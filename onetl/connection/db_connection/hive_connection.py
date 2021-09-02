@@ -1,1 +1,0 @@
-# TODO: нужен ли Hive connection????
