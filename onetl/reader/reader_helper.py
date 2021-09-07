@@ -1,6 +1,6 @@
 import fnmatch
 import os
-from typing import Optional, List
+from typing import List
 from logging import getLogger
 
 log = getLogger(__name__)
