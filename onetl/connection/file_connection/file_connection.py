@@ -40,6 +40,18 @@ class FileConnection(ConnectionABC):
     def get_name(self, item):
         """"""
 
+    @abstractmethod
+    def path_exists(self, path):
+        """"""
+
+    @abstractmethod
+    def mk_dir(self, path):
+        """"""
+
+    @abstractmethod
+    def upload_file(self, file, path, *args, **kwargs):
+        """"""
+
     def listdir(self, path) -> List[str]:
         return [self.get_name(item) for item in self._listdir(path)]
 
@@ -77,5 +89,3 @@ class FileConnection(ConnectionABC):
     @abstractmethod
     def _listdir(self, path):
         """"""
-
-    # TODO: def upload_file(path)

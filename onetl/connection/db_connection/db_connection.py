@@ -1,8 +1,11 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Optional, Mapping
 
 from onetl.connection import ConnectionABC
+
+log = getLogger(__name__)
 
 
 @dataclass
@@ -15,6 +18,33 @@ class DBConnection(ConnectionABC):
     schema: Optional[str] = None
     extra: Optional[Mapping] = field(default_factory=dict)
     spark: Optional['pyspark.sql.SparkSession'] = None
+
+    def save_df(
+        self,
+        df: 'pyspark.sql.DataFrame',
+        table: str,
+        spark_write_config: Mapping,
+    ):
+        """
+        Save the DataFrame into RDB.
+
+        :type df: pyspark.sql.DataFrame
+        """
+
+        properties = {
+            'user': self.login,
+            'password': self.password,
+            'driver': self.driver,
+        }
+        if 'properties' in spark_write_config:
+            properties.update(spark_write_config['properties'])
+
+        log_pass = 'PASSWORD="*****"' if properties.get('password') else 'NO_PASSWORD'
+        log.info(f'USER="{properties["user"]}" {log_pass} DRIVER={properties["driver"]}')
+        log.info(f'JDBC_URL="{self.url}"')
+
+        mode = spark_write_config.get('mode')
+        df.write.jdbc(self.url, table, mode, properties).collect()
 
     @property
     @abstractmethod
