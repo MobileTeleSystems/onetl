@@ -1,12 +1,12 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from functools import cached_property
+from functools import lru_cache
 from typing import Optional, Any, List, Mapping
 
 from onetl.connection import ConnectionABC
 
 
-@dataclass
+@dataclass(frozen=True)
 class FileConnection(ConnectionABC):
     host: Optional[str] = None
     port: Optional[int] = None
@@ -20,7 +20,8 @@ class FileConnection(ConnectionABC):
     def get_client(self) -> Any:
         """"""
 
-    @cached_property
+    @property
+    @lru_cache()
     def client(self):
         return self.get_client()
 

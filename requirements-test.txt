@@ -1,0 +1,27 @@
+-r requirements.txt
+
+pytest
+pytest-cov
+future
+pyyaml>5
+freezegun
+mock
+
+# May be needed for testing:
+sasl
+thrift
+thrift-sasl
+pyspark < 3
+pyhive >= 0.6
+hdfs[avro,dataframe,kerberos]>2
+psycopg2-binary
+
+# For test fixtures creation
+jpype1==0.6.3
+
+# linter
+wemake-python-styleguide==0.15.2
+
+# docs
+sphinx
+sphinx_rtd_theme

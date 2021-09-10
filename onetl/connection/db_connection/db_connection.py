@@ -8,22 +8,24 @@ from onetl.connection import ConnectionABC
 log = getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class DBConnection(ConnectionABC):
     driver: str = field(init=False, default='')
     host: Optional[str] = None
     port: Optional[int] = None
     login: Optional[str] = None
-    password: Optional[str] = None
-    schema: Optional[str] = None
-    extra: Optional[Mapping] = field(default_factory=dict)
+    password: Optional[str] = field(repr=False, default=None)
+    # Database in rdbms, schema in DBReader.
+    # Difference like https://www.educba.com/postgresql-database-vs-schema/
+    database: str = 'default'
+    extra: Mapping = field(default_factory=dict)
     spark: Optional['pyspark.sql.SparkSession'] = None
 
     def save_df(
         self,
         df: 'pyspark.sql.DataFrame',
         table: str,
-        spark_write_config: Mapping,
+        jdbc_options: Mapping,
     ):
         """
         Save the DataFrame into RDB.
@@ -31,20 +33,15 @@ class DBConnection(ConnectionABC):
         :type df: pyspark.sql.DataFrame
         """
 
-        properties = {
-            'user': self.login,
-            'password': self.password,
-            'driver': self.driver,
-        }
-        if 'properties' in spark_write_config:
-            properties.update(spark_write_config['properties'])
+        options = jdbc_options.copy()
+        options.update(user=self.login, password=self.password, driver=self.driver)
 
-        log_pass = 'PASSWORD="*****"' if properties.get('password') else 'NO_PASSWORD'
-        log.info(f'USER="{properties["user"]}" {log_pass} DRIVER={properties["driver"]}')
+        log_pass = 'PASSWORD="*****"' if options.get('password') else 'NO_PASSWORD'
+        log.info(f'USER="{options["user"]}" {log_pass} DRIVER={options["driver"]}')
         log.info(f'JDBC_URL="{self.url}"')
 
-        mode = spark_write_config.get('mode')
-        df.write.jdbc(self.url, table, mode, properties).collect()
+        mode = options.get('mode')
+        df.write.options(**options).jdbc(self.url, table, mode).saveAsTable()
 
     @property
     @abstractmethod

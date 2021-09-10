@@ -8,7 +8,7 @@ from onetl.connection.file_connection.file_connection import FileConnection
 log = getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Samba(FileConnection):
     """
     Airflow connection example:
@@ -26,7 +26,7 @@ class Samba(FileConnection):
         kw = self.extra.copy()
         kw.update(
             server=self.host,
-            share=self.schema,
+            share=self.database,
             username=self.login,
         )
         if self.password:

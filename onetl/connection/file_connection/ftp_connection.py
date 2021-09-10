@@ -10,7 +10,7 @@ from onetl.connection.file_connection.file_connection import FileConnection
 log = getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class FTP(FileConnection):
     port: int = 22
 
