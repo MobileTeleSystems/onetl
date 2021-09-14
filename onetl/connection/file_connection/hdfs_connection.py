@@ -8,7 +8,7 @@ from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kereberos_helpers import KerberosMixin
 
 
-@dataclass
+@dataclass(frozen=True)
 class HDFS(FileConnection, KerberosMixin):
     port: int = 50070
 

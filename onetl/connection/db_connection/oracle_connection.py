@@ -4,7 +4,7 @@ from re import sub
 from onetl.connection.db_connection.db_connection import DBConnection
 
 
-@dataclass
+@dataclass(frozen=True)
 class Oracle(DBConnection):
     driver: str = field(init=False, default='oracle.jdbc.driver.OracleDriver')
     port: int = 1521

@@ -1,0 +1,6 @@
+ftputil
+PySmbClient
+sftpserver
+paramiko
+requests
+requests_ntlm

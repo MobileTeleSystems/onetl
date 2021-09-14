@@ -2,6 +2,7 @@ import os
 import json
 
 from logging import getLogger
+from dataclasses import dataclass
 
 from requests import Session
 from requests_ntlm import HttpNtlmAuth
@@ -11,6 +12,7 @@ from onetl.connection.file_connection.file_connection import FileConnection
 log = getLogger(__name__)
 
 
+@dataclass(frozen=True)
 class Sharepoint(FileConnection):
     def get_client(self):
         auth = HttpNtlmAuth(self.login, self.password)

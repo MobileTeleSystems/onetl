@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from onetl.connection.db_connection.db_connection import DBConnection
 
 
-@dataclass
+@dataclass(frozen=True)
 class Teradata(DBConnection):
     driver: str = field(init=False, default='com.teradata.jdbc.TeraDriver')
     port: int = 1025
@@ -14,7 +14,7 @@ class Teradata(DBConnection):
             url = self.host
         else:
             prop = self.extra.copy()
-            prop['DATABASE'] = self.schema
+            prop['DATABASE'] = self.database
             if self.port:
                 prop['DBS_PORT'] = self.port
 
