@@ -41,7 +41,50 @@ class DBConnection(ConnectionABC):
         log.info(f'JDBC_URL="{self.url}"')
 
         mode = options.get('mode')
-        df.write.options(**options).jdbc(self.url, table, mode).saveAsTable()
+        df.write.options(**options).jdbc(self.url, table, mode)
+
+    def read_table(self, sql_text, jdbc_options):
+        conf = jdbc_options.copy()
+
+        conf['user'] = self.login
+        conf['password'] = self.password
+        conf['driver'] = self.driver
+
+        log.info(f'SQL statement: {sql_text}')
+
+        num_partitions = conf.get('numPartitions')
+        partition_column = conf.get('partitionColumn')
+        lower = conf.get('lowerBound')
+        upper = conf.get('upperBound')
+
+        # TODO: возможно тоже стоит переработать
+        if num_partitions is not None:
+            if partition_column is None:
+                log.warning("partitionColumn task parameter wasn't specified; the reading will be slowed down!")
+            else:
+                conf['numPartitions'] = num_partitions
+                conf['column'] = partition_column
+                conf['lowerBound'] = lower
+                conf['upperBound'] = upper
+
+        prepare = conf.get('sessionInitStatement')
+        if prepare:
+            log.info(f'Init SQL statement: {prepare}')
+
+        return self.spark.read.options(**conf).jdbc(url=self.url, table=sql_text)
+
+    def get_sql_text(self, sql_hint, columns, table, sql_where):
+        statements = [
+            'SELECT ',
+            sql_hint,
+            columns,
+            f' FROM {table}',
+        ]
+
+        if sql_where:
+            statements.append(f' WHERE ({sql_where})')
+
+        return f'({" ".join(statements)}) T'
 
     @property
     @abstractmethod

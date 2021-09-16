@@ -21,5 +21,3 @@ class DBWriter:
         conf.update(mode=self.mode, format=self.format)
 
         self.connection.save_df(df, self.table, conf)
-
-

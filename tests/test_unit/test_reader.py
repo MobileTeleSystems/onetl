@@ -14,7 +14,7 @@ class TestDBReader:
         reader = DBReader(connection=Oracle(), table='default.test')
         table_sql = reader.get_table_sql_text()
 
-        assert table_sql == 'default.test T'
+        assert table_sql == '(SELECT   *  FROM default.test) T'
 
     def test_db_reader_table_sql_with_extra_params(self):
         reader = DBReader(
