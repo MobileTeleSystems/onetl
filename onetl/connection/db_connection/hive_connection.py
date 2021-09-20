@@ -22,5 +22,21 @@ class Hive(DBConnection):
     ):
         df.write.saveAsTable(table)
 
+    def read_table(self, sql_text, jdbc_options):
+        return self.spark.sql(sql_text)
+
+    def get_sql_text(self, sql_hint, columns, table, sql_where):
+        statements = [
+            'SELECT ',
+            sql_hint,
+            columns,
+            f' FROM {table}',
+        ]
+
+        if sql_where:
+            statements.append(f' WHERE ({sql_where})')
+
+        return f'{" ".join(statements)}'
+
     def _get_timestamp_value_sql(self, value):
         return value

@@ -15,6 +15,7 @@ pyspark < 3
 pyhive >= 0.6
 hdfs[avro,dataframe,kerberos]>2
 psycopg2-binary
+mtspark
 
 # For test fixtures creation
 jpype1==0.6.3

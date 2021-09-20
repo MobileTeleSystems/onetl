@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-import sysconfig
 import logging
 
 # noinspection PyPackageRequirements
 import pytest
-import pyspark
 
 # noinspection PyPackageRequirements
 from pyhive import hive
 from hdfs import InsecureClient
+from mtspark import get_spark
 
 LOG = logging.getLogger(__name__)
 
@@ -26,25 +25,19 @@ def debug_executor_change_state_crutch(self, key, state):
     self.event_buffer[key] = state
 
 
-@pytest.fixture(scope='session', name='spark_conf')
-def setup_spark_conf():
-    # FIXME: the conf leaks
-    jars = ','.join((
-        (
-            'http://rep.msk.mts.ru/artifactory/SBT-maven.org-cache/org/postgresql/'
-            'postgresql/42.2.4/postgresql-42.2.4.jar'
-        ),
-        (
-            'http://rep.msk.mts.ru/artifactory/jcenter/ru/yandex/clickhouse/clickhouse-jdbc/0.2.4/'
-            'clickhouse-jdbc-0.2.4.jar'
-        ),
-        (
-            'http://rep.msk.mts.ru:80/artifactory/files/oracle/ojdbc7.jar'
-        ),
-    ))
-    conf = pyspark.SparkConf().setAppName('onetl').setMaster('local[*]')
-    conf.set('spark.jars', jars)
-    return conf
+@pytest.fixture(scope='session', name='spark')
+def get_mtspark_session():
+    spark = get_spark(
+        config={
+            'appName': 'onetl',
+            'master': 'local',
+            'spark.jars.packages': True,
+            'spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation': 'true',
+        },
+        fix_pyspark=False,
+    )
+    yield spark
+    spark.stop()
 
 
 @pytest.fixture(scope='session')
