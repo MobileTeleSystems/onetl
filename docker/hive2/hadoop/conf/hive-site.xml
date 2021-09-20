@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
-    <property> 
-        <name>javax.jdo.option.ConnectionURL</name> 
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:postgresql://postgres:5432/metastore2_db</value>
         <description>JDBC connect string for a JDBC metastore</description>
     </property>
@@ -21,18 +21,18 @@
         <name>javax.jdo.option.ConnectionPassword</name>
         <value>hive2</value>
     </property>
-    
+
     <property>
-        <name>hive.server2.authentication</name> 
+        <name>hive.server2.authentication</name>
         <value>NONE</value>
         <description> Client authentication types. NONE: no authentication check LDAP: LDAP/AD based authentication KERBEROS: Kerberos/GSSAPI authentication CUSTOM: Custom authentication provider (Use with property hive.server2.custom.authentication.class) </description>
     </property>
-    
+
     <property>
         <name>datanucleus.autoCreateTables</name>
         <value>False</value>
     </property>
-<!--    
+<!--
     <property>
       <name>hive.exec.post.hooks</name>
       <value>org.apache.atlas.hive.hook.HiveHook</value>

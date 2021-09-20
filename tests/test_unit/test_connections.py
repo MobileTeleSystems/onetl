@@ -1,3 +1,5 @@
+import pytest
+
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
 
 
@@ -15,6 +17,17 @@ class TestDBConnection:
         assert conn.url == 'jdbc:oracle:thin:@some_host:1521:PE'
         assert Oracle.driver == 'oracle.jdbc.driver.OracleDriver'
         assert Oracle.port == 1521
+
+    def test_oracle_uri_with_service_name(self):
+        conn = Oracle(host='some_host', login='user', password='passwd', extra={'service_name': 'DWHLDTS'})
+
+        assert conn.url == 'jdbc:oracle:thin:@//some_host:1521/DWHLDTS'
+
+    def test_oracle_without_extra(self):
+        conn = Oracle(host='some_host', login='user', password='passwd')
+
+        with pytest.raises(ValueError):
+            conn.url  # noqa: WPS428
 
     def test_postgres_driver_and_uri(self):
         conn = Postgres(host='some_host', login='user', password='passwd')

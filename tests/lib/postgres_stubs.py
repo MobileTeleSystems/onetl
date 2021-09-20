@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # noinspection PyProtectedMember
 from os import environ
 from functools import wraps
@@ -10,7 +9,7 @@ logger = getLogger(__name__)
 
 
 # noinspection SqlNoDataSourceInspection,SqlResolve,SqlDialectInspection
-class PostgresTableStub(object):
+class PostgresTableStub:
 
     def __init__(self, connection):
         self.connection = connection

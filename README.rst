@@ -16,7 +16,7 @@ entrypoint.sh могут не взлететь. Для гарантии можн
 
 .. code-block:: bash
 
-    docker build -t onetl -f ./docker/onetl/Dockerfile .
+    docker build -t onetl -f ./docker/Dockerfile .
 
     docker system prune --volumes
 
