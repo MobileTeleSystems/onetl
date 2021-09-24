@@ -37,8 +37,10 @@ COPY --from=wheel_builder /opt/build_dir/dist/ /opt/build_dir/dist/
 
 COPY ./requirements.txt \
     ./requirements-test.txt \
-    ./docker/onetl/entrypoint.sh \
+    ./docker/entrypoint.sh \
     ${ONETL_USER_HOME}/
+
+COPY . /opt/project/
 
 RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
     && yum -y install \
@@ -72,6 +74,6 @@ RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
 
 USER onetl
 
-WORKDIR ${ONETL_USER_HOME}
+WORKDIR /opt/project/
 
 ENTRYPOINT ["/entrypoint.sh"]

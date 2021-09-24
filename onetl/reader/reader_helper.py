@@ -76,12 +76,12 @@ class BaseRemoteFile:
         self.check_flag(self.remote_file_path, files)
         self.check_pattern(self.remote_file_path)
         if check_history:
-            self.check_history(self.remote_file_path)
+            self.check_history()
 
         if self.remote_source_file_flag_download:
             self.check_pattern(self.remote_flag_file_path)
             if check_history:
-                self.check_history(self.remote_flag_file_path)
+                self.check_history()
 
         return True
 
@@ -141,7 +141,7 @@ class BaseRemoteFile:
                 md5_hash.update(byte_block)
             md5_actual = md5_hash.hexdigest().lower()
 
-        log.info('MD5 actual={} expected={}'.format(md5_actual, md5_expected))
+        log.info(f'MD5 actual={md5_actual} expected={md5_expected}')
 
         # cleanup
         if not self.remote_source_file_flag_download:
@@ -155,9 +155,9 @@ class BaseRemoteFile:
         try:
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
-                log.info('Created directory {0}'.format(dir_name))
+                log.info(f'Created directory {dir_name}')
         except Exception as last_exception:
-            log.error('Cannot create directory {}. Exception: {}'.format(dir_name, last_exception))
+            log.error(f'Cannot create directory {dir_name}. Exception: {last_exception}')
             raise last_exception
 
     def _get_local(self, remote):

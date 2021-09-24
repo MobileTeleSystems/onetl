@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Optional, Mapping
+from typing import Optional, Dict
 
 from onetl.connection import ConnectionABC
 
@@ -18,14 +18,14 @@ class DBConnection(ConnectionABC):
     # Database in rdbms, schema in DBReader.
     # Difference like https://www.educba.com/postgresql-database-vs-schema/
     database: str = 'default'
-    extra: Mapping = field(default_factory=dict)
+    extra: Dict = field(default_factory=dict)
     spark: Optional['pyspark.sql.SparkSession'] = None
 
     def save_df(
         self,
         df: 'pyspark.sql.DataFrame',
         table: str,
-        jdbc_options: Mapping,
+        jdbc_options: Dict,
     ):
         """
         Save the DataFrame into RDB.

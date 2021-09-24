@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# Might be helpful:
-# https://github.com/puckel/docker-airflow/blob/master/config/airflow.cfg
 
 # TODO: remove later, if not needed
 # The entrypoint Defaults

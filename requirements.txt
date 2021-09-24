@@ -1,6 +1,6 @@
 ftputil
-PySmbClient
-sftpserver
 paramiko
+PySmbClient
 requests
 requests_ntlm
+sftpserver

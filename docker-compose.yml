@@ -3,40 +3,42 @@ version: '3.5'
 # NOTE: Только для разработки и локального/CI тестирования
 services:
   postgres:
-    image: docker.rep.msk.mts.ru/postgres:12.1
+    # TODO: fix later
+    build:
+      context: ./docker/postgres/
+      dockerfile: Dockerfile
     env_file: onetl_local.default.env
     restart: always
     networks: [onetl]
-    volumes:
-      - ./docker/postgres/init-users.sh:/docker-entrypoint-initdb.d/init-users.sh
     ports:
-      - "5432:5432"
+    - 5432:5432
 
   hive2:
-    image: docker.rep.msk.mts.ru/test-hive:2.1.0
+    # TODO: fix later
+    build:
+      context: ./docker/hive2
+      dockerfile: Dockerfile
     env_file: onetl_local.default.env
     hostname: hive2
     networks: [onetl]
     depends_on:
-      - "postgres"
+    - postgres
     ports:
-      - "50010:50010"
-      - "50020:50020"
-      - "50070:50070"
-      - "50075:50075"
-      - "10000:10000"
-      - "10020:10020"
-      - "19888:19888"
-      - "9000:9000"
-      - "8030:8030"
-      - "8031:8031"
-      - "8032:8032"
-      - "8033:8033"
-      - "8040:8040"
-      - "8042:8042"
-      - "8088:8088"
-    volumes:
-      - ./docker/hive2:/var/input
+    - 50010:50010
+    - 50020:50020
+    - 50070:50070
+    - 50075:50075
+    - 10000:10000
+    - 10020:10020
+    - 19888:19888
+    - 9000:9000
+    - 8030:8030
+    - 8031:8031
+    - 8032:8032
+    - 8033:8033
+    - 8040:8040
+    - 8042:8042
+    - 8088:8088
 
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
 #  тогда содержимое БД будет сохраняться между подъемами docker-compose.

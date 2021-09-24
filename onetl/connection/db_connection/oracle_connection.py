@@ -16,7 +16,7 @@ class Oracle(DBConnection):
         elif 'service_name' in self.extra:
             url = f'jdbc:oracle:thin:@//{self.host}:{self.port}/{self.extra["service_name"]}'
         else:
-            raise RuntimeError('Connection to Oracle does not have sid or service_name')
+            raise ValueError('Connection to Oracle does not have sid or service_name')
         return url
 
     def _get_timestamp_value_sql(self, value):

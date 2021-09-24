@@ -30,7 +30,7 @@ class FileExtractor:
     lookup_history: bool = True
 
     def remote_files_listing(self, source_path: str) -> Iterator:
-        log.info('Getting files list from remote source path: {path}'.format(path=source_path))
+        log.info(f'Getting files list from remote source path: {source_path}')
         exclude_dirs = []
         if self.remote_source_exclude_dirs:
             exclude_dirs = [os.path.join(source_path, d) for d in self.remote_source_exclude_dirs]
@@ -53,7 +53,7 @@ class FileExtractor:
         for root, dirs, files in ftp_walk:
             log.info(f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}')
             for res_file in files:
-                log.info('Checking file: {}'.format(res_file))
+                log.info(f'Checking file: {res_file}')
                 # TODO: Слишком сложно. упростить
                 remote_file = BaseRemoteFile(
                     local_dir=self.local_path,
@@ -77,7 +77,7 @@ class FileExtractor:
 
                 res_files = remote_file.get_remote_names()
                 res_files_str = '\n'.join(res_files)
-                log.info('Add files: {}'.format(res_files_str))
+                log.info(f'Add files: {res_files_str}')
                 yield remote_file
 
     def extract(self):

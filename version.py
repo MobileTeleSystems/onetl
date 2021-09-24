@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 
 version = '0.1.{build_num}'  # Bump minor version here

@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+  onetl_tests:
+    image: ${TEST_IMAGE}
+    depends_on:
+    - postgres
+    - hive2
+    env_file:
+    - onetl_local.default.env
+    environment:
+      WAIT: 150
+    working_dir: /opt/project
+    networks:
+    - onetl
+    command: bash -c 'pytest --verbose -s -c pytest.ini tests --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:coverage.xml --junitxml=junitxml.xml'
+  postgres:
+    # TODO: fix later
+    build:
+      context: ./docker/postgres/
+      dockerfile: Dockerfile
+    env_file: onetl_local.default.env
+    restart: always
+    networks: [onetl]
+
+  hive2:
+    # TODO: fix later
+    build:
+      context: ./docker/hive2
+      dockerfile: Dockerfile
+    env_file: onetl_local.default.env
+    hostname: hive2
+    networks: [onetl]
+    depends_on:
+    - postgres
+
+networks:
+  onetl:
+    name: onetl
