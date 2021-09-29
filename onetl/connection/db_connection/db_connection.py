@@ -36,16 +36,6 @@ class DBConnection(ConnectionABC):
         'customSchema',
     ]
 
-    # TODO: use the <jdbc_outer_properties> list to implement functionality in help with typos in parameter input
-    jdbc_outer_properties = [
-        'url',
-        'table',
-        'lowerBound',
-        'upperBound',
-        'numPartitions',
-        'partitionColumn',
-    ]
-
     def jdbc_params_creator(
         self,
         table: str,
