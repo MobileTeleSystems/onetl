@@ -15,7 +15,7 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class Sharepoint(FileConnection):
     def get_client(self):
-        auth = HttpNtlmAuth(self.login, self.password)
+        auth = HttpNtlmAuth(self.user, self.password)
         conn = Session()
         conn.verify = False
         conn.auth = auth

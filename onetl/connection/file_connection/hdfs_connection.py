@@ -16,13 +16,13 @@ class HDFS(FileConnection, KerberosMixin):
         conn_str = f'http://{self.host}:{self.port}'
         if self.extra.get('keytab') or self.password:
             self.kinit(
-                self.login,
+                self.user,
                 keytab=self.extra.get('keytab'),
                 password=self.password,
             )
             client = KerberosClient(conn_str, timeout=self.extra.get('timeout'))
         else:
-            client = InsecureClient(conn_str, user=self.login)
+            client = InsecureClient(conn_str, user=self.user)
         client.status('/')
         return client
 

@@ -14,7 +14,7 @@ class ConnectionABC(ABC):
 
     host: Optional[str] = None
     port: Optional[int] = None
-    login: Optional[str] = None
+    user: Optional[str] = None
     password: Optional[str] = None
     database: Optional[str] = None
     extra: Optional[Mapping] = field(default_factory=dict)
@@ -33,7 +33,7 @@ class ConnectionABC(ABC):
             f'{self.__class__.__name__}('  # noqa: WPS221
             f'host={self.host!r}, '
             f'port={self.port!r}, '
-            f'login={self.login!r}, '
+            f'user={self.user!r}, '
             "password='XXX', "
             f'database={self.database!r}, '
             f'extra={secure_extra!r}'

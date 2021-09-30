@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Mapping, Optional
+from typing import Optional, Dict
 
 from onetl.connection.db_connection.db_connection import DBConnection
 
@@ -12,31 +12,30 @@ class Hive(DBConnection):
     def url(self):
         params = '&'.join(f'{k}={v}' for k, v in self.extra.items())
 
-        return f'hiveserver2://{self.login}:{self.password}@{self.host}:{self.port}?{params}'
+        return f'hiveserver2://{self.user}:{self.password}@{self.host}:{self.port}?{params}'
 
     def save_df(
         self,
         df: 'pyspark.sql.DataFrame',
         table: str,
-        jdbc_options: Optional[Mapping],
-    ):
-        df.write.saveAsTable(table)
+        jdbc_options: Dict,
+    ) -> None:
+        # TODO: rewrite, take into account all data recording possibilities
+        df.write.mode(jdbc_options.get('mode', 'append')).format(jdbc_options.get('format', 'orc')).saveAsTable(table)
 
-    def read_table(self, sql_text, jdbc_options):
-        return self.spark.sql(sql_text)
-
-    def get_sql_text(self, sql_hint, columns, table, sql_where):
-        statements = [
-            'SELECT ',
-            sql_hint,
-            columns,
-            f' FROM {table}',
-        ]
-
-        if sql_where:
-            statements.append(f' WHERE ({sql_where})')
-
-        return f'{" ".join(statements)}'
+    # TODO: think about unused params in this method
+    def read_table(
+        self,
+        jdbc_options: Dict,
+        table: str,
+        columns: Optional[str] = '*',
+        sql_hint: Optional[str] = None,
+        sql_where: Optional[str] = None,
+    ) -> 'pyspark.sql.DataFrame':
+        if not self.spark:
+            raise ValueError('Spark session not provided')
+        table = self.get_sql_query(table=table, sql_hint=sql_hint, columns=columns, sql_where=sql_where)
+        return self.spark.sql(table)
 
     def _get_timestamp_value_sql(self, value):
         return value

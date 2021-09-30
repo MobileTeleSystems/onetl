@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-
 from onetl.connection.db_connection.db_connection import DBConnection
 
 

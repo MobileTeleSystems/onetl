@@ -31,7 +31,8 @@ ENV TZ=${TZ} \
     PYSPARK_DRIVER_PYTHON=python3 \
     PYTHONUNBUFFERED=1 \
     HADOOP_CONF_DIR=/opt/project/docker/hive2/hadoop/conf/ \
-    ONETL_PG_CONN=postgres://onetl:onetl@postgres:5432/
+    ONETL_PG_CONN=postgres://onetl:onetl@postgres:5432/ \
+    MTSPARK_CUSTOM_CONFIG_PATH=/opt/project/tests/config.yml
 
 COPY --from=wheel_builder /opt/build_dir/dist/ /opt/build_dir/dist/
 

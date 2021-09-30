@@ -16,7 +16,7 @@ class Samba(FileConnection):
     Conn Type:  samba
     Host:       0000mskrwdc01
     Schema:     msk
-    Login:      username
+    User:      username
     Password:   pass
     Extra:      {"domain": "ADMSK"}
     """
@@ -27,7 +27,7 @@ class Samba(FileConnection):
         kw.update(
             server=self.host,
             share=self.database,
-            username=self.login,
+            username=self.user,
         )
         if self.password:
             # does not work without \n on smbclient --version Version 4.7.1

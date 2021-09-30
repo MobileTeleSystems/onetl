@@ -25,7 +25,7 @@ class KerberosMixin:
         else:
             cmd = f'echo "{password}" | kinit {user}'
 
-        log.info(f'exec_cmd: {cmd.replace(password, "***")}')
+        log.debug(f'exec_cmd: {cmd.replace(password, "***")}')
         return check_call(cmd, shell=True)  # NOQA S602
 
     def ticket_expiring(self):
