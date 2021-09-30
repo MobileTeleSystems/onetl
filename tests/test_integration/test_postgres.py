@@ -27,7 +27,15 @@ PG_TO_HIVE_TEST_LOWER_UPPER_AUTO_SETTING = {
     },
 }
 HIVE_TO_PG_SNAPSHOT = {'schema_for_hive': {
-    'hive2rdb_snapshot': [('d_datetime', 'timestamp primary key'), ('d_name', 'text')],
+    'rdb_to_hive_snapshot': [('d_datetime', 'timestamp primary key'), ('d_name', 'text')],
+}}
+
+HIVE_TO_PG_APPEND_MODE_TEST = {'fiddle': {
+    'rdb_to_hive_append_mode': [('d_id', 'serial primary key'), ('d_name', 'text')],
+}}
+
+HIVE_TO_PG_OVERWRITE_MODE_TEST = {'fiddle': {
+    'rdb_to_hive_overwrite_mode': [('d_id', 'serial primary key'), ('d_name', 'text')],
 }}
 
 
@@ -39,6 +47,8 @@ def teardown_hive_and_hdfs(hive_client, hdfs_client):
     yield
     with hive_client.cursor() as cursor:
         cursor.execute('drop table if exists hive_pg_schema.full_postgres_to_hive')
+        cursor.execute('drop table if exists hive_pg_schema.rdb_to_hive_append_mode')
+        cursor.execute('drop table if exists hive_pg_schema.rdb_to_hive_overwrite_mode')
         cursor.execute('drop table if exists hive_pg_schema.postgres_to_hive_test_lower_upper_bound_filtering')
         cursor.execute('drop table if exists hive_pg_schema.postgres_to_hive_test_lower_upper_auto_setting')
         cursor.execute('drop table if exists schema_for_hive.hive2rdb_snapshot')
@@ -47,6 +57,83 @@ def teardown_hive_and_hdfs(hive_client, hdfs_client):
 # noinspection SqlDialectInspection,SqlNoDataSourceInspection
 @pytest.mark.usefixtures('teardown_hive_and_hdfs')
 class TestOnETLPostgresToHive:
+
+    @postgres_stubs.tables_generator(HIVE_TO_PG_APPEND_MODE_TEST)
+    def test_append_mode(self, spark):
+        with psycopg2.connect(environ['ONETL_PG_CONN']) as postgres_conn:
+            fiddle_stub = postgres_stubs.PostgresTableStub(postgres_conn)
+            fiddle_stub.bulk_insert(
+                'fiddle', 'rdb_to_hive_append_mode', ['d_id', 'd_name'], ((i + 1, 'guy') for i in range(10 ** 3)),
+            )
+
+        postgres = Postgres(host='postgres', user='onetl', password='onetl', database='onetl', spark=spark)
+
+        reader = DBReader(
+            connection=postgres,
+            table='fiddle.rdb_to_hive_append_mode',
+        )
+        table_df = reader.run()
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table='hive_pg_schema.rdb_to_hive_append_mode',
+            format='parquet',
+            mode='append',
+        )
+
+        # loading is done twice to validate the test
+        writer.run(table_df)
+        writer.run(table_df)
+
+        # Check Hive
+        hive_reader = DBReader(
+            connection=hive,
+            table='hive_pg_schema.rdb_to_hive_append_mode',
+        )
+        hive_df = hive_reader.run()
+
+        assert dataframe_equal(table_df.union(table_df), hive_df)
+
+    @postgres_stubs.tables_generator(HIVE_TO_PG_OVERWRITE_MODE_TEST)
+    def test_overwrite_mode(self, spark):
+        with psycopg2.connect(environ['ONETL_PG_CONN']) as postgres_conn:
+            fiddle_stub = postgres_stubs.PostgresTableStub(postgres_conn)
+            fiddle_stub.bulk_insert(
+                'fiddle', 'rdb_to_hive_overwrite_mode', ['d_id', 'd_name'], ((i + 1, 'guy') for i in range(10 ** 3)),
+            )
+
+        postgres = Postgres(host='postgres', user='onetl', password='onetl', database='onetl', spark=spark)
+
+        reader = DBReader(
+            connection=postgres,
+            table='fiddle.rdb_to_hive_overwrite_mode',
+        )
+        table_df = reader.run()
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table='hive_pg_schema.rdb_to_hive_overwrite_mode',
+            format='parquet',
+            mode='overwrite',
+        )
+
+        # loading is done twice to validate the test
+        writer.run(table_df)
+        writer.run(table_df)
+
+        # Check Hive
+        hive_reader = DBReader(
+            connection=hive,
+            table='hive_pg_schema.rdb_to_hive_overwrite_mode',
+        )
+        hive_df = hive_reader.run()
+
+        assert dataframe_equal(table_df, hive_df)
+
     @postgres_stubs.tables_generator(PG_TO_HIVE_SNAPSHOT)
     def test_snapshot_postgres_to_hive(self, spark):
         with psycopg2.connect(environ['ONETL_PG_CONN']) as postgres_conn:
