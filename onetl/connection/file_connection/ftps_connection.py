@@ -38,7 +38,7 @@ class FTPS(FTP):
 
         return FTPHost(
             self.host,
-            self.login,
+            self.user,
             password,
             session_factory=session_factory,
         )

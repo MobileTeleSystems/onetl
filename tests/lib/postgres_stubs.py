@@ -45,7 +45,7 @@ class PostgresTableStub:
             cursor.execute(f'drop table if exists {schema}.{table} cascade')
 
 
-def tables_generator(rdbms_struct):  # noqa: WPS231
+def tables_generator(rdbms_struct, pre_create_table=True):  # noqa: WPS231
     # example rdbms_struct = {'schema': {'test_table': [('d_id', 'serial primary key'), ('d_name', 'text')]}}
     def create_dbs_and_tables(test):  # noqa: WPS231
         @wraps(test)
@@ -61,7 +61,8 @@ def tables_generator(rdbms_struct):  # noqa: WPS231
                     for table in tables:
                         full_name = (database, table)
                         full_names_list.append(full_name)
-                        stub.create_table(*full_name, rdbms_struct.get(database).get(table))
+                        if pre_create_table:
+                            stub.create_table(*full_name, rdbms_struct.get(database).get(table))
                 postgres_conn.commit()
                 test(*args, **kwargs)
             except Exception as error:

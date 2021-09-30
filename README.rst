@@ -41,7 +41,7 @@ Run -> Edit Configurations -> New -> pytest:
 
 3. Python interpreter **Project Default (onetl:latest). Нужно выбрать Python interpreter path: python3**.
 
-4. Working directory **(absolute path to)/onetl**.
+4. Working directory /opt/project
 
 5. Add content roots and source roots -- **галки необязательны**.
 

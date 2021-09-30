@@ -10,7 +10,7 @@ from onetl.connection import ConnectionABC
 class FileConnection(ConnectionABC):
     host: Optional[str] = None
     port: Optional[int] = None
-    login: Optional[str] = None
+    user: Optional[str] = None
     password: Optional[str] = None
     schema: Optional[str] = None
     extra: Optional[Mapping] = field(default_factory=dict)

@@ -28,7 +28,7 @@ class FTP(FileConnection):
 
         return FTPHost(
             self.host,
-            self.login,
+            self.user,
             self.password,
             session_factory=session_factory,
         )

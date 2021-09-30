@@ -50,7 +50,7 @@ class SSH(FileConnection):
                 client.connect(
                     hostname=self.host,
                     port=self.port,
-                    username=self.login,
+                    username=self.user,
                     password=self.password,
                     timeout=timeout,
                     compress=compress,
@@ -60,7 +60,7 @@ class SSH(FileConnection):
                 client.connect(
                     hostname=self.host,
                     port=self.port,
-                    username=self.login,
+                    username=self.user,
                     key_filename=key_file,
                     timeout=timeout,
                     compress=compress,

@@ -29,9 +29,7 @@ def get_mtspark_session():
     spark = get_spark(
         config={
             'appName': 'onetl',
-            'master': 'local',
             'spark.jars.packages': True,
-            'spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation': 'true',
         },
         fix_pyspark=False,
     )

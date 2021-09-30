@@ -1,0 +1,18 @@
+spark:
+  master: local
+  spark.driver.memory: 1g
+  spark.driver.maxResultSize: 1g
+  spark.executor.cores: 1
+  spark.executor.memory: 1g
+  spark.port.maxRetries: 5
+  spark.serializer: org.apache.spark.serializer.KryoSerializer
+  spark.kryoserializer.buffer.max: 256m
+  spark.default.parallelism: 1
+  spark.yarn.am.memory: 1g
+  spark.dynamicAllocation.executorIdleTimeout: 30s
+  spark.dynamicAllocation.cachedExecutorIdleTimeout: 60s
+  spark.dynamicAllocation.maxExecutors: 4
+  spark.metrics.conf.*.sink.graphite.host: some.unknown.node
+  spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation: true
+  spark.jars.repositories:
+  - http://rep.msk.mts.ru/artifactory/libs-release-local

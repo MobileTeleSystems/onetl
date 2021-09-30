@@ -51,7 +51,7 @@ class FileExtractor:
             remote_source_file_flag_regex = re.compile(self.remote_source_file_flag_regex)
 
         for root, dirs, files in ftp_walk:
-            log.info(f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}')
+            log.debug(f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}')
             for res_file in files:
                 log.info(f'Checking file: {res_file}')
                 # TODO: Слишком сложно. упростить
