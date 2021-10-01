@@ -88,15 +88,14 @@ flake8:
     when: always
     paths: [flake8.txt]
 
-# TODO: turn on later
-#black:
-#  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
-#  variables:
-#    PYTHON_VERSION: '3.7'
-#  stage: static analysis
-#  script:
-#  - pip install black
-#  - python3 -m black . --check
+black:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: static analysis
+  script:
+  - pip install black
+  - python3 -m black . --check
 
 build_docker_image:
   extends: .base_docker_build
@@ -110,32 +109,37 @@ tests:
   image: docker.rep.msk.mts.ru/test/docker-dind:20.10.8
   stage: tests
   variables:
-    CI_FILES_PATH: /builds/$CI_PROJECT_PATH
-    DOCKER_PROJECT_PATH: $CI_PROJECT_PATH
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
-    JUNIT_FILE: /mnt/junitxml.xml
-    COVERAGE_FILE: /mnt/coverage.xml
-  before_script:
-  - export TEST_IMAGE=${CI_REGISTRY}/${DOCKER_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
+    DOCKER_TLS_CERTDIR: ''
+    GIT_STRATEGY: clone
+    JUNIT_FILE: /data/onetools/onetl/junitxml.xml
+    COVERAGE_FILE: /data/onetools/onetl/coverage.xml
+    TEST_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_PIPELINE_ID}
   script:
+  - mkdir -p /data/onetools/onetl
   - docker-compose -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
-  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run -u root --rm onetl_tests
-  - docker-compose -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
+  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run -u root --rm -v /data/onetools:/data/onetools onetl_tests
+  after_script:
+  - cp /data/onetools/onetl/* ./
+  - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
   artifacts:
     when: always
-    # TODO: deal with reports
+    paths:
+    - coverage.xml
     reports:
       junit:
       - junitxml.xml
       cobertura:
       - coverage.xml
-  dependencies:
-  - build_docker_image
+  tags:
+  - bigdata
+  - onetools
+  - docker
 
 sonarqube_check:
   extends: .base_check_sonarqube
   stage: sonarqube_check
-
+  variables:
+    SONAR_SOURCES: onetl
 
 build_and_deploy:
   extends: .base_pip_pkg_build_and_deploy_to_jfrog

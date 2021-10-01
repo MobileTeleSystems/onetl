@@ -10,6 +10,7 @@ class FTP_TLS_fix(ftplib.FTP_TLS):  # noqa: N801
     Fix for python 3.6+
     https://stackoverflow.com/questions/14659154/ftpes-session-reuse-required
     """
+
     def ntransfercmd(self, cmd, rest=None):
         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)  # noqa: S321
         if self._prot_p:

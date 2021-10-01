@@ -14,7 +14,7 @@ class FileConnection(ConnectionABC):
     password: Optional[str] = None
     schema: Optional[str] = None
     extra: Optional[Mapping] = field(default_factory=dict)
-    spark: Optional['pyspark.sql.SparkSession'] = None
+    spark: Optional["pyspark.sql.SparkSession"] = None
 
     @abstractmethod
     def get_client(self) -> Any:

@@ -9,12 +9,12 @@ services:
     env_file:
     - onetl_local.default.env
     environment:
-      WAIT: 150
+      WAIT: 140
     working_dir: /opt/project
     networks:
     - onetl
-    command: bash -c 'pytest --verbose -s -c pytest.ini tests --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:coverage.xml --junitxml=junitxml.xml'
-    
+    command: bash -c 'pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}'
+
   postgres:
     # TODO: fix later
     build:
@@ -36,3 +36,4 @@ services:
 
 networks:
   onetl:
+    name: onetl-${CI_PIPELINE_ID}

@@ -10,7 +10,8 @@ class ConnectionABC(ABC):
 
     Checkout airflow.models.connection.Connection for more info.
     """
-    secure: tuple = field(default=('token', 'key', 'password', 'passwd', 'pass', 'pw', 'pwd'), init=False)
+
+    secure: tuple = field(default=("token", "key", "password", "passwd", "pass", "pw", "pwd"), init=False)
 
     host: Optional[str] = None
     port: Optional[int] = None
@@ -26,18 +27,18 @@ class ConnectionABC(ABC):
         secure_extra = {}
         for k, v in self.extra.items():
             if isinstance(v, str) and any(s in k.lower() for s in self.secure):
-                v = 'XXX'
+                v = "XXX"
             secure_extra[k] = v
 
         return (
-            f'{self.__class__.__name__}('  # noqa: WPS221
-            f'host={self.host!r}, '
-            f'port={self.port!r}, '
-            f'user={self.user!r}, '
+            f"{self.__class__.__name__}("  # noqa: WPS221
+            f"host={self.host!r}, "
+            f"port={self.port!r}, "
+            f"user={self.user!r}, "
             "password='XXX', "
-            f'database={self.database!r}, '
-            f'extra={secure_extra!r}'
-            ')'
+            f"database={self.database!r}, "
+            f"extra={secure_extra!r}"
+            ")"
         )
 
     def __repr__(self):
