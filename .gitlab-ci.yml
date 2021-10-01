@@ -116,7 +116,7 @@ tests:
     TEST_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_PIPELINE_ID}
   script:
   - mkdir -p /data/onetools/onetl
-  - docker-compose -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
+  - docker-compose -f docker-compose.tests.ym -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
   - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run -u root --rm -v /data/onetools:/data/onetools onetl_tests
   after_script:
   - cp /data/onetools/onetl/* ./
@@ -157,7 +157,7 @@ remove_docker_compose:
     CI_FILES_PATH: /builds/$CI_PROJECT_PATH
     DOCKER_PROJECT_PATH: $CI_PROJECT_PATH
   script:
-  - docker-compose -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
+  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
   when: always
 
 clean_docker_repo:
