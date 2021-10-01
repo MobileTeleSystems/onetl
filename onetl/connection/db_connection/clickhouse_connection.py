@@ -6,14 +6,14 @@ from onetl.connection.db_connection.db_connection import DBConnection
 
 @dataclass(frozen=True)
 class Clickhouse(DBConnection):
-    driver: str = field(init=False, default='ru.yandex.clickhouse.ClickHouseDriver')
+    driver: str = field(init=False, default="ru.yandex.clickhouse.ClickHouseDriver")
     port: int = 9000
 
     @property
     def url(self):
-        params = '&'.join(f'{k}={v}' for k, v in self.extra.items())
-        return f'jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}'.rstrip('?')
+        params = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
 
     def _get_timestamp_value_sql(self, value):
-        value_without_fraction = sub(r"(.+)\.\d*'$", r"\1'", value.lit())
+        value_without_fraction = sub(r"(.+)\.\d*'$", r"\1'", value.lit())  # NOSONAR
         return f"CAST('{value_without_fraction}' AS DateTime)"

@@ -41,11 +41,11 @@ class FTP(FileConnection):
 
     def download_file(self, remote_file_path, local_file_path):
         self.client.download(remote_file_path, local_file_path)
-        log.info(f'Successfully download _file {remote_file_path} remote SFTP to {local_file_path}')
+        log.info(f"Successfully download _file {remote_file_path} remote SFTP to {local_file_path}")
 
     def remove_file(self, remote_file_path):
         self.client.remove(remote_file_path)
-        log.info(f'Successfully removed file {remote_file_path}')
+        log.info(f"Successfully removed file {remote_file_path}")
 
     def _listdir(self, path):
         return self.client.listdir(path)

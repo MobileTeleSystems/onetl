@@ -10,18 +10,17 @@ logger = getLogger(__name__)
 
 # noinspection SqlNoDataSourceInspection,SqlResolve,SqlDialectInspection
 class PostgresTableStub:
-
     def __init__(self, connection):
         self.connection = connection
 
-    def create_schema(self, schema: str = 'schema_for_hive'):
+    def create_schema(self, schema: str = "schema_for_hive"):
         with self.connection.cursor() as cursor:
-            cursor.execute(f'create schema if not exists {schema}')  # schema_for_hive
+            cursor.execute(f"create schema if not exists {schema}")  # schema_for_hive
 
     def create_table(self, schema: str, table: str, fields: list):
         # example fields = [('d_id', 'serial primary key'), ('d_name', 'text')]
         with self.connection.cursor() as cursor:
-            str_fields = ', '.join([f'{f[0]} \n{f[1]}' for f in fields])
+            str_fields = ", ".join([f"{f[0]} \n{f[1]}" for f in fields])
             sql = f"""
                 create table if not exists {schema}.{table} (
                     {str_fields}
@@ -34,7 +33,7 @@ class PostgresTableStub:
             str_fields = f' {", ".join(field_names)}'
             extras.execute_values(
                 cursor,
-                f'insert into {database}.{table} ({str_fields}) values %s',  # noqa: WPS323
+                f"insert into {database}.{table} ({str_fields}) values %s",  # noqa: WPS323
                 values,
                 page_size=page_size,
                 fetch=fetch,
@@ -42,7 +41,7 @@ class PostgresTableStub:
 
     def drop_table(self, schema: str, table: str):
         with self.connection.cursor() as cursor:
-            cursor.execute(f'drop table if exists {schema}.{table} cascade')
+            cursor.execute(f"drop table if exists {schema}.{table} cascade")
 
 
 def tables_generator(rdbms_struct, pre_create_table=True):  # noqa: WPS231
@@ -50,7 +49,7 @@ def tables_generator(rdbms_struct, pre_create_table=True):  # noqa: WPS231
     def create_dbs_and_tables(test):  # noqa: WPS231
         @wraps(test)
         def wrapped(*args, **kwargs):
-            postgres_conn = connect(environ['ONETL_PG_CONN'])
+            postgres_conn = connect(environ["ONETL_PG_CONN"])
             databases = rdbms_struct.keys()
             stub = PostgresTableStub(postgres_conn)
             full_names_list = []
@@ -73,5 +72,7 @@ def tables_generator(rdbms_struct, pre_create_table=True):  # noqa: WPS231
                     stub.drop_table(*t)
                 postgres_conn.commit()
                 postgres_conn.close()
+
         return wrapped
+
     return create_dbs_and_tables

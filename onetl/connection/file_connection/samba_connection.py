@@ -20,6 +20,7 @@ class Samba(FileConnection):
     Password:   pass
     Extra:      {"domain": "ADMSK"}
     """
+
     port: int = 445
 
     def get_client(self) -> SambaClient:
@@ -31,19 +32,19 @@ class Samba(FileConnection):
         )
         if self.password:
             # does not work without \n on smbclient --version Version 4.7.1
-            kw['password'] = self.password + '\n'
+            kw["password"] = self.password + "\n"
 
         return SambaClient(**kw)
 
     def is_dir(self, top, item):
-        return 'D' in item[1]
+        return "D" in item[1]
 
     def get_name(self, item):
         return item[0]
 
     def download_file(self, remote_file_path: str, local_file_path: str) -> None:
         self.client.download(remote_file_path, local_file_path)
-        log.info(f'Successfully download_file {remote_file_path} remote SMB to {local_file_path}')
+        log.info(f"Successfully download_file {remote_file_path} remote SMB to {local_file_path}")
 
     def remove_file(self, remote_file_path):
         """
@@ -55,7 +56,7 @@ class Samba(FileConnection):
         :return:
         """
         self.client.remove(remote_file_path)
-        log.info(f'Successfully removed file {remote_file_path} from SMB')
+        log.info(f"Successfully removed file {remote_file_path} from SMB")
 
     def _listdir(self, path):
         return self.client.lsdir(path)

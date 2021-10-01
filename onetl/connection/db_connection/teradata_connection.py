@@ -5,24 +5,24 @@ from onetl.connection.db_connection.db_connection import DBConnection
 
 @dataclass(frozen=True)
 class Teradata(DBConnection):
-    driver: str = field(init=False, default='com.teradata.jdbc.TeraDriver')
+    driver: str = field(init=False, default="com.teradata.jdbc.TeraDriver")
     port: int = 1025
 
     @property
     def url(self):
-        if 'jdbc:' in self.host:
+        if "jdbc:" in self.host:
             url = self.host
         else:
             prop = self.extra.copy()
-            prop['DATABASE'] = self.database
+            prop["DATABASE"] = self.database
             if self.port:
-                prop['DBS_PORT'] = self.port
+                prop["DBS_PORT"] = self.port
 
-            schema_items = [f'{k}={v}' for k, v in prop.items()]
-            schema = ','.join(schema_items)
+            schema_items = [f"{k}={v}" for k, v in prop.items()]
+            schema = ",".join(schema_items)
 
-            url = f'jdbc:teradata://{self.host}/{schema}'
+            url = f"jdbc:teradata://{self.host}/{schema}"
         return url
 
     def _get_timestamp_value_sql(self, value):
-        return f'CAST({value.lit()} AS TIMESTAMP)'
+        return f"CAST({value.lit()} AS TIMESTAMP)"

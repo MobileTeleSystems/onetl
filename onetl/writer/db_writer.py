@@ -12,8 +12,8 @@ log = getLogger(__name__)
 class DBWriter:
     connection: DBConnection
     table: str
-    format: str = 'orc'
-    mode: str = 'append'
+    format: str = "orc"
+    mode: str = "append"
     jdbc_options: Mapping = field(default_factory=dict)
 
     def run(self, df):

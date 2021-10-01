@@ -17,11 +17,11 @@ class KerberosMixin:
 
     def kinit(self, user, keytab=None, password=None):
         if not user or (not keytab and not password):
-            raise KerberosAuthException('Not user or keytab and password')
+            raise KerberosAuthException("Not user or keytab and password")
 
         self._prep_krb_args()
         if keytab:
-            cmd = f'kinit {user} -k -t {keytab}'
+            cmd = f"kinit {user} -k -t {keytab}"
         else:
             cmd = f'echo "{password}" | kinit {user}'
 
@@ -32,12 +32,12 @@ class KerberosMixin:
         return (datetime.utcnow() - self.ticket_life_start) > self.ticket_life_time
 
     def _prep_krb_args(self):
-        tmp_dir = f'/tmp/tmp_dir_{uuid.uuid4()}'
-        krb5ccname = f'DIR:{tmp_dir}'
+        tmp_dir = f"/tmp/tmp_dir_{uuid.uuid4()}"  # NOSONAR
+        krb5ccname = f"DIR:{tmp_dir}"
         if not self.krb_tmp_dir:
             os.mkdir(tmp_dir)
             self.krb_tmp_dir = tmp_dir
-            os.environ['KRB5CCNAME'] = krb5ccname
+            os.environ["KRB5CCNAME"] = krb5ccname
 
 
 class KerberosAuthException(Exception):

@@ -8,50 +8,50 @@ class TestDBReader:
     def test_db_reader_set_lower_upper_bound(self):
         reader: DBReader = DBReader(
             connection=Oracle(),
-            table='default.test',
-            jdbc_options={'lowerBound': 10, 'upperBound': 1000},
+            table="default.test",
+            jdbc_options={"lowerBound": 10, "upperBound": 1000},
         )
 
-        assert 'lowerBound' in reader.jdbc_options.keys()
-        assert 'upperBound' in reader.jdbc_options.keys()
-        assert reader.jdbc_options.get('lowerBound') == 10
-        assert reader.jdbc_options.get('upperBound') == 1000
+        assert "lowerBound" in reader.jdbc_options.keys()
+        assert "upperBound" in reader.jdbc_options.keys()
+        assert reader.jdbc_options.get("lowerBound") == 10
+        assert reader.jdbc_options.get("upperBound") == 1000
 
     def test_db_reader_generate_jdbc_options(self):
 
         reader: DBReader = DBReader(
-            connection=Postgres(host='local', user='admin', password='1234'),
-            table='default.test',
+            connection=Postgres(host="local", user="admin", password="1234"),
+            table="default.test",
             # some of the parameters below are not used together.
             # Such as fetchsize and batchsize.
             # This test only demonstrates how the parameters will be distributed
             # in the jdbc() function in the properties parameter.
             jdbc_options={
-                'user': 'user_name',
-                'lowerBound': 10,
-                'upperBound': 1000,
-                'url': 'connection_url',
-                'driver': 'some_driver',
-                'partitionColumn': 'some_column',
-                'numPartitions': 20,
-                'fetchsize': 1000,
-                'batchsize': 1000,
-                'isolationLevel': 'NONE',
-                'sessionInitStatement': "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
-                'truncate': 'true',
-                'createTableOptions': 'some_options',
-                'createTableColumnTypes': 'some_option',
-                'customSchema': 'id DECIMAL(38, 0)',
+                "user": "user_name",
+                "lowerBound": 10,
+                "upperBound": 1000,
+                "url": "connection_url",
+                "driver": "some_driver",
+                "partitionColumn": "some_column",
+                "numPartitions": 20,
+                "fetchsize": 1000,
+                "batchsize": 1000,
+                "isolationLevel": "NONE",
+                "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
+                "truncate": "true",
+                "createTableOptions": "some_options",
+                "createTableColumnTypes": "some_option",
+                "customSchema": "id DECIMAL(38, 0)",
             },
-            sql_where='some_column_1 = 2 AND some_column_2 = 3',
-            sql_hint='some_hint',
-            columns=['column_1', 'column_2'],
+            sql_where="some_column_1 = 2 AND some_column_2 = 3",
+            sql_hint="some_hint",
+            columns=["column_1", "column_2"],
         )
         table = reader.connection.get_sql_query(
             table=reader.table,
             sql_where=reader.sql_where,
             sql_hint=reader.sql_hint,
-            columns='column_1, column_2',
+            columns="column_1, column_2",
         )
 
         jdbc_params = reader.connection.jdbc_params_creator(
@@ -60,22 +60,22 @@ class TestDBReader:
         )
 
         assert jdbc_params == {
-            'lowerBound': 10,
-            'upperBound': 1000,
-            'url': 'jdbc:postgresql://local:5432/default',
-            'column': 'some_column',
-            'numPartitions': 20,
-            'properties': {
-                'user': 'admin',
-                'driver': 'org.postgresql.Driver',
-                'fetchsize': 1000,
-                'batchsize': 1000,
-                'isolationLevel': 'NONE',
-                'sessionInitStatement': "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
-                'truncate': 'true',
-                'createTableOptions': 'some_options',
-                'createTableColumnTypes': 'some_option',
-                'customSchema': 'id DECIMAL(38, 0)',
-                'password': '1234',
+            "lowerBound": 10,
+            "upperBound": 1000,
+            "url": "jdbc:postgresql://local:5432/default",
+            "column": "some_column",
+            "numPartitions": 20,
+            "properties": {
+                "user": "admin",
+                "driver": "org.postgresql.Driver",
+                "fetchsize": 1000,
+                "batchsize": 1000,
+                "isolationLevel": "NONE",
+                "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
+                "truncate": "true",
+                "createTableOptions": "some_options",
+                "createTableColumnTypes": "some_option",
+                "customSchema": "id DECIMAL(38, 0)",
+                "password": "1234",
             },
         }
