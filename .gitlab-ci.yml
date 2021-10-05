@@ -159,6 +159,10 @@ remove_docker_compose:
   script:
   - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
   when: always
+  tags:
+  - bigdata
+  - onetools
+  - docker
 
 clean_docker_repo:
   extends: .base_docker_cleaner
