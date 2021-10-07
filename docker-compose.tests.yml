@@ -31,6 +31,7 @@ services:
       context: ./docker/hive2
       dockerfile: Dockerfile
     env_file: onetl_local.default.env
+    hostname: hive2
     networks:
     - onetl
 

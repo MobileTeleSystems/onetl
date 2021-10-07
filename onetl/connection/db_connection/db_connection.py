@@ -51,7 +51,7 @@ class DBConnection(ConnectionABC):
         # Have to replace the <partitionColumn> parameter with <column>
         # since the method takes the named <column> parameter
         # link to source below
-        # https://github.com/apache/spark/blob/2ef8ced27a6b0170a691722a855d3886e079f037/python/pyspark/sql/readwriter.py#L465
+        # https://git.io/JKOku
         if options.get("partitionColumn"):
             options["column"] = options["partitionColumn"]
             options.pop("partitionColumn")

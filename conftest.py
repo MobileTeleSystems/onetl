@@ -1,5 +1,6 @@
 import os
 import logging
+from time import sleep
 
 # noinspection PyPackageRequirements
 import pytest
@@ -35,8 +36,24 @@ def sftp_source_path():
 def sftp_server():
     server = MockSFtpServer(os.path.join("/tmp", "SFTP_HOME"))
     server.start()
+    sleep(0.5)
     yield server
     server.stop()
+
+
+@pytest.fixture(scope="session")
+def resource_path():
+    return os.path.join(os.path.dirname(__file__), "tests", "resources", "src")
+
+
+@pytest.fixture(scope="session")
+def test_file_path(resource_path, test_file_name):
+    return os.path.join(resource_path, "news_parse_zp", "2018_03_05_10_00_00", test_file_name)
+
+
+@pytest.fixture(scope="session")
+def test_file_name():
+    return "newsage-zp-2018_03_05_10_00_00.csv"
 
 
 @pytest.fixture(scope="session")

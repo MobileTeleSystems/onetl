@@ -15,8 +15,6 @@ def create_local_dir(local_path: str) -> None:
 
 
 def check_pattern(res_file: str, remote_source_file_pattern: str = None) -> bool:
-    if not remote_source_file_pattern:
-        return True
-    if fnmatch.fnmatch(res_file, remote_source_file_pattern):
+    if not remote_source_file_pattern or fnmatch.fnmatch(res_file, remote_source_file_pattern):
         return True
     raise RuntimeError("File is not matched with patterns")

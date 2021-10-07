@@ -56,7 +56,15 @@ class FTP(FileConnection):
         return self.client.stat(path=path, _exception_for_missing_path=False)
 
     def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
-        self.client.upload(local_file_path, remote_file_path)
+        self.client.run(local_file_path, remote_file_path)
+
+    def rename(self, source: str, target: str) -> None:
+        self.client.rename(source, target)
+        log.info(f"Successfully renamed file {source} to {target}")
+
+    def rmdir(self, path: str, recursive: bool) -> None:
+        self.client.rmtree(path)
+        log.info(f"Successfully deleted {path}")
 
     def _listdir(self, path: str) -> List:
         return self.client.listdir(path)
