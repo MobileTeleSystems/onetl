@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from logging import getLogger
 from stat import S_ISDIR
+from typing import List
 
 import paramiko
 
@@ -14,11 +15,11 @@ log = getLogger(__name__)
 class SSH(FileConnection):
     port: int = 22
 
-    def get_client(self):  # noqa: WPS231
-        log.debug("creating ssh client")
+    def get_client(self) -> "paramiko.client.SSHClient":  # noqa: WPS231
+        log.info("creating ssh client")
 
         key_file = self.extra.get("key_file")
-        timeout = int(self.extra.get("timeout"), 10)
+        timeout = int(self.extra.get("timeout", 10))
         compress = True
         no_host_key_check = self.extra.get("no_host_key_check", True)
 
@@ -82,26 +83,34 @@ class SSH(FileConnection):
 
         return client.open_sftp()
 
-    def is_dir(self, top, item):
+    def is_dir(self, top, item) -> bool:
         return S_ISDIR(item.st_mode)
 
-    def get_name(self, item):
+    def get_name(self, item) -> str:
         return item.filename
 
-    def download_file(self, remote_file_path, local_file_path):
+    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
         self.client.get(remote_file_path, local_file_path)
-        log.info(f"Successfully download _file {remote_file_path} remote SFTP to {local_file_path}")
+        log.info(f"Successfully download file {remote_file_path} remote SFTP to {local_file_path}")
 
-    def remove_file(self, remote_file_path):
+    def remove_file(self, remote_file_path: str) -> None:
         self.client.remove(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path}")
 
-    def path_exists(self, path):
+    def path_exists(self, path: str) -> bool:
         try:
             self.client.stat(path)
             return True
         except FileNotFoundError:
             return False
 
-    def _listdir(self, path):
+    def mk_dir(self, path: str) -> None:
+        self.client.mk_dir(path)
+        log.info(f"Successfully created dir {path}")
+
+    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
+        self.client.put(local_file_path, remote_file_path)
+        log.info(f"Successfully uploaded _file from {local_file_path} to remote SFTP {remote_file_path}")
+
+    def _listdir(self, path: str) -> List:
         return self.client.listdir_attr(path)

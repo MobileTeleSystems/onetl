@@ -11,7 +11,7 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class DBConnection(ConnectionABC):
     driver: str = field(init=False, default="")
-    host: Optional[str] = None
+    host: str = ""
     port: Optional[int] = None
     user: Optional[str] = None
     password: Optional[str] = field(repr=False, default=None)
@@ -222,7 +222,7 @@ class DBConnection(ConnectionABC):
 
     @property
     @abstractmethod
-    def url(self):
+    def url(self) -> str:
         """"""
 
     def get_value_sql(self, value):

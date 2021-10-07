@@ -1,6 +1,7 @@
 import pytest
 
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
+from onetl.connection.file_connection import FTP, FTPS, HDFS, SSH, Samba, FileConnection
 
 
 class TestDBConnection:
@@ -115,3 +116,32 @@ class TestDBConnection:
         expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"
 
         assert table_sql == expected_sql
+
+
+class TestFileConnections:
+    def test_ftp_connection(self):
+        ftp = FTP(host="some_host", user="some_user", password="pwd")
+        assert isinstance(ftp, FileConnection)
+        assert ftp.port == 21
+
+    def test_ftps_connection(self):
+        ftps = FTPS(host="some_host", user="some_user", password="pwd")
+        assert isinstance(ftps, FileConnection)
+        assert ftps.port == 21
+
+    def test_hdfs_connection(self):
+        hdfs = HDFS(host="some_host", user="some_user", password="pwd")
+        assert isinstance(hdfs, FileConnection)
+        assert hdfs.port == 50070
+
+    def test_ssh_connection(self):
+        ssh = SSH(host="some_host", user="some_user", password="pwd")
+        assert isinstance(ssh, FileConnection)
+        assert ssh.port == 22
+
+    def test_samba_connection(self):
+        samba = Samba(host="some_host", user="some_user", password="pwd")
+        assert isinstance(samba, FileConnection)
+        assert samba.port == 445
+
+    # TODO: decide on sharepoint

@@ -8,7 +8,7 @@ class Postgres(DBConnection):
     port: int = 5432
 
     @property
-    def url(self):
+    def url(self) -> str:
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
     def _get_timestamp_value_sql(self, value):

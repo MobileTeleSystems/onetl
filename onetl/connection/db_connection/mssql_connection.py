@@ -9,7 +9,7 @@ class MSSQL(DBConnection):
     port: int = 1433
 
     @property
-    def url(self):
+    def url(self) -> str:
         params = "".join(f";{k}={v}" for k, v in self.extra.items())
         return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{params}"
 

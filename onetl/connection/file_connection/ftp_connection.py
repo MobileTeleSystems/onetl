@@ -2,6 +2,7 @@ import ftplib  # noqa: S402
 import posixpath
 from logging import getLogger
 from dataclasses import dataclass
+from typing import List
 
 from ftputil import FTPHost, session as ftp_session
 
@@ -12,9 +13,9 @@ log = getLogger(__name__)
 
 @dataclass(frozen=True)
 class FTP(FileConnection):
-    port: int = 22
+    port: int = 21
 
-    def get_client(self):
+    def get_client(self) -> "ftputil.host.FTPHost":
         """
         Returns a FTP connection object
         """
@@ -33,19 +34,29 @@ class FTP(FileConnection):
             session_factory=session_factory,
         )
 
-    def is_dir(self, top, item):
+    def is_dir(self, top: str, item: str) -> bool:
         return self.client.path.isdir(posixpath.join(top, self.get_name(item)))
 
-    def get_name(self, item):
+    def get_name(self, item: str) -> str:
         return item
 
-    def download_file(self, remote_file_path, local_file_path):
+    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
         self.client.download(remote_file_path, local_file_path)
-        log.info(f"Successfully download _file {remote_file_path} remote SFTP to {local_file_path}")
+        log.info(f"Successfully download file {remote_file_path} from remote SFTP to {local_file_path}")
 
-    def remove_file(self, remote_file_path):
+    def remove_file(self, remote_file_path: str) -> None:
         self.client.remove(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path}")
 
-    def _listdir(self, path):
+    def mk_dir(self, path: str) -> None:
+        self.client.mkdir(path)
+        log.info(f"Successfully created directory {path}")
+
+    def path_exists(self, path: str) -> bool:
+        return self.client.stat(path=path, _exception_for_missing_path=False)
+
+    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
+        self.client.upload(local_file_path, remote_file_path)
+
+    def _listdir(self, path: str) -> List:
         return self.client.listdir(path)
