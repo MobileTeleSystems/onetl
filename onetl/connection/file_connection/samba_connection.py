@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from logging import getLogger
+from typing import List
 
 from smbclient import SambaClient
 
@@ -36,17 +37,17 @@ class Samba(FileConnection):
 
         return SambaClient(**kw)
 
-    def is_dir(self, top, item):
+    def is_dir(self, top, item) -> bool:
         return "D" in item[1]
 
-    def get_name(self, item):
+    def get_name(self, item) -> str:
         return item[0]
 
     def download_file(self, remote_file_path: str, local_file_path: str) -> None:
-        self.client.download(remote_file_path, local_file_path)
+        self.client.run(remote_file_path, local_file_path)
         log.info(f"Successfully download_file {remote_file_path} remote SMB to {local_file_path}")
 
-    def remove_file(self, remote_file_path):
+    def remove_file(self, remote_file_path: str) -> None:
         """
         Remove remote file
 
@@ -58,5 +59,15 @@ class Samba(FileConnection):
         self.client.remove(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path} from SMB")
 
-    def _listdir(self, path):
+    def mk_dir(self, path: str) -> None:
+        self.client.mkdir(path)
+        log.info(f"Successfully created directory {path}")
+
+    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
+        self.client.upload(local_file_path, remote_file_path)
+
+    def path_exists(self, path: str) -> bool:
+        return self.client.exists(path)
+
+    def _listdir(self, path) -> List:
         return self.client.lsdir(path)

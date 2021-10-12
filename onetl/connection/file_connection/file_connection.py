@@ -1,9 +1,23 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from functools import lru_cache
-from typing import Optional, Any, List, Mapping
+from functools import wraps
+import posixpath
+from typing import Optional, Any, List, Mapping, Callable, Generator
 
 from onetl.connection import ConnectionABC
+
+
+# Workaround for cached_property
+def cached(f):
+    @wraps(f)  # NOQA: WPS430
+    def wrapped(*args, **kwargs):  # NOQA: WPS430
+        if hasattr(wrapped, "_cached_val"):
+            return wrapped._cached_val
+        result = f(*args, **kwargs)
+        wrapped._cached_val = result
+        return result
+
+    return wrapped
 
 
 @dataclass(frozen=True)
@@ -21,7 +35,7 @@ class FileConnection(ConnectionABC):
         """"""
 
     @property
-    @lru_cache()
+    @cached
     def client(self):
         return self.get_client()
 
@@ -30,33 +44,39 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def remove_file(self, remote_file_path: str):
+    def remove_file(self, remote_file_path: str) -> None:
         """"""
 
     @abstractmethod
-    def is_dir(self, top, item):
+    def is_dir(self, top, item) -> bool:
         """"""
 
     @abstractmethod
-    def get_name(self, item):
+    def get_name(self, item) -> str:
         """"""
 
     @abstractmethod
-    def path_exists(self, path):
+    def path_exists(self, path: str) -> str:
         """"""
 
     @abstractmethod
-    def mk_dir(self, path):
+    def mk_dir(self, path: str) -> str:
         """"""
 
     @abstractmethod
-    def upload_file(self, file, path, *args, **kwargs):
+    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> str:
         """"""
 
-    def listdir(self, path) -> List[str]:
+    def listdir(self, path: str) -> List[str]:
         return [self.get_name(item) for item in self._listdir(path)]
 
-    def walk(self, top, topdown=True, onerror=None, exclude_dirs=None):
+    def walk(
+        self,
+        top: str,
+        topdown: bool = True,
+        onerror: Callable = None,
+        exclude_dirs: List[str] = None,
+    ) -> Generator[str, List[str], List[str]]:
         """
         Iterate over directory tree and return a tuple (dirpath,
         dirnames, filenames) on each iteration, like the `os.walk`
@@ -73,20 +93,26 @@ class FileConnection(ConnectionABC):
         dirs, nondirs = [], []
         for item in items:
             name = self.get_name(item)
-            full_name = top / name
+            full_name = posixpath.join(top, name)
             if self.is_dir(top, item):
-                if full_name not in exclude_dirs:
+                if not self.excluded_dir(full_name, exclude_dirs):
                     dirs.append(name)
             else:
                 nondirs.append(name)
         if topdown:
             yield top, dirs, nondirs
         for name in dirs:
-            path = top / name
+            path = posixpath.join(top, name)
             yield from self.walk(path, topdown, onerror, exclude_dirs)
         if not topdown:
             yield top, dirs, nondirs
 
+    def excluded_dir(self, full_name: str, exclude_dirs: List) -> bool:
+        for exclude_dir in exclude_dirs:
+            if exclude_dir in full_name:
+                return True
+        return False
+
     @abstractmethod
-    def _listdir(self, path):
+    def _listdir(self, path: str) -> List:
         """"""

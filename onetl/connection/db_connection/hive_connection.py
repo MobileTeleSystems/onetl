@@ -9,7 +9,7 @@ class Hive(DBConnection):
     port: int = 10000
 
     @property
-    def url(self):
+    def url(self) -> str:
         params = "&".join(f"{k}={v}" for k, v in self.extra.items())
 
         return f"hiveserver2://{self.user}:{self.password}@{self.host}:{self.port}?{params}"

@@ -9,6 +9,8 @@ from pyhive import hive
 from hdfs import InsecureClient
 from mtspark import get_spark
 
+from tests.lib.mock_sftp_server import MockSFtpServer
+
 LOG = logging.getLogger(__name__)
 
 # ****************************Environment Variables*****************************
@@ -22,6 +24,33 @@ def debug_executor_change_state_crutch(self, key, state):
     self.log.debug(f"Popping {key} from executor task queue.")
     self.running.pop(key, None)
     self.event_buffer[key] = state
+
+
+@pytest.fixture(scope="session")
+def sftp_source_path():
+    return "/export/news_parse"
+
+
+@pytest.fixture(scope="session")
+def sftp_server():
+    server = MockSFtpServer(os.path.join("/tmp", "SFTP_HOME"))
+    server.start()
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="session")
+def sftp_client(sftp_server):
+    """
+    :param sftp_server:
+    :type sftp_server: MockFtpServer
+    :return:
+    :rtype: SFTPClient
+    """
+    ssh_client_started, sftp_client_started = sftp_server.create_client()
+    yield sftp_client_started
+    sftp_client_started.close()
+    ssh_client_started.close()
 
 
 @pytest.fixture(scope="session", name="spark")

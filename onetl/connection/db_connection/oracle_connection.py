@@ -10,7 +10,7 @@ class Oracle(DBConnection):
     port: int = 1521
 
     @property
-    def url(self):
+    def url(self) -> str:
         if "sid" in self.extra:
             url = f'jdbc:oracle:thin:@{self.host}:{self.port}:{self.extra["sid"]}'
         elif "service_name" in self.extra:

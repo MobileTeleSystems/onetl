@@ -23,7 +23,7 @@ class FTP_TLS_fix(ftplib.FTP_TLS):  # noqa: N801
 
 
 class FTPS(FTP):
-    def get_client(self):
+    def get_client(self) -> "ftputil.host.FTPHost":
         """
         Returns a FTPS connection object
         """

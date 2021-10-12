@@ -10,7 +10,7 @@ class Clickhouse(DBConnection):
     port: int = 9000
 
     @property
-    def url(self):
+    def url(self) -> str:
         params = "&".join(f"{k}={v}" for k, v in self.extra.items())
         return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
 

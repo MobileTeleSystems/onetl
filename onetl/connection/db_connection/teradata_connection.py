@@ -9,7 +9,7 @@ class Teradata(DBConnection):
     port: int = 1025
 
     @property
-    def url(self):
+    def url(self) -> str:
         if "jdbc:" in self.host:
             url = self.host
         else:
