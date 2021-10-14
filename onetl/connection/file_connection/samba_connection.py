@@ -59,7 +59,7 @@ class Samba(FileConnection):
         self.client.unlink(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path} from SMB")
 
-    def mk_dir(self, path: str) -> None:
+    def mkdir(self, path: str) -> None:
         self.client.mkdir(path)
         log.info(f"Successfully created directory {path}")
 

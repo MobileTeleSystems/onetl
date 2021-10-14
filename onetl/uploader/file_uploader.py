@@ -22,13 +22,13 @@ class FileUploader:
             raise ValueError("Files list is empty")
 
         if not self.connection.path_exists(self.target_path):
-            self.connection.mk_dir(self.target_path)
+            self.connection.mkdir(self.target_path)
 
         successfully_uploaded_files = []
         current_temp_dir = self.temp_path.format(str(uuid.uuid4()))
 
         if not self.connection.path_exists(current_temp_dir):
-            self.connection.mk_dir(current_temp_dir)
+            self.connection.mkdir(current_temp_dir)
 
         for count, file_path in enumerate(files_list):
             log.info(f"Processing {count + 1} of {len(files_list)} ")

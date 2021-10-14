@@ -49,7 +49,7 @@ class HDFS(FileConnection, KerberosMixin):
     def path_exists(self, target_hdfs_path: str) -> bool:
         return self.client.status(target_hdfs_path, strict=False)
 
-    def mk_dir(self, path: str) -> None:
+    def mkdir(self, path: str) -> None:
         self.client.makedirs(path)
         log.info(f"Successfully created directory {path}")
 

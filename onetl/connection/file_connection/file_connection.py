@@ -62,7 +62,7 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def mk_dir(self, path: str) -> str:
+    def mkdir(self, path: str) -> str:
         """"""
 
     @abstractmethod
