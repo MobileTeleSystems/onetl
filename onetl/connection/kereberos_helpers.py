@@ -7,7 +7,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-# TODO: вынести в отдельный пакет
+# TODO:(@mivasil6) make separate package
 class KerberosMixin:
     ticket_life_time = timedelta(hours=8)
 

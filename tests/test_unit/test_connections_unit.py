@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
-from onetl.connection.file_connection import FTP, FTPS, HDFS, SSH, Samba, FileConnection
+from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
 
 
 class TestDBConnection:
@@ -117,8 +117,29 @@ class TestDBConnection:
 
         assert table_sql == expected_sql
 
+    def test_hive_read_table_without_spark(self):
+        hive = Hive()
+        with pytest.raises(ValueError):
+            hive.read_table({"test": "test"}, "test_table")
+
+    def test_hive_connection_uri(self):
+        hive = Hive(host="some_host", user="user", password="passwd", extra={"param": "value"})
+
+        assert hive.url == "hiveserver2://user:passwd@some_host:10000?param=value"
+
 
 class TestFileConnections:
+    def test_secure_extra_connection(self):
+        ssh = SFTP(
+            host="some_host",
+            user="some_user",
+            extra={
+                "token": "some_token",
+                "password": "pwd",
+            },
+        )
+        assert "extra={'token': 'XXX', 'password': 'XXX'}" in str(ssh)
+
     def test_ftp_connection(self):
         ftp = FTP(host="some_host", user="some_user", password="pwd")
         assert isinstance(ftp, FileConnection)
@@ -135,7 +156,7 @@ class TestFileConnections:
         assert hdfs.port == 50070
 
     def test_ssh_connection(self):
-        ssh = SSH(host="some_host", user="some_user", password="pwd")
+        ssh = SFTP(host="some_host", user="some_user", password="pwd")
         assert isinstance(ssh, FileConnection)
         assert ssh.port == 22
 

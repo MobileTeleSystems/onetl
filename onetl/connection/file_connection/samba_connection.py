@@ -56,7 +56,7 @@ class Samba(FileConnection):
         :param remote_file_path:
         :return:
         """
-        self.client.remove(remote_file_path)
+        self.client.unlink(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path} from SMB")
 
     def mk_dir(self, path: str) -> None:
@@ -64,10 +64,20 @@ class Samba(FileConnection):
         log.info(f"Successfully created directory {path}")
 
     def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
-        self.client.upload(local_file_path, remote_file_path)
+        self.client.run(local_file_path, remote_file_path)
 
     def path_exists(self, path: str) -> bool:
         return self.client.exists(path)
+
+    def rename(self, source: str, target: str) -> None:
+        self.client.rename(source, target)
+        log.info(f"Successfully renamed file {source} to {target}")
+
+    def rmdir(self, path: str, recursive: bool) -> None:
+        for file in self.client.listdir():
+            self.client.unlink(file)
+        self.client.rmdir(path)
+        log.info(f"Successfully removed path {path} from SMB")
 
     def _listdir(self, path) -> List:
         return self.client.lsdir(path)

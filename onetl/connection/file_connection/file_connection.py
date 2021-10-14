@@ -10,11 +10,13 @@ from onetl.connection import ConnectionABC
 # Workaround for cached_property
 def cached(f):
     @wraps(f)  # NOQA: WPS430
-    def wrapped(*args, **kwargs):  # NOQA: WPS430
-        if hasattr(wrapped, "_cached_val"):
-            return wrapped._cached_val
-        result = f(*args, **kwargs)
-        wrapped._cached_val = result
+    def wrapped(self, *args, **kwargs):  # NOQA: WPS430
+        key = f"{self.__class__.__name__}_{f.__name__}_cached_val"
+        existing = getattr(wrapped, key, None)
+        if existing is not None:
+            return existing
+        result = f(self, *args, **kwargs)
+        setattr(wrapped, key, result)
         return result
 
     return wrapped
@@ -56,7 +58,7 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def path_exists(self, path: str) -> str:
+    def path_exists(self, path: str) -> bool:
         """"""
 
     @abstractmethod
@@ -106,6 +108,12 @@ class FileConnection(ConnectionABC):
             yield from self.walk(path, topdown, onerror, exclude_dirs)
         if not topdown:
             yield top, dirs, nondirs
+
+    def rename(self, source: str, target: str) -> None:
+        """"""
+
+    def rmdir(self, path: str, recursive: bool) -> None:
+        """"""
 
     def excluded_dir(self, full_name: str, exclude_dirs: List) -> bool:
         for exclude_dir in exclude_dirs:

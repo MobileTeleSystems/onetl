@@ -56,5 +56,13 @@ class HDFS(FileConnection, KerberosMixin):
     def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
         self.client.upload(remote_file_path, local_file_path)
 
+    def rename(self, source: str, target: str) -> None:
+        self.client.rename(source, target)
+        log.info(f"Successfully renamed file {source} to {target}")
+
+    def rmdir(self, path: str, recursive: bool) -> None:
+        self.client.delete(path, recursive=True)
+        log.info(f"Successfully removed path {path}")
+
     def _listdir(self, path: str) -> List:
         return self.client.list(path)

@@ -7,11 +7,12 @@ import tempfile
 # noinspection PyPackageRequirements
 import pytest
 
-from onetl.connection.file_connection import SSH
+from onetl.connection.file_connection import SFTP
 from onetl.downloader import FileDownloader
+from onetl.uploader import FileUploader
+from tests.lib.common import hashfile
 
 LOG = getLogger(__name__)
-TEST_RESOURCES_PATH = "/opt/project/tests/resources"
 
 
 def sftp_walk(sftp, remote_path):
@@ -31,35 +32,25 @@ def sftp_walk(sftp, remote_path):
         yield from sftp_walk(sftp, new_path)
 
 
+# TODO:(@mivasil6) refactor later
 @pytest.fixture(scope="module")  # noqa: WPS231
-def sftp_files(sftp_client):
-    def mkdir_recurse(path):
-        try:
-            sftp_client.stat(path)
-        except Exception:
-            abs_path = "/"
-            for directory in path.strip(posixpath.sep).split(posixpath.sep):
-                abs_path = posixpath.join(abs_path, directory)
-                try:  # noqa: WPS505
-                    sftp_client.stat(abs_path)
-                except Exception:
-                    sftp_client.mkdir(abs_path)
+def sftp_files(sftp_client, sftp_server, resource_path):
+    sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
 
     remote_files = set()
     remote_path = "/export/news_parse"
-    local_path = os.path.join(TEST_RESOURCES_PATH, "src", "sftp_sources")
     sftp_client.chdir("/")
     # Create remote directory if it doesn't exist
 
     has_files = False
-    if os.path.isdir(local_path):
-        mkdir_recurse(remote_path)
-        for dir_path, dir_names, file_names in os.walk(local_path):
-            rel_local = os.path.relpath(dir_path, local_path).replace("\\", "/")
+    if os.path.isdir(resource_path):
+        sftp.mk_dir(remote_path)
+        for dir_path, dir_names, file_names in os.walk(resource_path):
+            rel_local = os.path.relpath(dir_path, resource_path).replace("\\", "/")
             remote_dir = posixpath.abspath(posixpath.join(remote_path, rel_local))
 
             for sub_dir in dir_names:
-                mkdir_recurse(posixpath.join(remote_dir, sub_dir))
+                sftp.mk_dir(posixpath.join(remote_dir, sub_dir))
 
             for filename in file_names:
                 has_files = True
@@ -71,14 +62,14 @@ def sftp_files(sftp_client):
 
         if not has_files:
             raise RuntimeError(
-                f"Could not load file examples from {local_path}. Path should be exists and should contain samples",
+                f"Could not load file examples from {resource_path}. Path should be exists and should contain samples",
             )
     return remote_files
 
 
 class TestDownloader:
-    def test_downloader_local_path(self, sftp_files, sftp_server, sftp_source_path):
-        ftp = SSH(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+    def test_downloader_local_path(self, sftp_files, sftp_server, sftp_source_path, test_file_name, test_file_path):
+        ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
 
             downloader = FileDownloader(
@@ -89,11 +80,14 @@ class TestDownloader:
             )
 
             files = downloader.run()
-            assert files == [posixpath.join(local_path, "newsage-zp-2018_03_05_10_00_00.csv")]
-            assert os.path.exists(posixpath.join(local_path, "newsage-zp-2018_03_05_10_00_00.csv"))
+            assert files == [posixpath.join(local_path, test_file_name)]
+            # compare size of files
+            assert os.path.getsize(test_file_path) == os.path.getsize(os.path.join(local_path, test_file_name))
+            # compare files
+            assert hashfile(test_file_path) == hashfile(os.path.join(local_path, test_file_name))
 
     def test_downloader_wrong_pattern(self, sftp_files, sftp_server, sftp_source_path):
-        ftp = SSH(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+        ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
 
             downloader = FileDownloader(
@@ -106,7 +100,7 @@ class TestDownloader:
             assert not files
 
     def test_downloader_exclude_dirs(self, sftp_files, sftp_server, sftp_source_path):
-        ftp = SSH(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+        ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
 
             downloader = FileDownloader(
@@ -123,7 +117,7 @@ class TestDownloader:
 
     # TODO: сделать тесты атомарными
     def test_downloader_delete_source(self, sftp_client, sftp_files, sftp_server, sftp_source_path):
-        ftp = SSH(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+        ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
 
             downloader = FileDownloader(
@@ -142,3 +136,14 @@ class TestDownloader:
 
             assert downloaded_files
             assert not current_sftp_files
+
+    def test_sftp_uploader(self, sftp_server, test_file_name, test_file_path):
+        ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+
+        uploader = FileUploader(connection=ftp, target_path="/tmp/test_upload")
+        files = [
+            test_file_path,
+        ]
+
+        uploaded_files = uploader.run(files)
+        assert uploaded_files == [f"/tmp/test_upload/{test_file_name}"]

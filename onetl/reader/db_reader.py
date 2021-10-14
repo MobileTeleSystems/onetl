@@ -5,7 +5,7 @@ from typing import Optional, Union, List, Dict
 from onetl.connection.db_connection.db_connection import DBConnection
 
 log = getLogger(__name__)
-# TODO: implement logging
+# TODO:(@mivasil6) implement logging
 
 
 @dataclass
