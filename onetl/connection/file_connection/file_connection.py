@@ -117,7 +117,7 @@ class FileConnection(ConnectionABC):
 
     def excluded_dir(self, full_name: str, exclude_dirs: List) -> bool:
         for exclude_dir in exclude_dirs:
-            if exclude_dir in full_name:
+            if exclude_dir == full_name:
                 return True
         return False
 

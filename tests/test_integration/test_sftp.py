@@ -107,12 +107,12 @@ class TestDownloader:
                 connection=ftp,
                 source_path=sftp_source_path,
                 local_path=local_path,
-                source_exclude_dirs=["exclude_dir"],
+                source_exclude_dirs=["/export/news_parse/exclude_dir"],
             )
 
             files = downloader.run()
 
-            assert os.path.join(local_path, "file_1.txt") not in files
+            assert os.path.join(local_path, "file_1.txt") in files
             assert os.path.join(local_path, "file_5.txt") not in files
 
     # TODO: сделать тесты атомарными
