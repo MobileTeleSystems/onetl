@@ -79,7 +79,7 @@ class SFTP(FileConnection):
         except FileNotFoundError:
             return False
 
-    def mk_dir(self, path: str) -> None:
+    def mkdir(self, path: str) -> None:
         try:
             self.client.stat(path)
         except Exception:

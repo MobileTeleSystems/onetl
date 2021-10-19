@@ -44,13 +44,13 @@ def sftp_files(sftp_client, sftp_server, resource_path):
 
     has_files = False
     if os.path.isdir(resource_path):
-        sftp.mk_dir(remote_path)
+        sftp.mkdir(remote_path)
         for dir_path, dir_names, file_names in os.walk(resource_path):
             rel_local = os.path.relpath(dir_path, resource_path).replace("\\", "/")
             remote_dir = posixpath.abspath(posixpath.join(remote_path, rel_local))
 
             for sub_dir in dir_names:
-                sftp.mk_dir(posixpath.join(remote_dir, sub_dir))
+                sftp.mkdir(posixpath.join(remote_dir, sub_dir))
 
             for filename in file_names:
                 has_files = True
