@@ -3,7 +3,7 @@ import posixpath
 from dataclasses import dataclass
 from logging import getLogger
 from stat import S_ISDIR
-from typing import List
+from typing import List, Optional
 
 import paramiko
 
@@ -15,23 +15,19 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class SFTP(FileConnection):
     port: int = 22
+    key_file: Optional[str] = None
+    timeout: int = 10
+    no_host_key_check: bool = True
+    compress: bool = True
 
     def get_client(self) -> "paramiko.sftp_client.SFTPClient":
         log.info("creating ssh client")
 
-        key_file = self.extra.get("key_file")
-        timeout = int(self.extra.get("timeout", 10))
-        compress = True
-        no_host_key_check = self.extra.get("no_host_key_check", True)
-
-        if self.extra.get("compress", "").lower() == "false":
-            compress = False
-
-        host_proxy, key_file = self.parse_user_ssh_config(key_file)
+        host_proxy, key_file = self.parse_user_ssh_config(self.key_file)
 
         client = paramiko.SSHClient()
         client.load_system_host_keys()
-        if no_host_key_check:
+        if self.no_host_key_check:
             # Default is RejectPolicy
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -41,8 +37,8 @@ class SFTP(FileConnection):
                 port=self.port,
                 username=self.user,
                 password=self.password,
-                timeout=timeout,
-                compress=compress,
+                timeout=self.timeout,
+                compress=self.compress,
                 sock=host_proxy,
             )
         else:
@@ -51,8 +47,8 @@ class SFTP(FileConnection):
                 port=self.port,
                 username=self.user,
                 key_filename=key_file,
-                timeout=timeout,
-                compress=compress,
+                timeout=self.timeout,
+                compress=self.compress,
                 sock=host_proxy,
             )
 

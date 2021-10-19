@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from logging import getLogger
-from typing import List
+from typing import List, Optional
 
 from smbclient import SambaClient
 
@@ -11,31 +11,21 @@ log = getLogger(__name__)
 
 @dataclass(frozen=True)
 class Samba(FileConnection):
-    """
-    Airflow connection example:
-    Conn Id:    samba
-    Conn Type:  samba
-    Host:       0000mskrwdc01
-    Schema:     msk
-    User:      username
-    Password:   pass
-    Extra:      {"domain": "ADMSK"}
-    """
 
     port: int = 445
+    domain: Optional[str] = None
 
     def get_client(self) -> SambaClient:
-        kw = self.extra.copy()
-        kw.update(
+
+        return SambaClient(
             server=self.host,
             share=self.database,
             username=self.user,
-        )
-        if self.password:
+            domain=self.domain,
+            port=self.port,
             # does not work without \n on smbclient --version Version 4.7.1
-            kw["password"] = self.password + "\n"
-
-        return SambaClient(**kw)
+            password=self.password + "\n",
+        )
 
     def is_dir(self, top, item) -> bool:
         return "D" in item[1]

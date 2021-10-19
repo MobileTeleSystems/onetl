@@ -35,11 +35,9 @@ class FTPS(FTP):
             debug_level=0,
         )
 
-        password = self.password
-
         return FTPHost(
             self.host,
             self.user,
-            password,
+            self.password,
             session_factory=session_factory,
         )
