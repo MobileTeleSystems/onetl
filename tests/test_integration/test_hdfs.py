@@ -1,8 +1,8 @@
 from logging import getLogger
 import os
 import tempfile
+from unittest.mock import patch
 
-import pytest
 
 from onetl.connection.file_connection import HDFS
 from onetl.uploader import FileUploader
@@ -13,11 +13,13 @@ LOG = getLogger(__name__)
 
 
 class TestHDFS:
-    def test_file_uploader_with_empty_file_list(self):
+    @patch("logging.Logger.warning")
+    def test_file_uploader_with_empty_file_list(self, mock):
         hdfs = HDFS(host="hive2", port=50070)
         uploader = FileUploader(connection=hdfs, target_path="/target/path/")
-        with pytest.raises(ValueError):
-            uploader.run([])
+        uploaded_files = uploader.run([])
+        assert not uploaded_files
+        mock.assert_called_with("Files list is empty. Please, provide files to upload.")
 
     def test_hdfs_file_uploader(self, test_file_path, test_file_name):
         hdfs = HDFS(host="hive2", port=50070)
