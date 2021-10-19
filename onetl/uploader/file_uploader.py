@@ -19,7 +19,8 @@ class FileUploader:
     def run(self, files_list: List[str]) -> List[str]:
 
         if not files_list:
-            raise ValueError("Files list is empty")
+            log.warning("Files list is empty. Please, provide files to upload.")
+            return files_list
 
         if not self.connection.path_exists(self.target_path):
             self.connection.mkdir(self.target_path)
