@@ -1,7 +1,7 @@
 import posixpath
 from logging import getLogger
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Union, Optional
 
 from hdfs import InsecureClient, HdfsError
 from hdfs.ext.kerberos import KerberosClient
@@ -15,16 +15,18 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class HDFS(FileConnection, KerberosMixin):
     port: int = 50070
+    keytab: Optional[str] = None
+    timeout: Optional[int] = None
 
     def get_client(self) -> Union["hdfs.ext.kerberos.KerberosClient", "hdfs.client.InsecureClient"]:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
-        if self.extra.get("keytab") or self.password:
+        if self.keytab or self.password:
             self.kinit(
                 self.user,
-                keytab=self.extra.get("keytab"),
+                keytab=self.keytab,
                 password=self.password,
             )
-            client = KerberosClient(conn_str, timeout=self.extra.get("timeout"))
+            client = KerberosClient(conn_str, timeout=self.timeout)
         else:
             client = InsecureClient(conn_str, user=self.user)
         client.status("/")

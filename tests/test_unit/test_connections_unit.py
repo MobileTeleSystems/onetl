@@ -8,18 +8,18 @@ class TestDBConnection:
     def test_secure_str_and_repr(self):
         conn = Oracle(host="some_host", user="user", password="passwd")
 
-        assert "password='XXX'" in str(conn)
+        assert "password=" not in str(conn)
         assert "password=" not in repr(conn)
 
     def test_oracle_driver_and_uri(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", extra={"sid": "PE"})
+        conn = Oracle(host="some_host", user="user", password="passwd", sid="PE")
 
         assert conn.url == "jdbc:oracle:thin:@some_host:1521:PE"
         assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
         assert Oracle.port == 1521
 
     def test_oracle_uri_with_service_name(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", extra={"service_name": "DWHLDTS"})
+        conn = Oracle(host="some_host", user="user", password="passwd", service_name="DWHLDTS")
 
         assert conn.url == "jdbc:oracle:thin:@//some_host:1521/DWHLDTS"
 
@@ -129,17 +129,6 @@ class TestDBConnection:
 
 
 class TestFileConnections:
-    def test_secure_extra_connection(self):
-        ssh = SFTP(
-            host="some_host",
-            user="some_user",
-            extra={
-                "token": "some_token",
-                "password": "pwd",
-            },
-        )
-        assert "extra={'token': 'XXX', 'password': 'XXX'}" in str(ssh)
-
     def test_ftp_connection(self):
         ftp = FTP(host="some_host", user="some_user", password="pwd")
         assert isinstance(ftp, FileConnection)

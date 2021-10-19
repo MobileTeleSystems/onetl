@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass, field
 from functools import wraps
 import posixpath
-from typing import Optional, Any, List, Mapping, Callable, Generator
+from typing import Optional, Any, List, Callable, Generator
 
 from onetl.connection import ConnectionABC
 
@@ -27,10 +27,8 @@ class FileConnection(ConnectionABC):
     host: Optional[str] = None
     port: Optional[int] = None
     user: Optional[str] = None
-    password: Optional[str] = None
+    password: Optional[str] = field(repr=False, default=None)
     schema: Optional[str] = None
-    extra: Optional[Mapping] = field(default_factory=dict)
-    spark: Optional["pyspark.sql.SparkSession"] = None
 
     @abstractmethod
     def get_client(self) -> Any:
