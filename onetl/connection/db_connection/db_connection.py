@@ -106,9 +106,9 @@ class DBConnection(ConnectionABC):
         )
 
         log.debug(
-            f'USER="{self.user}" ' f'OPTIONS={options} DRIVER={options["properties"]["driver"]}',
+            f"USER='{self.user}' " f"OPTIONS={options} DRIVER={options['properties']['driver']}",
         )
-        log.debug(f'JDBC_URL="{self.url}"')
+        log.debug(f"JDBC_URL='{self.url}'")
         return self.spark.read.jdbc(table=f"({sql_text}) T", **options)
 
     def save_df(
@@ -129,8 +129,8 @@ class DBConnection(ConnectionABC):
 
         log_pass = "PASSWORD='*****'" if options["properties"].get("password") else "NO_PASSWORD"
 
-        log.debug(f'USER="{self.user}" {log_pass} DRIVER={options["properties"]["driver"]}')
-        log.debug(f'JDBC_URL="{self.url}"')
+        log.debug(f"USER='{self.user}' {log_pass} DRIVER={options['properties']['driver']}")
+        log.debug(f"JDBC_URL='{self.url}'")
         df.write.mode(mode).format(format).jdbc(table=table, **options)
 
     def get_sql_query(

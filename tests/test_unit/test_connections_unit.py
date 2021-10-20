@@ -105,7 +105,7 @@ class TestDBConnection:
 
         assert table_sql == "SELECT * FROM default.test"
 
-    def test_db_reader_table_sql_with_extra_params(self):
+    def test_dbreader_table_sql_with_extra_params(self):
         connection = Oracle()
         table_sql = connection.get_sql_query(
             table="default.test",
