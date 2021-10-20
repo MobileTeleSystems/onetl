@@ -1,6 +1,8 @@
 import os
 import logging
 from time import sleep
+import secrets
+from typing import Union, Dict, List
 
 # noinspection PyPackageRequirements
 import pytest
@@ -8,11 +10,15 @@ import pytest
 # noinspection PyPackageRequirements
 from pyhive import hive
 from hdfs import InsecureClient
+
 from mtspark import get_spark
+from tests.lib.postgres_processing import PostgressProcessing
+from tests.lib.hive_processing import HiveProcessing
 
 from tests.lib.mock_sftp_server import MockSFtpServer
 
 LOG = logging.getLogger(__name__)
+ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection"]
 
 # ****************************Environment Variables*****************************
 SELF_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -94,6 +100,83 @@ def hive_client():
 def hdfs_client():
     client = InsecureClient(f"http://{DOCKER_HOST}:{HDFS_PORT}")  # NOSONAR
     yield client
+
+
+@pytest.fixture()
+def processing(request, spark):
+    storage_matching: Dict = {
+        "postgres": PostgressProcessing,
+        "hive": HiveProcessing,
+    }
+
+    test_function = request.function
+
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive
+
+    db_processing = storage_matching[db_storage_name]
+
+    if db_storage_name == "hive":
+        return db_processing(spark)
+
+    return db_processing()
+
+
+@pytest.fixture()
+def prepare_schema_table(processing, request, spark):
+    test_function = request.function
+    table = f"{test_function.__name__}_{secrets.token_hex(5)}"
+    schema = "onetl_schema"
+
+    full_name = f"{schema}.{table}"
+
+    storages = ["postgres", "hive"]
+    entities = ["reader", "writer"]
+    column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime"]
+
+    test_function = request.function
+
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive
+    test_entity = test_function.__name__.split("_")[2]
+
+    columns_and_types = [
+        {
+            "column_name": column_name,
+            "type": processing.get_column_types_and_names_matching()[column_name],
+        }
+        for column_name in column_names
+    ]
+
+    if db_storage_name == "hive" and not spark:
+        raise ValueError("When working with Hive, you need to pass spark session.")
+
+    preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
+
+    if db_storage_name in storages and test_entity in entities:
+
+        try:
+            processing.create_schema(schema=schema)
+            processing.create_table(schema=schema, table=table, fields=columns_and_types)
+
+            if preloading_data:
+                processing.insert_data(
+                    schema=schema,
+                    table=table,
+                    field_names=columns_and_types,
+                    values=processing.create_pandas_df(),
+                )
+
+        except Exception as error:
+            LOG.exception(error)
+            raise error
+
+        yield {"full_name": full_name, "schema": schema, "table": table}
+
+        processing.drop_table(
+            table=table,
+            schema=schema,
+        )
+
+        processing.stop_conn()
 
 
 if __name__ == "__main__":

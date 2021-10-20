@@ -24,3 +24,4 @@ pyyaml>5
 sasl
 thrift
 thrift-sasl
+sqlalchemy

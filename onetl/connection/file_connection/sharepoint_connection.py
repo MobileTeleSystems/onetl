@@ -39,13 +39,13 @@ class Sharepoint(FileConnection):
         log.info(f"Successfully removed file {remote_file_path}")
 
     def get_files_list(self, folder):
-        list_files_url = f'https://{self.host}/_api/web/GetFolderByServerRelativeUrl("{folder}")/Files'
+        list_files_url = f"https://{self.host}/_api/web/GetFolderByServerRelativeUrl('{folder}')/Files"
         response = self.client.get(list_files_url)
         response.raise_for_status()
         return json.loads(response.text)["d"]["results"]
 
     def get_folders_list(self, folder):
-        list_dirs_url = f'https://{self.host}/_api/web/GetFolderByServerRelativeUrl("{folder}")/Folders'
+        list_dirs_url = f"https://{self.host}/_api/web/GetFolderByServerRelativeUrl('{folder}')/Folders"
         response = self.client.get(list_dirs_url)
         response.raise_for_status()
         return json.loads(response.text)["d"]["results"]
@@ -53,7 +53,7 @@ class Sharepoint(FileConnection):
     def get_file_content(self, filepath):
         folder, filename = os.path.split(filepath)
         file_content_url = (
-            f'https://{self.host}/_api/web/GetFolderByServerRelativeUrl("{folder}")/Files("{filename}")/$value'
+            f"https://{self.host}/_api/web/GetFolderByServerRelativeUrl('{folder}')/Files('{filename}')/$value"
         )
         response = self.client.get(file_content_url)
         response.raise_for_status()
@@ -61,7 +61,7 @@ class Sharepoint(FileConnection):
 
     def remove_file_http(self, filepath):
         folder, filename = os.path.split(filepath)
-        file_content_url = f'https://{self.host}/_api/web/GetFolderByServerRelativeUrl("{folder}")/Files("{filename}")'
+        file_content_url = f"https://{self.host}/_api/web/GetFolderByServerRelativeUrl('{folder}')/Files('{filename}')"
         response = self.client.delete(file_content_url)
         response.raise_for_status()
         return response.content

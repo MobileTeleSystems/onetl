@@ -20,8 +20,8 @@ class Hive(DBConnection):
         table: str,
         jdbc_options: Dict,
     ) -> None:
-
-        df.write.mode(jdbc_options.get("mode", "append")).format(jdbc_options.get("format", "orc")).saveAsTable(table)
+        # TODO:(@dypedchenk) rewrite, take into account all data recording possibilities. Use "mode" param.
+        df.write.insertInto(table, overwrite=False)
 
     # TODO:(@dypedchenk) think about unused params in this method
     def read_table(
