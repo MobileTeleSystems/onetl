@@ -1,4 +1,5 @@
 ftputil
+hdfs[avro,dataframe,kerberos]>2
 paramiko
 PySmbClient
 requests

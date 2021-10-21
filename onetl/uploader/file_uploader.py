@@ -11,12 +11,81 @@ log = getLogger(__name__)
 
 @dataclass
 class FileUploader:
+    """Class specifies remote file source where you can upload files.
+
+    Parameters
+    ----------
+    connection : onetl.connection.file_connection.FileConnection
+        Class which contain File system connection properties. See in FileConnection section.
+    target_path : str
+        Path on remote source where you upload files.
+    temp_path : str, optional, default: ``/tmp/{uuid.uuid4()}``
+        Remote path where files uploaded firstly
+
+        Default value: ``/tmp/{uuid.uuid4()}``
+
+    Examples
+    --------
+    Simple Uploader creation
+
+    .. code::
+
+        from onetl.uploader import FileUploader
+        from onetl.connection.file_connection import HDFS
+
+        hdfs = HDFS(...)
+
+        uploader = FileUploader(
+            connection=hdfs,
+            target_path="/path/to/remote/source",
+        )
+
+    Uploader with all parameters
+
+    .. code::
+
+        from onetl.uploader import FileUploader
+        from onetl.connection.file_connection import HDFS
+
+        hdfs = HDFS(...)
+
+        uploader = FileUploader(
+            connection=hdfs,
+            target_path="/path/to/remote/source",
+            temp_path="/home/onetl"
+        )
+
+    """
+
     connection: FileConnection
     target_path: str
     # Remote temporary path to upload files
     temp_path: Optional[str] = "/tmp/{}"  # NOSONAR
 
     def run(self, files_list: List[str]) -> List[str]:
+        """
+        Method for uploading files to remote host.
+
+        Params
+        -------
+        files_list : List[str]
+            List of files on local storage
+
+        Returns
+        -------
+        uploaded_files : List[str]
+            List of uploaded files
+
+        Examples
+        --------
+
+        Upload files
+
+        .. code::
+
+            uploaded_files = uploader.run(files_list)
+
+        """
 
         if not files_list:
             log.warning("Files list is empty. Please, provide files to upload.")

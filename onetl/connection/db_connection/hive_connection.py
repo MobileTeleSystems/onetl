@@ -6,6 +6,30 @@ from onetl.connection.db_connection.db_connection import DBConnection
 
 @dataclass(frozen=True)
 class Hive(DBConnection):
+    """Class for Hive spark connection.
+
+    Parameters
+    ----------
+    spark : pyspark.sql.SparkSession, default: ``None``
+        Spark session that required for connection to hive.
+
+        You can use ``mtspark`` for spark session initialization.
+
+    Examples
+    --------
+
+    Hive connection initialization
+
+    .. code::
+
+        from onetl.connection.db_connection import Hive
+        from mtspark import get_spark
+
+        spark = get_spark({"appName": "spark-app-name"})
+
+        hive = Hive(spark=spark)
+    """
+
     port: int = 10000
 
     @property

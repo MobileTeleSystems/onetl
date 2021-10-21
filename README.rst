@@ -1,18 +1,85 @@
+.. title
+
+onETL
+=======
+
+|Build Status| |Quality Gate Status| |Maintainability Rating| |Coverage|
+|Documentation| |PyPI|
+
+.. |Build Status| image:: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/badges/develop/pipeline.svg
+   :target: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/-/pipelines
+.. |Quality Gate Status| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=alert_status
+   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+.. |Maintainability Rating| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=sqale_rating
+   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+.. |Coverage| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=coverage
+   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+.. |Documentation| image:: https://img.shields.io/badge/docs-latest-success
+   :target: https://docs.bd.msk.mts.ru/onetl
+.. |PyPI| image:: https://img.shields.io/badge/pypi-download-orange
+   :target: http://rep.msk.mts.ru/ui/packages/pypi:%2F%2Fonetl?name=onetl&type=packages
+
+Python package with simple ETL tools.
+
+
+**Supports only Python == 3.7**
+
+.. documentation
+
+Documentation
+-------------
+
+See https://docs.bd.msk.mts.ru/onetl
+
+.. wiki
+
+Wiki page
+-------------
+
+See https://wiki.bd.msk.mts.ru/display/ONE/onETL
+
+.. contribution
+
+Contribution guide
+-------------------
+
+See https://wiki.bd.msk.mts.ru/display/DAT/Contribution+guide
+
+
+.. install
+
+Installation
+---------------
+
+Stable release
+~~~~~~~~~~~~~~~
+Stable version is released on every tag to ``master`` branch. Please use stable releases on production environment.
+Version example: ``1.1.2``
+
+.. code:: bash
+
+    pip install onetl==1.1.2 # exact version
+
+    pip install onetl # latest release
+
+Development release
+~~~~~~~~~~~~~~~~~~~~
+# TDB
+
+.. develops
+
+Development
+---------------
+
+
 Building
 ~~~~~~~~
-Docker должен быть настроен в соответствии с "Работа с Python внутри Docker"
+Set up your Docker with this link:
+
 (https://wiki.bd.msk.mts.ru/pages/viewpage.action?pageId=42960827).
 
-При билдинге на винде нужно **убедиться, что в .sh файлы в ./docker не пролезли CRLF**\ , иначе
-entrypoint.sh могут не взлететь. Для гарантии можно прописать в **.gitconfig**\ :
 
-.. code-block::
-
-   [core]
-       filemode = false
-       autocrlf = input
-
-Билд:
+Build:
 
 .. code-block:: bash
 
@@ -20,17 +87,15 @@ entrypoint.sh могут не взлететь. Для гарантии можн
 
     docker system prune --volumes
 
-С этого момента станет доступен образ **onetl**.
+Now you have Docker Image **onetl**.
 
 IDE (PyCharm)
 ~~~~~~~~~~~~~
 
 Settings:
 
-1. Project Interpreter -> Add -> Docker -> Image name onetl:latest
+Project Interpreter -> Add -> Docker -> Image name onetl:latest
 
-2. Project Structure:
-   - Пометить onetl, как **Sources**.
 
 Run -> Edit Configurations -> New -> pytest:
 0. Name **Test All**.
@@ -39,22 +104,21 @@ Run -> Edit Configurations -> New -> pytest:
 
 2. Additional Arguments **--verbose -s -c pytest.ini**.
 
-3. Python interpreter **Project Default (onetl:latest). Нужно выбрать Python interpreter path: python3**.
+3. Python interpreter **Project Default (onetl:latest). You should write Python interpreter path: python3**.
 
 4. Working directory /opt/project
 
-5. Add content roots and source roots -- **галки необязательны**.
+5. Add content roots and source roots -- **you can remove this buttons**.
 
 6. Docker container settings:
 
-   1. Network mode **onetl** (то есть нетворк из docker-compose.yml) or  Add --net onetl in Run options
+   1. Network mode **onetl** (network from docker-compode из docker-compose.yml) or  Add --net onetl in Run options
 
    2. Volume bindings (container -> local):
-      - **/opt/project -> (absolute path to)/onetl** (PyCharm должен сделать это сам).
+      - **/opt/project -> (absolute path to)/onetl** (PyCharm do it for you, but check!!!).
 
 Run -> Edit Configurations -> Copy Configuration **Test All**:
 
-Дополнительно можно создать конфигурации под конкретные тесты.
 
 
 Testing
@@ -68,12 +132,14 @@ Testing
 
     docker-compose up
 
-Ждем, пока инициализируется окружение и сервисы.
+Wait initialization of every service
 
 
-С этого момента можно запустить всё что есть конфигурацией **Test All**.
+Now you can run tests with configuration **Test All**.
 
+.. usage
 
-PS, **есть проблема с .pyc файлами, которую пока что неясно, как решить**. На
-текущий момент при локальной разработке проще всего нажать правой кнопкой на
-директорию с проектом и сделать **Clean Python Compiled Files**.
+Usage
+------------
+
+# TBD

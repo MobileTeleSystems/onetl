@@ -23,6 +23,35 @@ class FTP_TLS_fix(ftplib.FTP_TLS):  # noqa: N801
 
 
 class FTPS(FTP):
+    """Class for FTPS file connection.
+
+    Parameters
+    ----------
+    host : str
+        Host of ftp source. For example: ``10.226.174.94``
+    port : int, optional, default: ``21``
+        Port of ftp source
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``sa0000sphretltest``
+    password : str, default: ``None``
+        Password for file source connection
+
+    Examples
+    --------
+
+    FTP file connection initialization
+
+    .. code::
+
+        from onetl.connection.file_connection import FTP
+
+        ftps = FTPS(
+            host="10.226.174.94",
+            user="sa0000sphretltest",
+            password="*****",
+        )
+    """
+
     def get_client(self) -> "ftputil.host.FTPHost":
         """
         Returns a FTPS connection object

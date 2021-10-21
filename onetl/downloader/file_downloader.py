@@ -14,12 +14,65 @@ log = getLogger(__name__)
 @dataclass
 # TODO:(@mivasil6) make check_history functional
 class FileDownloader:
+    """Class specifies file source from where you can download files. Download files **only** in local directory.
+
+    Parameters
+    ----------
+    connection : onetl.connection.file_connection.FileConnection
+        Class which contain File system connection properties. See in FileConnection section.
+    source_path : str
+        Path on remote source where you get files.
+    local_path : str
+        Local path where you download files
+    source_file_pattern : str, optional, default: ``*``
+        Fnmatch check for file_name. For example: ``*.csv``.
+    delete_source : bool, optional, default: ``False``
+        Parameter responsible for configuring the deletion of downloaded files on source.
+    source_exclude_dirs : list of str, optional, default: ``None``
+        A list of dirs excluded from loading. Must contain full path to excluded dir.
+
+    Examples
+    --------
+    Simple Downloader creation
+
+    .. code::
+
+        from onetl.downloader import FileDownloader
+        from onetl.connection.file_connection import SFTP
+
+        sftp = SFTP(...)
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/path/to/remote/source",
+            local_path="/path/to/local",
+        )
+
+    Downloader with all parameters
+
+    .. code::
+
+        from onetl.downloader import FileDownloader
+        from onetl.connection.file_connection import SFTP
+
+        sftp = SFTP(...)
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/path/to/remote/source",
+            local_path="/path/to/local",
+            delete_source=True,
+            source_exclude_dirs=["path/to/remote/source/exclude_dir"],
+            source_file_pattern="*.txt",
+        )
+    """
+
     connection: FileConnection
     source_path: str
     local_path: str
-    source_file_pattern: Optional[str] = "*"  # fnmatch check for file_name. For example: "*.csv"
-    delete_source: bool = False  # parameter responsible for configuring the deletion of downloaded files on source
-    source_exclude_dirs: List = field(default_factory=list)  # a list of dirs excluded from loading
+    source_file_pattern: Optional[str] = "*"
+    delete_source: bool = False
+    source_exclude_dirs: List = field(default_factory=list)
 
     def remote_files_listing(self, source_path: str) -> Iterator:
         log.info(f"Getting files list from remote source path: {source_path}")
@@ -51,6 +104,24 @@ class FileDownloader:
                 yield file_path
 
     def run(self) -> List[str]:  # noqa: WPS231
+        """
+        Method for downloading files from source to local directory.
+
+        Returns
+        -------
+        downloaded_files : List[str]
+            List of downloaded files
+
+        Examples
+        --------
+
+        Download files
+
+        .. code::
+
+            downloaded_files = downloader.run()
+
+        """
         downloaded_files = []
         downloaded_remote_files = []
         files_size = 0
