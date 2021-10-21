@@ -11,14 +11,14 @@ class TestIntegrationONETLHive:
 
         reader = DBReader(
             connection=hive,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
         )
 
         df = reader.run()
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=df,
         )
 
@@ -29,13 +29,13 @@ class TestIntegrationONETLHive:
 
         writer = DBWriter(
             connection=hive,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
         )
 
         writer.run(df)
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=df,
         )

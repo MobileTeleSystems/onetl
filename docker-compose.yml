@@ -40,6 +40,19 @@ services:
     - 8042:8042
     - 8088:8088
 
+  oracle:
+    build:
+      context: ./docker/oracle
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+    - 1522:1521
+    - 5501:5500
+    networks: [onetl]
+    hostname: oracle
+    depends_on:
+    - postgres
+
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
 #  тогда содержимое БД будет сохраняться между подъемами docker-compose.
 volumes:
