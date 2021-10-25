@@ -77,11 +77,8 @@ class TestDBConnection:
 
     def test_jdbc_params_creator(self):
         jdbc_options = {
-            "user": "user_name",
             "lowerBound": 10,
             "upperBound": 1000,
-            "url": "connection_url",
-            "driver": "some_driver",
             "partitionColumn": "some_column",
             "numPartitions": 20,
             "fetchsize": 1000,
@@ -89,18 +86,18 @@ class TestDBConnection:
 
         conn = Postgres(host="some_host", user="user", password="passwd")
 
-        jdbc_options = conn.jdbc_params_creator(jdbc_options=jdbc_options, table="test_table")
+        jdbc_options = conn.jdbc_params_creator(jdbc_options=jdbc_options)
 
         assert jdbc_options == {
-            "lowerBound": 10,
-            "upperBound": 1000,
+            "lowerBound": "10",
+            "upperBound": "1000",
             "url": "jdbc:postgresql://some_host:5432/default",
             "column": "some_column",
-            "numPartitions": 20,
+            "numPartitions": "20",
             "properties": {
                 "user": "user",
                 "driver": "org.postgresql.Driver",
-                "fetchsize": 1000,
+                "fetchsize": "1000",
                 "password": "passwd",
             },
         }

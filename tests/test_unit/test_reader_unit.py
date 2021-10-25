@@ -1,3 +1,5 @@
+import pytest
+
 from onetl.reader import DBReader
 from onetl.connection.db_connection import Oracle, Postgres
 
@@ -27,11 +29,8 @@ class TestDBReader:
             # This test only demonstrates how the parameters will be distributed
             # in the jdbc() function in the properties parameter.
             jdbc_options={
-                "user": "user_name",
                 "lowerBound": 10,
                 "upperBound": 1000,
-                "url": "connection_url",
-                "driver": "some_driver",
                 "partitionColumn": "some_column",
                 "numPartitions": 20,
                 "fetchsize": 1000,
@@ -47,29 +46,22 @@ class TestDBReader:
             sql_hint="some_hint",
             columns=["column_1", "column_2"],
         )
-        table = reader.connection.get_sql_query(
-            table=reader.table,
-            sql_where=reader.sql_where,
-            sql_hint=reader.sql_hint,
-            columns="column_1, column_2",
-        )
 
         jdbc_params = reader.connection.jdbc_params_creator(
             jdbc_options=reader.jdbc_options,
-            table=table,
         )
 
         assert jdbc_params == {
-            "lowerBound": 10,
-            "upperBound": 1000,
+            "lowerBound": "10",
+            "upperBound": "1000",
             "url": "jdbc:postgresql://local:5432/default",
             "column": "some_column",
-            "numPartitions": 20,
+            "numPartitions": "20",
             "properties": {
                 "user": "admin",
                 "driver": "org.postgresql.Driver",
-                "fetchsize": 1000,
-                "batchsize": 1000,
+                "fetchsize": "1000",
+                "batchsize": "1000",
                 "isolationLevel": "NONE",
                 "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
                 "truncate": "true",
@@ -79,3 +71,12 @@ class TestDBReader:
                 "password": "1234",
             },
         }
+
+    def test_db_reader_jdbc_properties_value_error(self):
+        reader = DBReader(
+            connection=Oracle(),
+            table="default.test",
+            jdbc_options={"user": "some_user"},
+        )
+        with pytest.raises(ValueError):
+            reader.run()

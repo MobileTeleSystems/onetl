@@ -6,6 +6,7 @@ from typing import Any, TYPE_CHECKING
 
 from onetl.connection.db_connection import DBConnection
 
+
 log = getLogger(__name__)
 # TODO:(@mivasil6) implement logging
 

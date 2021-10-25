@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Mapping
+from typing import Dict
 
 from onetl.connection.db_connection.db_connection import DBConnection
+
 
 log = getLogger(__name__)
 # TODO:(@mivasil6) implement logging
@@ -157,7 +158,7 @@ class DBWriter:
     table: str
     format: str = "orc"
     mode: str = "append"
-    jdbc_options: Mapping = field(default_factory=dict)
+    jdbc_options: Dict = field(default_factory=dict)
 
     def run(self, df):
         """

@@ -91,3 +91,15 @@ class TestIntegrationONETLPostgres:
                 table=prepare_schema_table.table,
                 df=df2,
             )
+
+    def test_postgres_writer_jdbc_properties_value_error(self, spark, processing):
+        df = processing.create_spark_df(spark)
+
+        writer = DBWriter(
+            Postgres(),
+            table="table",
+            jdbc_options={"user": "some_user"},
+        )
+
+        with pytest.raises(ValueError):
+            writer.run(df)
