@@ -92,8 +92,11 @@ class FTP(FileConnection):
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool) -> None:
-        self.client.rmtree(path)
+    def rmdir(self, path: str, recursive: bool = False) -> None:
+        if recursive:
+            self.client.rmtree(path)
+        else:
+            self.client.rmdir(path)
         log.info(f"Successfully deleted {path}")
 
     def _listdir(self, path: str) -> List:
