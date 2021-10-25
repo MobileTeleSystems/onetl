@@ -1,4 +1,5 @@
 # noinspection PyPackageRequirements
+import pytest
 
 from onetl.connection.db_connection import Postgres
 from onetl.reader.db_reader import DBReader
@@ -54,7 +55,8 @@ class TestIntegrationONETLPostgres:
             df=df,
         )
 
-    def test_postgres_writer_mode_append(self, spark, processing, prepare_schema_table):
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    def test_postgres_writer_mode(self, spark, processing, prepare_schema_table, mode):
         df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
         df1 = df[df.id_int < 1001]
         df2 = df[df.id_int > 1000]
@@ -70,43 +72,22 @@ class TestIntegrationONETLPostgres:
         writer = DBWriter(
             connection=postgres,
             table=prepare_schema_table.full_name,
-            mode="append",
+            mode=mode,
         )
 
         writer.run(df1)
         writer.run(df2)
 
-        processing.assert_equal_df(
-            schema=prepare_schema_table.schema,
-            table=prepare_schema_table.table,
-            df=df,
-        )
+        if mode == "append":
+            processing.assert_equal_df(
+                schema=prepare_schema_table.schema,
+                table=prepare_schema_table.table,
+                df=df,
+            )
 
-    def test_postgres_writer_mode_overwrite(self, spark, processing, prepare_schema_table):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int < 1001]
-        df2 = df[df.id_int > 1000]
-
-        postgres = Postgres(
-            host=processing.host,
-            user=processing.user,
-            password=processing.password,
-            database=processing.database,
-            spark=spark,
-        )
-
-        writer = DBWriter(
-            connection=postgres,
-            table=prepare_schema_table.full_name,
-            mode="overwrite",
-        )
-
-        # loading is done twice to validate the test
-        writer.run(df1)
-        writer.run(df2)
-
-        processing.assert_equal_df(
-            schema=prepare_schema_table.schema,
-            table=prepare_schema_table.table,
-            df=df2,
-        )
+        if mode == "overwrite":
+            processing.assert_equal_df(
+                schema=prepare_schema_table.schema,
+                table=prepare_schema_table.table,
+                df=df2,
+            )
