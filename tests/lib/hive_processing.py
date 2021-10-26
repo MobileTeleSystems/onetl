@@ -1,13 +1,12 @@
 from logging import getLogger
-from typing import List, Union, Optional
+from typing import List, Optional
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from tests.lib.storage_abc import StorageABC
+from tests.lib.storage_abc import StorageABC, ConnectionType
 
 logger = getLogger(__name__)
-ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection"]
 
 
 class HiveProcessing(StorageABC):
@@ -66,40 +65,35 @@ class HiveProcessing(StorageABC):
         df = self.connection.createDataFrame(values)
         df.write.mode("append").insertInto(f"{schema}.{table}")
 
-    def get_written_df(
-        self,
-        schema: str,
-        table: str,
-    ) -> "pandas.core.frame.DataFrame":
-        df = self.connection.read.table(f"{schema}.{table}").collect()
-
-        column_names = StorageABC.get_column_names()
-
-        values = {column_name: [] for column_name in column_names}
-
-        for row in df:
-            for idx, _ in enumerate(row):
-                # Row(id=1, text='hello') -> values = ['id':[1], 'text': ['hello']]
-                values[column_names[idx]].append(row[idx])
-
-        return pd.DataFrame(data=values)
-
     def stop_conn(self):
         # connection.stop() in spark fixture
         """"""
 
     def assert_equal_df(
         self,
-        schema_name: str,
+        schema: str,
         table: str,
         df: "pyspark.sql.DataFrame",
         other_frame: Optional["pyspark.sql.DataFrame"] = None,
     ) -> None:
 
         if not other_frame:
-            other_frame = self.get_written_df(
-                schema=schema_name,
-                table=table,
-            )
+            other_frame = self.get_expected_dataframe(schema=schema, table=table)
 
         assert_frame_equal(left=df.toPandas(), right=other_frame, check_dtype=False)
+
+    def get_expected_dataframe(
+        self,
+        schema: str,
+        table: str,
+    ) -> "pandas.core.frame.DataFrame":
+        df_listed = self.connection.read.table(f"{schema}.{table}").collect()
+        column_names = StorageABC.get_column_names()
+        values = {column_name: [] for column_name in column_names}
+
+        for row in df_listed:
+            for idx, _ in enumerate(row):
+                # Row(id=1, text='hello') -> values = ['id':[1], 'text': ['hello']]
+                values[column_names[idx]].append(row[idx])
+
+        return pd.DataFrame(data=values)

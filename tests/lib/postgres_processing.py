@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List, Union, Optional
+from typing import List, Optional
 import os
 
 from psycopg2 import connect as pg_connect
@@ -7,10 +7,9 @@ import pandas as pd
 from pandas.io import sql as psql
 from pandas.util.testing import assert_frame_equal
 
-from tests.lib.storage_abc import StorageABC
+from tests.lib.storage_abc import ConnectionType, StorageABC
 
 logger = getLogger(__name__)
-ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection"]
 
 
 class PostgressProcessing(StorageABC):
@@ -27,24 +26,28 @@ class PostgressProcessing(StorageABC):
         self.connection = self.get_conn()
 
     @property
-    def user(self):
+    def user(self) -> str:
         return os.getenv("ONETL_PG_CONN_USER")
 
     @property
-    def password(self):
+    def password(self) -> str:
         return os.getenv("ONETL_PG_CONN_PASSWORD")
 
     @property
-    def host(self):
+    def host(self) -> str:
         return os.getenv("ONETL_PG_CONN_HOST")
 
     @property
-    def database(self):
+    def database(self) -> str:
         return os.getenv("ONETL_PG_CONN_DATABASE")
 
     @property
-    def url(self):
-        return f"postgresql://{self.user}:" f"{self.password}" f"@{self.host}:5432/"
+    def url(self) -> str:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/"
+
+    @property
+    def port(self) -> int:
+        return int(os.getenv("ONETL_PG_CONN_PORT"))
 
     def create_schema(
         self,
@@ -93,42 +96,37 @@ class PostgressProcessing(StorageABC):
         values: "pandas.core.frame.DataFrame",
     ) -> None:
 
-        con_info = self.connection.info
-
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
         psql.to_sql(
             frame=values,
             name=table,
-            con=f"postgresql://{con_info.user}:{con_info.password}@{con_info.host}:5432",
+            con=self.url,
             index=False,
             schema=schema,
             if_exists="append",
         )
-
-    def get_written_df(
-        self,
-        schema: str,
-        table: str,
-    ) -> "pandas.core.frame.DataFrame":
-
-        return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)
 
     def stop_conn(self) -> None:
         self.connection.close()
 
     def assert_equal_df(
         self,
-        schema_name: str,
+        schema: str,
         table: str,
         df: "pyspark.sql.DataFrame",
         other_frame: Optional["pyspark.sql.DataFrame"] = None,
     ) -> None:
 
         if not other_frame:
-            other_frame = self.get_written_df(
-                schema=schema_name,
-                table=table,
-            )
+            other_frame = self.get_expected_dataframe(schema=schema, table=table)
 
         assert_frame_equal(left=df.toPandas(), right=other_frame, check_dtype=False)
+
+    def get_expected_dataframe(
+        self,
+        schema: str,
+        table: str,
+    ) -> "pandas.core.frame.DataFrame":
+
+        return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)

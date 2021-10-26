@@ -35,6 +35,14 @@ ENV TZ=${TZ} \
     ONETL_PG_CONN_HOST=postgres \
     ONETL_PG_CONN_PASSWORD=onetl \
     ONETL_PG_CONN_DATABASE=onetl \
+    ONETL_PG_CONN_PORT=5432 \
+    ONETL_ORA_CONN_USER=onetl \
+    ONETL_ORA_CONN_HOST=oracle \
+    ONETL_ORA_CONN_PASSWORD=onetl \
+    ONETL_ORA_CONN_DATABASE=onetl \
+    ONETL_ORA_CONN_PORT=1521 \
+    ONETL_ORA_CLIENT_PATH=/usr/lib/oracle/21/client64/lib \
+    ONETL_ORA_CONN_SID=XE \
     MTSPARK_CUSTOM_CONFIG_PATH=/opt/project/tests/config.yml
 
 COPY --from=wheel_builder /opt/build_dir/dist/ /opt/build_dir/dist/
@@ -47,6 +55,8 @@ COPY ./requirements.txt \
 COPY . /opt/project/
 
 RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
+    && wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
+    && yum -y install /tmp/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
     && yum -y install \
         java \
         krb5-devel \

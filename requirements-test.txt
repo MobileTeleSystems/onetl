@@ -20,6 +20,9 @@ pytest==6.2.5
 pytest-cov==2.10.1
 pyyaml>5
 
+# Oracle client
+cx_Oracle
+
 # May be needed for testing:
 sasl
 sqlalchemy

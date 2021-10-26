@@ -6,6 +6,7 @@ services:
     depends_on:
     - postgres
     - hive2
+    - oracle
     env_file:
     - onetl_local.default.env
     environment:
@@ -34,6 +35,17 @@ services:
     hostname: hive2
     networks:
     - onetl
+
+  oracle:
+    build:
+      context: ./docker/oracle
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+    - onetl
+    hostname: oracle
+    depends_on:
+      - postgres
 
 networks:
   onetl:

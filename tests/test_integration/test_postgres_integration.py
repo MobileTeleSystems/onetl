@@ -20,13 +20,13 @@ class TestIntegrationONETLPostgres:
 
         reader = DBReader(
             connection=postgres,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
         )
         table_df = reader.run()
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=table_df,
         )
 
@@ -43,14 +43,14 @@ class TestIntegrationONETLPostgres:
 
         writer = DBWriter(
             connection=postgres,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
         )
 
         writer.run(df)
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=df,
         )
 
@@ -69,7 +69,7 @@ class TestIntegrationONETLPostgres:
 
         writer = DBWriter(
             connection=postgres,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
             mode="append",
         )
 
@@ -77,8 +77,8 @@ class TestIntegrationONETLPostgres:
         writer.run(df2)
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=df,
         )
 
@@ -97,7 +97,7 @@ class TestIntegrationONETLPostgres:
 
         writer = DBWriter(
             connection=postgres,
-            table=prepare_schema_table["full_name"],
+            table=prepare_schema_table.full_name,
             mode="overwrite",
         )
 
@@ -106,7 +106,7 @@ class TestIntegrationONETLPostgres:
         writer.run(df2)
 
         processing.assert_equal_df(
-            schema_name=prepare_schema_table["schema"],
-            table=prepare_schema_table["table"],
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
             df=df2,
         )

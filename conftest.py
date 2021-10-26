@@ -3,6 +3,7 @@ import logging
 from time import sleep
 import secrets
 from typing import Union, Dict, List
+from collections import namedtuple
 
 # noinspection PyPackageRequirements
 import pytest
@@ -14,6 +15,7 @@ from hdfs import InsecureClient
 from mtspark import get_spark
 from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
+from tests.lib.oracle_processing import OracleProcessing
 
 from tests.lib.mock_sftp_server import MockSFtpServer
 
@@ -25,12 +27,6 @@ SELF_PATH = os.path.abspath(os.path.dirname(__file__))
 
 HDFS_PORT = "50070"
 DOCKER_HOST = "host.docker.internal"
-
-
-def debug_executor_change_state_crutch(self, key, state):
-    self.log.debug(f"Popping {key} from executor task queue.")
-    self.running.pop(key, None)
-    self.event_buffer[key] = state
 
 
 @pytest.fixture(scope="session")
@@ -107,11 +103,12 @@ def processing(request, spark):
     storage_matching: Dict = {
         "postgres": PostgressProcessing,
         "hive": HiveProcessing,
+        "oracle": OracleProcessing,
     }
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle
 
     db_processing = storage_matching[db_storage_name]
 
@@ -125,17 +122,17 @@ def processing(request, spark):
 def prepare_schema_table(processing, request, spark):
     test_function = request.function
     table = f"{test_function.__name__}_{secrets.token_hex(5)}"
-    schema = "onetl_schema"
+    schema = "onetl"
 
     full_name = f"{schema}.{table}"
 
-    storages = ["postgres", "hive"]
+    storages = ["postgres", "hive", "oracle"]
     entities = ["reader", "writer"]
     column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime"]
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle
     test_entity = test_function.__name__.split("_")[2]
 
     columns_and_types = [
@@ -169,7 +166,9 @@ def prepare_schema_table(processing, request, spark):
             LOG.exception(error)
             raise error
 
-        yield {"full_name": full_name, "schema": schema, "table": table}
+        PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "table", "schema"])
+
+        yield PreparedDbInfo(full_name=full_name, table=table, schema=schema)
 
         processing.drop_table(
             table=table,

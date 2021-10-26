@@ -6,7 +6,7 @@ from datetime import datetime, date
 import pandas as pd
 
 logger = getLogger(__name__)
-ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection"]
+ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection", "cx_Oracle.Connection"]
 
 
 class StorageABC(ABC):
@@ -71,14 +71,6 @@ class StorageABC(ABC):
     @classmethod
     def get_column_names(cls) -> List:
         return cls._column_names
-
-    @abstractmethod
-    def get_written_df(
-        self,
-        schema: str,
-        table: str,
-    ) -> "pandas.core.frame.DataFrame":
-        """"""
 
     def create_pandas_df(self, min_id: int = 1, max_id: int = _df_max_length) -> "pandas.core.frame.DataFrame":
         # the date is filled in a cycle until 12, then the time and date follow a new cycle
