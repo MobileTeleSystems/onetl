@@ -144,10 +144,10 @@ class TestFileConnections:
         assert isinstance(hdfs, FileConnection)
         assert hdfs.port == 50070
 
-    def test_ssh_connection(self):
-        ssh = SFTP(host="some_host", user="some_user", password="pwd")
-        assert isinstance(ssh, FileConnection)
-        assert ssh.port == 22
+    def test_sftp_connection(self):
+        sftp = SFTP(host="some_host", user="some_user", password="pwd")
+        assert isinstance(sftp, FileConnection)
+        assert sftp.port == 22
 
     def test_samba_connection(self):
         samba = Samba(host="some_host", user="some_user", password="pwd")

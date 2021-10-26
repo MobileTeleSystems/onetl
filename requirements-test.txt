@@ -22,6 +22,6 @@ pyyaml>5
 
 # May be needed for testing:
 sasl
+sqlalchemy
 thrift
 thrift-sasl
-sqlalchemy

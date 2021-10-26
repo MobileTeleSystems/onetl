@@ -14,6 +14,60 @@ log = getLogger(__name__)
 
 @dataclass(frozen=True)
 class HDFS(FileConnection, KerberosMixin):
+    """Class for HDFS file connection.
+
+    Parameters
+    ----------
+    host : str
+        Host of hdfs source. For example: ``rnd-dwh-nn-001.msk.mts.ru``
+    port : int, optional, default: ``50070``
+        Port of hdfs source
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``tech_etl``
+    password : str, default: ``None``
+        Password for file source connection
+
+        .. warning ::
+
+            To correct work you can provide only one of the parameters: ``password`` or ``kinit``
+    kinit : str, default: ``None``
+        Path to keytab file.
+
+        .. warning ::
+
+            To correct work you can provide only one of the parameters: ``password`` or ``kinit``
+    timeout : int, default: ``10``
+        Connection timeouts, forwarded to the request handler.
+        How long to wait for the server to send data before giving up.
+
+    Examples
+    --------
+
+    HDFS file connection initialization with password
+
+    .. code::
+
+        from onetl.connection.file_connection import HDFS
+
+        hdfs = HDFS(
+            host="rnd-dwh-nn-001.msk.mts.ru",
+            user="tech_etl",
+            password="*****",
+        )
+
+    HDFS file connection initialization with keytab
+
+    .. code::
+
+        from onetl.connection.file_connection import HDFS
+
+        hdfs = HDFS(
+            host="rnd-dwh-nn-001.msk.mts.ru",
+            user="tech_etl",
+            keytab="/path/to/keytab",
+        )
+    """
+
     port: int = 50070
     keytab: Optional[str] = None
     timeout: Optional[int] = None

@@ -14,10 +14,47 @@ log = getLogger(__name__)
 
 @dataclass(frozen=True)
 class SFTP(FileConnection):
+    """Class for SFTP file connection.
+
+    Parameters
+    ----------
+    host : str
+        Host of sftp source. For example: ``0001testadviat04.msk.mts.ru``
+    port : int, optional, default: ``22``
+        Port of sftp source
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``sa0000sphrsftptest``
+    password : str, default: ``None``
+        Password for file source connection
+    key_file : str, default: ``None``
+        the filename of optional private key(s) and/or certs to try for authentication
+    timeout : int, default: ``10``
+        How long to wait for the server to send data before giving up.
+    host_key_check : bool, default: ``False``
+        set to True to enable searching for discoverable private key files in ``~/.ssh/``
+    compress : bool, default: ``True``
+        Set to True to turn on compression
+
+    Examples
+    --------
+
+    SFTP file connection initialization
+
+    .. code::
+
+        from onetl.connection.file_connection import SFTP
+
+        sftp = SFTP(
+            host="0001testadviat04.msk.mts.ru",
+            user="sa0000sphrsftptest",
+            password="*****",
+        )
+    """
+
     port: int = 22
     key_file: Optional[str] = None
     timeout: int = 10
-    no_host_key_check: bool = True
+    host_key_check: bool = False
     compress: bool = True
 
     def get_client(self) -> "paramiko.sftp_client.SFTPClient":
@@ -27,7 +64,7 @@ class SFTP(FileConnection):
 
         client = paramiko.SSHClient()
         client.load_system_host_keys()
-        if self.no_host_key_check:
+        if not self.host_key_check:
             # Default is RejectPolicy
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 

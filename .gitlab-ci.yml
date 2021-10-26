@@ -19,6 +19,7 @@ stages:
 - tests
 - sonarqube_check
 - build_and_deploy
+- build_and_publish_docs
 - .post
 
 ### --------------- Include gitlab-ci-templates --------------- ###
@@ -149,6 +150,22 @@ build_and_deploy:
   - develop
   variables:
     PYTHON_VERSION: '3.7'
+
+# TODO: rewrite for versions before release
+build_and_publish_docs:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: build_and_publish_docs
+  only:
+  - master
+  - develop
+    # TODO: remove later
+  - feature/ONE-181
+  script:
+  - pip install -r requirements.txt -r requirements-docs.txt && cd docs && make html && tar cvzf html-onetl-master.tar.gz -C _build/html .
+  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-onetl-master.tar.gz
+
 
 remove_docker_compose:
   image: docker.rep.msk.mts.ru/test/docker-dind:20.10.8

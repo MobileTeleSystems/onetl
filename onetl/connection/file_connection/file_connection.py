@@ -28,7 +28,6 @@ class FileConnection(ConnectionABC):
     port: Optional[int] = None
     user: Optional[str] = None
     password: Optional[str] = field(repr=False, default=None)
-    schema: Optional[str] = None
 
     @abstractmethod
     def get_client(self) -> Any:

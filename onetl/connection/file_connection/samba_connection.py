@@ -11,15 +11,51 @@ log = getLogger(__name__)
 
 @dataclass(frozen=True)
 class Samba(FileConnection):
+    """Class for Samba file connection.
+
+    Parameters
+    ----------
+    host : str
+        Host of samba source. For example: ``msk.mts.ru``
+    port : int, optional, default: ``445``
+        Port of samba source
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``sa0000techgen``
+    password : str, default: ``None``
+        Password for file source connection
+    domain : str, default: ``None``
+        A Samba domain member is a Linux machine joined to a domain that is running Samba
+        and does not provide domain services,
+        such as an NT4 primary domain controller (PDC) or Active Directory (AD) domain controller (DC)
+    schema : str, default: ``None``
+        Secure File Server Share path. For example: ``MSK``
+
+    Examples
+    --------
+
+    Samba file connection initialization
+
+    .. code::
+
+        from onetl.connection.file_connection import Samba
+
+        samba = Samba(
+            host="msk.mts.ru",
+            user="sa0000techgen",
+            password="*****",
+            schema="MSK",
+        )
+    """
 
     port: int = 445
     domain: Optional[str] = None
+    schema: Optional[str] = None
 
     def get_client(self) -> SambaClient:
 
         return SambaClient(
             server=self.host,
-            share=self.database,
+            share=self.schema,
             username=self.user,
             domain=self.domain,
             port=self.port,
@@ -38,14 +74,6 @@ class Samba(FileConnection):
         log.info(f"Successfully download_file {remote_file_path} remote SMB to {local_file_path}")
 
     def remove_file(self, remote_file_path: str) -> None:
-        """
-        Remove remote file
-
-        :param client:
-        :type client: SambaClient
-        :param remote_file_path:
-        :return:
-        """
         self.client.unlink(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path} from SMB")
 

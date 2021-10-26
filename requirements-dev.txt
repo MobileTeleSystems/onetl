@@ -1,6 +1,4 @@
 black
 mypy
 pre-commit
-sphinx
-sphinx_rtd_theme
 wemake-python-styleguide

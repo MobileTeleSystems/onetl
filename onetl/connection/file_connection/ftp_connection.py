@@ -11,8 +11,38 @@ from onetl.connection.file_connection.file_connection import FileConnection
 log = getLogger(__name__)
 
 
+# TODO: (@mivasil6) подумать на что можно поменять слова source/target
 @dataclass(frozen=True)
 class FTP(FileConnection):
+    """Class for FTP file connection.
+
+    Parameters
+    ----------
+    host : str
+        Host of ftp source. For example: ``0001testadviat04.msk.mts.ru``
+    port : int, optional, default: ``21``
+        Port of ftp source
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``sa0000sphrsftptest``
+    password : str, default: ``None``
+        Password for file source connection
+
+    Examples
+    --------
+
+    FTP file connection initialization
+
+    .. code::
+
+        from onetl.connection.file_connection import FTP
+
+        ftp = FTP(
+            host="0001testadviat04.msk.mts.ru",
+            user="sa0000sphrsftptest",
+            password="*****",
+        )
+    """
+
     port: int = 21
 
     def get_client(self) -> "ftputil.host.FTPHost":

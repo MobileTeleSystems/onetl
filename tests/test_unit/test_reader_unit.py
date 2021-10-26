@@ -7,7 +7,7 @@ class TestDBReader:
     # TODO: the functionality of the connection class in the reader class is tested
     def test_db_reader_set_lower_upper_bound(self):
         reader: DBReader = DBReader(
-            connection=Oracle(),
+            Oracle(),
             table="default.test",
             jdbc_options={"lowerBound": 10, "upperBound": 1000},
         )
