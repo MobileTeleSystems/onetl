@@ -15,6 +15,8 @@ hdfs[avro,dataframe,kerberos]>2
 jpype1==0.6.3
 mock
 mtspark
+
+omegaconf
 psycopg2-binary
 pyhive >= 0.6
 pyspark < 3
@@ -28,3 +30,6 @@ sasl
 sqlalchemy
 thrift
 thrift-sasl
+
+# mypy
+types-PyYAML

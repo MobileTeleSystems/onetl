@@ -7,6 +7,7 @@ from typing import Dict
 from collections import namedtuple
 
 import pytest
+from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
 
 # noinspection PyPackageRequirements
 from pyhive import hive
@@ -161,7 +162,7 @@ def prepare_schema_table(processing, request, spark):
     full_name = f"{schema}.{table}"
 
     storages = ["postgres", "hive", "oracle"]
-    entities = ["reader", "writer"]
+    entities = ["reader", "writer", "strategy", "hwm"]
 
     test_function = request.function
 
@@ -206,3 +207,16 @@ def prepare_schema_table(processing, request, spark):
             table=table,
             schema=schema,
         )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def use_memory_hwm_store(request):
+    test_function = request.function
+    entities = test_function.__name__.split("_")
+
+    if "strategy" in entities:
+        with MemoryHWMStore():
+            yield None
+
+    else:
+        yield None

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime, date
 from onetl.connection.db_connection.db_connection import DBConnection
 
 
@@ -58,5 +59,10 @@ class Postgres(DBConnection):
     def url(self) -> str:
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
-    def _get_timestamp_value_sql(self, value):
-        return f"{value.lit()}::timestamp"
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.isoformat()
+        return f"'{result}'::timestamp"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.isoformat()
+        return f"'{result}'::date"

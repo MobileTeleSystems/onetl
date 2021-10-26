@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Optional, Union, List, Dict
+from typing import Any, TYPE_CHECKING
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection import DBConnection
 
 log = getLogger(__name__)
 # TODO:(@mivasil6) implement logging
+
+if TYPE_CHECKING:
+    from pyspark.sql.dataframe import DataFrame
+    from pyspark.sql.types import StructType
 
 
 @dataclass
@@ -62,7 +68,7 @@ class DBReader:
             spark=spark,
         )
 
-         reader = DBReader(postgres, table="fiddle.dummy")
+        reader = DBReader(postgres, table="fiddle.dummy")
 
     RDBMS table with jdbc_options
 
@@ -143,12 +149,19 @@ class DBReader:
     connection: DBConnection
     # table is 'schema.table'
     table: str
-    columns: Optional[Union[str, List]] = "*"
-    sql_where: Optional[str] = ""
-    sql_hint: Optional[str] = ""
-    jdbc_options: Dict = field(default_factory=dict)
+    columns: str | list[str] | None = None
+    sql_where: str | None = None
+    sql_hint: str | None = None
+    hwm_column: str | None = None
+    jdbc_options: dict[str, Any] = field(default_factory=dict)
 
-    def run(self) -> "pyspark.sql.DataFrameReader":
+    def get_columns(self) -> str:
+        return ", ".join(self.columns) if isinstance(self.columns, list) else self.columns or "*"  # noqa: WPS601
+
+    def get_schema(self) -> StructType:
+        return self.connection.get_schema(table=self.table, columns=self.get_columns(), jdbc_options=self.jdbc_options)
+
+    def run(self) -> DataFrame:
         """
         Reads data from source table and saves as Spark dataframe
 
@@ -168,10 +181,21 @@ class DBReader:
 
         """
 
-        return self.connection.read_table(
-            jdbc_options=self.jdbc_options,
-            sql_hint=self.sql_hint,
-            columns=", ".join(self.columns) if isinstance(self.columns, list) else self.columns,
-            sql_where=self.sql_where,
+        # avoid circular imports
+        from onetl.reader.strategy_helper import StrategyHelper, NonHWMStrategyHelper, HWMStrategyHelper
+
+        helper: StrategyHelper
+        if self.hwm_column:
+            helper = HWMStrategyHelper(self, self.hwm_column)
+        else:
+            helper = NonHWMStrategyHelper(self)
+
+        df = self.connection.read_table(
             table=self.table,
+            columns=self.get_columns(),
+            sql_hint=self.sql_hint,
+            sql_where=helper.where,
+            jdbc_options=self.jdbc_options,
         )
+
+        return helper.save(df)

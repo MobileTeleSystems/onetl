@@ -1,3 +1,4 @@
+from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.clickhouse_connection import Clickhouse
 from onetl.connection.db_connection.postgres_connection import Postgres
 from onetl.connection.db_connection.teradata_connection import Teradata

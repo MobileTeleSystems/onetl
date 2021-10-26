@@ -58,8 +58,11 @@ class Hive(DBConnection):
     ) -> "pyspark.sql.DataFrame":
         if not self.spark:
             raise ValueError("Spark session not provided")
-        table = self.get_sql_query(table=table, sql_hint=sql_hint, columns=columns, sql_where=sql_where)
-        return self.spark.sql(table)
 
-    def _get_timestamp_value_sql(self, value):
-        return value
+        table = self.get_sql_query(
+            table=table,
+            sql_hint=sql_hint,
+            columns=columns,
+            sql_where=sql_where,
+        )
+        return self.spark.sql(table)

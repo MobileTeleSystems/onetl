@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from re import sub
+from datetime import date, datetime
 
 from onetl.connection.db_connection.db_connection import DBConnection
 
@@ -65,6 +65,10 @@ class Clickhouse(DBConnection):
         params = "&".join(f"{k}={v}" for k, v in self.extra.items())
         return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
 
-    def _get_timestamp_value_sql(self, value):
-        value_without_fraction = sub(r"(.+)\.\d*'$", r"\1'", value.lit())  # NOSONAR
-        return f"CAST('{value_without_fraction}' AS DateTime)"
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.strftime("%Y-%m-%d %H:%M:%S")
+        return f"CAST('{result}', AS DateTime)"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.strftime("%Y-%m-%d")
+        return f"CAST('{result}', AS Date)"

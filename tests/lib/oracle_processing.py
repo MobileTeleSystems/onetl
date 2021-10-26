@@ -100,7 +100,6 @@ class OracleProcessing(BaseProcessing):
         except Exception:
             logger.debug("cx_Oracle client is already initialized.", exc_info=True)
         dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
-
         return cx_Oracle.connect(user=self.user, password=self.password, dsn=dsn)
 
     def insert_data(
