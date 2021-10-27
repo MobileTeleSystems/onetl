@@ -1,11 +1,11 @@
 # noinspection PyPackageRequirements
 
-from onetl.connection.db_connection import Hive
+from onetl.connection.db_connection import Clickhouse
 from onetl.reader.db_reader import DBReader
 from onetl.writer.db_writer import DBWriter
 
 
-class TestIntegrationONETLHive:
+class TestIntegrationONETLClickhouse:
     """
     The test name affects how the test works: the second and third words define the behavior of the test.
     For example: test_<storage_name>_<reader/writer>_...
@@ -15,11 +15,17 @@ class TestIntegrationONETLHive:
     The name of the test will be given to the test table.
     """
 
-    def test_hive_reader_snapshot(self, spark, processing, prepare_schema_table):
-        hive = Hive(spark=spark)
+    def test_clickhouse_reader_snapshot(self, spark, processing, prepare_schema_table):
+        clickhouse = Clickhouse(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
 
         reader = DBReader(
-            connection=hive,
+            connection=clickhouse,
             table=prepare_schema_table.full_name,
         )
 
@@ -31,13 +37,19 @@ class TestIntegrationONETLHive:
             df=df,
         )
 
-    def test_hive_writer_snapshot(self, spark, processing, prepare_schema_table):
-        df = processing.create_spark_df(spark)
+    def test_clickhouse_writer_snapshot(self, spark, processing, prepare_schema_table):
+        df = processing.create_spark_df(spark=spark)
 
-        hive = Hive(spark=spark)
+        clickhouse = Clickhouse(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
 
         writer = DBWriter(
-            connection=hive,
+            connection=clickhouse,
             table=prepare_schema_table.full_name,
         )
 

@@ -43,6 +43,11 @@ ENV TZ=${TZ} \
     ONETL_ORA_CONN_DATABASE=onetl \
     ONETL_ORA_CLIENT_PATH=/usr/lib/oracle/21/client64/lib \
     ONETL_ORA_CONN_SID=XE \
+    ONETL_CH_CONN_USER=default \
+    ONETL_CH_CONN_HOST=clickhouse \
+    ONETL_CH_CONN_PASSWORD="" \
+    ONETL_CH_CONN_PORT=9000 \
+    ONETL_CH_CONN_DATABASE=default \
     MTSPARK_CUSTOM_CONFIG_PATH=/opt/project/tests/config.yml
 
 COPY --from=wheel_builder /opt/build_dir/dist/ /opt/build_dir/dist/

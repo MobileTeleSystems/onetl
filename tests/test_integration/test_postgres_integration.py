@@ -7,8 +7,14 @@ from onetl.writer.db_writer import DBWriter
 
 
 class TestIntegrationONETLPostgres:
-    # test_<storage_name>_<reader/writer>_...
-    # reader - create + autofill source table, writer - just create table
+    """
+    The test name affects how the test works: the second and third words define the behavior of the test.
+    For example: test_<storage_name>_<reader/writer>_...
+    <storage_name> - the name of the database in which the table will be pre-created.
+    <reader/writer> - if reader is specified then the table will be pre-created and filled with test data,
+    if writer is specified then only preliminary table creation will be performed.
+    The name of the test will be given to the test table.
+    """
 
     def test_postgres_reader_snapshot(self, spark, processing, prepare_schema_table):
         postgres = Postgres(

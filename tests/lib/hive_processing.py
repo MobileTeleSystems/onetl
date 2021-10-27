@@ -34,7 +34,7 @@ class HiveProcessing(BaseProcessing):
         fields: List,
         schema: str,
     ) -> None:
-        str_fields = ", ".join([f"{f['column_name']} {f['type']}" for f in fields])
+        str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
         self.connection.sql(f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) STORED AS ORC")
 
     def drop_database(

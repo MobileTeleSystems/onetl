@@ -65,10 +65,10 @@ class TestDBConnection:
     def test_clickhouse_driver_and_uri(self):
         conn = Clickhouse(host="some_host", user="user", password="passwd")
 
-        assert conn.url == "jdbc:clickhouse://some_host:9000/default"
+        assert conn.url == "jdbc:clickhouse://some_host:8123/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
-        assert Clickhouse.port == 9000
+        assert Clickhouse.port == 8123
 
     def test_empty_connection(self):
         conn = Hive()
