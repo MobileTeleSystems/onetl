@@ -49,7 +49,11 @@ class DBReader:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
             user="your_user",
@@ -68,7 +72,11 @@ class DBReader:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
             user="your_user",
@@ -88,7 +96,11 @@ class DBReader:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
             user="your_user",
@@ -116,6 +128,7 @@ class DBReader:
         from mtspark import get_spark
 
         spark = get_spark({"appName": "spark-app-name"})
+
         hive = Hive(spark=spark)
 
         reader = DBReader(

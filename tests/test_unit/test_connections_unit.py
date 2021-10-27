@@ -16,6 +16,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:oracle:thin:@some_host:1521:PE"
         assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
+        assert Oracle.package == "com.oracle:ojdbc7:12.1.0.2"
         assert Oracle.port == 1521
 
     def test_oracle_uri_with_service_name(self):
@@ -34,6 +35,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:postgresql://some_host:5432/default"
         assert Postgres.driver == "org.postgresql.Driver"
+        assert Postgres.package == "org.postgresql:postgresql:42.2.5"
         assert Postgres.port == 5432
 
     def test_teradata_driver_and_uri(self):
@@ -41,6 +43,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
         assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
+        assert Teradata.package == "com.teradata.jdbc:terajdbc4:16.20.00.10"
         assert Teradata.port == 1025
 
     def test_mysql_driver_and_uri(self):
@@ -48,6 +51,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
         assert MySQL.driver == "com.mysql.jdbc.Driver"
+        assert MySQL.package == "mysql:mysql-connector-java:5.1.8"
         assert MySQL.port == 3306
 
     def test_mssql_driver_and_uri(self):
@@ -55,6 +59,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:sqlserver://some_host:1433;databaseName=default;characterEncoding=UTF-8"
         assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+        assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
         assert MSSQL.port == 1433
 
     def test_clickhouse_driver_and_uri(self):
@@ -62,6 +67,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:clickhouse://some_host:9000/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
+        assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
         assert Clickhouse.port == 9000
 
     def test_empty_connection(self):

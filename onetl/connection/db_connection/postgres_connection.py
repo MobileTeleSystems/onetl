@@ -35,7 +35,11 @@ class Postgres(DBConnection):
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
             user="appmetrica_test",
@@ -47,6 +51,7 @@ class Postgres(DBConnection):
     """
 
     driver: str = field(init=False, default="org.postgresql.Driver")
+    package: str = field(init=False, default="org.postgresql:postgresql:42.2.5")
     port: int = 5432
 
     @property

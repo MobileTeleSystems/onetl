@@ -38,8 +38,12 @@ class MySQL(DBConnection):
         from onetl.connection.db_connection import MySQL
         from mtspark import get_spark
 
-        extra = "some_extra": "..."
-        spark = get_spark({"appName": "spark-app-name"})
+        extra = {"some_extra": "..."}
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": MySQL.package,
+        })
 
         mysql = MySQL(
             host="mysql0012.dmz.msk.mts.ru",
@@ -52,6 +56,7 @@ class MySQL(DBConnection):
     """
 
     driver: str = field(init=False, default="com.mysql.jdbc.Driver")
+    package: str = field(init=False, default="mysql:mysql-connector-java:5.1.8")
     port: int = 3306
 
     @property

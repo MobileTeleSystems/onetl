@@ -57,8 +57,18 @@ class DBWriter:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark(...)
-        postgres = Postgres(...)
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
+        postgres = Postgres(
+            host="test-db-vip.msk.mts.ru",
+            user="your_user",
+            password="***",
+            database="target_db",
+            spark=spark,
+        )
 
          writer = DBWriter(
           connection=postgres,
@@ -73,8 +83,19 @@ class DBWriter:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark(...)
-        postgres = Postgres(...)
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
+        postgres = Postgres(
+            host="test-db-vip.msk.mts.ru",
+            user="your_user",
+            password="***",
+            database="target_db",
+            spark=spark,
+        )
+
         jdbc_options = {"truncate": "true", "batchsize": 1000}
 
         writer = DBWriter(
@@ -91,8 +112,19 @@ class DBWriter:
         from onetl.connection.db_connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark(...)
-        postgres = Postgres(...)
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Postgres.package,
+        })
+
+        postgres = Postgres(
+            host="test-db-vip.msk.mts.ru",
+            user="your_user",
+            password="***",
+            database="target_db",
+            spark=spark,
+        )
+
         jdbc_options = {"truncate": "true", "batchsize": 1000}
 
         writer = DBWriter(
@@ -110,7 +142,7 @@ class DBWriter:
         from onetl.connection.db_connection import Hive
         from mtspark import get_spark
 
-        spark = get_spark(...)
+        spark = get_spark({"appName": "spark-app-name"})
         hive = Hive(spark=spark)
 
         writer = DBWriter(

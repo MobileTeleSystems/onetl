@@ -49,7 +49,11 @@ class Oracle(DBConnection):
         from onetl.connection.db_connection import Oracle
         from mtspark import get_spark
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Oracle.package,
+        })
+
         oracle = Oracle(
             host="bill.ug.mts.ru",
             user="BD_TECH_ETL",
@@ -61,6 +65,7 @@ class Oracle(DBConnection):
     """
 
     driver: str = field(init=False, default="oracle.jdbc.driver.OracleDriver")
+    package: str = field(init=False, default="com.oracle:ojdbc7:12.1.0.2")
     port: int = 1521
     sid: Optional[str] = None
     service_name: Optional[str] = None

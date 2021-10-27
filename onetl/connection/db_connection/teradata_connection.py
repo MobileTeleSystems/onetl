@@ -44,7 +44,11 @@ class Teradata(DBConnection):
           "CHARSET": "UTF8",
           "LOGMECH":"LDAP",
         }
-        spark = get_spark({"appName": "spark-app-name"})
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Teradata.package,
+        })
 
         teradata = Teradata(
             host="0411td-rnd.pv.mts.ru",
@@ -57,6 +61,8 @@ class Teradata(DBConnection):
     """
 
     driver: str = field(init=False, default="com.teradata.jdbc.TeraDriver")
+    # TODO: think about workaround for case with several jar packages
+    package: str = field(init=False, default="com.teradata.jdbc:terajdbc4:16.20.00.10")
     port: int = 1025
 
     @property
