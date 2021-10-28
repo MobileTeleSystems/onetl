@@ -2,15 +2,13 @@ import os
 import logging
 from time import sleep
 import secrets
-from typing import Union, Dict, List
+from typing import Dict
 from collections import namedtuple
 
-# noinspection PyPackageRequirements
 import pytest
 
 # noinspection PyPackageRequirements
 from pyhive import hive
-from hdfs import InsecureClient
 
 from mtspark import get_spark
 from tests.lib.postgres_processing import PostgressProcessing
@@ -19,14 +17,10 @@ from tests.lib.oracle_processing import OracleProcessing
 
 from tests.lib.mock_sftp_server import MockSFtpServer
 
-LOG = logging.getLogger(__name__)
-ConnectionType = Union["pyspark.sql.SparkSession", "psycopg2.extensions.connection"]
+log = logging.getLogger(__name__)
 
 # ****************************Environment Variables*****************************
 SELF_PATH = os.path.abspath(os.path.dirname(__file__))
-
-HDFS_PORT = "50070"
-DOCKER_HOST = "host.docker.internal"
 
 
 @pytest.fixture(scope="session")
@@ -92,12 +86,6 @@ def hive_client():
     client.close()
 
 
-@pytest.fixture(scope="session")
-def hdfs_client():
-    client = InsecureClient(f"http://{DOCKER_HOST}:{HDFS_PORT}")  # NOSONAR
-    yield client
-
-
 @pytest.fixture()
 def processing(request, spark):
     storage_matching: Dict = {
@@ -113,9 +101,10 @@ def processing(request, spark):
     db_processing = storage_matching[db_storage_name]
 
     if db_storage_name == "hive":
-        return db_processing(spark)
-
-    return db_processing()
+        yield db_processing(spark)
+    else:
+        with db_processing() as result:
+            yield result
 
 
 @pytest.fixture()
@@ -128,7 +117,6 @@ def prepare_schema_table(processing, request, spark):
 
     storages = ["postgres", "hive", "oracle"]
     entities = ["reader", "writer"]
-    column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime"]
 
     test_function = request.function
 
@@ -138,9 +126,9 @@ def prepare_schema_table(processing, request, spark):
     columns_and_types = [
         {
             "column_name": column_name,
-            "type": processing.get_column_types_and_names_matching()[column_name],
+            "type": processing.get_column_type(column_name),
         }
-        for column_name in column_names
+        for column_name in processing.column_names
     ]
 
     if db_storage_name == "hive" and not spark:
@@ -158,12 +146,11 @@ def prepare_schema_table(processing, request, spark):
                 processing.insert_data(
                     schema=schema,
                     table=table,
-                    field_names=columns_and_types,
                     values=processing.create_pandas_df(),
                 )
 
         except Exception as error:
-            LOG.exception(error)
+            log.exception(error)
             raise error
 
         PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "table", "schema"])
@@ -174,17 +161,3 @@ def prepare_schema_table(processing, request, spark):
             table=table,
             schema=schema,
         )
-
-        processing.stop_conn()
-
-
-if __name__ == "__main__":
-    pytest.main(
-        [
-            "--verbose",
-            "-s",
-            "-c",
-            "pytest.ini",
-            os.environ.get("X-TEST-TARGET", "tests"),
-        ],
-    )

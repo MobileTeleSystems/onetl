@@ -45,7 +45,7 @@ services:
     - onetl
     hostname: oracle
     depends_on:
-      - postgres
+    - postgres
 
 networks:
   onetl:

@@ -4,12 +4,12 @@ from typing import List, Optional
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from tests.lib.storage_abc import StorageABC, ConnectionType
+from tests.lib.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
 
-class HiveProcessing(StorageABC):
+class HiveProcessing(BaseProcessing):
 
     _column_types_and_names_matching = {
         "id_int": "int",
@@ -50,15 +50,10 @@ class HiveProcessing(StorageABC):
     ) -> None:
         self.connection.sql(f"DROP TABLE IF EXISTS {schema}.{table}")
 
-    def get_conn(self) -> ConnectionType:
-        # connection is spark
-        """"""
-
     def insert_data(
         self,
         schema: str,
         table: str,
-        field_names: List,
         values: List,
     ) -> None:
 
@@ -88,12 +83,11 @@ class HiveProcessing(StorageABC):
         table: str,
     ) -> "pandas.core.frame.DataFrame":
         df_listed = self.connection.read.table(f"{schema}.{table}").collect()
-        column_names = StorageABC.get_column_names()
-        values = {column_name: [] for column_name in column_names}
+        values = {column_name: [] for column_name in self.column_names}
 
         for row in df_listed:
             for idx, _ in enumerate(row):
                 # Row(id=1, text='hello') -> values = ['id':[1], 'text': ['hello']]
-                values[column_names[idx]].append(row[idx])
+                values[self.column_names[idx]].append(row[idx])
 
         return pd.DataFrame(data=values)

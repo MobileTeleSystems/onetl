@@ -3,16 +3,17 @@ from typing import List, Optional
 import os
 
 from psycopg2 import connect as pg_connect
+from psycopg2.extensions import connection
 import pandas as pd
 from pandas.io import sql as psql
 from pandas.util.testing import assert_frame_equal
 
-from tests.lib.storage_abc import ConnectionType, StorageABC
+from tests.lib.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
 
-class PostgressProcessing(StorageABC):
+class PostgressProcessing(BaseProcessing):
 
     _column_types_and_names_matching = {
         "id_int": "serial primary key",
@@ -22,8 +23,13 @@ class PostgressProcessing(StorageABC):
         "hwm_datetime": "timestamp",
     }
 
-    def __init__(self):
+    def __enter__(self):
         self.connection = self.get_conn()
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        self.connection.close()
+        return False
 
     @property
     def user(self) -> str:
@@ -85,14 +91,13 @@ class PostgressProcessing(StorageABC):
             cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
             self.connection.commit()
 
-    def get_conn(self) -> ConnectionType:
+    def get_conn(self) -> connection:
         return pg_connect(self.url)
 
     def insert_data(
         self,
         schema: str,
         table: str,
-        field_names: List,
         values: "pandas.core.frame.DataFrame",
     ) -> None:
 
@@ -106,9 +111,6 @@ class PostgressProcessing(StorageABC):
             schema=schema,
             if_exists="append",
         )
-
-    def stop_conn(self) -> None:
-        self.connection.close()
 
     def assert_equal_df(
         self,

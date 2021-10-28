@@ -4,6 +4,9 @@ certifi==2021.5.30
 cffi==1.14.6
 charset-normalizer==2.0.6
 coverage==4.5.4
+
+# Oracle client
+cx_Oracle
 freezegun
 future
 hdfs[avro,dataframe,kerberos]>2
@@ -19,9 +22,6 @@ pyspark < 3
 pytest==6.2.5
 pytest-cov==2.10.1
 pyyaml>5
-
-# Oracle client
-cx_Oracle
 
 # May be needed for testing:
 sasl
