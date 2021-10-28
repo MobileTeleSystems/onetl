@@ -41,7 +41,11 @@ class MSSQL(DBConnection):
         from mtspark import get_spark
 
         extra = {"connectRetryCount": 3, "connectRetryInterval": 10}
-        spark = get_spark({"appName": "spark-app-name"})
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": MSSQL.package,
+        })
 
         mssql = MSSQL(
             host="0001MSSQLDB02.dmz.msk.mts.ru",
@@ -54,6 +58,7 @@ class MSSQL(DBConnection):
     """
 
     driver: str = field(init=False, default="com.microsoft.sqlserver.jdbc.SQLServerDriver")
+    package: str = field(init=False, default="com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8")
     port: int = 1433
 
     @property

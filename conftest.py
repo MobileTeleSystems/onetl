@@ -13,6 +13,7 @@ from pyhive import hive
 from hdfs import InsecureClient
 
 from mtspark import get_spark
+from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, MSSQL, Teradata
 from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.oracle_processing import OracleProcessing
@@ -77,7 +78,14 @@ def get_mtspark_session():
     spark = get_spark(
         config={
             "appName": "onetl",
-            "spark.jars.packages": True,
+            "spark.jars.packages": [
+                Oracle.package,
+                Clickhouse.package,
+                Postgres.package,
+                MySQL.package,
+                MSSQL.package,
+                Teradata.package,
+            ],
         },
         fix_pyspark=False,
     )

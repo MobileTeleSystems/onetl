@@ -40,7 +40,11 @@ class Clickhouse(DBConnection):
         from mtspark import get_spark
 
         extra = {"ssl": True, "sslmode": "none"}
-        spark = get_spark({"appName": "spark-app-name"})
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": Clickhouse.package,
+        })
 
         clickhouse = Clickhouse(
             host="clickhouse-sbl-dev.msk.bd-cloud.mts.ru",
@@ -53,6 +57,7 @@ class Clickhouse(DBConnection):
     """
 
     driver: str = field(init=False, default="ru.yandex.clickhouse.ClickHouseDriver")
+    package: str = field(init=False, default="ru.yandex.clickhouse:clickhouse-jdbc:0.2.4")
     port: int = 9000
 
     @property
