@@ -93,7 +93,7 @@ def sftp_files(sftp_client, sftp_server, resource_path):
                 has_files = True
                 local_filename = os.path.join(dir_path, filename)
                 remote_filename = posixpath.join(remote_dir, filename)
-                LOG.info(f"Copying {local_filename} to {remote_filename}")
+                log.info(f"Copying {local_filename} to {remote_filename}")
                 sftp_client.put(local_filename, remote_filename)
                 remote_files.add(remote_filename)
 

@@ -22,7 +22,7 @@ def find_py(name, path):
 
 class MockSFtpServer:
     def __init__(self, homedir):
-        self.host = "localhost"
+        self.host = "127.0.0.1"
         self.port = 2222
         self.user = "user1"
         self.password = "passwd"
