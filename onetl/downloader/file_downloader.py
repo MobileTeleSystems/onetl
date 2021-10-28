@@ -1,8 +1,8 @@
-import os
-import posixpath
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
+from pathlib import Path, PosixPath
 from typing import Optional, Iterator, List
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -68,13 +68,17 @@ class FileDownloader:
     """
 
     connection: FileConnection
-    source_path: str
-    local_path: str
+    source_path: Path | str
+    local_path: Path | str
     source_file_pattern: Optional[str] = "*"
     delete_source: bool = False
     source_exclude_dirs: List = field(default_factory=list)
 
-    def remote_files_listing(self, source_path: str) -> Iterator:
+    def __post_init__(self):
+        self.source_path = PosixPath(self.source_path)
+        self.local_path = Path(self.local_path)
+
+    def remote_files_listing(self, source_path: Path | str) -> Iterator:
         log.info(f"Getting files list from remote source path: {source_path}")
 
         try:
@@ -99,11 +103,11 @@ class FileDownloader:
                     log.warning(e)
                     continue
 
-                file_path = posixpath.join(root, res_file)
+                file_path = PosixPath(root) / res_file
                 log.info(f"Add file: {file_path}")
                 yield file_path
 
-    def run(self) -> List[str]:  # noqa: WPS231
+    def run(self) -> List[Path]:  # noqa: WPS231
         """
         Method for downloading files from source to local directory.
 
@@ -130,8 +134,8 @@ class FileDownloader:
 
         for remote_file_path in self.remote_files_listing(self.source_path):
             try:
-                path, filename = os.path.split(remote_file_path)
-                local_file_path = posixpath.join(self.local_path, filename)
+                filename = remote_file_path.name
+                local_file_path = PosixPath(self.local_path) / filename
 
                 # Download
                 self.connection.download_file(remote_file_path, local_file_path)
@@ -140,7 +144,7 @@ class FileDownloader:
                 if self.delete_source:
                     self.connection.remove_file(remote_file_path)
 
-                file_size = os.path.getsize(local_file_path)
+                file_size = local_file_path.stat().st_size
 
             except Exception as e:
                 last_exception = e

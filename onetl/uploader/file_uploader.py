@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import uuid
 import os
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Optional, List
+from pathlib import Path, PosixPath
+from typing import List
 
 from onetl.connection.file_connection.file_connection import FileConnection
 
@@ -58,22 +61,25 @@ class FileUploader:
     """
 
     connection: FileConnection
-    target_path: str
+    target_path: str | os.PathLike
     # Remote temporary path to upload files
-    temp_path: Optional[str] = "/tmp/{}"  # NOSONAR
+    temp_path: str | os.PathLike | None = "/tmp/{}"  # NOSONAR
 
-    def run(self, files_list: List[str]) -> List[str]:
+    def __post_init__(self):
+        self.target_path = PosixPath(self.target_path)
+
+    def run(self, files_list: List[str | os.PathLike]) -> List[Path]:
         """
         Method for uploading files to remote host.
 
         Params
         -------
-        files_list : List[str]
+        files_list : List[str | os.PathLike]
             List of files on local storage
 
         Returns
         -------
-        uploaded_files : List[str]
+        uploaded_files : List[Path]
             List of uploaded files
 
         Examples
@@ -102,9 +108,9 @@ class FileUploader:
 
         for count, file_path in enumerate(files_list):
             log.info(f"Processing {count + 1} of {len(files_list)} ")
-            path, filename = os.path.split(file_path)
-            tmp_file = os.path.join(current_temp_dir, filename)
-            target_file = os.path.join(self.target_path, filename)
+            filename = Path(file_path).name
+            tmp_file = PosixPath(current_temp_dir) / filename
+            target_file = self.target_path / filename
             try:
                 self.connection.upload_file(file_path, tmp_file)
 

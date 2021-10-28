@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from functools import wraps
-import posixpath
+from pathlib import PosixPath, Path
+import os
 from typing import Optional, Any, List, Callable, Generator
 from logging import getLogger
 
@@ -42,11 +45,11 @@ class FileConnection(ConnectionABC):
         return self.get_client()
 
     @abstractmethod
-    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
+    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         """"""
 
     @abstractmethod
-    def remove_file(self, remote_file_path: str) -> None:
+    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         """"""
 
     @abstractmethod
@@ -54,27 +57,27 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def get_name(self, item) -> str:
+    def get_name(self, item) -> Path:
         """"""
 
     @abstractmethod
-    def path_exists(self, path: str) -> bool:
+    def path_exists(self, path: os.PathLike | str) -> bool:
         """"""
 
     @abstractmethod
-    def mkdir(self, path: str) -> str:
+    def mkdir(self, path: os.PathLike | str) -> None:
         """"""
 
     @abstractmethod
-    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> str:
+    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         """"""
 
-    def listdir(self, path: str) -> List[str]:
+    def listdir(self, path: os.PathLike | str) -> List[Path]:
         return [self.get_name(item) for item in self._listdir(path)]
 
     def walk(
         self,
-        top: str,
+        top: os.PathLike | str,
         topdown: bool = True,
         onerror: Callable = None,
         exclude_dirs: List[str] = None,
@@ -95,7 +98,7 @@ class FileConnection(ConnectionABC):
         dirs, nondirs = [], []
         for item in items:
             name = self.get_name(item)
-            full_name = posixpath.join(top, name)
+            full_name = PosixPath(top) / name
             if self.is_dir(top, item):
                 if not self.excluded_dir(full_name, exclude_dirs):
                     dirs.append(name)
@@ -104,19 +107,19 @@ class FileConnection(ConnectionABC):
         if topdown:
             yield top, dirs, nondirs
         for name in dirs:
-            path = posixpath.join(top, name)
+            path = PosixPath(top) / name
             yield from self.walk(path, topdown, onerror, exclude_dirs)
         if not topdown:
             yield top, dirs, nondirs
 
-    def rename(self, source: str, target: str) -> None:
+    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         """"""
 
-    def rmdir(self, path: str, recursive: bool = False) -> None:
+    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if recursive:
             for file in self._listdir(path):
                 name = self.get_name(file)
-                full_name = posixpath.join(path, name)
+                full_name = PosixPath(path) / name
 
                 if self.is_dir(path, file):
                     self.rmdir(full_name, recursive=True)
@@ -124,15 +127,15 @@ class FileConnection(ConnectionABC):
                     self.remove_file(full_name)
             self.rmdir(path)
         else:
-            self.client.rmdir(path)
+            self.client.rmdir(os.fspath(path))
             log.info(f"Successfully removed path {path}")
 
-    def excluded_dir(self, full_name: str, exclude_dirs: List) -> bool:
+    def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: List[os.PathLike | str]) -> bool:
         for exclude_dir in exclude_dirs:
-            if exclude_dir == full_name:
+            if PosixPath(exclude_dir) == PosixPath(full_name):
                 return True
         return False
 
     @abstractmethod
-    def _listdir(self, path: str) -> List:
+    def _listdir(self, path: os.PathLike) -> List:
         """"""

@@ -1,6 +1,9 @@
-import posixpath
+from __future__ import annotations
+
+import os
 from logging import getLogger
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Union, Optional
 
 from hdfs import InsecureClient, HdfsError
@@ -86,39 +89,39 @@ class HDFS(FileConnection, KerberosMixin):
         client.status("/")
         return client
 
-    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
+    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         return self.client.download(remote_file_path, local_file_path)
 
-    def remove_file(self, remote_file_path: str) -> None:
+    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         if not self.path_exists(remote_file_path):
             raise HdfsError(f"{remote_file_path} doesn`t exists")
         self.client.delete(remote_file_path, recursive=False)
         log.info(f"Successfully removed file {remote_file_path}")
 
-    def is_dir(self, top: str, item: str) -> bool:
-        if self.client.status(posixpath.join(top, self.get_name(item)))["type"] == "DIRECTORY":
+    def is_dir(self, top: os.PathLike | str, item: str) -> bool:
+        if self.client.status(Path(top) / self.get_name(item))["type"] == "DIRECTORY":
             return True
 
-    def get_name(self, item: str) -> str:
-        return item
+    def get_name(self, item: str) -> Path:
+        return Path(item)
 
-    def path_exists(self, target_hdfs_path: str) -> bool:
+    def path_exists(self, target_hdfs_path: os.PathLike | str) -> bool:
         return self.client.status(target_hdfs_path, strict=False)
 
-    def mkdir(self, path: str) -> None:
+    def mkdir(self, path: os.PathLike | str) -> None:
         self.client.makedirs(path)
         log.info(f"Successfully created directory {path}")
 
-    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
+    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         self.client.upload(remote_file_path, local_file_path)
 
-    def rename(self, source: str, target: str) -> None:
+    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool = False) -> None:
+    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         self.client.delete(path, recursive=recursive)
         log.info(f"Successfully removed path {path}")
 
-    def _listdir(self, path: str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> List:
         return self.client.list(path)
