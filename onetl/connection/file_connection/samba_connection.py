@@ -91,11 +91,5 @@ class Samba(FileConnection):
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool) -> None:
-        for file in self.client.listdir():
-            self.client.unlink(file)
-        self.client.rmdir(path)
-        log.info(f"Successfully removed path {path} from SMB")
-
     def _listdir(self, path) -> List:
         return self.client.lsdir(path)

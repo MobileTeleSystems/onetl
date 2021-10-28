@@ -92,7 +92,7 @@ class HDFS(FileConnection, KerberosMixin):
     def remove_file(self, remote_file_path: str) -> None:
         if not self.path_exists(remote_file_path):
             raise HdfsError(f"{remote_file_path} doesn`t exists")
-        self.client.delete(remote_file_path, recursive=True)
+        self.client.delete(remote_file_path, recursive=False)
         log.info(f"Successfully removed file {remote_file_path}")
 
     def is_dir(self, top: str, item: str) -> bool:
@@ -116,8 +116,8 @@ class HDFS(FileConnection, KerberosMixin):
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool) -> None:
-        self.client.delete(path, recursive=True)
+    def rmdir(self, path: str, recursive: bool = False) -> None:
+        self.client.delete(path, recursive=recursive)
         log.info(f"Successfully removed path {path}")
 
     def _listdir(self, path: str) -> List:

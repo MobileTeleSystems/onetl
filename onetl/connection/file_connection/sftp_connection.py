@@ -133,10 +133,6 @@ class SFTP(FileConnection):
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool) -> None:
-        self.client.rmdir(path)
-        log.info(f"Successfully removed path {path}")
-
     def parse_user_ssh_config(self, key_file):
         user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
         host_proxy = None

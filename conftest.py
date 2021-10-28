@@ -1,6 +1,7 @@
 import os
 import logging
 from time import sleep
+import posixpath
 import secrets
 from typing import Union, Dict, List
 from collections import namedtuple
@@ -13,6 +14,7 @@ from pyhive import hive
 from hdfs import InsecureClient
 
 from mtspark import get_spark
+from onetl.connection.file_connection import SFTP
 from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, MSSQL, Teradata
 from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
@@ -71,6 +73,41 @@ def sftp_client(sftp_server):
     yield sftp_client_started
     sftp_client_started.close()
     ssh_client_started.close()
+
+
+# TODO:(@mivasil6) refactor later
+@pytest.fixture(scope="function")  # noqa: WPS231
+def sftp_files(sftp_client, sftp_server, resource_path):
+    sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+
+    remote_files = set()
+    remote_path = "/export/news_parse"
+    sftp_client.chdir("/")
+    # Create remote directory if it doesn't exist
+
+    has_files = False
+    if os.path.isdir(resource_path):
+        sftp.mkdir(remote_path)
+        for dir_path, dir_names, file_names in os.walk(resource_path):
+            rel_local = os.path.relpath(dir_path, resource_path).replace("\\", "/")
+            remote_dir = posixpath.abspath(posixpath.join(remote_path, rel_local))
+
+            for sub_dir in dir_names:
+                sftp.mkdir(posixpath.join(remote_dir, sub_dir))
+
+            for filename in file_names:
+                has_files = True
+                local_filename = os.path.join(dir_path, filename)
+                remote_filename = posixpath.join(remote_dir, filename)
+                LOG.info(f"Copying {local_filename} to {remote_filename}")
+                sftp_client.put(local_filename, remote_filename)
+                remote_files.add(remote_filename)
+
+        if not has_files:
+            raise RuntimeError(
+                f"Could not load file examples from {resource_path}. Path should be exists and should contain samples",
+            )
+    return remote_files
 
 
 @pytest.fixture(scope="session", name="spark")

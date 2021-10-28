@@ -3,8 +3,11 @@ from dataclasses import dataclass, field
 from functools import wraps
 import posixpath
 from typing import Optional, Any, List, Callable, Generator
+from logging import getLogger
 
 from onetl.connection import ConnectionABC
+
+log = getLogger(__name__)
 
 
 # Workaround for cached_property
@@ -109,8 +112,20 @@ class FileConnection(ConnectionABC):
     def rename(self, source: str, target: str) -> None:
         """"""
 
-    def rmdir(self, path: str, recursive: bool) -> None:
-        """"""
+    def rmdir(self, path: str, recursive: bool = False) -> None:
+        if recursive:
+            for file in self._listdir(path):
+                name = self.get_name(file)
+                full_name = posixpath.join(path, name)
+
+                if self.is_dir(path, file):
+                    self.rmdir(full_name, recursive=True)
+                else:
+                    self.remove_file(full_name)
+            self.rmdir(path)
+        else:
+            self.client.rmdir(path)
+            log.info(f"Successfully removed path {path}")
 
     def excluded_dir(self, full_name: str, exclude_dirs: List) -> bool:
         for exclude_dir in exclude_dirs:

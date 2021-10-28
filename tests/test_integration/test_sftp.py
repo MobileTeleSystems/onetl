@@ -4,9 +4,6 @@ from logging import getLogger
 import os
 import tempfile
 
-# noinspection PyPackageRequirements
-import pytest
-
 from onetl.connection.file_connection import SFTP
 from onetl.downloader import FileDownloader
 from onetl.uploader import FileUploader
@@ -30,41 +27,6 @@ def sftp_walk(sftp, remote_path):
     for folder in folders:
         new_path = posixpath.join(remote_path, folder)
         yield from sftp_walk(sftp, new_path)
-
-
-# TODO:(@mivasil6) refactor later
-@pytest.fixture(scope="module")  # noqa: WPS231
-def sftp_files(sftp_client, sftp_server, resource_path):
-    sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
-
-    remote_files = set()
-    remote_path = "/export/news_parse"
-    sftp_client.chdir("/")
-    # Create remote directory if it doesn't exist
-
-    has_files = False
-    if os.path.isdir(resource_path):
-        sftp.mkdir(remote_path)
-        for dir_path, dir_names, file_names in os.walk(resource_path):
-            rel_local = os.path.relpath(dir_path, resource_path).replace("\\", "/")
-            remote_dir = posixpath.abspath(posixpath.join(remote_path, rel_local))
-
-            for sub_dir in dir_names:
-                sftp.mkdir(posixpath.join(remote_dir, sub_dir))
-
-            for filename in file_names:
-                has_files = True
-                local_filename = os.path.join(dir_path, filename)
-                remote_filename = posixpath.join(remote_dir, filename)
-                LOG.info(f"Copying {local_filename} to {remote_filename}")
-                sftp_client.put(local_filename, remote_filename)
-                remote_files.add(remote_filename)
-
-        if not has_files:
-            raise RuntimeError(
-                f"Could not load file examples from {resource_path}. Path should be exists and should contain samples",
-            )
-    return remote_files
 
 
 class TestDownloader:
