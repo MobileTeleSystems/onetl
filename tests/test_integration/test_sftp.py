@@ -1,6 +1,7 @@
 from stat import S_ISDIR
 import posixpath
 from logging import getLogger
+from pathlib import PosixPath
 import os
 import tempfile
 
@@ -29,7 +30,7 @@ def sftp_walk(sftp, remote_path):
         yield from sftp_walk(sftp, new_path)
 
 
-class TestDownloader:
+class TestSFTP:
     def test_downloader_local_path(self, sftp_files, sftp_server, sftp_source_path, test_file_name, test_file_path):
         ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
@@ -42,7 +43,7 @@ class TestDownloader:
             )
 
             files = downloader.run()
-            assert files == [posixpath.join(local_path, test_file_name)]
+            assert files == [PosixPath(local_path) / test_file_name]
             # compare size of files
             assert os.path.getsize(test_file_path) == os.path.getsize(os.path.join(local_path, test_file_name))
             # compare files
@@ -74,10 +75,9 @@ class TestDownloader:
 
             files = downloader.run()
 
-            assert os.path.join(local_path, "file_1.txt") in files
-            assert os.path.join(local_path, "file_5.txt") not in files
+            assert PosixPath(local_path) / "file_1.txt" in files
+            assert PosixPath(local_path) / "file_5.txt" not in files
 
-    # TODO: сделать тесты атомарными
     def test_downloader_delete_source(self, sftp_client, sftp_files, sftp_server, sftp_source_path):
         ftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:
@@ -108,4 +108,4 @@ class TestDownloader:
         ]
 
         uploaded_files = uploader.run(files)
-        assert uploaded_files == [f"/tmp/test_upload/{test_file_name}"]
+        assert uploaded_files == [PosixPath("/tmp/test_upload") / test_file_name]

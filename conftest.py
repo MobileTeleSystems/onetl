@@ -4,6 +4,7 @@ from time import sleep
 import posixpath
 import secrets
 from typing import Dict
+from pathlib import Path
 from collections import namedtuple
 
 import pytest
@@ -42,12 +43,12 @@ def sftp_server():
 
 @pytest.fixture(scope="session")
 def resource_path():
-    return os.path.join(os.path.dirname(__file__), "tests", "resources", "src")
+    return Path(__file__).parent / "tests" / "resources" / "src"
 
 
 @pytest.fixture(scope="session")
 def test_file_path(resource_path, test_file_name):
-    return os.path.join(resource_path, "news_parse_zp", "2018_03_05_10_00_00", test_file_name)
+    return resource_path / "news_parse_zp" / "2018_03_05_10_00_00" / test_file_name
 
 
 @pytest.fixture(scope="session")

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
-import posixpath
 from dataclasses import dataclass
 from logging import getLogger
+from pathlib import PosixPath
 from stat import S_ISDIR
 from typing import List, Optional
 
@@ -94,43 +96,43 @@ class SFTP(FileConnection):
     def is_dir(self, top, item) -> bool:
         return S_ISDIR(item.st_mode)
 
-    def get_name(self, item) -> str:
-        return item.filename
+    def get_name(self, item) -> str | PosixPath:
+        return PosixPath(item.filename)
 
-    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
-        self.client.get(remote_file_path, local_file_path)
+    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+        self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
         log.info(f"Successfully download file {remote_file_path} remote SFTP to {local_file_path}")
 
-    def remove_file(self, remote_file_path: str) -> None:
-        self.client.remove(remote_file_path)
+    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        self.client.remove(os.fspath(remote_file_path))
         log.info(f"Successfully removed file {remote_file_path}")
 
-    def path_exists(self, path: str) -> bool:
+    def path_exists(self, path: os.PathLike | str) -> bool:
         try:
-            self.client.stat(path)
+            self.client.stat(os.fspath(path))
             return True
         except FileNotFoundError:
             return False
 
-    def mkdir(self, path: str) -> None:
+    def mkdir(self, path: os.PathLike | str) -> None:
         try:
-            self.client.stat(path)
+            self.client.stat(os.fspath(path))
         except Exception:
             abs_path = "/"
-            for directory in path.strip(posixpath.sep).split(posixpath.sep):
-                abs_path = posixpath.join(abs_path, directory)
+            for directory in PosixPath(path).parts:
+                abs_path = PosixPath(abs_path) / directory
                 try:  # noqa: WPS505
-                    self.client.stat(abs_path)
+                    self.client.stat(os.fspath(abs_path))
                 except Exception:
-                    self.client.mkdir(abs_path)
+                    self.client.mkdir(os.fspath(abs_path))
         log.info(f"Successfully created dir {path}")
 
-    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
-        self.client.put(local_file_path, remote_file_path)
+    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
         log.info(f"Successfully uploaded _file from {local_file_path} to remote SFTP {remote_file_path}")
 
-    def rename(self, source: str, target: str) -> None:
-        self.client.rename(source, target)
+    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+        self.client.rename(os.fspath(source), os.fspath(target))
         log.info(f"Successfully renamed file {source} to {target}")
 
     def parse_user_ssh_config(self, key_file):
@@ -148,5 +150,5 @@ class SFTP(FileConnection):
 
         return host_proxy, key_file
 
-    def _listdir(self, path: str) -> List:
-        return self.client.listdir_attr(path)
+    def _listdir(self, path: os.PathLike | str) -> List:
+        return self.client.listdir_attr(os.fspath(path))

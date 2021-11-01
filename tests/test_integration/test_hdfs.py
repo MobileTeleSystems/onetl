@@ -1,6 +1,7 @@
 from logging import getLogger
 import os
 import tempfile
+from pathlib import Path, PosixPath
 from unittest.mock import patch
 
 
@@ -30,13 +31,13 @@ class TestHDFS:
         ]
 
         uploaded_files = uploader.run(files)
-        assert uploaded_files == [f"/user/onetl/test_upload/{test_file_name}"]
+        assert uploaded_files == [PosixPath("/user/onetl/test_upload") / test_file_name]
         hdfs.rmdir("/user/onetl/test_upload", True)
 
     def test_hdfs_file_downloader(self, test_file_path, test_file_name):
         hdfs = HDFS(host="hive2", port=50070)
         hdfs.client.upload(
-            os.path.join("/user/onetl/test_download", test_file_name),
+            Path("/user/onetl/test_download") / test_file_name,
             test_file_path,
         )
 
@@ -50,17 +51,17 @@ class TestHDFS:
 
             downloaded_files = downloader.run()
 
-            assert downloaded_files == [os.path.join(local_path, test_file_name)]
+            assert downloaded_files == [PosixPath(local_path) / test_file_name]
             # compare size of files
-            assert os.path.getsize(test_file_path) == os.path.getsize(os.path.join(local_path, test_file_name))
+            assert os.path.getsize(test_file_path) == os.path.getsize(Path(local_path) / test_file_name)
             # compare files
-            assert hashfile(test_file_path) == hashfile(os.path.join(local_path, test_file_name))
-            hdfs.rmdir("/user/onetl/test_download", True)
+            assert hashfile(test_file_path) == hashfile(Path(local_path) / test_file_name)
+            hdfs.rmdir(Path("/user/onetl/test_download"), True)
 
     def test_hdfs_file_downloader_with_delete_source(self, test_file_path, test_file_name):
         hdfs = HDFS(host="hive2", port=50070)
         hdfs.client.upload(
-            os.path.join("/user/onetl/test_delete_source", test_file_name),
+            Path("/user/onetl/test_delete_source") / test_file_name,
             test_file_path,
         )
 
@@ -75,5 +76,5 @@ class TestHDFS:
 
             downloaded_files = downloader.run()
 
-            assert downloaded_files == [os.path.join(local_path, test_file_name)]
-            assert not hdfs.path_exists(os.path.join("/user/onetl/test_delete_source", test_file_name))
+            assert downloaded_files == [PosixPath(local_path) / test_file_name]
+            assert not hdfs.path_exists(Path("/user/onetl/test_delete_source") / test_file_name)

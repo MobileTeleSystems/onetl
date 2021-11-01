@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import ftplib  # noqa: S402
-import posixpath
+from pathlib import PosixPath
+import os
 from logging import getLogger
 from dataclasses import dataclass
 from typing import List
@@ -64,40 +67,40 @@ class FTP(FileConnection):
             session_factory=session_factory,
         )
 
-    def is_dir(self, top: str, item: str) -> bool:
-        return self.client.path.isdir(posixpath.join(top, self.get_name(item)))
+    def is_dir(self, top: os.PathLike | str, item: str | os.PathLike) -> bool:
+        return self.client.path.isdir(top / self.get_name(item))
 
-    def get_name(self, item: str) -> str:
-        return item
+    def get_name(self, item: str | os.PathLike) -> PosixPath:
+        return PosixPath(item)
 
-    def download_file(self, remote_file_path: str, local_file_path: str) -> None:
+    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.download(remote_file_path, local_file_path)
         log.info(f"Successfully download file {remote_file_path} from remote SFTP to {local_file_path}")
 
-    def remove_file(self, remote_file_path: str) -> None:
+    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         self.client.remove(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path}")
 
-    def mkdir(self, path: str) -> None:
+    def mkdir(self, path: os.PathLike | str) -> None:
         self.client.mkdir(path)
         log.info(f"Successfully created directory {path}")
 
-    def path_exists(self, path: str) -> bool:
+    def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.stat(path=path, _exception_for_missing_path=False)
 
-    def upload_file(self, local_file_path: str, remote_file_path: str, *args, **kwargs) -> None:
+    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         self.client.run(local_file_path, remote_file_path)
 
-    def rename(self, source: str, target: str) -> None:
+    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def rmdir(self, path: str, recursive: bool = False) -> None:
+    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if recursive:
             self.client.rmtree(path)
         else:
             self.client.rmdir(path)
         log.info(f"Successfully deleted {path}")
 
-    def _listdir(self, path: str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> List:
         return self.client.listdir(path)
