@@ -65,6 +65,11 @@ repos:
   hooks:
   - id: pyupgrade
     args: [--py37-plus]
+- repo: https://github.com/ambv/black
+  rev: 21.10b0
+  hooks:
+  - id: black
+    language_version: python3
 - repo: https://github.com/asottile/blacken-docs
   rev: v1.10.0
   hooks:
