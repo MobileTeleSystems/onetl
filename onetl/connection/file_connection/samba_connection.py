@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import os
 from logging import getLogger
 from pathlib import Path
-from typing import List, Optional
 
 from smbclient import SambaClient
 
@@ -52,8 +51,8 @@ class Samba(FileConnection):
     """
 
     port: int = 445
-    domain: Optional[str] = None
-    schema: Optional[str] = None
+    domain: str | None = None
+    schema: str | None = None
 
     def get_client(self) -> SambaClient:
 
@@ -95,5 +94,5 @@ class Samba(FileConnection):
         self.client.rename(source, target)
         log.info(f"Successfully renamed file {source} to {target}")
 
-    def _listdir(self, path: os.PathLike | str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.lsdir(path)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from logging import getLogger
 from pathlib import Path, PosixPath
-from typing import Optional, Iterator, List
+from typing import Iterator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.downloader.downloader_helper import create_local_dir, check_pattern
@@ -70,9 +70,9 @@ class FileDownloader:
     connection: FileConnection
     source_path: Path | str
     local_path: Path | str
-    source_file_pattern: Optional[str] = "*"
+    source_file_pattern: str | None = "*"
     delete_source: bool = False
-    source_exclude_dirs: List = field(default_factory=list)
+    source_exclude_dirs: list = field(default_factory=list)
 
     def __post_init__(self):
         self.source_path = PosixPath(self.source_path)
@@ -107,7 +107,7 @@ class FileDownloader:
                 log.info(f"Add file: {file_path}")
                 yield file_path
 
-    def run(self) -> List[Path]:  # noqa: WPS231
+    def run(self) -> list[Path]:  # noqa: WPS231
         """
         Method for downloading files from source to local directory.
 

@@ -4,7 +4,6 @@ import os
 from logging import getLogger
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Union, Optional
 
 from hdfs import InsecureClient, HdfsError
 from hdfs.ext.kerberos import KerberosClient
@@ -72,10 +71,10 @@ class HDFS(FileConnection, KerberosMixin):
     """
 
     port: int = 50070
-    keytab: Optional[str] = None
-    timeout: Optional[int] = None
+    keytab: str | None = None
+    timeout: int | None = None
 
-    def get_client(self) -> Union["hdfs.ext.kerberos.KerberosClient", "hdfs.client.InsecureClient"]:
+    def get_client(self) -> hdfs.ext.kerberos.KerberosClient | hdfs.client.InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
         if self.keytab or self.password:
             self.kinit(
@@ -123,5 +122,5 @@ class HDFS(FileConnection, KerberosMixin):
         self.client.delete(path, recursive=recursive)
         log.info(f"Successfully removed path {path}")
 
-    def _listdir(self, path: os.PathLike | str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.list(path)

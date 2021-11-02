@@ -5,7 +5,6 @@ from pathlib import PosixPath
 import os
 from logging import getLogger
 from dataclasses import dataclass
-from typing import List
 
 from ftputil import FTPHost, session as ftp_session
 
@@ -48,7 +47,7 @@ class FTP(FileConnection):
 
     port: int = 21
 
-    def get_client(self) -> "ftputil.host.FTPHost":
+    def get_client(self) -> ftputil.host.FTPHost:
         """
         Returns a FTP connection object
         """
@@ -102,5 +101,5 @@ class FTP(FileConnection):
             self.client.rmdir(path)
         log.info(f"Successfully deleted {path}")
 
-    def _listdir(self, path: os.PathLike | str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir(path)

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import PosixPath, Path
 import os
-from typing import Optional, Any, List, Callable, Generator
+from typing import Any, Callable, Generator
 from logging import getLogger
 
 from onetl.connection import ConnectionABC
@@ -30,10 +30,10 @@ def cached(f):
 
 @dataclass(frozen=True)
 class FileConnection(ConnectionABC):
-    host: Optional[str] = None
-    port: Optional[int] = None
-    user: Optional[str] = None
-    password: Optional[str] = field(repr=False, default=None)
+    host: str | None = None
+    port: int | None = None
+    user: str | None = None
+    password: str | None = field(repr=False, default=None)
 
     @abstractmethod
     def get_client(self) -> Any:
@@ -72,7 +72,7 @@ class FileConnection(ConnectionABC):
     def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         """"""
 
-    def listdir(self, path: os.PathLike | str) -> List[Path]:
+    def listdir(self, path: os.PathLike | str) -> list[Path]:
         return [self.get_name(item) for item in self._listdir(path)]
 
     def walk(
@@ -80,8 +80,8 @@ class FileConnection(ConnectionABC):
         top: os.PathLike | str,
         topdown: bool = True,
         onerror: Callable = None,
-        exclude_dirs: List[str] = None,
-    ) -> Generator[str, List[str], List[str]]:
+        exclude_dirs: list[str] = None,
+    ) -> Generator[str, list[str], list[str]]:
         """
         Iterate over directory tree and return a tuple (dirpath,
         dirnames, filenames) on each iteration, like the `os.walk`
@@ -130,12 +130,12 @@ class FileConnection(ConnectionABC):
             self.client.rmdir(os.fspath(path))
             log.info(f"Successfully removed path {path}")
 
-    def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: List[os.PathLike | str]) -> bool:
+    def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: list[os.PathLike | str]) -> bool:
         for exclude_dir in exclude_dirs:
             if PosixPath(exclude_dir) == PosixPath(full_name):
                 return True
         return False
 
     @abstractmethod
-    def _listdir(self, path: os.PathLike) -> List:
+    def _listdir(self, path: os.PathLike) -> list:
         """"""

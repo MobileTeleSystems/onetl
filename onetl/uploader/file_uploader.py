@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path, PosixPath
-from typing import List
 
 from onetl.connection.file_connection.file_connection import FileConnection
 
@@ -68,7 +67,7 @@ class FileUploader:
     def __post_init__(self):
         self.target_path = PosixPath(self.target_path)
 
-    def run(self, files_list: List[str | os.PathLike]) -> List[Path]:
+    def run(self, files_list: list[str | os.PathLike]) -> list[Path]:
         """
         Method for uploading files to remote host.
 

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import PosixPath
 from stat import S_ISDIR
-from typing import List, Optional
 
 import paramiko
 
@@ -54,12 +53,12 @@ class SFTP(FileConnection):
     """
 
     port: int = 22
-    key_file: Optional[str] = None
+    key_file: str | None = None
     timeout: int = 10
     host_key_check: bool = False
     compress: bool = True
 
-    def get_client(self) -> "paramiko.sftp_client.SFTPClient":
+    def get_client(self) -> paramiko.sftp_client.SFTPClient:
         log.info("creating ssh client")
 
         host_proxy, key_file = self.parse_user_ssh_config(self.key_file)
@@ -150,5 +149,5 @@ class SFTP(FileConnection):
 
         return host_proxy, key_file
 
-    def _listdir(self, path: os.PathLike | str) -> List:
+    def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir_attr(os.fspath(path))
