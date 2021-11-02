@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime, date
 
 from onetl.connection.db_connection.db_connection import DBConnection
 
@@ -66,5 +67,10 @@ class MSSQL(DBConnection):
         params = "".join(f";{k}={v}" for k, v in self.extra.items())
         return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{params}"
 
-    def _get_timestamp_value_sql(self, value):
-        return f"CAST({value.lit()} AS datetime2)"
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.isoformat()
+        return f"CAST('{result}' AS datetime2)"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.isoformat()
+        return f"CAST('{result}' AS date)"

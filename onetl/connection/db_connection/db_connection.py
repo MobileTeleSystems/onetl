@@ -1,7 +1,10 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
+from datetime import date, datetime
+from decimal import Decimal
 from logging import getLogger
-from typing import Optional, Dict
+import operator
+from typing import Any, Callable, ClassVar, Optional, Dict
 
 from onetl.connection import ConnectionABC
 
@@ -35,6 +38,15 @@ class DBConnection(ConnectionABC):
         "createTableColumnTypes",
         "customSchema",
     ]
+
+    compare_statements: ClassVar[Dict[Callable, str]] = {
+        operator.ge: "{} >= {}",
+        operator.gt: "{} > {}",
+        operator.le: "{} <= {}",
+        operator.lt: "{} < {}",
+        operator.eq: "{} == {}",
+        operator.ne: "{} != {}",
+    }
 
     def jdbc_params_creator(
         self,
@@ -86,7 +98,7 @@ class DBConnection(ConnectionABC):
             raise ValueError("Spark session not provided")
 
         if not jdbc_options.get("fetchsize"):
-            log.warning("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
+            log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
 
         if jdbc_options.get("sessionInitStatement"):
             log.debug(f"Init SQL statement: {jdbc_options.get('sessionInitStatement')}")
@@ -98,7 +110,8 @@ class DBConnection(ConnectionABC):
             sql_where=sql_where,
         )
 
-        log.debug(f"SQL statement: {sql_text}")
+        log.info(f"{self.__class__.__name__}: Reading table {table}")
+        log.info(f"{self.__class__.__name__}: SQL statement: {sql_text}")
 
         options = self.jdbc_params_creator(
             jdbc_options=jdbc_options,
@@ -220,27 +233,60 @@ class DBConnection(ConnectionABC):
                 )
         return jdbc_options
 
+    def raw_query(self, sql: str, jdbc_options: Dict) -> "pyspark.sql.DataFrame":
+        jdbc_options_raw = jdbc_options.copy()
+        jdbc_options_raw["table"] = sql
+        jdbc_options_raw.pop("numPartitions", None)
+        jdbc_options_raw.pop("lowerBound", None)
+        jdbc_options_raw.pop("upperBound", None)
+        jdbc_options_raw.pop("column", None)
+        return self.spark.read.jdbc(**jdbc_options_raw)  # type: ignore[union-attr]
+
+    def get_schema(self, table: str, columns: str, jdbc_options: Dict) -> "pyspark.sql.types.StructType":
+        jdbc_options = self.jdbc_params_creator(jdbc_options=jdbc_options, table=table)
+
+        query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
+        jdbc_options["table"] = query_schema
+        jdbc_options["properties"]["fetchsize"] = "0"
+
+        log.info(f"{self.__class__.__name__}: Fetching table {table} schema")
+        log.info(f"{self.__class__.__name__}: SQL statement: {query_schema}")
+        df = self.raw_query(query_schema, jdbc_options)
+        return df.schema
+
     @property
     @abstractmethod
     def url(self) -> str:
         """"""
 
-    def get_value_sql(self, value):
+    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
+        template = self.compare_statements[comparator]
+        return template.format(arg1, self.get_value_sql(arg2))
+
+    def get_value_sql(self, value: Any) -> str:
         """
         Transform the value into an SQL Dialect-supported form.
-
-        :type value: HWM
-        :rtype: str
         """
-        if value.value_type in {"timestamp", "datetime"}:
-            return self._get_timestamp_value_sql(value)
-        return value.lit()
 
-    @abstractmethod
-    def _get_timestamp_value_sql(self, value):
-        """
-        Transform the value into an SQL Dialect-supported timestamp.
+        if isinstance(value, datetime):
+            return self._get_datetime_value_sql(value)
+        elif isinstance(value, date):
+            return self._get_date_value_sql(value)
+        elif isinstance(value, (int, float, Decimal)):
+            return str(value)
 
-        :type value: Value
-        :rtype: str
+        return f"'{value}'"
+
+    def _get_datetime_value_sql(self, value: datetime) -> str:
         """
+        Transform the value into an SQL Dialect-supported datetime.
+        """
+        result = value.isoformat()
+        return f"'{result}'"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        """
+        Transform the value into an SQL Dialect-supported date.
+        """
+        result = value.isoformat()
+        return f"'{result}'"

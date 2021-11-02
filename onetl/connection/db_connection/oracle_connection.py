@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from re import sub
+from datetime import datetime, date
 from typing import Optional
 
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -80,6 +80,10 @@ class Oracle(DBConnection):
             raise ValueError("Connection to Oracle does not have sid or service_name")
         return url
 
-    def _get_timestamp_value_sql(self, value):
-        value_without_fraction = sub(r"(.+)\.\d*'$", r"\1'", value.lit())  # NOSONAR
-        return f"TO_DATE({value_without_fraction}, 'YYYY-MM-DD HH24:MI:SS')"
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.strftime("%Y-%m-%d %H:%M:%S")
+        return f"TO_DATE('{result}', 'YYYY-MM-DD HH24:MI:SS')"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.strftime("%Y-%m-%d")
+        return f"TO_DATE('{result}', 'YYYY-MM-DD')"

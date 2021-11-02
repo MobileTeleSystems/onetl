@@ -73,7 +73,7 @@ mypy:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install mypy
+  - pip install mypy types-PyYAML
   - python3 -m mypy --config-file setup.cfg onetl
 
 flake8:
@@ -117,8 +117,9 @@ tests:
     TEST_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_PIPELINE_ID}
   script:
   - mkdir -p /data/onetools/onetl
-  - docker-compose -f docker-compose.tests.ym -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
-  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run -u root --rm -v /data/onetools:/data/onetools onetl_tests
+  - chmod 777 -R /data/onetools/onetl
+  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
+  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run --rm -v /data/onetools:/data/onetools onetl_tests
   after_script:
   - cp /data/onetools/onetl/* ./
   - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml

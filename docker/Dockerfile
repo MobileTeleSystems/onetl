@@ -84,7 +84,8 @@ RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
     && echo $(python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)") > ${ONETL_USER_HOME}/fernet.key \
     && mv ${ONETL_USER_HOME}/entrypoint.sh / \
     && useradd -ms /bin/bash -d ${ONETL_USER_HOME} onetl \
-    && chown -R onetl:onetl ${ONETL_USER_HOME}
+    && chown -R onetl:onetl ${ONETL_USER_HOME} \
+    && chown -R onetl:onetl /opt/project/
 
 USER onetl
 

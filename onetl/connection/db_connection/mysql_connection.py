@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime, date
 
 from onetl.connection.db_connection.db_connection import DBConnection
 
@@ -68,5 +69,10 @@ class MySQL(DBConnection):
 
         return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{params}"
 
-    def _get_timestamp_value_sql(self, value):
-        return f"STR_TO_DATE({value.lit()}, '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.strftime("%Y-%m-%d")
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"  # noqa: WPS323

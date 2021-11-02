@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date, datetime
 
 from onetl.connection.db_connection.db_connection import DBConnection
 
@@ -39,10 +40,10 @@ class Teradata(DBConnection):
         from mtspark import get_spark
 
         extra = {
-          "LOGMECH": "TERA",
-          "MAYBENULL": "ON",
-          "CHARSET": "UTF8",
-          "LOGMECH":"LDAP",
+            "LOGMECH": "TERA",
+            "MAYBENULL": "ON",
+            "CHARSET": "UTF8",
+            "LOGMECH":"LDAP",
         }
 
         spark = get_spark({
@@ -67,19 +68,19 @@ class Teradata(DBConnection):
 
     @property
     def url(self) -> str:
-        if "jdbc:" in self.host:
-            url = self.host
-        else:
-            prop = self.extra.copy()
-            prop["DATABASE"] = self.database
-            if self.port:
-                prop["DBS_PORT"] = self.port
+        prop = self.extra.copy()
+        prop["DATABASE"] = self.database
+        if self.port:
+            prop["DBS_PORT"] = self.port
 
-            schema_items = [f"{k}={v}" for k, v in prop.items()]
-            schema = ",".join(schema_items)
+        schema = ",".join(f"{k}={v}" for k, v in prop.items())
 
-            url = f"jdbc:teradata://{self.host}/{schema}"
-        return url
+        return f"jdbc:teradata://{self.host}/{schema}"
 
-    def _get_timestamp_value_sql(self, value):
-        return f"CAST({value.lit()} AS TIMESTAMP)"
+    def _get_datetime_value_sql(self, value: datetime) -> str:
+        result = value.isoformat()
+        return f"CAST('{result}' AS TIMESTAMP)"
+
+    def _get_date_value_sql(self, value: date) -> str:
+        result = value.isoformat()
+        return f"CAST('{result}' AS DATE)"

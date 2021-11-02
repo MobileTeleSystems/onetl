@@ -15,4 +15,3 @@ class ConnectionABC(ABC):
     port: Optional[int] = None
     user: Optional[str] = None
     password: Optional[str] = None
-    database: Optional[str] = None

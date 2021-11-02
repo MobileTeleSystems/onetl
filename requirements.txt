@@ -1,7 +1,9 @@
 ftputil
 hdfs[avro,dataframe,kerberos]>2
 paramiko
+platformdirs
 PySmbClient
+pyyaml
 requests
 requests_ntlm
 sftpserver
