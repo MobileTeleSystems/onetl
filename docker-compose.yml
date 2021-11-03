@@ -53,6 +53,15 @@ services:
     depends_on:
     - postgres
 
+  clickhouse:
+    hostname: clickhouse
+    image: yandex/clickhouse-server
+    env_file: onetl_local.default.env
+    ports:
+      - 8123:8123
+      - 9001:9000
+    networks: [onetl]
+
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
 #  тогда содержимое БД будет сохраняться между подъемами docker-compose.
 volumes:

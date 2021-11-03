@@ -72,7 +72,7 @@ class OracleProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{f['column_name']} {f['type']}" for f in fields])
+            str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
             sql = f"CREATE TABLE {schema}.{table} ({str_fields})"
             cursor.execute(sql)
             self.connection.commit()

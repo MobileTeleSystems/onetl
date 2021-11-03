@@ -19,6 +19,7 @@ from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, 
 from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.oracle_processing import OracleProcessing
+from tests.lib.clickhouse_processing import ClickhouseProcessing
 
 from tests.lib.mock_sftp_server import MockSFtpServer
 
@@ -37,7 +38,7 @@ def sftp_source_path():
 def sftp_server():
     server = MockSFtpServer(os.path.join("/tmp", "SFTP_HOME"))
     server.start()
-    sleep(0.5)
+    sleep(5)
     yield server
     server.stop()
 
@@ -139,11 +140,12 @@ def processing(request, spark):
         "postgres": PostgressProcessing,
         "hive": HiveProcessing,
         "oracle": OracleProcessing,
+        "clickhouse": ClickhouseProcessing,
     }
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse
 
     db_processing = storage_matching[db_storage_name]
 
@@ -162,7 +164,7 @@ def prepare_schema_table(processing, request, spark):
 
     full_name = f"{schema}.{table}"
 
-    storages = ["postgres", "hive", "oracle"]
+    storages = ["postgres", "hive", "oracle", "clickhouse"]
     entities = ["reader", "writer", "strategy", "hwm"]
 
     test_function = request.function
