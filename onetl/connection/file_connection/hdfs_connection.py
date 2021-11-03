@@ -31,13 +31,15 @@ class HDFS(FileConnection, KerberosMixin):
 
         .. warning ::
 
-            To correct work you can provide only one of the parameters: ``password`` or ``kinit``
+            To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
+            If you provide both, connection will raise Exception.
     kinit : str, default: ``None``
         Path to keytab file.
 
         .. warning ::
 
-            To correct work you can provide only one of the parameters: ``password`` or ``kinit``
+            To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
+            If you provide both, connection will raise Exception.
     timeout : int, default: ``10``
         Connection timeouts, forwarded to the request handler.
         How long to wait for the server to send data before giving up.
@@ -73,6 +75,10 @@ class HDFS(FileConnection, KerberosMixin):
     port: int = 50070
     keytab: str | None = None
     timeout: int | None = None
+
+    def __post_init__(self):
+        if self.password and self.keytab:
+            raise ValueError("Please provide only `keytab` or only `password` for kinit")
 
     def get_client(self) -> hdfs.ext.kerberos.KerberosClient | hdfs.client.InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR

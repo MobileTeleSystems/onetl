@@ -147,6 +147,10 @@ class TestFileConnections:
         assert isinstance(hdfs, FileConnection)
         assert hdfs.port == 50070
 
+    def test_hdfs_connection_with_password_and_keytab(self):
+        with pytest.raises(ValueError):
+            hdfs = HDFS(host="hive2", port=50070, user="usr", password="pwd", keytab="/path/to/keytab")  # noqa: F841
+
     def test_sftp_connection(self):
         sftp = SFTP(host="some_host", user="some_user", password="pwd")
         assert isinstance(sftp, FileConnection)
