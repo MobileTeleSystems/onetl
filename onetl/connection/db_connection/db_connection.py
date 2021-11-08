@@ -40,8 +40,8 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
         jdbc_options: Dict,
         table: str,
         columns: Optional[str],
-        sql_hint: Optional[str],
-        sql_where: Optional[str],
+        hint: Optional[str],
+        where: Optional[str],
     ) -> "pyspark.sql.DataFrame":
 
         # TODO:(@dypedchenk) Here will need to implement a hint in case of typos in writing parameters
@@ -56,9 +56,9 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
 
         sql_text = self.get_sql_query(
             table=table,
-            sql_hint=sql_hint,
+            hint=hint,
             columns=columns,
-            sql_where=sql_where,
+            where=where,
         )
 
         log.info(f"{self.__class__.__name__}: Reading table {table}")
@@ -110,23 +110,23 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
     @staticmethod
     def get_sql_query(
         table: str,
-        sql_hint: Optional[str] = None,
+        hint: Optional[str] = None,
         columns: Optional[str] = "*",
-        sql_where: Optional[str] = None,
+        where: Optional[str] = None,
     ) -> str:
         """
         Creates a sql query for the dbtable parameter in the jdbc function.
         For instance: spark.read.jdbc(dbtable=sql)
         """
-        sql_hint = f"/*+ {sql_hint} */" if sql_hint else None
-        sql_where = f"WHERE {sql_where}" if sql_where else None
+        hint = f"/*+ {hint} */" if hint else None
+        where = f"WHERE {where}" if where else None
 
         statements = [
             "SELECT",
-            sql_hint,
+            hint,
             columns,
             f"FROM {table}",
-            sql_where,
+            where,
         ]
 
         # The elements of the array with the value None are removed

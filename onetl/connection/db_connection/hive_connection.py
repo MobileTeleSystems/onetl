@@ -53,16 +53,16 @@ class Hive(DBConnection):
         jdbc_options: Dict,
         table: str,
         columns: Optional[str] = "*",
-        sql_hint: Optional[str] = None,
-        sql_where: Optional[str] = None,
+        hint: Optional[str] = None,
+        where: Optional[str] = None,
     ) -> "pyspark.sql.DataFrame":
         if not self.spark:
             raise ValueError("Spark session not provided")
 
         table = self.get_sql_query(
             table=table,
-            sql_hint=sql_hint,
+            hint=hint,
             columns=columns,
-            sql_where=sql_where,
+            where=where,
         )
         return self.spark.sql(table)

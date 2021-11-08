@@ -41,7 +41,7 @@ class NonHWMStrategyHelper(StrategyHelper):
 
     @property
     def where(self) -> str | None:
-        return self.reader.sql_where
+        return self.reader.where
 
     def save(self, df: DataFrame) -> DataFrame:
         return df
@@ -116,8 +116,8 @@ class HWMStrategyHelper(StrategyHelper):
             df = self.reader.connection.read_table(
                 table=self.reader.table,
                 columns=self.reader.get_columns(),
-                sql_hint=self.reader.sql_hint,
-                sql_where=self.where,
+                hint=self.reader.hint,
+                where=self.where,
                 jdbc_options=self.reader.jdbc_options,
             )
 
@@ -153,7 +153,7 @@ class HWMStrategyHelper(StrategyHelper):
 
     @property
     def where(self) -> str:
-        result = [self.reader.sql_where]
+        result = [self.reader.where]
 
         if self.strategy.current_value is not None:
             comparator = self.strategy.current_value_comparator
