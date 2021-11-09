@@ -29,10 +29,10 @@ class DBReader:
         Name like ``schema.name``
     columns : list of str, optional, default: ``*``
         The list of columns to be read
-    sql_where : str, optional, default: ``None``
+    where : str, optional, default: ``None``
         Custom ``where`` for SQL query
-    sql_hint : str, optional, default: ``None``
-        Add sql hint to SQL query
+    hint : str, optional, default: ``None``
+        Add hint to SQL query
     jdbc_options : dict, optional, default: ``None``
         Spark jdbc read options.
         For example: ``{"partitionColumn": "some_column", "numPartitions": 20, "fetchsize": 1000}``
@@ -120,8 +120,9 @@ class DBReader:
         reader = DBReader(
             connection=postgres,
             table="default.test",
-            sql_where="d_id > 100",
-            sql_hint="NOWAIT",
+            where="d_id > 100",
+            hint="NOWAIT",
+            limit=10,
             columns=["d_id", "d_name", "d_age"],
             jdbc_options=jdbc_options,
         )
@@ -141,8 +142,9 @@ class DBReader:
         reader = DBReader(
             connection=hive,
             table="default.test",
-            sql_where="d_id > 100",
-            sql_hint="NOWAIT",
+            where="d_id > 100",
+            hint="NOWAIT",
+            limit=10,
             columns=["d_id", "d_name", "d_age"],
         )
     """
@@ -151,8 +153,8 @@ class DBReader:
     # table is 'schema.table'
     table: str
     columns: str | list[str] | None = None
-    sql_where: str | None = None
-    sql_hint: str | None = None
+    where: str | None = None
+    hint: str | None = None
     hwm_column: str | None = None
     jdbc_options: dict[str, Any] = field(default_factory=dict)
 
@@ -194,8 +196,8 @@ class DBReader:
         df = self.connection.read_table(
             table=self.table,
             columns=self.get_columns(),
-            sql_hint=self.sql_hint,
-            sql_where=helper.where,
+            hint=self.hint,
+            where=helper.where,
             jdbc_options=self.jdbc_options,
         )
 

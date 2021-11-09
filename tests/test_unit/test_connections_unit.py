@@ -112,9 +112,9 @@ class TestDBConnection:
         connection = Oracle()
         table_sql = connection.get_sql_query(
             table="default.test",
-            sql_hint="NOWAIT",
+            hint="NOWAIT",
             columns="d_id, d_name, d_age",
-            sql_where="d_id > 100",
+            where="d_id > 100",
         )
         expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"
 

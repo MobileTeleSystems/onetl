@@ -42,8 +42,8 @@ class TestDBReader:
                 "createTableColumnTypes": "some_option",
                 "customSchema": "id DECIMAL(38, 0)",
             },
-            sql_where="some_column_1 = 2 AND some_column_2 = 3",
-            sql_hint="some_hint",
+            where="some_column_1 = 2 AND some_column_2 = 3",
+            hint="some_hint",
             columns=["column_1", "column_2"],
         )
 
