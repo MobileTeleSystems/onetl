@@ -1,3 +1,3 @@
-FROM docker.rep.msk.mts.ru/test-hive:2.1.0
+FROM docker.rep.msk.mts.ru/platform/hadoop:2.7
 
 COPY . /var/input/
