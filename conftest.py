@@ -1,7 +1,6 @@
 import os
 import logging
 from time import sleep
-import posixpath
 import secrets
 from typing import Dict
 from pathlib import Path
@@ -14,14 +13,15 @@ from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
 from pyhive import hive
 
 from mtspark import get_spark
-from onetl.connection.file_connection import SFTP
+from onetl.connection.file_connection import SFTP, FTP, FTPS
 from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, MSSQL, Teradata
 from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.oracle_processing import OracleProcessing
 from tests.lib.clickhouse_processing import ClickhouseProcessing
+from tests.lib.common import upload_files
 
-from tests.lib.mock_sftp_server import MockSFtpServer
+from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
 
 log = logging.getLogger(__name__)
 
@@ -30,13 +30,31 @@ SELF_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture(scope="session")
-def sftp_source_path():
+def source_path():
     return "/export/news_parse"
 
 
 @pytest.fixture(scope="session")
+def ftp_server():
+    server = TestFTPServer(os.path.join("/tmp", "FTP_HOME"))
+    server.start()
+    sleep(5)
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="session")
+def ftps_server():
+    server = TestFTPServer(os.path.join("/tmp", "FTPS_HOME"), is_ftps=True)
+    server.start()
+    sleep(5)
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="session")
 def sftp_server():
-    server = MockSFtpServer(os.path.join("/tmp", "SFTP_HOME"))
+    server = TestSFTPServer(os.path.join("/tmp", "SFTP_HOME"))
     server.start()
     sleep(5)
     yield server
@@ -72,39 +90,25 @@ def sftp_client(sftp_server):
     ssh_client_started.close()
 
 
-# TODO:(@mivasil6) refactor later
 @pytest.fixture(scope="function")  # noqa: WPS231
-def sftp_files(sftp_client, sftp_server, resource_path):
+def sftp_files(sftp_client, sftp_server, resource_path, source_path):
     sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
 
-    remote_files = set()
-    remote_path = "/export/news_parse"
-    sftp_client.chdir("/")
-    # Create remote directory if it doesn't exist
+    upload_files(resource_path, source_path, sftp)
 
-    has_files = False
-    if os.path.isdir(resource_path):
-        sftp.mkdir(remote_path)
-        for dir_path, dir_names, file_names in os.walk(resource_path):
-            rel_local = os.path.relpath(dir_path, resource_path).replace("\\", "/")
-            remote_dir = posixpath.abspath(posixpath.join(remote_path, rel_local))
 
-            for sub_dir in dir_names:
-                sftp.mkdir(posixpath.join(remote_dir, sub_dir))
+@pytest.fixture(scope="function")
+def ftp_files(ftp_server, resource_path, source_path):
+    ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
 
-            for filename in file_names:
-                has_files = True
-                local_filename = os.path.join(dir_path, filename)
-                remote_filename = posixpath.join(remote_dir, filename)
-                log.info(f"Copying {local_filename} to {remote_filename}")
-                sftp_client.put(local_filename, remote_filename)
-                remote_files.add(remote_filename)
+    upload_files(resource_path, source_path, ftp)
 
-        if not has_files:
-            raise RuntimeError(
-                f"Could not load file examples from {resource_path}. Path should be exists and should contain samples",
-            )
-    return remote_files
+
+@pytest.fixture(scope="function")
+def ftps_files(ftps_server, resource_path, source_path):
+    ftps = FTPS(user=ftps_server.user, password=ftps_server.password, host=ftps_server.host, port=ftps_server.port)
+
+    upload_files(resource_path, source_path, ftps)
 
 
 @pytest.fixture(scope="session", name="spark")

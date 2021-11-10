@@ -100,7 +100,7 @@ class SFTP(FileConnection):
 
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
-        log.info(f"Successfully download file {remote_file_path} remote SFTP to {local_file_path}")
+        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         self.client.remove(os.fspath(remote_file_path))

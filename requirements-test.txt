@@ -2,14 +2,16 @@
 
 # Oracle client
 cx_Oracle
+clickhouse-driver
 
 mtspark
 
 omegaconf
 psycopg2-binary
 pyhive[hive, sqlalchemy] >= 0.6
+pyftpdlib
+pyopenssl
 pyspark < 3
-clickhouse-driver
 
 pyyaml>5
 pytest

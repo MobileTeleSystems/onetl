@@ -48,6 +48,11 @@ ENV TZ=${TZ} \
     ONETL_CH_CONN_PASSWORD="" \
     ONETL_CH_CONN_PORT=9000 \
     ONETL_CH_CONN_DATABASE=default \
+    ONETL_FILE_SOURCE_USER="user1" \
+    ONETL_FILE_SOURCE_PASSWORD="passwd" \
+    ONETL_SFTP_PORT=2222 \
+    ONETL_FTP_PORT=8998 \
+    ONETL_FTPS_PORT=2121 \
     MTSPARK_CUSTOM_CONFIG_PATH=/opt/project/tests/config.yml
 
 COPY --from=wheel_builder /opt/build_dir/dist/ /opt/build_dir/dist/
