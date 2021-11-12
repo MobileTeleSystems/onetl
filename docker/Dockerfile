@@ -2,7 +2,7 @@ FROM docker.rep.msk.mts.ru/platform/python:3.7-slim as wheel_builder
 
 RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
     && yum -y install make wheel gcc gcc-c++ \
-    && pip3 install -U pip setuptools
+    && pip3 install -U pip==20.3.4 setuptools
 
 COPY ./requirements.txt \
     ./README.rst \
@@ -80,7 +80,7 @@ RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
         cyrus-sasl-plain\
     && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone \
-    && pip install -U pip setuptools \
+    && pip install -U pip==20.3.4 setuptools \
     && pip install -i http://rep.msk.mts.ru/artifactory/api/pypi/pypi-dev-local/simple --extra-index-url=http://rep.msk.mts.ru/artifactory/api/pypi/pypi/simple --trusted-host=rep.msk.mts.ru --retries 15 --timeout 30 -r ${ONETL_USER_HOME}/requirements-test.txt \
     && yum -y autoremove gcc make \
     && yum -y erase krb5-devel cyrus-sasl-devel zlib-devel bzip2-devel \
