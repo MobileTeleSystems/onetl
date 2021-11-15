@@ -1,18 +1,25 @@
 import pytest
+from unittest.mock import Mock
 
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
 from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
 
 
 class TestDBConnection:
+    spark = Mock()
+
     def test_secure_str_and_repr(self):
-        conn = Oracle(host="some_host", user="user", password="passwd")
+        conn = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
 
         assert "password=" not in str(conn)
         assert "password=" not in repr(conn)
 
+    def test_db_conn_without_spark(self):
+        with pytest.raises(ValueError):
+            conn = Postgres(host="some_host", user="user", password="passwd")  # noqa: F841
+
     def test_oracle_driver_and_uri(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", sid="PE")
+        conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
 
         assert conn.url == "jdbc:oracle:thin:@some_host:1521:PE"
         assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
@@ -20,18 +27,18 @@ class TestDBConnection:
         assert Oracle.port == 1521
 
     def test_oracle_uri_with_service_name(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", service_name="DWHLDTS")
+        conn = Oracle(host="some_host", user="user", password="passwd", service_name="DWHLDTS", spark=self.spark)
 
         assert conn.url == "jdbc:oracle:thin:@//some_host:1521/DWHLDTS"
 
     def test_oracle_without_extra(self):
-        conn = Oracle(host="some_host", user="user", password="passwd")
+        conn = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
 
         with pytest.raises(ValueError):
             conn.url  # noqa: WPS428
 
     def test_postgres_driver_and_uri(self):
-        conn = Postgres(host="some_host", user="user", password="passwd")
+        conn = Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
 
         assert conn.url == "jdbc:postgresql://some_host:5432/default"
         assert Postgres.driver == "org.postgresql.Driver"
@@ -39,7 +46,13 @@ class TestDBConnection:
         assert Postgres.port == 5432
 
     def test_teradata_driver_and_uri(self):
-        conn = Teradata(host="some_host", user="user", password="passwd", extra={"TMODE": "TERA", "LOGMECH": "LDAP"})
+        conn = Teradata(
+            host="some_host",
+            user="user",
+            password="passwd",
+            extra={"TMODE": "TERA", "LOGMECH": "LDAP"},
+            spark=self.spark,
+        )
 
         assert conn.url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
         assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
@@ -47,7 +60,7 @@ class TestDBConnection:
         assert Teradata.port == 1025
 
     def test_mysql_driver_and_uri(self):
-        conn = MySQL(host="some_host", user="user", password="passwd")
+        conn = MySQL(host="some_host", user="user", password="passwd", spark=self.spark)
 
         assert conn.url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
         assert MySQL.driver == "com.mysql.jdbc.Driver"
@@ -55,7 +68,13 @@ class TestDBConnection:
         assert MySQL.port == 3306
 
     def test_mssql_driver_and_uri(self):
-        conn = MSSQL(host="some_host", user="user", password="passwd", extra={"characterEncoding": "UTF-8"})
+        conn = MSSQL(
+            host="some_host",
+            user="user",
+            password="passwd",
+            extra={"characterEncoding": "UTF-8"},
+            spark=self.spark,
+        )
 
         assert conn.url == "jdbc:sqlserver://some_host:1433;databaseName=default;characterEncoding=UTF-8"
         assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
@@ -63,16 +82,17 @@ class TestDBConnection:
         assert MSSQL.port == 1433
 
     def test_clickhouse_driver_and_uri(self):
-        conn = Clickhouse(host="some_host", user="user", password="passwd")
+        conn = Clickhouse(host="some_host", user="user", password="passwd", spark=self.spark)
 
         assert conn.url == "jdbc:clickhouse://some_host:8123/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
         assert Clickhouse.port == 8123
 
+    # TODO:(@mivasil6) will be done in feature/ONE-325
+    @pytest.mark.skip
     def test_empty_connection(self):
         conn = Hive()
-        # TODO: what to do on empty connection??
         assert conn
 
     def test_jdbc_params_creator(self):
@@ -84,7 +104,7 @@ class TestDBConnection:
             "fetchsize": 1000,
         }
 
-        conn = Postgres(host="some_host", user="user", password="passwd")
+        conn = Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
 
         jdbc_options = conn.jdbc_params_creator(jdbc_options=jdbc_options)
 
@@ -103,13 +123,13 @@ class TestDBConnection:
         }
 
     def test_get_sql_without_extra_params(self):
-        connection = Oracle()
+        connection = Oracle(spark=self.spark)
         table_sql = connection.get_sql_query(table="default.test")
 
         assert table_sql == "SELECT * FROM default.test"
 
     def test_dbreader_table_sql_with_extra_params(self):
-        connection = Oracle()
+        connection = Oracle(spark=self.spark)
         table_sql = connection.get_sql_query(
             table="default.test",
             hint="NOWAIT",
@@ -120,13 +140,8 @@ class TestDBConnection:
 
         assert table_sql == expected_sql
 
-    def test_hive_read_table_without_spark(self):
-        hive = Hive()
-        with pytest.raises(ValueError):
-            hive.read_table({"test": "test"}, "test_table")
-
     def test_hive_connection_uri(self):
-        hive = Hive(host="some_host", user="user", password="passwd", extra={"param": "value"})
+        hive = Hive(host="some_host", user="user", password="passwd", extra={"param": "value"}, spark=self.spark)
 
         assert hive.url == "hiveserver2://user:passwd@some_host:10000?param=value"
 

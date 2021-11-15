@@ -102,7 +102,7 @@ class TestIntegrationONETLPostgres:
         df = processing.create_spark_df(spark)
 
         writer = DBWriter(
-            Postgres(),
+            Postgres(spark=spark),
             table="table",
             jdbc_options={"user": "some_user"},
         )

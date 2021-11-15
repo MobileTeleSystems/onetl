@@ -2,6 +2,7 @@
 
 import secrets
 import pytest
+from unittest.mock import Mock
 
 from onetl.connection import Postgres
 from onetl.reader import DBReader
@@ -25,7 +26,7 @@ def test_strategy_batch_step_is_empty(step, strategy):
 def test_strategy_hwm_column_missing(strategy):
     with strategy():
         reader = DBReader(
-            connection=Postgres(),
+            connection=Postgres(spark=Mock()),
             table=secrets.token_hex(),
         )
 

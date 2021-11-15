@@ -1,15 +1,17 @@
 import pytest
+from unittest.mock import Mock
 
 from onetl.reader import DBReader
 from onetl.connection.db_connection import Oracle, Postgres
 
 
 class TestDBReader:
+    spark = Mock()
 
     # TODO: the functionality of the connection class in the reader class is tested
     def test_db_reader_set_lower_upper_bound(self):
         reader: DBReader = DBReader(
-            Oracle(),
+            Oracle(spark=self.spark),
             table="default.test",
             jdbc_options={"lowerBound": 10, "upperBound": 1000},
         )
@@ -22,7 +24,7 @@ class TestDBReader:
     def test_db_reader_generate_jdbc_options(self):
 
         reader: DBReader = DBReader(
-            connection=Postgres(host="local", user="admin", password="1234"),
+            connection=Postgres(host="local", user="admin", password="1234", spark=self.spark),
             table="default.test",
             # some of the parameters below are not used together.
             # Such as fetchsize and batchsize.
@@ -74,7 +76,7 @@ class TestDBReader:
 
     def test_db_reader_jdbc_properties_value_error(self):
         reader = DBReader(
-            connection=Oracle(),
+            connection=Oracle(spark=self.spark),
             table="default.test",
             jdbc_options={"user": "some_user"},
         )
