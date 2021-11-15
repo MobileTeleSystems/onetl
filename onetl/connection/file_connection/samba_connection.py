@@ -74,7 +74,7 @@ class Samba(FileConnection):
 
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.run(remote_file_path, local_file_path)
-        log.info(f"Successfully download_file {remote_file_path} remote SMB to {local_file_path}")
+        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         self.client.unlink(remote_file_path)

@@ -74,21 +74,21 @@ class FTP(FileConnection):
 
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.download(remote_file_path, local_file_path)
-        log.info(f"Successfully download file {remote_file_path} from remote SFTP to {local_file_path}")
+        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         self.client.remove(remote_file_path)
         log.info(f"Successfully removed file {remote_file_path}")
 
     def mkdir(self, path: os.PathLike | str) -> None:
-        self.client.mkdir(path)
+        self.client.makedirs(path, exist_ok=True)
         log.info(f"Successfully created directory {path}")
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.stat(path=path, _exception_for_missing_path=False)
 
     def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.run(local_file_path, remote_file_path)
+        self.client.upload(local_file_path, remote_file_path)
 
     def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)

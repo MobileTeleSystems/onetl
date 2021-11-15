@@ -95,7 +95,8 @@ class HDFS(FileConnection, KerberosMixin):
         return client
 
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        return self.client.download(remote_file_path, local_file_path)
+        self.client.download(remote_file_path, local_file_path)
+        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         if not self.path_exists(remote_file_path):

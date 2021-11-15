@@ -51,6 +51,7 @@ class TestHDFS:
 
             downloaded_files = downloader.run()
 
+            # file list comparison
             assert downloaded_files == [PosixPath(local_path) / test_file_name]
             # compare size of files
             assert os.path.getsize(test_file_path) == os.path.getsize(Path(local_path) / test_file_name)
