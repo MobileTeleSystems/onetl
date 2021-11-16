@@ -115,6 +115,67 @@ def test_postgres_strategy_increment(spark, processing, prepare_schema_table, hw
             second_pandas_df[column].isin(second_span[column]).all()
 
 
+def test_postgres_strategy_increment_where(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    # resulting WHERE clause should be "(id < 1000 OR id = 1000) AND hwm_int > 100"
+    # not like this: "id < 1000 OR id = 1000 AND hwm_int > 100"
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        where="id_int < 1000 OR id_int = 1000",
+        hwm_column="hwm_int",
+    )
+
+    # there are 2 spans with a gap between
+    span_gap = 10
+    span_length = 50
+
+    # 0..100
+    first_begin = 0
+    first_end = first_begin + span_length
+
+    # 110..210
+    second_begin = first_end + span_gap
+    second_end = second_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
+    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # incremental run
+    with IncrementalStrategy():
+        first_df = reader.run()
+
+    # all the data has been read
+    assert_frame_equal(left=first_df.toPandas(), right=first_span, check_dtype=False)
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    with IncrementalStrategy():
+        second_df = reader.run()
+
+    # only changed data has been read
+    assert_frame_equal(left=second_df.toPandas(), right=second_span, check_dtype=False)
+
+
 @pytest.mark.parametrize(
     "span_gap, span_length, hwm_column, offset",
     [
