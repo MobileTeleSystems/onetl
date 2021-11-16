@@ -57,7 +57,7 @@ class MySQL(DBConnection):
     """
 
     driver: str = field(init=False, default="com.mysql.jdbc.Driver")
-    package: str = field(init=False, default="mysql:mysql-connector-java:5.1.8")
+    package: str = field(init=False, default="mysql:mysql-connector-java:8.0.26")
     port: int = 3306
 
     @property

@@ -8,11 +8,15 @@ services:
     - hive2
     - oracle
     - clickhouse
+    - mysql
     env_file:
     - onetl_local.default.env
     environment:
       WAIT: 140
     working_dir: /opt/project
+    volumes:
+    - /data/onetools:/data/onetools
+    - /etc/localtime:/etc/localtime
     networks:
     - onetl
     command: bash -c 'pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}'
@@ -52,6 +56,12 @@ services:
   clickhouse:
     hostname: clickhouse
     image: yandex/clickhouse-server
+    env_file: onetl_local.default.env
+    networks:
+    - onetl
+
+  mysql:
+    image: mysql
     env_file: onetl_local.default.env
     networks:
     - onetl

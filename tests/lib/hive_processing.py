@@ -60,10 +60,6 @@ class HiveProcessing(BaseProcessing):
         df = self.connection.createDataFrame(values)
         df.write.mode("append").insertInto(f"{schema}.{table}")
 
-    def stop_conn(self):
-        # connection.stop() in spark fixture
-        """"""
-
     def assert_equal_df(
         self,
         schema: str,

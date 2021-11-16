@@ -19,6 +19,7 @@ from tests.lib.postgres_processing import PostgressProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.oracle_processing import OracleProcessing
 from tests.lib.clickhouse_processing import ClickhouseProcessing
+from tests.lib.mysql_processing import MySQLProcessing
 from tests.lib.common import upload_files
 
 from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
@@ -145,11 +146,12 @@ def processing(request, spark):
         "hive": HiveProcessing,
         "oracle": OracleProcessing,
         "clickhouse": ClickhouseProcessing,
+        "mysql": MySQLProcessing,
     }
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql
 
     db_processing = storage_matching[db_storage_name]
 
@@ -168,12 +170,12 @@ def prepare_schema_table(processing, request, spark):
 
     full_name = f"{schema}.{table}"
 
-    storages = ["postgres", "hive", "oracle", "clickhouse"]
+    storages = ["postgres", "hive", "oracle", "clickhouse", "mysql"]
     entities = ["reader", "writer", "strategy", "hwm"]
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle
+    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql
     test_entity = test_function.__name__.split("_")[2]
 
     columns_and_types = [
