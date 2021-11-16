@@ -35,6 +35,10 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
         operator.ne: "{} != {}",
     }
 
+    def __post_init__(self):
+        if not self.spark:
+            raise ValueError("Please, provide active spark session.")
+
     def read_table(
         self,
         jdbc_options: Dict,
@@ -45,9 +49,6 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
     ) -> "pyspark.sql.DataFrame":
 
         # TODO:(@dypedchenk) Here will need to implement a hint in case of typos in writing parameters
-        if not self.spark:
-            raise ValueError("Spark session not provided")
-
         if not jdbc_options.get("fetchsize"):
             log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
 
@@ -77,7 +78,7 @@ class DBConnection(ConnectionABC, JDBCParamsCreatorMixin):
         #    url, table, column, lowerBound, upperBound, numPartitions, predicates
         #    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
-        return self.spark.read.jdbc(table=f"({sql_text}) T", **options)
+        return self.spark.read.jdbc(table=f"({sql_text}) T", **options)  # type: ignore[union-attr]
 
     def save_df(
         self,

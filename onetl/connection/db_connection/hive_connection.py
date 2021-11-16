@@ -56,8 +56,6 @@ class Hive(DBConnection):
         hint: Optional[str] = None,
         where: Optional[str] = None,
     ) -> "pyspark.sql.DataFrame":
-        if not self.spark:
-            raise ValueError("Spark session not provided")
 
         table = self.get_sql_query(
             table=table,
@@ -65,4 +63,4 @@ class Hive(DBConnection):
             columns=columns,
             where=where,
         )
-        return self.spark.sql(table)
+        return self.spark.sql(table)  # type: ignore[union-attr]
