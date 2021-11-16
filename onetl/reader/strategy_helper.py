@@ -173,4 +173,4 @@ class HWMStrategyHelper(StrategyHelper):
             )
             result.append(compare)
 
-        return " AND ".join(filter(None, result))
+        return " AND ".join(f"({where})" for where in result if where)
