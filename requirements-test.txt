@@ -10,7 +10,9 @@ omegaconf
 psycopg2-binary
 pyftpdlib
 pyhive[hive, sqlalchemy] >= 0.6
+pymssql
 PyMySQL
+pyodbc
 pyopenssl
 pyspark < 3
 pytest

@@ -1,3 +1,5 @@
+from datetime import date, datetime, timedelta
+from random import randint
 from logging import getLogger
 from typing import List, Optional
 import os
@@ -5,21 +7,21 @@ import os
 import pandas as pd
 from pandas.io import sql as psql
 from pandas.util.testing import assert_frame_equal
-import pymysql
+import pymssql
 
 from tests.lib.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
 
-class MySQLProcessing(BaseProcessing):
+class MSSQLProcessing(BaseProcessing):
 
     _column_types_and_names_matching = {
-        "id_int": "INT NOT NULL primary key AUTO_INCREMENT",
+        "id_int": "INT primary key IDENTITY",
         "text_string": "VARCHAR(50)",
         "hwm_int": "INT",
         "hwm_date": "DATE",
-        "hwm_datetime": "DATETIME(6)",
+        "hwm_datetime": "DATETIME",
     }
 
     def __enter__(self):
@@ -32,34 +34,61 @@ class MySQLProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_USER")
+        return os.getenv("ONETL_MSSQL_CONN_USER")
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_PASSWORD")
+        return os.getenv("ONETL_MSSQL_CONN_PASSWORD")
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_HOST")
+        return os.getenv("ONETL_MSSQL_CONN_HOST")
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_DATABASE")
+        return os.getenv("ONETL_MSSQL_CONN_DATABASE")
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_MYSQL_CONN_PORT"))
+        return int(os.getenv("ONETL_MSSQL_CONN_PORT"))
 
     @property
     def url(self) -> str:
-        return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
+        max_id = self._df_max_length if not max_id else max_id
+        time_multiplier = 100000
+
+        values = {column_name: [] for column_name in self.column_names}
+
+        for i in range(min_id, max_id + 1):
+            for column_name in values.keys():
+                if "int" in column_name.split("_"):
+                    values[column_name].append(i)
+                if "text" in column_name.split("_"):
+                    values[column_name].append("This line is made to test the work")
+                if "date" in column_name.split("_"):
+                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
+                    values[column_name].append(date.today() + timedelta(seconds=rand_second))
+                if "datetime" in column_name.split("_"):
+                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
+                    # MSSQL DATETIME format has time range:	00:00:00 through 23:59:59.997
+                    values[column_name].append(datetime.now().replace(microsecond=0) + timedelta(seconds=rand_second))
+
+        return pd.DataFrame(data=values)
 
     def create_schema(
         self,
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+            cursor.execute(
+                f"""IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{schema}'))
+                    BEGIN
+                        EXEC ('CREATE SCHEMA [{schema}]')
+                    END""",
+            )
 
     def create_table(
         self,
@@ -69,7 +98,7 @@ class MySQLProcessing(BaseProcessing):
     ) -> None:
         with self.connection.cursor() as cursor:
             str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
-            sql = f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})"
+            sql = f"CREATE TABLE {table} ({str_fields})"
             cursor.execute(sql)
             self.connection.commit()
 
@@ -78,7 +107,7 @@ class MySQLProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {schema}")
+            cursor.execute(f"DROP DATABASE {schema}")
             self.connection.commit()
 
     def drop_table(
@@ -87,17 +116,16 @@ class MySQLProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
+            cursor.execute(f"DROP TABLE {schema}.{table}")
             self.connection.commit()
 
     def get_conn(self):
-        return pymysql.connect(
+        return pymssql.connect(
             host=self.host,
             port=self.port,
             user=self.user,
             password=self.password,
             database=self.database,
-            cursorclass=pymysql.cursors.DictCursor,
         )
 
     def insert_data(
@@ -123,6 +151,7 @@ class MySQLProcessing(BaseProcessing):
         schema: str,
         table: str,
     ) -> "pandas.core.frame.DataFrame":
+
         return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)
 
     def assert_equal_df(
@@ -135,6 +164,7 @@ class MySQLProcessing(BaseProcessing):
 
         if not other_frame:
             other_frame = self.get_expected_dataframe(schema, table)
+
         pd_df = df.toPandas()
 
         assert_frame_equal(
