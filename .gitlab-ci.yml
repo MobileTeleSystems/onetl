@@ -119,7 +119,7 @@ tests:
   - mkdir -p /data/onetools/onetl
   - chmod 777 -R /data/onetools/onetl
   - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} down -v --remove-orphans || true
-  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run --rm -v /data/onetools:/data/onetools onetl_tests
+  - docker-compose -f docker-compose.tests.yml -p onetl-ci:${CI_PIPELINE_ID} run --rm onetl_tests
   after_script:
   - cp /data/onetools/onetl/* ./
   - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml

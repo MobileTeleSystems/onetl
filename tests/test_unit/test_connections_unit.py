@@ -64,7 +64,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
         assert MySQL.driver == "com.mysql.jdbc.Driver"
-        assert MySQL.package == "mysql:mysql-connector-java:5.1.8"
+        assert MySQL.package == "mysql:mysql-connector-java:8.0.26"
         assert MySQL.port == 3306
 
     def test_mssql_driver_and_uri(self):

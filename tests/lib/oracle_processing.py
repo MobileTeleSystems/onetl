@@ -128,9 +128,6 @@ class OracleProcessing(BaseProcessing):
 
         return pd.read_sql_query(f"SELECT * FROM {schema}.{table}", con=self.connection)
 
-    def stop_conn(self) -> None:
-        self.connection.close()
-
     def assert_equal_df(
         self,
         schema: str,
