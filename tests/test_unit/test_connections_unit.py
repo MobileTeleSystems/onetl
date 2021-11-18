@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
 from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
+from onetl.connection.connection_helpers import get_sql_query
 
 
 class TestDBConnection:
@@ -14,9 +15,46 @@ class TestDBConnection:
         assert "password=" not in str(conn)
         assert "password=" not in repr(conn)
 
-    def test_db_conn_without_spark(self):
+    # TODO:(@mivasil6) will be done in feature/ONE-325
+    @pytest.mark.skip
+    def test_empty_connection(self):
+        conn = Hive()
+        assert conn
+
+
+class TestHiveConnectionUnit:
+    spark = Mock()
+
+    def test_hive_connection_get_schema_raise_exception(self):
+        hive = Hive(self.spark)
         with pytest.raises(ValueError):
-            conn = Postgres(host="some_host", user="user", password="passwd")  # noqa: F841
+            hive.get_schema(
+                table="table",
+                columns="column",
+                jdbc_options={"option": "option"},  # wrong parameter
+            )
+
+    def test_hive_connection_read_table_raise_exception(self):
+        hive = Hive(self.spark)
+        with pytest.raises(ValueError):
+            hive.read_table(
+                table="table",
+                columns="column",
+                jdbc_options={"option": "option"},  # wrong parameter
+            )
+
+    def test_hive_connection_save_df_raise_exception(self):
+        hive = Hive(self.spark)
+        with pytest.raises(ValueError):
+            hive.save_df(
+                df="dataframe",
+                table="table",
+                jdbc_options={"option": "option"},  # wrong parameter
+            )
+
+
+class TestJDBCConnection:
+    spark = Mock()
 
     def test_oracle_driver_and_uri(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
@@ -89,12 +127,6 @@ class TestDBConnection:
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
         assert Clickhouse.port == 8123
 
-    # TODO:(@mivasil6) will be done in feature/ONE-325
-    @pytest.mark.skip
-    def test_empty_connection(self):
-        conn = Hive()
-        assert conn
-
     def test_jdbc_params_creator(self):
         jdbc_options = {
             "lowerBound": 10,
@@ -122,15 +154,17 @@ class TestDBConnection:
             },
         }
 
+
+class TestConnectionHelpers:
     def test_get_sql_without_extra_params(self):
-        connection = Oracle(spark=self.spark)
-        table_sql = connection.get_sql_query(table="default.test")
+
+        table_sql = get_sql_query(table="default.test")
 
         assert table_sql == "SELECT * FROM default.test"
 
     def test_dbreader_table_sql_with_extra_params(self):
-        connection = Oracle(spark=self.spark)
-        table_sql = connection.get_sql_query(
+
+        table_sql = get_sql_query(
             table="default.test",
             hint="NOWAIT",
             columns="d_id, d_name, d_age",
@@ -139,11 +173,6 @@ class TestDBConnection:
         expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"
 
         assert table_sql == expected_sql
-
-    def test_hive_connection_uri(self):
-        hive = Hive(host="some_host", user="user", password="passwd", extra={"param": "value"}, spark=self.spark)
-
-        assert hive.url == "hiveserver2://user:passwd@some_host:10000?param=value"
 
 
 class TestFileConnections:

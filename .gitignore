@@ -88,3 +88,4 @@ venv.bak/
 venv/
 virtualenv/
 wheels/
+/jar/

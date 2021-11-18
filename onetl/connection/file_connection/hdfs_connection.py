@@ -9,7 +9,7 @@ from hdfs import InsecureClient, HdfsError
 from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.kereberos_helpers import KerberosMixin
+from onetl.connection.kerberos_helpers import KerberosMixin
 
 log = getLogger(__name__)
 

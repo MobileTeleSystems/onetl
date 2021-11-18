@@ -5,6 +5,7 @@ from logging import getLogger
 from typing import Any, TYPE_CHECKING
 
 from onetl.connection.db_connection import DBConnection
+from onetl.connection.db_connection import Hive
 
 
 log = getLogger(__name__)
@@ -158,11 +159,20 @@ class DBReader:
     hwm_column: str | None = None
     jdbc_options: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self):
+        if isinstance(self.connection, Hive) and self.jdbc_options:
+            raise ValueError("It is forbidden to pass the jdbc_options parameter if you passed Hive.")
+
     def get_columns(self) -> str:
         return ", ".join(self.columns) if isinstance(self.columns, list) else self.columns or "*"  # noqa: WPS601
 
     def get_schema(self) -> StructType:
-        return self.connection.get_schema(table=self.table, columns=self.get_columns(), jdbc_options=self.jdbc_options)
+
+        return self.connection.get_schema(  # type: ignore
+            table=self.table,
+            columns=self.get_columns(),
+            jdbc_options=self.jdbc_options,
+        )
 
     def run(self) -> DataFrame:
         """

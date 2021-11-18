@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 @dataclass(frozen=True)
-class Teradata(DBConnection):
+class Teradata(JDBCConnection):
     """Class for Teradata jdbc connection.
 
     Parameters

@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime, date
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 @dataclass(frozen=True)
-class MySQL(DBConnection):
+class MySQL(JDBCConnection):
     """Class for MySQL jdbc connection.
 
     Parameters

@@ -1,7 +1,14 @@
-from typing import Dict
+from abc import abstractmethod
 from logging import getLogger
+from typing import Optional, Dict, Any
+from dataclasses import dataclass, field
+
+from onetl.connection.connection_helpers import get_sql_query
+from onetl.connection.db_connection import DBConnection
+from onetl.connection.connection_helpers import execute_query_without_partitioning
 
 log = getLogger(__name__)
+
 # FORBIDDEN_JDBC_PROPERTIES - properties that are not allowed to be overridden
 # in the constructors of the DWReader and DBWriter classes
 FORBIDDEN_JDBC_PROPERTIES = {"user", "password", "url", "driver"}
@@ -23,13 +30,109 @@ JDBC_PROPERTIES = [
 ]
 
 
-class JDBCParamsCreatorMixin:
-    def __init__(self):
-        self.user = ""
-        self.password = ""
-        self.driver = ""
-        self.spark = ""
-        self.url = ""
+@dataclass(frozen=True)
+class JDBCConnection(DBConnection):
+    extra: Dict = field(default_factory=dict)
+    driver: str = field(init=False, default="")
+    host: str = ""
+    port: Optional[int] = None
+    user: Optional[str] = ""
+    password: Optional[str] = field(repr=False, default=None)
+    # Database in rdbms, schema in DBReader.
+    # Difference like https://www.educba.com/postgresql-database-vs-schema/
+    database: str = "default"
+
+    @property
+    @abstractmethod
+    def url(self) -> str:
+        """"""
+
+    def read_table(  # type: ignore
+        self,
+        table: str,
+        columns: Optional[str],
+        hint: Optional[str],
+        where: Optional[str],
+        jdbc_options: Dict,
+        **kwargs: Any,
+    ) -> "pyspark.sql.DataFrame":
+
+        if not jdbc_options.get("fetchsize"):
+            log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
+
+        if jdbc_options.get("sessionInitStatement"):
+            log.debug(f"Init SQL statement: {jdbc_options.get('sessionInitStatement')}")
+
+        sql_text = get_sql_query(
+            table=table,
+            hint=hint,
+            columns=columns,
+            where=where,
+        )
+
+        log.info(f"{self.__class__.__name__}: Reading table {table}")
+        log.info(f"{self.__class__.__name__}: SQL statement: {sql_text}")
+
+        options = self.jdbc_params_creator(jdbc_options=jdbc_options)
+        options = self.set_lower_upper_bound(jdbc_options=options, table=table)
+
+        log.debug(
+            f"USER='{self.user}' " f"OPTIONS={options} DRIVER={options['properties']['driver']}",
+        )
+        log.debug(f"JDBC_URL='{self.url}'")
+
+        # for convenience. parameters accepted by spark.read.jdbc method
+        #  spark.read.jdbc(
+        #    url, table, column, lowerBound, upperBound, numPartitions, predicates
+        #    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
+
+        return self.spark.read.jdbc(table=f"({sql_text}) T", **options)
+
+    def save_df(  # type: ignore
+        self,
+        df: "pyspark.sql.DataFrame",
+        table: str,
+        jdbc_options: Dict,
+        mode: Optional[str] = "append",
+        **kwargs: Any,
+    ) -> None:
+        """
+        Save the DataFrame into RDB.
+
+        """
+
+        options = jdbc_options.copy()
+        options = self.jdbc_params_creator(jdbc_options=options)
+
+        log_pass = "PASSWORD='*****'" if options["properties"].get("password") else "NO_PASSWORD"
+
+        log.debug(f"USER='{self.user}' {log_pass} DRIVER={options['properties']['driver']}")
+        log.debug(f"JDBC_URL='{self.url}'")
+
+        # for convenience. parameters accepted by spark.write.jdbc method
+        #   spark.read.jdbc(
+        #     url, table, mode,
+        #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
+
+        df.write.mode(mode).jdbc(table=table, **options)
+
+    def get_schema(  # type: ignore
+        self,
+        table: str,
+        columns: str,
+        jdbc_options: Dict,
+        **kwargs: Any,
+    ) -> "pyspark.sql.types.StructType":
+        jdbc_options = self.jdbc_params_creator(jdbc_options=jdbc_options)
+
+        query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
+        jdbc_options["table"] = query_schema
+        jdbc_options["properties"]["fetchsize"] = "0"
+
+        log.info(f"{self.__class__.__name__}: Fetching table {table} schema")
+        log.info(f"{self.__class__.__name__}: SQL statement: {query_schema}")
+        df = execute_query_without_partitioning(parameters=jdbc_options, spark=self.spark, sql=query_schema)
+        return df.schema
 
     def jdbc_params_creator(
         self,
@@ -102,9 +205,6 @@ class JDBCParamsCreatorMixin:
 
         if (not lower_bound or not upper_bound) and num_partitions:
 
-            if not self.spark:
-                raise ValueError("Spark session not provided")
-
             log.info("Getting <upperBound> and <lowerBound> options")
 
             query_upper_lower_bound = (
@@ -114,13 +214,11 @@ class JDBCParamsCreatorMixin:
             )
             log.debug(f"SQL query\n{query_upper_lower_bound}")
 
-            jdbc_options_bounds_query = jdbc_options.copy()
-            jdbc_options_bounds_query["table"] = query_upper_lower_bound
-            jdbc_options_bounds_query.pop("numPartitions", None)
-            jdbc_options_bounds_query.pop("lowerBound", None)
-            jdbc_options_bounds_query.pop("upperBound", None)
-            jdbc_options_bounds_query.pop("column", None)
-            df_upper_lower_bound = self.spark.read.jdbc(**jdbc_options_bounds_query)
+            df_upper_lower_bound = execute_query_without_partitioning(
+                parameters=jdbc_options,
+                spark=self.spark,
+                sql=query_upper_lower_bound,
+            )
 
             # The sessionInitStatement parameter is removed because it only needs to be applied once.
             jdbc_options["properties"].pop("sessionInitStatement", None)
