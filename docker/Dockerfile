@@ -53,6 +53,11 @@ ENV TZ=${TZ} \
     ONETL_MYSQL_CONN_HOST=mysql \
     ONETL_MYSQL_CONN_DATABASE=onetl \
     ONETL_MYSQL_CONN_PORT=3306 \
+    ONETL_MSSQL_CONN_USER=onetl \
+    ONETL_MSSQL_CONN_PASSWORD=7ellowEl7akey \
+    ONETL_MSSQL_CONN_HOST=mssql \
+    ONETL_MSSQL_CONN_DATABASE=onetl \
+    ONETL_MSSQL_CONN_PORT=1433 \
     ONETL_FILE_SOURCE_USER="user1" \
     ONETL_FILE_SOURCE_PASSWORD="passwd" \
     ONETL_SFTP_PORT=2222 \
@@ -81,6 +86,7 @@ RUN unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy \
         make \
         gcc \
         gcc-c++ \
+        unixODBC-devel \
         # for oracle client
         libaio1\
         libaio\

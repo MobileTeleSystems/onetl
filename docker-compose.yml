@@ -69,6 +69,14 @@ services:
     - 3306:3306
     networks: [onetl]
 
+  mssql:
+    image: mcmoe/mssqldocker
+    hostname: mssql
+    env_file: onetl_local.default.env
+    ports:
+    - 1433:1433
+    networks: [onetl]
+
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
 #  тогда содержимое БД будет сохраняться между подъемами docker-compose.
 volumes:

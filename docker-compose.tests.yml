@@ -9,6 +9,7 @@ services:
     - oracle
     - clickhouse
     - mysql
+    - mssql
     env_file:
     - onetl_local.default.env
     environment:
@@ -37,7 +38,6 @@ services:
       context: ./docker/hive2
       dockerfile: Dockerfile
     env_file: onetl_local.default.env
-    hostname: hive2
     networks:
     - onetl
 
@@ -49,12 +49,10 @@ services:
     env_file: onetl_local.default.env
     networks:
     - onetl
-    hostname: oracle
     depends_on:
     - postgres
 
   clickhouse:
-    hostname: clickhouse
     image: yandex/clickhouse-server
     env_file: onetl_local.default.env
     networks:
@@ -62,6 +60,12 @@ services:
 
   mysql:
     image: mysql
+    env_file: onetl_local.default.env
+    networks:
+    - onetl
+
+  mssql:
+    image: mcmoe/mssqldocker
     env_file: onetl_local.default.env
     networks:
     - onetl
