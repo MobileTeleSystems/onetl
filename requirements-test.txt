@@ -9,7 +9,6 @@ mtspark
 omegaconf
 psycopg2-binary
 pyftpdlib
-pyhive[hive, sqlalchemy] >= 0.6
 pymssql
 PyMySQL
 pyodbc
@@ -20,6 +19,7 @@ pytest-cov
 
 pyyaml>5
 
+sqlalchemy
 
 # mypy
 types-PyYAML

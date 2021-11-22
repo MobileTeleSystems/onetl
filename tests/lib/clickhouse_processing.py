@@ -1,3 +1,5 @@
+from datetime import date, datetime, timedelta
+from random import randint
 from logging import getLogger
 from typing import List, Optional
 import os
@@ -48,6 +50,28 @@ class ClickhouseProcessing(BaseProcessing):
     @property
     def port(self) -> int:
         return int(os.getenv("ONETL_CH_CONN_PORT"))
+
+    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
+        max_id = self._df_max_length if not max_id else max_id
+        time_multiplier = 100000
+
+        values = {column_name: [] for column_name in self.column_names}
+
+        for i in range(min_id, max_id + 1):
+            for column_name in values.keys():
+                if "int" in column_name.split("_"):
+                    values[column_name].append(i)
+                if "text" in column_name.split("_"):
+                    values[column_name].append("This line is made to test the work")
+                if "date" in column_name.split("_"):
+                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
+                    values[column_name].append(date.today() + timedelta(seconds=rand_second))
+                if "datetime" in column_name.split("_"):
+                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
+                    # Clickhouse DATETIME format has time range: 00:00:00 through 23:59:59
+                    values[column_name].append(datetime.now().replace(microsecond=0) + timedelta(seconds=rand_second))
+
+        return pd.DataFrame(data=values)
 
     def create_schema(
         self,
@@ -121,12 +145,6 @@ class ClickhouseProcessing(BaseProcessing):
             )
 
         pd_df = df.toPandas()
-
-        # deleting microseconds since they are not recorded in clickhouse
-        for column_name in pd_df:  # noqa: WPS528
-            if "datetime" in column_name:
-                for idx, row in enumerate(pd_df[column_name]):
-                    pd_df[column_name][idx] = row.replace(microsecond=0)
 
         assert_frame_equal(
             left=pd_df,
