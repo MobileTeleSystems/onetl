@@ -112,9 +112,11 @@ Run -> Edit Configurations -> New -> pytest:
 
 6. Docker container settings:
 
-   1. Network mode **onetl** (network from docker-compode из docker-compose.yml) or  Add --net onetl in Run options
+   1. Network mode **onetl** (network from docker-compode) or  Add --net onetl in Run options
 
-   2. Volume bindings (container -> local):
+   2. Add --env-file (absolute path to)/onetl_local.default.env in docker Run options
+
+   3. Volume bindings (container -> local):
       - **/opt/project -> (absolute path to)/onetl** (PyCharm do it for you, but check!!!).
 
 Run -> Edit Configurations -> Copy Configuration **Test All**:

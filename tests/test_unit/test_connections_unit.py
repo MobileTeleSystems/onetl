@@ -86,7 +86,7 @@ class TestDBConnection:
 
         assert conn.url == "jdbc:clickhouse://some_host:8123/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
-        assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
+        assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
         assert Clickhouse.port == 8123
 
     # TODO:(@mivasil6) will be done in feature/ONE-325

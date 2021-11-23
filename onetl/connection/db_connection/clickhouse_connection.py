@@ -57,7 +57,7 @@ class Clickhouse(DBConnection):
     """
 
     driver: str = field(init=False, default="ru.yandex.clickhouse.ClickHouseDriver")
-    package: str = field(init=False, default="ru.yandex.clickhouse:clickhouse-jdbc:0.2.4")
+    package: str = field(init=False, default="ru.yandex.clickhouse:clickhouse-jdbc:0.3.0")
     port: int = 8123
 
     @property

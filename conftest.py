@@ -9,9 +9,6 @@ from collections import namedtuple
 import pytest
 from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
 
-# noinspection PyPackageRequirements
-from pyhive import hive
-
 from mtspark import get_spark
 from onetl.connection.file_connection import SFTP, FTP, FTPS
 from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, MSSQL, Teradata
@@ -131,13 +128,6 @@ def get_mtspark_session():
     )
     yield spark
     spark.stop()
-
-
-@pytest.fixture(scope="session")
-def hive_client():
-    client = hive.connect(host="hive2")
-    yield client
-    client.close()
 
 
 @pytest.fixture()
