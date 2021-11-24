@@ -1,12 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime, date
-from typing import Optional
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 @dataclass(frozen=True)
-class Oracle(DBConnection):
+class Oracle(JDBCConnection):
     """Class for Oracle jdbc connection.
 
     Parameters
@@ -67,8 +66,8 @@ class Oracle(DBConnection):
     driver: str = field(init=False, default="oracle.jdbc.driver.OracleDriver")
     package: str = field(init=False, default="com.oracle:ojdbc7:12.1.0.2")
     port: int = 1521
-    sid: Optional[str] = None
-    service_name: Optional[str] = None
+    sid: str = ""
+    service_name: str = ""
 
     @property
     def url(self) -> str:

@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime, date
-from onetl.connection.db_connection.db_connection import DBConnection
+
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 @dataclass(frozen=True)
-class Postgres(DBConnection):
+class Postgres(JDBCConnection):
     """Class for Postgres jdbc connection.
 
     Parameters

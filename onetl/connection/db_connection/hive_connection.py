@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional, Any
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection import DBConnection
+from onetl.connection.connection_helpers import get_sql_query, attribute_checker
 
 
+@attribute_checker(forbidden_parameter="jdbc_options")
 @dataclass(frozen=True)
 class Hive(DBConnection):
     """Class for Hive spark connection.
@@ -30,37 +32,44 @@ class Hive(DBConnection):
         hive = Hive(spark=spark)
     """
 
-    port: int = 10000
-
-    @property
-    def url(self) -> str:
-        params = "&".join(f"{k}={v}" for k, v in self.extra.items())
-
-        return f"hiveserver2://{self.user}:{self.password}@{self.host}:{self.port}?{params}"
-
     def save_df(
         self,
         df: "pyspark.sql.DataFrame",
         table: str,
-        jdbc_options: Dict,
+        mode: Optional[str] = "append",
+        **kwargs: Any,
     ) -> None:
+
         # TODO:(@dypedchenk) rewrite, take into account all data recording possibilities. Use "mode" param.
         df.write.insertInto(table, overwrite=False)
 
-    # TODO:(@dypedchenk) think about unused params in this method
-    def read_table(
+    def read_table(  # type: ignore
         self,
-        jdbc_options: Dict,
         table: str,
         columns: Optional[str] = "*",
         hint: Optional[str] = None,
         where: Optional[str] = None,
+        **kwargs: Any,
     ) -> "pyspark.sql.DataFrame":
 
-        table = self.get_sql_query(
+        table = get_sql_query(
             table=table,
             hint=hint,
             columns=columns,
             where=where,
         )
-        return self.spark.sql(table)  # type: ignore[union-attr]
+
+        return self.spark.sql(table)
+
+    def get_schema(
+        self,
+        table: str,
+        columns: str,
+        **kwargs: Any,
+    ) -> "pyspark.sql.types.StructType":
+
+        query_schema = f"SELECT {columns} FROM {table} WHERE 1 = 0"
+
+        df = self.spark.sql(query_schema)
+
+        return df.schema

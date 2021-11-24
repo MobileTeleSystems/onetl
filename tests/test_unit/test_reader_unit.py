@@ -2,11 +2,24 @@ import pytest
 from unittest.mock import Mock
 
 from onetl.reader import DBReader
-from onetl.connection.db_connection import Oracle, Postgres
+from onetl.connection.db_connection import Oracle, Postgres, Hive
 
 
 class TestDBReader:
     spark = Mock()
+
+    def test_reader_jdbc_properties_raise_exception(self):
+        """
+        if the type of the connection parameter is equal to Hive,
+        it will fall if the jdbc_properties parameter is used
+        """
+
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="table",
+                jdbc_options={"user": "some_user"},  # wrong parameter
+            )
 
     # TODO: the functionality of the connection class in the reader class is tested
     def test_db_reader_set_lower_upper_bound(self):
@@ -74,7 +87,8 @@ class TestDBReader:
             },
         }
 
-    def test_db_reader_jdbc_properties_value_error(self):
+    def test_db_reader_jdbc_properties_overrides_parameter(self):
+        """Overrides the <user> parameter in the jdbc_options parameter which was already defined in the connection"""
         reader = DBReader(
             connection=Oracle(spark=self.spark),
             table="default.test",

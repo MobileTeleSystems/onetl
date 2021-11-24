@@ -8,7 +8,7 @@ import pytest
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from onetl.connection import Postgres
+from onetl.connection import Postgres, Hive
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy
 
@@ -174,6 +174,73 @@ def test_postgres_strategy_increment_where(spark, processing, prepare_schema_tab
 
     # only changed data has been read
     assert_frame_equal(left=second_df.toPandas(), right=second_span, check_dtype=False)
+
+
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "hwm_int",
+        "hwm_date",
+        "hwm_datetime",
+    ],
+)
+@pytest.mark.parametrize(
+    "span_gap, span_length",
+    [
+        (10, 100),
+        (10, 50),
+    ],
+)
+def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
+    hive = Hive(spark=spark)
+    reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    # there are 2 spans with a gap between
+
+    # 0..100
+    first_begin = 0
+    first_end = first_begin + span_length
+
+    # 110..210
+    second_begin = first_end + span_gap
+    second_end = second_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
+    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # incremental run
+    with IncrementalStrategy():
+        first_df = reader.run()
+
+    # all the data has been read
+    assert_frame_equal(left=first_df.toPandas(), right=first_span, check_dtype=False)
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    with IncrementalStrategy():
+        second_df = reader.run()
+
+    if "int" in hwm_column:
+        # only changed data has been read
+        assert_frame_equal(left=second_df.toPandas(), right=second_span, check_dtype=False)
+    else:
+        second_pandas_df = second_df.toPandas()
+        # date and datetime values have a random part
+        # so instead of checking the whole dataframe a partial comparison should be performed
+        for column in second_span.columns:
+            second_pandas_df[column].isin(second_span[column]).all()
 
 
 @pytest.mark.parametrize(

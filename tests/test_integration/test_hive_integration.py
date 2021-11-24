@@ -1,5 +1,4 @@
 # noinspection PyPackageRequirements
-
 from onetl.connection.db_connection import Hive
 from onetl.reader.db_reader import DBReader
 from onetl.writer.db_writer import DBWriter

@@ -145,6 +145,9 @@ def processing(request, spark):
 
     db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql, mssql
 
+    if db_storage_name not in storage_matching:
+        raise ValueError(f"Wrong name. Please use {list(storage_matching.keys())}")
+
     db_processing = storage_matching[db_storage_name]
 
     if db_storage_name == "hive":

@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Dict
 
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection import DBConnection
+from onetl.connection.db_connection.hive_connection import Hive
 
 
 log = getLogger(__name__)
@@ -131,7 +132,6 @@ class DBWriter:
         writer = DBWriter(
           connection=postgres,
           table="default.test",
-          format="parquet",
           mode="overwrite",
           jdbc_options=jdbc_options,
         )
@@ -149,16 +149,18 @@ class DBWriter:
         writer = DBWriter(
           connection=hive,
           table="default.test",
-          format="parquet",
           mode="skip",
         )
     """
 
     connection: DBConnection
     table: str
-    format: str = "orc"
-    mode: str = "append"
+    mode: str = field(default="append")
     jdbc_options: Dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if isinstance(self.connection, Hive) and self.jdbc_options:
+            raise ValueError("It is forbidden to pass the jdbc_options parameter if you passed Hive.")
 
     def run(self, df):
         """
@@ -180,10 +182,10 @@ class DBWriter:
 
         """
         jdbc_options = self.jdbc_options.copy()
-        jdbc_options.update(mode=self.mode, format=self.format)
 
         self.connection.save_df(
             df=df,
             table=self.table,
             jdbc_options=jdbc_options,
+            mode=self.mode,
         )

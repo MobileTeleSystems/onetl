@@ -8,7 +8,7 @@ import os
 from typing import Any, Callable, Generator
 from logging import getLogger
 
-from onetl.connection import ConnectionABC
+from onetl.connection.connection_abc import ConnectionABC
 
 log = getLogger(__name__)
 

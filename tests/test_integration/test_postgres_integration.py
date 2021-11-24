@@ -99,6 +99,7 @@ class TestIntegrationONETLPostgres:
             )
 
     def test_postgres_writer_jdbc_properties_value_error(self, spark, processing):
+        """Overrides the <user> parameter in the jdbc_options parameter which was already defined in the connection"""
         df = processing.create_spark_df(spark)
 
         writer = DBWriter(
