@@ -15,18 +15,16 @@ class TestDBConnection:
         assert "password=" not in str(conn)
         assert "password=" not in repr(conn)
 
-    # TODO:(@mivasil6) will be done in feature/ONE-325
-    @pytest.mark.skip
     def test_empty_connection(self):
-        conn = Hive()
-        assert conn
+        with pytest.raises(TypeError):
+            conn = Hive()  # noqa: F841
 
 
 class TestHiveConnectionUnit:
     spark = Mock()
 
     def test_hive_connection_get_schema_raise_exception(self):
-        hive = Hive(self.spark)
+        hive = Hive(spark=self.spark)
         with pytest.raises(ValueError):
             hive.get_schema(
                 table="table",
@@ -35,7 +33,7 @@ class TestHiveConnectionUnit:
             )
 
     def test_hive_connection_read_table_raise_exception(self):
-        hive = Hive(self.spark)
+        hive = Hive(spark=self.spark)
         with pytest.raises(ValueError):
             hive.read_table(
                 table="table",
@@ -44,7 +42,7 @@ class TestHiveConnectionUnit:
             )
 
     def test_hive_connection_save_df_raise_exception(self):
-        hive = Hive(self.spark)
+        hive = Hive(spark=self.spark)
         with pytest.raises(ValueError):
             hive.save_df(
                 df="dataframe",
@@ -55,6 +53,10 @@ class TestHiveConnectionUnit:
 
 class TestJDBCConnection:
     spark = Mock()
+
+    def test_jdbc_connection_without_host_and_credentials(self):
+        with pytest.raises(TypeError):
+            conn = Postgres(spark=self.spark)  # noqa: F841
 
     def test_oracle_driver_and_uri(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
@@ -176,6 +178,10 @@ class TestConnectionHelpers:
 
 
 class TestFileConnections:
+    def test_file_connection_without_host_and_user(self):
+        with pytest.raises(TypeError):
+            conn = FTP()  # noqa: F841
+
     def test_ftp_connection(self):
         ftp = FTP(host="some_host", user="some_user", password="pwd")
         assert isinstance(ftp, FileConnection)

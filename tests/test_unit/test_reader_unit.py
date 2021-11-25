@@ -24,7 +24,7 @@ class TestDBReader:
     # TODO: the functionality of the connection class in the reader class is tested
     def test_db_reader_set_lower_upper_bound(self):
         reader: DBReader = DBReader(
-            Oracle(spark=self.spark),
+            Oracle(spark=self.spark, host="some_host", user="valid_user", password="pwd"),
             table="default.test",
             jdbc_options={"lowerBound": 10, "upperBound": 1000},
         )
@@ -90,7 +90,7 @@ class TestDBReader:
     def test_db_reader_jdbc_properties_overrides_parameter(self):
         """Overrides the <user> parameter in the jdbc_options parameter which was already defined in the connection"""
         reader = DBReader(
-            connection=Oracle(spark=self.spark),
+            connection=Oracle(spark=self.spark, host="some_host", user="valid_user", password="pwd"),
             table="default.test",
             jdbc_options={"user": "some_user"},
         )

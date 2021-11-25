@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from logging import getLogger
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, ClassVar
 from dataclasses import dataclass, field
 
 from onetl.connection.connection_helpers import get_sql_query
@@ -32,15 +32,16 @@ JDBC_PROPERTIES = [
 
 @dataclass(frozen=True)
 class JDBCConnection(DBConnection):
-    extra: Dict = field(default_factory=dict)
-    driver: str = field(init=False, default="")
-    host: str = ""
+    host: str
+    user: str
+    password: str = field(repr=False)
     port: Optional[int] = None
-    user: Optional[str] = ""
-    password: Optional[str] = field(repr=False, default=None)
     # Database in rdbms, schema in DBReader.
     # Difference like https://www.educba.com/postgresql-database-vs-schema/
     database: str = "default"
+    extra: Dict = field(default_factory=dict)
+    driver: ClassVar[str] = ""
+    package: ClassVar[str] = ""
 
     @property
     @abstractmethod
