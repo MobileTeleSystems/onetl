@@ -1,5 +1,5 @@
 import posixpath
-from logging import getLogger
+import logging
 from pathlib import PosixPath
 import os
 import tempfile
@@ -9,10 +9,14 @@ from onetl.downloader import FileDownloader
 from onetl.uploader import FileUploader
 from tests.lib.common import hashfile
 
-LOG = getLogger(__name__)
-
 
 class TestFTP:
+    def test_ftp_source_check(self, ftp_server, caplog):
+        ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
+        with caplog.at_level(logging.INFO):
+            ftp.check()
+        assert "Connection is available" in caplog.text
+
     def test_ftp_downloader_with_pattern(self, ftp_server, ftp_files, source_path, test_file_name, test_file_path):
         ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:

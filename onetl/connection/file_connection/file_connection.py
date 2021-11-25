@@ -17,7 +17,7 @@ log = getLogger(__name__)
 def cached(f):
     @wraps(f)  # NOQA: WPS430
     def wrapped(self, *args, **kwargs):  # NOQA: WPS430
-        key = f"{self.__class__.__name__}_{f.__name__}_cached_val"
+        key = f"{self.__class__.__name__}_{f.__name__}_{self.user}_{self.host}_cached_val"
         existing = getattr(wrapped, key, None)
         if existing is not None:
             return existing
@@ -43,6 +43,13 @@ class FileConnection(ConnectionABC):
     @cached
     def client(self):
         return self.get_client()
+
+    def check(self):
+        try:
+            self.listdir("/")
+            log.info("Connection is available")
+        except Exception as e:
+            raise RuntimeError(f"Connection is unavailable:\n{e}")
 
     @abstractmethod
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:

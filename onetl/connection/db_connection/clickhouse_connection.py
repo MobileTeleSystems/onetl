@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -56,8 +57,8 @@ class Clickhouse(JDBCConnection):
 
     """
 
-    driver: str = field(init=False, default="ru.yandex.clickhouse.ClickHouseDriver")
-    package: str = field(init=False, default="ru.yandex.clickhouse:clickhouse-jdbc:0.3.0")
+    driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
+    package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
     port: int = 8123
 
     @property

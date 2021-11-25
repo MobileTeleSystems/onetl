@@ -1,4 +1,5 @@
 # noinspection PyPackageRequirements
+import logging
 
 from onetl.connection.db_connection import Clickhouse
 from onetl.reader.db_reader import DBReader
@@ -14,6 +15,19 @@ class TestIntegrationONETLClickhouse:
     if writer is specified then only preliminary table creation will be performed.
     The name of the test will be given to the test table.
     """
+
+    def test_clickhouse_connection_check(self, spark, processing, caplog):
+        clickhouse = Clickhouse(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        with caplog.at_level(logging.INFO):
+            clickhouse.check()
+        assert "Connection is available" in caplog.text
 
     def test_clickhouse_reader_snapshot(self, spark, processing, prepare_schema_table):
         clickhouse = Clickhouse(

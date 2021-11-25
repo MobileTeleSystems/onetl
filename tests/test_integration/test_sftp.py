@@ -1,16 +1,14 @@
 from stat import S_ISDIR
 import posixpath
-from logging import getLogger
 from pathlib import PosixPath
 import os
+import logging
 import tempfile
 
 from onetl.connection.file_connection import SFTP
 from onetl.downloader import FileDownloader
 from onetl.uploader import FileUploader
 from tests.lib.common import hashfile
-
-LOG = getLogger(__name__)
 
 
 def sftp_walk(sftp, remote_path):
@@ -31,6 +29,13 @@ def sftp_walk(sftp, remote_path):
 
 
 class TestSFTP:
+    def test_sftp_source_check(self, sftp_server, caplog):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+
+        with caplog.at_level(logging.INFO):
+            sftp.check()
+        assert "Connection is available" in caplog.text
+
     def test_downloader_local_path(self, sftp_files, sftp_server, source_path, test_file_name, test_file_path):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
         with tempfile.TemporaryDirectory() as local_path:

@@ -48,6 +48,14 @@ class JDBCConnection(DBConnection):
     def url(self) -> str:
         """"""
 
+    def check(self):
+        options = {"properties": {"user": self.user, "password": self.password, "driver": self.driver}}
+        try:
+            self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.url, **options).collect()
+            log.info("Connection is available")
+        except Exception as e:
+            raise RuntimeError(f"Connection is unavailable:\n{e}")
+
     def read_table(  # type: ignore
         self,
         table: str,

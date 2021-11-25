@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -58,8 +59,9 @@ class MSSQL(JDBCConnection):
 
     """
 
-    driver: str = field(init=False, default="com.microsoft.sqlserver.jdbc.SQLServerDriver")
-    package: str = field(init=False, default="com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8")
+    driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
+    check_statement: ClassVar[str] = "select 1 as field"
     port: int = 1433
 
     @property

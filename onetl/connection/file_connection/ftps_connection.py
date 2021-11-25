@@ -5,7 +5,7 @@ from ftputil import FTPHost, session as ftp_session
 from onetl.connection.file_connection.ftp_connection import FTP
 
 
-class FTP_TLS_fix(ftplib.FTP_TLS):  # noqa: N801
+class TLSfix(ftplib.FTP_TLS):  # noqa: N801
     """
     Fix for python 3.6+
     https://stackoverflow.com/questions/14659154/ftpes-session-reuse-required
@@ -58,7 +58,7 @@ class FTPS(FTP):
         """
 
         session_factory = ftp_session.session_factory(
-            base_class=FTP_TLS_fix,
+            base_class=TLSfix,
             port=self.port,
             encrypt_data_channel=True,
             debug_level=0,
