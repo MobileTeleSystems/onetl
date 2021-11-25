@@ -73,6 +73,7 @@ class HDFS(FileConnection, KerberosMixin):
     """
 
     port: int = 50070
+    user: str = ""
     keytab: str | None = None
     timeout: int | None = None
 

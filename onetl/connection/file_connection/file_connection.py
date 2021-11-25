@@ -30,10 +30,10 @@ def cached(f):
 
 @dataclass(frozen=True)
 class FileConnection(ConnectionABC):
-    host: str | None = None
-    port: int | None = None
-    user: str | None = None
-    password: str | None = field(repr=False, default=None)
+    host: str
+    user: str
+    port: int
+    password: str = field(repr=False, default="")
 
     @abstractmethod
     def get_client(self) -> Any:

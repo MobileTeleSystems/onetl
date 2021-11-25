@@ -42,6 +42,7 @@
 .venv
 .vscode
 .webassets-cache
+/jar/
 /site
 ENV/
 MANIFEST
@@ -88,4 +89,3 @@ venv.bak/
 venv/
 virtualenv/
 wheels/
-/jar/
