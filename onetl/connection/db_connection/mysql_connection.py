@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -56,8 +57,8 @@ class MySQL(JDBCConnection):
 
     """
 
-    driver: str = field(init=False, default="com.mysql.jdbc.Driver")
-    package: str = field(init=False, default="mysql:mysql-connector-java:8.0.26")
+    driver: ClassVar[str] = "com.mysql.jdbc.Driver"
+    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.26"
     port: int = 3306
 
     @property

@@ -15,6 +15,7 @@ log = getLogger(__name__)
 class DBConnection(ConnectionABC):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: "pyspark.sql.SparkSession"
+    check_statement: ClassVar[str] = "select 1"
 
     compare_statements: ClassVar[Dict[Callable, str]] = {
         operator.ge: "{} >= {}",

@@ -1,4 +1,6 @@
 # noinspection PyPackageRequirements
+import logging
+
 import pytest
 
 from onetl.connection.db_connection import Postgres
@@ -15,6 +17,25 @@ class TestIntegrationONETLPostgres:
     if writer is specified then only preliminary table creation will be performed.
     The name of the test will be given to the test table.
     """
+
+    def test_postgres_connection_check(self, spark, processing, caplog):
+        postgres = Postgres(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        with caplog.at_level(logging.INFO):
+            postgres.check()
+        assert "Connection is available" in caplog.text
+
+    def test_postgres_wrong_connection_check(self, spark):
+        postgres = Postgres(host="host", user="some_user", password="pwd", spark=spark)
+
+        with pytest.raises(RuntimeError):
+            postgres.check()
 
     def test_postgres_reader_snapshot(self, spark, processing, prepare_schema_table):
         postgres = Postgres(

@@ -1,8 +1,12 @@
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Optional, Any
 
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.connection_helpers import get_sql_query, attribute_checker
+
+
+log = getLogger(__name__)
 
 
 @attribute_checker(forbidden_parameter="jdbc_options")
@@ -73,3 +77,10 @@ class Hive(DBConnection):
         df = self.spark.sql(query_schema)
 
         return df.schema
+
+    def check(self):
+        try:
+            self.spark.sql(self.check_statement).collect()
+            log.info("Connection is available")
+        except Exception as e:
+            raise RuntimeError(f"Connection is unavailable:\n{e}")

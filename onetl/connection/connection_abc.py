@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
@@ -9,3 +9,7 @@ class ConnectionABC(ABC):
 
     Checkout airflow.models.connection.Connection for more info.
     """
+
+    @abstractmethod
+    def check(self):
+        """Check source availability"""

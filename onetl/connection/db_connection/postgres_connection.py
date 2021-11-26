@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -52,8 +53,8 @@ class Postgres(JDBCConnection):
 
     """
 
-    driver: str = field(init=False, default="org.postgresql.Driver")
-    package: str = field(init=False, default="org.postgresql:postgresql:42.2.5")
+    driver: ClassVar[str] = "org.postgresql.Driver"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.2.5"
     port: int = 5432
 
     @property

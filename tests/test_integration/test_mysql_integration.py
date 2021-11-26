@@ -1,3 +1,5 @@
+import logging
+
 from onetl.connection.db_connection import MySQL
 from onetl.reader.db_reader import DBReader
 from onetl.writer.db_writer import DBWriter
@@ -12,6 +14,19 @@ class TestIntegrationONETLMySQL:
     if writer is specified then only preliminary table creation will be performed.
     The name of the test will be given to the test table.
     """
+
+    def test_mysql_connection_check(self, spark, processing, caplog):
+        mysql = MySQL(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        with caplog.at_level(logging.INFO):
+            mysql.check()
+        assert "Connection is available" in caplog.text
 
     def test_mysql_reader_snapshot(self, spark, processing, prepare_schema_table):
         mysql = MySQL(

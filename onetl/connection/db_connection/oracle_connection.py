@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -63,8 +64,9 @@ class Oracle(JDBCConnection):
 
     """
 
-    driver: str = field(init=False, default="oracle.jdbc.driver.OracleDriver")
-    package: str = field(init=False, default="com.oracle:ojdbc7:12.1.0.2")
+    driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
+    package: ClassVar[str] = "com.oracle:ojdbc7:12.1.0.2"
+    check_statement: ClassVar[str] = "select 1 from dual"
     port: int = 1521
     sid: str = ""
     service_name: str = ""

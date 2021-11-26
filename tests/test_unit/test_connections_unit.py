@@ -178,6 +178,11 @@ class TestConnectionHelpers:
 
 
 class TestFileConnections:
+    def test_wrong_source_check(self):
+        ftp = FTP(host="some_host", user="some_user", password="pwd")
+        with pytest.raises(RuntimeError):
+            ftp.check()
+
     def test_file_connection_without_host_and_user(self):
         with pytest.raises(TypeError):
             conn = FTP()  # noqa: F841

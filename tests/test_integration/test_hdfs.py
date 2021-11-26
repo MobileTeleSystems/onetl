@@ -1,7 +1,7 @@
-from logging import getLogger
 import os
 import tempfile
 from pathlib import Path, PosixPath
+import logging
 from unittest.mock import patch
 
 
@@ -10,10 +10,15 @@ from onetl.uploader import FileUploader
 from onetl.downloader import FileDownloader
 from tests.lib.common import hashfile
 
-LOG = getLogger(__name__)
-
 
 class TestHDFS:
+    def test_hdfs_source_check(self, caplog):
+        hdfs = HDFS(host="hive2", port=50070)
+
+        with caplog.at_level(logging.INFO):
+            hdfs.check()
+        assert "Connection is available" in caplog.text
+
     @patch("logging.Logger.warning")
     def test_file_uploader_with_empty_file_list(self, mock):
         hdfs = HDFS(host="hive2", port=50070)
