@@ -21,6 +21,7 @@ class PostgressProcessing(BaseProcessing):
         "hwm_int": "bigint",
         "hwm_date": "date",
         "hwm_datetime": "timestamp",
+        "float_value": "float",
     }
 
     def __enter__(self):

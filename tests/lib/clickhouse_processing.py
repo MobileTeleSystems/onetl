@@ -21,6 +21,7 @@ class ClickhouseProcessing(BaseProcessing):
         "hwm_int": "Int32",
         "hwm_date": "Date",
         "hwm_datetime": "DateTime",
+        "float_value": "Float32",
     }
 
     def __enter__(self):
@@ -61,12 +62,14 @@ class ClickhouseProcessing(BaseProcessing):
             for column_name in values.keys():
                 if "int" in column_name.split("_"):
                     values[column_name].append(i)
-                if "text" in column_name.split("_"):
+                elif "float" in column_name.split("_"):
+                    values[column_name].append(float(f"{i}.{i}"))
+                elif "text" in column_name.split("_"):
                     values[column_name].append("This line is made to test the work")
-                if "date" in column_name.split("_"):
+                elif "date" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     values[column_name].append(date.today() + timedelta(seconds=rand_second))
-                if "datetime" in column_name.split("_"):
+                elif "datetime" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     # Clickhouse DATETIME format has time range: 00:00:00 through 23:59:59
                     values[column_name].append(datetime.now().replace(microsecond=0) + timedelta(seconds=rand_second))

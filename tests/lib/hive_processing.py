@@ -17,6 +17,7 @@ class HiveProcessing(BaseProcessing):
         "hwm_int": "int",
         "hwm_date": "date",
         "hwm_datetime": "timestamp",
+        "float_value": "float",
     }
 
     def __init__(self, spark):

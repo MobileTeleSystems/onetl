@@ -14,7 +14,7 @@ class BaseProcessing:
 
     _column_types_and_names_matching: Dict = {}
 
-    column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime"]
+    column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime", "float_value"]
 
     @abstractmethod
     def create_schema(
@@ -68,12 +68,14 @@ class BaseProcessing:
             for column_name in values.keys():
                 if "int" in column_name.split("_"):
                     values[column_name].append(i)
-                if "text" in column_name.split("_"):
+                elif "float" in column_name.split("_"):
+                    values[column_name].append(float(f"{i}.{i}"))
+                elif "text" in column_name.split("_"):
                     values[column_name].append("This line is made to test the work")
-                if "date" in column_name.split("_"):
+                elif "date" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     values[column_name].append(date.today() + timedelta(seconds=rand_second))
-                if "datetime" in column_name.split("_"):
+                elif "datetime" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     values[column_name].append(datetime.now() + timedelta(seconds=rand_second))
 
