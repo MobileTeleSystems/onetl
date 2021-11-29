@@ -20,6 +20,7 @@ class OracleProcessing(BaseProcessing):
         "hwm_int": "INTEGER",
         "hwm_date": "DATE",
         "hwm_datetime": "TIMESTAMP",
+        "float_value": "FLOAT",
     }
 
     def __enter__(self):
@@ -146,11 +147,13 @@ class OracleProcessing(BaseProcessing):
 
         for column in df:
 
-            column_name_words = [column_word.lower() for column_word in column.split("_")]
+            column_names = [column_word.lower() for column_word in column.split("_")]
 
-            if "int" in column_name_words:
+            if "int" in column_names:
                 convert_rules[column] = "int64"
-            if "datetime" in column_name_words or "date" in column_name_words:
+            elif "float" in column_names:
+                convert_rules[column] = "float64"
+            elif "datetime" in column_names or "date" in column_names:
                 convert_rules[column] = "datetime64[ns]"
 
         df = df.astype(convert_rules)

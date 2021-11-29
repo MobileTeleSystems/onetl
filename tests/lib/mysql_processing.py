@@ -20,6 +20,7 @@ class MySQLProcessing(BaseProcessing):
         "hwm_int": "INT",
         "hwm_date": "DATE",
         "hwm_datetime": "DATETIME(6)",
+        "float_value": "FLOAT",
     }
 
     def __enter__(self):
