@@ -5,8 +5,8 @@ services:
   postgres:
     # TODO: fix later
     build:
-      context: ./docker/postgres/
-      dockerfile: Dockerfile
+      dockerfile: ./docker/postgres/Dockerfile
+      context: .
     env_file: onetl_local.default.env
     restart: always
     networks: [onetl]
@@ -16,8 +16,8 @@ services:
   hive2:
     # TODO: fix later
     build:
-      context: ./docker/hive2
-      dockerfile: Dockerfile
+      dockerfile: ./docker/hive2/Dockerfile
+      context: .
     env_file: onetl_local.default.env
     hostname: hive2
     networks: [onetl]
@@ -42,8 +42,8 @@ services:
 
   oracle:
     build:
-      context: ./docker/oracle
-      dockerfile: Dockerfile
+      dockerfile: ./docker/oracle/Dockerfile
+      context: .
     restart: always
     ports:
     - 1522:1521

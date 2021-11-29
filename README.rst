@@ -136,7 +136,6 @@ Testing
 
 Wait initialization of every service
 
-
 Now you can run tests with configuration **Test All**.
 
 .. usage
