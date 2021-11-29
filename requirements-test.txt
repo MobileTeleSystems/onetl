@@ -23,3 +23,6 @@ sqlalchemy
 
 # mypy
 types-PyYAML
+
+# coverage
+coverage==4.5.4
