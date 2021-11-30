@@ -1,6 +1,9 @@
 -r requirements.txt
 clickhouse-driver
 
+# coverage
+coverage==4.5.4
+
 # Oracle client
 cx_Oracle
 
@@ -23,6 +26,3 @@ sqlalchemy
 
 # mypy
 types-PyYAML
-
-# coverage
-coverage==4.5.4

@@ -1,5 +1,6 @@
 ftputil
 hdfs[avro,dataframe,kerberos]>2
+humanize
 paramiko
 platformdirs
 PySmbClient

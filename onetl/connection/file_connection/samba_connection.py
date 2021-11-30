@@ -72,27 +72,23 @@ class Samba(FileConnection):
     def get_name(self, item) -> Path:
         return Path(item[0])
 
-    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self.client.run(remote_file_path, local_file_path)
-        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
-
-    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        self.client.unlink(remote_file_path)
-        log.info(f"Successfully removed file {remote_file_path} from SMB")
-
-    def mkdir(self, path: os.PathLike | str) -> None:
-        self.client.mkdir(path)
-        log.info(f"Successfully created directory {path}")
-
-    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.run(local_file_path, remote_file_path)
-
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.exists(path)
 
-    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
-        log.info(f"Successfully renamed file {source} to {target}")
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.lsdir(path)
+
+    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+        self.client.run(remote_file_path, local_file_path)
+
+    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        self.client.unlink(remote_file_path)
+
+    def _mkdir(self, path: os.PathLike | str) -> None:
+        self.client.mkdir(path)
+
+    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        self.client.run(local_file_path, remote_file_path)

@@ -72,34 +72,30 @@ class FTP(FileConnection):
     def get_name(self, item: str | os.PathLike) -> PosixPath:
         return PosixPath(item)
 
-    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self.client.download(remote_file_path, local_file_path)
-        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
-
-    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        self.client.remove(remote_file_path)
-        log.info(f"Successfully removed file {remote_file_path}")
-
-    def mkdir(self, path: os.PathLike | str) -> None:
-        self.client.makedirs(path, exist_ok=True)
-        log.info(f"Successfully created directory {path}")
-
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.stat(path=path, _exception_for_missing_path=False)
-
-    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.upload(local_file_path, remote_file_path)
-
-    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        self.client.rename(source, target)
-        log.info(f"Successfully renamed file {source} to {target}")
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if recursive:
             self.client.rmtree(path)
         else:
             self.client.rmdir(path)
-        log.info(f"Successfully deleted {path}")
+        log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
+
+    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        self.client.upload(local_file_path, remote_file_path)
+
+    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+        self.client.rename(source, target)
+
+    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+        self.client.download(remote_file_path, local_file_path)
+
+    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        self.client.remove(remote_file_path)
+
+    def _mkdir(self, path: os.PathLike | str) -> None:
+        self.client.makedirs(path, exist_ok=True)
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir(path)

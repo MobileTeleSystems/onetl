@@ -98,41 +98,12 @@ class SFTP(FileConnection):
     def get_name(self, item) -> str | PosixPath:
         return PosixPath(item.filename)
 
-    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
-        log.info(f"Successfully download file {remote_file_path} from remote host {self.host} to {local_file_path}")
-
-    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        self.client.remove(os.fspath(remote_file_path))
-        log.info(f"Successfully removed file {remote_file_path}")
-
     def path_exists(self, path: os.PathLike | str) -> bool:
         try:
             self.client.stat(os.fspath(path))
             return True
         except FileNotFoundError:
             return False
-
-    def mkdir(self, path: os.PathLike | str) -> None:
-        try:
-            self.client.stat(os.fspath(path))
-        except Exception:
-            abs_path = "/"
-            for directory in PosixPath(path).parts:
-                abs_path = PosixPath(abs_path) / directory
-                try:  # noqa: WPS505
-                    self.client.stat(os.fspath(abs_path))
-                except Exception:
-                    self.client.mkdir(os.fspath(abs_path))
-        log.info(f"Successfully created dir {path}")
-
-    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
-        log.info(f"Successfully uploaded _file from {local_file_path} to remote SFTP {remote_file_path}")
-
-    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        self.client.rename(os.fspath(source), os.fspath(target))
-        log.info(f"Successfully renamed file {source} to {target}")
 
     def parse_user_ssh_config(self, key_file):
         user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
@@ -148,6 +119,30 @@ class SFTP(FileConnection):
                 key_file = host_info.get("identityfile")[0]  # NOQA WPS220
 
         return host_proxy, key_file
+
+    def _mkdir(self, path: os.PathLike | str) -> None:
+        try:
+            self.client.stat(os.fspath(path))
+        except Exception:
+            abs_path = "/"
+            for directory in PosixPath(path).parts:
+                abs_path = PosixPath(abs_path) / directory
+                try:  # noqa: WPS505
+                    self.client.stat(os.fspath(abs_path))
+                except Exception:
+                    self.client.mkdir(os.fspath(abs_path))
+
+    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
+
+    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+        self.client.rename(os.fspath(source), os.fspath(target))
+
+    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+        self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
+
+    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        self.client.remove(os.fspath(remote_file_path))
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir_attr(os.fspath(path))

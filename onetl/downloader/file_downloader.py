@@ -5,7 +5,10 @@ from logging import getLogger
 from pathlib import Path, PosixPath
 from typing import Iterator
 
+import humanize
+
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.connection_helpers import decorated_log
 from onetl.downloader.downloader_helper import create_local_dir, check_pattern
 
 log = getLogger(__name__)
@@ -79,7 +82,7 @@ class FileDownloader:
         self.local_path = Path(self.local_path)
 
     def remote_files_listing(self, source_path: Path | str) -> Iterator:
-        log.info(f"Getting files list from remote source path: {source_path}")
+        log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: {source_path}")
 
         try:
             ftp_walk = self.connection.walk(
@@ -94,20 +97,23 @@ class FileDownloader:
             )
 
         for root, dirs, files in ftp_walk:
-            log.debug(f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}')
+            log.debug(
+                f"|{self.connection.__class__.__name__}| "
+                f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}',
+            )
             for res_file in files:
-                log.info(f"Checking file: {res_file}")
+                log.info(f"|{self.connection.__class__.__name__}| Checking file: {PosixPath(root) / res_file}")
                 try:
                     check_pattern(res_file, self.source_file_pattern)
                 except Exception as e:
-                    log.warning(e)
+                    log.info(e)
                     continue
 
                 file_path = PosixPath(root) / res_file
-                log.info(f"Add file: {file_path}")
+                log.info(f"Add file to batch: {file_path}")
                 yield file_path
 
-    def run(self) -> list[Path]:  # noqa: WPS231
+    def run(self) -> list[Path]:  # noqa: WPS231, WPS213
         """
         Method for downloading files from source to local directory.
 
@@ -126,10 +132,26 @@ class FileDownloader:
             downloaded_files = downloader.run()
 
         """
+        decorated_log(msg="FileDownloader starts")
+        indent = len(f"|{self.__class__.__name__}| ") + 2
+
+        log.info(
+            f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files from path '{self.source_path}'"
+            f" to local directory: '{self.local_path}'",
+        )
+        log.info(f"|{self.__class__.__name__}| Using options:")
+        log.info(" " * indent + f"source_file_pattern={self.source_file_pattern}")
+        log.info(" " * indent + f"delete_source={self.delete_source}")
+        log.info(" " * indent + f"source_exclude_dirs={self.source_exclude_dirs}")
+        log.info(f"|{self.__class__.__name__}| Using connection:")
+        log.info(" " * indent + f"type={self.connection.__class__.__name__}")
+        log.info(" " * indent + f"host={self.connection.host}")
+        log.info(" " * indent + f"user={self.connection.user}")
         downloaded_files = []
         downloaded_remote_files = []
         files_size = 0
         last_exception = None
+        # TODO:(@mivasil6) не выводить лог, если папка есть
         create_local_dir(self.local_path)
 
         for remote_file_path in self.remote_files_listing(self.source_path):
@@ -149,19 +171,23 @@ class FileDownloader:
             except Exception as e:
                 last_exception = e
                 log.error(
-                    f"Download file {remote_file_path} from remote to {self.local_path} failed with:\n{last_exception}",
+                    f"|{self.connection.__class__.__name__}| Download file {remote_file_path} "
+                    f"from remote to {self.local_path} failed with:\n{last_exception}",
                 )
             else:
                 downloaded_files.append(local_file_path)
                 downloaded_remote_files.append(remote_file_path)
                 files_size += file_size
 
-        log.info(f"Batch: {len(downloaded_files)} file(s) {files_size / 1024 / 1024:.3f}Mb")
-
         if not downloaded_files and not last_exception:
             log.warning("There are no files on remote server")
-        if last_exception:
+        elif last_exception:
             log.error("There are some errors with files. Check previous logs.")
             raise last_exception
+        else:
+            log.info(f"|Local FS| Files successfully downloaded from {self.connection.__class__.__name__}")
+
+        msg = f"Downloaded: {len(downloaded_files)} file(s) {humanize.naturalsize(files_size)}"
+        decorated_log(msg=msg, char="-")
 
         return downloaded_files

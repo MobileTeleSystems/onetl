@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from onetl.connection.connection_helpers import get_sql_query
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import execute_query_without_partitioning
+from onetl.connection.connection_helpers import execute_query_without_partitioning, get_indent, SPARK_INDENT
 
 log = getLogger(__name__)
 
@@ -50,11 +50,26 @@ class JDBCConnection(DBConnection):
 
     def check(self):
         options = {"properties": {"user": self.user, "password": self.password, "driver": self.driver}}
+
+        class_indent = get_indent(f"|{self.__class__.__name__}|")
+        log.info(f"|{self.__class__.__name__}| Check connection availability...")
+
+        log.info("|Spark| Using connection:")
+        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
+        log.info(" " * SPARK_INDENT + f"user={self.user}")
+
+        log.info(f"|{self.__class__.__name__}| Execute statement:")
+        log.info(" " * class_indent + f"{self.check_statement}")
+
         try:
             self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.url, **options).collect()
-            log.info("Connection is available")
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
-            raise RuntimeError(f"Connection is unavailable:\n{e}")
+            msg = f"Connection is unavailable:\n{e}"
+            log.exception(f"|{self.__class__.__name__}| {msg}")
+            raise RuntimeError(msg)
 
     def read_table(  # type: ignore
         self,
@@ -66,36 +81,41 @@ class JDBCConnection(DBConnection):
         **kwargs: Any,
     ) -> "pyspark.sql.DataFrame":
 
-        if not jdbc_options.get("fetchsize"):
-            log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
-
-        if jdbc_options.get("sessionInitStatement"):
-            log.debug(f"Init SQL statement: {jdbc_options.get('sessionInitStatement')}")
-
         sql_text = get_sql_query(
             table=table,
             hint=hint,
             columns=columns,
             where=where,
         )
-
-        log.info(f"{self.__class__.__name__}: Reading table {table}")
-        log.info(f"{self.__class__.__name__}: SQL statement: {sql_text}")
-
         options = self.jdbc_params_creator(jdbc_options=jdbc_options)
         options = self.set_lower_upper_bound(jdbc_options=options, table=table)
+        class_indent = get_indent(f"|{self.__class__.__name__}|")
 
-        log.debug(
-            f"USER='{self.user}' " f"OPTIONS={options} DRIVER={options['properties']['driver']}",
-        )
-        log.debug(f"JDBC_URL='{self.url}'")
+        log.info(f"|{self.__class__.__name__}| -> |Spark| Reading {table} to DataFrame")
+        # TODO:(@mivasil6) Make debug, выводить все введенные опции без повторений и пароля
+        log.info("|Spark| Using <<Reading_OPTIONS>>:")
+        log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
+
+        log.info("|Spark| Using connection:")
+        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
+        log.info(" " * SPARK_INDENT + f"user={self.user}")
+
+        if not jdbc_options.get("fetchsize"):
+            log.info("|Spark| <fetchsize> option wasn't specified — reading will be slowed down!")
+
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log.info(" " * class_indent + f"{sql_text}")
 
         # for convenience. parameters accepted by spark.read.jdbc method
         #  spark.read.jdbc(
         #    url, table, column, lowerBound, upperBound, numPartitions, predicates
         #    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
-        return self.spark.read.jdbc(table=f"({sql_text}) T", **options)
+        df = self.spark.read.jdbc(table=f"({sql_text}) T", **options)
+        log.info("|Spark| DataFrame successfully created from SQL statement")
+        return df
 
     def save_df(  # type: ignore
         self,
@@ -113,10 +133,16 @@ class JDBCConnection(DBConnection):
         options = jdbc_options.copy()
         options = self.jdbc_params_creator(jdbc_options=options)
 
-        log_pass = "PASSWORD='*****'" if options["properties"].get("password") else "NO_PASSWORD"
+        # TODO:(@mivasil6) выводить все введенные опции без повторений и пароля
+        log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
+        log.info("|Spark| Using <<WRITER_OPTIONS>>:")
+        log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
 
-        log.debug(f"USER='{self.user}' {log_pass} DRIVER={options['properties']['driver']}")
-        log.debug(f"JDBC_URL='{self.url}'")
+        log.info("|Spark| Using connection:")
+        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
+        log.info(" " * SPARK_INDENT + f"user={self.user}")
 
         # for convenience. parameters accepted by spark.write.jdbc method
         #   spark.read.jdbc(
@@ -124,6 +150,7 @@ class JDBCConnection(DBConnection):
         #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
         df.write.mode(mode).jdbc(table=table, **options)
+        log.info(f"|{self.__class__.__name__}| {table} successfully written")
 
     def get_schema(  # type: ignore
         self,
@@ -132,14 +159,18 @@ class JDBCConnection(DBConnection):
         jdbc_options: Dict,
         **kwargs: Any,
     ) -> "pyspark.sql.types.StructType":
+
         jdbc_options = self.jdbc_params_creator(jdbc_options=jdbc_options)
+        class_indent = get_indent(f"|{self.__class__.__name__}|")
 
         query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
         jdbc_options["table"] = query_schema
         jdbc_options["properties"]["fetchsize"] = "0"
 
-        log.info(f"{self.__class__.__name__}: Fetching table {table} schema")
-        log.info(f"{self.__class__.__name__}: SQL statement: {query_schema}")
+        log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
+
+        log.info(f"|{self.__class__.__name__}| SQL statement:\n{query_schema}")
+        log.info(" " * class_indent + f"{query_schema}")
         df = execute_query_without_partitioning(parameters=jdbc_options, spark=self.spark, sql=query_schema)
         return df.schema
 
@@ -207,21 +238,21 @@ class JDBCConnection(DBConnection):
         partition_column = jdbc_options.get("column")
         num_partitions = jdbc_options.get("numPartitions")
         if num_partitions and not partition_column:
-            raise ValueError("<partitionColumn> task parameter wasn't specified")
+            raise ValueError("|Spark| <partitionColumn> task parameter wasn't specified")
 
         upper_bound = jdbc_options.get("upperBound")
         lower_bound = jdbc_options.get("lowerBound")
 
         if (not lower_bound or not upper_bound) and num_partitions:
 
-            log.info("Getting <upperBound> and <lowerBound> options")
+            log.info("|Spark| Getting <upperBound> and <lowerBound> options")
 
             query_upper_lower_bound = (
                 f"(SELECT min({partition_column}) lower_bound,"
                 f"max({partition_column}) upper_bound "
                 f"FROM {table} ) T"
             )
-            log.debug(f"SQL query\n{query_upper_lower_bound}")
+            log.info(f"|{self.__class__.__name__}| SQL statement\n{query_upper_lower_bound}")
 
             df_upper_lower_bound = execute_query_without_partitioning(
                 parameters=jdbc_options,
@@ -237,14 +268,14 @@ class JDBCConnection(DBConnection):
             if not lower_bound:
                 jdbc_options["lowerBound"] = tuple_upper_lower_bound.lower_bound
                 log.warning(
-                    "<lowerBound> task parameter wasn't specified:"
+                    "|Spark| <lowerBound> task parameter wasn't specified:"
                     f" auto generated value is <{tuple_upper_lower_bound.lower_bound}>",
                 )
 
             if not upper_bound:
                 jdbc_options["upperBound"] = tuple_upper_lower_bound.upper_bound
                 log.warning(
-                    f"<upperBound> task parameter wasn't specified:"
+                    f"|Spark| <upperBound> task parameter wasn't specified:"
                     f" auto generated value is <{tuple_upper_lower_bound.upper_bound}>",
                 )
         return jdbc_options

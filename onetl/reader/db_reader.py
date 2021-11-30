@@ -6,6 +6,7 @@ from typing import Any, TYPE_CHECKING
 
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.db_connection import Hive
+from onetl.connection.connection_helpers import decorated_log
 
 
 log = getLogger(__name__)
@@ -197,6 +198,8 @@ class DBReader:
         # avoid circular imports
         from onetl.reader.strategy_helper import StrategyHelper, NonHWMStrategyHelper, HWMStrategyHelper
 
+        decorated_log(msg="DBReader starts")
+
         helper: StrategyHelper
         if self.hwm_column:
             helper = HWMStrategyHelper(self, self.hwm_column)
@@ -211,4 +214,8 @@ class DBReader:
             jdbc_options=self.jdbc_options,
         )
 
-        return helper.save(df)
+        df = helper.save(df)
+
+        decorated_log(msg="DBReader ends", char="-")
+
+        return df

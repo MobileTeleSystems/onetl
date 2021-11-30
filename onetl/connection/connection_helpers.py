@@ -3,6 +3,21 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+HALF_SCREEN_SIZE = 45
+
+
+def get_indent(msg):
+    return len(f"{msg}") + 2
+
+
+SPARK_INDENT = get_indent("|Spark|")
+ONETL_INDENT = get_indent("|onETL|")
+
+
+def decorated_log(msg: str, char: str = "="):
+    msg = f" {msg} "
+    log.info(char * (HALF_SCREEN_SIZE - len(msg) // 2) + msg + char * (HALF_SCREEN_SIZE - len(msg) // 2))  # noqa:WPS221
+
 
 def get_sql_query(
     table: str,

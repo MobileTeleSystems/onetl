@@ -11,16 +11,16 @@ class BaseStrategy:
         # hack to avoid circular imports
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug(f"{self.__class__.__name__}: Entered stack at level {StrategyManager.get_current_level()}")
+        log.debug(f"|{self.__class__.__name__}| Entered stack at level {StrategyManager.get_current_level()}")
         StrategyManager.push(self)
-        log.info(f"{self.__class__.__name__}: Using {self} as a strategy")
+        log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
         self.enter_hook()
         return self
 
     def __exit__(self, exc_type, _exc_value, _traceback):
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug(f"{self.__class__.__name__}: Exiting stack at level {StrategyManager.get_current_level()-1}")
+        log.debug(f"|{self.__class__.__name__}| Exiting stack at level {StrategyManager.get_current_level()-1}")
         strategy = StrategyManager.pop()
 
         strategy.exit_hook(failed=bool(exc_type))

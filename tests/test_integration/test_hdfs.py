@@ -2,7 +2,6 @@ import os
 import tempfile
 from pathlib import Path, PosixPath
 import logging
-from unittest.mock import patch
 
 
 from onetl.connection.file_connection import HDFS
@@ -19,13 +18,13 @@ class TestHDFS:
             hdfs.check()
         assert "Connection is available" in caplog.text
 
-    @patch("logging.Logger.warning")
-    def test_file_uploader_with_empty_file_list(self, mock):
+    def test_file_uploader_with_empty_file_list(self, caplog):
         hdfs = HDFS(host="hive2", port=50070)
         uploader = FileUploader(connection=hdfs, target_path="/target/path/")
-        uploaded_files = uploader.run([])
+        with caplog.at_level(logging.INFO):
+            uploaded_files = uploader.run([])
+            assert "Files list is empty. Please, provide files to upload." in caplog.text
         assert not uploaded_files
-        mock.assert_called_with("Files list is empty. Please, provide files to upload.")
 
     def test_hdfs_file_uploader(self, test_file_path, test_file_name):
         hdfs = HDFS(host="hive2", port=50070)
