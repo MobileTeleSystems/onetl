@@ -124,19 +124,19 @@ build_docker_image:
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
-    DOCKER_FILE_PATH: "./docker/postgres/Dockerfile" 
+    DOCKER_FILE_PATH: ./docker/postgres/Dockerfile
     DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres
 build_docker_image_oracle:
   extends: .build_docker_images
   variables:
-    DOCKER_FILE_PATH: "./docker/oracle/Dockerfile" 
+    DOCKER_FILE_PATH: ./docker/oracle/Dockerfile
     DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle
 build_docker_image_hive2:
   extends: .build_docker_images
   variables:
-    DOCKER_FILE_PATH: "./docker/hive2/Dockerfile" 
+    DOCKER_FILE_PATH: ./docker/hive2/Dockerfile
     DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2
 
@@ -145,52 +145,52 @@ tests:
   stage: tests
   variables:
     # Postgres
-    POSTGRES_USER: "onetl"
-    POSTGRES_DB: "onetl"
-    POSTGRES_HOST: "postgres"
-    POSTGRES_PASSWORD: "onetl"
+    POSTGRES_USER: onetl
+    POSTGRES_DB: onetl
+    POSTGRES_HOST: postgres
+    POSTGRES_PASSWORD: onetl
     # Oracle
-    ORACLE_BASE: "/opt/oracle"
-    ORACLE_HOME: "/opt/oracle/product/18c/dbhomeXE"
-    ORACLE_SID: "XE"
-    ORACLE_ALLOW_REMOTE: "true"
+    ORACLE_BASE: /opt/oracle
+    ORACLE_HOME: /opt/oracle/product/18c/dbhomeXE
+    ORACLE_SID: XE
+    ORACLE_ALLOW_REMOTE: 'true'
     # MySQL
-    MYSQL_ROOT_PASSWORD: "onetl"
-    MYSQL_DATABASE: "onetl"
-    MYSQL_USER: "onetl"
-    MYSQL_PASSWORD: "onetl"
-    MYSQL_HOST: "mysql"
-    MYSQL_TCP_PORT: "3306"
+    MYSQL_ROOT_PASSWORD: onetl
+    MYSQL_DATABASE: onetl
+    MYSQL_USER: onetl
+    MYSQL_PASSWORD: onetl
+    MYSQL_HOST: mysql
+    MYSQL_TCP_PORT: '3306'
     # MSSQL
-    MSSQL_DB: "onetl"
-    MSSQL_USER: "onetl"
-    MSSQL_PASSWORD: "7ellowEl7akey"
-    ACCEPT_EULA: "Y"
-    SA_PASSWORD: "2astazeY"
+    MSSQL_DB: onetl
+    MSSQL_USER: onetl
+    MSSQL_PASSWORD: 7ellowEl7akey
+    ACCEPT_EULA: Y
+    SA_PASSWORD: 2astazeY
     # Hive
-    TZ: "Europe/Moscow"
+    TZ: Europe/Moscow
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
     COVERAGE_FILE: coverage.xml
     JUNIT_FILE: junitxml.xml
   services:
-    - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_ID}
-      alias: postgres
-    - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_ID}
-      alias: hive2
-    - name: yandex/clickhouse-server
-      alias: clickhouse
-    - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_ID}
-      alias: oracle
-    - name: mysql
-      alias: mysql
-    - name: mcmoe/mssqldocker
-      alias: mssql
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_ID}
+    alias: postgres
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_ID}
+    alias: hive2
+  - name: yandex/clickhouse-server
+    alias: clickhouse
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_ID}
+    alias: oracle
+  - name: mysql
+    alias: mysql
+  - name: mcmoe/mssqldocker
+    alias: mssql
   script:
-    - pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
+  - pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
   after_script:
-    - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
+  - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
   artifacts:
     when: always
     paths:

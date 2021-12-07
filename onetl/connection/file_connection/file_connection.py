@@ -9,6 +9,7 @@ from typing import Any, Callable, Generator
 from logging import getLogger
 
 from onetl.connection.connection_abc import ConnectionABC
+from onetl.connection.connection_helpers import ONETL_INDENT
 
 log = getLogger(__name__)
 
@@ -46,18 +47,37 @@ class FileConnection(ConnectionABC):
 
     def check(self):
         try:
+            log.info(f"|{self.__class__.__name__}| Check connection availability...")
+            log.info("|onETL| Using connection:")
+            log.info(" " * ONETL_INDENT + f"type={self.__class__.__name__}")
+            log.info(" " * ONETL_INDENT + f"host={self.host}")
+            log.info(" " * ONETL_INDENT + f"user={self.user}")
             self.listdir("/")
-            log.info("Connection is available")
+            log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
-            raise RuntimeError(f"Connection is unavailable:\n{e}")
+            msg = f"Connection is unavailable:\n{e}"
+            log.exception(f"|{self.__class__.__name__}| {msg}")
+            raise RuntimeError(msg)
 
-    @abstractmethod
     def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        """"""
+        self._download_file(remote_file_path, local_file_path)
+        log.info(f"|Local FS| Successfully downloaded file: {local_file_path} ")
 
-    @abstractmethod
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        """"""
+        self._remove_file(remote_file_path)
+        log.info(f"|{self.__class__.__name__}| Successfully removed file: {remote_file_path} ")
+
+    def mkdir(self, path: os.PathLike | str) -> None:
+        self._mkdir(path)
+        log.info(f"|{self.__class__.__name__}| Successfully created directory: {path}")
+
+    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        self._upload_file(local_file_path, remote_file_path)
+        log.info(f"|{self.__class__.__name__}| Successfully uploaded file: {remote_file_path}")
+
+    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+        self._rename(source, target)
+        log.info(f"|{self.__class__.__name__}| Successfully renamed file {source} to {target}")
 
     @abstractmethod
     def is_dir(self, top, item) -> bool:
@@ -69,14 +89,6 @@ class FileConnection(ConnectionABC):
 
     @abstractmethod
     def path_exists(self, path: os.PathLike | str) -> bool:
-        """"""
-
-    @abstractmethod
-    def mkdir(self, path: os.PathLike | str) -> None:
-        """"""
-
-    @abstractmethod
-    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         """"""
 
     def listdir(self, path: os.PathLike | str) -> list[Path]:
@@ -119,9 +131,6 @@ class FileConnection(ConnectionABC):
         if not topdown:
             yield top, dirs, nondirs
 
-    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        """"""
-
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if recursive:
             for file in self._listdir(path):
@@ -135,13 +144,33 @@ class FileConnection(ConnectionABC):
             self.rmdir(path)
         else:
             self.client.rmdir(os.fspath(path))
-            log.info(f"Successfully removed path {path}")
+            log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
 
     def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: list[os.PathLike | str]) -> bool:
         for exclude_dir in exclude_dirs:
             if PosixPath(exclude_dir) == PosixPath(full_name):
                 return True
         return False
+
+    @abstractmethod
+    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _mkdir(self, path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+        """"""
 
     @abstractmethod
     def _listdir(self, path: os.PathLike) -> list:

@@ -4,6 +4,7 @@ from typing import Dict
 
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive_connection import Hive
+from onetl.connection.connection_helpers import decorated_log
 
 
 log = getLogger(__name__)
@@ -181,6 +182,8 @@ class DBWriter:
             writer.run(df)
 
         """
+        decorated_log(msg="DBWriter starts")
+
         jdbc_options = self.jdbc_options.copy()
 
         self.connection.save_df(
@@ -189,3 +192,5 @@ class DBWriter:
             jdbc_options=jdbc_options,
             mode=self.mode,
         )
+
+        decorated_log(msg="DBWriter ends", char="-")
