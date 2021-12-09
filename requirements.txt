@@ -5,6 +5,4 @@ paramiko
 platformdirs
 PySmbClient
 pyyaml
-requests
-requests_ntlm
 sftpserver
