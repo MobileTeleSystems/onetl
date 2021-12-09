@@ -131,3 +131,46 @@ class TestIntegrationONETLPostgres:
 
         with pytest.raises(ValueError):
             writer.run(df)
+
+    def test_postgres_num_partition_without_partition_column(self, spark):
+
+        reader = DBReader(
+            connection=Postgres(spark=spark, host="some_host", user="valid_user", password="pwd"),
+            table="table",
+            jdbc_options={"numPartitions": "200"},
+        )
+
+        with pytest.raises(ValueError):
+            reader.run()
+
+    @pytest.mark.parametrize(
+        "jdbc_options",
+        [
+            {"numPartitions": "2", "column": "hwm_int"},
+            {"numPartitions": "2", "column": "hwm_int", "lowerBound": "50"},
+            {"numPartitions": "2", "column": "hwm_int", "upperBound": "70"},
+            {"fetchsize": "2"},
+        ],
+    )
+    def test_postgres_reader_different_jdbc_options(self, spark, processing, prepare_schema_table, jdbc_options):
+
+        postgres = Postgres(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=postgres,
+            table=prepare_schema_table.full_name,
+            jdbc_options=jdbc_options,
+        )
+        table_df = reader.run()
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=table_df,
+        )
