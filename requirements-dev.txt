@@ -1,4 +1,5 @@
 black
 mypy
 pre-commit
+types-PyYAML
 wemake-python-styleguide

@@ -65,9 +65,13 @@ class MSSQL(JDBCConnection):
     port: int = 1433
 
     @property
-    def url(self) -> str:
+    def jdbc_url(self) -> str:
         params = "".join(f";{k}={v}" for k, v in self.extra.items())
         return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{params}"
+
+    @property
+    def instance_url(self) -> str:
+        return f"{super().instance_url}/{self.database}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()

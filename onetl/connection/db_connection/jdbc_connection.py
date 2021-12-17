@@ -46,8 +46,12 @@ class JDBCConnection(DBConnection):
 
     @property
     @abstractmethod
-    def url(self) -> str:
-        """"""
+    def jdbc_url(self) -> str:
+        """JDBC Connection URL"""
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     def check(self):
         options = {"properties": {"user": self.user, "password": self.password, "driver": self.driver}}
@@ -57,7 +61,7 @@ class JDBCConnection(DBConnection):
 
         log.info("|Spark| Using connection:")
         log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
         log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
         log.info(" " * SPARK_INDENT + f"user={self.user}")
 
@@ -65,7 +69,7 @@ class JDBCConnection(DBConnection):
         log.info(" " * class_indent + f"{self.check_statement}")
 
         try:
-            self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.url, **options).collect()
+            self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.jdbc_url, **options).collect()
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"
@@ -104,7 +108,7 @@ class JDBCConnection(DBConnection):
         log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
         log.info("|Spark| Using connection:")
         log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
         log.info(" " * SPARK_INDENT + f"driver={self.driver}")
         log.info(" " * SPARK_INDENT + f"user={self.user}")
 
@@ -142,7 +146,7 @@ class JDBCConnection(DBConnection):
 
         log.info("|Spark| Using connection:")
         log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
+        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
         log.info(" " * SPARK_INDENT + f"driver={self.driver}")
         log.info(" " * SPARK_INDENT + f"user={self.user}")
 
@@ -184,7 +188,7 @@ class JDBCConnection(DBConnection):
                 "user": self.user,
                 "password": self.password,
                 "driver": self.driver,
-                "url": self.url,
+                "url": self.jdbc_url,
             },
         )
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import pickle  # noqa: S403
-from typing import AnyStr
+import re
+from typing import AnyStr, ClassVar
 import yaml
 import base64
 
@@ -9,11 +10,11 @@ from platformdirs import user_data_dir
 from dataclasses import dataclass
 from pathlib import Path
 
-from onetl.strategy.hwm import HWM
+from etl_entities import HWM
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import default_hwm_store_class, register_hwm_store_class
 
-DATA_PATH = Path(user_data_dir("onETL", "oneTools"))
+DATA_PATH = Path(user_data_dir("onETL", "ONEtools"))
 
 
 @default_hwm_store_class
@@ -99,6 +100,8 @@ class YAMLHWMStore(BaseHWMStore):
     path: Path = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
 
+    PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:#@|/\\]+")
+
     def __post_init__(self):
         self.path = Path(self.path).expanduser().absolute()  # noqa: WPS601
         self.path.mkdir(parents=True, exist_ok=True)
@@ -118,9 +121,18 @@ class YAMLHWMStore(BaseHWMStore):
 
         data = {"value": encoded}
 
-        self._dump(str(hwm), data)
+        self._dump(hwm.qualified_name, data)
+
+    @classmethod
+    def _cleanup_name(cls, name: str) -> str:
+        # id|partition=value#db.table@proto://instance#process@host
+        # ->
+        # id__partition__value__db.table__proto_instance__process__host
+
+        return cls.PROHIBITED_SYMBOLS_PATTERN.sub("__", name)
 
     def _load(self, name: str) -> dict[str, AnyStr]:
+        name = self._cleanup_name(name)
         path = self.path / f"{name}.yml"
         if not path.exists():
             return {}
@@ -129,6 +141,7 @@ class YAMLHWMStore(BaseHWMStore):
             return yaml.safe_load(file)
 
     def _dump(self, name: str, data: dict[str, AnyStr]) -> None:
+        name = self._cleanup_name(name)
         path = self.path / f"{name}.yml"
         with path.open("w", encoding=self.encoding) as file:
             yaml.dump(data, file)

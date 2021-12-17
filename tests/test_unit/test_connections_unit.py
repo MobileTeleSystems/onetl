@@ -32,7 +32,7 @@ class TestDBConnection:
                 Oracle.Options(fetchsize=1000, truncate=True, partition_column="id_int"),
             ),
         ],
-        ids=["JDBC connection with Hive opitons.", "Hive connection with JDBC options."],
+        ids=["JDBC connection with Hive options.", "Hive connection with JDBC options."],
     )
     def test_inappropriate_connection_and_options_types(self, connection, options):
         with pytest.raises(ValueError):
@@ -53,7 +53,7 @@ class TestJDBCConnection:
     def test_oracle_driver_and_uri(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
 
-        assert conn.url == "jdbc:oracle:thin:@some_host:1521:PE"
+        assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:PE"
         assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
         assert Oracle.package == "com.oracle:ojdbc7:12.1.0.2"
         assert Oracle.port == 1521
@@ -61,18 +61,18 @@ class TestJDBCConnection:
     def test_oracle_uri_with_service_name(self):
         conn = Oracle(host="some_host", user="user", password="passwd", service_name="DWHLDTS", spark=self.spark)
 
-        assert conn.url == "jdbc:oracle:thin:@//some_host:1521/DWHLDTS"
+        assert conn.jdbc_url == "jdbc:oracle:thin:@//some_host:1521/DWHLDTS"
 
     def test_oracle_without_extra(self):
         conn = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
 
         with pytest.raises(ValueError):
-            conn.url  # noqa: WPS428
+            conn.jdbc_url  # noqa: WPS428
 
     def test_postgres_driver_and_uri(self):
         conn = Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
 
-        assert conn.url == "jdbc:postgresql://some_host:5432/default"
+        assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/default"
         assert Postgres.driver == "org.postgresql.Driver"
         assert Postgres.package == "org.postgresql:postgresql:42.2.5"
         assert Postgres.port == 5432
@@ -86,7 +86,7 @@ class TestJDBCConnection:
             spark=self.spark,
         )
 
-        assert conn.url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
+        assert conn.jdbc_url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
         assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
         assert Teradata.package == "com.teradata.jdbc:terajdbc4:16.20.00.10"
         assert Teradata.port == 1025
@@ -94,7 +94,7 @@ class TestJDBCConnection:
     def test_mysql_driver_and_uri(self):
         conn = MySQL(host="some_host", user="user", password="passwd", spark=self.spark)
 
-        assert conn.url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
+        assert conn.jdbc_url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
         assert MySQL.driver == "com.mysql.jdbc.Driver"
         assert MySQL.package == "mysql:mysql-connector-java:8.0.26"
         assert MySQL.port == 3306
@@ -108,7 +108,7 @@ class TestJDBCConnection:
             spark=self.spark,
         )
 
-        assert conn.url == "jdbc:sqlserver://some_host:1433;databaseName=default;characterEncoding=UTF-8"
+        assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433;databaseName=default;characterEncoding=UTF-8"
         assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
         assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
         assert MSSQL.port == 1433
@@ -116,7 +116,7 @@ class TestJDBCConnection:
     def test_clickhouse_driver_and_uri(self):
         conn = Clickhouse(host="some_host", user="user", password="passwd", spark=self.spark)
 
-        assert conn.url == "jdbc:clickhouse://some_host:8123/default"
+        assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
         assert Clickhouse.port == 8123

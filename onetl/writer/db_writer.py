@@ -1,7 +1,9 @@
-from dataclasses import dataclass, field
-from logging import getLogger
-from typing import Optional, Dict, Union
+from __future__ import annotations
 
+from dataclasses import dataclass
+from logging import getLogger
+
+from etl_entities import Table
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.connection_helpers import decorated_log
 
@@ -10,7 +12,7 @@ log = getLogger(__name__)
 # TODO:(@mivasil6) implement logging
 
 
-@dataclass
+@dataclass  # noqa: WPS338
 class DBWriter:
     """Class specifies database and table where you can write your dataframe.
 
@@ -35,7 +37,7 @@ class DBWriter:
                 Don't write anything
             * ``error``
                 Raise exception
-    jdbc_options : dict, optional, default: ``None``
+    options : dict, optional, default: ``None``
         Spark jdbc write options.
 
         For example: ``{"truncate": "true", "batchsize": 1000}``
@@ -72,12 +74,12 @@ class DBWriter:
             spark=spark,
         )
 
-         writer = DBWriter(
-          connection=postgres,
-          table="fiddle.dummy",
+        writer = DBWriter(
+            connection=postgres,
+            table="fiddle.dummy",
         )
 
-    RDBMS table with jdbc_options
+    RDBMS table with JDBC options
 
     .. code::
 
@@ -101,9 +103,9 @@ class DBWriter:
         jdbc_options = {"truncate": "true", "batchsize": 1000}
 
         writer = DBWriter(
-          connection=postgres,
-          table="fiddle.dummy",
-          jdbc_options=jdbc_options,
+            connection=postgres,
+            table="fiddle.dummy",
+            options=jdbc_options,
         )
 
     Reader creation with all params:
@@ -130,10 +132,10 @@ class DBWriter:
         jdbc_options = {"truncate": "true", "batchsize": 1000}
 
         writer = DBWriter(
-          connection=postgres,
-          table="default.test",
-          mode="overwrite",
-          jdbc_options=jdbc_options,
+            connection=postgres,
+            table="default.test",
+            mode="overwrite",
+            options=jdbc_options,
         )
 
     Reader for Hive with all available params:
@@ -147,24 +149,41 @@ class DBWriter:
         hive = Hive(spark=spark)
 
         writer = DBWriter(
-          connection=hive,
-          table="default.test",
-          mode="skip",
+            connection=hive,
+            table="default.test",
+            mode="skip",
         )
     """
 
     connection: DBConnection
-    table: str
-    mode: str = field(default="append")
-    options: Optional[Union[DBConnection.Options, Dict]] = None
+    table: Table
+    mode: str
+    options: DBConnection.Options
 
-    def __post_init__(self):
-        if self.options:
-            self.pydantic_options = self.connection.to_options(
-                options=self.options,
-            )
-        else:
-            self.pydantic_options = self.connection.Options()
+    def __init__(
+        self,
+        connection: DBConnection,
+        table: str,
+        mode: str = "append",
+        options: DBConnection.Options | dict | None = None,
+    ):
+        self.connection = connection
+        self.table = self._handle_table(table)
+        self.mode = mode
+        self.options = self._handle_options(options)
+
+    def _handle_table(self, table: str) -> Table:
+        if table.count(".") != 1:
+            raise ValueError("`table` should be set in format `schema.table`")
+
+        db, table = table.split(".")
+        return Table(name=table, db=db, instance=self.connection.instance_url)
+
+    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
+        if options:
+            return self.connection.to_options(options)
+
+        return self.connection.Options()
 
     def run(self, df):
         """
@@ -189,8 +208,8 @@ class DBWriter:
 
         self.connection.save_df(
             df=df,
-            table=self.table,
-            options=self.pydantic_options,
+            table=str(self.table),
+            options=self.options,
             mode=self.mode,
         )
 

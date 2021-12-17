@@ -19,7 +19,7 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class DBConnection(ConnectionABC):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
-    spark: "pyspark.sql.SparkSession"
+    spark: pyspark.sql.SparkSession
     check_statement: ClassVar[str] = "SELECT 1"
 
     compare_statements: ClassVar[Dict[Callable, str]] = {
@@ -39,10 +39,15 @@ class DBConnection(ConnectionABC):
             frozen = True
             extra = "allow"
 
+    @property
+    @abstractmethod
+    def instance_url(self) -> str:
+        """Instance URL"""
+
     @abstractmethod
     def save_df(
         self,
-        df: "pyspark.sql.DataFrame",
+        df: pyspark.sql.DataFrame,
         table: str,
         mode: Optional[str] = "append",
         options: Options = None,
@@ -57,7 +62,7 @@ class DBConnection(ConnectionABC):
         hint: Optional[str],
         where: Optional[str],
         options: Options,
-    ) -> "pyspark.sql.DataFrame":
+    ) -> pyspark.sql.DataFrame:
         """"""
 
     @abstractmethod
@@ -66,7 +71,7 @@ class DBConnection(ConnectionABC):
         table: str,
         columns: str,
         options: Options,
-    ) -> "pyspark.sql.types.StructType":
+    ) -> pyspark.sql.types.StructType:
         """"""
 
     def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:

@@ -62,7 +62,7 @@ class MySQL(JDBCConnection):
     port: int = 3306
 
     @property
-    def url(self):
+    def jdbc_url(self):
         prop = self.extra.copy()
         prop["useUnicode"] = "yes"
         prop["characterEncoding"] = "UTF-8"

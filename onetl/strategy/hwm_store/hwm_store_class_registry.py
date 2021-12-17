@@ -108,11 +108,11 @@ def register_hwm_store_class(*type_names: str):
 
     """
 
-    def wrapper(klass: type[BaseHWMStore]):
+    def wrapper(cls: type[BaseHWMStore]):
         for type_name in type_names:
-            HWMStoreClassRegistry.add(type_name, klass)
+            HWMStoreClassRegistry.add(type_name, cls)
 
-        return klass
+        return cls
 
     return wrapper
 

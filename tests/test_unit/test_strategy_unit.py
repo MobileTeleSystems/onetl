@@ -27,7 +27,7 @@ def test_strategy_hwm_column_missing(strategy):
     with strategy():
         reader = DBReader(
             connection=Postgres(spark=Mock(), host="some_host", user="valid_user", password="pwd"),
-            table=secrets.token_hex(),
+            table=f"{secrets.token_hex()}.{secrets.token_hex()}",
         )
 
         with pytest.raises(ValueError):

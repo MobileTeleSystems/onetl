@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from logging import getLogger
-from typing import TYPE_CHECKING, Optional, Dict
+from typing import TYPE_CHECKING
 
+from etl_entities import Column, Table
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.connection_helpers import decorated_log
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
-@dataclass
+@dataclass  # noqa: WPS338
 class DBReader:
     """Class allows you to read data from a table with specified connection
     and parameters and save it as Spark dataframe
@@ -72,7 +73,7 @@ class DBReader:
 
         reader = DBReader(postgres, table="fiddle.dummy")
 
-    RDBMS table with jdbc_options
+    RDBMS table with JDBC Options
 
     .. code::
 
@@ -94,7 +95,7 @@ class DBReader:
         )
         jdbc_options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
 
-        reader = DBReader(postgres, table="fiddle.dummy", jdbc_options=jdbc_options)
+        reader = DBReader(postgres, table="fiddle.dummy", options=jdbc_options)
 
     Reader creation with all params:
 
@@ -151,31 +152,69 @@ class DBReader:
     """
 
     connection: DBConnection
-    # table is 'schema.table'
-    table: str
-    columns: str | list[str] | None = None
-    where: str | None = None
-    hint: str | None = None
-    hwm_column: str | None = None
-    options: Optional[DBConnection.Options, Dict] = None
+    table: Table
+    where: str | None
+    hint: str | None
+    columns: str
+    hwm_column: Column | None
+    options: DBConnection.Options
 
-    def __post_init__(self):
-        if self.options:
-            self.pydantic_options = self.connection.to_options(
-                options=self.options,
-            )
+    def __init__(
+        self,
+        connection: DBConnection,
+        table: str,
+        columns: str | list[str] = "*",
+        where: str | None = None,
+        hint: str | None = None,
+        hwm_column: str | None = None,
+        options: DBConnection.Options | dict | None = None,
+    ):
+        self.connection = connection
+        self.table = self._handle_table(table)
+        self.where = where
+        self.hint = hint
+        self.hwm_column = self._handle_hwm_column(hwm_column)
+        self.columns = self._handle_columns(columns)
+        self.options = self._handle_options(options)
+
+    def _handle_table(self, table: str) -> Table:
+        if table.count(".") != 1:
+            raise ValueError("`table` should be set in format `schema.table`")
+
+        db, table = table.split(".")
+        return Table(name=table, db=db, instance=self.connection.instance_url)
+
+    @staticmethod
+    def _handle_hwm_column(hwm_column: str | None) -> Column | None:
+        return Column(name=hwm_column) if hwm_column else None
+
+    @staticmethod
+    def _handle_columns(columns: str | list[str]) -> str:
+        items: list[str]
+        if isinstance(columns, str):
+            items = columns.split(",")
         else:
-            self.pydantic_options = self.connection.Options()
+            items = list(columns)
 
-    def get_columns(self) -> str:
-        return ", ".join(self.columns) if isinstance(self.columns, list) else self.columns or "*"  # noqa: WPS601
+        items = [item.strip() for item in items]
+
+        if not items or "*" in items:
+            return "*"
+
+        return ", ".join(items)
+
+    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
+        if options:
+            return self.connection.to_options(options)
+
+        return self.connection.Options()
 
     def get_schema(self) -> StructType:
 
         return self.connection.get_schema(  # type: ignore
-            table=self.table,
-            columns=self.get_columns(),
-            options=self.pydantic_options,
+            table=str(self.table),
+            columns=self.columns,
+            options=self.options,
         )
 
     def run(self) -> DataFrame:
@@ -210,11 +249,11 @@ class DBReader:
             helper = NonHWMStrategyHelper(self)
 
         df = self.connection.read_table(
-            table=self.table,
-            columns=self.get_columns(),
+            table=str(self.table),
+            columns=self.columns,
             hint=self.hint,
             where=helper.where,
-            options=self.pydantic_options,
+            options=self.options,
         )
 
         df = helper.save(df)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from dataclasses import dataclass, field
 
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -28,7 +30,7 @@ class BatchHWMStrategy(HWMStrategy):
         if self.is_finished:
             raise StopIteration
 
-        return self.hwm
+        return self.current_value
 
     @property
     def is_first_run(self) -> bool:
@@ -36,7 +38,7 @@ class BatchHWMStrategy(HWMStrategy):
 
     @property
     def is_finished(self) -> bool:
-        return self.hwm is not None and self.has_upper_limit and self.current_value >= self.stop
+        return self.current_value is not None and self.has_upper_limit and self.current_value >= self.stop
 
     @property
     def has_lower_limit(self) -> bool:
@@ -74,8 +76,6 @@ class BatchHWMStrategy(HWMStrategy):
 
     @property
     def next_value(self) -> Any:
-        result = None
-
         if self.current_value is not None:
             result = self.current_value + self.step
         else:
@@ -92,7 +92,7 @@ class BatchHWMStrategy(HWMStrategy):
 
     def update_hwm(self, value: Any) -> None:
         # no rows has been read, going to next iteration
-        if value is None and self.hwm is not None:
-            self.hwm.value = self.next_value
+        if self.hwm is not None:
+            self.hwm = self.hwm.with_value(self.next_value)
 
         super().update_hwm(value)

@@ -1,3 +1,4 @@
+from onetl.strategy.hwm_store.hwm_class_registry import HWMClassRegistry, register_hwm_class
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 from onetl.strategy.hwm_store.hwm_store_class_registry import (
     HWMStoreClassRegistry,

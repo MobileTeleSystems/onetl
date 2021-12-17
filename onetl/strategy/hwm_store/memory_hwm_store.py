@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from dataclasses import dataclass, field
 
-from onetl.strategy.hwm import HWM
+from etl_entities import HWM
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import register_hwm_store_class
 
@@ -66,9 +65,9 @@ class MemoryHWMStore(BaseHWMStore):
         result = self._data.get(name, None)
 
         if result is not None:
-            return deepcopy(result)
+            return result
 
         return None
 
     def save(self, hwm: HWM) -> None:
-        self._data[str(hwm)] = deepcopy(hwm)
+        self._data[hwm.qualified_name] = hwm

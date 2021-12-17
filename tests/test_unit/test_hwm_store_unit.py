@@ -3,13 +3,11 @@
 import secrets
 import tempfile
 import pytest
-from onetl.strategy.hwm.hwm import ColumnHWM
-
-from onetl.strategy.hwm_store import YAMLHWMStore, HWMStoreManager, detect_hwm_store
 
 from omegaconf import OmegaConf
 
-from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
+from etl_entities import Column, Table, IntHWM
+from onetl.strategy.hwm_store import YAMLHWMStore, MemoryHWMStore, HWMStoreManager, detect_hwm_store
 
 
 @pytest.mark.parametrize(
@@ -22,11 +20,13 @@ from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
 def test_postgres_hwm_store_unit(hwm_store_class):
     store = hwm_store_class()
 
-    hwm = ColumnHWM(table=secrets.token_hex(), column=secrets.token_hex())
-    assert store.get(str(hwm)) is None
+    table = Table(name="abc", db="cde", instance="proto://domain.com")
+    column = Column(name="def")
+    hwm = IntHWM(column=column, table=table)
+    assert store.get(hwm.qualified_name) is None
 
     store.save(hwm)
-    assert store.get(str(hwm)) == hwm
+    assert store.get(hwm.qualified_name) == hwm
 
 
 def test_postgres_hwm_store_unit_yaml_path(tmp_path_factory):
@@ -38,12 +38,20 @@ def test_postgres_hwm_store_unit_yaml_path(tmp_path_factory):
     assert store.path == path
     assert path.exists()
 
-    hwm = ColumnHWM(table=secrets.token_hex(), column=secrets.token_hex())
-    hwm_path = path / f"{hwm}.yml"
+    assert not list(path.glob("**/*"))
+
+    table = Table(name="abc", db="cde", instance="proto://domain.com")
+    column = Column(name="def")
+    hwm = IntHWM(column=column, table=table)
     store.save(hwm)
 
-    assert hwm_path.exists()
-    assert hwm_path.is_file()
+    empty = True
+    for item in path.glob("**/*"):
+        empty = False
+        assert item.is_file()
+        assert item.suffix == ".yml"
+
+    assert not empty
 
 
 def test_postgres_hwm_store_unit_yaml_path_not_folder(tmp_path_factory):
@@ -62,7 +70,9 @@ def test_postgres_hwm_store_unit_yaml_path_no_access(tmp_path_factory):
     path.chmod(000)
 
     store = YAMLHWMStore(path)
-    hwm = ColumnHWM(table=secrets.token_hex(), column=secrets.token_hex())
+    table = Table(name="abc", db="cde", instance="proto://domain.com")
+    column = Column(name="def")
+    hwm = IntHWM(column=column, table=table)
 
     with pytest.raises(OSError):
         store.save(hwm)

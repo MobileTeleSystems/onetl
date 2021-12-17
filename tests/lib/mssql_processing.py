@@ -1,12 +1,11 @@
 from datetime import date, datetime, timedelta
 from random import randint
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 import os
 
 import pandas as pd
 from pandas.io import sql as psql
-from pandas.util.testing import assert_frame_equal
 import pymssql
 
 from tests.lib.base_processing import BaseProcessing
@@ -156,22 +155,3 @@ class MSSQLProcessing(BaseProcessing):
     ) -> "pandas.core.frame.DataFrame":
 
         return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)
-
-    def assert_equal_df(
-        self,
-        schema: str,
-        table: str,
-        df: "pyspark.sql.DataFrame",
-        other_frame: Optional["pyspark.sql.DataFrame"] = None,
-    ) -> None:
-
-        if not other_frame:
-            other_frame = self.get_expected_dataframe(schema, table)
-
-        pd_df = df.toPandas()
-
-        assert_frame_equal(
-            left=pd_df,
-            right=other_frame,
-            check_dtype=False,
-        )

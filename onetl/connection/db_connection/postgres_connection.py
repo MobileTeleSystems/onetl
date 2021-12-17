@@ -58,8 +58,12 @@ class Postgres(JDBCConnection):
     port: int = 5432
 
     @property
-    def url(self) -> str:
+    def jdbc_url(self) -> str:
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
+
+    @property
+    def instance_url(self) -> str:
+        return f"{super().instance_url}/{self.database}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()

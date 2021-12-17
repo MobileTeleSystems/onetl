@@ -7,7 +7,6 @@ from contextlib import suppress
 from datetime import timedelta, datetime, date
 
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
 
 from onetl.connection import Postgres
 from onetl.reader.db_reader import DBReader
@@ -55,7 +54,7 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
     with SnapshotStrategy():
         total_df = reader.run()
 
-    assert_frame_equal(left=total_df.toPandas(), right=span, check_dtype=False)
+    processing.assert_equal_df(df=total_df, other_frame=span)
 
 
 @pytest.mark.parametrize(
@@ -99,7 +98,7 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
     step = 1
 
     table1 = prepare_schema_table.full_name
-    table2 = secrets.token_hex()
+    table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
 
     hwm_column1 = "hwm_int"
     hwm_column2 = "hwm_datetime"
@@ -197,8 +196,8 @@ def test_postgres_strategy_snapshot_batch(
     # all the rows will be read
     total_span = pd.concat([first_span, second_span], ignore_index=True)
 
-    total_pandas_df = total_df.sort(total_df.id_int.asc()).toPandas()
-    assert_frame_equal(left=total_pandas_df, right=total_span, check_dtype=False)
+    total_df = total_df.sort(total_df.id_int.asc())
+    processing.assert_equal_df(df=total_df, other_frame=total_span)
 
 
 @pytest.mark.parametrize(
@@ -331,6 +330,6 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
 
     # all the rows will be read
     total_span = pd.concat([first_span, second_span], ignore_index=True)
-    total_pandas_df = total_df.sort(total_df.id_int.asc()).toPandas()
+    total_df = total_df.sort(total_df.id_int.asc())
 
-    assert_frame_equal(left=total_pandas_df, right=total_span, check_dtype=False)
+    processing.assert_equal_df(df=total_df, other_frame=total_span)
