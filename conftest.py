@@ -213,7 +213,7 @@ def prepare_schema_table(processing, request, spark):
         )
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function", autouse=True)  # noqa: WPS325
 def use_memory_hwm_store(request):
     test_function = request.function
     entities = test_function.__name__.split("_")

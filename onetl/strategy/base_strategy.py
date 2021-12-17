@@ -26,11 +26,11 @@ class BaseStrategy:
         strategy.exit_hook(failed=bool(exc_type))
         return False
 
-    @property
+    @property  # noqa: WPS324
     def current_value(self) -> Any:
         return None  # noqa: WPS324
 
-    @property
+    @property  # noqa: WPS324
     def next_value(self) -> Any:
         return None  # noqa: WPS324
 

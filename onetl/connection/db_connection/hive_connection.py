@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Optional, Any
+from typing import Optional, List, Tuple, Iterable, Union
+
+from pydantic import Field
 
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import get_sql_query, attribute_checker, get_indent, SPARK_INDENT
+from onetl.connection.connection_helpers import get_sql_query, get_indent, SPARK_INDENT
 
 
 log = getLogger(__name__)
 
 
-@attribute_checker(forbidden_parameter="jdbc_options")
 @dataclass(frozen=True)
 class Hive(DBConnection):
     """Class for Hive spark connection.
@@ -36,28 +37,63 @@ class Hive(DBConnection):
         hive = Hive(spark=spark)
     """
 
-    def save_df(
+    # TODO(@dypedchenk): add documentation for values
+    class Options(DBConnection.Options):  # noqa: WPS431
+        partition_by: Optional[Union[List[str], str]] = Field(alias="partitionBy")
+        bucket_by: Optional[Tuple[int, str]] = Field(alias="bucketBy")
+        sort_by: Optional[Union[List[str], str]] = Field(alias="sortBy")
+        format: str = Field(default="orc")
+        compression: Optional[str] = None
+        insert_into: bool = Field(alias="insertInto", default=False)
+
+        class Config:  # noqa: WPS431
+            extra = "allow"
+
+    def save_df(  # type: ignore
         self,
         df: "pyspark.sql.DataFrame",
         table: str,
+        options: Options,
         mode: Optional[str] = "append",
-        **kwargs: Any,
     ) -> None:
         log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
         log.info("|Spark| Using <<WRITER_OPTIONS>>:")
         log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
-        # TODO:(@dypedchenk) rewrite, take into account all data recording possibilities. Use "mode" param.
-        df.write.insertInto(table, overwrite=False)
+
+        writer = df.write
+
+        if options.insert_into:  # type: ignore
+            writer.insertInto(table, overwrite=mode == "overwrite")  # overwrite = True or False
+        else:
+            for method, value in options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
+                # <value> is the arguments that will be passed to the <method>
+                # format orc, parquet methods and format simultaneously
+                if hasattr(writer, method):
+                    if isinstance(value, Iterable) and not isinstance(value, str):
+                        writer = getattr(writer, method)(*value)  # noqa: WPS220
+                    else:
+                        writer = getattr(writer, method)(value)  # noqa: WPS220
+                else:
+                    writer = writer.option(method, value)
+            writer.saveAsTable(table, mode=mode, format=options.format)  # type: ignore
+
         log.info(f"|{self.__class__.__name__}| {table} successfully written")
 
     def read_table(  # type: ignore
         self,
         table: str,
+        options: Options,
         columns: Optional[str] = "*",
         hint: Optional[str] = None,
         where: Optional[str] = None,
-        **kwargs: Any,
     ) -> "pyspark.sql.DataFrame":
+
+        if options:
+            if options.dict(exclude_unset=True):
+                raise ValueError(
+                    f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
+                    "Hive reader does not support options.",
+                )
 
         table = get_sql_query(
             table=table,
@@ -78,7 +114,7 @@ class Hive(DBConnection):
         self,
         table: str,
         columns: str,
-        **kwargs: Any,
+        options: DBConnection.Options,
     ) -> "pyspark.sql.types.StructType":
 
         query_schema = f"SELECT {columns} FROM {table} WHERE 1 = 0"

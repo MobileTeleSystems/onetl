@@ -1,6 +1,7 @@
 from typing import Optional
 from logging import getLogger
 
+
 log = getLogger(__name__)
 
 HALF_SCREEN_SIZE = 45
@@ -95,18 +96,3 @@ def attribute_checker(forbidden_parameter):
         return Checker
 
     return wrapper
-
-
-def execute_query_without_partitioning(
-    parameters: dict,
-    spark: "pyspark.sql.SparkSession",
-    sql: str,
-) -> "pyspark.sql.DataFrame":
-    jdbc_options = parameters.copy()
-    jdbc_options["table"] = sql
-    jdbc_options.pop("numPartitions", None)
-    jdbc_options.pop("lowerBound", None)
-    jdbc_options.pop("upperBound", None)
-    jdbc_options.pop("column", None)
-
-    return spark.read.jdbc(**jdbc_options)

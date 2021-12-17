@@ -58,6 +58,29 @@ class TestIntegrationONETLPostgres:
             df=table_df,
         )
 
+    def test_postgres_reader_snapshot_with_pydantic_options(self, spark, processing, prepare_schema_table):
+        postgres = Postgres(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=postgres,
+            table=prepare_schema_table.full_name,
+            options=Postgres.Options(batchsize=500),
+        )
+
+        table_df = reader.run()
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=table_df,
+        )
+
     def test_postgres_writer_snapshot(self, spark, processing, prepare_schema_table):
         df = processing.create_spark_df(spark=spark)
 
@@ -72,6 +95,56 @@ class TestIntegrationONETLPostgres:
         writer = DBWriter(
             connection=postgres,
             table=prepare_schema_table.full_name,
+        )
+
+        writer.run(df)
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=df,
+        )
+
+    def test_postgres_writer_snapshot_with_dict_options(self, spark, processing, prepare_schema_table):
+        df = processing.create_spark_df(spark=spark)
+
+        postgres = Postgres(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        writer = DBWriter(
+            connection=postgres,
+            table=prepare_schema_table.full_name,
+            options={"batchsize": "500"},
+        )
+
+        writer.run(df)
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=df,
+        )
+
+    def test_postgres_writer_snapshot_with_pydantic_options(self, spark, processing, prepare_schema_table):
+        df = processing.create_spark_df(spark=spark)
+
+        postgres = Postgres(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            database=processing.database,
+            spark=spark,
+        )
+
+        writer = DBWriter(
+            connection=postgres,
+            table=prepare_schema_table.full_name,
+            options=Postgres.Options(batchsize=500),
         )
 
         writer.run(df)
@@ -119,25 +192,12 @@ class TestIntegrationONETLPostgres:
                 df=df2,
             )
 
-    def test_postgres_writer_jdbc_properties_value_error(self, spark, processing):
-        """Overrides the <user> parameter in the jdbc_options parameter which was already defined in the connection"""
-        df = processing.create_spark_df(spark)
-
-        writer = DBWriter(
-            Postgres(spark=spark, host="some_host", user="valid_user", password="pwd"),
-            table="table",
-            jdbc_options={"user": "some_user"},
-        )
-
-        with pytest.raises(ValueError):
-            writer.run(df)
-
     def test_postgres_num_partition_without_partition_column(self, spark):
 
         reader = DBReader(
             connection=Postgres(spark=spark, host="some_host", user="valid_user", password="pwd"),
             table="table",
-            jdbc_options={"numPartitions": "200"},
+            options={"numPartitions": "200"},
         )
 
         with pytest.raises(ValueError):
@@ -146,9 +206,9 @@ class TestIntegrationONETLPostgres:
     @pytest.mark.parametrize(
         "jdbc_options",
         [
-            {"numPartitions": "2", "column": "hwm_int"},
-            {"numPartitions": "2", "column": "hwm_int", "lowerBound": "50"},
-            {"numPartitions": "2", "column": "hwm_int", "upperBound": "70"},
+            {"numPartitions": "2", "partitionColumn": "hwm_int"},
+            {"numPartitions": "2", "partitionColumn": "hwm_int", "lowerBound": "50"},
+            {"numPartitions": "2", "partitionColumn": "hwm_int", "upperBound": "70"},
             {"fetchsize": "2"},
         ],
     )
@@ -165,7 +225,7 @@ class TestIntegrationONETLPostgres:
         reader = DBReader(
             connection=postgres,
             table=prepare_schema_table.full_name,
-            jdbc_options=jdbc_options,
+            options=jdbc_options,
         )
         table_df = reader.run()
 

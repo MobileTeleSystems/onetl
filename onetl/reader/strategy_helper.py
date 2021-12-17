@@ -118,7 +118,7 @@ class HWMStrategyHelper(StrategyHelper):
                 columns=self.reader.get_columns(),
                 hint=self.reader.hint,
                 where=self.where,
-                jdbc_options=self.reader.jdbc_options,
+                options=self.reader.pydantic_options,
             )
 
             min_hwm_value, max_hwm_value = self.get_hwm_boundaries(df)

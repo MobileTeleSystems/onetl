@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
 from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
 from onetl.connection.connection_helpers import get_sql_query
+from onetl.writer.db_writer import DBWriter
 
 
 class TestDBConnection:
@@ -19,35 +20,26 @@ class TestDBConnection:
         with pytest.raises(TypeError):
             conn = Hive()  # noqa: F841
 
-
-class TestHiveConnectionUnit:
-    spark = Mock()
-
-    def test_hive_connection_get_schema_raise_exception(self):
-        hive = Hive(spark=self.spark)
+    @pytest.mark.parametrize(
+        "connection,options",
+        [
+            (
+                Oracle(host="some_host", user="user", password="passwd", spark=spark),
+                Hive.Options(sort_by="hwm_int"),
+            ),
+            (
+                Hive(spark=spark),
+                Oracle.Options(fetchsize=1000, truncate=True, partition_column="id_int"),
+            ),
+        ],
+        ids=["JDBC connection with Hive opitons.", "Hive connection with JDBC options."],
+    )
+    def test_inappropriate_connection_and_options_types(self, connection, options):
         with pytest.raises(ValueError):
-            hive.get_schema(
-                table="table",
-                columns="column",
-                jdbc_options={"option": "option"},  # wrong parameter
-            )
-
-    def test_hive_connection_read_table_raise_exception(self):
-        hive = Hive(spark=self.spark)
-        with pytest.raises(ValueError):
-            hive.read_table(
-                table="table",
-                columns="column",
-                jdbc_options={"option": "option"},  # wrong parameter
-            )
-
-    def test_hive_connection_save_df_raise_exception(self):
-        hive = Hive(spark=self.spark)
-        with pytest.raises(ValueError):
-            hive.save_df(
-                df="dataframe",
-                table="table",
-                jdbc_options={"option": "option"},  # wrong parameter
+            DBWriter(
+                connection=connection,
+                table="onetl.some_table",
+                options=options,
             )
 
 
@@ -128,33 +120,6 @@ class TestJDBCConnection:
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
         assert Clickhouse.port == 8123
-
-    def test_jdbc_params_creator(self):
-        jdbc_options = {
-            "lowerBound": 10,
-            "upperBound": 1000,
-            "partitionColumn": "some_column",
-            "numPartitions": 20,
-            "fetchsize": 1000,
-        }
-
-        conn = Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
-
-        jdbc_options = conn.jdbc_params_creator(jdbc_options=jdbc_options)
-
-        assert jdbc_options == {
-            "lowerBound": "10",
-            "upperBound": "1000",
-            "url": "jdbc:postgresql://some_host:5432/default",
-            "column": "some_column",
-            "numPartitions": "20",
-            "properties": {
-                "user": "user",
-                "driver": "org.postgresql.Driver",
-                "fetchsize": "1000",
-                "password": "passwd",
-            },
-        }
 
 
 class TestConnectionHelpers:

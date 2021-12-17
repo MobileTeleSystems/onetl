@@ -6,3 +6,4 @@ platformdirs
 PySmbClient
 pyyaml
 sftpserver
+pydantic

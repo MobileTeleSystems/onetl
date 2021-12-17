@@ -34,7 +34,7 @@ class BaseHWMStore:
     def __str__(self):
         return self.__class__.__name__
 
-    @abstractmethod
+    @abstractmethod  # noqa: WPS324
     def get(self, name: str) -> HWM | None:
         return None  # noqa: WPS324
 

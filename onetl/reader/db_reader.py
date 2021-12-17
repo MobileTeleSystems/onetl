@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from logging import getLogger
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Dict
 
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.db_connection import Hive
 from onetl.connection.connection_helpers import decorated_log
 
 
@@ -117,7 +116,7 @@ class DBReader:
             database="target_db",
             spark=spark,
         )
-        jdbc_options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
+        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100"}
 
         reader = DBReader(
             connection=postgres,
@@ -126,7 +125,7 @@ class DBReader:
             hint="NOWAIT",
             limit=10,
             columns=["d_id", "d_name", "d_age"],
-            jdbc_options=jdbc_options,
+            options=jdbc_options,
         )
 
     Reader for Hive with all available params:
@@ -158,11 +157,15 @@ class DBReader:
     where: str | None = None
     hint: str | None = None
     hwm_column: str | None = None
-    jdbc_options: dict[str, Any] = field(default_factory=dict)
+    options: Optional[DBConnection.Options, Dict] = None
 
     def __post_init__(self):
-        if isinstance(self.connection, Hive) and self.jdbc_options:
-            raise ValueError("It is forbidden to pass the jdbc_options parameter if you passed Hive.")
+        if self.options:
+            self.pydantic_options = self.connection.to_options(
+                options=self.options,
+            )
+        else:
+            self.pydantic_options = self.connection.Options()
 
     def get_columns(self) -> str:
         return ", ".join(self.columns) if isinstance(self.columns, list) else self.columns or "*"  # noqa: WPS601
@@ -172,7 +175,7 @@ class DBReader:
         return self.connection.get_schema(  # type: ignore
             table=self.table,
             columns=self.get_columns(),
-            jdbc_options=self.jdbc_options,
+            options=self.pydantic_options,
         )
 
     def run(self) -> DataFrame:
@@ -211,7 +214,7 @@ class DBReader:
             columns=self.get_columns(),
             hint=self.hint,
             where=helper.where,
-            jdbc_options=self.jdbc_options,
+            options=self.pydantic_options,
         )
 
         df = helper.save(df)
