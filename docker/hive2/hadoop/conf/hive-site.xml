@@ -3,6 +3,11 @@
 <configuration>
 
     <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/user/hive/warehouse</value>
+    </property>
+
+    <property>
         <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:postgresql://postgres:5432/metastore2_db</value>
         <description>JDBC connect string for a JDBC metastore</description>

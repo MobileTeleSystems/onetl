@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Dict
+from typing import Optional, Dict, Union
 
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.db_connection.hive_connection import Hive
 from onetl.connection.connection_helpers import decorated_log
 
 
@@ -157,11 +156,15 @@ class DBWriter:
     connection: DBConnection
     table: str
     mode: str = field(default="append")
-    jdbc_options: Dict = field(default_factory=dict)
+    options: Optional[Union[DBConnection.Options, Dict]] = None
 
     def __post_init__(self):
-        if isinstance(self.connection, Hive) and self.jdbc_options:
-            raise ValueError("It is forbidden to pass the jdbc_options parameter if you passed Hive.")
+        if self.options:
+            self.pydantic_options = self.connection.to_options(
+                options=self.options,
+            )
+        else:
+            self.pydantic_options = self.connection.Options()
 
     def run(self, df):
         """
@@ -184,12 +187,10 @@ class DBWriter:
         """
         decorated_log(msg="DBWriter starts")
 
-        jdbc_options = self.jdbc_options.copy()
-
         self.connection.save_df(
             df=df,
             table=self.table,
-            jdbc_options=jdbc_options,
+            options=self.pydantic_options,
             mode=self.mode,
         )
 

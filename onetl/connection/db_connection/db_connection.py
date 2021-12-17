@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from logging import getLogger
 import operator
-from typing import Any, Callable, ClassVar, Optional, Dict
+from typing import Any, Callable, ClassVar, Optional, Dict, Union
 from abc import abstractmethod
 
+from pydantic import BaseModel
+
 from onetl.connection.connection_abc import ConnectionABC
+
 
 log = getLogger(__name__)
 
@@ -26,13 +31,21 @@ class DBConnection(ConnectionABC):
         operator.ne: "{} != {}",
     }
 
+    class Options(BaseModel):  # noqa: WPS431
+        """Hive or JDBC options"""
+
+        class Config:  # noqa: WPS431
+            allow_population_by_field_name = True
+            frozen = True
+            extra = "allow"
+
     @abstractmethod
     def save_df(
         self,
         df: "pyspark.sql.DataFrame",
         table: str,
         mode: Optional[str] = "append",
-        **kwargs: Any,
+        options: Options = None,
     ) -> None:
         """"""
 
@@ -43,7 +56,7 @@ class DBConnection(ConnectionABC):
         columns: Optional[str],
         hint: Optional[str],
         where: Optional[str],
-        **kwargs: Any,
+        options: Options,
     ) -> "pyspark.sql.DataFrame":
         """"""
 
@@ -52,7 +65,7 @@ class DBConnection(ConnectionABC):
         self,
         table: str,
         columns: str,
-        **kwargs: Any,
+        options: Options,
     ) -> "pyspark.sql.types.StructType":
         """"""
 
@@ -73,6 +86,27 @@ class DBConnection(ConnectionABC):
             return str(value)
 
         return f"'{value}'"
+
+    def to_options(
+        self,
+        options: Union[Options, Dict],
+    ) -> Options:
+        """
+        Сonverting <options> is performed depending on which class the <options> parameter was passed.
+        If a parameter inherited from the Option class was passed, then it will be returned unchanged.
+        If a Dict object was passed it will be converted to Options.
+        If the JDBC connect class was used and the Hive options class was used,
+        then a ValueError exception will be thrown. If it is the other way around, an exception will also be thrown.
+        """
+        if isinstance(options, Dict):
+            options = self.Options.parse_obj(options)
+
+        if not isinstance(options, self.Options):
+            raise ValueError(
+                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. " f"Inappropriate types.",
+            )
+
+        return options
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         """

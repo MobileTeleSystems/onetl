@@ -1,33 +1,15 @@
 from abc import abstractmethod
 from logging import getLogger
-from typing import Optional, Dict, Any, ClassVar
+from typing import Optional, Dict, ClassVar
 from dataclasses import dataclass, field
+
+from pydantic import Field
 
 from onetl.connection.connection_helpers import get_sql_query
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import execute_query_without_partitioning, get_indent, SPARK_INDENT
+from onetl.connection.connection_helpers import get_indent, SPARK_INDENT
 
 log = getLogger(__name__)
-
-# FORBIDDEN_JDBC_PROPERTIES - properties that are not allowed to be overridden
-# in the constructors of the DWReader and DBWriter classes
-FORBIDDEN_JDBC_PROPERTIES = {"user", "password", "url", "driver"}
-
-# JDBC_PROPERTIES - these are the parameters that will go into the properties parameter
-# in the spark method pyspark.sql.DataFrame.write.jdbc
-JDBC_PROPERTIES = [
-    "user",
-    "password",
-    "driver",
-    "fetchsize",
-    "batchsize",
-    "isolationLevel",
-    "sessionInitStatement",
-    "truncate",
-    "createTableOptions",
-    "createTableColumnTypes",
-    "customSchema",
-]
 
 
 @dataclass(frozen=True)
@@ -42,6 +24,25 @@ class JDBCConnection(DBConnection):
     extra: Dict = field(default_factory=dict)
     driver: ClassVar[str] = ""
     package: ClassVar[str] = ""
+
+    class Options(DBConnection.Options):  # noqa: WPS431
+        fetchsize: Optional[int] = None
+        batchsize: Optional[int] = None
+        isolation_level: Optional[str] = Field(alias="isolationLevel", default=None)
+        session_init_statement: Optional[str] = Field(alias="sessionInitStatement", default=None)
+        truncate: Optional[bool] = None
+        create_table_options: Optional[str] = Field(alias="createTableOptions", default=None)
+        create_table_column_types: Optional[str] = Field(alias="createTableColumnTypes", default=None)
+        custom_schema: Optional[str] = Field(alias="customSchema", default=None)
+        query_timeout: Optional[int] = Field(alias="queryTimeout", default=None)
+        cascade_truncate: Optional[bool] = Field(alias="cascadeTruncate", default=None)
+        push_down_predicate: Optional[str] = Field(alias="pushDownPredicate", default=None)
+
+        # Options in DataDrameWriter.jdbc() method
+        partition_column: Optional[str] = Field(alias="partitionColumn", default=None)
+        lower_bound: Optional[int] = Field(alias="lowerBound", default=None)
+        upper_bound: Optional[int] = Field(alias="upperBound", default=None)
+        num_partitions: Optional[int] = Field(alias="numPartitions", default=None)
 
     @property
     @abstractmethod
@@ -77,9 +78,15 @@ class JDBCConnection(DBConnection):
         columns: Optional[str],
         hint: Optional[str],
         where: Optional[str],
-        jdbc_options: Dict,
-        **kwargs: Any,
+        options: Options,
     ) -> "pyspark.sql.DataFrame":
+
+        if options:
+            if not options.fetchsize:
+                log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
+
+            if options.session_init_statement and options:
+                log.debug(f"Init SQL statement: {options.sessionInitStatement}")  # type: ignore
 
         sql_text = get_sql_query(
             table=table,
@@ -87,22 +94,21 @@ class JDBCConnection(DBConnection):
             columns=columns,
             where=where,
         )
-        options = self.jdbc_params_creator(jdbc_options=jdbc_options)
-        options = self.set_lower_upper_bound(jdbc_options=options, table=table)
+
+        read_options = self.set_lower_upper_bound(jdbc_options=options, table=table)
         class_indent = get_indent(f"|{self.__class__.__name__}|")
 
         log.info(f"|{self.__class__.__name__}| -> |Spark| Reading {table} to DataFrame")
         # TODO:(@mivasil6) Make debug, выводить все введенные опции без повторений и пароля
         log.info("|Spark| Using <<Reading_OPTIONS>>:")
         log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
-
         log.info("|Spark| Using connection:")
         log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
         log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
-        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
+        log.info(" " * SPARK_INDENT + f"driver={self.driver}")
         log.info(" " * SPARK_INDENT + f"user={self.user}")
 
-        if not jdbc_options.get("fetchsize"):
+        if not read_options.fetchsize:
             log.info("|Spark| <fetchsize> option wasn't specified — reading will be slowed down!")
 
         log.info(f"|{self.__class__.__name__}| SQL statement:")
@@ -113,7 +119,8 @@ class JDBCConnection(DBConnection):
         #    url, table, column, lowerBound, upperBound, numPartitions, predicates
         #    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
-        df = self.spark.read.jdbc(table=f"({sql_text}) T", **options)
+        dict_read_options = self.jdbc_params_creator(jdbc_options=read_options)
+        df = self.spark.read.jdbc(table=f"({sql_text}) T", **dict_read_options)
         log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
@@ -121,17 +128,12 @@ class JDBCConnection(DBConnection):
         self,
         df: "pyspark.sql.DataFrame",
         table: str,
-        jdbc_options: Dict,
+        options: Options,
         mode: Optional[str] = "append",
-        **kwargs: Any,
     ) -> None:
         """
         Save the DataFrame into RDB.
-
         """
-
-        options = jdbc_options.copy()
-        options = self.jdbc_params_creator(jdbc_options=options)
 
         # TODO:(@mivasil6) выводить все введенные опции без повторений и пароля
         log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
@@ -141,7 +143,7 @@ class JDBCConnection(DBConnection):
         log.info("|Spark| Using connection:")
         log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
         log.info(" " * SPARK_INDENT + f"jdbc_url={self.url}")
-        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
+        log.info(" " * SPARK_INDENT + f"driver={self.driver}")
         log.info(" " * SPARK_INDENT + f"user={self.user}")
 
         # for convenience. parameters accepted by spark.write.jdbc method
@@ -149,83 +151,80 @@ class JDBCConnection(DBConnection):
         #     url, table, mode,
         #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
-        df.write.mode(mode).jdbc(table=table, **options)
+        jdbc_options = self.jdbc_params_creator(jdbc_options=options)
+        df.write.mode(mode).jdbc(table=table, **jdbc_options)
         log.info(f"|{self.__class__.__name__}| {table} successfully written")
 
     def get_schema(  # type: ignore
         self,
         table: str,
         columns: str,
-        jdbc_options: Dict,
-        **kwargs: Any,
+        options: Options,
     ) -> "pyspark.sql.types.StructType":
 
-        jdbc_options = self.jdbc_params_creator(jdbc_options=jdbc_options)
         class_indent = get_indent(f"|{self.__class__.__name__}|")
-
         query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
-        jdbc_options["table"] = query_schema
-        jdbc_options["properties"]["fetchsize"] = "0"
-
+        temp_prop = options.copy(update={"fetchsize": "0"})
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
-
         log.info(f"|{self.__class__.__name__}| SQL statement:\n{query_schema}")
         log.info(" " * class_indent + f"{query_schema}")
-        df = execute_query_without_partitioning(parameters=jdbc_options, spark=self.spark, sql=query_schema)
+        df = self.execute_query_without_partitioning(
+            parameters=temp_prop,
+            spark=self.spark,
+            table=query_schema,
+        )
         return df.schema
 
     def jdbc_params_creator(
         self,
-        jdbc_options: Dict,
+        jdbc_options: Options,
     ) -> Dict:
-        options = jdbc_options.copy()
-
-        # Method intended to check the passed parameter jdbc_options.
-        # The check is needed so that the parameters defined in the DBCOnnection class are not
-        # overridden in the DBReader and DBWriter classes
-        if set(jdbc_options).intersection(FORBIDDEN_JDBC_PROPERTIES):
-            raise ValueError(
-                f"An invalid parameter "
-                f"<{set(jdbc_options).intersection(FORBIDDEN_JDBC_PROPERTIES)}> "
-                f"was entered."
-                f"{FORBIDDEN_JDBC_PROPERTIES} parameters can be defined only in DBConnection object",
-            )
-
-        options["user"] = self.user
-        options["password"] = self.password
-        options["driver"] = self.driver
-        options["url"] = self.url
+        jdbc_options = jdbc_options.copy(
+            update={
+                "user": self.user,
+                "password": self.password,
+                "driver": self.driver,
+                "url": self.url,
+            },
+        )
 
         # Have to replace the <partitionColumn> parameter with <column>
         # since the method takes the named <column> parameter
         # link to source below
         # https://git.io/JKOku
-        if options.get("partitionColumn"):
-            options["column"] = options["partitionColumn"]
-            options.pop("partitionColumn")
+        if jdbc_options.partition_column:  # noqa: WPS609
+            jdbc_options = jdbc_options.copy(
+                update={"column": jdbc_options.partition_column},
+                exclude={"partition_column"},
+            )
 
-        # Further below, the parameters are distributed to those that are inside the <properties> parameter
-        # and those that are not included in it
-        properties = {}
-        for k, v in options.items():
-            options[k] = str(v)
-            if k in JDBC_PROPERTIES:
-                properties[k] = str(v)
+        top_level_options = {"url", "column", "lower_bound", "upper_bound", "num_partitions"}
+        result = jdbc_options.dict(
+            by_alias=True,
+            include=top_level_options,
+            exclude_none=True,
+        )
+        result["properties"] = jdbc_options.dict(
+            by_alias=True,
+            exclude=top_level_options,
+            exclude_none=True,
+        )
 
-        for k in properties.keys():
-            options.pop(k)
+        def recursive_all_values_to_str(d: Dict):  # noqa: WPS430
+            for k, v in d.items():
+                if not isinstance(d[k], dict):
+                    d[k] = str(v).lower() if str(v).lower() in {"true", "false"} else str(v)
+                else:
+                    recursive_all_values_to_str(d[k])
+            return d
 
-        options["properties"] = properties
-
-        # Will add lower and upper bounds parameters if numPartitions parameter was set
-        # If numPartitions was not set then jdbc_options will remain unchanged
-        return options
+        return recursive_all_values_to_str(result)
 
     def set_lower_upper_bound(
         self,
-        jdbc_options: Dict,
+        jdbc_options: Options,
         table: str,
-    ) -> Dict:
+    ) -> Options:
         """
         If numPatition was set then sets upperBound and lowerBound if not set ones.
         """
@@ -233,15 +232,14 @@ class JDBCConnection(DBConnection):
         # If the lowerBound and upperBound parameters are not set,
         # then the automatic calculation algorithm of the boundary is started.
 
-        jdbc_options = jdbc_options.copy()
+        partition_column = jdbc_options.partition_column
+        num_partitions = jdbc_options.num_partitions
 
-        partition_column = jdbc_options.get("column")
-        num_partitions = jdbc_options.get("numPartitions")
         if num_partitions and not partition_column:
             raise ValueError("|Spark| <partitionColumn> task parameter wasn't specified")
 
-        upper_bound = jdbc_options.get("upperBound")
-        lower_bound = jdbc_options.get("lowerBound")
+        upper_bound = jdbc_options.upper_bound
+        lower_bound = jdbc_options.lower_bound
 
         if (not lower_bound or not upper_bound) and num_partitions:
 
@@ -254,28 +252,44 @@ class JDBCConnection(DBConnection):
             )
             log.info(f"|{self.__class__.__name__}| SQL statement\n{query_upper_lower_bound}")
 
-            df_upper_lower_bound = execute_query_without_partitioning(
+            df_upper_lower_bound = self.execute_query_without_partitioning(
                 parameters=jdbc_options,
                 spark=self.spark,
-                sql=query_upper_lower_bound,
+                table=query_upper_lower_bound,
             )
 
             # The sessionInitStatement parameter is removed because it only needs to be applied once.
-            jdbc_options["properties"].pop("sessionInitStatement", None)
+            jdbc_options.__delattr__("session_init_statement")  # noqa: WPS609
 
             tuple_upper_lower_bound = df_upper_lower_bound.collect()[0]
 
             if not lower_bound:
-                jdbc_options["lowerBound"] = tuple_upper_lower_bound.lower_bound
+                jdbc_options = jdbc_options.copy(update={"lower_bound": tuple_upper_lower_bound.lower_bound})
                 log.warning(
                     "|Spark| <lowerBound> task parameter wasn't specified:"
                     f" auto generated value is <{tuple_upper_lower_bound.lower_bound}>",
                 )
 
             if not upper_bound:
-                jdbc_options["upperBound"] = tuple_upper_lower_bound.upper_bound
+                jdbc_options = jdbc_options.copy(update={"upper_bound": tuple_upper_lower_bound.upper_bound})
                 log.warning(
                     f"|Spark| <upperBound> task parameter wasn't specified:"
                     f" auto generated value is <{tuple_upper_lower_bound.upper_bound}>",
                 )
+
         return jdbc_options
+
+    def execute_query_without_partitioning(
+        self,
+        parameters: "JDBCConnection.Options",
+        spark: "pyspark.sql.SparkSession",
+        table: str,
+    ) -> "pyspark.sql.DataFrame":
+        jdbc_dict_params = self.jdbc_params_creator(parameters)
+        jdbc_dict_params.pop("numPartitions", None)
+        jdbc_dict_params.pop("lowerBound", None)
+        jdbc_dict_params.pop("upperBound", None)
+        jdbc_dict_params.pop("partitionColumn", None)
+        jdbc_dict_params.pop("column", None)
+
+        return spark.read.jdbc(table=table, **jdbc_dict_params)

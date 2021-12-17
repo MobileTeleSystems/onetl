@@ -17,7 +17,7 @@ class KerberosMixin:
 
     def kinit(self, user, keytab=None, password=None):
         if not user or (not keytab and not password):
-            raise KerberosAuthException("Not user or keytab and password")
+            raise KerberosAuthError("Not user or keytab and password")
 
         self._prep_krb_args()
         if keytab:
@@ -40,5 +40,5 @@ class KerberosMixin:
             os.environ["KRB5CCNAME"] = krb5ccname
 
 
-class KerberosAuthException(Exception):
+class KerberosAuthError(Exception):
     pass  # noqa: WPS420, WPS604
