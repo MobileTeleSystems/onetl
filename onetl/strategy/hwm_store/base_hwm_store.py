@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 
-from onetl.strategy.hwm import HWM
+from etl_entities import HWM
 from onetl.connection.connection_helpers import get_indent
 
 log = logging.getLogger(__name__)

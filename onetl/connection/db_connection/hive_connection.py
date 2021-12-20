@@ -49,7 +49,12 @@ class Hive(DBConnection):
         class Config:  # noqa: WPS431
             extra = "allow"
 
-    def save_df(  # type: ignore
+    # TODO (@msmarty5): Replace with active_namenode function from mtspark
+    @property
+    def instance_url(self) -> str:
+        return "cluster"
+
+    def save_df(  # type: ignore[override]
         self,
         df: "pyspark.sql.DataFrame",
         table: str,

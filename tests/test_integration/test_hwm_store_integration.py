@@ -47,11 +47,12 @@ def test_postgres_hwm_store_integration(spark, processing, prepare_schema_table,
 
     with hwm_store:
         # incremental run
-        with IncrementalStrategy():
+        with IncrementalStrategy() as strategy:
             reader.run()
+            strategy_hwm = strategy.hwm
 
         store = HWMStoreManager.get_current()
-        hwm = store.get(f"{prepare_schema_table.full_name}.{hwm_column}")
+        hwm = store.get(strategy_hwm.qualified_name)
 
         # HWM value was updated in the storage
         assert hwm.value == span[hwm_column].max()

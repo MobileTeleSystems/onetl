@@ -4,9 +4,10 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any, TYPE_CHECKING, NoReturn
 
+from etl_entities import Column, ColumnHWM, HWM
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import StrategyManager
-from onetl.strategy.hwm import HWM, ColumnHWM, HWMClassRegistry
+from onetl.strategy.hwm_store import HWMClassRegistry
 from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 
@@ -50,7 +51,7 @@ class NonHWMStrategyHelper(StrategyHelper):
 @dataclass
 class HWMStrategyHelper(StrategyHelper):
     reader: DBReader
-    hwm_column: str
+    hwm_column: Column
     strategy: HWMStrategy = field(init=False)
 
     def __post_init__(self):
@@ -91,7 +92,7 @@ class HWMStrategyHelper(StrategyHelper):
 
     def get_hwm_type(self) -> type[ColumnHWM]:
         schema = self.reader.get_schema()
-        hwm_column_type = schema[self.hwm_column].dataType.json().strip('"')
+        hwm_column_type = schema[self.hwm_column.name].dataType.typeName()
         result_type = HWMClassRegistry.get(hwm_column_type)
 
         if not issubclass(result_type, ColumnHWM):
@@ -104,21 +105,21 @@ class HWMStrategyHelper(StrategyHelper):
             return
 
         hwm_type = self.get_hwm_type()
-        self.strategy.hwm = hwm_type(self.reader.table, self.hwm_column)
+        self.strategy.hwm = hwm_type(table=self.reader.table, column=self.hwm_column)
 
     def fetch_hwm(self):
-        if self.strategy.hwm.value is not None:
+        if self.strategy.hwm:
             return
 
         if isinstance(self.strategy, BatchHWMStrategy) and not (
             self.strategy.has_lower_limit and self.strategy.has_upper_limit
         ):
             df = self.reader.connection.read_table(
-                table=self.reader.table,
-                columns=self.reader.get_columns(),
+                table=str(self.reader.table),
+                columns=self.reader.columns,
                 hint=self.reader.hint,
                 where=self.where,
-                options=self.reader.pydantic_options,
+                options=self.reader.options,
             )
 
             min_hwm_value, max_hwm_value = self.get_hwm_boundaries(df)
@@ -145,8 +146,8 @@ class HWMStrategyHelper(StrategyHelper):
         from pyspark.sql import functions as F  # noqa: N812
 
         result = df.select(
-            F.max(self.hwm_column).alias("max_value"),
-            F.min(self.hwm_column).alias("min_value"),
+            F.max(self.hwm_column.name).alias("max_value"),
+            F.min(self.hwm_column.name).alias("min_value"),
         ).collect()[0]
 
         return result["min_value"], result["max_value"]
@@ -155,20 +156,20 @@ class HWMStrategyHelper(StrategyHelper):
     def where(self) -> str:
         result = [self.reader.where]
 
-        if self.strategy.current_value is not None:
+        if self.strategy.current_value is not None and self.strategy.hwm is not None:
             comparator = self.strategy.current_value_comparator
             compare = self.reader.connection.get_compare_statement(
                 comparator,
-                self.strategy.hwm,
+                self.strategy.hwm.name,
                 self.strategy.current_value,
             )
             result.append(compare)
 
-        if self.strategy.next_value is not None:
+        if self.strategy.next_value is not None and self.strategy.hwm is not None:
             comparator = self.strategy.next_value_comparator
             compare = self.reader.connection.get_compare_statement(
                 comparator,
-                self.strategy.hwm,
+                self.strategy.hwm.name,
                 self.strategy.next_value,
             )
             result.append(compare)

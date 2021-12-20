@@ -1,8 +1,7 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
 
 from tests.lib.base_processing import BaseProcessing
 
@@ -61,19 +60,6 @@ class HiveProcessing(BaseProcessing):
         df = self.connection.createDataFrame(values)
         df.write.mode("append").insertInto(f"{schema}.{table}")
 
-    def assert_equal_df(
-        self,
-        schema: str,
-        table: str,
-        df: "pyspark.sql.DataFrame",
-        other_frame: Optional["pyspark.sql.DataFrame"] = None,
-    ) -> None:
-
-        if not other_frame:
-            other_frame = self.get_expected_dataframe(schema=schema, table=table)
-
-        assert_frame_equal(left=df.toPandas(), right=other_frame, check_dtype=False)
-
     def get_expected_dataframe(
         self,
         schema: str,
@@ -88,3 +74,17 @@ class HiveProcessing(BaseProcessing):
                 values[self.column_names[idx]].append(row[idx])
 
         return pd.DataFrame(data=values)
+
+    def fix_pandas_df(
+        self,
+        df: "pandas.core.frame.DataFrame",
+    ) -> "pandas.core.frame.DataFrame":
+        # Type conversion is required since Hive returns float32 instead float64
+
+        for column in df:  # noqa: WPS528
+            column_names = column.split("_")
+
+            if "float" in column_names:
+                df[column] = df[column].astype("float32")
+
+        return df

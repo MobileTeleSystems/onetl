@@ -196,7 +196,7 @@ class TestIntegrationONETLPostgres:
 
         reader = DBReader(
             connection=Postgres(spark=spark, host="some_host", user="valid_user", password="pwd"),
-            table="table",
+            table="default.table",
             options={"numPartitions": "200"},
         )
 

@@ -8,6 +8,20 @@ from onetl.connection.db_connection import Oracle, Postgres, Hive
 class TestDBReader:
     spark = Mock()
 
+    def test_reader_without_schema(self):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="table",  # missing schema
+            )
+
+    def test_reader_with_too_many_dots(self):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="schema.table.abc",  # wrong input
+            )
+
     def test_reader_jdbc_properties_raise_exception(self):
         """
         if the type of the connection parameter is equal to Hive,
@@ -16,7 +30,7 @@ class TestDBReader:
 
         reader = DBReader(
             connection=Hive(spark=self.spark),
-            table="table",
+            table="default.table",
             options=Hive.Options(user="some_user"),  # wrong parameter
         )
 
@@ -101,7 +115,7 @@ class TestDBReader:
         )
 
         jdbc_params = reader.connection.jdbc_params_creator(
-            jdbc_options=reader.pydantic_options,
+            jdbc_options=reader.options,
         )
 
         assert jdbc_params == {

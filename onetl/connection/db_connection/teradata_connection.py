@@ -68,15 +68,13 @@ class Teradata(JDBCConnection):
     port: int = 1025
 
     @property
-    def url(self) -> str:
+    def jdbc_url(self) -> str:
         prop = self.extra.copy()
         prop["DATABASE"] = self.database
-        if self.port:
-            prop["DBS_PORT"] = self.port
+        prop["DBS_PORT"] = self.port
 
-        schema = ",".join(f"{k}={v}" for k, v in prop.items())
-
-        return f"jdbc:teradata://{self.host}/{schema}"
+        conn = ",".join(f"{k}={v}" for k, v in prop.items())
+        return f"jdbc:teradata://{self.host}/{conn}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()

@@ -1,10 +1,11 @@
 from abc import abstractmethod
 from logging import getLogger
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import date, datetime, timedelta
 from random import randint
 
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 
 logger = getLogger(__name__)
 
@@ -56,6 +57,14 @@ class BaseProcessing:
     ) -> None:
         """"""
 
+    @abstractmethod
+    def get_expected_dataframe(
+        self,
+        schema: str,
+        table: str,
+    ) -> "pandas.core.frame.DataFrame":
+        """"""
+
     def get_column_type(self, name: str) -> str:
         return self._column_types_and_names_matching[name]
 
@@ -88,3 +97,44 @@ class BaseProcessing:
         max_id: int = _df_max_length,
     ) -> "pyspark.sql.DataFrame":
         return spark.createDataFrame(self.create_pandas_df(min_id=min_id, max_id=max_id))
+
+    def fix_pandas_df(
+        self,
+        df: "pandas.core.frame.DataFrame",
+    ) -> "pandas.core.frame.DataFrame":
+        return df
+
+    def assert_equal_df(
+        self,
+        df: "pyspark.sql.DataFrame",
+        schema: Optional[str] = None,
+        table: Optional[str] = None,
+        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+    ) -> None:
+        """Checks that df and other_frame are equal"""
+
+        if other_frame is None:
+            other_frame = self.get_expected_dataframe(schema=schema, table=table)
+
+        df = self.fix_pandas_df(df.toPandas())
+        other_frame = self.fix_pandas_df(other_frame)
+
+        assert_frame_equal(left=df, right=other_frame, check_dtype=False)
+
+    def assert_subset_df(
+        self,
+        df: "pyspark.sql.DataFrame",
+        schema: Optional[str] = None,
+        table: Optional[str] = None,
+        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+    ) -> None:
+        """Checks that other_frame contains df"""
+
+        if other_frame is None:
+            other_frame = self.get_expected_dataframe(schema=schema, table=table)
+
+        df = self.fix_pandas_df(df.toPandas())
+        other_frame = self.fix_pandas_df(other_frame)
+
+        for column in df:  # noqa: WPS528
+            assert df[column].isin(other_frame[column]).all()  # noqa: S101

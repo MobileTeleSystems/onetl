@@ -1,10 +1,9 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 import os
 
 import pandas as pd
 from pandas.io import sql as psql
-from pandas.util.testing import assert_frame_equal
 import cx_Oracle
 
 from tests.lib.base_processing import BaseProcessing
@@ -129,45 +128,29 @@ class OracleProcessing(BaseProcessing):
 
         return pd.read_sql_query(f"SELECT * FROM {schema}.{table}", con=self.connection)
 
-    def assert_equal_df(
+    def fix_pandas_df(
         self,
-        schema: str,
-        table: str,
-        df: "pyspark.sql.DataFrame",
-        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
-    ) -> None:
-
-        if not other_frame:
-            other_frame = self.get_expected_dataframe(schema=schema, table=table)
-
-        # Type conversion is required since spark cannot read the int data type from oracle
-        convert_rules = {}
-
-        df = df.toPandas()
-
-        for column in df:
-
-            column_names = [column_word.lower() for column_word in column.split("_")]
-
-            if "int" in column_names:
-                convert_rules[column] = "int64"
-            elif "float" in column_names:
-                convert_rules[column] = "float64"
-            elif "datetime" in column_names or "date" in column_names:
-                convert_rules[column] = "datetime64[ns]"
-
-        df = df.astype(convert_rules)
-
-        # converting to lowercase for comparing data frames column names
+        df: "pandas.core.frame.DataFrame",
+    ) -> "pandas.core.frame.DataFrame":
+        # Oracle returns column names in UPPERCASE, convert them back to lowercase
         rename_columns = {x: x.lower() for x in df}
         df = df.rename(columns=rename_columns, inplace=False)
-        rename_columns.clear()
 
-        rename_columns = {x: x.lower() for x in other_frame}
-        other_frame = other_frame.rename(columns=rename_columns, inplace=False)
+        for column in df:  # noqa: WPS528
+            column_names = column.split("_")
 
-        assert_frame_equal(
-            left=df,
-            right=other_frame,
-            check_dtype=False,
-        )
+            # Type conversion is required since Spark stores both Integer and Float as Numeric
+            if "int" in column_names:
+                df[column] = df[column].astype("int64")
+            elif "float" in column_names:
+                df[column] = df[column].astype("float64")
+            elif "datetime" in column_names:
+                # I'm not sure why, but something does not support milliseconds
+                # It's either Spark 2.3 (https://stackoverflow.com/a/57929964/16977118) or pandas.io.sql
+                # So cut them off
+                df[column] = df[column].astype("datetime64[ns]").dt.floor("S")
+            elif "date" in column_names:
+                # Oracle's Date type is actually Datetime, so we need to truncate dates
+                df[column] = df[column].astype("datetime64[ns]").dt.date
+
+        return df

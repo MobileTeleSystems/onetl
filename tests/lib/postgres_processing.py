@@ -1,12 +1,11 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 import os
 
 from psycopg2 import connect as pg_connect
 from psycopg2.extensions import connection
 import pandas as pd
 from pandas.io import sql as psql
-from pandas.util.testing import assert_frame_equal
 
 from tests.lib.base_processing import BaseProcessing
 
@@ -112,19 +111,6 @@ class PostgressProcessing(BaseProcessing):
             schema=schema,
             if_exists="append",
         )
-
-    def assert_equal_df(
-        self,
-        schema: str,
-        table: str,
-        df: "pyspark.sql.DataFrame",
-        other_frame: Optional["pyspark.sql.DataFrame"] = None,
-    ) -> None:
-
-        if not other_frame:
-            other_frame = self.get_expected_dataframe(schema=schema, table=table)
-
-        assert_frame_equal(left=df.toPandas(), right=other_frame, check_dtype=False)
 
     def get_expected_dataframe(
         self,

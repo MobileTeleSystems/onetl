@@ -1,9 +1,10 @@
+etl-entities==1.0.0.dev774762
 ftputil
 hdfs[avro,dataframe,kerberos]>2
 humanize
 paramiko
 platformdirs
+pydantic
 PySmbClient
 pyyaml
 sftpserver
-pydantic

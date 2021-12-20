@@ -132,13 +132,13 @@ class ClickhouseProcessing(BaseProcessing):
 
     def assert_equal_df(
         self,
-        schema: str,
-        table: str,
         df: "pyspark.sql.DataFrame",
+        schema: Optional[str] = None,
+        table: Optional[str] = None,
         other_frame: Optional["pandas.core.frame.DataFrame"] = None,
     ) -> None:
 
-        if not other_frame:
+        if other_frame is None:
             other_frame = pd.DataFrame(
                 self.get_expected_dataframe(
                     schema=schema,

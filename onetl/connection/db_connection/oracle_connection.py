@@ -72,14 +72,21 @@ class Oracle(JDBCConnection):
     service_name: str = ""
 
     @property
-    def url(self) -> str:
+    def jdbc_url(self) -> str:
         if self.sid:
-            url = f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
-        elif self.service_name:
-            url = f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
-        else:
-            raise ValueError("Connection to Oracle does not have sid or service_name")
-        return url
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
+
+        if self.service_name:
+            return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
+
+        raise ValueError("Connection to Oracle does not have sid or service_name")
+
+    @property
+    def instance_url(self) -> str:
+        if self.sid:
+            return f"{super().instance_url}/{self.sid}"
+
+        return f"{super().instance_url}/{self.service_name}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")
