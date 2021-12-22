@@ -7,6 +7,7 @@ from logging import getLogger
 import operator
 from typing import Any, Callable, ClassVar, Optional, Dict, Union
 from abc import abstractmethod
+from enum import Enum
 
 from pydantic import BaseModel
 
@@ -14,6 +15,13 @@ from onetl.connection.connection_abc import ConnectionABC
 
 
 log = getLogger(__name__)
+
+
+class WriteMode(Enum):
+    APPEND = "append"
+    OVERWRITE = "overwrite"
+    IGNORE = "ignore"
+    ERROR = "error"
 
 
 @dataclass(frozen=True)
@@ -34,7 +42,10 @@ class DBConnection(ConnectionABC):
     class Options(BaseModel):  # noqa: WPS431
         """Hive or JDBC options"""
 
+        mode: WriteMode = WriteMode.APPEND
+
         class Config:  # noqa: WPS431
+            use_enum_values = True
             allow_population_by_field_name = True
             frozen = True
             extra = "allow"
@@ -49,7 +60,6 @@ class DBConnection(ConnectionABC):
         self,
         df: pyspark.sql.DataFrame,
         table: str,
-        mode: Optional[str] = "append",
         options: Options = None,
     ) -> None:
         """"""

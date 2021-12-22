@@ -42,6 +42,16 @@ class TestDBConnection:
                 options=options,
             )
 
+    def test_wrong_mode_option(self):
+        oracle = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
+
+        with pytest.raises(ValueError):
+            DBWriter(
+                connection=oracle,
+                table="onetl.some_table",
+                options=Oracle.Options(mode="wrong_mode"),  # wrong mode
+            )
+
 
 class TestJDBCConnection:
     spark = Mock()

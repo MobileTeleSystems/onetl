@@ -46,9 +46,6 @@ class Hive(DBConnection):
         compression: Optional[str] = None
         insert_into: bool = Field(alias="insertInto", default=False)
 
-        class Config:  # noqa: WPS431
-            extra = "allow"
-
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
     def instance_url(self) -> str:
@@ -59,7 +56,6 @@ class Hive(DBConnection):
         df: "pyspark.sql.DataFrame",
         table: str,
         options: Options,
-        mode: Optional[str] = "append",
     ) -> None:
         log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
         log.info("|Spark| Using <<WRITER_OPTIONS>>:")
@@ -68,7 +64,7 @@ class Hive(DBConnection):
         writer = df.write
 
         if options.insert_into:  # type: ignore
-            writer.insertInto(table, overwrite=mode == "overwrite")  # overwrite = True or False
+            writer.insertInto(table, overwrite=options.mode == "overwrite")  # overwrite = True or False
         else:
             for method, value in options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
                 # <value> is the arguments that will be passed to the <method>
@@ -80,7 +76,7 @@ class Hive(DBConnection):
                         writer = getattr(writer, method)(value)  # noqa: WPS220
                 else:
                     writer = writer.option(method, value)
-            writer.saveAsTable(table, mode=mode, format=options.format)  # type: ignore
+            writer.saveAsTable(table)  # type: ignore
 
         log.info(f"|{self.__class__.__name__}| {table} successfully written")
 

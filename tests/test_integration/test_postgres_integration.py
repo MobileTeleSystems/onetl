@@ -172,7 +172,7 @@ class TestIntegrationONETLPostgres:
         writer = DBWriter(
             connection=postgres,
             table=prepare_schema_table.full_name,
-            mode=mode,
+            options=Postgres.Options(mode=mode),
         )
 
         writer.run(df1)

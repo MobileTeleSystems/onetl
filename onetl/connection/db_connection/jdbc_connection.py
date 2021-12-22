@@ -99,7 +99,7 @@ class JDBCConnection(DBConnection):
             where=where,
         )
 
-        read_options = self.set_lower_upper_bound(jdbc_options=options, table=table)
+        read_options = self.set_lower_upper_bound(jdbc_options=options.copy(exclude={"mode"}), table=table)
         class_indent = get_indent(f"|{self.__class__.__name__}|")
 
         log.info(f"|{self.__class__.__name__}| -> |Spark| Reading {table} to DataFrame")
@@ -133,7 +133,6 @@ class JDBCConnection(DBConnection):
         df: "pyspark.sql.DataFrame",
         table: str,
         options: Options,
-        mode: Optional[str] = "append",
     ) -> None:
         """
         Save the DataFrame into RDB.
@@ -156,7 +155,7 @@ class JDBCConnection(DBConnection):
         #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
 
         jdbc_options = self.jdbc_params_creator(jdbc_options=options)
-        df.write.mode(mode).jdbc(table=table, **jdbc_options)
+        df.write.jdbc(table=table, **jdbc_options)
         log.info(f"|{self.__class__.__name__}| {table} successfully written")
 
     def get_schema(  # type: ignore
@@ -202,7 +201,7 @@ class JDBCConnection(DBConnection):
                 exclude={"partition_column"},
             )
 
-        top_level_options = {"url", "column", "lower_bound", "upper_bound", "num_partitions"}
+        top_level_options = {"url", "column", "lower_bound", "upper_bound", "num_partitions", "mode"}
         result = jdbc_options.dict(
             by_alias=True,
             include=top_level_options,
@@ -295,5 +294,6 @@ class JDBCConnection(DBConnection):
         jdbc_dict_params.pop("upperBound", None)
         jdbc_dict_params.pop("partitionColumn", None)
         jdbc_dict_params.pop("column", None)
+        jdbc_dict_params.pop("mode", None)
 
         return spark.read.jdbc(table=table, **jdbc_dict_params)
