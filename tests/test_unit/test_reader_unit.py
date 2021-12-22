@@ -65,6 +65,7 @@ class TestDBReader:
                 "createTableColumnTypes": "name CHAR(64)",
                 "customSchema": "id DECIMAL(38, 0)",
                 "unknownProperty": "SomeValue",
+                "mode": "append",
             },
             Postgres.Options(
                 lowerBound=10,
@@ -80,6 +81,7 @@ class TestDBReader:
                 createTableColumnTypes="name CHAR(64)",
                 customSchema="id DECIMAL(38, 0)",
                 unknownProperty="SomeValue",
+                mode="append",
             ),
             Postgres.Options(
                 lower_bound=10,
@@ -95,6 +97,7 @@ class TestDBReader:
                 create_table_column_types="name CHAR(64)",
                 custom_schema="id DECIMAL(38, 0)",
                 unknownProperty="SomeValue",
+                mode="append",
             ),
         ],
         ids=["Options as dictionary.", "Options with camel case.", "Options with snake case."],
@@ -122,6 +125,7 @@ class TestDBReader:
             "column": "some_column",
             "lowerBound": "10",
             "numPartitions": "20",
+            "mode": "append",
             "properties": {
                 "batchsize": "1000",
                 "createTableColumnTypes": "name CHAR(64)",

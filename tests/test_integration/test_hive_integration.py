@@ -198,8 +198,7 @@ class TestIntegrationONETLHive:
         writer = DBWriter(
             connection=hive,
             table=prepare_schema_table.full_name,
-            mode=mode,
-            options=Hive.Options(insert_into=True),
+            options=Hive.Options(insert_into=True, mode=mode),
         )
 
         writer.run(df1)

@@ -12,7 +12,7 @@ log = getLogger(__name__)
 # TODO:(@mivasil6) implement logging
 
 
-@dataclass  # noqa: WPS338
+@dataclass
 class DBWriter:
     """Class specifies database and table where you can write your dataframe.
 
@@ -157,33 +157,17 @@ class DBWriter:
 
     connection: DBConnection
     table: Table
-    mode: str
     options: DBConnection.Options
 
     def __init__(
         self,
         connection: DBConnection,
         table: str,
-        mode: str = "append",
         options: DBConnection.Options | dict | None = None,
     ):
         self.connection = connection
         self.table = self._handle_table(table)
-        self.mode = mode
         self.options = self._handle_options(options)
-
-    def _handle_table(self, table: str) -> Table:
-        if table.count(".") != 1:
-            raise ValueError("`table` should be set in format `schema.table`")
-
-        db, table = table.split(".")
-        return Table(name=table, db=db, instance=self.connection.instance_url)
-
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        if options:
-            return self.connection.to_options(options)
-
-        return self.connection.Options()
 
     def run(self, df):
         """
@@ -210,7 +194,19 @@ class DBWriter:
             df=df,
             table=str(self.table),
             options=self.options,
-            mode=self.mode,
         )
 
         decorated_log(msg="DBWriter ends", char="-")
+
+    def _handle_table(self, table: str) -> Table:
+        if table.count(".") != 1:
+            raise ValueError("`table` should be set in format `schema.table`")
+
+        db, table = table.split(".")
+        return Table(name=table, db=db, instance=self.connection.instance_url)
+
+    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
+        if options:
+            return self.connection.to_options(options)
+
+        return self.connection.Options()

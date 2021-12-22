@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
-@dataclass  # noqa: WPS338
+@dataclass
 class DBReader:
     """Class allows you to read data from a table with specified connection
     and parameters and save it as Spark dataframe
@@ -177,38 +177,6 @@ class DBReader:
         self.columns = self._handle_columns(columns)
         self.options = self._handle_options(options)
 
-    def _handle_table(self, table: str) -> Table:
-        if table.count(".") != 1:
-            raise ValueError("`table` should be set in format `schema.table`")
-
-        db, table = table.split(".")
-        return Table(name=table, db=db, instance=self.connection.instance_url)
-
-    @staticmethod
-    def _handle_hwm_column(hwm_column: str | None) -> Column | None:
-        return Column(name=hwm_column) if hwm_column else None
-
-    @staticmethod
-    def _handle_columns(columns: str | list[str]) -> str:
-        items: list[str]
-        if isinstance(columns, str):
-            items = columns.split(",")
-        else:
-            items = list(columns)
-
-        items = [item.strip() for item in items]
-
-        if not items or "*" in items:
-            return "*"
-
-        return ", ".join(items)
-
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        if options:
-            return self.connection.to_options(options)
-
-        return self.connection.Options()
-
     def get_schema(self) -> StructType:
 
         return self.connection.get_schema(  # type: ignore
@@ -261,3 +229,35 @@ class DBReader:
         decorated_log(msg="DBReader ends", char="-")
 
         return df
+
+    def _handle_table(self, table: str) -> Table:
+        if table.count(".") != 1:
+            raise ValueError("`table` should be set in format `schema.table`")
+
+        db, table = table.split(".")
+        return Table(name=table, db=db, instance=self.connection.instance_url)
+
+    @staticmethod
+    def _handle_hwm_column(hwm_column: str | None) -> Column | None:
+        return Column(name=hwm_column) if hwm_column else None
+
+    @staticmethod
+    def _handle_columns(columns: str | list[str]) -> str:
+        items: list[str]
+        if isinstance(columns, str):
+            items = columns.split(",")
+        else:
+            items = list(columns)
+
+        items = [item.strip() for item in items]
+
+        if not items or "*" in items:
+            return "*"
+
+        return ", ".join(items)
+
+    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
+        if options:
+            return self.connection.to_options(options)
+
+        return self.connection.Options()
