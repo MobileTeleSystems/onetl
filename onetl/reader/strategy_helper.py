@@ -82,12 +82,12 @@ class HWMStrategyHelper(StrategyHelper):
         if not isinstance(self.strategy.hwm, ColumnHWM):
             self.raise_hwm_type(type(self.strategy.hwm))
 
-        if self.strategy.hwm.table != self.reader.table or self.strategy.hwm.column != self.hwm_column:
+        if self.strategy.hwm.source != self.reader.table or self.strategy.hwm.column != self.hwm_column:
             raise ValueError(
                 f"{self.reader.__class__.__name__} was created "
                 f"with `hwm_column={self.reader.hwm_column}` and `table={self.reader.table}` "
-                f"but current HWM value is ",
-                f"`hwm_column={self.strategy.hwm.column}` and `table={self.strategy.hwm.table}` ",
+                f"but current HWM is created for ",
+                f"`column={self.strategy.hwm.column}` and `source={self.strategy.hwm.source}` ",
             )
 
     def get_hwm_type(self) -> type[ColumnHWM]:
@@ -105,7 +105,7 @@ class HWMStrategyHelper(StrategyHelper):
             return
 
         hwm_type = self.get_hwm_type()
-        self.strategy.hwm = hwm_type(table=self.reader.table, column=self.hwm_column)
+        self.strategy.hwm = hwm_type(source=self.reader.table, column=self.hwm_column)
 
     def fetch_hwm(self):
         if self.strategy.hwm:

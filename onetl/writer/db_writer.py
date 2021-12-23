@@ -199,11 +199,7 @@ class DBWriter:
         decorated_log(msg="DBWriter ends", char="-")
 
     def _handle_table(self, table: str) -> Table:
-        if table.count(".") != 1:
-            raise ValueError("`table` should be set in format `schema.table`")
-
-        db, table = table.split(".")
-        return Table(name=table, db=db, instance=self.connection.instance_url)
+        return Table(name=table, instance=self.connection.instance_url)
 
     def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
         if options:

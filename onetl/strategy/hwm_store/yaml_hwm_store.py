@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import pickle  # noqa: S403
 import re
-from typing import AnyStr, ClassVar
+from typing import ClassVar
 import yaml
-import base64
+import operator
 
 from platformdirs import user_data_dir
 from dataclasses import dataclass
 from pathlib import Path
 
-from etl_entities import HWM
+from etl_entities import HWM, HWMTypeRegistry
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import default_hwm_store_class, register_hwm_store_class
 
@@ -109,19 +108,15 @@ class YAMLHWMStore(BaseHWMStore):
     def get(self, name: str) -> HWM | None:
         data = self._load(name)
 
-        if "value" in data:
-            decoded = base64.b64decode(data["value"])
-            return pickle.loads(decoded)  # noqa: S301
+        if not data:
+            return None
 
-        return None
+        latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
+        return HWMTypeRegistry.parse(latest)
 
     def save(self, hwm: HWM) -> None:
-        pickled = pickle.dumps(hwm)
-        encoded = base64.b64encode(pickled).decode(self.encoding)
-
-        data = {"value": encoded}
-
-        self._dump(hwm.qualified_name, data)
+        data = self._load(hwm.qualified_name)
+        self._dump(hwm.qualified_name, [hwm.serialize()] + data)
 
     @classmethod
     def _cleanup_name(cls, name: str) -> str:
@@ -131,16 +126,16 @@ class YAMLHWMStore(BaseHWMStore):
 
         return cls.PROHIBITED_SYMBOLS_PATTERN.sub("__", name)
 
-    def _load(self, name: str) -> dict[str, AnyStr]:
+    def _load(self, name: str) -> list[dict]:
         name = self._cleanup_name(name)
         path = self.path / f"{name}.yml"
         if not path.exists():
-            return {}
+            return []
 
         with path.open("r", encoding=self.encoding) as file:
             return yaml.safe_load(file)
 
-    def _dump(self, name: str, data: dict[str, AnyStr]) -> None:
+    def _dump(self, name: str, data: list[dict]) -> None:
         name = self._cleanup_name(name)
         path = self.path / f"{name}.yml"
         with path.open("w", encoding=self.encoding) as file:

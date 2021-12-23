@@ -36,8 +36,8 @@ class BaseHWMStore:
 
     @abstractmethod  # noqa: WPS324
     def get(self, name: str) -> HWM | None:
-        return None  # noqa: WPS324
+        ...  # noqa: WPS428
 
     @abstractmethod
     def save(self, hwm: HWM) -> None:
-        pass  # noqa: WPS420
+        ...  # noqa: WPS428
