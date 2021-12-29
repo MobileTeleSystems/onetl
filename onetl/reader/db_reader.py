@@ -36,22 +36,38 @@ class DBReader:
         Custom ``where`` for SQL query
     hint : str, optional, default: ``None``
         Add hint to SQL query
-    jdbc_options : dict, optional, default: ``None``
-        Spark jdbc read options.
-        For example: ``{"partitionColumn": "some_column", "numPartitions": 20, "fetchsize": 1000}``
+    options : dict, DBConnection.Options, optional, default: ``None``
+        Spark JDBC read options.
+        For example:
 
-        You can find all list of options in link below:
+        .. code::
 
-        https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html
+            Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
+
+        List of options:
+
+            * ``partitionColumn``
+            * ``lowerBound``
+            * ``upperBound``
+            * ``numPartitions``
+            * ``queryTimeout``
+            * ``fetchsize``
+            * ``sessionInitStatement``
+            * ``customSchema``
+            * ``pushDownPredicate``
+
+        You can find a description of the options at the link below:
+
+        https://spark.apache.org/docs/2.4.0/sql-data-sources-jdbc.html
 
         .. warning ::
 
-            Doesn't work on ``Hive`` DBConnection
+            ``Hive`` DBConnection does not have options
 
 
     Examples
     --------
-    Simple Reader creation
+    Simple Reader creation:
 
     .. code::
 
@@ -74,7 +90,7 @@ class DBReader:
 
         reader = DBReader(postgres, table="fiddle.dummy")
 
-    RDBMS table with JDBC Options
+    Reader creation with JDBC options:
 
     .. code::
 
@@ -94,9 +110,11 @@ class DBReader:
             database="target_db",
             spark=spark,
         )
-        jdbc_options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
+        options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
+        # or (it is the same):
+        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100"}
 
-        reader = DBReader(postgres, table="fiddle.dummy", options=jdbc_options)
+        reader = DBReader(postgres, table="fiddle.dummy", options=options)
 
     Reader creation with all params:
 
@@ -127,7 +145,7 @@ class DBReader:
             hint="NOWAIT",
             limit=10,
             columns=["d_id", "d_name", "d_age"],
-            options=jdbc_options,
+            options=options,
         )
 
     Reader for Hive with all available params:
@@ -198,7 +216,7 @@ class DBReader:
         Examples
         --------
 
-        Read df
+        Read data to Spark dataframe:
 
         .. code::
 
