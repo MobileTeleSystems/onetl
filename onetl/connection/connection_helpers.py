@@ -5,14 +5,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 HALF_SCREEN_SIZE = 45
-
-
-def get_indent(msg):
-    return len(f"{msg}") + 2
-
-
-SPARK_INDENT = get_indent("|Spark|")
-ONETL_INDENT = get_indent("|onETL|")
+LOG_INDENT = 9
 
 
 def decorated_log(msg: str, char: str = "="):

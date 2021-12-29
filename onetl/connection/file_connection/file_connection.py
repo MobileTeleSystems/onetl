@@ -9,7 +9,7 @@ from typing import Any, Callable, Generator
 from logging import getLogger
 
 from onetl.connection.connection_abc import ConnectionABC
-from onetl.connection.connection_helpers import ONETL_INDENT
+from onetl.connection.connection_helpers import LOG_INDENT
 
 log = getLogger(__name__)
 
@@ -49,9 +49,9 @@ class FileConnection(ConnectionABC):
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
-            log.info(" " * ONETL_INDENT + f"type={self.__class__.__name__}")
-            log.info(" " * ONETL_INDENT + f"host={self.host}")
-            log.info(" " * ONETL_INDENT + f"user={self.user}")
+            log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+            log.info(" " * LOG_INDENT + f"host = {self.host}")
+            log.info(" " * LOG_INDENT + f"user = {self.user}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:

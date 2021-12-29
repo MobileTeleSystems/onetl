@@ -9,7 +9,7 @@ from pathlib import Path, PosixPath
 import humanize
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.connection_helpers import decorated_log, get_indent
+from onetl.connection.connection_helpers import decorated_log, LOG_INDENT
 
 log = getLogger(__name__)
 
@@ -95,16 +95,17 @@ class FileUploader:
 
         """
         decorated_log(msg="FileUploader starts")
-        indent = get_indent(f"|{self.__class__.__name__}|")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files to path: {self.target_path} ")
-        log.info(f"|{self.__class__.__name__}| Using options:")
-        log.info(" " * indent + "opt1=opt1")
+        log.info(f"|{self.__class__.__name__}| Using params:")
+        log.info(" " * LOG_INDENT + f"target_path = {self.target_path}")
+        log.info(" " * LOG_INDENT + f"temp_path = {self.temp_path}")
 
         log.info(f"|{self.__class__.__name__}| Using connection:")
-        log.info(" " * indent + f"type={self.connection.__class__.__name__}")
-        log.info(" " * indent + f"host={self.connection.host}")
-        log.info(" " * indent + f"user={self.connection.user}")
+        log.info(" " * LOG_INDENT + f"type = {self.connection.__class__.__name__}")
+        log.info(" " * LOG_INDENT + f"host = {self.connection.host}")
+        log.info(" " * LOG_INDENT + f"user = {self.connection.user}")
+
         if not files_list:
             log.warning("|Local| Files list is empty. Please, provide files to upload.")
             return files_list

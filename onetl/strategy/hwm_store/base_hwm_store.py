@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 
 from etl_entities import HWM
-from onetl.connection.connection_helpers import get_indent
+from onetl.connection.connection_helpers import LOG_INDENT
 
 log = logging.getLogger(__name__)
 
@@ -14,13 +14,13 @@ class BaseHWMStore:
         # hack to avoid circular imports
         from onetl.strategy.hwm_store import HWMStoreManager
 
-        indent = get_indent(f"|{self.__class__.__name__}|")
-
-        log.debug(f"|{self}| Entered stack at level {HWMStoreManager.get_current_level()}")
+        log.debug(f"|{self.__class__.__name__}| Entered stack at level {HWMStoreManager.get_current_level()}")
         HWMStoreManager.push(self)
-        log.info(f"|onETL| Using {self} as HWM Store")
+        log.info(f"|onETL| Using {self.__class__.__name__} as HWM Store")
         log.info(f"|{self.__class__.__name__}| Using options:")
-        log.info(" " * indent + "opt=opt_val")
+
+        for option, value in vars(self).items():
+            log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         return self
 

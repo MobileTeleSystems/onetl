@@ -190,6 +190,8 @@ class DBWriter:
         """
         decorated_log(msg="DBWriter starts")
 
+        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to {self.table}")
+
         self.connection.save_df(
             df=df,
             table=str(self.table),

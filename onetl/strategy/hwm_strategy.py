@@ -43,14 +43,17 @@ class HWMStrategy(BaseStrategy):
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
 
-            log.info(f"|onETL| Loading {self.hwm!r} from {hwm_store}")
+            log.info(f"|onETL| Loading {self.hwm!r} from {hwm_store.__class__.__name__}")
             value = hwm_store.get(self.hwm.qualified_name)
 
             if value is not None:
                 log.info(f"|onETL| Received HWM value: {value!r}")
                 self.hwm = value  # noqa: WPS601
             else:
-                log.info(f"|onETL| HWM is not exist in {hwm_store}. Using snapshot strategy instead incremental.")
+                log.info(
+                    f"|onETL| HWM is not exist in {hwm_store.__class__.__name__}. "
+                    "Using snapshot strategy instead incremental.",
+                )
         else:
             # TODO:(@mivasil6) спросить у Макса попадаем ли мы в это условие, и почему это не эксепшен
             log.debug(f"{self.__class__.__name__}: HWM will not be loaded, skipping")

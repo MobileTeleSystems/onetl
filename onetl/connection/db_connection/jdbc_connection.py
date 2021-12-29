@@ -7,7 +7,7 @@ from pydantic import Field
 
 from onetl.connection.connection_helpers import get_sql_query
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import get_indent, SPARK_INDENT
+from onetl.connection.connection_helpers import LOG_INDENT
 
 log = getLogger(__name__)
 
@@ -56,17 +56,16 @@ class JDBCConnection(DBConnection):
     def check(self):
         options = {"properties": {"user": self.user, "password": self.password, "driver": self.driver}}
 
-        class_indent = get_indent(f"|{self.__class__.__name__}|")
         log.info(f"|{self.__class__.__name__}| Check connection availability...")
 
         log.info("|Spark| Using connection:")
-        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
-        log.info(" " * SPARK_INDENT + f"driver={options['properties']['driver']}")
-        log.info(" " * SPARK_INDENT + f"user={self.user}")
+        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+        log.info(" " * LOG_INDENT + f"jdbc_url = {self.jdbc_url}")
+        log.info(" " * LOG_INDENT + f"driver = {options['properties']['driver']}")
+        log.info(" " * LOG_INDENT + f"user = {self.user}")
 
         log.info(f"|{self.__class__.__name__}| Execute statement:")
-        log.info(" " * class_indent + f"{self.check_statement}")
+        log.info(" " * LOG_INDENT + f"{self.check_statement}")
 
         try:
             self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.jdbc_url, **options).collect()
@@ -84,13 +83,13 @@ class JDBCConnection(DBConnection):
         where: Optional[str],
         options: Options,
     ) -> "pyspark.sql.DataFrame":
-
         if options:
             if not options.fetchsize:
                 log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
 
-            if options.session_init_statement and options:
-                log.debug(f"Init SQL statement: {options.sessionInitStatement}")  # type: ignore
+            if options.session_init_statement:
+                log.debug("Init SQL statement:")
+                log.debug(" " * LOG_INDENT + options.session_init_statement)
 
         sql_text = get_sql_query(
             table=table,
@@ -100,23 +99,14 @@ class JDBCConnection(DBConnection):
         )
 
         read_options = self.set_lower_upper_bound(jdbc_options=options.copy(exclude={"mode"}), table=table)
-        class_indent = get_indent(f"|{self.__class__.__name__}|")
 
-        log.info(f"|{self.__class__.__name__}| -> |Spark| Reading {table} to DataFrame")
-        # TODO:(@mivasil6) Make debug, выводить все введенные опции без повторений и пароля
-        log.info("|Spark| Using <<Reading_OPTIONS>>:")
-        log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
-        log.info("|Spark| Using connection:")
-        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
-        log.info(" " * SPARK_INDENT + f"driver={self.driver}")
-        log.info(" " * SPARK_INDENT + f"user={self.user}")
+        self._log_options(entity="reader", options=read_options)
 
         if not read_options.fetchsize:
-            log.info("|Spark| <fetchsize> option wasn't specified — reading will be slowed down!")
+            log.warning("|Spark| <fetchsize> option wasn't specified — reading will be slowed down!")
 
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * class_indent + f"{sql_text}")
+        log.info(" " * LOG_INDENT + f"{sql_text}")
 
         # for convenience. parameters accepted by spark.read.jdbc method
         #  spark.read.jdbc(
@@ -138,16 +128,7 @@ class JDBCConnection(DBConnection):
         Save the DataFrame into RDB.
         """
 
-        # TODO:(@mivasil6) выводить все введенные опции без повторений и пароля
-        log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
-        log.info("|Spark| Using <<WRITER_OPTIONS>>:")
-        log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
-
-        log.info("|Spark| Using connection:")
-        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
-        log.info(" " * SPARK_INDENT + f"jdbc_url={self.jdbc_url}")
-        log.info(" " * SPARK_INDENT + f"driver={self.driver}")
-        log.info(" " * SPARK_INDENT + f"user={self.user}")
+        self._log_options(entity="writer", options=options)
 
         # for convenience. parameters accepted by spark.write.jdbc method
         #   spark.read.jdbc(
@@ -156,7 +137,7 @@ class JDBCConnection(DBConnection):
 
         jdbc_options = self.jdbc_params_creator(jdbc_options=options)
         df.write.jdbc(table=table, **jdbc_options)
-        log.info(f"|{self.__class__.__name__}| {table} successfully written")
+        log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
 
     def get_schema(  # type: ignore
         self,
@@ -165,17 +146,19 @@ class JDBCConnection(DBConnection):
         options: Options,
     ) -> "pyspark.sql.types.StructType":
 
-        class_indent = get_indent(f"|{self.__class__.__name__}|")
         query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
         temp_prop = options.copy(update={"fetchsize": "0"})
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
-        log.info(f"|{self.__class__.__name__}| SQL statement:\n{query_schema}")
-        log.info(" " * class_indent + f"{query_schema}")
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log.info(" " * LOG_INDENT + f"{query_schema}")
         df = self.execute_query_without_partitioning(
             parameters=temp_prop,
             spark=self.spark,
             table=query_schema,
         )
+
+        log.info(f"|{self.__class__.__name__}| Schema fetched")
+
         return df.schema
 
     def jdbc_params_creator(
@@ -297,3 +280,31 @@ class JDBCConnection(DBConnection):
         jdbc_dict_params.pop("mode", None)
 
         return spark.read.jdbc(table=table, **jdbc_dict_params)
+
+    def _log_options(self, entity: str, options: Options):
+        if options.dict(exclude_none=True):
+            log.info(f"|Spark| With {entity} options:")
+        else:
+            log.info("|Spark| Without options.")
+
+        for option, value in options.dict(exclude_none=True).items():
+            log.info(" " * LOG_INDENT + f"{option} = {value}")
+
+        log.info("|Spark| Using connection params:")
+        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+        log.info(" " * LOG_INDENT + f"jdbc_url = {self.jdbc_url}")
+
+        for attr in self.__class__.__dataclass_fields__:  # type: ignore  # noqa: WPS609
+            # TODO(dypedchenk): until using pydantic dataclass
+            if attr in {
+                "compare_statements",
+                "check_statement",
+                "spark",
+                "password",
+            }:
+                continue
+
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
