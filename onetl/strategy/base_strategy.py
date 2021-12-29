@@ -3,17 +3,25 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from onetl.connection.connection_helpers import LOG_INDENT
+
 log = logging.getLogger(__name__)
 
 
 class BaseStrategy:
     def __enter__(self):
+
         # hack to avoid circular imports
         from onetl.strategy.strategy_manager import StrategyManager
 
         log.debug(f"|{self.__class__.__name__}| Entered stack at level {StrategyManager.get_current_level()}")
         StrategyManager.push(self)
         log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
+        log.info(f"|{self.__class__.__name__}| Using options:")
+
+        for option, value in vars(self).items():
+            log.info(" " * LOG_INDENT + f"{option} = {value}")
+
         self.enter_hook()
         return self
 

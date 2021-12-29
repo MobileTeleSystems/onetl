@@ -5,7 +5,7 @@ from typing import Optional, List, Tuple, Iterable, Union
 from pydantic import Field
 
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import get_sql_query, get_indent, SPARK_INDENT
+from onetl.connection.connection_helpers import get_sql_query, LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -57,9 +57,9 @@ class Hive(DBConnection):
         table: str,
         options: Options,
     ) -> None:
-        log.info(f"|Spark| -> |{self.__class__.__name__}| Writing DataFrame to {table}")
-        log.info("|Spark| Using <<WRITER_OPTIONS>>:")
-        log.info(" " * SPARK_INDENT + "<OPTION1>=<VALUE1>")
+        log.info("|Spark| With writer options:")
+        for option, value in options.dict(exclude_none=True).items():
+            log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         writer = df.write
 
@@ -78,7 +78,7 @@ class Hive(DBConnection):
                     writer = writer.option(method, value)
             writer.saveAsTable(table)  # type: ignore
 
-        log.info(f"|{self.__class__.__name__}| {table} successfully written")
+        log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
 
     def read_table(  # type: ignore
         self,
@@ -96,17 +96,17 @@ class Hive(DBConnection):
                     "Hive reader does not support options.",
                 )
 
-        table = get_sql_query(
+        sql_text = get_sql_query(
             table=table,
             hint=hint,
             columns=columns,
             where=where,
         )
-        log.info(f"|{self.__class__.__name__}| -> |Spark| Reading {table} to DataFrame")
-        log.info("|Spark| Using connection:")
-        log.info(" " * SPARK_INDENT + f"type={self.__class__.__name__}")
 
-        df = self._execute_sql(table)
+        log.info("|Spark| Using connection:")
+        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+
+        df = self._execute_sql(sql_text)
         log.info("|Spark| DataFrame successfully created from SQL statement")
 
         return df
@@ -140,7 +140,6 @@ class Hive(DBConnection):
             raise RuntimeError(msg)
 
     def _execute_sql(self, query):
-        class_indent = get_indent(f"|{self.__class__.__name__}|")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * class_indent + f"{query}")
+        log.info(" " * LOG_INDENT + f"{query}")
         return self.spark.sql(query)

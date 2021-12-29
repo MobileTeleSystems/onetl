@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from etl_entities import Column, Table
 from onetl.connection.db_connection import DBConnection
 from onetl.connection.connection_helpers import decorated_log
+from onetl.connection.connection_helpers import LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -215,6 +216,18 @@ class DBReader:
             helper = HWMStrategyHelper(self, self.hwm_column)
         else:
             helper = NonHWMStrategyHelper(self)
+
+        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading {self.table} to DataFrame")
+
+        log.info("|Spark| Using writer params:")
+        log.info(" " * LOG_INDENT + f"table = {self.table}")
+        log.info(" " * LOG_INDENT + f"columns = {self.columns}")
+
+        if self.hint is not None:
+            log.info(" " * LOG_INDENT + f"hint = {self.hint}")
+
+        if self.where is not None:
+            log.info(" " * LOG_INDENT + f"where = {self.where}")
 
         df = self.connection.read_table(
             table=str(self.table),
