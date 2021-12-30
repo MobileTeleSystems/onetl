@@ -51,7 +51,7 @@ class DBWriter:
 
             * ``insertInto``: bool, optional, default: ``False``
                 If you need to insert data into an existing table then set option as True.
-                Used pyspark method `insertInto <t.ly/0RRH>`_ under the hood.
+                Used pyspark method `insertInto <https://t.ly/0RRH>`_ under the hood.
 
             * ``partitionBy``: str, List[str], optional, default: ``None``
                 Partitions the output by the given columns on the file system.
