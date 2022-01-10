@@ -22,7 +22,7 @@ def test_postgres_hwm_store_unit(hwm_store_class):
 
     table = Table(name="abc", db="cde", instance="proto://domain.com")
     column = Column(name="def")
-    hwm = IntHWM(column=column, table=table)
+    hwm = IntHWM(column=column, source=table)
     assert store.get(hwm.qualified_name) is None
 
     store.save(hwm)
@@ -42,7 +42,7 @@ def test_postgres_hwm_store_unit_yaml_path(tmp_path_factory):
 
     table = Table(name="abc", db="cde", instance="proto://domain.com")
     column = Column(name="def")
-    hwm = IntHWM(column=column, table=table)
+    hwm = IntHWM(column=column, source=table)
     store.save(hwm)
 
     empty = True
@@ -72,7 +72,7 @@ def test_postgres_hwm_store_unit_yaml_path_no_access(tmp_path_factory):
     store = YAMLHWMStore(path)
     table = Table(name="abc", db="cde", instance="proto://domain.com")
     column = Column(name="def")
-    hwm = IntHWM(column=column, table=table)
+    hwm = IntHWM(column=column, source=table)
 
     with pytest.raises(OSError):
         store.save(hwm)

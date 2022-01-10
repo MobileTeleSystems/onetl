@@ -1,4 +1,4 @@
-etl-entities==1.0.0.dev774762
+etl-entities==1.0.0.dev830959
 ftputil
 hdfs[avro,dataframe,kerberos]>2
 humanize

@@ -197,7 +197,6 @@ class DBReader:
         self.options = self._handle_options(options)
 
     def get_schema(self) -> StructType:
-
         return self.connection.get_schema(  # type: ignore
             table=str(self.table),
             columns=self.columns,
@@ -262,11 +261,7 @@ class DBReader:
         return df
 
     def _handle_table(self, table: str) -> Table:
-        if table.count(".") != 1:
-            raise ValueError("`table` should be set in format `schema.table`")
-
-        db, table = table.split(".")
-        return Table(name=table, db=db, instance=self.connection.instance_url)
+        return Table(name=table, instance=self.connection.instance_url)
 
     @staticmethod
     def _handle_hwm_column(hwm_column: str | None) -> Column | None:
