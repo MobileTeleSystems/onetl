@@ -308,6 +308,9 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     def fetch_hwm(self) -> None:
         pass  # noqa: WPS420,WPS604
 
+    def save_hwm(self) -> None:
+        pass  # noqa: WPS420,WPS604
+
     @property
     def current_value_comparator(self) -> Callable:
         if self.is_first_run:

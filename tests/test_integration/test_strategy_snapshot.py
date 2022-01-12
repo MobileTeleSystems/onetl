@@ -11,6 +11,7 @@ import pandas as pd
 from onetl.connection import Postgres
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import SnapshotStrategy, SnapshotBatchStrategy, IncrementalStrategy
+from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 
 
 def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepare_schema_table):
@@ -121,11 +122,11 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
 
 
 @pytest.mark.parametrize(
-    "hwm_column, step, per_iter",
+    "hwm_type_name, hwm_column, step, per_iter",
     [
-        ("hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
-        ("hwm_date", timedelta(days=1), 20),  # this offset is covering span_length + gap
-        ("hwm_datetime", timedelta(hours=100), 30),  # same
+        ("integer", "hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
+        ("date", "hwm_date", timedelta(days=1), 20),  # this offset is covering span_length + gap
+        ("timestamp", "hwm_datetime", timedelta(hours=100), 30),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -140,8 +141,103 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
     ],
 )
 def test_postgres_strategy_snapshot_batch(
-    spark, processing, prepare_schema_table, hwm_column, step, per_iter, span_gap, span_length  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_type_name,
+    hwm_column,
+    step,
+    per_iter,
+    span_gap,
+    span_length,
 ):
+    store = HWMStoreManager.get_current()
+
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    hwm_type = HWMClassRegistry.get(hwm_type_name)
+    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+
+    # hwm is not in the store
+    assert store.get(hwm.qualified_name) is None
+
+    # there are 2 spans with a gap between
+    # 0..100
+    first_span_begin = 0
+    first_span_end = span_length
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+
+    # 150..200
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    # snapshot run with only 10 rows per run
+    total_df = None
+    with SnapshotBatchStrategy(step=step) as batches:
+        for _ in batches:
+            # no hwm saves on each iteration
+            assert store.get(hwm.qualified_name) is None
+
+            next_df = reader.run()
+            assert next_df.count() <= per_iter
+
+            if total_df is None:
+                total_df = next_df
+            else:
+                total_df = total_df.union(next_df)
+
+            assert store.get(hwm.qualified_name) is None
+
+    # no hwm saves after exiting the context
+    assert store.get(hwm.qualified_name) is None
+
+    # all the rows will be read
+    total_span = pd.concat([first_span, second_span], ignore_index=True)
+
+    total_df = total_df.sort(total_df.id_int.asc())
+    processing.assert_equal_df(df=total_df, other_frame=total_span)
+
+
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", 10),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
+        ("hwm_date", timedelta(days=1)),  # this offset is covering span_length + gap
+        ("hwm_datetime", timedelta(hours=100)),  # same
+    ],
+)
+def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+):
+    span_length = 100
+    span_gap = 50
+
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -180,12 +276,11 @@ def test_postgres_strategy_snapshot_batch(
         values=second_span,
     )
 
-    # snapshot run with only 10 rows per run
+    # snapshot run
     total_df = None
     with SnapshotBatchStrategy(step=step) as batches:
         for _ in batches:
             next_df = reader.run()
-            assert next_df.count() <= per_iter
 
             if total_df is None:
                 total_df = next_df
