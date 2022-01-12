@@ -26,7 +26,7 @@ class JDBCConnection(DBConnection):
     package: ClassVar[str] = ""
 
     class Options(DBConnection.Options):  # noqa: WPS431
-        fetchsize: Optional[int] = None
+        fetchsize: int = 100000
         batchsize: Optional[int] = None
         isolation_level: Optional[str] = Field(alias="isolationLevel", default=None)
         session_init_statement: Optional[str] = Field(alias="sessionInitStatement", default=None)
@@ -38,7 +38,7 @@ class JDBCConnection(DBConnection):
         cascade_truncate: Optional[bool] = Field(alias="cascadeTruncate", default=None)
         push_down_predicate: Optional[str] = Field(alias="pushDownPredicate", default=None)
 
-        # Options in DataDrameWriter.jdbc() method
+        # Options in DataFrameWriter.jdbc() method
         partition_column: Optional[str] = Field(alias="partitionColumn", default=None)
         lower_bound: Optional[int] = Field(alias="lowerBound", default=None)
         upper_bound: Optional[int] = Field(alias="upperBound", default=None)
