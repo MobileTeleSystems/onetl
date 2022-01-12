@@ -60,6 +60,12 @@ class TestJDBCConnection:
         with pytest.raises(TypeError):
             conn = Postgres(spark=self.spark)  # noqa: F841
 
+    def test_jdbc_default_fetchsize(self):
+        conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
+        options = conn.Options()
+
+        assert options.fetchsize == 100000
+
     def test_oracle_driver_and_uri(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
 
