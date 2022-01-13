@@ -10,6 +10,7 @@ import pandas as pd
 from onetl.connection import Postgres, Hive, Oracle
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy
+from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 
 
 def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, prepare_schema_table):
@@ -42,11 +43,11 @@ def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, pre
 
 
 @pytest.mark.parametrize(
-    "hwm_column",
+    "hwm_type_name, hwm_column",
     [
-        "hwm_int",
-        "hwm_date",
-        "hwm_datetime",
+        ("integer", "hwm_int"),
+        ("date", "hwm_date"),
+        ("timestamp", "hwm_datetime"),
     ],
 )
 @pytest.mark.parametrize(
@@ -56,7 +57,17 @@ def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, pre
         (10, 50),
     ],
 )
-def test_postgres_strategy_increment(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
+def test_postgres_strategy_increment(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_type_name,
+    hwm_column,
+    span_gap,
+    span_length,
+):
+    store = HWMStoreManager.get_current()
+
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -66,18 +77,24 @@ def test_postgres_strategy_increment(spark, processing, prepare_schema_table, hw
     )
     reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
+    hwm_type = HWMClassRegistry.get(hwm_type_name)
+    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+
     # there are 2 spans with a gap between
 
     # 0..100
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 110..210
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
 
     # insert first span
     processing.insert_data(
@@ -86,9 +103,17 @@ def test_postgres_strategy_increment(spark, processing, prepare_schema_table, hw
         values=first_span,
     )
 
+    # hwm is not in the store
+    assert store.get(hwm.qualified_name) is None
+
     # incremental run
     with IncrementalStrategy():
         first_df = reader.run()
+
+    hwm = store.get(hwm.qualified_name)
+    assert hwm is not None
+    assert isinstance(hwm, hwm_type)
+    assert hwm.value == first_span_max
 
     # all the data has been read
     processing.assert_equal_df(df=first_df, other_frame=first_span)
@@ -102,6 +127,8 @@ def test_postgres_strategy_increment(spark, processing, prepare_schema_table, hw
 
     with IncrementalStrategy():
         second_df = reader.run()
+
+    assert store.get(hwm.qualified_name).value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
@@ -135,15 +162,15 @@ def test_postgres_strategy_increment_where(spark, processing, prepare_schema_tab
     span_length = 50
 
     # 0..100
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 110..210
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert first span
     processing.insert_data(
@@ -195,15 +222,15 @@ def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_co
     # there are 2 spans with a gap between
 
     # 0..100
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 110..210
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert first span
     processing.insert_data(
@@ -262,15 +289,15 @@ def test_postgres_strategy_incremental_offset(
     # there are 2 spans with a gap between
 
     # 0..50
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 60..110
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert second span
     processing.insert_data(
@@ -316,15 +343,15 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     # there are 2 spans with a gap between
 
     # 0..50
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 60..110
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert first span
     processing.insert_data(
@@ -362,7 +389,11 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     processing.assert_equal_df(df=second_df, other_frame=second_span)
 
 
-def test_postgres_reader_strategy_increment_batch_hwm_set_twice(spark, processing, prepare_schema_table):
+def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS118
+    spark,
+    processing,
+    prepare_schema_table,
+):
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -397,12 +428,12 @@ def test_postgres_reader_strategy_increment_batch_hwm_set_twice(spark, processin
 
 
 @pytest.mark.parametrize(
-    "hwm_column, step, per_iter",
+    "hwm_type_name, hwm_column, step, per_iter",
     [
-        ("hwm_int", 20, 30),  # step <  per_iter
-        ("hwm_int", 30, 30),  # step == per_iter
-        ("hwm_date", timedelta(days=20), 20),  # per_iter value is calculated to cover the step value
-        ("hwm_datetime", timedelta(weeks=2), 20),  # same
+        ("integer", "hwm_int", 20, 30),  # step <  per_iter
+        ("integer", "hwm_int", 30, 30),  # step == per_iter
+        ("date", "hwm_date", timedelta(days=20), 20),  # per_iter value is calculated to cover the step value
+        ("timestamp", "hwm_datetime", timedelta(weeks=2), 20),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -417,8 +448,18 @@ def test_postgres_reader_strategy_increment_batch_hwm_set_twice(spark, processin
     ],
 )
 def test_postgres_strategy_incremental_batch(
-    spark, processing, prepare_schema_table, hwm_column, step, per_iter, span_gap, span_length  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_type_name,
+    hwm_column,
+    step,
+    per_iter,
+    span_gap,
+    span_length,
 ):
+    store = HWMStoreManager.get_current()
+
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -427,6 +468,9 @@ def test_postgres_strategy_incremental_batch(
         spark=spark,
     )
     reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    hwm_type = HWMClassRegistry.get(hwm_type_name)
+    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100
@@ -439,6 +483,9 @@ def test_postgres_strategy_incremental_batch(
     second_span_end = second_span_begin + span_length
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
+
     # insert first span
     processing.insert_data(
         schema=prepare_schema_table.schema,
@@ -446,9 +493,18 @@ def test_postgres_strategy_incremental_batch(
         values=first_span,
     )
 
+    # hwm is not in the store
+    assert store.get(hwm.qualified_name) is None
+
     # fill up hwm storage with last value, e.g. 100
-    with IncrementalStrategy():
-        reader.run()
+    with IncrementalBatchStrategy(step=step) as batches:
+        for _ in batches:
+            reader.run()
+
+    hwm = store.get(hwm.qualified_name)
+    assert hwm is not None
+    assert isinstance(hwm, hwm_type)
+    assert hwm.value == first_span_max
 
     # insert second span
     processing.insert_data(
@@ -462,6 +518,11 @@ def test_postgres_strategy_incremental_batch(
     total_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
+            hwm = store.get(hwm.qualified_name)
+            assert hwm is not None
+            assert isinstance(hwm, hwm_type)
+            assert first_span_max <= hwm.value <= second_span_max
+
             next_df = reader.run()
             assert next_df.count() <= per_iter
 
@@ -469,6 +530,16 @@ def test_postgres_strategy_incremental_batch(
                 total_df = next_df
             else:
                 total_df = total_df.union(next_df)
+
+            hwm = store.get(hwm.qualified_name)
+            assert hwm is not None
+            assert isinstance(hwm, hwm_type)
+            assert first_span_max <= hwm.value <= second_span_max
+
+    hwm = store.get(hwm.qualified_name)
+    assert hwm is not None
+    assert isinstance(hwm, hwm_type)
+    assert hwm.value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
@@ -565,15 +636,15 @@ def test_postgres_strategy_incremental_batch_offset(
     # there are 2 spans with a gap between
 
     # 0..40
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 50..90
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert second span
     processing.insert_data(
@@ -646,15 +717,15 @@ def test_oracle_strategy_increment(spark, processing, prepare_schema_table, hwm_
     # there are 2 spans with a gap between
 
     # 0..100
-    first_begin = 0
-    first_end = first_begin + span_length
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
 
     # 110..210
-    second_begin = first_end + span_gap
-    second_end = second_begin + span_length
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
 
-    first_span = processing.create_pandas_df(min_id=first_begin, max_id=first_end)
-    second_span = processing.create_pandas_df(min_id=second_begin, max_id=second_end)
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert first span
     processing.insert_data(

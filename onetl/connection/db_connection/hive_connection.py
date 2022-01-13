@@ -64,7 +64,7 @@ class Hive(DBConnection):
         writer = df.write
 
         if options.insert_into:  # type: ignore
-            writer.insertInto(table, overwrite=options.mode == "overwrite")  # overwrite = True or False
+            writer.insertInto(table, overwrite=options.mode == "overwrite")  # overwrite is boolean
         else:
             for method, value in options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
                 # <value> is the arguments that will be passed to the <method>
@@ -89,12 +89,11 @@ class Hive(DBConnection):
         where: Optional[str] = None,
     ) -> "pyspark.sql.DataFrame":
 
-        if options:
-            if options.dict(exclude_unset=True):
-                raise ValueError(
-                    f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
-                    "Hive reader does not support options.",
-                )
+        if options.dict(exclude_unset=True):
+            raise ValueError(
+                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
+                "Hive reader does not support options.",
+            )
 
         sql_text = get_sql_query(
             table=table,
