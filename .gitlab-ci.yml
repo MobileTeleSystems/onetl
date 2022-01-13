@@ -232,7 +232,7 @@ build_and_publish_docs:
   - pip install -r requirements.txt -r requirements-docs.txt
   - cd docs
   - make html
-  - tar cvzf html-onetl-master.tar.gz -C _build/html .
+  - tar cvzf html-latest.tar.gz -C _build/html .
   - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz
 
 ### --------------- DEPLOY --------------- ###
