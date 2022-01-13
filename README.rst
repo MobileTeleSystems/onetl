@@ -7,17 +7,17 @@ onETL
 |Documentation| |PyPI|
 
 .. |Build Status| image:: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/badges/develop/pipeline.svg
-   :target: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/-/pipelines
+    :target: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/-/pipelines
 .. |Quality Gate Status| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=alert_status
-   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
 .. |Maintainability Rating| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=sqale_rating
-   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
 .. |Coverage| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=coverage
-   :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
+    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
 .. |Documentation| image:: https://img.shields.io/badge/docs-latest-success
-   :target: https://docs.bd.msk.mts.ru/onetl
+    :target: https://bigdata.pages.mts.ru/platform/onetools/onetl/
 .. |PyPI| image:: https://img.shields.io/badge/pypi-download-orange
-   :target: http://rep.msk.mts.ru/ui/packages/pypi:%2F%2Fonetl?name=onetl&type=packages
+    :target: http://rep.msk.mts.ru/ui/packages/pypi:%2F%2Fonetl?name=onetl&type=packages
 
 Python package with simple ETL tools.
 
