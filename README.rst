@@ -29,7 +29,7 @@ Python package with simple ETL tools.
 Documentation
 -------------
 
-See https://docs.bd.msk.mts.ru/onetl
+See https://bigdata.pages.mts.ru/platform/onetools/onetl/
 
 .. wiki
 
