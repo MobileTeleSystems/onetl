@@ -12,15 +12,13 @@ default:
 ## Так же можо задать порядок выполнения stage-ов, указав их по порядку в этом блоке. ##
 
 stages:
-- .pre
 #- pre-commit
 - static analysis
 - build
 - tests
 - sonarqube_check
-- build_and_deploy
-- build_and_publish_docs
-- .post
+- artifactory
+- deploy
 
 ### --------------- Include gitlab-ci-templates --------------- ###
 ## Добавляет в текущую конфигурацию CI\CD template's из DevOps репозитория для переиспользования. ##
@@ -48,6 +46,11 @@ include:
 - project: DevOps/cicd-store/gitlabci/pip
   ref: v2
   file: .base_pip_pkg_build_and_deploy_to_jfrog.yml
+
+# Pages
+- project: DevOps/cicd-store/gitlabci/pages
+  ref: v1
+  file: .base_pages_deploy_sphinx.yml
 
 
 
@@ -209,7 +212,7 @@ sonarqube_check:
 
 build_and_deploy:
   extends: .base_pip_pkg_build_and_deploy_to_jfrog
-  stage: build_and_deploy
+  stage: artifactory
   only:
   - master
   - develop
@@ -221,13 +224,25 @@ build_and_publish_docs:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
   variables:
     PYTHON_VERSION: '3.7'
-  stage: build_and_publish_docs
+  stage: artifactory
   only:
   - master
   - develop
   script:
-  - pip install -r requirements.txt -r requirements-docs.txt && cd docs && make html && tar cvzf html-onetl-master.tar.gz -C _build/html .
-  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-onetl-master.tar.gz
+  - pip install -r requirements.txt -r requirements-docs.txt
+  - cd docs
+  - make html
+  - tar cvzf html-onetl-master.tar.gz -C _build/html .
+  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz
+
+### --------------- DEPLOY --------------- ###
+pages:
+  extends: .base_pages_deploy_sphinx
+  stage: deploy
+  dependencies:
+  - build_and_publish_docs
+  variables:
+    CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
 
 .clean_docker_repo:
   extends: .base_docker_cleaner

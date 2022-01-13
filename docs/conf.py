@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 # -- Project information -----------------------------------------------------
 
 project = "onETL"
-copyright = "2021, ONEtools Team"
+copyright = "2022, ONEtools Team"
 author = "ONEtools Team"
 
 

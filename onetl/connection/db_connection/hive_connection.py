@@ -49,7 +49,7 @@ class Hive(DBConnection):
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
     def instance_url(self) -> str:
-        return "cluster"
+        return "rnd-dwh"
 
     def save_df(  # type: ignore[override]
         self,
