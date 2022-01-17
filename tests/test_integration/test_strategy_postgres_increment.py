@@ -7,7 +7,7 @@ import pytest
 
 import pandas as pd
 
-from onetl.connection import Postgres, Hive, Oracle
+from onetl.connection import Postgres
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy
 from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
@@ -198,71 +198,6 @@ def test_postgres_strategy_increment_where(spark, processing, prepare_schema_tab
 
     # only changed data has been read
     processing.assert_equal_df(df=second_df, other_frame=second_span)
-
-
-@pytest.mark.parametrize(
-    "hwm_column",
-    [
-        "hwm_int",
-        "hwm_date",
-        "hwm_datetime",
-    ],
-)
-@pytest.mark.parametrize(
-    "span_gap, span_length",
-    [
-        (10, 100),
-        (10, 50),
-    ],
-)
-def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
-    hive = Hive(spark=spark)
-    reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
-
-    # there are 2 spans with a gap between
-
-    # 0..100
-    first_span_begin = 0
-    first_span_end = first_span_begin + span_length
-
-    # 110..210
-    second_span_begin = first_span_end + span_gap
-    second_span_end = second_span_begin + span_length
-
-    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
-    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
-
-    # insert first span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=first_span,
-    )
-
-    # incremental run
-    with IncrementalStrategy():
-        first_df = reader.run()
-
-    # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
-
-    # insert second span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=second_span,
-    )
-
-    with IncrementalStrategy():
-        second_df = reader.run()
-
-    if "int" in hwm_column:
-        # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
-    else:
-        # date and datetime values have a random part
-        # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
 @pytest.mark.parametrize(
@@ -687,79 +622,6 @@ def test_postgres_strategy_incremental_batch_offset(
         processing.assert_subset_df(df=total_df, other_frame=total_span)
 
 
-# There is no INTEGER column in Oracle, only NUMERIC
-# Do not fail in such the case
-@pytest.mark.parametrize(
-    "hwm_column",
-    [
-        "HWM_INT",
-        "HWM_DATE",
-        "HWM_DATETIME",
-    ],
-)
-@pytest.mark.parametrize(
-    "span_gap, span_length",
-    [
-        (10, 100),
-        (10, 50),
-    ],
-)
-def test_oracle_strategy_increment(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
-    oracle = Oracle(
-        host=processing.host,
-        user=processing.user,
-        password=processing.password,
-        sid=processing.sid,
-        spark=spark,
-    )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
-
-    # there are 2 spans with a gap between
-
-    # 0..100
-    first_span_begin = 0
-    first_span_end = first_span_begin + span_length
-
-    # 110..210
-    second_span_begin = first_span_end + span_gap
-    second_span_end = second_span_begin + span_length
-
-    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
-    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
-
-    # insert first span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=first_span,
-    )
-
-    # incremental run
-    with IncrementalStrategy():
-        first_df = reader.run()
-
-    # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
-
-    # insert second span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=second_span,
-    )
-
-    with IncrementalStrategy():
-        second_df = reader.run()
-
-    if "int" in hwm_column:
-        # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
-    else:
-        # date and datetime values have a random part
-        # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span)
-
-
 # Fail if HWM is Float
 def test_postgres_strategy_increment_float(spark, processing, prepare_schema_table):
     hwm_column = "float_value"
@@ -772,34 +634,6 @@ def test_postgres_strategy_increment_float(spark, processing, prepare_schema_tab
         spark=spark,
     )
     reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
-
-    data = processing.create_pandas_df()
-
-    # insert first span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=data,
-    )
-
-    with pytest.raises(ValueError):
-        # incremental run
-        with IncrementalStrategy():
-            reader.run()
-
-
-# Fail if HWM is Numeric or Decimal with fractional part
-def test_oracle_strategy_increment_float(spark, processing, prepare_schema_table):
-    hwm_column = "FLOAT_VALUE"
-
-    oracle = Oracle(
-        host=processing.host,
-        user=processing.user,
-        password=processing.password,
-        sid=processing.sid,
-        spark=spark,
-    )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 

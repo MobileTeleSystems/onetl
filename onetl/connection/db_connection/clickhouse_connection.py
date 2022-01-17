@@ -68,8 +68,8 @@ class Clickhouse(JDBCConnection):
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")
-        return f"CAST('{result}', AS DateTime)"
+        return f"CAST('{result}' AS DateTime)"
 
     def _get_date_value_sql(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
-        return f"CAST('{result}', AS Date)"
+        return f"CAST('{result}' AS Date)"

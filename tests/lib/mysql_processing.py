@@ -14,7 +14,7 @@ logger = getLogger(__name__)
 class MySQLProcessing(BaseProcessing):
 
     _column_types_and_names_matching = {
-        "id_int": "INT NOT NULL primary key AUTO_INCREMENT",
+        "id_int": "INT NOT NULL",
         "text_string": "VARCHAR(50)",
         "hwm_int": "INT",
         "hwm_date": "DATE",
