@@ -180,22 +180,38 @@ def detect_hwm_store(func: Callable) -> Callable:
 
     .. code:: yaml
 
+        # no constructor args
         hwm_store: yaml
 
     or
 
     .. code:: yaml
 
+        # one constructor args
         hwm_store:
-            yaml: "/some/path.yml"
+            yaml: /some/path.yml
 
     or
 
     .. code:: yaml
 
+        # positional constructor args
         hwm_store:
-            yaml:
-                path: "/some/path.yml"
+            atlas:
+            - http://some.atlas.url
+            - username
+            - password
+
+    or
+
+    .. code:: yaml
+
+        # named constructor args
+        hwm_store:
+            atlas:
+                url: http://some.atlas.url
+                user: username
+                password: password
 
     Config could be nested:
 

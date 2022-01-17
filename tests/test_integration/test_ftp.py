@@ -1,8 +1,9 @@
-import posixpath
 import logging
-from pathlib import PosixPath
 import os
+import posixpath
+import pytest
 import tempfile
+from pathlib import PosixPath
 
 from onetl.connection.file_connection import FTP
 from onetl.downloader import FileDownloader
@@ -16,6 +17,12 @@ class TestFTP:
         with caplog.at_level(logging.INFO):
             ftp.check()
         assert "Connection is available" in caplog.text
+
+    def test_ftp_wrong_source_check(self):
+        ftp = FTP(user="some_user", password="pwd", host="host", port=123)
+
+        with pytest.raises(RuntimeError):
+            ftp.check()
 
     def test_ftp_downloader_with_pattern(self, ftp_server, ftp_files, source_path, test_file_name, test_file_path):
         ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)

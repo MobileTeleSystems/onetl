@@ -236,7 +236,7 @@ class DBReader:
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading {self.table} to DataFrame")
 
-        log.info("|Spark| Using writer params:")
+        log.info("|Spark| Using reader params:")
         log.info(" " * LOG_INDENT + f"table = {self.table}")
         log.info(" " * LOG_INDENT + f"columns = {self.columns}")
 

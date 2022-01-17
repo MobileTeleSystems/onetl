@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 from onetl.connection.db_connection import MySQL
 from onetl.reader.db_reader import DBReader
@@ -27,6 +28,12 @@ class TestIntegrationONETLMySQL:
         with caplog.at_level(logging.INFO):
             mysql.check()
         assert "Connection is available" in caplog.text
+
+    def test_mysql_wrong_connection_check(self, spark):
+        mysql = MySQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+
+        with pytest.raises(RuntimeError):
+            mysql.check()
 
     def test_mysql_reader_snapshot(self, spark, processing, prepare_schema_table):
         mysql = MySQL(

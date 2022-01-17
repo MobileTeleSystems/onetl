@@ -1,81 +1,32 @@
 # noinspection PyPackageRequirements
 
+import pytest
 import secrets
 import tempfile
-import pytest
 
 from omegaconf import OmegaConf
 
-from etl_entities import Column, Table, IntHWM
-from onetl.strategy.hwm_store import YAMLHWMStore, MemoryHWMStore, HWMStoreManager, detect_hwm_store
+from onetl.strategy.hwm_store import AtlasHWMStore, HWMStoreManager, MemoryHWMStore, YAMLHWMStore, detect_hwm_store
 
 
 @pytest.mark.parametrize(
-    "hwm_store_class",
+    "hwm_store",
     [
-        YAMLHWMStore,
-        MemoryHWMStore,
+        MemoryHWMStore(),
+        YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
+        AtlasHWMStore(
+            url="http://some.atlas.url",
+            user=secrets.token_hex(),
+            password=secrets.token_hex(),
+        ),
     ],
 )
-def test_postgres_hwm_store_unit(hwm_store_class):
-    store = hwm_store_class()
+def test_hwm_store_unit_context_manager(hwm_store):
+    with hwm_store as store:
+        assert HWMStoreManager.get_current() == store
 
-    table = Table(name="abc", db="cde", instance="proto://domain.com")
-    column = Column(name="def")
-    hwm = IntHWM(column=column, source=table)
-    assert store.get(hwm.qualified_name) is None
-
-    store.save(hwm)
-    assert store.get(hwm.qualified_name) == hwm
-
-
-def test_postgres_hwm_store_unit_yaml_path(tmp_path_factory):
-    folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
-
-    store = YAMLHWMStore(path)
-
-    assert store.path == path
-    assert path.exists()
-
-    assert not list(path.glob("**/*"))
-
-    table = Table(name="abc", db="cde", instance="proto://domain.com")
-    column = Column(name="def")
-    hwm = IntHWM(column=column, source=table)
-    store.save(hwm)
-
-    empty = True
-    for item in path.glob("**/*"):
-        empty = False
-        assert item.is_file()
-        assert item.suffix == ".yml"
-
-    assert not empty
-
-
-def test_postgres_hwm_store_unit_yaml_path_not_folder(tmp_path_factory):
-    folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
-    path.touch()
-
-    with pytest.raises(OSError):
-        YAMLHWMStore(path)
-
-
-def test_postgres_hwm_store_unit_yaml_path_no_access(tmp_path_factory):
-    folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
-    path.mkdir()
-    path.chmod(000)
-
-    store = YAMLHWMStore(path)
-    table = Table(name="abc", db="cde", instance="proto://domain.com")
-    column = Column(name="def")
-    hwm = IntHWM(column=column, source=table)
-
-    with pytest.raises(OSError):
-        store.save(hwm)
+    assert HWMStoreManager.get_current() != hwm_store
+    assert isinstance(HWMStoreManager.get_current(), YAMLHWMStore)
 
 
 @pytest.mark.parametrize(
@@ -106,34 +57,84 @@ def test_postgres_hwm_store_unit_yaml_path_no_access(tmp_path_factory):
             {"hwm_store": "in-memory"},
         ),
         (
+            MemoryHWMStore,
+            {"hwm_store": {"memory": None}},
+        ),
+        (
+            MemoryHWMStore,
+            {"hwm_store": {"memory": []}},
+        ),
+        (
+            MemoryHWMStore,
+            {"hwm_store": {"memory": {}}},
+        ),
+        (
             YAMLHWMStore,
             {"hwm_store": {"yml": tempfile.mktemp("hwmstore")}},  # noqa: S306 NOSONAR
+        ),
+        (
+            YAMLHWMStore,
+            {"hwm_store": {"yml": [tempfile.mktemp("hwmstore")]}},  # noqa: S306 NOSONAR
         ),
         (
             YAMLHWMStore,
             {"hwm_store": {"yml": {"path": tempfile.mktemp("hwmstore"), "encoding": "utf8"}}},  # noqa: S306 NOSONAR
         ),
         (
-            MemoryHWMStore,
-            {"hwm_store": {"memory": None}},
+            YAMLHWMStore,
+            {"hwm_store": {"yml": [tempfile.mktemp("hwmstore"), "utf8"]}},  # noqa: S306 NOSONAR
         ),
         (
-            YAMLHWMStore,
-            {"nested": {"hwm_store": "yaml"}},
+            AtlasHWMStore,
+            {"hwm_store": {"atlas": "http://some.atlas.url"}},
         ),
         (
-            YAMLHWMStore,
-            {"even": {"more": {"nested": {"hwm_store": "yml"}}}},
+            AtlasHWMStore,
+            {"hwm_store": {"atlas": {"url": "http://some.atlas.url"}}},
+        ),
+        (
+            AtlasHWMStore,
+            {"hwm_store": {"atlas": ["http://some.atlas.url"]}},
+        ),
+        (
+            AtlasHWMStore,
+            {
+                "hwm_store": {
+                    "atlas": {
+                        "url": "http://some.atlas.url",
+                        "user": secrets.token_hex(),
+                        "password": secrets.token_hex(),
+                    },
+                },
+            },
+        ),
+        (
+            AtlasHWMStore,
+            {
+                "hwm_store": {
+                    "atlas": [
+                        "http://some.atlas.url",
+                        secrets.token_hex(),
+                        secrets.token_hex(),
+                    ],
+                },
+            },
         ),
     ],
 )
 @pytest.mark.parametrize("config_constructor", [dict, OmegaConf.create])
-def test_postgres_hwm_store_unit_detect(hwm_store_class, input_config, config_constructor):
+def test_hwm_store_unit_detect(hwm_store_class, input_config, config_constructor):
     @detect_hwm_store
     def main(config):
         assert isinstance(HWMStoreManager.get_current(), hwm_store_class)
 
     conf = config_constructor(input_config)
+    main(conf)
+
+    conf = config_constructor({"nested": input_config})
+    main(conf)
+
+    conf = config_constructor({"even": {"more": {"nested": input_config}}})
     main(conf)
 
 
@@ -146,11 +147,55 @@ def test_postgres_hwm_store_unit_detect(hwm_store_class, input_config, config_co
     ],
 )
 @pytest.mark.parametrize("config_constructor", [dict, OmegaConf.create])
-def test_postgres_hwm_store_unit_detect_failure(input_config, config_constructor):
+def test_hwm_store_unit_detect_failure(input_config, config_constructor):
     @detect_hwm_store
     def main(config):  # NOSONAR
         pass
 
     conf = config_constructor(input_config)
     with pytest.raises((KeyError, ValueError)):
+        main(conf)
+
+    conf = config_constructor({"nested": input_config})
+    with pytest.raises((KeyError, ValueError)):
+        main(conf)
+
+    conf = config_constructor({"even": {"more": {"nested": input_config}}})
+    with pytest.raises((KeyError, ValueError)):
+        main(conf)
+
+
+@pytest.mark.parametrize(
+    "input_config",
+    [
+        {"hwm_store": {"memory": 1}},
+        {"hwm_store": {"memory": {"unknown": "arg"}}},
+        {"hwm_store": {"memory": ["too_many_arg"]}},
+        {"hwm_store": {"yml": 1}},
+        {"hwm_store": {"yml": {"unknown": "arg"}}},
+        {"hwm_store": {"yml": ["too", "many", "args"]}},
+        {"hwm_store": {"atlas": 1}},
+        {"hwm_store": {"atlas": None}},
+        {"hwm_store": {"atlas": []}},
+        {"hwm_store": {"atlas": {}}},
+        {"hwm_store": {"atlas": {"unknown": "arg"}}},
+        {"hwm_store": {"atlas": ["too", "many", "args", "abc"]}},
+    ],
+)
+@pytest.mark.parametrize("config_constructor", [dict, OmegaConf.create])
+def test_hwm_store_unit_wrong_options(input_config, config_constructor):
+    @detect_hwm_store
+    def main(config):  # NOSONAR
+        pass
+
+    conf = config_constructor(input_config)
+    with pytest.raises((TypeError, ValueError)):
+        main(conf)
+
+    conf = config_constructor({"nested": input_config})
+    with pytest.raises((TypeError, ValueError)):
+        main(conf)
+
+    conf = config_constructor({"even": {"more": {"nested": input_config}}})
+    with pytest.raises((TypeError, ValueError)):
         main(conf)

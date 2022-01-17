@@ -43,7 +43,7 @@ class HWMStrategy(BaseStrategy):
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
 
-            log.info(f"|onETL| Loading {self.hwm!r} from {hwm_store.__class__.__name__}")
+            log.info(f"|onETL| Loading {self.hwm.qualified_name} from {hwm_store.__class__.__name__}")
             value = hwm_store.get(self.hwm.qualified_name)
 
             if value is not None:
@@ -66,7 +66,7 @@ class HWMStrategy(BaseStrategy):
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
             # TODO:(@mivasil6) подумать над __repr__ hwm
-            log.info(f"|onETL| Saving {self.hwm!r} to {hwm_store}")
+            log.info(f"|onETL| Saving {self.hwm.qualified_name} with value {self.hwm.value} to {hwm_store}")
 
             hwm_store.save(self.hwm)
             log.info("|onETL| HWM has been saved")

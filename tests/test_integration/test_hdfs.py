@@ -1,12 +1,12 @@
+import logging
 import os
+import pytest
 import tempfile
 from pathlib import Path, PosixPath
-import logging
-
 
 from onetl.connection.file_connection import HDFS
-from onetl.uploader import FileUploader
 from onetl.downloader import FileDownloader
+from onetl.uploader import FileUploader
 from tests.lib.common import hashfile
 
 
@@ -18,7 +18,13 @@ class TestHDFS:
             hdfs.check()
         assert "Connection is available" in caplog.text
 
-    def test_file_uploader_with_empty_file_list(self, caplog):
+    def test_hdfs_wrong_source_check(self):
+        hdfs = HDFS(host="hive1", port=1234)
+
+        with pytest.raises(RuntimeError):
+            hdfs.check()
+
+    def test_hdfs_file_uploader_with_empty_file_list(self, caplog):
         hdfs = HDFS(host="hive2", port=50070)
         uploader = FileUploader(connection=hdfs, target_path="/target/path/")
         with caplog.at_level(logging.INFO):
