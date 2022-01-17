@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 class MSSQLProcessing(BaseProcessing):
 
     _column_types_and_names_matching = {
-        "id_int": "INT primary key IDENTITY",
+        "id_int": "INT",
         "text_string": "VARCHAR(50)",
         "hwm_int": "INT",
         "hwm_date": "DATE",
