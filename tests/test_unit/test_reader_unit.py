@@ -40,7 +40,7 @@ class TestDBReader:
     # TODO: the functionality of the connection class in the reader class is tested
     def test_db_reader_set_lower_upper_bound(self):
         reader: DBReader = DBReader(
-            Oracle(spark=self.spark, host="some_host", user="valid_user", password="pwd"),
+            Oracle(spark=self.spark, host="some_host", user="valid_user", sid="sid", password="pwd"),
             table="default.test",
             options=Oracle.Options(lowerBound=10, upperBound=1000),
         )
@@ -105,7 +105,7 @@ class TestDBReader:
     def test_db_reader_generate_jdbc_options(self, options):
 
         reader: DBReader = DBReader(
-            connection=Postgres(host="local", user="admin", password="1234", spark=self.spark),
+            connection=Postgres(host="local", user="admin", database="default", password="1234", spark=self.spark),
             table="default.test",
             # some of the parameters below are not used together.
             # Such as fetchsize and batchsize.

@@ -71,15 +71,21 @@ class Oracle(JDBCConnection):
     sid: str = ""
     service_name: str = ""
 
+    def __post_init__(self):
+        if self.sid and self.service_name:
+            raise ValueError(
+                "Parameters sid and service_name are specified at the same time, only one must be specified",
+            )
+
+        if not self.sid and not self.service_name:
+            raise ValueError("Connection to Oracle does not have sid or service_name")
+
     @property
     def jdbc_url(self) -> str:
         if self.sid:
             return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
 
-        if self.service_name:
-            return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
-
-        raise ValueError("Connection to Oracle does not have sid or service_name")
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
 
     @property
     def instance_url(self) -> str:

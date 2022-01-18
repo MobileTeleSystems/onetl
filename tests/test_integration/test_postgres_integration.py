@@ -32,7 +32,7 @@ class TestIntegrationONETLPostgres:
         assert "Connection is available" in caplog.text
 
     def test_postgres_wrong_connection_check(self, spark):
-        postgres = Postgres(host="host", user="some_user", password="pwd", spark=spark)
+        postgres = Postgres(host="host", database="db", user="some_user", password="pwd", spark=spark)
 
         with pytest.raises(RuntimeError):
             postgres.check()
@@ -195,7 +195,7 @@ class TestIntegrationONETLPostgres:
     def test_postgres_num_partition_without_partition_column(self, spark):
 
         reader = DBReader(
-            connection=Postgres(spark=spark, host="some_host", user="valid_user", password="pwd"),
+            connection=Postgres(spark=spark, database="db", host="some_host", user="valid_user", password="pwd"),
             table="default.table",
             options={"numPartitions": "200"},
         )

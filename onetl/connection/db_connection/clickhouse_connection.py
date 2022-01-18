@@ -19,7 +19,7 @@ class Clickhouse(JDBCConnection):
         User, which have access to the database and table. For example: ``TECH_ETL``
     password : str, default: ``None``
         Password for database connection
-    database : str, default: ``default``
+    database : str
         Database in rdbms. To provide schema, use DBReader class
     extra : Dict, optional, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
@@ -64,7 +64,11 @@ class Clickhouse(JDBCConnection):
     @property
     def jdbc_url(self) -> str:
         params = "&".join(f"{k}={v}" for k, v in self.extra.items())
-        return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
+
+        if self.database:
+            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
+
+        return f"jdbc:clickhouse://{self.host}:{self.port}?{params}".rstrip("?")
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")

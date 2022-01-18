@@ -19,7 +19,7 @@ class Postgres(JDBCConnection):
         User, which have access to the database and table. For example: ``appmetrica_test``
     password : str, default: ``None``
         Password for database connection
-    database : str, default: ``default``
+    database : str
         Database in rdbms. To provide schema, use DBReader class
 
         Difference like https://www.educba.com/postgresql-database-vs-schema/
@@ -56,6 +56,13 @@ class Postgres(JDBCConnection):
     driver: ClassVar[str] = "org.postgresql.Driver"
     package: ClassVar[str] = "org.postgresql:postgresql:42.2.5"
     port: int = 5432
+
+    def __post_init__(self):
+        if not self.database:
+            raise ValueError(
+                f"You should provide database name for {self.__class__.__name__} connection. "
+                "Use database parameter: database = 'database_name'",
+            )
 
     @property
     def jdbc_url(self) -> str:

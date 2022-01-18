@@ -59,6 +59,27 @@ class TestIntegrationONETLClickhouse:
             df=df,
         )
 
+    def test_clickhouse_reader_snapshot_without_set_database(self, spark, processing, prepare_schema_table):
+        clickhouse = Clickhouse(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=clickhouse,
+            table=prepare_schema_table.full_name,
+        )
+
+        df = reader.run()
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=df,
+        )
+
     def test_clickhouse_writer_snapshot(self, spark, processing, prepare_schema_table):
         df = processing.create_spark_df(spark=spark)
 
