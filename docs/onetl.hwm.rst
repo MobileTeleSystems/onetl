@@ -1,7 +1,10 @@
-.. hwm
+.. _hwm:
 
 HWM
 =====
+
+What is it
+-----------
 
 Sometimes it is need to read only changed rows from a table.
 
@@ -17,28 +20,51 @@ For example, there is a table with the following schema:
 ``id`` column is a autoincrement field, so its values are increasing all the time,
 e.g. ``1000``, ``1001``, ``1002`` and so on.
 
-It is possible to read only a part of the data that appeared
-in the source after the previous load was performed.
+New rows are constantly added into the table.
 
-Firstly we need to the maximum value of ``id`` column:
+For example,
+yesterday the maximum ``id`` value in the table was 1010.
+Today all values have ``id`` above ``1010`` and below ``1020``.
+
+So we can use value of this column to mark rows we already read.
+Whose which value is above specified are new ones.
+
+Such a column is called ``High watermark`` or ``HWM`` for short.
+
+
+How it is used
+---------------
+
+Firstly we need to get the maximum value of ``id`` column:
 
 .. code:: sql
 
-    SELECT max(id) FROM mydata;
+    SELECT max(id) FROM mydata; -- returned 1000
 
-And then save it to be used in the future reads.
-It is called ``High watermark`` or ``HWM`` for short.
-
-Then it is possible to use saved values to get only new data:
+Then it is possible to use this HWM value to get only new data:
 
 .. code:: sql
 
-    SELECT id, data FROM mydata WHERE id > 1000; -- since previous value hwm column
+    SELECT id, data FROM mydata WHERE id > 1000; -- since previous read attempt
 
-HWM column is always ``NOT NULL`` and only could be one of the following types:
 
-1. ``NUMERIC`` (a.k.a. ``INT``, ``DECIMAL``, ``NUMBER`` and so on)
+HWM types
+---------
 
-2. ``DATE``
+HWM column could be one of the following types:
 
-3. ``DATETIME`` (a.k.a. ``TIMESTAMP``)
+1. Integer (of any length, like ``INTEGER``, ``SHORT``, ``LONG``).
+
+2. Decimal **without** fractional part (Oracle specific, because ``INTEGER`` type here is ``NUMERIC``)
+
+3. Date
+
+4. Datetime (same as ``TIMESTAMP``)
+
+
+HWM column restrictions
+-----------------------
+
+- HWM column values cannot decrease over time, they can only increase
+- HWM column cannot contain ``NULL`` values because they cannot be tracked properly, and thus will be skipped
+- It is highly recommended (but not necessary) for HWM column values to be unique
