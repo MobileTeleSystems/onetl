@@ -1,4 +1,4 @@
-.. _atlas_hwm_store:
+.. _atlas-hwm-store:
 
 Atlas HWM Store (remote)
 =================================================================

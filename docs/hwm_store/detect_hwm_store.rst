@@ -1,4 +1,4 @@
-.. _detect_hwm_store:
+.. _detect-hwm-store:
 
 Detect HWM Store decorator
 =================================================================

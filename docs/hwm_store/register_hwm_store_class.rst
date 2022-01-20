@@ -1,4 +1,4 @@
-.. _register_hwm_store_class:
+.. _register-hwm-store-class:
 
 Register own HWM Store decorator
 =================================================================

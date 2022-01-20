@@ -36,7 +36,7 @@ class AtlasHWMStore(BaseHWMStore):
 
         from onetl.connection import Postgres, Hive
         from onetl.reader import DBReader
-        from onetl.strategy import IncrementStrategy
+        from onetl.strategy import IncrementalStrategy
         from onetl.strategy.hwm_store import AtlasHWMStore
 
         from mtspark import get_spark
@@ -62,8 +62,8 @@ class AtlasHWMStore(BaseHWMStore):
 
         writer = DBWriter(hive, "newtable")
 
-        with AtlasHWMStore(url="http://atlas.domain", user="atlas_user", passwword="*****"):
-            with IncrementStrategy():
+        with AtlasHWMStore(url="http://atlas.domain", user="atlas_user", password="*****"):
+            with IncrementalStrategy():
                 df = reader.run()
                 writer.run(df)
 

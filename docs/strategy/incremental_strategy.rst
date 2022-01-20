@@ -1,4 +1,4 @@
-.. _incremental_strategy:
+.. _incremental-strategy:
 
 Incremental strategy
 =================================================================

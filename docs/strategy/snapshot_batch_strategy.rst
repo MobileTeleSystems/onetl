@@ -1,4 +1,4 @@
-.. _snapshot_batch_strategy:
+.. _snapshot-batch-strategy:
 
 Snapshot batch strategy
 =================================================================

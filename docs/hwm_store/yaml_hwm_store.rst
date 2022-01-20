@@ -1,4 +1,4 @@
-.. _yaml_hwm_store:
+.. _yaml-hwm-store:
 
 YAML HWM Store (local)
 =================================================================
