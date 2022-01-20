@@ -54,31 +54,19 @@ class DBWriter:
                 Used pyspark method `insertInto <https://t.ly/0RRH>`_ under the hood.
 
             * ``partitionBy``: str, List[str], optional, default: ``None``
-                Partitions the output by the given columns on the file system.
-                If specified, the output is laid out on the file system similar
+                Column names which will be used for the output partitioning.
+
+                If set, the output is laid out on the file system similar
                 to Hive's partitioning scheme.
 
-                Parameters:
-                    * ``cols`` : str or list
-                        name of columns
+            * ``bucketBy``: Tuple[int, str] or Tuple[int, List[str]], optional, default: ``None``
+                Divide output to specific number of buckets over a column/columns.
 
-            * ``bucketBy``: Tuple[int, str], optional, default: ``None``
-                Buckets the output by the given columns. If specified,
-                the output is laid out on the file system similar to Hive's bucketing scheme,
-                but with a different bucket hash function and is not compatible with Hive's bucketing.
+                If set, the output is laid out on the file system *similar* to Hive's bucketing scheme,
+                but with a **different bucket hash function** which is not compatible with Hive's bucketing.
 
-                Parameters:
-                    * ``numBuckets`` : int
-                        the number of buckets to save
-                    * ``col`` : str, list or tuple
-                        a name of a column, or a list of names.
-
-            * ``sortBy``: str, optional, default: ``None``
-                Sorts the output in each bucket by the given columns on the file system.
-
-                Parameters:
-                    * ``col``: str, tuple or list
-                        a name of a column, or a list of names.
+            * ``sortBy``: str or List[str], optional, default: ``None``
+                Sorts the output in each bucket by the given columns.
 
             * other options
                 Options that are written to the ``option`` method are specified without specifying the
@@ -160,7 +148,7 @@ class DBWriter:
 
         options = {"truncate": "true", "batchsize": 1000}
         # or (it is the same):
-        options = Hive.Options(truncate=True, batchsize=1000}
+        options = Postgres.Options(truncate=True, batchsize=1000}
 
         writer = DBWriter(
             connection=postgres,
@@ -180,18 +168,15 @@ class DBWriter:
 
         hive = Hive(spark=spark)
 
-        writer_1 = DBWriter(
+        options = {"compression": "snappy", "partitionBy": "id"}
+        # or (it is the same):
+        options = Hive.Options(compression="snappy", partitionBy="id")
+
+        writer = DBWriter(
             connection=hive,
             table="default.test",
-            options=Hive.Options(compression="snappy", partitionBy="id"),
+            options=options,
         )
-
-        writer_2 = DBWriter(
-            connection=hive,
-            table="default.test",
-            options=Hive.Options({"compression":"snappy", "partitionBy":"id"}),
-        )
-
     """
 
     connection: DBConnection
