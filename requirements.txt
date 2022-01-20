@@ -2,7 +2,7 @@ etl-entities==1.0.0.dev843036
 ftputil
 hdfs[avro,dataframe,kerberos]>2
 humanize
-mts_apache_atlas>=0.3.0,<0.4
+mts_apache_atlas==0.3.0
 paramiko
 platformdirs
 pydantic
