@@ -49,12 +49,8 @@ services:
     - 1522:1521
     - 5501:5500
     networks: [onetl]
-    hostname: oracle
-    depends_on:
-    - postgres
 
   clickhouse:
-    hostname: clickhouse
     image: yandex/clickhouse-server
     env_file: onetl_local.default.env
     ports:
@@ -71,10 +67,16 @@ services:
 
   mssql:
     image: mcmoe/mssqldocker
-    hostname: mssql
     env_file: onetl_local.default.env
     ports:
     - 1433:1433
+    networks: [onetl]
+
+  atlas:
+    image: docker.rep.msk.mts.ru/dev/atlas:2.1
+    env_file: onetl_local.default.env
+    ports:
+    - 21000:21000
     networks: [onetl]
 
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,

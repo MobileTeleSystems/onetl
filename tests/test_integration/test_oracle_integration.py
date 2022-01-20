@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 from onetl.connection.db_connection import Oracle
 from onetl.reader.db_reader import DBReader
@@ -28,6 +29,12 @@ class TestIntegrationONETLOracle:
         with caplog.at_level(logging.INFO):
             oracle.check()
         assert "Connection is available" in caplog.text
+
+    def test_mysql_wrong_connection_check(self, spark):
+        oracle = Oracle(host="host", user="some_user", password="pwd", database="abc", sid="cde", spark=spark)
+
+        with pytest.raises(RuntimeError):
+            oracle.check()
 
     def test_oracle_reader_snapshot(self, spark, processing, prepare_schema_table):
         oracle = Oracle(

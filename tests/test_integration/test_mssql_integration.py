@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 from onetl.connection.db_connection import MSSQL
 from onetl.reader.db_reader import DBReader
@@ -27,6 +28,12 @@ class TestIntegrationONETLMSSQL:
         with caplog.at_level(logging.INFO):
             mssql.check()
         assert "Connection is available" in caplog.text
+
+    def test_mssql_wrong_connection_check(self, spark):
+        mssql = MSSQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+
+        with pytest.raises(RuntimeError):
+            mssql.check()
 
     def test_mssql_reader_snapshot(self, spark, processing, prepare_schema_table):
         mysql = MSSQL(

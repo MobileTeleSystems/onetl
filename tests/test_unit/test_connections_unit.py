@@ -159,14 +159,9 @@ class TestConnectionHelpers:
 
 
 class TestFileConnections:
-    def test_wrong_source_check(self):
-        ftp = FTP(host="some_host", user="some_user", password="pwd")
-        with pytest.raises(RuntimeError):
-            ftp.check()
-
     def test_file_connection_without_host_and_user(self):
         with pytest.raises(TypeError):
-            conn = FTP()  # noqa: F841
+            FTP()  # noqa: F841
 
     def test_ftp_connection(self):
         ftp = FTP(host="some_host", user="some_user", password="pwd")
@@ -185,7 +180,7 @@ class TestFileConnections:
 
     def test_hdfs_connection_with_password_and_keytab(self):
         with pytest.raises(ValueError):
-            hdfs = HDFS(host="hive2", port=50070, user="usr", password="pwd", keytab="/path/to/keytab")  # noqa: F841
+            HDFS(host="hive2", port=50070, user="usr", password="pwd", keytab="/path/to/keytab")  # noqa: F841
 
     def test_sftp_connection(self):
         sftp = SFTP(host="some_host", user="some_user", password="pwd")

@@ -1,9 +1,10 @@
-from stat import S_ISDIR
-import posixpath
-from pathlib import PosixPath
-import os
 import logging
+import os
+import posixpath
+import pytest
 import tempfile
+from pathlib import PosixPath
+from stat import S_ISDIR
 
 from onetl.connection.file_connection import SFTP
 from onetl.downloader import FileDownloader
@@ -35,6 +36,12 @@ class TestSFTP:
         with caplog.at_level(logging.INFO):
             sftp.check()
         assert "Connection is available" in caplog.text
+
+    def test_sftp_wrong_source_check(self):
+        sftp = SFTP(user="some_user", password="pwd", host="host", port=123)
+
+        with pytest.raises(RuntimeError):
+            sftp.check()
 
     def test_downloader_local_path(self, sftp_files, sftp_server, source_path, test_file_name, test_file_path):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)

@@ -61,7 +61,7 @@ class JDBCConnection(DBConnection):
         log.info("|Spark| Using connection:")
         log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
         log.info(" " * LOG_INDENT + f"jdbc_url = {self.jdbc_url}")
-        log.info(" " * LOG_INDENT + f"driver = {options['properties']['driver']}")
+        log.info(" " * LOG_INDENT + f"driver = {self.driver}")
         log.info(" " * LOG_INDENT + f"user = {self.user}")
 
         log.info(f"|{self.__class__.__name__}| Execute statement:")
@@ -73,7 +73,7 @@ class JDBCConnection(DBConnection):
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from e
 
     def read_table(  # type: ignore
         self,

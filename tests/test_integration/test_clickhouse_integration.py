@@ -1,5 +1,6 @@
 # noinspection PyPackageRequirements
 import logging
+import pytest
 
 from onetl.connection.db_connection import Clickhouse
 from onetl.reader.db_reader import DBReader
@@ -27,7 +28,14 @@ class TestIntegrationONETLClickhouse:
 
         with caplog.at_level(logging.INFO):
             clickhouse.check()
+
         assert "Connection is available" in caplog.text
+
+    def test_clickhouse_wrong_connection_check(self, spark):
+        clickhouse = Clickhouse(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+
+        with pytest.raises(RuntimeError):
+            clickhouse.check()
 
     def test_clickhouse_reader_snapshot(self, spark, processing, prepare_schema_table):
         clickhouse = Clickhouse(
