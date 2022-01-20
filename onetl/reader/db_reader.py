@@ -32,8 +32,22 @@ class DBReader:
         Name like ``schema.name``
     columns : list of str, optional, default: ``*``
         The list of columns to be read
+
+        .. warning ::
+
+            For `Oracle <db_connection/oracle_connection.html>`_ connection
+            you must specify column names in UPPERCASE.
+
     where : str, optional, default: ``None``
         Custom ``where`` for SQL query
+    hwm_column : str, optional, default: ``None``
+        Column to be used as `HWM <onetl.hwm.html>`_ value
+
+        .. warning ::
+
+            For `Oracle <db_connection/oracle_connection.html>`_ connection
+            you must specify ``hwm_column`` name in UPPERCASE.
+
     hint : str, optional, default: ``None``
         Add hint to SQL query
     options : dict, DBConnection.Options, optional, default: ``None``
@@ -62,7 +76,7 @@ class DBReader:
 
         .. warning ::
 
-            ``Hive`` DBConnection does not have options
+            `Hive <db_connection/hive_connection.html>`_ connection does not have options
 
 
     Examples

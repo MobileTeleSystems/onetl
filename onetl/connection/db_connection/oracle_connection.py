@@ -32,7 +32,7 @@ class Oracle(JDBCConnection):
 
         .. warning ::
 
-            Be careful, to correct work you must provide ``sid`` or ``service_name``
+            Be careful, for correct work you must provide ``sid`` or ``service_name``
 
     spark : pyspark.sql.SparkSession, default: ``None``
         Spark session that required for jdbc connection to database.
