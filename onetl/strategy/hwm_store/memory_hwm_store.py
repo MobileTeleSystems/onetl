@@ -24,7 +24,7 @@ class MemoryHWMStore(BaseHWMStore):
 
         from onetl.connection import Postgres, Hive
         from onetl.reader import DBReader
-        from onetl.strategy import IncrementStrategy
+        from onetl.strategy import IncrementalStrategy
         from onetl.strategy.hwm_store import MemoryHWMStore
 
         from mtspark import get_spark
@@ -51,7 +51,7 @@ class MemoryHWMStore(BaseHWMStore):
         writer = DBWriter(hive, "newtable")
 
         with MemoryHWMStore():
-            with IncrementStrategy():
+            with IncrementalStrategy():
                 df = reader.run()
                 writer.run(df)
 

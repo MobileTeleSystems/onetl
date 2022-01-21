@@ -47,7 +47,7 @@ class YAMLHWMStore(BaseHWMStore):
 
         from onetl.connection import Postgres, Hive
         from onetl.reader import DBReader
-        from onetl.strategy import IncrementStrategy
+        from onetl.strategy import IncrementalStrategy
         from onetl.strategy.hwm_store import YAMLHWMStore
 
         from mtspark import get_spark
@@ -74,7 +74,7 @@ class YAMLHWMStore(BaseHWMStore):
         writer = DBWriter(hive, "newtable")
 
         with YAMLHWMStore():
-            with IncrementStrategy():
+            with IncrementalStrategy():
                 df = reader.run()
                 writer.run(df)
 
@@ -88,7 +88,7 @@ class YAMLHWMStore(BaseHWMStore):
     .. code:: python
 
         with YAMLHWMStore(path="/my/store", encoding="utf-8"):
-            with IncrementStrategy():
+            with IncrementalStrategy():
                 df = reader.run()
                 writer.run(df)
 

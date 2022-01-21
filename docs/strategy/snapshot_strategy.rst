@@ -1,4 +1,4 @@
-.. _snapshot_strategy:
+.. _snapshot-strategy:
 
 Snapshot strategy
 =================================================================

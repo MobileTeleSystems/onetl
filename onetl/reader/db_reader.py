@@ -35,17 +35,17 @@ class DBReader:
 
         .. warning ::
 
-            For `Oracle <db_connection/oracle_connection.html>`_ connection
+            For :obj:`onetl.connection.db_connection.oracle_connection.Oracle` connection
             you must specify column names in UPPERCASE.
 
     where : str, optional, default: ``None``
         Custom ``where`` for SQL query
     hwm_column : str, optional, default: ``None``
-        Column to be used as `HWM <onetl.hwm.html>`_ value
+        Column to be used as ref:`hwm` value
 
         .. warning ::
 
-            For `Oracle <db_connection/oracle_connection.html>`_ connection
+            For :obj:`onetl.connection.db_connection.oracle_connection.Oracle` connection
             you must specify ``hwm_column`` name in UPPERCASE.
 
     hint : str, optional, default: ``None``
@@ -76,7 +76,7 @@ class DBReader:
 
         .. warning ::
 
-            `Hive <db_connection/hive_connection.html>`_ connection does not have options
+            :obj:`onetl.connection.db_connection.hive_connection.Hive` connection does not have options
 
 
     Examples

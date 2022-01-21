@@ -1,4 +1,4 @@
-.. _incremental_batch_strategy:
+.. _incremental-batch-strategy:
 
 Incremental batch strategy
 =================================================================

@@ -1,3 +1,5 @@
+.. _clickhouse-connection:
+
 Clickhouse connection
 =================================================================
 

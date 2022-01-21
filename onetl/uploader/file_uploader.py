@@ -74,8 +74,8 @@ class FileUploader:
         """
         Method for uploading files to remote host.
 
-        Params
-        -------
+        Parameters
+        ----------
         files_list : List[str | os.PathLike]
             List of files on local storage
 
