@@ -19,7 +19,7 @@ class Teradata(JDBCConnection):
         User, which have access to the database and table. For example: ``TECH_ETL``
     password : str, default: ``None``
         Password for database connection
-    database : str, default: ``default``
+    database : str
         Database in rdbms. To provide schema, use DBReader class
     extra : Dict, optional, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
@@ -70,7 +70,10 @@ class Teradata(JDBCConnection):
     @property
     def jdbc_url(self) -> str:
         prop = self.extra.copy()
-        prop["DATABASE"] = self.database
+
+        if self.database:
+            prop["DATABASE"] = self.database
+
         prop["DBS_PORT"] = self.port
 
         conn = ",".join(f"{k}={v}" for k, v in prop.items())

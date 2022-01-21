@@ -19,7 +19,7 @@ class MySQL(JDBCConnection):
         User, which have access to the database and table. For example: ``big_data_tech_user``
     password : str, default: ``None``
         Password for database connection
-    database : str, default: ``default``
+    database : str
         Database in rdbms. To provide schema, use DBReader class
     extra : Dict, optional, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
@@ -68,7 +68,10 @@ class MySQL(JDBCConnection):
         prop["characterEncoding"] = "UTF-8"
         params = "&".join(f"{k}={v}" for k, v in prop.items())
 
-        return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{params}"
+        if self.database:
+            return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{params}"
+
+        return f"jdbc:mysql://{self.host}:{self.port}?{params}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S.%f")

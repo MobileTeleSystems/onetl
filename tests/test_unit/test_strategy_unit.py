@@ -26,7 +26,7 @@ def test_strategy_batch_step_is_empty(step, strategy):
 def test_strategy_hwm_column_missing(strategy):
     with strategy():
         reader = DBReader(
-            connection=Postgres(spark=Mock(), host="some_host", user="valid_user", password="pwd"),
+            connection=Postgres(spark=Mock(), host="some_host", user="valid_user", database="default", password="pwd"),
             table=f"{secrets.token_hex()}.{secrets.token_hex()}",
         )
 

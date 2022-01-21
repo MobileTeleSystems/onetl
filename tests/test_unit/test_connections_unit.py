@@ -11,7 +11,7 @@ class TestDBConnection:
     spark = Mock()
 
     def test_secure_str_and_repr(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
+        conn = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=self.spark)
 
         assert "password=" not in str(conn)
         assert "password=" not in repr(conn)
@@ -24,7 +24,7 @@ class TestDBConnection:
         "connection,options",
         [
             (
-                Oracle(host="some_host", user="user", password="passwd", spark=spark),
+                Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark),
                 Hive.Options(sort_by="hwm_int"),
             ),
             (
@@ -43,7 +43,7 @@ class TestDBConnection:
             )
 
     def test_wrong_mode_option(self):
-        oracle = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
+        oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=self.spark)
 
         with pytest.raises(ValueError):
             DBWriter(
@@ -66,6 +66,8 @@ class TestJDBCConnection:
 
         assert options.fetchsize == 100000
 
+    # ORACLE
+
     def test_oracle_driver_and_uri(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
 
@@ -79,19 +81,36 @@ class TestJDBCConnection:
 
         assert conn.jdbc_url == "jdbc:oracle:thin:@//some_host:1521/DWHLDTS"
 
-    def test_oracle_without_extra(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
-
+    def test_oracle_without_set_sid_service_name(self):
         with pytest.raises(ValueError):
-            conn.jdbc_url  # noqa: WPS428
+            Oracle(host="some_host", user="user", password="passwd", spark=self.spark)
+
+    def test_oracle_set_sid_and_service_name(self):
+        with pytest.raises(ValueError):
+            Oracle(
+                host="some_host",
+                user="user",
+                password="passwd",
+                spark=self.spark,
+                service_name="service",
+                sid="sid",
+            )
+
+    # POSTGRES
+
+    def test_postgres_without_database_error(self):
+        with pytest.raises(ValueError):
+            Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
 
     def test_postgres_driver_and_uri(self):
-        conn = Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
+        conn = Postgres(host="some_host", user="user", password="passwd", database="default", spark=self.spark)
 
         assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/default"
         assert Postgres.driver == "org.postgresql.Driver"
         assert Postgres.package == "org.postgresql:postgresql:42.2.5"
         assert Postgres.port == 5432
+
+    # TERADATA
 
     def test_teradata_driver_and_uri(self):
         conn = Teradata(
@@ -100,6 +119,7 @@ class TestJDBCConnection:
             password="passwd",
             extra={"TMODE": "TERA", "LOGMECH": "LDAP"},
             spark=self.spark,
+            database="default",
         )
 
         assert conn.jdbc_url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
@@ -107,13 +127,46 @@ class TestJDBCConnection:
         assert Teradata.package == "com.teradata.jdbc:terajdbc4:16.20.00.10"
         assert Teradata.port == 1025
 
+    def test_teradata_without_database(self):
+        conn = Teradata(
+            host="some_host",
+            user="user",
+            password="passwd",
+            extra={"TMODE": "TERA", "LOGMECH": "LDAP"},
+            spark=self.spark,
+        )
+
+        assert conn.jdbc_url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DBS_PORT=1025"
+
+    # MYSQL
+
     def test_mysql_driver_and_uri(self):
-        conn = MySQL(host="some_host", user="user", password="passwd", spark=self.spark)
+        conn = MySQL(host="some_host", user="user", database="default", password="passwd", spark=self.spark)
 
         assert conn.jdbc_url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
         assert MySQL.driver == "com.mysql.jdbc.Driver"
         assert MySQL.package == "mysql:mysql-connector-java:8.0.26"
         assert MySQL.port == 3306
+
+    def test_mysql_without_database(self):
+        conn = MySQL(
+            host="some_host",
+            user="user",
+            password="passwd",
+            spark=self.spark,
+            extra={"allowMultiQueries": "true", "requireSSL": "true"},
+        )
+
+        assert conn.jdbc_url == (
+            "jdbc:mysql://some_host:3306?allowMultiQueries=true&requireSSL=true"
+            "&useUnicode=yes&characterEncoding=UTF-8"
+        )
+
+    # MSSQL
+
+    def test_mssql_without_database_error(self):
+        with pytest.raises(ValueError):
+            MSSQL(host="some_host", user="user", password="passwd", spark=self.spark)
 
     def test_mssql_driver_and_uri(self):
         conn = MSSQL(
@@ -122,6 +175,7 @@ class TestJDBCConnection:
             password="passwd",
             extra={"characterEncoding": "UTF-8"},
             spark=self.spark,
+            database="default",
         )
 
         assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433;databaseName=default;characterEncoding=UTF-8"
@@ -129,13 +183,26 @@ class TestJDBCConnection:
         assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
         assert MSSQL.port == 1433
 
+    # CLICKHOUSE
+
     def test_clickhouse_driver_and_uri(self):
-        conn = Clickhouse(host="some_host", user="user", password="passwd", spark=self.spark)
+        conn = Clickhouse(host="some_host", user="user", database="default", password="passwd", spark=self.spark)
 
         assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123/default"
         assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
         assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
         assert Clickhouse.port == 8123
+
+    def test_clickhouse_without_database(self):
+        conn = Clickhouse(
+            host="some_host",
+            user="user",
+            password="passwd",
+            extra={"socket_timeout": "120000", "query": "SELECT%201%3B"},
+            spark=self.spark,
+        )
+
+        assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123?socket_timeout=120000&query=SELECT%201%3B"
 
 
 class TestConnectionHelpers:

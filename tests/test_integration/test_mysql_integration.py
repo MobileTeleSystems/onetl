@@ -57,6 +57,27 @@ class TestIntegrationONETLMySQL:
             df=df,
         )
 
+    def test_mysql_reader_snapshot_with_not_set_database(self, spark, processing, prepare_schema_table):
+        mysql = MySQL(
+            host=processing.host,
+            user=processing.user,
+            password=processing.password,
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=mysql,
+            table=prepare_schema_table.full_name,
+        )
+
+        df = reader.run()
+
+        processing.assert_equal_df(
+            schema=prepare_schema_table.schema,
+            table=prepare_schema_table.table,
+            df=df,
+        )
+
     def test_mysql_writer_snapshot(self, spark, processing, prepare_schema_table):
         df = processing.create_spark_df(spark=spark)
 

@@ -17,10 +17,10 @@ class JDBCConnection(DBConnection):
     host: str
     user: str
     password: str = field(repr=False)
-    port: Optional[int] = None
     # Database in rdbms, schema in DBReader.
     # Difference like https://www.educba.com/postgresql-database-vs-schema/
-    database: str = "default"
+    database: Optional[str] = None
+    port: Optional[int] = None
     extra: Dict = field(default_factory=dict)
     driver: ClassVar[str] = ""
     package: ClassVar[str] = ""
