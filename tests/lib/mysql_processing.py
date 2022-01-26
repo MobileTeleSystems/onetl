@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List
+from typing import List, Optional
 import os
 
 import pandas as pd
@@ -122,5 +122,12 @@ class MySQLProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
+        order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-        return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)
+
+        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
+
+        if order_by:
+            statement += f" ORDER BY {order_by}"
+
+        return pd.read_sql_query(f"{statement};", con=self.connection)

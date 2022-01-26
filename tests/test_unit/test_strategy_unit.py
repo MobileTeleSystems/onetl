@@ -1,5 +1,3 @@
-# noinspection PyPackageRequirements
-
 import secrets
 import pytest
 from unittest.mock import Mock

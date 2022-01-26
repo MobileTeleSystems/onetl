@@ -101,14 +101,14 @@ class ClickhouseProcessing(BaseProcessing):
         self,
         schema: str,
     ) -> None:
-        self.connection.execute(f"DROP DATABASE {schema}")
+        self.connection.execute(f"DROP DATABASE IF EXISTS {schema}")
 
     def drop_table(
         self,
         table: str,
         schema: str,
     ) -> None:
-        self.connection.execute(f"DROP TABLE {schema}.{table}")
+        self.connection.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
 
     def get_conn(self) -> "clickhouse_driver.client.Client":
         return clickhouse_driver.Client(host=self.host, port=self.port)
@@ -126,16 +126,24 @@ class ClickhouseProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
+        order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
 
-        return self.connection.execute(f"SELECT * FROM {schema}.{table}")
+        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
+
+        if order_by:
+            statement += f" ORDER BY {order_by}"
+
+        return self.connection.execute(statement)
 
     def assert_equal_df(
         self,
         df: "pyspark.sql.DataFrame",
         schema: Optional[str] = None,
         table: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
         other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+        **kwargs,
     ) -> None:
 
         if other_frame is None:
@@ -147,10 +155,14 @@ class ClickhouseProcessing(BaseProcessing):
                 columns=self.column_names,
             )
 
+        if order_by:
+            other_frame = other_frame.sort_values(by=order_by)
+
         pd_df = df.toPandas()
 
         assert_frame_equal(
             left=pd_df,
             right=other_frame,
             check_dtype=False,
+            **kwargs,
         )

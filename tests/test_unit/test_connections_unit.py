@@ -25,7 +25,7 @@ class TestDBConnection:
         [
             (
                 Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark),
-                Hive.Options(sort_by="hwm_int"),
+                Hive.Options(bucket_by=(10, "hwm_int"), sort_by="hwm_int"),
             ),
             (
                 Hive(spark=spark),
@@ -51,6 +51,34 @@ class TestDBConnection:
                 table="onetl.some_table",
                 options=Oracle.Options(mode="wrong_mode"),  # wrong mode
             )
+
+
+class TestHiveOptions:
+    @pytest.mark.parametrize(
+        "sort_by",
+        ["id_int", ["id_int", "hwm_int"]],
+        ids=["sortBy as string.", "sortBy as List."],
+    )
+    def test_sort_by_without_bucket_by(self, sort_by):
+        with pytest.raises(ValueError):
+            Hive.Options(sortBy=sort_by)
+
+    @pytest.mark.parametrize(
+        "options",
+        [
+            # disallowed modes
+            {"mode": "error"},
+            {"mode": "ignore"},
+            # options user only for table creation
+            {"compression": True},
+            {"partitionBy": "id_int"},
+            {"bucketBy": (10, "id_int")},
+            {"bucketBy": (10, "id_int"), "sortBy": "id_int"},
+        ],
+    )
+    def test_insert_into_wrong_options(self, options):
+        with pytest.raises(ValueError):
+            Hive.Options(insert_into=True, **options)
 
 
 class TestJDBCConnection:

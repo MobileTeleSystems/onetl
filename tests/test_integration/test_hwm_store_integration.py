@@ -1,5 +1,3 @@
-# noinspection PyPackageRequirements
-
 import os
 from datetime import datetime, date, timedelta
 import secrets

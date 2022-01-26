@@ -1,4 +1,3 @@
-# noinspection PyPackageRequirements
 import logging
 import pytest
 
@@ -24,7 +23,7 @@ class TestIntegrationONETLHive:
             hive.check()
         assert "Connection is available" in caplog.text
 
-    def test_hive_reader_snapshot(self, spark, processing, prepare_schema_table):
+    def test_hive_reader(self, spark, processing, prepare_schema_table):
         hive = Hive(spark=spark)
 
         reader = DBReader(
@@ -39,6 +38,21 @@ class TestIntegrationONETLHive:
             table=prepare_schema_table.table,
             df=df,
         )
+
+    def test_hive_reader_non_existing_table(self, spark, get_schema_table):
+        from pyspark.sql.utils import AnalysisException
+
+        hive = Hive(spark=spark)
+
+        reader = DBReader(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        with pytest.raises(AnalysisException) as excinfo:
+            reader.run()
+
+            assert "does not exists" in str(excinfo.value)
 
     @pytest.mark.parametrize(
         "options",
@@ -57,141 +71,377 @@ class TestIntegrationONETLHive:
             "Wrong type tuple of <options>.",
         ],
     )
-    def test_hive_reader_snapshot_with_options_error(self, spark, processing, prepare_schema_table, options):
+    def test_hive_reader_with_wrong_options(self, spark, options, get_schema_table):
         hive = Hive(spark=spark)
 
         with pytest.raises(ValueError):
             DBReader(
                 connection=hive,
-                table="onetl.some_table",
+                table=get_schema_table.full_name,
                 options=options,  # wrong <options>
             )
 
-    def test_hive_writer_snapshot(self, spark, processing, prepare_schema_table):
+    def test_hive_writer(self, spark, processing, get_schema_table):
         df = processing.create_spark_df(spark)
 
         hive = Hive(spark=spark)
 
         writer = DBWriter(
             connection=hive,
-            table=prepare_schema_table.full_name,
-            options=Hive.Options(insert_into=True),
+            table=get_schema_table.full_name,
         )
 
         writer.run(df)
 
         processing.assert_equal_df(
-            schema=prepare_schema_table.schema,
-            table=prepare_schema_table.table,
+            schema=get_schema_table.schema,
+            table=get_schema_table.table,
             df=df,
         )
 
-    def test_hive_writer_with_dict_options(self, spark, processing, prepare_schema_table):
+    def test_hive_writer_with_dict_options(self, spark, processing, get_schema_table):
         df = processing.create_spark_df(spark)
 
         hive = Hive(spark=spark)
 
         writer = DBWriter(
             connection=hive,
-            table="onetl.some_table",
+            table=get_schema_table.full_name,
             options={"compression": "snappy"},
         )
 
         writer.run(df)
 
-        response = spark.sql("SHOW CREATE TABLE onetl.some_table")
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
         response = response.collect()[0][0]
-        spark.sql("DROP TABLE onetl.some_table")
 
         assert """`compression` 'snappy'""" in response  # noqa: WPS462, WPS322
 
-    def test_hive_writer_with_pydantic_options(self, spark, processing, prepare_schema_table):
+    def test_hive_writer_with_pydantic_options(self, spark, processing, get_schema_table):
         df = processing.create_spark_df(spark)
 
         hive = Hive(spark=spark)
 
         writer = DBWriter(
             connection=hive,
-            table="onetl.some_table",
+            table=get_schema_table.full_name,
             options=Hive.Options(compression="snappy"),
         )
 
         writer.run(df)
 
-        response = spark.sql("SHOW CREATE TABLE onetl.some_table")
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
         response = response.collect()[0][0]
-        spark.sql("DROP TABLE onetl.some_table")
 
         assert """`compression` 'snappy'""" in response  # noqa: WPS462, WPS322
+
+    @pytest.mark.parametrize(
+        "fmt",
+        ["orc", "parquet"],
+    )
+    def test_hive_writer_with_format(self, spark, processing, get_schema_table, fmt):
+        df = processing.create_spark_df(spark)
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(format=fmt),
+        )
+
+        writer.run(df)
+
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+        response = response.collect()[0][0]
+
+        assert f"USING {fmt}" in response
+
+    def test_hive_writer_default_format_orc(self, spark, processing, get_schema_table):
+        df = processing.create_spark_df(spark)
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer.run(df)
+
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+        response = response.collect()[0][0]
+
+        assert "USING orc" in response
+
+    @pytest.mark.parametrize(
+        "bucket_number, bucket_columns",
+        [
+            (10, "id_int"),
+            (5, ["id_int", "hwm_int"]),
+        ],
+        ids=["bucket columns as string.", "bucket columns as List."],
+    )
+    def test_hive_writer_with_bucket_by(
+        self,
+        spark,
+        processing,
+        get_schema_table,
+        bucket_number,
+        bucket_columns,
+    ):
+        df = processing.create_spark_df(spark)
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(bucketBy=(bucket_number, bucket_columns)),
+        )
+
+        writer.run(df)
+
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+        response = response.collect()[0][0]
+
+        if isinstance(bucket_columns, str):
+            assert f"CLUSTERED BY ({bucket_columns})" in response
+        else:
+            assert f"CLUSTERED BY ({', '.join(bucket_columns)})" in response
+
+        assert f"INTO {bucket_number} BUCKETS" in response
 
     @pytest.mark.parametrize(
         "sort_by",
         ["id_int", ["id_int", "hwm_int"]],
         ids=["sortBy as string.", "sortBy as List."],
     )
-    def test_hive_writer_default_format_orc_save_table(self, spark, processing, prepare_schema_table, sort_by):
-        df = processing.create_spark_df(spark)
-        hive = Hive(spark=spark)
-
-        writer = DBWriter(
-            connection=hive,
-            table="onetl.some_table",
-            options=Hive.Options(sortBy=sort_by, bucketBy=(10, "hwm_int")),
-        )
-
-        writer.run(df)
-
-        response = spark.sql("SHOW CREATE TABLE onetl.some_table")
-        response = response.collect()[0][0]
-        spark.sql("DROP TABLE onetl.some_table")
-
-        assert "USING orc" in response
-
-    def test_hive_writer_with_write_options_sortby_bucketby(self, spark, processing, prepare_schema_table):
+    def test_hive_writer_with_bucket_by_and_sort_by(
+        self,
+        spark,
+        processing,
+        get_schema_table,
+        sort_by,
+    ):
         df = processing.create_spark_df(spark)
 
         hive = Hive(spark=spark)
 
         writer = DBWriter(
             connection=hive,
-            table="onetl.some_table",
-            options=Hive.Options(sortBy=["id_int"], bucketBy=(10, "hwm_int")),
+            table=get_schema_table.full_name,
+            options=Hive.Options(bucketBy=(10, "id_int"), sortBy=sort_by),
         )
 
         writer.run(df)
 
-        response = spark.sql("SHOW CREATE TABLE onetl.some_table")
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
         response = response.collect()[0][0]
-        spark.sql("DROP TABLE onetl.some_table")
 
-        assert "CLUSTERED BY (hwm_int)" in response
-        assert "SORTED BY (id_int)" in response
+        if isinstance(sort_by, str):
+            assert f"SORTED BY ({sort_by})" in response
+        else:
+            assert f"SORTED BY ({', '.join(sort_by)})" in response
+
+        assert "CLUSTERED BY (id_int)" in response
         assert "INTO 10 BUCKETS" in response
 
-    def test_hive_writer_with_write_options_partitionby(self, spark, processing, prepare_schema_table):
+    def test_hive_writer_default_not_bucketed(self, spark, processing, get_schema_table):
+        df = processing.create_spark_df(spark)
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer.run(df)
+
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+        response = response.collect()[0][0]
+
+        assert "SORTED BY" not in response
+        assert "CLUSTERED BY" not in response
+        assert "BUCKETS" not in response
+
+    @pytest.mark.parametrize(
+        "partition_by",
+        [
+            "id_int",
+            ["id_int", "hwm_int"],
+        ],
+        ids=["partitionBy as string.", "partitionBy as List."],
+    )
+    def test_hive_writer_with_partition_by(self, spark, processing, get_schema_table, partition_by):
         df = processing.create_spark_df(spark)
 
         hive = Hive(spark=spark)
 
         writer = DBWriter(
             connection=hive,
-            table="onetl.some_table",
-            options=Hive.Options(partitionBy="hwm_date"),
+            table=get_schema_table.full_name,
+            options=Hive.Options(partitionBy=partition_by),
         )
 
         writer.run(df)
 
-        response = spark.sql("SHOW CREATE TABLE onetl.some_table")
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
         response = response.collect()[0][0]
-        spark.sql("DROP TABLE onetl.some_table")
 
-        assert "PARTITIONED BY (hwm_date)" in response
+        if isinstance(partition_by, str):
+            assert f"PARTITIONED BY ({partition_by})" in response
+        else:
+            assert f"PARTITIONED BY ({', '.join(partition_by)})" in response
 
-    @pytest.mark.parametrize("mode", ["append", "overwrite"])
-    def test_hive_writer_mode(self, spark, processing, prepare_schema_table, mode):
+    def test_hive_writer_default_not_partitioned(self, spark, processing, get_schema_table):
+        df = processing.create_spark_df(spark)
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer.run(df)
+
+        response = spark.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+        response = response.collect()[0][0]
+
+        assert "PARTITIONED BY" not in response
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite", "error", "ignore"])
+    def test_hive_writer_with_mode(self, spark, processing, get_schema_table, mode):
         df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
         df1 = df[df.id_int < 1001]
         df2 = df[df.id_int > 1000]
+        df2_reversed = df2.select(*reversed(df2.columns))
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(mode=mode),
+        )
+
+        # creates table if does not exist
+        writer.run(df1)
+
+        if mode == "error":
+            from pyspark.sql.utils import AnalysisException
+
+            with pytest.raises(AnalysisException) as excinfo:
+                writer.run(df2_reversed)
+
+                assert "already exists" in str(excinfo.value)
+        else:
+            writer.run(df2_reversed)
+
+        if mode == "ignore":
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df1,
+            )
+
+        elif mode == "append":
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df,
+            )
+
+        elif mode == "overwrite":
+            # table is truncated
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df2,
+            )
+
+    def test_hive_writer_with_mode_default_append(self, spark, processing, get_schema_table):
+        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
+        df1 = df[df.id_int < 1001]
+        df2 = df[df.id_int > 1000]
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer.run(df1)
+        writer.run(df2)
+
+        processing.assert_equal_df(
+            schema=get_schema_table.schema,
+            table=get_schema_table.table,
+            df=df,
+        )
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    def test_hive_writer_with_mode_and_partition_by(self, spark, processing, get_schema_table, mode):
+        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
+        df1 = df[df.id_int <= 500]
+        df2 = df.where("id_int > 500 AND id_int <= 1000")
+        df3 = df[df.id_int > 1000]
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(mode=mode, partitionBy="id_int"),
+        )
+
+        # create table with partitions 1 and 2
+        writer.run(df1.union(df2))
+
+        # insert partitions 1 and 3
+        df13 = df1.union(df3)
+        writer.run(df13.select(*reversed(df13.columns)))
+
+        if mode == "append":
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df1.union(df1).union(df2).union(df3).orderBy("id_int"),
+                order_by=["id_int"],
+            )
+
+        elif mode == "overwrite":
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df1.union(df3),
+                order_by=["id_int"],
+            )
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    def test_hive_writer_insert_into_non_existent_table(self, spark, processing, get_schema_table, mode):
+        df = processing.create_spark_df(spark=spark)
+
+        hive = Hive(spark=spark)
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(insert_into=True, mode=mode),
+        )
+
+        from pyspark.sql.utils import AnalysisException
+
+        with pytest.raises(AnalysisException) as excinfo:
+            writer.run(df)
+
+            assert "does not exists" in str(excinfo.value)
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    def test_hive_writer_insert_into_with_mode(self, spark, processing, prepare_schema_table, mode):
+        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
+        df1 = df[df.id_int < 1001]
+        df2 = df[df.id_int > 1000]
+        df2_reversed = df2.select(*reversed(df2.columns))
 
         hive = Hive(spark=spark)
 
@@ -202,7 +452,7 @@ class TestIntegrationONETLHive:
         )
 
         writer.run(df1)
-        writer.run(df2)
+        writer.run(df2_reversed)
 
         if mode == "append":
             processing.assert_equal_df(
@@ -211,14 +461,14 @@ class TestIntegrationONETLHive:
                 df=df,
             )
 
-        if mode == "overwrite":
+        elif mode == "overwrite":
             processing.assert_equal_df(
                 schema=prepare_schema_table.schema,
                 table=prepare_schema_table.table,
                 df=df2,
             )
 
-    def test_hive_writer_default_append(self, spark, processing, prepare_schema_table):
+    def test_hive_writer_insert_into_with_mode_default_append(self, spark, processing, prepare_schema_table):
         df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
         df1 = df[df.id_int < 1001]
         df2 = df[df.id_int > 1000]
@@ -239,3 +489,76 @@ class TestIntegrationONETLHive:
             table=prepare_schema_table.table,
             df=df,
         )
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    @pytest.mark.parametrize("partitioned", [True, False])  # noqa: WPS118
+    @pytest.mark.parametrize(  # noqa: WPS118
+        "spark",
+        [
+            {"spark.sql.sources.partitionOverwriteMode": "dynamic"},
+            {"spark.sql.sources.partitionOverwriteMode": "static"},
+        ],
+        indirect=True,
+    )
+    def test_hive_writer_insert_into_with_mode_and_partitioning(
+        self,
+        spark,
+        processing,
+        get_schema_table,
+        partitioned,
+        mode,
+    ):
+        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
+        df1 = df[df.id_int <= 500]
+        df2 = df.where("id_int > 500 AND id_int <= 1000")
+        df3 = df[df.id_int > 1000]
+
+        hive = Hive(spark=spark)
+
+        if partitioned:
+            options = Hive.Options(partitionBy="id_int")
+        else:
+            options = None
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=options,
+        )
+
+        writer.run(df1.union(df2))
+
+        writer = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(insert_into=True, mode=mode),
+        )
+
+        df13 = df1.union(df3)
+        writer.run(df13.select(*reversed(df13.columns)))
+
+        if mode == "append":
+            processing.assert_equal_df(
+                schema=get_schema_table.schema,
+                table=get_schema_table.table,
+                df=df1.union(df1).union(df2).union(df3).orderBy("id_int"),
+                order_by=["id_int"],
+            )
+
+        elif mode == "overwrite":
+            if partitioned and spark.sparkContext._conf.get("spark.sql.sources.partitionOverwriteMode") == "dynamic":
+                processing.assert_equal_df(
+                    schema=get_schema_table.schema,
+                    table=get_schema_table.table,
+                    # df2 is left unchanged instead of being removed
+                    df=df1.union(df2).union(df3).orderBy("id_int"),
+                    order_by=["id_int"],
+                )
+            else:
+                processing.assert_equal_df(
+                    schema=get_schema_table.schema,
+                    table=get_schema_table.table,
+                    # df2 is removed
+                    df=df1.union(df3).orderBy("id_int"),
+                    order_by=["id_int"],
+                )

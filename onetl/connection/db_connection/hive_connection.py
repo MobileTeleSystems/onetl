@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Optional, List, Tuple, Iterable, Union
 
-from pydantic import Field
+from pydantic import Field, validator
 
-from onetl.connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection import DBConnection, WriteMode
 from onetl.connection.connection_helpers import get_sql_query, LOG_INDENT
 
 
@@ -40,11 +40,38 @@ class Hive(DBConnection):
     # TODO(@dypedchenk): add documentation for values
     class Options(DBConnection.Options):  # noqa: WPS431
         partition_by: Optional[Union[List[str], str]] = Field(alias="partitionBy")
-        bucket_by: Optional[Tuple[int, str]] = Field(alias="bucketBy")
+        bucket_by: Optional[Tuple[int, Union[List[str], str]]] = Field(alias="bucketBy")  # noqa: WPS234
         sort_by: Optional[Union[List[str], str]] = Field(alias="sortBy")
-        format: str = Field(default="orc")
         compression: Optional[str] = None
         insert_into: bool = Field(alias="insertInto", default=False)
+        format: str = "orc"
+
+        @validator("sort_by")
+        def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):  # noqa: N805
+            options = values.copy()
+            bucket_by = options.pop("bucket_by", None)
+            if sort_by and not bucket_by:
+                raise ValueError("`sort_by` option can only be used with non-empty `bucket_by`")
+
+            return sort_by
+
+        @validator("insert_into")
+        def insert_into_cannot_be_used_with_other_options(cls, insert_into, values):  # noqa: N805
+            options = {key: value for key, value in values.items() if value is not None}
+            mode = options.pop("mode", None)
+
+            if insert_into:
+                if mode:
+                    mode = WriteMode(mode)
+                    if mode not in {WriteMode.APPEND, WriteMode.OVERWRITE}:
+                        raise ValueError(  # noqa: WPS220
+                            f"Write mode {mode} cannot be used with `insert_into=True` option",
+                        )
+
+                if options:
+                    raise ValueError(f"Options like {options.keys()} cannot be used with `insert_into=True`")
+
+            return insert_into
 
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
@@ -61,11 +88,16 @@ class Hive(DBConnection):
         for option, value in options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"{option} = {value}")
 
-        writer = df.write
+        if options.insert_into:
+            table_columns = self.spark.table(table).columns
+            columns_to_save = [column for column in table_columns if column in df.columns]
 
-        if options.insert_into:  # type: ignore
-            writer.insertInto(table, overwrite=options.mode == "overwrite")  # overwrite is boolean
+            writer = df.select(*columns_to_save).write
+
+            mode = WriteMode(options.mode)
+            writer.insertInto(table, overwrite=mode == WriteMode.OVERWRITE)  # overwrite is boolean
         else:
+            writer = df.write
             for method, value in options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
                 # <value> is the arguments that will be passed to the <method>
                 # format orc, parquet methods and format simultaneously
@@ -76,6 +108,7 @@ class Hive(DBConnection):
                         writer = getattr(writer, method)(value)  # noqa: WPS220
                 else:
                     writer = writer.option(method, value)
+
             writer.saveAsTable(table)  # type: ignore
 
         log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
@@ -110,11 +143,11 @@ class Hive(DBConnection):
 
         return df
 
-    def get_schema(
+    def get_schema(  # type: ignore[override]
         self,
         table: str,
         columns: str,
-        options: DBConnection.Options,
+        options: Options,
     ) -> "pyspark.sql.types.StructType":
 
         query_schema = f"SELECT {columns} FROM {table} WHERE 1 = 0"
@@ -126,7 +159,6 @@ class Hive(DBConnection):
         return df.schema
 
     def check(self):
-
         try:
             log.info(
                 f"|{self.__class__.__name__}| Check connection availability...",

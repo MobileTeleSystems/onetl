@@ -111,19 +111,24 @@ def ftps_files(ftps_server, resource_path, source_path):
 
 
 @pytest.fixture(scope="session", name="spark")
-def get_mtspark_session():
+def get_mtspark_session(request):
+    config = {
+        "appName": "onetl",
+        "spark.jars.packages": [
+            Oracle.package,
+            Clickhouse.package,
+            Postgres.package,
+            MySQL.package,
+            MSSQL.package,
+            Teradata.package,
+        ],
+    }
+
+    if getattr(request, "param", None):
+        config.update(request.param)
+
     spark = get_spark(
-        config={
-            "appName": "onetl",
-            "spark.jars.packages": [
-                Oracle.package,
-                Clickhouse.package,
-                Postgres.package,
-                MySQL.package,
-                MSSQL.package,
-                Teradata.package,
-            ],
-        },
+        config=config,
         fix_pyspark=False,
     )
     yield spark
@@ -157,20 +162,30 @@ def processing(request, spark):
             yield result
 
 
-@pytest.fixture()
-def prepare_schema_table(processing, request, spark):
+@pytest.fixture
+def get_schema_table(request, processing):
     test_function = request.function
     table = f"{test_function.__name__}_{secrets.token_hex(5)}"
     schema = "onetl"
 
     full_name = f"{schema}.{table}"
 
-    storages = ["postgres", "hive", "oracle", "clickhouse", "mysql", "mssql"]
+    PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
+
+    yield PreparedDbInfo(full_name=full_name, schema=schema, table=table)
+
+    processing.drop_table(
+        table=table,
+        schema=schema,
+    )
+
+
+@pytest.fixture
+def prepare_schema_table(processing, request, get_schema_table, spark):
     entities = ["reader", "writer", "strategy", "hwm"]
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql, mssql
     test_entity = test_function.__name__.split("_")[2]
 
     columns_and_types = [
@@ -181,12 +196,10 @@ def prepare_schema_table(processing, request, spark):
         for column_name in processing.column_names
     ]
 
-    if db_storage_name == "hive" and not spark:
-        raise ValueError("When working with Hive, you need to pass spark session.")
-
     preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
 
-    if db_storage_name in storages and test_entity in entities:
+    if test_entity in entities:
+        _, schema, table = get_schema_table
 
         try:
             processing.create_schema(schema=schema)
@@ -203,14 +216,7 @@ def prepare_schema_table(processing, request, spark):
             log.exception(error)
             raise error
 
-        PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "table", "schema"])
-
-        yield PreparedDbInfo(full_name=full_name, table=table, schema=schema)
-
-        processing.drop_table(
-            table=table,
-            schema=schema,
-        )
+        return get_schema_table
 
 
 @pytest.fixture(scope="function", autouse=True)  # noqa: WPS325
