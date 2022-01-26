@@ -1,7 +1,6 @@
-from datetime import date, datetime, timedelta
-from random import randint
+from datetime import datetime
 from logging import getLogger
-from typing import List
+from typing import List, Optional
 import os
 
 import pandas as pd
@@ -56,29 +55,10 @@ class MSSQLProcessing(BaseProcessing):
     def url(self) -> str:
         return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
-        max_id = self._df_max_length if not max_id else max_id
-        time_multiplier = 100000
-
-        values = {column_name: [] for column_name in self.column_names}
-
-        for i in range(min_id, max_id + 1):
-            for column_name in values.keys():
-                if "int" in column_name.split("_"):
-                    values[column_name].append(i)
-                elif "float" in column_name.split("_"):
-                    values[column_name].append(float(f"{i}.{i}"))
-                elif "text" in column_name.split("_"):
-                    values[column_name].append("This line is made to test the work")
-                elif "date" in column_name.split("_"):
-                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
-                    values[column_name].append(date.today() + timedelta(seconds=rand_second))
-                elif "datetime" in column_name.split("_"):
-                    rand_second = randint(0, i * time_multiplier)  # noqa: S311
-                    # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
-                    values[column_name].append(datetime.now().replace(microsecond=0) + timedelta(seconds=rand_second))
-
-        return pd.DataFrame(data=values)
+    @staticmethod  # noqa: WPS605
+    def current_datetime() -> datetime:
+        # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
+        return datetime.now().replace(microsecond=0)
 
     def create_schema(
         self,
@@ -109,7 +89,7 @@ class MSSQLProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE {schema}")
+            cursor.execute(f"DROP DATABASE IF EXISTS {schema}")
             self.connection.commit()
 
     def drop_table(
@@ -118,7 +98,7 @@ class MSSQLProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE {schema}.{table}")
+            cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
             self.connection.commit()
 
     def get_conn(self):
@@ -152,6 +132,12 @@ class MSSQLProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
+        order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
 
-        return pd.read_sql_query(f"SELECT * FROM {schema}.{table};", con=self.connection)
+        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
+
+        if order_by:
+            statement += f" ORDER BY {order_by}"
+
+        return pd.read_sql_query(f"{statement};", con=self.connection)

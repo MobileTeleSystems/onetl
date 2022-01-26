@@ -1,5 +1,3 @@
-# noinspection PyPackageRequirements
-
 import pytest
 
 from onetl.connection import MySQL

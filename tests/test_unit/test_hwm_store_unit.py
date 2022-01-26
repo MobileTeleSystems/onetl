@@ -1,5 +1,3 @@
-# noinspection PyPackageRequirements
-
 import pytest
 import secrets
 import tempfile

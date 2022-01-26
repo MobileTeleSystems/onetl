@@ -1,4 +1,3 @@
-# noinspection PyPackageRequirements
 import logging
 
 import pytest

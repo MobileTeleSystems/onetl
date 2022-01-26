@@ -1,5 +1,3 @@
-# noinspection PyPackageRequirements
-
 from contextlib import suppress
 from datetime import date, timedelta, datetime
 import secrets

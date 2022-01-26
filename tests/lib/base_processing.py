@@ -68,6 +68,14 @@ class BaseProcessing:
     def get_column_type(self, name: str) -> str:
         return self._column_types_and_names_matching[name]
 
+    @staticmethod  # noqa: WPS605
+    def current_date() -> date:
+        return date.today()
+
+    @staticmethod  # noqa: WPS605
+    def current_datetime() -> datetime:
+        return datetime.now()
+
     def create_pandas_df(self, min_id: int = 1, max_id: int = _df_max_length) -> "pandas.core.frame.DataFrame":
         time_multiplier = 100000
 
@@ -83,10 +91,10 @@ class BaseProcessing:
                     values[column_name].append("This line is made to test the work")
                 elif "date" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
-                    values[column_name].append(date.today() + timedelta(seconds=rand_second))
+                    values[column_name].append(self.current_date() + timedelta(seconds=rand_second))
                 elif "datetime" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
-                    values[column_name].append(datetime.now() + timedelta(seconds=rand_second))
+                    values[column_name].append(self.current_datetime() + timedelta(seconds=rand_second))
 
         return pd.DataFrame(data=values)
 
@@ -109,17 +117,19 @@ class BaseProcessing:
         df: "pyspark.sql.DataFrame",
         schema: Optional[str] = None,
         table: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
         other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+        **kwargs,
     ) -> None:
         """Checks that df and other_frame are equal"""
 
         if other_frame is None:
-            other_frame = self.get_expected_dataframe(schema=schema, table=table)
+            other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
 
         df = self.fix_pandas_df(df.toPandas())
         other_frame = self.fix_pandas_df(other_frame)
 
-        assert_frame_equal(left=df, right=other_frame, check_dtype=False)
+        assert_frame_equal(left=df, right=other_frame, check_dtype=False, **kwargs)
 
     def assert_subset_df(
         self,

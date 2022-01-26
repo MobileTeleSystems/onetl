@@ -5,9 +5,8 @@ from dataclasses import dataclass, field
 
 from pydantic import Field
 
-from onetl.connection.connection_helpers import get_sql_query
-from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.connection.connection_helpers import get_sql_query, LOG_INDENT
+from onetl.connection.db_connection.db_connection import DBConnection
 
 log = getLogger(__name__)
 

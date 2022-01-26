@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -64,11 +64,15 @@ class HiveProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
+        order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-        df_listed = self.connection.read.table(f"{schema}.{table}").collect()
         values = {column_name: [] for column_name in self.column_names}
 
-        for row in df_listed:
+        df = self.connection.read.table(f"{schema}.{table}").select(*self.column_names)
+        if order_by:
+            df = df.orderBy(order_by)
+
+        for row in df.collect():
             for idx, _ in enumerate(row):
                 # Row(id=1, text='hello') -> values = ['id':[1], 'text': ['hello']]
                 values[self.column_names[idx]].append(row[idx])
