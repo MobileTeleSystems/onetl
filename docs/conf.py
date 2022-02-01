@@ -12,7 +12,11 @@
 #
 
 import os
+import subprocess
 import sys
+
+from setuptools_git_versioning import get_tag, get_all_tags, get_sha
+from packaging import version as Version
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -23,6 +27,18 @@ project = "onETL"
 copyright = "2022, ONEtools Team"
 author = "ONEtools Team"
 
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+#
+# The short X.Y version.
+
+ver = Version.parse(
+    subprocess.check_output("python ../setup.py --version", shell=True, universal_newlines=True).strip()
+)
+version = ver.base_version
+# The full version, including alpha/beta/rc tags.
+release = ver.public
 
 # -- General configuration ---------------------------------------------------
 
@@ -73,13 +89,31 @@ todo_include_todos = False
 # Output file base name for HTML help builder.
 htmlhelp_basename = "my-project-doc"
 
+tags = {ver}
+tags.update(Version.parse(tag) for tag in get_all_tags())
+tags = [tag.public for tag in reversed(sorted(list(tags)))]
+
+versions = [("latest", "/latest/")]
+versions.extend([(tag, f"/{tag}/") for tag in tags])
+
+tag = get_tag()
+tag_sha = get_sha(tag)
+head_sha = get_sha("HEAD")
+on_tag = tag and head_sha is not None and head_sha == tag_sha
+
 context = {
+    "current_version": release,
+    "version_slug": release,
+    "versions": versions,
+    "downloads": [("html", f"https://rep.msk.mts.ru/artifactory/files/onetools/onetl/docs/html-{release}.tar.gz")],
+    "single_version": False,
     "gitlab_host": "gitlab.bd.msk.mts.ru",
     "gitlab_user": "bigdata/platform/onetools",
     "gitlab_repo": "onetl",
-    "gitlab_version": "master",  # название ветки или тега, ниже есть пример для мультиверсионности
+    "gitlab_version": version if on_tag else "master",
     "conf_py_path": "/docs/",  # префикс для путей к файлам
     "display_gitlab": True,
+    "commit": head_sha[:8] if head_sha is not None else None,
 }
 
 if "html_context" in globals():

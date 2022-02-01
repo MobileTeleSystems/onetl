@@ -52,8 +52,6 @@ include:
   ref: v1
   file: .base_pages_deploy_sphinx.yml
 
-
-
 ### --------------- Get VAULT SECRET --------------- ###
 ## Переиспользование добавленного template'а по добавлению SSH-ключа пользователя ansible. ##
 devops_get_cicd_secrets:
@@ -104,13 +102,14 @@ black:
 .build_docker_images:
   extends: .base_docker_build
   stage: build
+  variables:
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
   dependencies:
   - devops_get_cicd_secrets
 
 build_docker_image:
   extends: .build_docker_images
   variables:
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
     DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_ID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
     DOCKER_CACHE_FROM: $CI_REGISTRY/$CI_PROJECT_PATH:dev
   rules:
@@ -121,32 +120,29 @@ build_docker_image:
       DOCKER_ADDITIONAL_TAGS: dev
   - if: $CI_COMMIT_TAG
     variables:
-      DOCKER_IMAGE_TAG: $CI_COMMIT_TAG
-      DOCKER_ADDITIONAL_TAGS: latest
+      DOCKER_ADDITIONAL_TAGS: latest,$CI_COMMIT_TAG
   - when: on_success
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/postgres/Dockerfile
-    DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres
 build_docker_image_oracle:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/oracle/Dockerfile
-    DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle
 build_docker_image_hive2:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/hive2/Dockerfile
-    DOCKER_IMAGE_TAG: ${CI_PIPELINE_ID}
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2
 
 tests:
-  image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_PIPELINE_ID}
+  image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
   stage: tests
   variables:
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
     # Postgres
     POSTGRES_USER: onetl
     POSTGRES_DB: onetl
@@ -192,6 +188,8 @@ tests:
     alias: mssql
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
+  before_script:
+  - printenv
   script:
   - pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
   after_script:
@@ -218,6 +216,7 @@ build_and_deploy:
   only:
   - master
   - develop
+  - tags
   variables:
     PYTHON_VERSION: '3.7'
 
@@ -230,12 +229,21 @@ build_and_publish_docs:
   only:
   - master
   - develop
+  - tags
+  before_script:
+  - export VERSION=$(python setup.py --version)
   script:
+  - printenv
   - pip install -r requirements.txt -r requirements-docs.txt
   - cd docs
   - make html
-  - tar cvzf html-latest.tar.gz -C _build/html .
-  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz
+  - tar cvzf html-${VERSION}.tar.gz -C _build/html .
+  - >
+    if [ "$CI_COMMIT_TAG" != "" ];
+    then cp html-${VERSION}.tar.gz html-latest.tar.gz;
+    curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz;
+    fi
+  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-${VERSION}.tar.gz
 
 ### --------------- DEPLOY --------------- ###
 pages:
@@ -249,29 +257,30 @@ pages:
 .clean_docker_repo:
   extends: .base_docker_cleaner
   stage: .post
-  when: always
+  variables:
+    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
 
 clean_docker_repo_hive2:
   extends: .clean_docker_repo
   variables:
     DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/hive2
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
     CICD_STORE_DEBUG: 'false'
+  when: always
 clean_docker_repo_postgres:
   extends: .clean_docker_repo
   variables:
     DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/postgres
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
     CICD_STORE_DEBUG: 'false'
+  when: always
 clean_docker_repo_oracle:
   extends: .clean_docker_repo
   variables:
     DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/oracle
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
     CICD_STORE_DEBUG: 'false'
+  when: always
 clean_docker_repo:
   extends: .clean_docker_repo
   variables:
     DOCKER_IMAGE_NAME: $CI_PROJECT_PATH
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
     CICD_STORE_DEBUG: 'false'
+  when: always
