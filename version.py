@@ -4,6 +4,9 @@ version = "0.1.{build_num}"  # Bump minor version here
 
 
 def get_version():
+    if "CI_COMMIT_TAG" in os.environ:
+        return os.environ["CI_COMMIT_TAG"]
+
     build_num = 0
     build_info = os.path.join(os.path.dirname(__file__), "..", "build.info")
     if os.path.exists(build_info):

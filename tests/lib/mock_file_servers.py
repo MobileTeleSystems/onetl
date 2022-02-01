@@ -16,7 +16,7 @@ LOCAL_HOST = "127.0.0.1"
 def find_py_extention(name, path):
     for dir_path, _dir_names, filenames in os.walk(path):
         for files in filenames:
-            regexp = fr".*{name}.*\.py"
+            regexp = rf".*{name}.*\.py"
             if re.match(regexp, files):
                 return os.path.join(dir_path, files)
     raise RuntimeError(f"Couldn`t find test ftp server py in directory {path}")
