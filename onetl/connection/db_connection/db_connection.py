@@ -12,6 +12,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
+from onetl.connection.connection_helpers import LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -122,6 +123,25 @@ class DBConnection(ConnectionABC):
             )
 
         return options
+
+    @classmethod
+    def _log_fields(cls) -> set[str]:
+        # TODO(dypedchenk): until using pydantic dataclass
+        return set(cls.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+
+    @classmethod
+    def _log_exclude_fields(cls) -> set[str]:
+        # TODO(dypedchenk): until using pydantic dataclass
+        return {"compare_statements", "check_statement", "spark"}
+
+    def _log_parameters(self):
+        log.info("|Spark| Using connection parameters:")
+        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+        for attr in sorted(self._log_fields() - self._log_exclude_fields()):
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         """

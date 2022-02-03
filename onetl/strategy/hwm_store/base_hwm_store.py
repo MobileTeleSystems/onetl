@@ -20,6 +20,9 @@ class BaseHWMStore:
         log.info(f"|{self.__class__.__name__}| Using options:")
 
         for option, value in vars(self).items():
+            if option.startswith("_"):
+                continue
+
             log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         return self

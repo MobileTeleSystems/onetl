@@ -20,6 +20,9 @@ class BaseStrategy:
         log.info(f"|{self.__class__.__name__}| Using options:")
 
         for option, value in vars(self).items():
+            if self._log_exclude_field(option):
+                continue
+
             log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         self.enter_hook()
@@ -32,6 +35,8 @@ class BaseStrategy:
         strategy = StrategyManager.pop()
 
         strategy.exit_hook(failed=bool(exc_type))
+        log.info(f"|onETL| Exiting {self.__class__.__name__}")
+
         return False
 
     @property  # noqa: WPS324
@@ -47,3 +52,7 @@ class BaseStrategy:
 
     def exit_hook(self, failed: bool = False) -> None:
         pass  # noqa: WPS420
+
+    @classmethod
+    def _log_exclude_field(cls, name: str) -> bool:
+        return name.startswith("_")

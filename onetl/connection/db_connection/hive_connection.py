@@ -84,9 +84,7 @@ class Hive(DBConnection):
         table: str,
         options: Options,
     ) -> None:
-        log.info("|Spark| With writer options:")
-        for option, value in options.dict(exclude_none=True).items():
-            log.info(" " * LOG_INDENT + f"{option} = {value}")
+        self._log_parameters()
 
         if options.insert_into:
             table_columns = self.spark.table(table).columns
@@ -121,12 +119,13 @@ class Hive(DBConnection):
         hint: Optional[str] = None,
         where: Optional[str] = None,
     ) -> "pyspark.sql.DataFrame":
-
         if options.dict(exclude_unset=True):
             raise ValueError(
                 f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
                 "Hive reader does not support options.",
             )
+
+        self._log_parameters()
 
         sql_text = get_sql_query(
             table=table,
@@ -134,9 +133,6 @@ class Hive(DBConnection):
             columns=columns,
             where=where,
         )
-
-        log.info("|Spark| Using connection:")
-        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
 
         df = self._execute_sql(sql_text)
         log.info("|Spark| DataFrame successfully created from SQL statement")
@@ -172,5 +168,5 @@ class Hive(DBConnection):
 
     def _execute_sql(self, query):
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + f"{query}")
+        log.info(" " * LOG_INDENT + query)
         return self.spark.sql(query)

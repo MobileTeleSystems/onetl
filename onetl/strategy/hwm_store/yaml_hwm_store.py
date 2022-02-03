@@ -41,7 +41,7 @@ class YAMLHWMStore(BaseHWMStore):
     Examples
     --------
 
-    Default params
+    Default parameters
 
     .. code:: python
 

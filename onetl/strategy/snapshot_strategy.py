@@ -91,9 +91,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             SELECT id, data
             FROM mydata
-            WHERE id >= 1000 AND id <= 1100;
-
-            -- from start to start+step
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step
 
     start : Any, default: ``None``
 
@@ -105,9 +103,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             SELECT min(id) as start
             FROM mydata
-            WHERE id <= 1400;
-
-            -- 1400 here is stop value
+            WHERE id <= 1400; -- 1400 here is stop value
 
     stop : Any, default: ``None``
 
@@ -119,9 +115,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             SELECT max(id) as stop
             FROM mydata
-            WHERE id >= 1000;
-
-            -- 1000 here is start value
+            WHERE id >= 1000; -- 1000 here is start value
 
     Examples
     --------

@@ -130,7 +130,7 @@ class DBReader:
 
         reader = DBReader(postgres, table="fiddle.dummy", options=options)
 
-    Reader creation with all params:
+    Reader creation with all parameters:
 
     .. code::
 
@@ -162,7 +162,7 @@ class DBReader:
             options=options,
         )
 
-    Reader for Hive with all available params:
+    Reader for Hive with all available parameters:
 
     .. code::
 
@@ -242,23 +242,31 @@ class DBReader:
 
         decorated_log(msg="DBReader starts")
 
+        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame")
+
+        log.info(f"|{self.__class__.__name__}| Parameters:")
+        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
+            if attr in {
+                "connection",
+                "options",
+            }:
+                continue
+
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+
+        log.info("")
+        log.info(" " * LOG_INDENT + "Options")
+        for option, value in self.options.dict(exclude_none=True).items():
+            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+
         helper: StrategyHelper
         if self.hwm_column:
             helper = HWMStrategyHelper(self, self.hwm_column)
         else:
             helper = NonHWMStrategyHelper(self)
-
-        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading {self.table} to DataFrame")
-
-        log.info("|Spark| Using reader params:")
-        log.info(" " * LOG_INDENT + f"table = {self.table}")
-        log.info(" " * LOG_INDENT + f"columns = {self.columns}")
-
-        if self.hint is not None:
-            log.info(" " * LOG_INDENT + f"hint = {self.hint}")
-
-        if self.where is not None:
-            log.info(" " * LOG_INDENT + f"where = {self.where}")
 
         df = self.connection.read_table(
             table=str(self.table),

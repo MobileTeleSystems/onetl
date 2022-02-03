@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.0.1
+  rev: v4.1.0
   hooks:
   - id: check-ast
   - id: check-case-conflict
@@ -23,7 +23,7 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.10
+  rev: v1.1.11
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
@@ -33,12 +33,12 @@ repos:
   - id: codespell
     args: [-w]
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.1.0
+  rev: v2.2.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
 - repo: https://github.com/lovesegfault/beautysh
-  rev: v6.1.0
+  rev: v6.2.1
   hooks:
   - id: beautysh
 - repo: https://github.com/IamTheFij/docker-pre-commit
@@ -46,11 +46,6 @@ repos:
   hooks:
   - id: docker-compose-check
     files: ^docker-compose.*\.(yaml|yml)$
-- repo: https://github.com/ansible/ansible-lint.git
-  rev: v5.1.2
-  hooks:
-  - id: ansible-lint
-    args: [ansible]
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.9.0
   hooks:
@@ -61,17 +56,17 @@ repos:
   - id: rst-inline-touching-normal
   - id: text-unicode-replacement-char
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.24.0
+  rev: v2.31.0
   hooks:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/ambv/black
-  rev: 21.10b0
+  rev: 22.1.0
   hooks:
   - id: black
     language_version: python3
 - repo: https://github.com/asottile/blacken-docs
-  rev: v1.10.0
+  rev: v1.12.1
   hooks:
   - id: blacken-docs
 - repo: meta

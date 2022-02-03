@@ -66,12 +66,12 @@ class MySQL(JDBCConnection):
         prop = self.extra.copy()
         prop["useUnicode"] = "yes"
         prop["characterEncoding"] = "UTF-8"
-        params = "&".join(f"{k}={v}" for k, v in prop.items())
+        parameters = "&".join(f"{k}={v}" for k, v in prop.items())
 
         if self.database:
-            return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{params}"
+            return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{parameters}"
 
-        return f"jdbc:mysql://{self.host}:{self.port}?{params}"
+        return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
