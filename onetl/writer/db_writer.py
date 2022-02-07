@@ -5,7 +5,7 @@ from logging import getLogger
 
 from etl_entities import Table
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import decorated_log
+from onetl.connection.connection_helpers import decorated_log, LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -214,7 +214,25 @@ class DBWriter:
         """
         decorated_log(msg="DBWriter starts")
 
-        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to {self.table}")
+        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table")
+
+        log.info(f"|{self.__class__.__name__}| Parameters:")
+        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
+            if attr in {
+                "connection",
+                "options",
+            }:
+                continue
+
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+
+        log.info("")
+        log.info(" " * LOG_INDENT + "Options")
+        for option, value in self.options.dict(exclude_none=True).items():
+            log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
         self.connection.save_df(
             df=df,

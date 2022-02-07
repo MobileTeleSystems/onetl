@@ -154,7 +154,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         WHERE business_dt > '2021-01-09';
 
         --- from HWM-offset (EXCLUDING FIRST ROW)
-
     """
 
 
@@ -392,3 +391,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         self.save_hwm()
 
         return result
+
+    @classmethod
+    def _log_exclude_field(cls, name: str) -> bool:
+        return super()._log_exclude_field(name) or name == "start"

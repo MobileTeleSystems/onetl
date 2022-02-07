@@ -139,7 +139,7 @@ class FileDownloader:
             f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files from path '{self.source_path}'"
             f" to local directory: '{self.local_path}'",
         )
-        log.info(f"|{self.__class__.__name__}| Using params:")
+        log.info(f"|{self.__class__.__name__}| Using parameters:")
         log.info(" " * indent + f"source_file_pattern = {self.source_file_pattern}")
         log.info(" " * indent + f"delete_source = {self.delete_source}")
         log.info(" " * indent + f"source_exclude_dirs = {self.source_exclude_dirs}")

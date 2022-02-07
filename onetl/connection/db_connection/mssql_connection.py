@@ -73,10 +73,9 @@ class MSSQL(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
+        parameters = "".join(f";{k}={v}" for k, v in self.extra.items())
 
-        params = "".join(f";{k}={v}" for k, v in self.extra.items())
-
-        return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{params}"
+        return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{parameters}"
 
     @property
     def instance_url(self) -> str:

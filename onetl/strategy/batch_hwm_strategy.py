@@ -3,8 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from dataclasses import dataclass, field
+import logging
 
 from onetl.strategy.hwm_strategy import HWMStrategy
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -28,7 +31,11 @@ class BatchHWMStrategy(HWMStrategy):
         self._iteration += 1  # noqa: WPS601
 
         if self.is_finished:
+            log.info(f"|{self.__class__.__name__}| Reached max HWM value, exiting after {self._iteration} iteration(s)")
             raise StopIteration
+
+        iteration_name = "First" if self.is_first_run else "Next"
+        log.info(f"|{self.__class__.__name__}| {iteration_name} iteration")
 
         return self.current_value
 

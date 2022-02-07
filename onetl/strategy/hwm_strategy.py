@@ -6,6 +6,7 @@ import operator
 from typing import Any, Callable
 
 from etl_entities import HWM
+from onetl.connection.connection_helpers import LOG_INDENT
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 
@@ -40,19 +41,24 @@ class HWMStrategy(BaseStrategy):
         self.fetch_hwm()
 
     def fetch_hwm(self) -> None:
+        log_prefix = f"|{self.__class__.__name__}|"
+
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
 
-            log.info(f"|onETL| Loading {self.hwm.qualified_name} from {hwm_store.__class__.__name__}")
+            log.info(f"{log_prefix} Loading HWM from {hwm_store.__class__.__name__}:")
+            log.info(" " * LOG_INDENT + f"qualified_name = {self.hwm.qualified_name}")
+
             value = hwm_store.get(self.hwm.qualified_name)
 
             if value is not None:
-                log.info(f"|onETL| Received HWM value: {value!r}")
+                log.info(f"{log_prefix} Got HWM:")
+                log.info(" " * LOG_INDENT + f"type = {value.__class__.__name__}")
+                log.info(" " * LOG_INDENT + f"value = {value.value}")
                 self.hwm = value  # noqa: WPS601
             else:
-                log.info(
-                    f"|onETL| HWM is not exist in {hwm_store.__class__.__name__}. "
-                    "Using snapshot strategy instead incremental.",
+                log.warning(
+                    f"{log_prefix} HWM does not exist in {hwm_store.__class__.__name__}. ALL ROWS WILL BE READ!",
                 )
         else:
             # TODO:(@mivasil6) спросить у Макса попадаем ли мы в это условие, и почему это не эксепшен
@@ -63,12 +69,22 @@ class HWMStrategy(BaseStrategy):
             self.save_hwm()
 
     def save_hwm(self) -> None:
+        log_prefix = f"|{self.__class__.__name__}|"
+
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
+
             # TODO:(@mivasil6) подумать над __repr__ hwm
-            log.info(f"|onETL| Saving {self.hwm.qualified_name} with value {self.hwm.value} to {hwm_store}")
+            log.info(f"{log_prefix} Saving HWM to {hwm_store.__class__.__name__}:")
+            log.info(" " * LOG_INDENT + f"type = {self.hwm.__class__.__name__}")
+            log.info(" " * LOG_INDENT + f"value = {self.hwm.value}")
+            log.info(" " * LOG_INDENT + f"qualified_name = {self.hwm.qualified_name}")
 
             hwm_store.save(self.hwm)
-            log.info("|onETL| HWM has been saved")
+            log.info(f"{log_prefix} HWM has been saved")
         else:
-            log.debug(f"{self.__class__.__name__}: HWM will not been saved, skipping")
+            log.debug(f"{log_prefix} HWM will not been saved, skipping")
+
+    @classmethod
+    def _log_exclude_field(cls, name: str) -> bool:
+        return super()._log_exclude_field(name) or name == "hwm"

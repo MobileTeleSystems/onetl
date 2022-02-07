@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from logging import getLogger
 from typing import Optional, Dict, ClassVar
@@ -64,7 +66,7 @@ class JDBCConnection(DBConnection):
         log.info(" " * LOG_INDENT + f"user = {self.user}")
 
         log.info(f"|{self.__class__.__name__}| Execute statement:")
-        log.info(" " * LOG_INDENT + f"{self.check_statement}")
+        log.info(" " * LOG_INDENT + self.check_statement)
 
         try:
             self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.jdbc_url, **options).collect()
@@ -82,13 +84,11 @@ class JDBCConnection(DBConnection):
         where: Optional[str],
         options: Options,
     ) -> "pyspark.sql.DataFrame":
-        if options:
-            if not options.fetchsize:
-                log.debug("<fetchsize> task parameter wasn't specified; the reading will be slowed down!")
+        if options.session_init_statement:
+            log.debug("Init SQL statement:")
+            log.debug(" " * LOG_INDENT + options.session_init_statement)
 
-            if options.session_init_statement:
-                log.debug("Init SQL statement:")
-                log.debug(" " * LOG_INDENT + options.session_init_statement)
+        self._log_parameters()
 
         sql_text = get_sql_query(
             table=table,
@@ -99,13 +99,8 @@ class JDBCConnection(DBConnection):
 
         read_options = self.set_lower_upper_bound(jdbc_options=options.copy(exclude={"mode"}), table=table)
 
-        self._log_options(entity="reader", options=read_options)
-
-        if not read_options.fetchsize:
-            log.warning("|Spark| <fetchsize> option wasn't specified — reading will be slowed down!")
-
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + f"{sql_text}")
+        log.info(" " * LOG_INDENT + sql_text)
 
         # for convenience. parameters accepted by spark.read.jdbc method
         #  spark.read.jdbc(
@@ -127,7 +122,7 @@ class JDBCConnection(DBConnection):
         Save the DataFrame into RDB.
         """
 
-        self._log_options(entity="writer", options=options)
+        self._log_parameters()
 
         # for convenience. parameters accepted by spark.write.jdbc method
         #   spark.read.jdbc(
@@ -149,7 +144,7 @@ class JDBCConnection(DBConnection):
         temp_prop = options.copy(update={"fetchsize": "0"})
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + f"{query_schema}")
+        log.info(" " * LOG_INDENT + query_schema)
         df = self.execute_query_without_partitioning(
             parameters=temp_prop,
             spark=self.spark,
@@ -280,30 +275,13 @@ class JDBCConnection(DBConnection):
 
         return spark.read.jdbc(table=table, **jdbc_dict_params)
 
-    def _log_options(self, entity: str, options: Options):
-        if options.dict(exclude_none=True):
-            log.info(f"|Spark| With {entity} options:")
-        else:
-            log.info("|Spark| Without options.")
+    @classmethod
+    def _log_fields(cls) -> set[str]:
+        fields = super()._log_fields()
+        fields.add("jdbc_url")
+        return fields
 
-        for option, value in options.dict(exclude_none=True).items():
-            log.info(" " * LOG_INDENT + f"{option} = {value}")
-
-        log.info("|Spark| Using connection params:")
-        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
-        log.info(" " * LOG_INDENT + f"jdbc_url = {self.jdbc_url}")
-
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore  # noqa: WPS609
-            # TODO(dypedchenk): until using pydantic dataclass
-            if attr in {
-                "compare_statements",
-                "check_statement",
-                "spark",
-                "password",
-            }:
-                continue
-
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+    @classmethod
+    def _log_exclude_fields(cls) -> set[str]:
+        fields = super()._log_exclude_fields()
+        return fields.union({"password", "package"})

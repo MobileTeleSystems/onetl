@@ -63,12 +63,12 @@ class Clickhouse(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        params = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        parameters = "&".join(f"{k}={v}" for k, v in self.extra.items())
 
         if self.database:
-            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{params}".rstrip("?")
+            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
-        return f"jdbc:clickhouse://{self.host}:{self.port}?{params}".rstrip("?")
+        return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")
