@@ -85,6 +85,31 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
                 reader.run()
 
 
+def test_postgres_reader_strategy_snapshot_batch_outside_loop(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column="hwm_int",
+    )
+
+    with pytest.raises(RuntimeError):
+        with SnapshotBatchStrategy(step=1):
+            reader.run()
+
+
 def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,

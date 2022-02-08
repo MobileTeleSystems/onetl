@@ -4,6 +4,7 @@ from typing import Any
 
 from dataclasses import dataclass, field
 import logging
+from textwrap import dedent
 
 from onetl.strategy.hwm_strategy import HWMStrategy
 
@@ -17,7 +18,7 @@ class BatchHWMStrategy(HWMStrategy):
     start: Any = None
     stop: Any = None
 
-    _iteration: int = field(init=False, repr=False, default=0)
+    _iteration: int = field(init=False, repr=False, default=-1)
 
     def __post_init__(self):
         if not self.step:
@@ -57,6 +58,21 @@ class BatchHWMStrategy(HWMStrategy):
 
     @property
     def current_value(self) -> Any:
+        if self._iteration < 0:
+            raise RuntimeError(
+                dedent(
+                    f"""
+                    Invalid {self.__class__.__name__} usage!
+
+                    You should use it like:
+
+                    with {self.__class__.__name__}(...) as batches:
+                        for batch in batches:
+                            reader.run()
+                    """,
+                ),
+            )
+
         result = super().current_value
 
         if result is None:
