@@ -24,7 +24,7 @@ class FileUploader:
         Class which contain File system connection properties. See in FileConnection section.
     target_path : str
         Path on remote source where you upload files.
-    temp_path : str, optional, default: ``/tmp/{uuid.uuid4()}``
+    temp_path : str, default: ``/tmp/{uuid.uuid4()}``
         Remote path where files uploaded firstly
 
         Default value: ``/tmp/{uuid.uuid4()}``

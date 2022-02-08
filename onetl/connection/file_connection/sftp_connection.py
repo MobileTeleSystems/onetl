@@ -21,9 +21,9 @@ class SFTP(FileConnection):
     ----------
     host : str
         Host of sftp source. For example: ``0001testadviat04.msk.mts.ru``
-    port : int, optional, default: ``22``
+    port : int, default: ``22``
         Port of sftp source
-    user : str, default: ``None``
+    user : str
         User, which have access to the file source. For example: ``sa0000sphrsftptest``
     password : str, default: ``None``
         Password for file source connection

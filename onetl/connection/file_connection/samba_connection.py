@@ -20,9 +20,9 @@ class Samba(FileConnection):
     ----------
     host : str
         Host of samba source. For example: ``msk.mts.ru``
-    port : int, optional, default: ``445``
+    port : int, default: ``445``
         Port of samba source
-    user : str, default: ``None``
+    user : str
         User, which have access to the file source. For example: ``sa0000techgen``
     password : str, default: ``None``
         Password for file source connection

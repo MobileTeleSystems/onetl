@@ -66,7 +66,7 @@ class YAMLHWMStore(BaseHWMStore):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
@@ -78,7 +78,7 @@ class YAMLHWMStore(BaseHWMStore):
                 df = reader.run()
                 writer.run(df)
 
-        # will create file "~/.local/share/onETL/yml_hwm_store/default.mydata.id.yml" with encoding="utf-8"
+        # will create file "~/.local/share/onETL/yml_hwm_store/public.mydata.id.yml" with encoding="utf-8"
         # and store here a serialized HWM value like:
 
         # "value": 1000
@@ -92,8 +92,7 @@ class YAMLHWMStore(BaseHWMStore):
                 df = reader.run()
                 writer.run(df)
 
-        # will create file "/my/store/default.mydata.id.yml" with encoding="utf-8"
-
+        # will create file "/my/store/public.mydata.id.yml" with encoding="utf-8"
     """
 
     path: Path = DATA_PATH / "yml_hwm_store"

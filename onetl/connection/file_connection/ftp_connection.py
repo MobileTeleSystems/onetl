@@ -22,9 +22,9 @@ class FTP(FileConnection):
     ----------
     host : str
         Host of ftp source. For example: ``0001testadviat04.msk.mts.ru``
-    port : int, optional, default: ``21``
+    port : int, default: ``21``
         Port of ftp source
-    user : str, default: ``None``
+    user : str
         User, which have access to the file source. For example: ``sa0000sphrsftptest``
     password : str, default: ``None``
         Password for file source connection

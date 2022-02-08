@@ -22,9 +22,9 @@ class HDFS(FileConnection, KerberosMixin):
     ----------
     host : str
         Host of hdfs source. For example: ``rnd-dwh-nn-001.msk.mts.ru``
-    port : int, optional, default: ``50070``
+    port : int, default: ``50070``
         Port of hdfs source
-    user : str, default: ``None``
+    user : str
         User, which have access to the file source. For example: ``tech_etl``
     password : str, default: ``None``
         Password for file source connection

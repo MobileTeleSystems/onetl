@@ -17,7 +17,7 @@ class Hive(DBConnection):
 
     Parameters
     ----------
-    spark : pyspark.sql.SparkSession, default: ``None``
+    spark : pyspark.sql.SparkSession
         Spark session that required for connection to hive.
 
         You can use ``mtspark`` for spark session initialization.

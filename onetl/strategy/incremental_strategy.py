@@ -56,8 +56,12 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. code:: sql
 
-            SELECT id, data FROM mydata WHERE id > 900;
-            -- 900 = 1000 - 100 = hwm - offset
+            SELECT id, data FROM public.mydata WHERE id > 900; -- 900 = 1000 - 100 = hwm - offset
+
+        .. warning::
+
+            This could cause reading duplicated values from the table.
+            You probably need additional deduplication step to handle them
 
     Examples
     --------
@@ -84,7 +88,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
@@ -100,7 +104,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         -- each batch will perform a query which return some part of input data
 
         SELECT id, data
-        FROM mydata
+        FROM public.mydata
         WHERE id > 1000;
 
         --- from HWM (EXCLUDING FIRST ROW)
@@ -111,7 +115,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         ...
 
-        offset = 100
         with IncrementalStrategy(offset=100):
             df = reader.run()
             writer.run(df)
@@ -122,10 +125,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         -- each batch will perform a query which return some part of input data
 
         SELECT id, data
-        FROM mydata
-        WHERE id > 900;
-
-        --- from HWM-offset (EXCLUDING FIRST ROW)
+        FROM public.mydata
+        WHERE id > 900; --- from HWM-offset (EXCLUDING FIRST ROW)
 
     ``offset`` could be any HWM type, not only integer
 
@@ -135,7 +136,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
@@ -150,8 +151,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         -- each batch will perform a query which return some part of input data
 
         SELECT business_dt, data
-        FROM mydata
-        WHERE business_dt > '2021-01-09';
+        FROM public.mydata
+        WHERE business_dt > '2021-01-09'; --- from HWM-offset (EXCLUDING FIRST ROW)
 
         --- from HWM-offset (EXCLUDING FIRST ROW)
     """
@@ -166,10 +167,10 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     .. code:: sql
 
-        SELECT id, data FROM mydata WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
-        SELECT id, data FROM mydata WHERE id > 1100 AND id <= 1200;
-        SELECT id, data FROM mydata WHERE id > 1200 AND id <= 1200;
-        SELECT id, data FROM mydata WHERE id > 1300 AND id <= 1400; -- until stop
+        SELECT id, data FROM public.mydata WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
+        SELECT id, data FROM public.mydata WHERE id > 1100 AND id <= 1200;
+        SELECT id, data FROM public.mydata WHERE id > 1200 AND id <= 1200;
+        SELECT id, data FROM public.mydata WHERE id > 1300 AND id <= 1400; -- until stop
 
     This allows to use less resources than reading all the data in the one batch.
 
@@ -177,15 +178,13 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     ----------
     step : Any, default: ``1000``
 
-        The value of step.
+        The value of step which will be used to generate batch SQL queries.
 
         .. code:: sql
 
             SELECT id, data
-            FROM mydata
-            WHERE id > 1000 AND id <= 1100;
-
-            -- 1000 is previous HWM value, step is 100
+            FROM public.mydata
+            WHERE id > 1000 AND id <= 1100; -- 1000 is previous HWM value, step is 100
 
     stop : Any, default: ``None``
 
@@ -196,10 +195,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         .. code:: sql
 
             SELECT max(id) as stop
-            FROM mydata
-            WHERE id > 1000 AND id <= 1100;
-
-            -- 1000 is previous HWM value, step is 100
+            FROM public.mydata
+            WHERE id > 1000 AND id <= 1100; -- 1000 is previous HWM value, step is 100
 
     offset : Any, default: ``None``
 
@@ -216,10 +213,13 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         .. code:: sql
 
             SELECT id, data
-            FROM mydata
-            WHERE id > 900 AND id <= 1000;
+            FROM public.mydata
+            WHERE id > 900 AND id <= 1000; -- 900 = 1000 - 100 = HWM - offset
 
-            -- 900 = 1000 - 100 = HWM - offset
+        .. warning::
+
+            This could cause reading duplicated values from the table.
+            You probably need additional deduplication step to handle them
 
     Examples
     --------
@@ -248,7 +248,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
@@ -266,7 +266,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         -- each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
+            FROM public.mydata
             WHERE id > 1100 AND id <= 1200; --- from HWM to HWM+step (EXCLUDING FIRST ROW)
 
         ... WHERE id > 1200 AND id <= 1300; -- next step
@@ -287,7 +287,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         -- each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
+            FROM public.mydata
             WHERE id > 1000 AND id <= 1100; --- from HWM to HWM+step (EXCLUDING FIRST ROW)
 
         ... WHERE id > 1100 AND id <= 1200; -- next step
@@ -309,8 +309,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         -- each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
-            WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE id >  900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING FIRST ROW)
 
         ... WHERE id > 1000 AND id <= 1100; -- next step
         ... WHERE id > 1100 AND id <= 1200; -- another step
@@ -336,7 +336,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         -- each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
+            FROM public.mydata
             WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING FIRST ROW)
 
         ... WHERE id > 1000 AND id <= 1100; -- next step
@@ -352,7 +352,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
@@ -372,16 +372,20 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         -- each batch will perform a query which return some part of input data
 
             SELECT business_dt, data
-            FROM mydata
-            WHERE business_dt  > '2021-01-09'  -- from HWM-offset (EXCLUDING FIRST ROW)
-            AND   business_dt <= '2021-01-14'; -- to HWM-offset+step
+            FROM public.mydata
+            WHERE business_dt  > CAST('2021-01-09' AS DATE)  -- from HWM-offset (EXCLUDING FIRST ROW)
+            AND   business_dt <= CAST('2021-01-14' AS DATE); -- to HWM-offset+step
 
-        ... WHERE business_dt  > '2021-01-14'
-            AND   business_dt <= '2021-01-19'; -- another step
+        ... WHERE business_dt  > CAST('2021-01-14' AS DATE) -- next step
+            AND   business_dt <= CAST('2021-01-19' AS DATE);
+
+        ... WHERE business_dt  > CAST('2021-01-19' AS DATE) -- another step
+            AND   business_dt <= CAST('2021-01-24' AS DATE);
+
         ...
 
-        ... WHERE business_dt  > '2021-01-29'
-            AND   business_dt <= '2021-01-31'; -- until stop
+        ... WHERE business_dt  > CAST('2021-01-29' AS DATE)
+            AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """
 

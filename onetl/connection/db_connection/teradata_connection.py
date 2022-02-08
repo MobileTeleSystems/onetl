@@ -13,22 +13,28 @@ class Teradata(JDBCConnection):
     ----------
     host : str
         Host of teradata database. For example: ``0411td-rnd.pv.mts.ru``
-    port : int, optional, default: ``1025``
+
+    port : int, default: ``1025``
         Port of teradata database
-    user : str, default: ``None``
+
+    user : str
         User, which have access to the database and table. For example: ``TECH_ETL``
-    password : str, default: ``None``
+
+    password : str
         Password for database connection
+
     database : str
         Database in rdbms. To provide schema, use DBReader class
-    extra : Dict, optional, default: ``None``
-        Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"LOGMECH": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``.
-    spark : pyspark.sql.SparkSession, default: ``None``
+    spark : pyspark.sql.SparkSession
         Spark session that required for jdbc connection to database.
 
-        You can use ``mtspark`` for spark session initialization.
+        You can use ``mtspark`` for spark session initialization
+
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"LOGMECH": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``
 
     Examples
     --------
@@ -49,7 +55,7 @@ class Teradata(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Teradata.package,
+            "spark.jars.packages": [Teradata.package],
         })
 
         teradata = Teradata(

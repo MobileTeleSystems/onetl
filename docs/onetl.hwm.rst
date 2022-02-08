@@ -39,13 +39,20 @@ Firstly we need to get the maximum value of ``id`` column:
 
 .. code:: sql
 
-    SELECT max(id) FROM mydata; -- returned 1000
+    SELECT max(id) FROM public.mydata; -- returned 1000
 
 Then it is possible to use this HWM value to get only new data:
 
 .. code:: sql
 
-    SELECT id, data FROM mydata WHERE id > 1000; -- since previous read attempt
+    SELECT id, data FROM public.mydata WHERE id > 1000; -- since previous read attempt
+
+.. note::
+
+    It is highly recommended for HWM column values to be unique, like table primary key.
+
+    Otherwise new rows with the same column value will be skipped
+    because they will not satisfy the condition.
 
 
 HWM types
@@ -67,4 +74,3 @@ HWM column restrictions
 
 - HWM column values cannot decrease over time, they can only increase
 - HWM column cannot contain ``NULL`` values because they cannot be tracked properly, and thus will be skipped
-- It is highly recommended (but not necessary) for HWM column values to be unique

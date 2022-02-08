@@ -26,11 +26,13 @@ class DBReader:
     Parameters
     ----------
     connection: onetl.connection.db_connection.DBConnection
-        Class which contain DB connection properties. See in DBConnection section.
+        Class which contain DB connection properties. See in DBConnection section
+
     table : str
         Table name from which to read. You need to specify the full path to the table, including the schema.
         Name like ``schema.name``
-    columns : list of str, optional, default: ``*``
+
+    columns : list of str, default: ``*``
         The list of columns to be read
 
         .. warning ::
@@ -38,9 +40,10 @@ class DBReader:
             For :obj:`onetl.connection.db_connection.oracle_connection.Oracle` connection
             you must specify column names in UPPERCASE.
 
-    where : str, optional, default: ``None``
+    where : str, default: ``None``
         Custom ``where`` for SQL query
-    hwm_column : str, optional, default: ``None``
+
+    hwm_column : str, default: ``None``
         Column to be used as ref:`hwm` value
 
         .. warning ::
@@ -48,9 +51,10 @@ class DBReader:
             For :obj:`onetl.connection.db_connection.oracle_connection.Oracle` connection
             you must specify ``hwm_column`` name in UPPERCASE.
 
-    hint : str, optional, default: ``None``
+    hint : str, default: ``None``
         Add hint to SQL query
-    options : dict, DBConnection.Options, optional, default: ``None``
+
+    options : dict, DBConnection.Options, default: ``None``
         Spark JDBC read options.
         For example:
 
@@ -91,7 +95,7 @@ class DBReader:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(
@@ -114,7 +118,7 @@ class DBReader:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(
@@ -140,7 +144,7 @@ class DBReader:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(
@@ -157,30 +161,9 @@ class DBReader:
             table="default.test",
             where="d_id > 100",
             hint="NOWAIT",
-            limit=10,
             columns=["d_id", "d_name", "d_age"],
+            hwm_column="d_age",
             options=options,
-        )
-
-    Reader for Hive with all available parameters:
-
-    .. code::
-
-        from onetl.connection.db_connection import Hive
-        from onetl.reader import DBReader
-        from mtspark import get_spark
-
-        spark = get_spark({"appName": "spark-app-name"})
-
-        hive = Hive(spark=spark)
-
-        reader = DBReader(
-            connection=hive,
-            table="default.test",
-            where="d_id > 100",
-            hint="NOWAIT",
-            limit=10,
-            columns=["d_id", "d_name", "d_age"],
         )
     """
 
