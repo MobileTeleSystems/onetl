@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import Optional, Dict, ClassVar
 from dataclasses import dataclass, field
 
-from pydantic import Field
+from pydantic import Field, validator
 
 from onetl.connection.connection_helpers import get_sql_query, LOG_INDENT
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -45,6 +45,15 @@ class JDBCConnection(DBConnection):
         upper_bound: Optional[int] = Field(alias="upperBound", default=None)
         num_partitions: Optional[int] = Field(alias="numPartitions", default=None)
 
+        @validator("num_partitions", pre=True)
+        def num_partitions_only_set_with_partition_column(cls, value, values):  # noqa: N805
+            partition_column = values.get("partition_column")
+
+            if value and not partition_column:
+                raise ValueError("Option `num_partitions` could be set only with `partitionColumn`")
+
+            return value
+
     @property
     @abstractmethod
     def jdbc_url(self) -> str:
@@ -83,7 +92,7 @@ class JDBCConnection(DBConnection):
         hint: Optional[str],
         where: Optional[str],
         options: Options,
-    ) -> "pyspark.sql.DataFrame":
+    ) -> pyspark.sql.DataFrame:
         if options.session_init_statement:
             log.debug("Init SQL statement:")
             log.debug(" " * LOG_INDENT + options.session_init_statement)
@@ -114,7 +123,7 @@ class JDBCConnection(DBConnection):
 
     def save_df(  # type: ignore
         self,
-        df: "pyspark.sql.DataFrame",
+        df: pyspark.sql.DataFrame,
         table: str,
         options: Options,
     ) -> None:
@@ -138,7 +147,7 @@ class JDBCConnection(DBConnection):
         table: str,
         columns: str,
         options: Options,
-    ) -> "pyspark.sql.types.StructType":
+    ) -> pyspark.sql.types.StructType:
 
         query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
         temp_prop = options.copy(update={"fetchsize": "0"})
@@ -214,10 +223,6 @@ class JDBCConnection(DBConnection):
 
         partition_column = jdbc_options.partition_column
         num_partitions = jdbc_options.num_partitions
-
-        if num_partitions and not partition_column:
-            raise ValueError("|Spark| <partitionColumn> task parameter wasn't specified")
-
         upper_bound = jdbc_options.upper_bound
         lower_bound = jdbc_options.lower_bound
 
@@ -261,10 +266,10 @@ class JDBCConnection(DBConnection):
 
     def execute_query_without_partitioning(
         self,
-        parameters: "JDBCConnection.Options",
-        spark: "pyspark.sql.SparkSession",
+        parameters: JDBCConnection.Options,
+        spark: pyspark.sql.SparkSession,
         table: str,
-    ) -> "pyspark.sql.DataFrame":
+    ) -> pyspark.sql.DataFrame:
         jdbc_dict_params = self.jdbc_params_creator(parameters)
         jdbc_dict_params.pop("numPartitions", None)
         jdbc_dict_params.pop("lowerBound", None)

@@ -35,7 +35,7 @@ class TestDBConnection:
         ids=["JDBC connection with Hive options.", "Hive connection with JDBC options."],
     )
     def test_inappropriate_connection_and_options_types(self, connection, options):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             DBWriter(
                 connection=connection,
                 table="onetl.some_table",
