@@ -32,13 +32,14 @@ def test_clickhouse_strategy_increment(
 ):
     store = HWMStoreManager.get_current()
 
-    oracle = Clickhouse(
+    clickhouse = Clickhouse(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=clickhouse, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     hwm_type = HWMClassRegistry.get(hwm_type_name)
     hwm = hwm_type(source=reader.table, column=reader.hwm_column)
@@ -103,13 +104,14 @@ def test_clickhouse_strategy_increment(
 def test_clickhouse_strategy_increment_float(spark, processing, prepare_schema_table):
     hwm_column = "float_value"
 
-    oracle = Clickhouse(
+    clickhouse = Clickhouse(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=clickhouse, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 

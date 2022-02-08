@@ -18,7 +18,7 @@ class TestDBConnection:
 
     def test_empty_connection(self):
         with pytest.raises(TypeError):
-            conn = Hive()  # noqa: F841
+            Hive()  # noqa: F841
 
     @pytest.mark.parametrize(
         "connection,options",
@@ -86,7 +86,7 @@ class TestJDBCConnection:
 
     def test_jdbc_connection_without_host_and_credentials(self):
         with pytest.raises(TypeError):
-            conn = Postgres(spark=self.spark)  # noqa: F841
+            Postgres(spark=self.spark)  # noqa: F841
 
     def test_jdbc_default_fetchsize(self):
         conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)

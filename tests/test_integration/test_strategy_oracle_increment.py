@@ -32,6 +32,7 @@ def test_oracle_strategy_increment(
 ):
     oracle = Oracle(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         sid=processing.sid,
@@ -91,6 +92,7 @@ def test_oracle_strategy_increment_float(spark, processing, prepare_schema_table
 
     oracle = Oracle(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         sid=processing.sid,

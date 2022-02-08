@@ -19,6 +19,7 @@ class TestIntegrationONETLMySQL:
     def test_mysql_connection_check(self, spark, processing, caplog):
         mysql = MySQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -38,6 +39,7 @@ class TestIntegrationONETLMySQL:
     def test_mysql_reader_snapshot(self, spark, processing, prepare_schema_table):
         mysql = MySQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -60,6 +62,7 @@ class TestIntegrationONETLMySQL:
     def test_mysql_reader_snapshot_with_not_set_database(self, spark, processing, prepare_schema_table):
         mysql = MySQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             spark=spark,
@@ -83,6 +86,7 @@ class TestIntegrationONETLMySQL:
 
         mysql = MySQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,

@@ -163,6 +163,7 @@ def test_hwm_store_integration_atlas_no_access(url, user, password, hwm, delta):
 def test_postgres_hwm_store_integration_with_reader(spark, processing, prepare_schema_table, hwm_store):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,

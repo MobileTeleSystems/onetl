@@ -34,6 +34,7 @@ def test_mssql_strategy_increment(
 
     mssql = MSSQL(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         spark=spark,
@@ -106,6 +107,7 @@ def test_mssql_strategy_increment_float(spark, processing, prepare_schema_table)
 
     oracle = MSSQL(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         spark=spark,

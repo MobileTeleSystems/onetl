@@ -5,7 +5,6 @@ from random import randint
 from datetime import date, datetime, timedelta
 
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
 import clickhouse_driver
 
 from tests.lib.base_processing import BaseProcessing
@@ -51,6 +50,10 @@ class ClickhouseProcessing(BaseProcessing):
     @property
     def port(self) -> int:
         return int(os.getenv("ONETL_CH_CONN_PORT"))
+
+    @property
+    def client_port(self) -> int:
+        return int(os.getenv("ONETL_CH_CONN_PORT_CLIENT"))
 
     def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
         max_id = self._df_max_length if not max_id else max_id
@@ -111,7 +114,7 @@ class ClickhouseProcessing(BaseProcessing):
         self.connection.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
 
     def get_conn(self) -> "clickhouse_driver.client.Client":
-        return clickhouse_driver.Client(host=self.host, port=self.port)
+        return clickhouse_driver.Client(host=self.host, port=self.client_port)
 
     def insert_data(
         self,
@@ -134,35 +137,4 @@ class ClickhouseProcessing(BaseProcessing):
         if order_by:
             statement += f" ORDER BY {order_by}"
 
-        return self.connection.execute(statement)
-
-    def assert_equal_df(
-        self,
-        df: "pyspark.sql.DataFrame",
-        schema: Optional[str] = None,
-        table: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
-        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
-        **kwargs,
-    ) -> None:
-
-        if other_frame is None:
-            other_frame = pd.DataFrame(
-                self.get_expected_dataframe(
-                    schema=schema,
-                    table=table,
-                ),
-                columns=self.column_names,
-            )
-
-        if order_by:
-            other_frame = other_frame.sort_values(by=order_by)
-
-        pd_df = df.toPandas()
-
-        assert_frame_equal(
-            left=pd_df,
-            right=other_frame,
-            check_dtype=False,
-            **kwargs,
-        )
+        return self.connection.query_dataframe(statement)

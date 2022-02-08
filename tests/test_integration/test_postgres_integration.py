@@ -20,6 +20,7 @@ class TestIntegrationONETLPostgres:
     def test_postgres_connection_check(self, spark, processing, caplog):
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -39,6 +40,7 @@ class TestIntegrationONETLPostgres:
     def test_postgres_reader_snapshot(self, spark, processing, prepare_schema_table):
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -60,6 +62,7 @@ class TestIntegrationONETLPostgres:
     def test_postgres_reader_snapshot_with_pydantic_options(self, spark, processing, prepare_schema_table):
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -85,6 +88,7 @@ class TestIntegrationONETLPostgres:
 
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -109,6 +113,7 @@ class TestIntegrationONETLPostgres:
 
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -134,6 +139,7 @@ class TestIntegrationONETLPostgres:
 
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -162,6 +168,7 @@ class TestIntegrationONETLPostgres:
 
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -215,6 +222,7 @@ class TestIntegrationONETLPostgres:
 
         postgres = Postgres(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
