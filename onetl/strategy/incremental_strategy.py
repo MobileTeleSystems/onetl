@@ -175,7 +175,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     Parameters
     ----------
-    step : Any, default: ``1000``
+    step : Any
 
         The value of step.
 

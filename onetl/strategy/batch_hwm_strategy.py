@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class BatchHWMStrategy(HWMStrategy):
-    step: Any = 1000
+    step: Any = None
 
     start: Any = None
     stop: Any = None
