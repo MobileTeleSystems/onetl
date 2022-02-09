@@ -188,10 +188,8 @@ tests:
     alias: mssql
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
-  before_script:
-  - printenv
   script:
-  - pytest --verbose -s -c pytest.ini tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
+  - pytest tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
   after_script:
   - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
   artifacts:

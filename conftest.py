@@ -83,6 +83,7 @@ def sftp_client(sftp_server):
     :return:
     :rtype: SFTPClient
     """
+
     ssh_client_started, sftp_client_started = sftp_server.create_client()
     yield sftp_client_started
     sftp_client_started.close()

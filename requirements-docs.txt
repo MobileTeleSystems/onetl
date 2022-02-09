@@ -1,4 +1,4 @@
 numpydoc
+setuptools-git-versioning
 sphinx
 sphinx_rtd_theme
-setuptools-git-versioning
