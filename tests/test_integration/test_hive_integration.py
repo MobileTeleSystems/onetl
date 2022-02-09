@@ -310,9 +310,9 @@ class TestIntegrationONETLHive:
 
     @pytest.mark.parametrize("mode", ["append", "overwrite", "error", "ignore"])
     def test_hive_writer_with_mode(self, spark, processing, get_schema_table, mode):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int < 1001]
-        df2 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 50]
+        df2 = df[df.id_int > 50]
         df2_reversed = df2.select(*reversed(df2.columns))
 
         hive = Hive(spark=spark)
@@ -348,6 +348,7 @@ class TestIntegrationONETLHive:
                 schema=get_schema_table.schema,
                 table=get_schema_table.table,
                 df=df,
+                order_by=["id_int"],
             )
 
         elif mode == "overwrite":
@@ -359,9 +360,9 @@ class TestIntegrationONETLHive:
             )
 
     def test_hive_writer_with_mode_default_append(self, spark, processing, get_schema_table):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int < 1001]
-        df2 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 50]
+        df2 = df[df.id_int > 50]
 
         hive = Hive(spark=spark)
 
@@ -377,14 +378,15 @@ class TestIntegrationONETLHive:
             schema=get_schema_table.schema,
             table=get_schema_table.table,
             df=df,
+            order_by=["id_int"],
         )
 
     @pytest.mark.parametrize("mode", ["append", "overwrite"])
     def test_hive_writer_with_mode_and_partition_by(self, spark, processing, get_schema_table, mode):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int <= 500]
-        df2 = df.where("id_int > 500 AND id_int <= 1000")
-        df3 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 30]
+        df2 = df.where("id_int > 30 AND id_int <= 60")
+        df3 = df[df.id_int > 60]
 
         hive = Hive(spark=spark)
 
@@ -413,7 +415,7 @@ class TestIntegrationONETLHive:
             processing.assert_equal_df(
                 schema=get_schema_table.schema,
                 table=get_schema_table.table,
-                df=df1.union(df3),
+                df=df1.union(df3).orderBy("id_int"),
                 order_by=["id_int"],
             )
 
@@ -438,9 +440,9 @@ class TestIntegrationONETLHive:
 
     @pytest.mark.parametrize("mode", ["append", "overwrite"])
     def test_hive_writer_insert_into_with_mode(self, spark, processing, prepare_schema_table, mode):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int < 1001]
-        df2 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 50]
+        df2 = df[df.id_int > 50]
         df2_reversed = df2.select(*reversed(df2.columns))
 
         hive = Hive(spark=spark)
@@ -459,6 +461,7 @@ class TestIntegrationONETLHive:
                 schema=prepare_schema_table.schema,
                 table=prepare_schema_table.table,
                 df=df,
+                order_by=["id_int"],
             )
 
         elif mode == "overwrite":
@@ -469,9 +472,9 @@ class TestIntegrationONETLHive:
             )
 
     def test_hive_writer_insert_into_with_mode_default_append(self, spark, processing, prepare_schema_table):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int < 1001]
-        df2 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 50]
+        df2 = df[df.id_int > 50]
 
         hive = Hive(spark=spark)
 
@@ -488,6 +491,7 @@ class TestIntegrationONETLHive:
             schema=prepare_schema_table.schema,
             table=prepare_schema_table.table,
             df=df,
+            order_by=["id_int"],
         )
 
     @pytest.mark.parametrize("mode", ["append", "overwrite"])
@@ -508,10 +512,10 @@ class TestIntegrationONETLHive:
         partitioned,
         mode,
     ):
-        df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
-        df1 = df[df.id_int <= 500]
-        df2 = df.where("id_int > 500 AND id_int <= 1000")
-        df3 = df[df.id_int > 1000]
+        df = processing.create_spark_df(spark=spark)
+        df1 = df[df.id_int <= 25]
+        df2 = df.where("id_int > 25 AND id_int <= 50")
+        df3 = df[df.id_int > 50]
 
         hive = Hive(spark=spark)
 
