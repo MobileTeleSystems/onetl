@@ -29,9 +29,9 @@ class FTPS(FTP):
     ----------
     host : str
         Host of ftp source. For example: ``10.226.174.94``
-    port : int, optional, default: ``21``
+    port : int, default: ``21``
         Port of ftp source
-    user : str, default: ``None``
+    user : str
         User, which have access to the file source. For example: ``sa0000sphretltest``
     password : str, default: ``None``
         Password for file source connection

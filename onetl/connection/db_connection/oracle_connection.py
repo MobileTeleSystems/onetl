@@ -13,19 +13,24 @@ class Oracle(JDBCConnection):
     ----------
     host : str
         Host of oracle database. For example: ``bill.ug.mts.ru``
-    port : int, optional, default: ``1521``
+
+    port : int, default: ``1521``
         Port of oracle database
-    user : str, default: ``None``
+
+    user : str
         User, which have access to the database and table. For example: ``BD_TECH_ETL``
-    password : str, default: ``None``
+
+    password : str
         Password for database connection
-    sid : str, optional, default: ``None``
+
+    sid : str, default: ``None``
         Sid of oracle database. For example: ``XE``
 
         .. warning ::
 
             Be careful, to correct work you must provide ``sid`` or ``service_name``
-    service_name : str, optional, default: ``None``
+
+    service_name : str, default: ``None``
         Specifies one or more names by which clients can connect to the instance.
 
         For example: ``DWHLDTS``.
@@ -34,10 +39,10 @@ class Oracle(JDBCConnection):
 
             Be careful, for correct work you must provide ``sid`` or ``service_name``
 
-    spark : pyspark.sql.SparkSession, default: ``None``
+    spark : pyspark.sql.SparkSession
         Spark session that required for jdbc connection to database.
 
-        You can use ``mtspark`` for spark session initialization.
+        You can use ``mtspark`` for spark session initialization
 
     Examples
     --------
@@ -51,7 +56,7 @@ class Oracle(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Oracle.package,
+            "spark.jars.packages": [Oracle.package],
         })
 
         oracle = Oracle(

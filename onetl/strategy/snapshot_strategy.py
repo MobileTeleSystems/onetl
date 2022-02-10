@@ -21,7 +21,7 @@ class SnapshotStrategy(BaseStrategy):
 
     .. code:: sql
 
-        SELECT id, data FROM mydata;
+        SELECT id, data FROM public.mydata;
 
     Examples
     --------
@@ -48,7 +48,7 @@ class SnapshotStrategy(BaseStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
@@ -60,7 +60,7 @@ class SnapshotStrategy(BaseStrategy):
 
         # current run will execute following query:
 
-        # SELECT id, data FROM mydata;
+        # SELECT id, data FROM public.mydata;
     """
 
 
@@ -72,10 +72,13 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: sql
 
-        SELECT id, data FROM mydata WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
-        SELECT id, data FROM mydata WHERE id > 1100 AND id <= 1200; -- + step
-        SELECT id, data FROM mydata WHERE id > 1200 AND id <= 1200; -- + step
-        SELECT id, data FROM mydata WHERE id > 1300 AND id <= 1400; -- until stop
+        SELECT id, data
+        FROM public.mydata
+        WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
+
+        ... WHERE id > 1100 AND id <= 1200; -- + step
+        ... WHERE id > 1200 AND id <= 1200; -- + step
+        ... WHERE id > 1300 AND id <= 1400; -- until stop
 
     This allows to use less resources than reading all the data in the one batch.
 
@@ -90,7 +93,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         .. code:: sql
 
             SELECT id, data
-            FROM mydata
+            FROM public.mydata
             WHERE id >= 1000 AND id <= 1100; -- from start to start+step
 
     start : Any, default: ``None``
@@ -102,7 +105,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         .. code:: sql
 
             SELECT min(id) as start
-            FROM mydata
+            FROM public.mydata
             WHERE id <= 1400; -- 1400 here is stop value
 
     stop : Any, default: ``None``
@@ -114,7 +117,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         .. code:: sql
 
             SELECT max(id) as stop
-            FROM mydata
+            FROM public.mydata
             WHERE id >= 1000; -- 1000 here is start value
 
     Examples
@@ -144,7 +147,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
@@ -160,19 +163,18 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         -- get start and stop values
             SELECT min(id) as start, max(id) as stop
-            FROM mydata;
+            FROM public.mydata;
         -- for example, start=1000 and stop=2345
 
         -- when each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
-            WHERE id >= 1000 AND id <= 1100; --- from start to start+step (INCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
 
         ... WHERE id > 1100 AND id <= 1200; -- next step
-        ... WHERE id > 1200 AND id <= 1300; --- another step
-        ...
-        ... WHERE id > 2300 AND id <= 2345; --- until stop
+        ... WHERE id > 1200 AND id <= 1300; -- another step
+        ... WHERE id > 2300 AND id <= 2345; -- until stop
 
     SnapshotBatch run with stop value
 
@@ -186,20 +188,23 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. code:: sql
 
         -- get start value
+
             SELECT min(id) as start
-            FROM mydata
+            FROM public.mydata
             WHERE id <= 1234;
+
         -- for example, start=1000
+        -- stop value is set, so no need to fetch it from DB
 
         -- when each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
-            WHERE id >= 1000 AND id <= 1100; --- from start to start+step (INCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
 
-        ... WHERE id > 1100 AND id <= 1200; -- next step
-        ... WHERE id > 1200 AND id <= 1300; --- another step
-        ... WHERE id > 1300 AND id <= 1234; --- until stop
+        ... WHERE id >  1100 AND id <= 1200; -- next step
+        ... WHERE id >  1200 AND id <= 1300; -- another step
+        ... WHERE id >  1300 AND id <= 1234; -- until stop
 
     SnapshotBatch run with start value
 
@@ -212,31 +217,34 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: sql
 
+        -- start value is set, so no need to fetch it from DB
         -- get stop value
+
             SELECT max(id) as stop
-            FROM mydata
+            FROM public.mydata
             WHERE id >= 500;
+
         -- for example, stop=2345
 
         -- when each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
-            WHERE id >= 500 AND id <= 600; --- from start to start+step (INCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE id >= 500 AND id <=  600; -- from start to start+step (INCLUDING FIRST ROW)
 
-        ... WHERE id > 600 AND id <= 700; -- next step
-        ... WHERE id > 700 AND id <= 800; --- another step
+        ... WHERE id >  600 AND id <=  700; -- next step
+        ... WHERE id >  700 AND id <=  800; -- another step
         ...
-        ... WHERE id > 2300 AND id <= 2345; --- until stop
+        ... WHERE id > 2300 AND id <= 2345; -- until stop
 
     SnapshotBatch run with all options
 
     .. code:: python
 
         with SnapshotBatchStrategy(
+            start=1000,
             step=100,
             stop=2000,
-            offset=100,
         ) as batches:
             for _ in batches:
                 df = reader.run()
@@ -244,20 +252,17 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: sql
 
-        -- previous HWM value was 1000
-        -- stop value is set, so no need to fetch boundaries from DB
-
+        -- start and stop values are set, so no need to fetch boundaries from DB
         -- each batch will perform a query which return some part of input data
 
             SELECT id, data
-            FROM mydata
-            WHERE id >= 500 AND id <= 600; --- from HWM-offset to HWM-offset+step (INCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
 
-        ... WHERE id > 900 AND id <= 1000; -- next step
-        ... WHERE id > 1000 AND id <= 1100; --- another step
-        ... WHERE id > 1100 AND id <= 1200; --- one more step
+        ... WHERE id >  1100 AND id <= 1200; -- next step
+        ... WHERE id >  1200 AND id <= 1300; -- another step
         ...
-        ... WHERE id > 1900 AND id <= 2000; --- until stop
+        ... WHERE id >  1900 AND id <= 2000; -- until stop
 
     ``step``, ``stop`` and ``start`` could be any HWM type, not only integer
 
@@ -267,14 +272,14 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
 
         with SnapshotBatchStrategy(
-            step=timedelta(days=5),
             start=date("2021-01-01"),
+            step=timedelta(days=5),
             stop=date("2021-01-31"),
         ) as batches:
             for _ in batches:
@@ -283,19 +288,26 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: sql
 
-        -- previous HWM value was '2021-01-10'
-        -- stop value is set, so no need to fetch boundaries from DB
-
+        -- start and stop values are set, so no need to fetch boundaries from DB
         -- each batch will perform a query which return some part of input data
+        -- HWM value will casted to match column type
+
 
             SELECT business_dt, data
-            FROM mydata
-            WHERE business_dt >= '2021-01-09'; --- from HWM-offset to HWM-offset+step (INCLUDING FIRST ROW)
+            FROM public.mydata
+            WHERE business_dt >= CAST('2020-01-01' AS DATE) -- from start to start+step (INCLUDING FIRST ROW)
+            AND   business_dt <= CAST('2021-01-05' AS DATE);
 
-        ... WHERE business_dt > '2021-01-10' AND business_dt <= '2021-01-15'; -- next step
-        ... WHERE business_dt > '2021-01-15' AND business_dt <= '2021-01-20'; --- another step
+        ... WHERE business_dt >  CAST('2021-01-05' AS DATE) -- next step
+            AND   business_dt <= CAST('2021-01-10' AS DATE);
+
+        ... WHERE business_dt >  CAST('2021-01-10' AS DATE) -- another step
+            AND   business_dt <= CAST('2021-01-15' AS DATE);
+
         ...
-        ... WHERE business_dt > '2021-01-30' AND business_dt <= '2021-01-31'; --- until stop
+
+        ... WHERE business_dt >  CAST('2021-01-30' AS DATE)
+            AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """
 

@@ -13,22 +13,28 @@ class Clickhouse(JDBCConnection):
     ----------
     host : str
         Host of clickhouse database. For example: ``clickhouse-sbl-dev.msk.bd-cloud.mts.ru``
-    port : int, optional, default: ``9000``
+
+    port : int, default: ``8123``
         Port of clickhouse database
-    user : str, default: ``None``
+
+    user : str
         User, which have access to the database and table. For example: ``TECH_ETL``
-    password : str, default: ``None``
+
+    password : str
         Password for database connection
+
     database : str
         Database in rdbms. To provide schema, use DBReader class
-    extra : Dict, optional, default: ``None``
+
+    spark : pyspark.sql.SparkSession
+        Spark session that required for jdbc connection to database.
+
+        You can use ``mtspark`` for spark session initialization
+
+    extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
         For example: ``{"ssl": True, "sslmode": "none"}``.
-    spark : pyspark.sql.SparkSession, default: ``None``
-        Spark session that required for jdbc connection to database.
-
-        You can use ``mtspark`` for spark session initialization.
 
     Examples
     --------
@@ -44,7 +50,7 @@ class Clickhouse(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Clickhouse.package,
+            "spark.jars.packages": [Clickhouse.package],
         })
 
         clickhouse = Clickhouse(

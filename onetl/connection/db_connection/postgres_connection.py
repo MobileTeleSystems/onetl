@@ -13,17 +13,22 @@ class Postgres(JDBCConnection):
     ----------
     host : str
         Host of postgres database. For example: ``test-db-vip.msk.mts.ru``
-    port : int, optional, default: ``5432``
+
+    port : int, default: ``5432``
         Port of postgres database
-    user : str, default: ``None``
+
+    user : str
         User, which have access to the database and table. For example: ``appmetrica_test``
-    password : str, default: ``None``
+
+    password : str
         Password for database connection
+
     database : str
         Database in rdbms. To provide schema, use DBReader class
 
-        Difference like https://www.educba.com/postgresql-database-vs-schema/
-    spark : pyspark.sql.SparkSession, default: ``None``
+        See https://www.educba.com/postgresql-database-vs-schema/ for more details
+
+    spark : pyspark.sql.SparkSession
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization.
@@ -40,7 +45,7 @@ class Postgres(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(

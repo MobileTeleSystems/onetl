@@ -55,7 +55,7 @@ class AtlasHWMStore(BaseHWMStore):
 
         reader = DBReader(
             postgres,
-            table="default.mydata",
+            table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )

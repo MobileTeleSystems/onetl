@@ -24,7 +24,7 @@ class DBWriter:
         Table from which we read. You need to specify the full path to the table, including the schema.
         Like ``schema.name``
 
-    options : dict, DBConnection.Options, optional, default: ``None``
+    options : dict, DBConnection.Options, default: ``None``
         Spark JDBC or Hive write options.
 
         For example:
@@ -33,7 +33,7 @@ class DBWriter:
         ``Hive.Options(mode="overwrite", compression="snappy")``
 
         Hive and JDBC options:
-            * ``mode`` : str, optional, default: ``append``
+            * ``mode`` : str, default: ``append``
                         The way of handling errors when the table is already exists.
 
                         Possible values:
@@ -46,26 +46,26 @@ class DBWriter:
                             * ``error``
                                 Raise exception
         Hive options:
-            * ``format`` : str, optional, default: ``orc``
+            * ``format`` : str, default: ``orc``
                 Format of written data. Can be ``json``, ``parquet``, ``orc``, ``csv``, ``text``, ``avro``
 
-            * ``insertInto``: bool, optional, default: ``False``
+            * ``insertInto``: bool, default: ``False``
                 If you need to insert data into an existing table then set option as True.
                 Used pyspark method `insertInto <https://t.ly/0RRH>`_ under the hood.
 
-            * ``partitionBy``: str, List[str], optional, default: ``None``
+            * ``partitionBy``: str, List[str], default: ``None``
                 Column names which will be used for the output partitioning.
 
                 If set, the output is laid out on the file system similar
                 to Hive's partitioning scheme.
 
-            * ``bucketBy``: Tuple[int, str] or Tuple[int, List[str]], optional, default: ``None``
+            * ``bucketBy``: Tuple[int, str] or Tuple[int, List[str]], default: ``None``
                 Divide output to specific number of buckets over a column/columns.
 
                 If set, the output is laid out on the file system *similar* to Hive's bucketing scheme,
                 but with a **different bucket hash function** which is not compatible with Hive's bucketing.
 
-            * ``sortBy``: str or List[str], optional, default: ``None``
+            * ``sortBy``: str or List[str], default: ``None``
                 Sorts the output in each bucket by the given columns.
 
             * other options
@@ -109,7 +109,7 @@ class DBWriter:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(
@@ -135,7 +135,7 @@ class DBWriter:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": Postgres.package,
+            "spark.jars.packages": [Postgres.package],
         })
 
         postgres = Postgres(
@@ -210,8 +210,8 @@ class DBWriter:
         .. code::
 
             writer.run(df)
-
         """
+
         decorated_log(msg="DBWriter starts")
 
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table")

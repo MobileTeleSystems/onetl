@@ -13,22 +13,28 @@ class MySQL(JDBCConnection):
     ----------
     host : str
         Host of MySQL database. For example: ``mysql0012.dmz.msk.mts.ru``
-    port : int, optional, default: ``3306``
+
+    port : int, default: ``3306``
         Port of MySQL database
-    user : str, default: ``None``
+
+    user : str
         User, which have access to the database and table. For example: ``big_data_tech_user``
-    password : str, default: ``None``
+
+    password : str
         Password for database connection
+
     database : str
         Database in rdbms. To provide schema, use DBReader class
-    extra : Dict, optional, default: ``None``
-        Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"some_extra": "..."}``.
-    spark : pyspark.sql.SparkSession, default: ``None``
+    spark : pyspark.sql.SparkSession
         Spark session that required for jdbc connection to database.
 
-        You can use ``mtspark`` for spark session initialization.
+        You can use ``mtspark`` for spark session initialization
+
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"some_extra": "..."}``
 
     Examples
     --------
@@ -44,7 +50,7 @@ class MySQL(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": MySQL.package,
+            "spark.jars.packages": [MySQL.package],
         })
 
         mysql = MySQL(
