@@ -283,10 +283,13 @@ class TestIntegrationONETLHive:
 
     @pytest.mark.parametrize("mode", ["append", "overwrite", "error", "ignore"])
     def test_hive_writer_with_mode(self, spark, processing, get_schema_table, mode):
+        from pyspark.sql.functions import col
+
         df = processing.create_spark_df(spark=spark)
         df1 = df[df.id_int <= 50]
         df2 = df[df.id_int > 50]
-        df2_reversed = df2.select(*reversed(df2.columns))
+
+        df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
         hive = Hive(spark=spark)
 
@@ -392,8 +395,41 @@ class TestIntegrationONETLHive:
                 order_by=["id_int"],
             )
 
-    @pytest.mark.parametrize("mode", ["append", "overwrite"])
-    def test_hive_writer_insert_into_non_existent_table(self, spark, processing, get_schema_table, mode):
+    def test_hive_writer_append_non_existent_column(self, spark, processing, get_schema_table):
+        from pyspark.sql.utils import AnalysisException
+
+        df = processing.create_spark_df(spark=spark)
+
+        hive = Hive(spark=spark)
+
+        writer1 = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer1.run(df)
+
+        writer2 = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(mode="append"),
+        )
+
+        df2 = df.withColumn("unknown", df.id_int)
+        with pytest.raises(AnalysisException):
+            writer2.run(df2)
+
+        df3 = df.select(df.id_int, df.hwm_int)
+        with pytest.raises(AnalysisException):
+            writer2.run(df3)
+
+        df4 = df.withColumn("unknown", df.id_int).select(df.id_int, df.hwm_int, "unknown")
+        with pytest.raises(AnalysisException):
+            writer2.run(df4)
+
+    def test_hive_writer_insert_into_non_existent_table(self, spark, processing, get_schema_table):
+        from pyspark.sql.utils import AnalysisException
+
         df = processing.create_spark_df(spark=spark)
 
         hive = Hive(spark=spark)
@@ -401,10 +437,8 @@ class TestIntegrationONETLHive:
         writer = DBWriter(
             connection=hive,
             table=get_schema_table.full_name,
-            options=Hive.Options(insert_into=True, mode=mode),
+            options=Hive.Options(insert_into=True),
         )
-
-        from pyspark.sql.utils import AnalysisException
 
         with pytest.raises(AnalysisException) as excinfo:
             writer.run(df)
@@ -413,10 +447,13 @@ class TestIntegrationONETLHive:
 
     @pytest.mark.parametrize("mode", ["append", "overwrite"])
     def test_hive_writer_insert_into_with_mode(self, spark, processing, prepare_schema_table, mode):
+        from pyspark.sql.functions import col
+
         df = processing.create_spark_df(spark=spark)
         df1 = df[df.id_int <= 50]
         df2 = df[df.id_int > 50]
-        df2_reversed = df2.select(*reversed(df2.columns))
+
+        df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
         hive = Hive(spark=spark)
 
@@ -539,3 +576,34 @@ class TestIntegrationONETLHive:
                     df=df1.union(df3).orderBy("id_int"),
                     order_by=["id_int"],
                 )
+
+    @pytest.mark.parametrize("mode", ["append", "overwrite"])
+    def test_hive_writer_insert_into_wrong_columns(self, spark, processing, get_schema_table, mode):
+        df = processing.create_spark_df(spark=spark)
+
+        hive = Hive(spark=spark)
+
+        writer1 = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+        )
+
+        writer1.run(df)
+
+        writer2 = DBWriter(
+            connection=hive,
+            table=get_schema_table.full_name,
+            options=Hive.Options(insert_into=True, mode=mode),
+        )
+
+        df2 = df.withColumn("unknown", df.id_int)
+        with pytest.raises(ValueError):
+            writer2.run(df2)
+
+        df3 = df.select(df.id_int, df.hwm_int)
+        with pytest.raises(ValueError):
+            writer2.run(df3)
+
+        df4 = df.withColumn("unknown", df.id_int).select(df.id_int, df.hwm_int, "unknown")
+        with pytest.raises(ValueError):
+            writer2.run(df4)

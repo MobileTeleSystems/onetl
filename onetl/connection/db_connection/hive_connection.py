@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from logging import getLogger
+from textwrap import dedent
 from typing import Optional, List, Tuple, Iterable, Union
 
 from pydantic import Field, validator
@@ -87,10 +88,8 @@ class Hive(DBConnection):
         self._log_parameters()
 
         if options.insert_into:
-            table_columns = self.spark.table(table).columns
-            columns_to_save = [column for column in table_columns if column in df.columns]
-
-            writer = df.select(*columns_to_save).write
+            columns = self._sort_df_columns_like_table(table, df.columns)
+            writer = df.select(*columns).write
 
             mode = WriteMode(options.mode)
             writer.insertInto(table, overwrite=mode == WriteMode.OVERWRITE)  # overwrite is boolean
@@ -166,7 +165,53 @@ class Hive(DBConnection):
             log.exception(f"|{self.__class__.__name__}| {msg}")
             raise RuntimeError(msg)
 
-    def _execute_sql(self, query):
+    def _execute_sql(self, query: str) -> "pyspark.sql.DataFrame":
         log.info(f"|{self.__class__.__name__}| SQL statement:")
         log.info(" " * LOG_INDENT + query)
         return self.spark.sql(query)
+
+    def _sort_df_columns_like_table(self, table: str, df_columns: List[str]) -> List[str]:
+        # Hive is inserting columns by the order, not by their name
+        # so if you're inserting dataframe with columns B, A, C to table with columns A, B, C, data will be damaged
+        # so it is important to sort columns in dataframe to match columns in the table.
+
+        table_columns = self.spark.table(table).columns
+
+        # But names could have different cases, this should not cause errors
+        table_columns_lower = list(map(lambda column: column.lower(), table_columns))
+
+        table_columns_set = set(table_columns_lower)
+        df_columns_lower = {column.lower() for column in df_columns}
+
+        missing_columns_df = df_columns_lower - table_columns_set
+        missing_columns_table = table_columns_set - df_columns_lower
+
+        if missing_columns_df or missing_columns_table:
+            missing_columns_df_message = ""
+            if missing_columns_df:
+                missing_columns_df_message = f"""
+                    These columns present only in dataframe:
+                    {', '.join(missing_columns_df)}
+                    """
+
+            missing_columns_table_message = ""
+            if missing_columns_table:
+                missing_columns_table_message = f"""
+                    These columns present only in table:
+                    {', '.join(missing_columns_table)}
+                    """
+
+            raise ValueError(
+                dedent(
+                    f"""
+                    Table "{table}" has columns:
+                    {', '.join(table_columns)}
+
+                    Dataframe has columns:
+                    {', '.join(df_columns)}
+                    {missing_columns_df_message}{missing_columns_table_message}
+                    """,
+                ),
+            )
+
+        return sorted(df_columns, key=lambda column: table_columns_lower.index(column.lower()))
