@@ -62,15 +62,29 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
     "hwm_column, step",
     [
         ("hwm_int", -10),
+        ("hwm_int", 0),
+        ("hwm_int", 0.5),
+        ("hwm_int", "abc"),
+        ("hwm_int", timedelta(hours=10)),
         ("hwm_date", timedelta(hours=-10)),
         ("hwm_date", timedelta(hours=0)),
         ("hwm_date", timedelta(hours=10)),
+        ("hwm_date", 10),
+        ("hwm_date", 0.5),
+        ("hwm_date", "abc"),
         ("hwm_datetime", timedelta(minutes=-60)),
         ("hwm_datetime", timedelta(minutes=0)),
+        ("hwm_datetime", 10),
+        ("hwm_datetime", 0.5),
+        ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_strategy_snapshot_batch_step_too_small(
-    spark, processing, prepare_schema_table, hwm_column, step  # noqa: C812
+def test_postgres_strategy_snapshot_batch_wrong_step(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -82,7 +96,7 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
     )
     reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    with pytest.raises(ValueError):
+    with pytest.raises((TypeError, ValueError)):
         with SnapshotBatchStrategy(step=step) as part:
             for _ in part:
                 reader.run()

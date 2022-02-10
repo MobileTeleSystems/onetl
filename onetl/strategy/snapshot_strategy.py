@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-import operator
-from typing import Callable
 
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
@@ -316,10 +314,3 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     def save_hwm(self) -> None:
         pass  # noqa: WPS420,WPS604
-
-    @property
-    def current_value_comparator(self) -> Callable:
-        if self.is_first_run:
-            return operator.ge
-
-        return super().current_value_comparator

@@ -102,7 +102,7 @@ def test_mysql_strategy_increment(
 
 
 # Fail if HWM is Numeric or Decimal with fractional part
-def test_mysql_strategy_increment_float(spark, processing, prepare_schema_table):
+def test_mysql_strategy_incremental_float(spark, processing, prepare_schema_table):
     hwm_column = "float_value"
 
     mysql = MySQL(

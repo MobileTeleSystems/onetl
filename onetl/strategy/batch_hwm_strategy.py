@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from dataclasses import dataclass, field
 import logging
+import operator
 from textwrap import dedent
 
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -119,3 +120,12 @@ class BatchHWMStrategy(HWMStrategy):
             self.hwm = self.hwm.with_value(self.next_value)
 
         super().update_hwm(value)
+
+    @property
+    def current_value_comparator(self) -> Callable:
+        if not self.hwm:
+            # if start == 0 and hwm is not set
+            # SQL should be `hwm_column >= 0` instead of `hwm_column > 0`
+            return operator.ge
+
+        return super().current_value_comparator

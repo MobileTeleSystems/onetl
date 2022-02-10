@@ -70,7 +70,7 @@ def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_co
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-def test_hive_strategy_increment_float(spark, processing, prepare_schema_table):
+def test_hive_strategy_incremental_float(spark, processing, prepare_schema_table):
     hwm_column = "float_value"
 
     hive = Hive(spark=spark)
