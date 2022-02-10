@@ -19,6 +19,7 @@ class TestIntegrationONETLClickhouse:
     def test_clickhouse_connection_check(self, spark, processing, caplog):
         clickhouse = Clickhouse(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -39,6 +40,7 @@ class TestIntegrationONETLClickhouse:
     def test_clickhouse_reader_snapshot(self, spark, processing, prepare_schema_table):
         clickhouse = Clickhouse(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -61,6 +63,7 @@ class TestIntegrationONETLClickhouse:
     def test_clickhouse_reader_snapshot_without_set_database(self, spark, processing, prepare_schema_table):
         clickhouse = Clickhouse(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             spark=spark,
@@ -84,6 +87,7 @@ class TestIntegrationONETLClickhouse:
 
         clickhouse = Clickhouse(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,

@@ -22,7 +22,7 @@ from onetl.strategy import IncrementalStrategy
         (10, 50),
     ],
 )
-def test_oracle_strategy_increment(
+def test_oracle_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
@@ -86,10 +86,15 @@ def test_oracle_strategy_increment(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-# Fail if HWM is Numeric or Decimal with fractional part
-def test_oracle_strategy_incremental_float(spark, processing, prepare_schema_table):
-    hwm_column = "FLOAT_VALUE"
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "FLOAT_VALUE",
+        "TEXT_STRING",
+    ],
+)
+def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_schema_table, hwm_column):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -109,7 +114,7 @@ def test_oracle_strategy_incremental_float(spark, processing, prepare_schema_tab
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalStrategy():
             reader.run()

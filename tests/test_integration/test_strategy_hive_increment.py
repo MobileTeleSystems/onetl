@@ -20,7 +20,7 @@ from onetl.strategy import IncrementalStrategy
         (10, 50),
     ],
 )
-def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
+def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
     hive = Hive(spark=spark)
     reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
@@ -70,9 +70,15 @@ def test_hive_strategy_increment(spark, processing, prepare_schema_table, hwm_co
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-def test_hive_strategy_incremental_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
     hive = Hive(spark=spark)
     reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
@@ -85,7 +91,7 @@ def test_hive_strategy_incremental_float(spark, processing, prepare_schema_table
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalStrategy():
             reader.run()

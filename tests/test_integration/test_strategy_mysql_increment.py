@@ -21,7 +21,7 @@ from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
         (10, 50),
     ],
 )
-def test_mysql_strategy_increment(
+def test_mysql_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
@@ -101,10 +101,15 @@ def test_mysql_strategy_increment(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-# Fail if HWM is Numeric or Decimal with fractional part
-def test_mysql_strategy_incremental_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_mysql_strategy_incremental_wrong_hwm_type(spark, processing, prepare_schema_table, hwm_column):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -124,7 +129,7 @@ def test_mysql_strategy_incremental_float(spark, processing, prepare_schema_tabl
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalStrategy():
             reader.run()
