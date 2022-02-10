@@ -17,12 +17,22 @@ from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy, Snapsh
 @pytest.mark.parametrize("strategy", [IncrementalBatchStrategy, SnapshotBatchStrategy])
 def test_strategy_batch_step_is_empty(step, strategy):
     with pytest.raises(ValueError):
+        strategy()
+
+    with pytest.raises(ValueError):
         strategy(step=step)
 
 
-@pytest.mark.parametrize("strategy", [IncrementalStrategy, IncrementalBatchStrategy, SnapshotBatchStrategy])
-def test_strategy_hwm_column_missing(strategy):
-    with strategy():
+@pytest.mark.parametrize(
+    "strategy, kwargs",
+    [
+        (IncrementalStrategy, {}),
+        (IncrementalBatchStrategy, {"step": 1}),
+        (SnapshotBatchStrategy, {"step": 1}),
+    ],
+)
+def test_strategy_hwm_column_not_set(strategy, kwargs):
+    with strategy(**kwargs):
         reader = DBReader(
             connection=Postgres(spark=Mock(), host="some_host", user="valid_user", database="default", password="pwd"),
             table=f"{secrets.token_hex()}.{secrets.token_hex()}",
