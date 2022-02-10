@@ -113,10 +113,10 @@ class Hive(DBConnection):
     def read_table(  # type: ignore
         self,
         table: str,
+        columns: Optional[List[str]],
+        hint: Optional[str],
+        where: Optional[str],
         options: Options,
-        columns: Optional[str] = "*",
-        hint: Optional[str] = None,
-        where: Optional[str] = None,
     ) -> "pyspark.sql.DataFrame":
         if options.dict(exclude_unset=True):
             raise ValueError(
@@ -141,11 +141,11 @@ class Hive(DBConnection):
     def get_schema(  # type: ignore[override]
         self,
         table: str,
-        columns: str,
+        columns: Optional[List[str]],
         options: Options,
     ) -> "pyspark.sql.types.StructType":
 
-        query_schema = f"SELECT {columns} FROM {table} WHERE 1 = 0"
+        query_schema = get_sql_query(table, columns=columns, where="1=0")
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
 

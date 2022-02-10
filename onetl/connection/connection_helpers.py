@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from logging import getLogger
 
 
@@ -16,24 +16,27 @@ def decorated_log(msg: str, char: str = "="):
 def get_sql_query(
     table: str,
     hint: Optional[str] = None,
-    columns: Optional[str] = "*",
+    columns: Optional[List[str]] = None,
     where: Optional[str] = None,
 ) -> str:
     """
     Creates a sql query for the dbtable parameter in the jdbc function.
     For instance: spark.read.jdbc(dbtable=sql)
     """
+
+    columns_str = ", ".join(columns) if columns else "*"
     hint = f"/*+ {hint} */" if hint else None
     where = f"WHERE {where}" if where else None
 
-    statements = [
-        "SELECT",
-        hint,
-        columns,
-        f"FROM {table}",
-        where,
-    ]
-
-    # The elements of the array with the value None are removed
-    state: list = [x for x in statements if x]
-    return " ".join(state)
+    return " ".join(
+        filter(
+            None,
+            [
+                "SELECT",
+                hint,
+                columns_str,
+                f"FROM {table}",
+                where,
+            ],
+        ),
+    )

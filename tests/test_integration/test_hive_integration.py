@@ -39,6 +39,18 @@ class TestIntegrationONETLHive:
             df=df,
         )
 
+    def test_hive_reader_raise_exception(self, spark, prepare_schema_table):
+        hive = Hive(spark=spark)
+
+        reader = DBReader(
+            connection=hive,
+            table=prepare_schema_table.full_name,
+            options=Hive.Options(abc="cde"),  # Hive does not accept any read options
+        )
+
+        with pytest.raises(ValueError):
+            reader.run()
+
     def test_hive_reader_non_existing_table(self, spark, get_schema_table):
         from pyspark.sql.utils import AnalysisException
 

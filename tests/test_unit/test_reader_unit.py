@@ -47,15 +47,57 @@ class TestDBReader:
                 options=options,  # wrong options input
             )
 
-    def test_reader_hive_raise_exception(self):
+    @pytest.mark.parametrize(
+        "columns",
+        [  # noqa: WPS317
+            [],
+            (),
+            {},
+            set(),
+            " \t\n",
+            [""],
+            [" \t\n"],
+            ["", "abc"],
+            [" \t\n", "abc"],
+            "",
+            " \t\n",
+            ",abc",
+            "abc,",
+            "cde,,abc",
+            "cde, ,abc",
+            "*,*,cde",
+            "abc,abc,cde",
+            ["*", "*", "cde"],
+            ["abc", "abc", "cde"],
+        ],
+    )
+    def test_reader_invalid_columns(self, columns):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="schema.table",
+                columns=columns,
+            )
+
+    @pytest.mark.parametrize(
+        "columns, real_columns",
+        [
+            ("*", ["*"]),
+            ("abc, cde", ["abc", "cde"]),
+            ("*, abc", ["*", "abc"]),
+            (["*"], ["*"]),
+            (["abc", "cde"], ["abc", "cde"]),
+            (["*", "abc"], ["*", "abc"]),
+        ],
+    )
+    def test_reader_valid_columns(self, columns, real_columns):
         reader = DBReader(
             connection=Hive(spark=self.spark),
-            table="default.table",
-            options=Hive.Options(abc="cde"),  # Hive does not accept any read options
+            table="schema.table",
+            columns=columns,
         )
 
-        with pytest.raises(ValueError):
-            reader.run()
+        assert reader.columns == real_columns
 
     def test_reader_jdbc_num_partitions_without_partition_column(self):
         with pytest.raises(ValueError):

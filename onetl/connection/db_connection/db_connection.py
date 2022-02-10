@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from logging import getLogger
 import operator
-from typing import Any, Callable, ClassVar, Optional, Dict, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 from abc import abstractmethod
 from enum import Enum
 
@@ -69,7 +69,7 @@ class DBConnection(ConnectionABC):
     def read_table(
         self,
         table: str,
-        columns: Optional[str],
+        columns: Optional[List[str]],
         hint: Optional[str],
         where: Optional[str],
         options: Options,
@@ -80,7 +80,7 @@ class DBConnection(ConnectionABC):
     def get_schema(
         self,
         table: str,
-        columns: str,
+        columns: Optional[List[str]],
         options: Options,
     ) -> pyspark.sql.types.StructType:
         """"""

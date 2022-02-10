@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from abc import abstractmethod
 from logging import getLogger
-from typing import Optional, Dict, ClassVar
+from typing import ClassVar, Dict, List, Optional, Set
 from dataclasses import dataclass, field
 
 from pydantic import Field, validator
@@ -88,11 +86,11 @@ class JDBCConnection(DBConnection):
     def read_table(  # type: ignore
         self,
         table: str,
-        columns: Optional[str],
+        columns: Optional[List[str]],
         hint: Optional[str],
         where: Optional[str],
         options: Options,
-    ) -> pyspark.sql.DataFrame:
+    ) -> "pyspark.sql.DataFrame":
         if options.session_init_statement:
             log.debug("Init SQL statement:")
             log.debug(" " * LOG_INDENT + options.session_init_statement)
@@ -123,7 +121,7 @@ class JDBCConnection(DBConnection):
 
     def save_df(  # type: ignore
         self,
-        df: pyspark.sql.DataFrame,
+        df: "pyspark.sql.DataFrame",
         table: str,
         options: Options,
     ) -> None:
@@ -145,11 +143,11 @@ class JDBCConnection(DBConnection):
     def get_schema(  # type: ignore
         self,
         table: str,
-        columns: str,
+        columns: Optional[List[str]],
         options: Options,
-    ) -> pyspark.sql.types.StructType:
+    ) -> "pyspark.sql.types.StructType":
 
-        query_schema = f"(SELECT {columns} FROM {table} WHERE 1 = 0) T"
+        query_schema = get_sql_query(table, columns=columns, where="1=0")
         temp_prop = options.copy(update={"fetchsize": "0"})
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
@@ -157,7 +155,7 @@ class JDBCConnection(DBConnection):
         df = self.execute_query_without_partitioning(
             parameters=temp_prop,
             spark=self.spark,
-            table=query_schema,
+            table=f"({query_schema}) T",
         )
 
         log.info(f"|{self.__class__.__name__}| Schema fetched")
@@ -266,10 +264,10 @@ class JDBCConnection(DBConnection):
 
     def execute_query_without_partitioning(
         self,
-        parameters: JDBCConnection.Options,
-        spark: pyspark.sql.SparkSession,
+        parameters: Options,
+        spark: "pyspark.sql.SparkSession",
         table: str,
-    ) -> pyspark.sql.DataFrame:
+    ) -> "pyspark.sql.DataFrame":
         jdbc_dict_params = self.jdbc_params_creator(parameters)
         jdbc_dict_params.pop("numPartitions", None)
         jdbc_dict_params.pop("lowerBound", None)
@@ -281,12 +279,12 @@ class JDBCConnection(DBConnection):
         return spark.read.jdbc(table=table, **jdbc_dict_params)
 
     @classmethod
-    def _log_fields(cls) -> set[str]:
+    def _log_fields(cls) -> Set[str]:
         fields = super()._log_fields()
         fields.add("jdbc_url")
         return fields
 
     @classmethod
-    def _log_exclude_fields(cls) -> set[str]:
+    def _log_exclude_fields(cls) -> Set[str]:
         fields = super()._log_exclude_fields()
         return fields.union({"password", "package"})
