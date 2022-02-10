@@ -114,7 +114,7 @@ class DBConnection(ConnectionABC):
         If the JDBC connect class was used and the Hive options class was used,
         then a ValueError exception will be thrown. If it is the other way around, an exception will also be thrown.
         """
-        if isinstance(options, Dict):
+        if isinstance(options, dict):
             options = self.Options.parse_obj(options)
 
         if not isinstance(options, self.Options):

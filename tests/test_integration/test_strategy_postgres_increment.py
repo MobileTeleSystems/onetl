@@ -327,6 +327,31 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     processing.assert_equal_df(df=second_df, other_frame=second_span)
 
 
+def test_postgres_reader_strategy_incremental_batch_outside_loop(  # noqa: WPS118
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column="hwm_int",
+    )
+
+    with pytest.raises(RuntimeError):
+        with IncrementalBatchStrategy(step=1):
+            reader.run()
+
+
 def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS118
     spark,
     processing,
