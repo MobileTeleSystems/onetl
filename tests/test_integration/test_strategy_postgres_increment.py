@@ -11,7 +11,7 @@ from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy
 from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 
 
-def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, prepare_schema_table):
+def test_postgres_reader_strategy_incremental_hwm_set_twice(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -39,6 +39,34 @@ def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, pre
 
         with pytest.raises(ValueError):
             reader3.run()
+
+
+# Fail if HWM is Float
+def test_postgres_strategy_incremental_float(spark, processing, prepare_schema_table):
+    hwm_column = "float_value"
+
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    data = processing.create_pandas_df()
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    with pytest.raises(ValueError):
+        # incremental run
+        with IncrementalStrategy():
+            reader.run()
 
 
 @pytest.mark.parametrize(
@@ -139,7 +167,7 @@ def test_postgres_strategy_increment(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-def test_postgres_strategy_increment_where(spark, processing, prepare_schema_table):
+def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -211,7 +239,13 @@ def test_postgres_strategy_increment_where(spark, processing, prepare_schema_tab
     ],
 )
 def test_postgres_strategy_incremental_offset(
-    spark, processing, prepare_schema_table, hwm_column, offset, span_gap, span_length  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    offset,
+    span_gap,
+    span_length,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -391,6 +425,80 @@ def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS1
             break
 
 
+# Fail if HWM is Float
+def test_postgres_strategy_incremental_batch_float(spark, processing, prepare_schema_table):
+    hwm_column = "float_value"
+    step = 1.0
+
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    data = processing.create_pandas_df()
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    with pytest.raises(ValueError):
+        # incremental run
+        with IncrementalBatchStrategy(step=step) as batches:
+            for _ in batches:
+                reader.run()
+
+
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", -10),
+        ("hwm_int", 0),
+        ("hwm_int", 0.5),
+        ("hwm_int", "abc"),
+        ("hwm_int", timedelta(hours=10)),
+        ("hwm_date", timedelta(hours=-10)),
+        ("hwm_date", timedelta(hours=0)),
+        ("hwm_date", timedelta(hours=10)),
+        ("hwm_date", 10),
+        ("hwm_date", 0.5),
+        ("hwm_date", "abc"),
+        ("hwm_datetime", timedelta(minutes=-60)),
+        ("hwm_datetime", timedelta(minutes=0)),
+        ("hwm_datetime", 10),
+        ("hwm_datetime", 0.5),
+        ("hwm_datetime", "abc"),
+    ],
+)
+def test_postgres_reader_strategy_incremental_batch_wrong_step(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    with pytest.raises((TypeError, ValueError)):
+        with IncrementalBatchStrategy(step=step) as part:
+            for _ in part:
+                reader.run()
+
+
 @pytest.mark.parametrize(
     "hwm_type_name, hwm_column, step, per_iter",
     [
@@ -462,10 +570,26 @@ def test_postgres_strategy_incremental_batch(
     assert store.get(hwm.qualified_name) is None
 
     # fill up hwm storage with last value, e.g. 100
+    first_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            reader.run()
+            next_df = reader.run()
 
+            if first_df is None:
+                first_df = next_df
+            else:
+                first_df = first_df.union(next_df)
+
+    # same behavior as SnapshotBatchStrategy, no rows skipped
+    if "int" in hwm_column:
+        # only changed data has been read
+        processing.assert_equal_df(df=first_df, other_frame=first_span)
+    else:
+        # date and datetime values have a random part
+        # so instead of checking the whole dataframe a partial comparison should be performed
+        processing.assert_subset_df(df=first_df, other_frame=first_span)
+
+    # hwm is set
     hwm = store.get(hwm.qualified_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
@@ -527,7 +651,13 @@ def test_postgres_strategy_incremental_batch(
 )
 @pytest.mark.parametrize("span_length", [100, 40, 5])
 def test_postgres_strategy_incremental_batch_stop(
-    spark, processing, prepare_schema_table, hwm_column, step, stop, span_length  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+    stop,
+    span_length,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -588,7 +718,15 @@ def test_postgres_strategy_incremental_batch_stop(
     ],
 )
 def test_postgres_strategy_incremental_batch_offset(
-    spark, processing, prepare_schema_table, hwm_column, offset, span_gap, span_length, step, full  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    offset,
+    span_gap,
+    span_length,
+    step,
+    full,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -653,32 +791,3 @@ def test_postgres_strategy_incremental_batch_offset(
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
         processing.assert_subset_df(df=total_df, other_frame=total_span)
-
-
-# Fail if HWM is Float
-def test_postgres_strategy_increment_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
-
-    data = processing.create_pandas_df()
-
-    # insert first span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=data,
-    )
-
-    with pytest.raises(ValueError):
-        # incremental run
-        with IncrementalStrategy():
-            reader.run()

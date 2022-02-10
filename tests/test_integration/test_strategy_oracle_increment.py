@@ -87,7 +87,7 @@ def test_oracle_strategy_increment(
 
 
 # Fail if HWM is Numeric or Decimal with fractional part
-def test_oracle_strategy_increment_float(spark, processing, prepare_schema_table):
+def test_oracle_strategy_incremental_float(spark, processing, prepare_schema_table):
     hwm_column = "FLOAT_VALUE"
 
     oracle = Oracle(
