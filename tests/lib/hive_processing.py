@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -19,7 +19,7 @@ class HiveProcessing(BaseProcessing):
         "float_value": "float",
     }
 
-    def __init__(self, spark):
+    def __init__(self, spark: "pyspark.sql.SparkSession"):
         self.connection = spark
 
     def create_schema(
@@ -31,10 +31,10 @@ class HiveProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: List,
+        fields: Dict[str, str],
         schema: str,
     ) -> None:
-        str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
         self.connection.sql(f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) STORED AS ORC")
 
     def drop_database(
@@ -54,7 +54,7 @@ class HiveProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: List,
+        values: list,
     ) -> None:
 
         df = self.connection.createDataFrame(values)

@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import Dict, List, Optional
 import os
 
 import pandas as pd
@@ -52,7 +52,7 @@ class OracleProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        sid = cx_Oracle.makedsn(self.host, 1521, sid=self.sid)
+        sid = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
         return f"oracle://{self.user}:{self.password}@{sid}"
 
     @property
@@ -68,13 +68,12 @@ class OracleProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: List,
+        fields: Dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
-            sql = f"CREATE TABLE {schema}.{table} ({str_fields})"
-            cursor.execute(sql)
+            str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+            cursor.execute(f"CREATE TABLE {schema}.{table} ({str_fields})")
             self.connection.commit()
 
     def drop_database(

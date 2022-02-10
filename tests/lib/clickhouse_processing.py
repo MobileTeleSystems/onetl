@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import Dict, List, Optional
 import os
 from random import randint
 from datetime import date, datetime, timedelta
@@ -88,17 +88,20 @@ class ClickhouseProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: List,
+        fields: Dict[str, str],
         schema: str,
     ) -> None:
-        str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
-        sql = f"""
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        first_field = list(fields.keys())[0]
+
+        self.connection.execute(
+            f"""
             create table if not exists {schema}.{table} ({str_fields})
             engine = MergeTree()
-            order by {fields[0]['column_name']}
-            primary key {fields[0]['column_name']}
-        """
-        self.connection.execute(sql)
+            order by {first_field}
+            primary key {first_field}
+            """,
+        )
 
     def drop_database(
         self,

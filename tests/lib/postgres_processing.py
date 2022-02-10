@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import List, Optional
+from typing import Dict, List, Optional
 import os
 
 from psycopg2 import connect as pg_connect
@@ -65,13 +65,12 @@ class PostgressProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: List,
+        fields: Dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{field['column_name']} {field['type']}" for field in fields])
-            sql = f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})"
-            cursor.execute(sql)
+            str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+            cursor.execute(f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})")
             self.connection.commit()
 
     def drop_database(

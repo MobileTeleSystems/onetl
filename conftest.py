@@ -182,20 +182,14 @@ def get_schema_table(request, processing):
 
 
 @pytest.fixture
-def prepare_schema_table(processing, request, get_schema_table, spark):
+def prepare_schema_table(processing, request, get_schema_table):
     entities = ["reader", "writer", "strategy", "hwm"]
 
     test_function = request.function
 
     test_entity = test_function.__name__.split("_")[2]
 
-    columns_and_types = [
-        {
-            "column_name": column_name,
-            "type": processing.get_column_type(column_name),
-        }
-        for column_name in processing.column_names
-    ]
+    fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
 
     preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
 
@@ -204,7 +198,7 @@ def prepare_schema_table(processing, request, get_schema_table, spark):
 
         try:
             processing.create_schema(schema=schema)
-            processing.create_table(schema=schema, table=table, fields=columns_and_types)
+            processing.create_table(schema=schema, table=table, fields=fields)
 
             if preloading_data:
                 processing.insert_data(

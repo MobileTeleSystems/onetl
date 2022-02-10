@@ -108,6 +108,46 @@ def test_postgres_strategy_incremental_wrong_hwm_type(spark, processing, prepare
 
 
 @pytest.mark.parametrize(
+    "hwm_column, new_type",
+    [
+        ("hwm_int", "date"),
+        ("hwm_date", "integer"),
+        ("hwm_datetime", "integer"),
+    ],
+)
+def test_postgres_reader_strategy_incremental_different_hwm_type_in_store(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    new_type,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    with IncrementalStrategy():
+        reader.run()
+
+    processing.drop_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table)
+
+    new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
+    new_fields[hwm_column] = new_type
+    processing.create_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table, fields=new_fields)
+
+    with pytest.raises(TypeError):
+        with IncrementalStrategy():
+            reader.run()
+
+
+@pytest.mark.parametrize(
     "hwm_type_name, hwm_column",
     [
         ("integer", "hwm_int"),
@@ -399,7 +439,7 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     processing.assert_equal_df(df=second_df, other_frame=second_span)
 
 
-def test_postgres_reader_strategy_incremental_batch_outside_loop(  # noqa: WPS118
+def test_postgres_reader_strategy_incremental_batch_outside_loop(
     spark,
     processing,
     prepare_schema_table,
@@ -431,7 +471,7 @@ def test_postgres_reader_strategy_incremental_batch_outside_loop(  # noqa: WPS11
         "HWM_INT",  # wrong case
     ],
 )
-def test_postgres_strategy_incremental_batch_unknown_hwm_column(  # noqa: WPS118
+def test_postgres_strategy_incremental_batch_unknown_hwm_column(
     spark,
     processing,
     prepare_schema_table,
@@ -458,7 +498,7 @@ def test_postgres_strategy_incremental_batch_unknown_hwm_column(  # noqa: WPS118
                 reader.run()
 
 
-def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS118
+def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(
     spark,
     processing,
     prepare_schema_table,
@@ -532,6 +572,49 @@ def test_postgres_strategy_incremental_batch_wrong_hwm_type(spark, processing, p
 
 
 @pytest.mark.parametrize(
+    "hwm_column, new_type, step",
+    [
+        ("hwm_int", "date", 200),
+        ("hwm_date", "integer", timedelta(days=20)),
+        ("hwm_datetime", "integer", timedelta(weeks=2)),
+    ],
+)
+def test_postgres_reader_strategy_incremental_batch_different_hwm_type_in_store(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    new_type,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    with IncrementalBatchStrategy(step=step) as batches:
+        for _ in batches:
+            reader.run()
+
+    processing.drop_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table)
+
+    new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
+    new_fields[hwm_column] = new_type
+    processing.create_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table, fields=new_fields)
+
+    with pytest.raises(TypeError):
+        with IncrementalBatchStrategy(step=step) as batches:
+            for _ in batches:
+                reader.run()
+
+
+@pytest.mark.parametrize(
     "hwm_column, step",
     [
         ("hwm_int", -10),
@@ -593,6 +676,7 @@ def test_postgres_reader_strategy_incremental_batch_wrong_step(
         (20, 5),  # span_length < step < gap
         (5, 2),  # gap < span_length < step
         (2, 5),  # span_length < gap < step
+        (1, 1),  # minimal span possible
     ],
 )
 def test_postgres_strategy_incremental_batch(
@@ -721,11 +805,12 @@ def test_postgres_strategy_incremental_batch(
         ("hwm_int", 10, 50),  # step <  stop
         ("hwm_int", 50, 10),  # step >  stop
         ("hwm_int", 50, 50),  # step == stop
+        ("hwm_int", 1, 1),  # step == stop
         ("hwm_date", timedelta(days=10), date.today() + timedelta(days=40)),
         ("hwm_datetime", timedelta(hours=100), datetime.now() + timedelta(days=10)),
     ],
 )
-@pytest.mark.parametrize("span_length", [100, 40, 5])
+@pytest.mark.parametrize("span_length", [100, 40, 5, 1])
 def test_postgres_strategy_incremental_batch_stop(
     spark,
     processing,

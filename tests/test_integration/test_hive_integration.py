@@ -505,8 +505,8 @@ class TestIntegrationONETLHive:
         )
 
     @pytest.mark.parametrize("mode", ["append", "overwrite"])
-    @pytest.mark.parametrize("partitioned", [True, False])  # noqa: WPS118
-    @pytest.mark.parametrize(  # noqa: WPS118
+    @pytest.mark.parametrize("partitioned", [True, False])
+    @pytest.mark.parametrize(
         "spark",
         [
             {"spark.sql.sources.partitionOverwriteMode": "dynamic"},
