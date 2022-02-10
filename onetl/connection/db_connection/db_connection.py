@@ -118,8 +118,8 @@ class DBConnection(ConnectionABC):
             options = self.Options.parse_obj(options)
 
         if not isinstance(options, self.Options):
-            raise ValueError(
-                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. " f"Inappropriate types.",
+            raise TypeError(
+                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}",
             )
 
         return options

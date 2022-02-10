@@ -22,24 +22,58 @@ class TestDBReader:
                 table="schema.table.abc",  # wrong input
             )
 
-    def test_reader_jdbc_properties_raise_exception(self):
-        """
-        if the type of the connection parameter is equal to Hive,
-        it will fall if the jdbc_properties parameter is used
-        """
+    @pytest.mark.parametrize(
+        "options",
+        [  # noqa: WPS317
+            {"some", "option"},
+            "Some_options",
+            123,
+            ["Option_1", "Option_2"],
+            ("Option_1", "Option_2"),
+        ],
+        ids=[
+            "Wrong type set of <options>.",
+            "Wrong type str of <options>.",
+            "Wrong type int of <options>.",
+            "Wrong type list of <options>.",
+            "Wrong type tuple of <options>.",
+        ],
+    )
+    def test_reader_with_wrong_options(self, options):
+        with pytest.raises(TypeError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="schema.table",
+                options=options,  # wrong options input
+            )
 
+    def test_reader_hive_raise_exception(self):
         reader = DBReader(
             connection=Hive(spark=self.spark),
             table="default.table",
-            options=Hive.Options(user="some_user"),  # wrong parameter
+            options=Hive.Options(abc="cde"),  # Hive does not accept any read options
         )
 
         with pytest.raises(ValueError):
             reader.run()
 
+    def test_reader_jdbc_num_partitions_without_partition_column(self):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Postgres(
+                    spark=self.spark,
+                    database="db",
+                    host="some_host",
+                    user="valid_user",
+                    password="pwd",
+                ),
+                table="default.table",
+                options={"numPartitions": "200"},
+            )
+
     # TODO: the functionality of the connection class in the reader class is tested
-    def test_db_reader_set_lower_upper_bound(self):
-        reader: DBReader = DBReader(
+    def test_reader_set_lower_upper_bound(self):
+        reader = DBReader(
             Oracle(spark=self.spark, host="some_host", user="valid_user", sid="sid", password="pwd"),
             table="default.test",
             options=Oracle.Options(lowerBound=10, upperBound=1000),
@@ -102,9 +136,8 @@ class TestDBReader:
         ],
         ids=["Options as dictionary.", "Options with camel case.", "Options with snake case."],
     )
-    def test_db_reader_generate_jdbc_options(self, options):
-
-        reader: DBReader = DBReader(
+    def test_reader_generate_jdbc_options(self, options):
+        reader = DBReader(
             connection=Postgres(host="local", user="admin", database="default", password="1234", spark=self.spark),
             table="default.test",
             # some of the parameters below are not used together.

@@ -54,33 +54,6 @@ class TestIntegrationONETLHive:
 
             assert "does not exists" in str(excinfo.value)
 
-    @pytest.mark.parametrize(
-        "options",
-        [  # noqa: WPS317
-            {"some", "option"},
-            "Some_options",
-            123,
-            ["Option_1", "Option_2"],
-            ("Option_1", "Option_2"),
-        ],
-        ids=[
-            "Wrong type set of <options>.",
-            "Wrong type str of <options>.",
-            "Wrong type int of <options>.",
-            "Wrong type list of <options>.",
-            "Wrong type tuple of <options>.",
-        ],
-    )
-    def test_hive_reader_with_wrong_options(self, spark, options, get_schema_table):
-        hive = Hive(spark=spark)
-
-        with pytest.raises(ValueError):
-            DBReader(
-                connection=hive,
-                table=get_schema_table.full_name,
-                options=options,  # wrong <options>
-            )
-
     def test_hive_writer(self, spark, processing, get_schema_table):
         df = processing.create_spark_df(spark)
 

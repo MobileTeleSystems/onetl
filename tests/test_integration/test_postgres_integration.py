@@ -198,17 +198,6 @@ class TestIntegrationONETLPostgres:
                 df=df2,
             )
 
-    def test_postgres_num_partition_without_partition_column(self, spark):
-
-        reader = DBReader(
-            connection=Postgres(spark=spark, database="db", host="some_host", user="valid_user", password="pwd"),
-            table="default.table",
-            options={"numPartitions": "200"},
-        )
-
-        with pytest.raises(ValueError):
-            reader.run()
-
     @pytest.mark.parametrize(
         "jdbc_options",
         [
