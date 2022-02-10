@@ -15,6 +15,7 @@ from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -30,6 +31,7 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
 def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -72,6 +74,7 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -88,6 +91,7 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
 def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -153,6 +157,7 @@ def test_postgres_strategy_snapshot_batch(
 
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -238,6 +243,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
 
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -309,6 +315,7 @@ def test_postgres_strategy_snapshot_batch_stop(
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -354,6 +361,7 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
     hwm_column = "hwm_int"
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,

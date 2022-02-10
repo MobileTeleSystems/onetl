@@ -14,6 +14,7 @@ from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 def test_postgres_reader_strategy_increment_hwm_set_twice(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -68,6 +69,7 @@ def test_postgres_strategy_increment(
 
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -140,6 +142,7 @@ def test_postgres_strategy_increment(
 def test_postgres_strategy_increment_where(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -212,6 +215,7 @@ def test_postgres_strategy_incremental_offset(
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -261,6 +265,7 @@ def test_postgres_strategy_incremental_offset(
 def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):  # noqa: C812
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -329,6 +334,7 @@ def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS1
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -395,6 +401,7 @@ def test_postgres_strategy_incremental_batch(
 
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -448,7 +455,7 @@ def test_postgres_strategy_incremental_batch(
 
     # incremental run with 10 rows per iter
     # but only hwm_column > 100 and hwm_column <= 250
-    total_df = None
+    second_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
             hwm = store.get(hwm.qualified_name)
@@ -459,10 +466,10 @@ def test_postgres_strategy_incremental_batch(
             next_df = reader.run()
             assert next_df.count() <= per_iter
 
-            if total_df is None:
-                total_df = next_df
+            if second_df is None:
+                second_df = next_df
             else:
-                total_df = total_df.union(next_df)
+                second_df = second_df.union(next_df)
 
             hwm = store.get(hwm.qualified_name)
             assert hwm is not None
@@ -476,11 +483,11 @@ def test_postgres_strategy_incremental_batch(
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=total_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span)
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=total_df, other_frame=second_span)
+        processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
 @pytest.mark.parametrize(
@@ -499,6 +506,7 @@ def test_postgres_strategy_incremental_batch_stop(
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -559,6 +567,7 @@ def test_postgres_strategy_incremental_batch_offset(
 ):
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -587,8 +596,9 @@ def test_postgres_strategy_incremental_batch_offset(
     )
 
     # set hwm value to second offset max value, e.g. 90
-    with IncrementalStrategy():
-        reader.run()
+    with IncrementalBatchStrategy(step=step) as batches:
+        for _ in batches:
+            reader.run()
 
     # first span was late
     processing.insert_data(
@@ -626,6 +636,7 @@ def test_postgres_strategy_increment_float(spark, processing, prepare_schema_tab
 
     postgres = Postgres(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,

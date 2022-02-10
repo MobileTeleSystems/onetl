@@ -19,6 +19,7 @@ class TestIntegrationONETLOracle:
     def test_oracle_connection_check(self, spark, processing, caplog):
         oracle = Oracle(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -39,6 +40,7 @@ class TestIntegrationONETLOracle:
     def test_oracle_reader_snapshot(self, spark, processing, prepare_schema_table):
         oracle = Oracle(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -63,6 +65,7 @@ class TestIntegrationONETLOracle:
 
         oracle = Oracle(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,

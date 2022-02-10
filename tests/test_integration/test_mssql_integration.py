@@ -19,6 +19,7 @@ class TestIntegrationONETLMSSQL:
     def test_mssql_connection_check(self, spark, processing, caplog):
         mssql = MSSQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -38,6 +39,7 @@ class TestIntegrationONETLMSSQL:
     def test_mssql_reader_snapshot(self, spark, processing, prepare_schema_table):
         mysql = MSSQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,
@@ -62,6 +64,7 @@ class TestIntegrationONETLMSSQL:
 
         mysql = MSSQL(
             host=processing.host,
+            port=processing.port,
             user=processing.user,
             password=processing.password,
             database=processing.database,

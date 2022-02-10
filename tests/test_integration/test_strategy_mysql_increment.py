@@ -34,6 +34,7 @@ def test_mysql_strategy_increment(
 
     mysql = MySQL(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
@@ -106,6 +107,7 @@ def test_mysql_strategy_increment_float(spark, processing, prepare_schema_table)
 
     mysql = MySQL(
         host=processing.host,
+        port=processing.port,
         user=processing.user,
         password=processing.password,
         spark=spark,
