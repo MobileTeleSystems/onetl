@@ -58,10 +58,10 @@ class HWMStrategyHelper(StrategyHelper):
         self.strategy = StrategyManager.get_current()  # noqa: WPS601
 
         self.check_hwm_strategy()
-        self.check_hwm_types_match()
+        self.check_hwm_match_reader()
 
         self.init_hwm()
-        self.fetch_hwm()
+        self.detect_hwm_column_boundaries()
 
     def check_hwm_strategy(self) -> None:
         if not isinstance(self.strategy, HWMStrategy):
@@ -70,17 +70,17 @@ class HWMStrategyHelper(StrategyHelper):
                 f"with `hwm_column` passed into {self.reader.__class__.__name__}",
             )
 
-    def raise_hwm_type(self, hwm_type: type[HWM]) -> NoReturn:
+    def raise_wrong_hwm_type(self, hwm_type: type[HWM]) -> NoReturn:
         raise ValueError(
             f"{hwm_type.__name__} cannot be used with {self.reader.__class__.__name__}",
         )
 
-    def check_hwm_types_match(self) -> None:
+    def check_hwm_match_reader(self) -> None:
         if self.strategy.hwm is None:
             return
 
         if not isinstance(self.strategy.hwm, ColumnHWM):
-            self.raise_hwm_type(type(self.strategy.hwm))
+            self.raise_wrong_hwm_type(type(self.strategy.hwm))
 
         if self.strategy.hwm.source != self.reader.table or self.strategy.hwm.column != self.hwm_column:
             raise ValueError(
@@ -90,57 +90,69 @@ class HWMStrategyHelper(StrategyHelper):
                 f"`column={self.strategy.hwm.column}` and `source={self.strategy.hwm.source}` ",
             )
 
-    def get_hwm_type(self) -> type[ColumnHWM]:
+    def detect_hwm_column_type(self) -> type[HWM]:
         schema = self.reader.get_schema()
         hwm_column_type = schema[self.hwm_column.name].dataType.typeName()
-        result_type = HWMClassRegistry.get(hwm_column_type)
-
-        if not issubclass(result_type, ColumnHWM):
-            self.raise_hwm_type(result_type)
-
-        return result_type
+        return HWMClassRegistry.get(hwm_column_type)
 
     def init_hwm(self) -> None:
-        if self.strategy.hwm is not None:
-            return
+        if self.strategy.hwm is None:
+            # Small hack used only to generate qualified_name
+            self.strategy.hwm = ColumnHWM(source=self.reader.table, column=self.hwm_column)
 
-        hwm_type = self.get_hwm_type()
-        self.strategy.hwm = hwm_type(source=self.reader.table, column=self.hwm_column)
+        if not self.strategy.hwm:
+            self.strategy.fetch_hwm()
 
-    def fetch_hwm(self):
-        if self.strategy.hwm:
-            return
+        hwm_type: type[HWM] | None = type(self.strategy.hwm)
+        if hwm_type == ColumnHWM:
+            # Remove HWM type set by hack above
+            hwm_type = None
 
-        if isinstance(self.strategy, BatchHWMStrategy) and not (
-            self.strategy.has_lower_limit and self.strategy.has_upper_limit
-        ):
-            df = self.reader.connection.read_table(
-                table=str(self.reader.table),
-                columns=self.reader.columns,
-                hint=self.reader.hint,
-                where=self.where,
-                options=self.reader.options,
+        detected_hwm_type = self.detect_hwm_column_type()
+
+        if not hwm_type:
+            hwm_type = detected_hwm_type
+
+        if hwm_type != detected_hwm_type:
+            raise TypeError(
+                f'Type of "{self.hwm_column}" column is matching '
+                f'"{detected_hwm_type.__name__}" which is different from "{hwm_type.__name__}"',
             )
 
-            min_hwm_value, max_hwm_value = self.get_hwm_boundaries(df)
-            if min_hwm_value is None or max_hwm_value is None:
-                raise ValueError(
-                    "Unable to determine max and min values. ",
-                    f"Table {self.reader.table} column {self.hwm_column} cannot be used as `hwm_column`",
-                )
+        if hwm_type == ColumnHWM or not issubclass(hwm_type, ColumnHWM):
+            self.raise_wrong_hwm_type(hwm_type)
 
-            if not self.strategy.has_lower_limit:
-                self.strategy.start = min_hwm_value
+        self.strategy.hwm = hwm_type(source=self.reader.table, column=self.hwm_column, value=self.strategy.hwm.value)
 
-            if not self.strategy.has_upper_limit:
-                self.strategy.stop = max_hwm_value
+    def detect_hwm_column_boundaries(self):
+        if not isinstance(self.strategy, BatchHWMStrategy):
+            return
 
-        self.strategy.fetch_hwm()
+        if self.strategy.has_upper_limit and (self.strategy.has_lower_limit or self.strategy.hwm):
+            # values already set by previous reader runs within the strategy
+            return
 
-    def save(self, df: DataFrame) -> DataFrame:
-        _, max_hwm_value = self.get_hwm_boundaries(df)
-        self.strategy.update_hwm(max_hwm_value)
-        return df
+        df = self.reader.connection.read_table(
+            table=str(self.reader.table),
+            columns=self.reader.columns,
+            hint=self.reader.hint,
+            where=self.reader.where,
+            options=self.reader.options,
+        )
+
+        min_hwm_value, max_hwm_value = self.get_hwm_boundaries(df)
+
+        if min_hwm_value is None or max_hwm_value is None:
+            raise ValueError(
+                "Unable to determine max and min values. ",
+                f"Table {self.reader.table} column {self.hwm_column} cannot be used as `hwm_column`",
+            )
+
+        if not self.strategy.has_lower_limit and not self.strategy.hwm:
+            self.strategy.start = min_hwm_value
+
+        if not self.strategy.has_upper_limit:
+            self.strategy.stop = max_hwm_value
 
     def get_hwm_boundaries(self, df: DataFrame) -> tuple[Any, Any]:
         from pyspark.sql import functions as F  # noqa: N812
@@ -152,23 +164,27 @@ class HWMStrategyHelper(StrategyHelper):
 
         return result["min_value"], result["max_value"]
 
+    def save(self, df: DataFrame) -> DataFrame:
+        _, max_hwm_value = self.get_hwm_boundaries(df)
+        self.strategy.update_hwm(max_hwm_value)
+        return df
+
     @property
     def where(self) -> str:
         result = [self.reader.where]
 
+        # `self.strategy.hwm is not None` is need only to handle mypy warnings
         if self.strategy.current_value is not None and self.strategy.hwm is not None:
-            comparator = self.strategy.current_value_comparator
             compare = self.reader.connection.get_compare_statement(
-                comparator,
+                self.strategy.current_value_comparator,
                 self.strategy.hwm.name,
                 self.strategy.current_value,
             )
             result.append(compare)
 
         if self.strategy.next_value is not None and self.strategy.hwm is not None:
-            comparator = self.strategy.next_value_comparator
             compare = self.reader.connection.get_compare_statement(
-                comparator,
+                self.strategy.next_value_comparator,
                 self.strategy.hwm.name,
                 self.strategy.next_value,
             )

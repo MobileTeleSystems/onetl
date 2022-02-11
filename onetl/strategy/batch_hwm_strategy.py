@@ -87,15 +87,19 @@ class BatchHWMStrategy(HWMStrategy):
         if value is None and not self.is_first_run:
             raise ValueError(f"`{name}` argument of {self.__class__.__name__} cannot be empty!")
 
-    def check_cannot_decrease(self, value: Any) -> None:
-        if (
-            self.current_value is not None
-            and value is not None
-            and self.current_value_comparator(self.current_value, value)
-        ):
+    def check_hwm_increased(self, next_value: Any) -> None:
+        if self.current_value is None:
+            return
+
+        if self.stop is not None and self.current_value == self.stop:
+            # if rows all have the same hwm_column value, this is not an error, read them all
+            return
+
+        if next_value is not None and self.current_value >= next_value:
+            # negative or zero step - exception
+            # date HWM with step value less than one day - exception
             raise ValueError(
-                f"HWM {self.hwm} value is started to decrease, "
-                f"please check options passed to {self.__class__.__name__}!",
+                f"HWM value is not increasing, please check options passed to {self.__class__.__name__}!",
             )
 
     @property
@@ -110,7 +114,7 @@ class BatchHWMStrategy(HWMStrategy):
         if self.has_upper_limit:
             result = min(result, self.stop)
 
-        self.check_cannot_decrease(result)
+        self.check_hwm_increased(result)
 
         return result
 

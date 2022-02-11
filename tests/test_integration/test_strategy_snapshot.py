@@ -179,6 +179,7 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
         (20, 5),  # span_length < step < gap
         (5, 2),  # gap < span_length < step
         (2, 5),  # span_length < gap < step
+        (1, 1),  # minimal span possible
     ],
 )
 def test_postgres_strategy_snapshot_batch(

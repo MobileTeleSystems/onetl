@@ -12,8 +12,7 @@ logger = getLogger(__name__)
 
 class BaseProcessing:
     _df_max_length: int = 100
-
-    _column_types_and_names_matching: Dict = {}
+    _column_types_and_names_matching: Dict[str, str] = {}
 
     column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime", "float_value"]
 
@@ -28,7 +27,7 @@ class BaseProcessing:
     def create_table(
         self,
         table: str,
-        fields: List,
+        fields: Dict[str, str],
         schema: str,
     ) -> None:
         """"""
@@ -53,7 +52,7 @@ class BaseProcessing:
         self,
         schema: str,
         table: str,
-        values: List,
+        values: list,
     ) -> None:
         """"""
 
