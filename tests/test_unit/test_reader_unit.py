@@ -193,7 +193,7 @@ class TestDBReader:
         )
 
         jdbc_params = reader.connection.jdbc_params_creator(
-            jdbc_options=reader.options,
+            options=reader.options,
         )
 
         assert jdbc_params == {

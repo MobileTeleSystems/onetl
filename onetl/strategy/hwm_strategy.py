@@ -6,7 +6,7 @@ import operator
 from typing import Any, Callable
 
 from etl_entities import HWM
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import LOG_INDENT
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 
@@ -62,7 +62,7 @@ class HWMStrategy(BaseStrategy):
                 )
         else:
             # TODO:(@mivasil6) спросить у Макса попадаем ли мы в это условие, и почему это не эксепшен
-            log.debug(f"{self.__class__.__name__}: HWM will not be loaded, skipping")
+            log.debug(f"{log_prefix}: HWM will not be loaded, skipping")
 
     def exit_hook(self, failed: bool = False) -> None:
         if not failed:

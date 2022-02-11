@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
 from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
-from onetl.connection.connection_helpers import get_sql_query
 from onetl.writer.db_writer import DBWriter
 
 
@@ -51,6 +50,69 @@ class TestDBConnection:
                 table="onetl.some_table",
                 options=Oracle.Options(mode="wrong_mode"),  # wrong mode
             )
+
+    def test_get_sql_without_extra_params(self):
+        conn = Postgres(host="some_host", user="user", password="passwd", database="abc", spark=self.spark)
+
+        table_sql = conn.get_sql_query("default.test", columns=["*"])
+
+        assert table_sql == "SELECT * FROM default.test"
+
+    def test_get_sql_query_with_extra_params(self):
+        conn = Postgres(host="some_host", user="user", password="passwd", database="abc", spark=self.spark)
+
+        table_sql = conn.get_sql_query(
+            table="default.test",
+            hint="NOWAIT",
+            columns=["d_id", "d_name", "d_age"],
+            where="d_id > 100",
+        )
+        expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"
+
+        assert table_sql == expected_sql
+
+    @pytest.mark.parametrize("hint, real_hint", [(None, ""), ("TEMP", " /*+ TEMP */")])
+    @pytest.mark.parametrize("columns, real_columns", [(None, "*"), (["a", "b", "c"], "a, b, c")])
+    @pytest.mark.parametrize("where, real_where", [(None, ""), ("a = b", " WHERE a = b")])
+    @pytest.mark.parametrize("cte_hint, real_cte_hint", [(None, ""), ("TEMP", " /*+ TEMP */")])
+    @pytest.mark.parametrize(
+        "cte_columns, real_cte_columns",
+        [(None, "*"), (["d_id", "d_name", "d_age"], "d_id, d_name, d_age")],
+    )
+    @pytest.mark.parametrize("cte_where, real_cte_where", [(None, ""), ("d_id > 100", " WHERE d_id > 100")])
+    def test_get_sql_query_cte(
+        self,
+        hint,
+        real_hint,
+        columns,
+        real_columns,
+        where,
+        real_where,
+        cte_hint,
+        real_cte_hint,
+        cte_columns,
+        real_cte_columns,
+        cte_where,
+        real_cte_where,
+    ):
+        conn = Postgres(host="some_host", user="user", password="passwd", database="abc", spark=self.spark)
+
+        table_sql = conn.get_sql_query_cte(
+            table="default.test",
+            hint=hint,
+            columns=columns,
+            where=where,
+            cte_hint=cte_hint,
+            cte_columns=cte_columns,
+            cte_where=cte_where,
+        )
+
+        expected_sql = (
+            f"WITH cte AS (SELECT{real_cte_hint} {real_cte_columns} FROM default.test{real_cte_where}) "
+            f"SELECT{real_hint} {real_columns} FROM cte{real_where}"
+        )
+
+        assert table_sql == expected_sql
 
 
 class TestHiveOptions:
@@ -211,6 +273,55 @@ class TestJDBCConnection:
         assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
         assert MSSQL.port == 1433
 
+    @pytest.mark.parametrize("hint, real_hint", [(None, ""), ("TEMP", " /*+ TEMP */")])
+    @pytest.mark.parametrize("columns, real_columns", [(None, "*"), (["a", "b", "c"], "a, b, c")])
+    @pytest.mark.parametrize("where, real_where", [(None, ""), ("a = b", " WHERE a = b")])
+    @pytest.mark.parametrize("cte_hint, real_cte_hint", [(None, ""), ("TEMP", " /*+ TEMP */")])
+    @pytest.mark.parametrize(
+        "cte_columns, real_cte_columns",
+        [(None, "*"), (["d_id", "d_name", "d_age"], "d_id, d_name, d_age")],
+    )
+    @pytest.mark.parametrize("cte_where, real_cte_where", [(None, ""), ("d_id > 100", " WHERE d_id > 100")])
+    def test_mssql_get_sql_query_cte(
+        self,
+        hint,
+        real_hint,
+        columns,
+        real_columns,
+        where,
+        real_where,
+        cte_hint,
+        real_cte_hint,
+        cte_columns,
+        real_cte_columns,
+        cte_where,
+        real_cte_where,
+    ):
+        conn = MSSQL(
+            host="some_host",
+            user="user",
+            password="passwd",
+            spark=self.spark,
+            database="default",
+        )
+
+        table_sql = conn.get_sql_query_cte(
+            table="default.test",
+            hint=hint,
+            columns=columns,
+            where=where,
+            cte_hint=cte_hint,
+            cte_columns=cte_columns,
+            cte_where=cte_where,
+        )
+
+        expected_sql = (
+            f"SELECT{real_hint} {real_columns} FROM (SELECT{real_cte_hint} {real_cte_columns} "
+            f"FROM default.test{real_cte_where}) as cte{real_where}"
+        )
+
+        assert table_sql == expected_sql
+
     # CLICKHOUSE
 
     def test_clickhouse_driver_and_uri(self):
@@ -231,26 +342,6 @@ class TestJDBCConnection:
         )
 
         assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123?socket_timeout=120000&query=SELECT%201%3B"
-
-
-class TestConnectionHelpers:
-    def test_get_sql_without_extra_params(self):
-
-        table_sql = get_sql_query(table="default.test")
-
-        assert table_sql == "SELECT * FROM default.test"
-
-    def test_dbreader_table_sql_with_extra_params(self):
-
-        table_sql = get_sql_query(
-            table="default.test",
-            hint="NOWAIT",
-            columns=["d_id", "d_name", "d_age"],
-            where="d_id > 100",
-        )
-        expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"
-
-        assert table_sql == expected_sql
 
 
 class TestFileConnections:

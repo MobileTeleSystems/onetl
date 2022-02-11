@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 from etl_entities import Column, ColumnHWM, HWM
 from onetl.reader.db_reader import DBReader
@@ -124,7 +124,7 @@ class HWMStrategyHelper(StrategyHelper):
 
         self.strategy.hwm = hwm_type(source=self.reader.table, column=self.hwm_column, value=self.strategy.hwm.value)
 
-    def detect_hwm_column_boundaries(self):
+    def detect_hwm_column_boundaries(self) -> None:
         if not isinstance(self.strategy, BatchHWMStrategy):
             return
 
@@ -132,16 +132,7 @@ class HWMStrategyHelper(StrategyHelper):
             # values already set by previous reader runs within the strategy
             return
 
-        df = self.reader.connection.read_table(
-            table=str(self.reader.table),
-            columns=self.reader.columns,
-            hint=self.reader.hint,
-            where=self.reader.where,
-            options=self.reader.options,
-        )
-
-        min_hwm_value, max_hwm_value = self.get_hwm_boundaries(df)
-
+        min_hwm_value, max_hwm_value = self.reader.get_min_max_bounds(self.hwm_column.name)
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
@@ -154,18 +145,14 @@ class HWMStrategyHelper(StrategyHelper):
         if not self.strategy.has_upper_limit:
             self.strategy.stop = max_hwm_value
 
-    def get_hwm_boundaries(self, df: DataFrame) -> tuple[Any, Any]:
+    def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812
 
-        result = df.select(
-            F.max(self.hwm_column.name).alias("max_value"),
-            F.min(self.hwm_column.name).alias("min_value"),
-        ).collect()[0]
+        max_df = df.select(F.max(self.hwm_column.name).alias("max_value"))
 
-        return result["min_value"], result["max_value"]
+        row = max_df.collect()[0]
+        max_hwm_value = row["max_value"]
 
-    def save(self, df: DataFrame) -> DataFrame:
-        _, max_hwm_value = self.get_hwm_boundaries(df)
         self.strategy.update_hwm(max_hwm_value)
         return df
 
@@ -175,7 +162,7 @@ class HWMStrategyHelper(StrategyHelper):
 
         # `self.strategy.hwm is not None` is need only to handle mypy warnings
         if self.strategy.current_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.connection.get_compare_statement(
+            compare = self.reader.get_compare_statement(
                 self.strategy.current_value_comparator,
                 self.strategy.hwm.name,
                 self.strategy.current_value,
@@ -183,7 +170,7 @@ class HWMStrategyHelper(StrategyHelper):
             result.append(compare)
 
         if self.strategy.next_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.connection.get_compare_statement(
+            compare = self.reader.get_compare_statement(
                 self.strategy.next_value_comparator,
                 self.strategy.hwm.name,
                 self.strategy.next_value,

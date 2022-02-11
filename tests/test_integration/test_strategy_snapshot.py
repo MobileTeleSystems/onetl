@@ -6,10 +6,12 @@ from datetime import timedelta, datetime, date
 
 import pandas as pd
 
+from etl_entities import DateHWM, DateTimeHWM, IntHWM
+
 from onetl.connection import Postgres
 from onetl.reader.db_reader import DBReader
 from onetl.strategy import SnapshotStrategy, SnapshotBatchStrategy, IncrementalStrategy
-from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
+from onetl.strategy.hwm_store import HWMStoreManager
 
 
 def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepare_schema_table):
@@ -163,11 +165,11 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
 
 
 @pytest.mark.parametrize(
-    "hwm_type_name, hwm_column, step, per_iter",
+    "hwm_type, hwm_column, step, per_iter",
     [
-        ("integer", "hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
-        ("date", "hwm_date", timedelta(days=1), 20),  # this offset is covering span_length + gap
-        ("timestamp", "hwm_datetime", timedelta(hours=100), 30),  # same
+        (IntHWM, "hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
+        (DateHWM, "hwm_date", timedelta(days=1), 20),  # this offset is covering span_length + gap
+        (DateTimeHWM, "hwm_datetime", timedelta(hours=100), 30),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -186,7 +188,7 @@ def test_postgres_strategy_snapshot_batch(
     spark,
     processing,
     prepare_schema_table,
-    hwm_type_name,
+    hwm_type,
     hwm_column,
     step,
     per_iter,
@@ -205,7 +207,6 @@ def test_postgres_strategy_snapshot_batch(
     )
     reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm_type = HWMClassRegistry.get(hwm_type_name)
     hwm = hwm_type(source=reader.table, column=reader.hwm_column)
 
     # hwm is not in the store
@@ -474,3 +475,85 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
     total_df = total_df.sort(total_df.id_int.asc())
 
     processing.assert_equal_df(df=total_df, other_frame=total_span)
+
+
+@pytest.mark.parametrize(
+    "hwm_source, hwm_column, hwm_expr, step, func",
+    [
+        (
+            "hwm_int",
+            "hwm1_int",
+            "text_string::int AS hwm1_int",
+            10,
+            str,
+        ),
+        (
+            "hwm_date",
+            "hwm1_date",
+            "text_string::date AS hwm1_date",
+            timedelta(days=10),
+            lambda x: x.isoformat(),
+        ),
+        (
+            "hwm_datetime",
+            "hwm1_datetime",
+            "text_string::timestamp AS hwm1_datetime",
+            timedelta(hours=100),
+            lambda x: x.isoformat(),
+        ),
+    ],
+)
+def test_postgres_strategy_snapshot_batch_with_hwm_expr(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_source,
+    hwm_column,
+    hwm_expr,
+    step,
+    func,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=["*", hwm_expr],
+        hwm_column=hwm_column,
+    )
+
+    # there is a span 0..100
+    span_begin = 0
+    span_end = 100
+    span = processing.create_pandas_df(min_id=span_begin, max_id=span_end)
+
+    span["text_string"] = span[hwm_source].apply(func)
+    span_with_hwm = span.copy()
+    span_with_hwm[hwm_column] = span[hwm_source]
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=span,
+    )
+
+    total_df = None
+    with SnapshotBatchStrategy(step=step) as batches:
+        for _ in batches:
+            next_df = reader.run()
+
+            if total_df is None:
+                total_df = next_df
+            else:
+                total_df = total_df.union(next_df)
+
+    # all the data has been read
+    processing.assert_equal_df(df=total_df.orderBy("id_int"), other_frame=span_with_hwm)

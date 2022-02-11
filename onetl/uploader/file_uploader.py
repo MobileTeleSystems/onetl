@@ -9,7 +9,7 @@ from pathlib import Path, PosixPath
 import humanize
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.connection_helpers import decorated_log, LOG_INDENT
+from onetl.log import entity_boundary_log, LOG_INDENT
 
 log = getLogger(__name__)
 
@@ -94,7 +94,7 @@ class FileUploader:
             uploaded_files = uploader.run(files_list)
 
         """
-        decorated_log(msg="FileUploader starts")
+        entity_boundary_log(msg="FileUploader starts")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files to path: {self.target_path} ")
         log.info(f"|{self.__class__.__name__}| Parameters:")
@@ -152,6 +152,6 @@ class FileUploader:
         log.info(f"|{self.connection.__class__.__name__}| Files successfully uploaded from Local FS")
 
         msg = f"Uploaded: {len(successfully_uploaded_files)} file(s) {humanize.naturalsize(files_size)}"
-        decorated_log(msg=msg, char="-")
+        entity_boundary_log(msg=msg, char="-")
 
         return successfully_uploaded_files

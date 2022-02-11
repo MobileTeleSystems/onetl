@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 
 from etl_entities import HWM
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import LOG_INDENT
 
 log = logging.getLogger(__name__)
 

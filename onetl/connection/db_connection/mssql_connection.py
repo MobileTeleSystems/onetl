@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, date
-from typing import ClassVar
+from typing import ClassVar, List, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -67,8 +67,9 @@ class MSSQL(JDBCConnection):
 
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
-    check_query: ClassVar[str] = "SELECT 1 AS field"
     port: int = 1433
+
+    _check_query: ClassVar[str] = "SELECT 1 AS field"
 
     def __post_init__(self):
         if not self.database:
@@ -86,6 +87,31 @@ class MSSQL(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
+
+    def get_sql_query_cte(
+        self,
+        table: str,
+        columns: Optional[List[str]] = None,
+        where: Optional[str] = None,
+        hint: Optional[str] = None,
+        cte_columns: Optional[List[str]] = None,
+        cte_where: Optional[str] = None,
+        cte_hint: Optional[str] = None,
+    ) -> str:
+        # Spark generates wrong SELECT clause for MSSQL
+        # More details:
+        # https://github.com/microsoft/mssql-jdbc/issues/1340
+        # https://issues.apache.org/jira/browse/SPARK-37259
+
+        if columns is None:
+            columns = ["*"]
+
+        if cte_columns is None:
+            cte_columns = ["*"]
+
+        cte = self.get_sql_query(table, columns=cte_columns, hint=cte_hint, where=cte_where)
+
+        return self.get_sql_query(f"({cte}) as cte", columns=columns, hint=hint, where=where)
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()

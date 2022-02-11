@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import LOG_INDENT
 
 log = logging.getLogger(__name__)
 
@@ -34,9 +34,11 @@ class BaseStrategy:
         log.debug(f"|{self.__class__.__name__}| Exiting stack at level {StrategyManager.get_current_level()-1}")
         strategy = StrategyManager.pop()
 
-        strategy.exit_hook(failed=bool(exc_type))
-        log.info(f"|onETL| Exiting {self.__class__.__name__}")
+        failed = bool(exc_type)
+        reason = f" because of {exc_type.__name__}" if failed else ""
+        log.info(f"|onETL| Exiting {self.__class__.__name__}{reason}")
 
+        strategy.exit_hook(failed=failed)
         return False
 
     @property  # noqa: WPS324

@@ -114,7 +114,7 @@ class YAMLHWMStore(BaseHWMStore):
               name: mydata
           type: int
           value: '1500'
-          - column:
+        - column:
               name: id
               partition: {}
           modified_time: '2022-02-11T16:00:31.962150'

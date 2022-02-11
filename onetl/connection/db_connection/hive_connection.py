@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from logging import getLogger
 from textwrap import dedent
-from typing import Optional, List, Tuple, Iterable, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 from pydantic import Field, validator
 
 from onetl.connection.db_connection.db_connection import DBConnection, WriteMode
-from onetl.connection.connection_helpers import get_sql_query, LOG_INDENT
+from onetl.log import LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -122,11 +122,11 @@ class Hive(DBConnection):
                 "Hive reader does not support options.",
             )
 
-        sql_text = get_sql_query(
+        sql_text = self.get_sql_query_cte(
             table=table,
-            hint=hint,
-            columns=columns,
+            cte_columns=columns,
             where=where,
+            cte_hint=hint,
         )
 
         df = self._execute_sql(sql_text)
@@ -141,7 +141,7 @@ class Hive(DBConnection):
         options: Options,
     ) -> "pyspark.sql.types.StructType":
 
-        query_schema = get_sql_query(table, columns=columns, where="1=0")
+        query_schema = self.get_sql_query(table, columns=columns, where="1=0")
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
 
@@ -149,15 +149,51 @@ class Hive(DBConnection):
 
         return df.schema
 
+    def get_min_max_bounds(  # type: ignore[override]
+        self,
+        table: str,
+        for_column: str,
+        columns: Optional[List[str]],
+        hint: Optional[str],
+        where: Optional[str],
+        options: Options,
+    ) -> Tuple[Any, Any]:
+
+        log.info(f"|Spark| Getting min and max values for column '{for_column}'")
+
+        sql_text = self.get_sql_query_cte(
+            table=table,
+            columns=[
+                self._get_min_value_sql(for_column, "min_value"),
+                self._get_max_value_sql(for_column, "max_value"),
+            ],
+            where=where,
+            cte_columns=columns,
+            cte_hint=hint,
+        )
+
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log.info(" " * LOG_INDENT + sql_text)
+
+        df = self._execute_sql(sql_text)
+        row = df.collect()[0]
+        min_value, max_value = row["min_value"], row["max_value"]
+
+        log.info("|Spark| Received values:")
+        log.info(" " * LOG_INDENT + f"MIN({for_column}) = {min_value}")
+        log.info(" " * LOG_INDENT + f"MAX({for_column}) = {max_value}")
+
+        return min_value, max_value
+
     def check(self):
         self.log_parameters()
 
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + self.check_query)
+        log.info(" " * LOG_INDENT + self._check_query)
 
         try:
-            self._execute_sql(self.check_query).collect()
+            self._execute_sql(self._check_query).collect()
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"

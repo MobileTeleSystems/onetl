@@ -199,7 +199,7 @@ class TestIntegrationONETLPostgres:
             )
 
     @pytest.mark.parametrize(
-        "jdbc_options",
+        "options",
         [
             {"numPartitions": "2", "partitionColumn": "hwm_int"},
             {"numPartitions": "2", "partitionColumn": "hwm_int", "lowerBound": "50"},
@@ -207,7 +207,7 @@ class TestIntegrationONETLPostgres:
             {"fetchsize": "2"},
         ],
     )
-    def test_postgres_reader_different_jdbc_options(self, spark, processing, prepare_schema_table, jdbc_options):
+    def test_postgres_reader_different_options(self, spark, processing, prepare_schema_table, options):
 
         postgres = Postgres(
             host=processing.host,
@@ -221,7 +221,7 @@ class TestIntegrationONETLPostgres:
         reader = DBReader(
             connection=postgres,
             table=prepare_schema_table.full_name,
-            options=jdbc_options,
+            options=options,
         )
         table_df = reader.run()
 
