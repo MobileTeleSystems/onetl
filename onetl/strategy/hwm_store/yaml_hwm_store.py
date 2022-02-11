@@ -78,10 +78,9 @@ class YAMLHWMStore(BaseHWMStore):
                 df = reader.run()
                 writer.run(df)
 
-        # will create file "~/.local/share/onETL/yml_hwm_store/public.mydata.id.yml" with encoding="utf-8"
-        # and store here a serialized HWM value like:
-
-        # "value": 1000
+        # will create file
+        # "~/.local/share/onETL/id__public.mydata__postgres_test-db-vip.msk.mts.ru_5432__myprocess__myhostname.yml"
+        # with encoding="utf-8" and save a serialized HWM values to this file
 
     With all options
 
@@ -92,13 +91,51 @@ class YAMLHWMStore(BaseHWMStore):
                 df = reader.run()
                 writer.run(df)
 
-        # will create file "/my/store/public.mydata.id.yml" with encoding="utf-8"
+        # will create file
+        # "/my/store/id__public.mydata__postgres_test-db-vip.msk.mts.ru_5432__myprocess__myhostname.yml"
+        # with encoding="utf-8" and save a serialized HWM values to this file
+
+    File content example:
+
+    .. code:: yaml
+
+        - column:
+            name: id
+            partition: {}
+          modified_time: '2022-02-11T17:10:49.659019'
+          process:
+              dag: ''
+              host: myhostname
+              name: myprocess
+              task: ''
+          source:
+              db: public
+              instance: postgres://test-db-vip.msk.mts.ru:5432/target_database
+              name: mydata
+          type: int
+          value: '1500'
+          - column:
+              name: id
+              partition: {}
+          modified_time: '2022-02-11T16:00:31.962150'
+          process:
+              dag: ''
+              host: myhostname
+              name: myprocess
+              task: ''
+          source:
+              db: public
+              instance: postgres://test-db-vip.msk.mts.ru:5432/target_database
+              name: mydata
+          type: int
+          value: '1000'
     """
 
     path: Path = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
 
-    PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:#@|/\\]+")
+    ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
+    PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
     def __post_init__(self):
         self.path = Path(self.path).expanduser().absolute()  # noqa: WPS601
@@ -118,15 +155,17 @@ class YAMLHWMStore(BaseHWMStore):
         self._dump(hwm.qualified_name, [hwm.serialize()] + data)
 
     @classmethod
-    def _cleanup_name(cls, name: str) -> str:
+    def cleanup_file_name(cls, name: str) -> str:
         # id|partition=value#db.table@proto://instance#process@host
         # ->
         # id__partition__value__db.table__proto_instance__process__host
 
-        return cls.PROHIBITED_SYMBOLS_PATTERN.sub("__", name)
+        result = cls.ITEMS_DELIMITER_PATTERN.sub("__", name)
+        result = cls.PROHIBITED_SYMBOLS_PATTERN.sub("_", result)
+        return re.sub("_{2,}", "__", result)
 
     def _load(self, name: str) -> list[dict]:
-        name = self._cleanup_name(name)
+        name = self.cleanup_file_name(name)
         path = self.path / f"{name}.yml"
         if not path.exists():
             return []
@@ -135,7 +174,7 @@ class YAMLHWMStore(BaseHWMStore):
             return yaml.safe_load(file)
 
     def _dump(self, name: str, data: list[dict]) -> None:
-        name = self._cleanup_name(name)
+        name = self.cleanup_file_name(name)
         path = self.path / f"{name}.yml"
         with path.open("w", encoding=self.encoding) as file:
             yaml.dump(data, file)
