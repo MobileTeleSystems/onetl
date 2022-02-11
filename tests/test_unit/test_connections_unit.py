@@ -245,7 +245,7 @@ class TestConnectionHelpers:
         table_sql = get_sql_query(
             table="default.test",
             hint="NOWAIT",
-            columns="d_id, d_name, d_age",
+            columns=["d_id", "d_name", "d_age"],
             where="d_id > 100",
         )
         expected_sql = "SELECT /*+ NOWAIT */ d_id, d_name, d_age FROM default.test WHERE d_id > 100"

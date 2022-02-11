@@ -171,7 +171,7 @@ class DBReader:
     table: Table
     where: str | None
     hint: str | None
-    columns: str
+    columns: list[str]
     hwm_column: Column | None
     options: DBConnection.Options
 
@@ -255,7 +255,7 @@ class DBReader:
 
         df = self.connection.read_table(
             table=str(self.table),
-            columns=self.columns,
+            columns=self._resolve_columns(),
             hint=self.hint,
             where=helper.where,
             options=self.options,
@@ -267,6 +267,22 @@ class DBReader:
 
         return df
 
+    def _resolve_columns(self) -> list[str]:
+        columns: list[str] = []
+        for column in self.columns:
+            if column == "*":
+                schema = self.connection.get_schema(
+                    table=str(self.table),
+                    columns=["*"],
+                    options=self.options,
+                )
+                real_columns = schema.fieldNames()
+                columns.extend(real_columns)
+            else:
+                columns.append(column)
+
+        return columns
+
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)
 
@@ -275,19 +291,30 @@ class DBReader:
         return Column(name=hwm_column) if hwm_column else None
 
     @staticmethod
-    def _handle_columns(columns: str | list[str]) -> str:
+    def _handle_columns(columns: str | list[str]) -> list[str]:
         items: list[str]
         if isinstance(columns, str):
             items = columns.split(",")
         else:
             items = list(columns)
 
-        items = [item.strip() for item in items]
+        if not items:
+            raise ValueError("Columns list cannot be empty")
 
-        if not items or "*" in items:
-            return "*"
+        result: list[str] = []
 
-        return ", ".join(items)
+        for item in items:
+            column = item.strip()
+
+            if not column:
+                raise ValueError(f"Column name cannot be empty string, got '{item}'")
+
+            if column in result:
+                raise ValueError(f"Duplicated column name: '{item}'")
+
+            result.append(column)
+
+        return result
 
     def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
         if options:
