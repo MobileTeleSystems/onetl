@@ -16,14 +16,14 @@ class BaseStrategy:
 
         log.debug(f"|{self.__class__.__name__}| Entered stack at level {StrategyManager.get_current_level()}")
         StrategyManager.push(self)
+
         log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
-        log.info(f"|{self.__class__.__name__}| Using options:")
+        options = {key: value for key, value in vars(self).items() if not self._log_exclude_field(key)}
 
-        for option, value in vars(self).items():
-            if self._log_exclude_field(option):
-                continue
-
-            log.info(" " * LOG_INDENT + f"{option} = {value}")
+        if options:
+            log.info(f"|{self.__class__.__name__}| Using options:")
+            for option, value in options.items():
+                log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         self.enter_hook()
         return self

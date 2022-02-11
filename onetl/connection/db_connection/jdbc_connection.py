@@ -64,21 +64,15 @@ class JDBCConnection(DBConnection):
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     def check(self):
+        self.log_parameters()
+
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log.info(" " * LOG_INDENT + self.check_query)
+
         options = {"properties": {"user": self.user, "password": self.password, "driver": self.driver}}
-
-        log.info(f"|{self.__class__.__name__}| Check connection availability...")
-
-        log.info("|Spark| Using connection:")
-        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
-        log.info(" " * LOG_INDENT + f"jdbc_url = {self.jdbc_url}")
-        log.info(" " * LOG_INDENT + f"driver = {self.driver}")
-        log.info(" " * LOG_INDENT + f"user = {self.user}")
-
-        log.info(f"|{self.__class__.__name__}| Execute statement:")
-        log.info(" " * LOG_INDENT + self.check_statement)
-
         try:
-            self.spark.read.jdbc(table=f"({self.check_statement}) T", url=self.jdbc_url, **options).collect()
+            self.spark.read.jdbc(table=f"({self.check_query}) T", url=self.jdbc_url, **options).collect()
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"
@@ -96,8 +90,6 @@ class JDBCConnection(DBConnection):
         if options.session_init_statement:
             log.debug("Init SQL statement:")
             log.debug(" " * LOG_INDENT + options.session_init_statement)
-
-        self._log_parameters()
 
         sql_text = get_sql_query(
             table=table,
@@ -127,12 +119,6 @@ class JDBCConnection(DBConnection):
         table: str,
         options: Options,
     ) -> None:
-        """
-        Save the DataFrame into RDB.
-        """
-
-        self._log_parameters()
-
         # for convenience. parameters accepted by spark.write.jdbc method
         #   spark.read.jdbc(
         #     url, table, mode,

@@ -245,6 +245,8 @@ class DBReader:
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
+        self.connection.log_parameters()
+
         helper: StrategyHelper
         if self.hwm_column:
             helper = HWMStrategyHelper(self, self.hwm_column)

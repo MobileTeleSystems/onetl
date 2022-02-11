@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
 from dataclasses import dataclass
+import io
 from logging import getLogger
 
 from etl_entities import Table
@@ -234,6 +236,19 @@ class DBWriter:
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
+        log.info("")
+        log.info(" " * LOG_INDENT + "DataFrame schema")
+
+        schema_tree = io.StringIO()
+        with redirect_stdout(schema_tree):
+            # unfortunately, printSchema immediately prints tree instead of returning it
+            # so we need a hack
+            df.printSchema()
+
+        for line in schema_tree.getvalue().splitlines():
+            log.info(" " * LOG_INDENT + f"    {line}")
+
+        self.connection.log_parameters()
         self.connection.save_df(
             df=df,
             table=str(self.table),
