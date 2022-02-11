@@ -29,7 +29,7 @@ class WriteMode(Enum):
 class DBConnection(ConnectionABC):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: pyspark.sql.SparkSession
-    check_statement: ClassVar[str] = "SELECT 1"
+    check_query: ClassVar[str] = "SELECT 1"
 
     compare_statements: ClassVar[Dict[Callable, str]] = {
         operator.ge: "{} >= {}",
@@ -124,6 +124,15 @@ class DBConnection(ConnectionABC):
 
         return options
 
+    def log_parameters(self):
+        log.info("|Spark| Using connection parameters:")
+        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+        for attr in sorted(self._log_fields() - self._log_exclude_fields()):
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+
     @classmethod
     def _log_fields(cls) -> set[str]:
         # TODO(dypedchenk): until using pydantic dataclass
@@ -132,16 +141,7 @@ class DBConnection(ConnectionABC):
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:
         # TODO(dypedchenk): until using pydantic dataclass
-        return {"compare_statements", "check_statement", "spark"}
-
-    def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
-        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
-        for attr in sorted(self._log_fields() - self._log_exclude_fields()):
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+        return {"compare_statements", "check_query", "spark"}
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         """

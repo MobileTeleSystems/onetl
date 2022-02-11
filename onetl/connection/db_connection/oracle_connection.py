@@ -71,7 +71,7 @@ class Oracle(JDBCConnection):
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     package: ClassVar[str] = "com.oracle:ojdbc7:12.1.0.2"
-    check_statement: ClassVar[str] = "SELECT 1 FROM dual"
+    check_query: ClassVar[str] = "SELECT 1 FROM dual"
     port: int = 1521
     sid: str = ""
     service_name: str = ""

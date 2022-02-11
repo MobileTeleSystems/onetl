@@ -85,8 +85,6 @@ class Hive(DBConnection):
         table: str,
         options: Options,
     ) -> None:
-        self._log_parameters()
-
         if options.insert_into:
             columns = self._sort_df_columns_like_table(table, df.columns)
             writer = df.select(*columns).write
@@ -124,8 +122,6 @@ class Hive(DBConnection):
                 "Hive reader does not support options.",
             )
 
-        self._log_parameters()
-
         sql_text = get_sql_query(
             table=table,
             hint=hint,
@@ -154,11 +150,14 @@ class Hive(DBConnection):
         return df.schema
 
     def check(self):
+        self.log_parameters()
+
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log.info(" " * LOG_INDENT + self.check_query)
+
         try:
-            log.info(
-                f"|{self.__class__.__name__}| Check connection availability...",
-            )
-            self._execute_sql(self.check_statement).collect()
+            self._execute_sql(self.check_query).collect()
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"

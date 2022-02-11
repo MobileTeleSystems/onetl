@@ -67,7 +67,7 @@ class MSSQL(JDBCConnection):
 
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
-    check_statement: ClassVar[str] = "SELECT 1 AS field"
+    check_query: ClassVar[str] = "SELECT 1 AS field"
     port: int = 1433
 
     def __post_init__(self):

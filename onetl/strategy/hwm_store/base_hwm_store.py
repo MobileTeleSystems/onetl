@@ -17,13 +17,12 @@ class BaseHWMStore:
         log.debug(f"|{self.__class__.__name__}| Entered stack at level {HWMStoreManager.get_current_level()}")
         HWMStoreManager.push(self)
         log.info(f"|onETL| Using {self.__class__.__name__} as HWM Store")
-        log.info(f"|{self.__class__.__name__}| Using options:")
+        options = {key: value for key, value in vars(self).items() if not key.startswith("_")}
 
-        for option, value in vars(self).items():
-            if option.startswith("_"):
-                continue
-
-            log.info(" " * LOG_INDENT + f"{option} = {value}")
+        if options:
+            log.info(f"|{self.__class__.__name__}| Using options:")
+            for option, value in options.items():
+                log.info(" " * LOG_INDENT + f"{option} = {value}")
 
         return self
 
