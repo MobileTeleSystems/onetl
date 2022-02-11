@@ -11,6 +11,39 @@ from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy
 from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
 
 
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "unknown_column",
+        "HWM_INT",  # wrong case
+    ],
+)
+def test_postgres_strategy_incremental_unknown_hwm_column(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column=hwm_column,
+    )
+
+    with pytest.raises(KeyError):
+        with IncrementalStrategy():
+            reader.run()
+
+
 def test_postgres_reader_strategy_incremental_hwm_set_twice(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
@@ -41,10 +74,15 @@ def test_postgres_reader_strategy_incremental_hwm_set_twice(spark, processing, p
             reader3.run()
 
 
-# Fail if HWM is Float
-def test_postgres_strategy_incremental_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_postgres_strategy_incremental_wrong_hwm_type(spark, processing, prepare_schema_table, hwm_column):
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -63,7 +101,7 @@ def test_postgres_strategy_incremental_float(spark, processing, prepare_schema_t
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalStrategy():
             reader.run()
@@ -84,7 +122,7 @@ def test_postgres_strategy_incremental_float(spark, processing, prepare_schema_t
         (10, 50),
     ],
 )
-def test_postgres_strategy_increment(
+def test_postgres_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
@@ -386,6 +424,40 @@ def test_postgres_reader_strategy_incremental_batch_outside_loop(  # noqa: WPS11
             reader.run()
 
 
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "unknown_column",
+        "HWM_INT",  # wrong case
+    ],
+)
+def test_postgres_strategy_incremental_batch_unknown_hwm_column(  # noqa: WPS118
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column=hwm_column,
+    )
+
+    with pytest.raises(KeyError):
+        with IncrementalBatchStrategy(step=1) as batches:
+            for _ in batches:
+                reader.run()
+
+
 def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS118
     spark,
     processing,
@@ -425,11 +497,15 @@ def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(  # noqa: WPS1
             break
 
 
-# Fail if HWM is Float
-def test_postgres_strategy_incremental_batch_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-    step = 1.0
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("float_value", 1.0),
+        ("text_string", "abc"),
+    ],
+)
+def test_postgres_strategy_incremental_batch_wrong_hwm_type(spark, processing, prepare_schema_table, hwm_column, step):
     postgres = Postgres(
         host=processing.host,
         user=processing.user,
@@ -448,7 +524,7 @@ def test_postgres_strategy_incremental_batch_float(spark, processing, prepare_sc
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalBatchStrategy(step=step) as batches:
             for _ in batches:

@@ -21,7 +21,7 @@ from onetl.strategy.hwm_store import HWMClassRegistry, HWMStoreManager
         (10, 50),
     ],
 )
-def test_clickhouse_strategy_increment(
+def test_clickhouse_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
@@ -100,10 +100,15 @@ def test_clickhouse_strategy_increment(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-# Fail if HWM is Numeric or Decimal with fractional part
-def test_clickhouse_strategy_incremental_float(spark, processing, prepare_schema_table):
-    hwm_column = "float_value"
-
+# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.parametrize(
+    "hwm_column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_clickhouse_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -122,7 +127,7 @@ def test_clickhouse_strategy_incremental_float(spark, processing, prepare_schema
         values=data,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, ValueError)):
         # incremental run
         with IncrementalStrategy():
             reader.run()
