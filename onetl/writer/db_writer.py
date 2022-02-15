@@ -7,7 +7,7 @@ from logging import getLogger
 
 from etl_entities import Table
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import decorated_log, LOG_INDENT
+from onetl.log import entity_boundary_log, LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -214,7 +214,7 @@ class DBWriter:
             writer.run(df)
         """
 
-        decorated_log(msg="DBWriter starts")
+        entity_boundary_log(msg="DBWriter starts")
 
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table")
 
@@ -255,7 +255,7 @@ class DBWriter:
             options=self.options,
         )
 
-        decorated_log(msg="DBWriter ends", char="-")
+        entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)

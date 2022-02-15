@@ -9,7 +9,7 @@ from typing import Any, Callable, Generator
 from logging import getLogger
 
 from onetl.connection.connection_abc import ConnectionABC
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
 

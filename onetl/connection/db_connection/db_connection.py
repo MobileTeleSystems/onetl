@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal
 from logging import getLogger
 import operator
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Union
 from abc import abstractmethod
 from enum import Enum
 
 from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -29,9 +28,9 @@ class WriteMode(Enum):
 class DBConnection(ConnectionABC):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: pyspark.sql.SparkSession
-    check_query: ClassVar[str] = "SELECT 1"
 
-    compare_statements: ClassVar[Dict[Callable, str]] = {
+    _check_query: ClassVar[str] = "SELECT 1"
+    _compare_statements: ClassVar[Dict[Callable, str]] = {
         operator.ge: "{} >= {}",
         operator.gt: "{} > {}",
         operator.le: "{} <= {}",
@@ -61,7 +60,7 @@ class DBConnection(ConnectionABC):
         self,
         df: pyspark.sql.DataFrame,
         table: str,
-        options: Options = None,
+        options: Options,
     ) -> None:
         """"""
 
@@ -85,23 +84,70 @@ class DBConnection(ConnectionABC):
     ) -> pyspark.sql.types.StructType:
         """"""
 
-    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
-        template = self.compare_statements[comparator]
-        return template.format(arg1, self.get_value_sql(arg2))
+    @abstractmethod
+    def get_min_max_bounds(
+        self,
+        table: str,
+        for_column: str,
+        columns: Optional[List[str]],
+        hint: Optional[str],
+        where: Optional[str],
+        options: Options,
+    ) -> Tuple[Any, Any]:
+        """"""
 
-    def get_value_sql(self, value: Any) -> str:
+    def get_sql_query(
+        self,
+        table: str,
+        columns: Optional[List[str]] = None,
+        where: Optional[str] = None,
+        hint: Optional[str] = None,
+    ) -> str:
         """
-        Transform the value into an SQL Dialect-supported form.
+        Generates a SQL query using input arguments
         """
 
-        if isinstance(value, datetime):
-            return self._get_datetime_value_sql(value)
-        elif isinstance(value, date):
-            return self._get_date_value_sql(value)
-        elif isinstance(value, (int, float, Decimal)):
-            return str(value)
+        columns_str = ", ".join(columns) if columns else "*"
+        hint = f"/*+ {hint} */" if hint else None
+        where = f"WHERE {where}" if where else None
 
-        return f"'{value}'"
+        return " ".join(
+            filter(
+                None,
+                [
+                    "SELECT",
+                    hint,
+                    columns_str,
+                    "FROM",
+                    table,
+                    where,
+                ],
+            ),
+        )
+
+    def get_sql_query_cte(
+        self,
+        table: str,
+        columns: Optional[List[str]] = None,
+        where: Optional[str] = None,
+        hint: Optional[str] = None,
+        cte_columns: Optional[List[str]] = None,
+        cte_where: Optional[str] = None,
+        cte_hint: Optional[str] = None,
+    ) -> str:
+        """
+        Wraps a SQL query into CTE clause using input arguments
+        """
+
+        if columns is None:
+            columns = ["*"]
+
+        if cte_columns is None:
+            cte_columns = ["*"]
+
+        cte = self.get_sql_query(table, columns=cte_columns, hint=cte_hint, where=cte_where)
+
+        return f"WITH cte AS ({cte}) " + self.get_sql_query(table="cte", columns=columns, hint=hint, where=where)
 
     def to_options(
         self,
@@ -114,6 +160,7 @@ class DBConnection(ConnectionABC):
         If the JDBC connect class was used and the Hive options class was used,
         then a ValueError exception will be thrown. If it is the other way around, an exception will also be thrown.
         """
+
         if isinstance(options, dict):
             options = self.Options.parse_obj(options)
 
@@ -123,6 +170,10 @@ class DBConnection(ConnectionABC):
             )
 
         return options
+
+    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
+        template = self._compare_statements[comparator]
+        return template.format(arg1, self._get_value_sql(arg2))
 
     def log_parameters(self):
         log.info("|Spark| Using connection parameters:")
@@ -136,23 +187,58 @@ class DBConnection(ConnectionABC):
     @classmethod
     def _log_fields(cls) -> set[str]:
         # TODO(dypedchenk): until using pydantic dataclass
-        return set(cls.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        return {
+            field
+            for field in cls.__dataclass_fields__.keys()  # type: ignore[attr-defined]
+            if not field.startswith("_")
+        }
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:
         # TODO(dypedchenk): until using pydantic dataclass
-        return {"compare_statements", "check_query", "spark"}
+        return {"spark"}
+
+    def _get_value_sql(self, value: Any) -> str:
+        """
+        Transform the value into an SQL Dialect-supported form.
+        """
+
+        if isinstance(value, datetime):
+            return self._get_datetime_value_sql(value)
+
+        if isinstance(value, date):
+            return self._get_date_value_sql(value)
+
+        return str(value)
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         """
-        Transform the value into an SQL Dialect-supported datetime.
+        Transform the datetime value into supported by SQL Dialect
         """
         result = value.isoformat()
         return f"'{result}'"
 
     def _get_date_value_sql(self, value: date) -> str:
         """
-        Transform the value into an SQL Dialect-supported date.
+        Transform the date value into supported by SQL Dialect
         """
         result = value.isoformat()
         return f"'{result}'"
+
+    def _get_max_value_sql(self, value: Any, alias: str) -> str:
+        """
+        Generate `MAX(value) AS alias` clause for given value and alias
+        """
+
+        result = self._get_value_sql(value)
+
+        return f"MAX({result}) AS {alias}"
+
+    def _get_min_value_sql(self, value: Any, alias: str) -> str:
+        """
+        Generate `MIN(value) AS alias` clause for given value and alias
+        """
+
+        result = self._get_value_sql(value)
+
+        return f"MIN({result}) AS {alias}"

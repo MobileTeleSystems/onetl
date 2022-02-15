@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 from etl_entities import Column, Table
 from onetl.connection.db_connection import DBConnection
-from onetl.connection.connection_helpers import decorated_log
-from onetl.connection.connection_helpers import LOG_INDENT
+from onetl.log import entity_boundary_log, LOG_INDENT
 
 
 log = getLogger(__name__)
@@ -194,11 +193,24 @@ class DBReader:
         self.options = self._handle_options(options)
 
     def get_schema(self) -> StructType:
-        return self.connection.get_schema(  # type: ignore
+        return self.connection.get_schema(
             table=str(self.table),
-            columns=self.columns,
+            columns=self._resolve_columns(),
             options=self.options,
         )
+
+    def get_min_max_bounds(self, column: str) -> tuple[Any, Any]:
+        return self.connection.get_min_max_bounds(
+            table=str(self.table),
+            for_column=column,
+            columns=self._resolve_columns(),
+            hint=self.hint,
+            where=self.where,
+            options=self.options,
+        )
+
+    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
+        return self.connection.get_compare_statement(comparator, arg1, arg2)
 
     def run(self) -> DataFrame:
         """
@@ -223,7 +235,7 @@ class DBReader:
         # avoid circular imports
         from onetl.reader.strategy_helper import StrategyHelper, NonHWMStrategyHelper, HWMStrategyHelper
 
-        decorated_log(msg="DBReader starts")
+        entity_boundary_log(msg="DBReader starts")
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame")
 
@@ -263,7 +275,7 @@ class DBReader:
 
         df = helper.save(df)
 
-        decorated_log(msg="DBReader ends", char="-")
+        entity_boundary_log(msg="DBReader ends", char="-")
 
         return df
 

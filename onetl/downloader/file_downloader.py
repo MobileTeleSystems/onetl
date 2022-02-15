@@ -8,7 +8,7 @@ from typing import Iterator
 import humanize
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.connection_helpers import decorated_log
+from onetl.log import entity_boundary_log
 from onetl.downloader.downloader_helper import create_local_dir, check_pattern
 
 log = getLogger(__name__)
@@ -132,7 +132,7 @@ class FileDownloader:
             downloaded_files = downloader.run()
 
         """
-        decorated_log(msg="FileDownloader starts")
+        entity_boundary_log(msg="FileDownloader starts")
         indent = len(f"|{self.__class__.__name__}| ") + 2
 
         log.info(
@@ -188,6 +188,6 @@ class FileDownloader:
             log.info(f"|Local FS| Files successfully downloaded from {self.connection.__class__.__name__}")
 
         msg = f"Downloaded: {len(downloaded_files)} file(s) {humanize.naturalsize(files_size)}"
-        decorated_log(msg=msg, char="-")
+        entity_boundary_log(msg=msg, char="-")
 
         return downloaded_files
