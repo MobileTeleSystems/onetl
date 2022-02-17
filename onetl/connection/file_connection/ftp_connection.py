@@ -67,7 +67,7 @@ class FTP(FileConnection):
         )
 
     def is_dir(self, top: os.PathLike | str, item: str | os.PathLike) -> bool:
-        return self.client.path.isdir(top / self.get_name(item))
+        return self.client.path.isdir(self.get_name(top) / self.get_name(item))
 
     def get_name(self, item: str | os.PathLike) -> PosixPath:
         return PosixPath(item)

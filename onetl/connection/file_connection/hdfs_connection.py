@@ -3,19 +3,19 @@ from __future__ import annotations
 import os
 from logging import getLogger
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import PosixPath
 
 from hdfs import InsecureClient, HdfsError
 from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.kerberos_helpers import KerberosMixin
+from onetl.connection.kerberos_helpers import kinit
 
 log = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class HDFS(FileConnection, KerberosMixin):
+class HDFS(FileConnection):
     """Class for HDFS file connection.
 
     Parameters
@@ -74,17 +74,17 @@ class HDFS(FileConnection, KerberosMixin):
 
     port: int = 50070
     user: str = ""
-    keytab: str | None = None
+    keytab: str | None = None  # TODO: change to Path
     timeout: int | None = None
 
     def __post_init__(self):
-        if self.password and self.keytab:
+        if self.keytab and self.password:
             raise ValueError("Please provide only `keytab` or only `password` for kinit")
 
-    def get_client(self) -> hdfs.ext.kerberos.KerberosClient | hdfs.client.InsecureClient:
+    def get_client(self) -> KerberosClient | InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
         if self.keytab or self.password:
-            self.kinit(
+            kinit(
                 self.user,
                 keytab=self.keytab,
                 password=self.password,
@@ -94,12 +94,12 @@ class HDFS(FileConnection, KerberosMixin):
             client = InsecureClient(conn_str, user=self.user)
         return client
 
-    def is_dir(self, top: os.PathLike | str, item: str) -> bool:
-        if self.client.status(Path(top) / self.get_name(item))["type"] == "DIRECTORY":
+    def is_dir(self, top: os.PathLike | str, item: os.PathLike | str) -> bool:
+        if self.client.status(self.get_name(top) / self.get_name(item))["type"] == "DIRECTORY":
             return True
 
-    def get_name(self, item: str) -> Path:
-        return Path(item)
+    def get_name(self, item: os.PathLike | str) -> PosixPath:
+        return PosixPath(item)
 
     def path_exists(self, target_hdfs_path: os.PathLike | str) -> bool:
         return self.client.status(target_hdfs_path, strict=False)
