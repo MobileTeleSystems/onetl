@@ -1,9 +1,9 @@
 import logging
+
 import pytest
 
-from onetl.connection.db_connection import Oracle
-from onetl.reader.db_reader import DBReader
-from onetl.writer.db_writer import DBWriter
+from onetl.connection import Oracle
+from onetl.core import DBReader, DBWriter
 
 
 class TestIntegrationONETLOracle:

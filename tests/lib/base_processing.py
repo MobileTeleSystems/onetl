@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from logging import getLogger
-from typing import List, Dict, Optional
 from datetime import date, datetime, timedelta
+from logging import getLogger
 from random import randint
+from typing import Dict, List, Optional
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal

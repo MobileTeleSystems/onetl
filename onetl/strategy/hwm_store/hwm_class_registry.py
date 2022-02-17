@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar, Iterator, Optional
 
+from etl_entities import HWM, DateHWM, DateTimeHWM, IntHWM
 from pydantic import StrictInt
-
-from etl_entities import HWM, IntHWM, DateHWM, DateTimeHWM
 
 
 class HWMClassRegistry:

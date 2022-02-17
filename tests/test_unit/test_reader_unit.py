@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import Mock
 
-from onetl.reader import DBReader
-from onetl.connection.db_connection import Oracle, Postgres, Hive
+import pytest
+
+from onetl.connection import Hive, Oracle, Postgres
+from onetl.core import DBReader
 
 
 class TestDBReader:

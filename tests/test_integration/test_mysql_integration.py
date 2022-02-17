@@ -1,9 +1,9 @@
 import logging
+
 import pytest
 
-from onetl.connection.db_connection import MySQL
-from onetl.reader.db_reader import DBReader
-from onetl.writer.db_writer import DBWriter
+from onetl.connection import MySQL
+from onetl.core import DBReader, DBWriter
 
 
 class TestIntegrationONETLMySQL:

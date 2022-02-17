@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from etl_entities import HWM
+
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import register_hwm_store_class
 
@@ -22,10 +23,9 @@ class MemoryHWMStore(BaseHWMStore):
 
     .. code:: python
 
-        from onetl.connection import Postgres, Hive
-        from onetl.reader import DBReader
-        from onetl.strategy import IncrementalStrategy
-        from onetl.strategy.hwm_store import MemoryHWMStore
+        from onetl.connection import Hive, Postgres
+        from onetl.core import DBReader
+        from onetl.strategy import MemoryHWMStore, IncrementalStrategy
 
         from mtspark import get_spark
 

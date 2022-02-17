@@ -1,9 +1,23 @@
-import pytest
 from unittest.mock import Mock
 
-from onetl.connection.db_connection import Oracle, Postgres, Teradata, Hive, MySQL, MSSQL, Clickhouse
-from onetl.connection.file_connection import FTP, FTPS, HDFS, SFTP, Samba, FileConnection
-from onetl.writer.db_writer import DBWriter
+import pytest
+
+from onetl.connection import (
+    FTP,
+    FTPS,
+    HDFS,
+    MSSQL,
+    SFTP,
+    Clickhouse,
+    FileConnection,
+    Hive,
+    MySQL,
+    Oracle,
+    Postgres,
+    Samba,
+    Teradata,
+)
+from onetl.core import DBWriter
 
 
 class TestDBConnection:

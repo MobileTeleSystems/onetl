@@ -1,11 +1,11 @@
+import os
 from logging import getLogger
 from typing import Dict, List, Optional
-import os
 
-from psycopg2 import connect as pg_connect
-from psycopg2.extensions import connection
 import pandas as pd
 from pandas.io import sql as psql
+from psycopg2 import connect as pg_connect
+from psycopg2.extensions import connection
 
 from tests.lib.base_processing import BaseProcessing
 

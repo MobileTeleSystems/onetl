@@ -7,7 +7,6 @@ from subprocess import Popen
 
 import paramiko
 
-
 CLIENT_CONNECTION_RETRY_DELAY_SEC = 1
 CLIENT_CONNECTION_RETRIES = 5
 LOCAL_HOST = "127.0.0.1"

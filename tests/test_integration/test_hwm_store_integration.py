@@ -1,15 +1,27 @@
 import os
-from datetime import datetime, date, timedelta
 import secrets
 import tempfile
+from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities import Column, IntHWM, DateHWM, DateTimeHWM, FileListHWM, Table, RemoteFolder
+from etl_entities import (
+    Column,
+    DateHWM,
+    DateTimeHWM,
+    FileListHWM,
+    IntHWM,
+    RemoteFolder,
+    Table,
+)
 
 from onetl.connection import Postgres
-from onetl.reader.db_reader import DBReader
-from onetl.strategy import IncrementalStrategy
-from onetl.strategy.hwm_store import YAMLHWMStore, AtlasHWMStore, MemoryHWMStore
+from onetl.core import DBReader
+from onetl.strategy import (
+    AtlasHWMStore,
+    IncrementalStrategy,
+    MemoryHWMStore,
+    YAMLHWMStore,
+)
 
 ATLAS_HOST = os.environ.get("ONETL_ATLAS_CONN_HOST")
 ATLAS_PORT = os.environ.get("ONETL_ATLAS_CONN_PORT")

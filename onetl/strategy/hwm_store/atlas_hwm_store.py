@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 
 from etl_entities import HWM
 from mts_apache_atlas import MTSAtlasClient
@@ -34,10 +34,9 @@ class AtlasHWMStore(BaseHWMStore):
 
     .. code:: python
 
-        from onetl.connection import Postgres, Hive
-        from onetl.reader import DBReader
-        from onetl.strategy import IncrementalStrategy
-        from onetl.strategy.hwm_store import AtlasHWMStore
+        from onetl.connection import Hive, Postgres
+        from onetl.core import DBReader
+        from onetl.strategy import AtlasHWMStore, IncrementalStrategy
 
         from mtspark import get_spark
 

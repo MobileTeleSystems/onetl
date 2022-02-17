@@ -1,10 +1,15 @@
 import secrets
-import pytest
 from unittest.mock import Mock
 
+import pytest
+
 from onetl.connection import Postgres
-from onetl.reader import DBReader
-from onetl.strategy import IncrementalStrategy, IncrementalBatchStrategy, SnapshotBatchStrategy
+from onetl.core import DBReader
+from onetl.strategy import (
+    IncrementalBatchStrategy,
+    IncrementalStrategy,
+    SnapshotBatchStrategy,
+)
 
 
 @pytest.mark.parametrize(

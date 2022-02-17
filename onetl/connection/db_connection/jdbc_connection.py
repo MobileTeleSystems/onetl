@@ -1,12 +1,12 @@
 from abc import abstractmethod
+from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
 
 from pydantic import Field, validator
 
-from onetl.log import LOG_INDENT
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
 

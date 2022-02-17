@@ -251,6 +251,10 @@ pages:
   - build_and_publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
+  only:
+  - master
+  - develop
+  - tags
 
 .clean_docker_repo:
   extends: .base_docker_cleaner

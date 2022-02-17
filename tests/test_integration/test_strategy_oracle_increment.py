@@ -1,9 +1,8 @@
 import pytest
-
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Oracle
-from onetl.reader.db_reader import DBReader
+from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 
 

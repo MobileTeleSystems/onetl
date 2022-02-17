@@ -1,9 +1,9 @@
 import logging
+
 import pytest
 
-from onetl.connection.db_connection import Clickhouse
-from onetl.reader.db_reader import DBReader
-from onetl.writer.db_writer import DBWriter
+from onetl.connection import Clickhouse
+from onetl.core import DBReader, DBWriter
 
 
 class TestIntegrationONETLClickhouse:

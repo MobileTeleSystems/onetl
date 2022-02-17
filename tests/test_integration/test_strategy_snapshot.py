@@ -1,16 +1,14 @@
 import secrets
-import pytest
-
 from contextlib import suppress
-from datetime import timedelta, datetime, date
+from datetime import date, datetime, timedelta
 
 import pandas as pd
-
+import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres
-from onetl.reader.db_reader import DBReader
-from onetl.strategy import SnapshotStrategy, SnapshotBatchStrategy, IncrementalStrategy
+from onetl.core import DBReader
+from onetl.strategy import IncrementalStrategy, SnapshotBatchStrategy, SnapshotStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
 
 
