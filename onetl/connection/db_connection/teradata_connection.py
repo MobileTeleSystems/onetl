@@ -70,7 +70,7 @@ class Teradata(JDBCConnection):
 
     driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
     # TODO:(@mivasil6) think about workaround for case with several jar packages
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:16.20.00.10"
+    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.10.00.25"
     port: int = 1025
 
     @property

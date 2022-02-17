@@ -214,7 +214,7 @@ class TestJDBCConnection:
 
         assert conn.jdbc_url == "jdbc:teradata://some_host/TMODE=TERA,LOGMECH=LDAP,DATABASE=default,DBS_PORT=1025"
         assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-        assert Teradata.package == "com.teradata.jdbc:terajdbc4:16.20.00.10"
+        assert Teradata.package == "com.teradata.jdbc:terajdbc4:17.10.00.25"
         assert Teradata.port == 1025
 
     def test_teradata_without_database(self):
