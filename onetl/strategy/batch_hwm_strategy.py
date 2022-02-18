@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable
-
-from dataclasses import dataclass, field
 import logging
 import operator
+from dataclasses import dataclass, field
 from textwrap import dedent
+from typing import Any, Callable
 
 from onetl.strategy.hwm_strategy import HWMStrategy
 

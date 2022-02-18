@@ -1,6 +1,5 @@
 from logging import getLogger
 
-
 log = getLogger(__name__)
 
 HALF_SCREEN_SIZE = 45

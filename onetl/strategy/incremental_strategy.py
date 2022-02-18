@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from etl_entities import HWM
-from onetl.strategy.hwm_strategy import HWMStrategy
+
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
+from onetl.strategy.hwm_strategy import HWMStrategy
 
 
 @dataclass
@@ -71,7 +72,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres
-        from onetl.reader import DBReader
+        from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
 
         from mtspark import get_spark
@@ -229,7 +230,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres, Hive
-        from onetl.reader import DBReader
+        from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
 
         from mtspark import get_spark

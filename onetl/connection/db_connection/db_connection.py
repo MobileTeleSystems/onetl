@@ -1,18 +1,17 @@
 from __future__ import annotations
 
+import operator
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime
-from logging import getLogger
-import operator
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Union
-from abc import abstractmethod
 from enum import Enum
+from logging import getLogger
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
 from onetl.log import LOG_INDENT
-
 
 log = getLogger(__name__)
 

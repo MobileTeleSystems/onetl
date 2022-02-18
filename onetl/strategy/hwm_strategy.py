@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import logging
 import operator
+from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from etl_entities import HWM
+
 from onetl.log import LOG_INDENT
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager

@@ -1,10 +1,11 @@
-import pytest
 import secrets
 import tempfile
 
+import pytest
 from omegaconf import OmegaConf
 
-from onetl.strategy.hwm_store import AtlasHWMStore, HWMStoreManager, MemoryHWMStore, YAMLHWMStore, detect_hwm_store
+from onetl.strategy import AtlasHWMStore, MemoryHWMStore, YAMLHWMStore, detect_hwm_store
+from onetl.strategy.hwm_store import HWMStoreManager
 
 
 @pytest.mark.parametrize(

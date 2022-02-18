@@ -4,7 +4,6 @@
 .. toctree::
     :maxdepth: 2
     :caption: onETL
-    :name: onetl
     :hidden:
 
     self
@@ -12,70 +11,95 @@
 .. toctree::
     :maxdepth: 2
     :caption: How to
-    :name: howto
+    :hidden:
 
     install
     develop
     usage
 
+..
+    TODO (@msmarty5): убрать блоки ниже после перехода на тему Furo.
+
+    В теме ReadTheDocs все заголовки по-умолчанию свернуты, и переопределить это не удается
+    Из-за чего документация выглядит не очень
+
 .. toctree::
     :maxdepth: 2
-    :hidden:
     :caption: DB Connection
-    :name: dbconnection
+    :hidden:
 
-    db_connection/clickhouse_connection
-    db_connection/hive_connection
-    db_connection/mssql_connection
-    db_connection/mysql_connection
-    db_connection/oracle_connection
-    db_connection/postgres_connection
-    db_connection/teradata_connection
+    db_connection/clickhouse
+    db_connection/hive
+    db_connection/mssql
+    db_connection/mysql
+    db_connection/oracle
+    db_connection/postgres
+    db_connection/teradata
 
 .. toctree::
     :maxdepth: 2
     :caption: File Connection
-    :name: fileconnection
+    :glob:
+    :hidden:
 
-    file_connection/ftp_connection
-    file_connection/ftps_connection
-    file_connection/hdfs_connection
-    file_connection/samba_connection
-    file_connection/sftp_connection
+    file_connection/ftp
+    file_connection/ftps
+    file_connection/hdfs
+    file_connection/samba
+    file_connection/sftp
 
 .. toctree::
     :maxdepth: 2
     :caption: DB Reader
-    :name: dbreader
+    :hidden:
 
-    onetl.db_reader
+    core/db_reader
 
 .. toctree::
     :maxdepth: 2
-    :caption: DB Writer
-    :name: dbwriter
+    :caption: DB Reader
+    :hidden:
 
-    onetl.db_writer
+    core/db_writer
 
 .. toctree::
     :maxdepth: 2
     :caption: File Downloader
-    :name: filedownloader
+    :hidden:
 
-    onetl.file_downloader
+    core/file_downloader
 
 .. toctree::
     :maxdepth: 2
     :caption: File Uploader
-    :name: fileuploader
+    :hidden:
 
-    onetl.file_uploader
+    core/file_uploader
+
+..
+    Заменить на блок ниже
+..
+    .. toctree::
+        :maxdepth: 2
+        :caption: Connection
+        :glob:
+        :hidden:
+
+        db_connection/index
+        file_connection/index
+
+    .. toctree::
+        :maxdepth: 2
+        :caption: Core
+        :hidden:
+
+        core/index
 
 .. toctree::
     :maxdepth: 2
     :caption: HWM and incremental reads
-    :name: hwm_incremental
+    :hidden:
 
-    onetl.hwm
+    hwm
     strategy/index
     hwm_store/index

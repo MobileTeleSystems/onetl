@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import Mock
 
-from onetl.writer import DBWriter
-from onetl.connection.db_connection import Hive
+import pytest
+
+from onetl.connection import Hive
+from onetl.core import DBWriter
 
 
 class TestDBWriter:

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-import re
-from typing import ClassVar
-import yaml
 import operator
-
-from platformdirs import user_data_dir
+import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
+import yaml
 from etl_entities import HWM, HWMTypeRegistry
+from platformdirs import user_data_dir
+
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
-from onetl.strategy.hwm_store.hwm_store_class_registry import default_hwm_store_class, register_hwm_store_class
+from onetl.strategy.hwm_store.hwm_store_class_registry import (
+    default_hwm_store_class,
+    register_hwm_store_class,
+)
 
 DATA_PATH = Path(user_data_dir("onETL", "ONEtools"))
 
@@ -45,10 +48,9 @@ class YAMLHWMStore(BaseHWMStore):
 
     .. code:: python
 
-        from onetl.connection import Postgres, Hive
-        from onetl.reader import DBReader
-        from onetl.strategy import IncrementalStrategy
-        from onetl.strategy.hwm_store import YAMLHWMStore
+        from onetl.connection import Hive, Postgres
+        from onetl.core import DBReader
+        from onetl.strategy import YAMLHWMStore, IncrementalStrategy
 
         from mtspark import get_spark
 

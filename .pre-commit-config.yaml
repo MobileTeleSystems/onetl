@@ -23,7 +23,7 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.11
+  rev: v1.1.12
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
@@ -46,6 +46,10 @@ repos:
   hooks:
   - id: docker-compose-check
     files: ^docker-compose.*\.(yaml|yml)$
+- repo: https://github.com/pycqa/isort
+  rev: 5.10.1
+  hooks:
+  - id: isort
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.9.0
   hooks:

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import os
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from functools import wraps
-from pathlib import PosixPath, Path
-import os
-from typing import Any, Callable, Generator
 from logging import getLogger
+from pathlib import Path, PosixPath
+from typing import Any, Callable, Generator
 
 from onetl.connection.connection_abc import ConnectionABC
 from onetl.log import LOG_INDENT

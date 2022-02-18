@@ -1,11 +1,11 @@
-from logging import getLogger
-from typing import Dict, List, Optional
 import os
-from random import randint
 from datetime import date, datetime, timedelta
+from logging import getLogger
+from random import randint
+from typing import Dict, List, Optional
 
-import pandas as pd
 import clickhouse_driver
+import pandas as pd
 
 from tests.lib.base_processing import BaseProcessing
 

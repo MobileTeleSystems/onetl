@@ -1,4 +1,4 @@
-.. _hwm_store:
+.. _strategy:
 
 Read Strategies
 =================
@@ -6,7 +6,6 @@ Read Strategies
 .. toctree::
     :maxdepth: 3
     :caption: Read Strategies
-    :name: read_strategies
     :hidden:
 
     snapshot_strategy
@@ -14,7 +13,7 @@ Read Strategies
     snapshot_batch_strategy
     incremental_batch_strategy
 
-oneETL have several builtin strategies of reading data:
+onETL have several builtin strategies for reading data:
 
 1. :doc:`snapshot_strategy`
 

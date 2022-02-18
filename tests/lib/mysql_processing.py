@@ -1,10 +1,10 @@
+import os
 from logging import getLogger
 from typing import Dict, List, Optional
-import os
 
 import pandas as pd
-from pandas.io import sql as psql
 import pymysql
+from pandas.io import sql as psql
 
 from tests.lib.base_processing import BaseProcessing
 

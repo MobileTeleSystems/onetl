@@ -1,10 +1,10 @@
+import os
 from logging import getLogger
 from typing import Dict, List, Optional
-import os
 
+import cx_Oracle
 import pandas as pd
 from pandas.io import sql as psql
-import cx_Oracle
 
 from tests.lib.base_processing import BaseProcessing
 

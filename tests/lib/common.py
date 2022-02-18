@@ -1,7 +1,7 @@
 import hashlib
+import logging
 import os
 import posixpath
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -29,7 +29,7 @@ class SnapshotStrategy(BaseStrategy):
     .. code:: python
 
         from onetl.connection import Postgres
-        from onetl.reader import DBReader
+        from onetl.core import DBReader
         from onetl.strategy import SnapshotStrategy
 
         from mtspark import get_spark
@@ -126,7 +126,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres, Hive
-        from onetl.reader import DBReader
+        from onetl.core import DBReader
         from onetl.strategy import SnapshotBatchStrategy
 
         from mtspark import get_spark

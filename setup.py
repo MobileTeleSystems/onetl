@@ -1,6 +1,7 @@
 from os.path import abspath, dirname, join
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 from version import get_version
 
 __version__ = get_version()

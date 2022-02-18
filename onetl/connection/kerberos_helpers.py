@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import os
-
-from subprocess import check_call
-
 from logging import getLogger
+from subprocess import check_call
 
 log = getLogger(__name__)
 

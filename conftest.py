@@ -1,26 +1,34 @@
-import os
 import logging
-from time import sleep
+import os
 import secrets
-from typing import Dict
-from pathlib import Path
 from collections import namedtuple
+from pathlib import Path
+from time import sleep
+from typing import Dict
 
 import pytest
-from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
-
 from mtspark import get_spark
-from onetl.connection.file_connection import SFTP, FTP, FTPS
-from onetl.connection.db_connection import Oracle, Clickhouse, Postgres, MySQL, MSSQL, Teradata
-from tests.lib.postgres_processing import PostgressProcessing
-from tests.lib.hive_processing import HiveProcessing
-from tests.lib.oracle_processing import OracleProcessing
-from tests.lib.clickhouse_processing import ClickhouseProcessing
-from tests.lib.mysql_processing import MySQLProcessing
-from tests.lib.mssql_processing import MSSQLProcessing
-from tests.lib.common import upload_files
 
+from onetl.connection import (
+    FTP,
+    FTPS,
+    MSSQL,
+    SFTP,
+    Clickhouse,
+    MySQL,
+    Oracle,
+    Postgres,
+    Teradata,
+)
+from onetl.strategy import MemoryHWMStore
+from tests.lib.clickhouse_processing import ClickhouseProcessing
+from tests.lib.common import upload_files
+from tests.lib.hive_processing import HiveProcessing
 from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
+from tests.lib.mssql_processing import MSSQLProcessing
+from tests.lib.mysql_processing import MySQLProcessing
+from tests.lib.oracle_processing import OracleProcessing
+from tests.lib.postgres_processing import PostgressProcessing
 
 log = logging.getLogger(__name__)
 

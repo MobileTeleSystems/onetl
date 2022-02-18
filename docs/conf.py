@@ -15,8 +15,8 @@ import os
 import subprocess
 import sys
 
-from setuptools_git_versioning import get_tag, get_all_tags, get_sha
 from packaging import version as Version
+from setuptools_git_versioning import get_all_tags, get_sha, get_tag
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
