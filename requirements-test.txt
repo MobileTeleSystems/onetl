@@ -22,6 +22,7 @@ pytest-cov
 
 pyyaml>5
 
+sftpserver
 sqlalchemy
 
 # mypy

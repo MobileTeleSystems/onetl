@@ -21,16 +21,21 @@ class FileDownloader:
 
     Parameters
     ----------
-    connection : onetl.connection.file_connection.FileConnection
+    connection : :obj:`onetl.connection.FileConnection`
         Class which contain File system connection properties. See in FileConnection section.
+
     source_path : str
         Path on remote source where you get files.
+
     local_path : str
         Local path where you download files
+
     source_file_pattern : str, default: ``*``
         Fnmatch check for file_name. For example: ``*.csv``.
+
     delete_source : bool, default: ``False``
         Parameter responsible for configuring the deletion of downloaded files on source.
+
     source_exclude_dirs : list of str, default: ``None``
         A list of dirs excluded from loading. Must contain full path to excluded dir.
 

@@ -1,9 +1,6 @@
 import logging
-import os
-import posixpath
 import tempfile
-from pathlib import PosixPath
-from stat import S_ISDIR
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -12,29 +9,13 @@ from onetl.core import FileDownloader, FileUploader
 from tests.lib.common import hashfile
 
 
-def sftp_walk(sftp, remote_path):
-    # Kindof a stripped down  version of os.walk, implemented for
-    # sftp.
-    path = remote_path
-    files = []
-    folders = []
-    for f in sftp.listdir_attr(remote_path):
-        if S_ISDIR(f.st_mode):
-            folders.append(f.filename)
-        else:
-            files.append(f.filename)
-    yield path, folders, files
-    for folder in folders:
-        new_path = posixpath.join(remote_path, folder)
-        yield from sftp_walk(sftp, new_path)
-
-
 class TestSFTP:
     def test_sftp_source_check(self, sftp_server, caplog):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
 
         with caplog.at_level(logging.INFO):
             sftp.check()
+
         assert "Connection is available" in caplog.text
 
     def test_sftp_wrong_source_check(self):
@@ -43,58 +24,118 @@ class TestSFTP:
         with pytest.raises(RuntimeError):
             sftp.check()
 
-    def test_downloader_local_path(self, sftp_files, sftp_server, source_path, test_file_name, test_file_path):
+    def test_sftp_file_uploader_with_empty_file_list(self, sftp_server, caplog):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
-        with tempfile.TemporaryDirectory() as local_path:
+
+        uploader = FileUploader(connection=sftp, target_path="/target/path/")
+
+        with caplog.at_level(logging.INFO):
+            uploaded_files = uploader.run([])
+            assert "Files list is empty. Please, provide files to upload." in caplog.text
+
+        assert not uploaded_files
+
+    def test_sftp_file_uploader(self, sftp_server, test_files):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+
+        target_path = PurePosixPath("/tmp/test_upload")
+        uploader = FileUploader(connection=sftp, target_path=target_path)
+        uploaded_files = uploader.run(test_files)
+
+        assert uploaded_files == [target_path / test_file.name for test_file in test_files]
+
+    def test_sftp_file_downloader_empty_dir(self, sftp_server, source_path):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+        file_pattern = "*.csv"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
 
             downloader = FileDownloader(
                 connection=sftp,
                 source_path=source_path,
                 local_path=local_path,
-                source_file_pattern="*.csv",
+                source_file_pattern=file_pattern,
             )
 
-            files = downloader.run()
-
-            # file list comparison
-            assert files == [PosixPath(local_path) / test_file_name]
-            # compare size of files
-            assert os.path.getsize(test_file_path) == os.path.getsize(os.path.join(local_path, test_file_name))
-            # compare files
-            assert hashfile(test_file_path) == hashfile(os.path.join(local_path, test_file_name))
-
-    def test_downloader_wrong_pattern(self, sftp_files, sftp_server, source_path):
-        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
-        with tempfile.TemporaryDirectory() as local_path:
-
-            downloader = FileDownloader(
-                connection=sftp,
-                source_path=source_path,
-                local_path=local_path,
-                source_file_pattern="*.wng",
-            )
             files = downloader.run()
             assert not files
 
-    def test_downloader_exclude_dirs(self, sftp_files, sftp_server, source_path):
+    def test_sftp_file_downloader(self, sftp_server, source_path, resource_path, sftp_files):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
-        with tempfile.TemporaryDirectory() as local_path:
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
 
             downloader = FileDownloader(
                 connection=sftp,
                 source_path=source_path,
                 local_path=local_path,
-                source_exclude_dirs=["/export/news_parse/exclude_dir"],
+            )
+
+            files = downloader.run()
+            local_files = [local_path / file.name for file in sftp_files]
+
+            assert len(files) == len(local_files)
+            assert set(files) == set(local_files)
+
+            original_files = [resource_path / file.relative_to(source_path) for file in sftp_files]
+
+            for original_file in original_files:
+                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(local_path / original_file.name)
+
+    def test_sftp_file_downloader_with_pattern(self, sftp_server, source_path, resource_path, sftp_files):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+        file_pattern = "*.csv"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path=source_path,
+                local_path=local_path,
+                source_file_pattern=file_pattern,
             )
 
             files = downloader.run()
 
-            assert PosixPath(local_path) / "file_1.txt" in files
-            assert PosixPath(local_path) / "file_5.txt" not in files
+            matching_files = [file for file in sftp_files if file.match(file_pattern)]
+            local_files = [local_path / file.name for file in matching_files]
 
-    def test_downloader_delete_source(self, sftp_client, sftp_files, sftp_server, source_path):
+            assert len(files) == len(local_files)
+            assert set(files) == set(local_files)
+
+            original_files = [
+                resource_path / file.relative_to(source_path) for file in sftp_files if file.match(file_pattern)
+            ]
+            for original_file in original_files:
+                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(local_path / original_file.name)
+
+    def test_sftp_file_downloader_with_wrong_pattern(self, sftp_server, source_path, sftp_files):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
-        with tempfile.TemporaryDirectory() as local_path:
+        file_pattern = "*.wng"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path=source_path,
+                local_path=local_path,
+                source_file_pattern=file_pattern,
+            )
+
+            files = downloader.run()
+            assert not files
+
+    def test_sftp_file_downloader_delete_source(self, sftp_server, source_path, resource_path, sftp_files):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
 
             downloader = FileDownloader(
                 connection=sftp,
@@ -103,23 +144,23 @@ class TestSFTP:
                 delete_source=True,
             )
 
-            downloaded_files = downloader.run()
+            files = downloader.run()
+            local_files = [local_path / file.name for file in sftp_files]
+
+            assert len(files) == len(local_files)
+            assert set(files) == set(local_files)
 
             current_sftp_files = set()
-            for root, _dirs, files in sftp_walk(sftp_client, source_path):
-                for filename in files:
-                    current_sftp_files.add(posixpath.join(root, filename))
+            for root, _dirs, files in sftp.walk(source_path):
+                root_path = PurePosixPath(root)
 
-            assert downloaded_files
+                for filename in files:
+                    current_sftp_files.add(root_path / filename)
+
             assert not current_sftp_files
 
-    def test_sftp_uploader(self, sftp_server, test_file_name, test_file_path):
-        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+            original_files = [resource_path / file.relative_to(source_path) for file in sftp_files]
 
-        uploader = FileUploader(connection=sftp, target_path="/tmp/test_upload")
-        files = [
-            test_file_path,
-        ]
-
-        uploaded_files = uploader.run(files)
-        assert uploaded_files == [PosixPath("/tmp/test_upload") / test_file_name]
+            for original_file in original_files:
+                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(local_path / original_file.name)

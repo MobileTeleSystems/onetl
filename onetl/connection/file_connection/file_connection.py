@@ -64,6 +64,10 @@ class FileConnection(ConnectionABC):
         log.info(f"|Local FS| Successfully downloaded file: {local_file_path} ")
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        if not self.path_exists(remote_file_path):
+            log.info(f"|{self.__class__.__name__}| File {remote_file_path} does not exist, nothing to remove")
+            return
+
         self._remove_file(remote_file_path)
         log.info(f"|{self.__class__.__name__}| Successfully removed file: {remote_file_path} ")
 
@@ -132,6 +136,10 @@ class FileConnection(ConnectionABC):
             yield top, dirs, nondirs
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+        if not self.path_exists(path):
+            log.info(f"|{self.__class__.__name__}| Directory {path} does not exist, nothing to remove")
+            return
+
         if recursive:
             for file in self._listdir(path):
                 name = self.get_name(file)
@@ -141,10 +149,9 @@ class FileConnection(ConnectionABC):
                     self.rmdir(full_name, recursive=True)
                 else:
                     self.remove_file(full_name)
-            self.rmdir(path)
-        else:
-            self.client.rmdir(os.fspath(path))
-            log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
+
+        self.client.rmdir(os.fspath(path))
+        log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
 
     def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: list[os.PathLike | str]) -> bool:
         for exclude_dir in exclude_dirs:

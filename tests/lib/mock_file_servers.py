@@ -1,11 +1,7 @@
 import os
 import re
 import shutil
-import time
-from ftplib import FTP  # noqa: S402
 from subprocess import Popen
-
-import paramiko
 
 CLIENT_CONNECTION_RETRY_DELAY_SEC = 1
 CLIENT_CONNECTION_RETRIES = 5
@@ -70,22 +66,6 @@ class TestFTPServer:
         self.server.wait()
         self.clear()
 
-    def create_client(self):
-        ftp_client = FTP()  # noqa: S321
-        ftp_client.set_debuglevel(0)
-        retries = 0
-        max_retries = CLIENT_CONNECTION_RETRIES
-        while retries < max_retries:
-            try:
-                ftp_client.connect(self.host, self.port)
-                ftp_client.login(self.user, self.password)
-                return ftp_client
-            except Exception:
-                retries += 1
-        if retries == max_retries:
-            raise RuntimeError(f"Couldn't connect to FTP server {self.host}:{self.port} after {retries} retries")
-        time.sleep(CLIENT_CONNECTION_RETRY_DELAY_SEC)
-
 
 class TestSFTPServer:
     def __init__(self, homedir):
@@ -125,19 +105,3 @@ class TestSFTPServer:
         self.server.terminate()
         self.server.wait()
         self.clear()
-
-    def create_client(self):
-        retries = 0
-        max_retries = CLIENT_CONNECTION_RETRIES
-        while retries < max_retries:
-            try:
-                ssh_client = paramiko.SSHClient()
-                ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(self.host, self.port, self.user, self.password)
-                sftp_client = ssh_client.open_sftp()
-                return ssh_client, sftp_client
-            except Exception:
-                retries += 1
-                time.sleep(CLIENT_CONNECTION_RETRY_DELAY_SEC)
-        if retries == max_retries:
-            raise RuntimeError(f"Couldn`t connect to local FTP server after {retries} retries")
