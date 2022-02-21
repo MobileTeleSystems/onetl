@@ -2,7 +2,7 @@ import logging
 import os
 import secrets
 from collections import namedtuple
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
 
@@ -12,6 +12,7 @@ from mtspark import get_spark
 from onetl.connection import (
     FTP,
     FTPS,
+    HDFS,
     MSSQL,
     SFTP,
     Clickhouse,
@@ -32,18 +33,10 @@ from tests.lib.postgres_processing import PostgressProcessing
 
 log = logging.getLogger(__name__)
 
-# ****************************Environment Variables*****************************
-SELF_PATH = os.path.abspath(os.path.dirname(__file__))
-
 
 @pytest.fixture(scope="session")
-def source_path():
-    return "/export/news_parse"
-
-
-@pytest.fixture(scope="session")
-def ftp_server():
-    server = TestFTPServer(os.path.join("/tmp", "FTP_HOME"))
+def ftp_server(tmp_path_factory):
+    server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
     server.start()
     sleep(5)
     yield server
@@ -51,8 +44,8 @@ def ftp_server():
 
 
 @pytest.fixture(scope="session")
-def ftps_server():
-    server = TestFTPServer(os.path.join("/tmp", "FTPS_HOME"), is_ftps=True)
+def ftps_server(tmp_path_factory):
+    server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
     server.start()
     sleep(5)
     yield server
@@ -60,12 +53,22 @@ def ftps_server():
 
 
 @pytest.fixture(scope="session")
-def sftp_server():
-    server = TestSFTPServer(os.path.join("/tmp", "SFTP_HOME"))
+def sftp_server(tmp_path_factory):
+    server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
     server.start()
     sleep(5)
     yield server
     server.stop()
+
+
+@pytest.fixture(scope="session")
+def hdfs_server():
+    HDFSServer = namedtuple("HDFSServer", ["host", "port"])
+
+    return HDFSServer(
+        os.getenv("ONETL_HDFS_CONN_HOST", "hive2"),
+        os.getenv("ONETL_HDFS_CONN_PORT", 50070),
+    )
 
 
 @pytest.fixture(scope="session")
@@ -74,49 +77,54 @@ def resource_path():
 
 
 @pytest.fixture(scope="session")
-def test_file_path(resource_path, test_file_name):
-    return resource_path / "news_parse_zp" / "2018_03_05_10_00_00" / test_file_name
+def test_files(resource_path):
+    resources = resource_path / "news_parse_zp" / "2018_03_05_10_00_00"
+
+    return [
+        resources / "newsage-zp-2018_03_05_10_00_00.csv",
+        resources / "newsage-zp-2018_03_05_10_10_00.csv",
+    ]
 
 
 @pytest.fixture(scope="session")
-def test_file_name():
-    return "newsage-zp-2018_03_05_10_00_00.csv"
-
-
-@pytest.fixture(scope="session")
-def sftp_client(sftp_server):
-    """
-    :param sftp_server:
-    :type sftp_server: MockFtpServer
-    :return:
-    :rtype: SFTPClient
-    """
-
-    ssh_client_started, sftp_client_started = sftp_server.create_client()
-    yield sftp_client_started
-    sftp_client_started.close()
-    ssh_client_started.close()
+def source_path():
+    return PurePosixPath("/export/news_parse")
 
 
 @pytest.fixture(scope="function")  # noqa: WPS231
-def sftp_files(sftp_client, sftp_server, resource_path, source_path):
+def sftp_files(sftp_server, resource_path, source_path):
     sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
 
-    upload_files(resource_path, source_path, sftp)
+    yield upload_files(resource_path, source_path, sftp)
+
+    sftp.rmdir(source_path, recursive=True)
 
 
 @pytest.fixture(scope="function")
 def ftp_files(ftp_server, resource_path, source_path):
     ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
 
-    upload_files(resource_path, source_path, ftp)
+    yield upload_files(resource_path, source_path, ftp)
+
+    ftp.rmdir(source_path, recursive=True)
 
 
 @pytest.fixture(scope="function")
 def ftps_files(ftps_server, resource_path, source_path):
     ftps = FTPS(user=ftps_server.user, password=ftps_server.password, host=ftps_server.host, port=ftps_server.port)
 
-    upload_files(resource_path, source_path, ftps)
+    yield upload_files(resource_path, source_path, ftps)
+
+    ftps.rmdir(source_path, recursive=True)
+
+
+@pytest.fixture(scope="function")
+def hdfs_files(hdfs_server, resource_path, source_path):
+    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
+
+    yield upload_files(resource_path, source_path, hdfs)
+
+    hdfs.rmdir(source_path, recursive=True)
 
 
 @pytest.fixture(scope="session", name="spark")

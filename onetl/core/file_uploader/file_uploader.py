@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 import uuid
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from logging import getLogger
-from pathlib import Path, PosixPath
+from pathlib import Path, PurePosixPath
 
 import humanize
 
@@ -20,14 +20,16 @@ class FileUploader:
 
     Parameters
     ----------
-    connection : onetl.connection.file_connection.FileConnection
+    connection : :obj:`onetl.connection.FileConnection`
         Class which contain File system connection properties. See in FileConnection section.
+
     target_path : str
         Path on remote source where you upload files.
-    temp_path : str, default: ``/tmp/{uuid.uuid4()}``
+
+    temp_path : str, default: ``/tmp``
         Remote path where files uploaded firstly
 
-        Default value: ``/tmp/{uuid.uuid4()}``
+        Default value: ``/tmp/``
 
     Examples
     --------
@@ -63,12 +65,16 @@ class FileUploader:
     """
 
     connection: FileConnection
-    target_path: str | os.PathLike
-    # Remote temporary path to upload files
-    temp_path: str | os.PathLike | None = "/tmp/{}"  # NOSONAR
 
-    def __post_init__(self):
-        self.target_path = PosixPath(self.target_path)
+    target_path: InitVar[str | os.PathLike]
+    _target_path: PurePosixPath = field(init=False)
+
+    temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
+    _temp_path: PurePosixPath = field(init=False)
+
+    def __post_init__(self, target_path: str | os.PathLike, temp_path: str | os.PathLike):
+        self._target_path = PurePosixPath(target_path)  # noqa: WPS601
+        self._temp_path = PurePosixPath(temp_path)  # noqa: WPS601
 
     def run(self, files_list: list[str | os.PathLike]) -> list[Path]:  # noqa: WPS213
         """
@@ -81,7 +87,7 @@ class FileUploader:
 
         Returns
         -------
-        uploaded_files : List[Path]
+        uploaded_files : List[PurePosixPath]
             List of uploaded files
 
         Examples
@@ -92,14 +98,15 @@ class FileUploader:
         .. code::
 
             uploaded_files = uploader.run(files_list)
-
         """
-        entity_boundary_log(msg="FileUploader starts")
 
-        log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files to path: {self.target_path} ")
+        entity_boundary_log(msg="FileUploader starts")
+        connection_class_name = self.connection.__class__.__name__
+
+        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files to path: {self._target_path} ")
         log.info(f"|{self.__class__.__name__}| Parameters:")
-        log.info(" " * LOG_INDENT + f"target_path = {self.target_path}")
-        log.info(" " * LOG_INDENT + f"temp_path = {self.temp_path}")
+        log.info(" " * LOG_INDENT + f"target_path = {self._target_path}")
+        log.info(" " * LOG_INDENT + f"temp_path = {self._temp_path}")
 
         log.info(f"|{self.__class__.__name__}| Using connection:")
         log.info(" " * LOG_INDENT + f"type = {self.connection.__class__.__name__}")
@@ -107,50 +114,48 @@ class FileUploader:
         log.info(" " * LOG_INDENT + f"user = {self.connection.user}")
 
         if not files_list:
-            log.warning("|Local| Files list is empty. Please, provide files to upload.")
-            return files_list
+            log.warning(f"|{self.__class__.__name__}| Files list is empty. Please, provide files to upload.")
+            return []
 
-        if not self.connection.path_exists(self.target_path):
-            log.info(f"|{self.connection.__class__.__name__}| There is no target directory: {self.target_path}")
-            log.info(f"|{self.connection.__class__.__name__}| Creating directory: {self.target_path}")
-            self.connection.mkdir(self.target_path)
+        if not self.connection.path_exists(self._target_path):
+            log.info(f"|{connection_class_name}| There is no target directory {self._target_path}, creating ...")
+            self.connection.mkdir(self._target_path)
 
         successfully_uploaded_files = []
         files_size = 0
-        current_temp_dir = self.temp_path.format(str(uuid.uuid4()))
 
+        current_temp_dir = self._temp_path / uuid.uuid4().hex
         if not self.connection.path_exists(current_temp_dir):
-            log.info(f"|{self.connection.__class__.__name__}| There is no temp directory: {current_temp_dir}")
-            log.info(f"|{self.connection.__class__.__name__}| Creating directory: {current_temp_dir}")
+            log.info(f"|{connection_class_name}| Creating temp directory: {current_temp_dir}")
             self.connection.mkdir(current_temp_dir)
 
-        log.info(f"|{self.connection.__class__.__name__}| Start uploading files")
+        log.info(f"|{self.__class__.__name__}| Start uploading files")
+        for count, file in enumerate(files_list):
+            log.info(f"|{self.__class__.__name__}| Uploading {count + 1}/{len(files_list)}")
 
-        for count, file_path in enumerate(files_list):
-            log.info(f"Uploading {count + 1}/{len(files_list)} ")
-            filename = Path(file_path).name
-            tmp_file = PosixPath(current_temp_dir) / filename
-            target_file = self.target_path / filename
+            file_path = Path(file)
+
+            tmp_file = current_temp_dir / file.name
+            target_file = self._target_path / file.name
+
             try:
-                self.connection.upload_file(file_path, tmp_file)
+                file_size = file_path.stat().st_size
 
+                self.connection.upload_file(file_path, tmp_file)
                 self.connection.rename(tmp_file, target_file)
 
-                file_size = file_path.stat().st_size
-            except Exception as e:
-                log.exception(
-                    f"|{self.connection.__class__.__name__}| Couldn't load file {file_path} "
-                    f"to target dir {self.target_path}.\nError:\n{e}",
-                )
-            else:
                 successfully_uploaded_files.append(target_file)
                 files_size += file_size
-            finally:
-                log.info(f"|{self.connection.__class__.__name__}| Removing temp directory: {current_temp_dir}")
-                self.connection.rmdir(current_temp_dir, recursive=True)
+            except Exception as e:
+                log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir:")
+                log.exception(" " * LOG_INDENT + f"file = {file_path} ")
+                log.exception(" " * LOG_INDENT + f"target_file = {target_file}")
+                log.exception(" " * LOG_INDENT + f"error = {e}")
 
-        log.info(f"|{self.connection.__class__.__name__}| Files successfully uploaded from Local FS")
+        log.info(f"|{connection_class_name}| Removing temp directory: {current_temp_dir}")
+        self.connection.rmdir(current_temp_dir, recursive=True)
 
+        log.info(f"|{connection_class_name}| Files successfully uploaded from Local FS")
         msg = f"Uploaded: {len(successfully_uploaded_files)} file(s) {humanize.naturalsize(files_size)}"
         entity_boundary_log(msg=msg, char="-")
 
