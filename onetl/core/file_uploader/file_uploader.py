@@ -21,7 +21,7 @@ class FileUploader:
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
-        Class which contain File system connection properties. See in FileConnection section.
+        Class which contains File system connection properties. See in FileConnection section.
 
     target_path : str
         Path on remote source where you upload files.

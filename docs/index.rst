@@ -7,6 +7,8 @@
     :hidden:
 
     self
+    concepts
+    quickstart
 
 .. toctree::
     :maxdepth: 2
@@ -15,7 +17,6 @@
 
     install
     develop
-    usage
 
 ..
     TODO (@msmarty5): убрать блоки ниже после перехода на тему Furo.

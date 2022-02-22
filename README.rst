@@ -19,10 +19,50 @@ onETL
 .. |PyPI| image:: https://img.shields.io/badge/pypi-download-orange
     :target: http://rep.msk.mts.ru/ui/packages/pypi:%2F%2Fonetl?name=onetl&type=packages
 
-Python package with simple ETL tools.
+What is onETL?
+--------------
+
+* `onETL` is a Python ETL framework powered by `Apache Spark <https://spark.apache.org/>`_ & other open-source tools
+* `onETL` provides unified classes to read & write data to various stores (**E/L**). Different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ are available
+* `onETL` **does not do T = Transformation**. We highly recommend to use PySpark/Python for this
+* (TBD) onETL can send data lineage to data catalog (`Apache Atlas <https://atlas.apache.org/#/>`_)
 
 
 **Supports only Python == 3.7**
+
+Storage Compatibility
+---------------------
+
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Storage                               | Documentation                                            | Notes                                                                                                                                                                                                          |
++=======================================+==========================================================+================================================================================================================================================================================================================+
+| Teradata                              | `Teradata connection <db_connection/teradata.html>`_     | Powered by Apache Spark (`JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_ & `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_ )  |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| MySQL                                 | `MySQL connection <db_connection/mysql.html>`_           |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| Postgres                              | `Postgres connection <db_connection/postgres.html>`_     |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| MSSQL                                 | `MSSQL connection <db_connection/mssql.html>`_           |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| Clickhouse                            | `Clickhouse connection <db_connection/clickhouse.html>`_ |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| Oracle                                | `Oracle connection <db_connection/oracle.html>`_         |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| Hive                                  | `Hive connection <db_connection/hive.html>`_             |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| (TBD) Aerospike                       |                                                          |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| HDFS                                  | `HDFS connection <file_connection/hdfs.html>`_           | Uses `HDFS client <https://pypi.org/project/hdfs/>`_                                                                                                                                                           |
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Samba                                 | `Samba connection <file_connection/hdfs.html>`_          | Uses `Samba client <https://pypi.org/project/PySmbClient/>`_                                                                                                                                                   |
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| SFTP                                  | `SFTP connection <file_connection/hdfs.html>`_           | Uses `Paramiko library <https://pypi.org/project/paramiko/>`_                                                                                                                                                  |
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| FTP                                   | `FTP connection <file_connection/hdfs.html>`_            | Uses `FTP client <https://pypi.org/project/ftputil/>`_                                                                                                                                                         |
++---------------------------------------+----------------------------------------------------------+                                                                                                                                                                                                                |
+| FTPS                                  | `FTPS connection <file_connection/hdfs.html>`_           |                                                                                                                                                                                                                |
++---------------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
 
 .. documentation
 
@@ -74,7 +114,8 @@ Development
 
 Building
 ~~~~~~~~
-Set up your Docker with this link:
+
+Set up your Docker using the link below:
 
 (https://wiki.bd.msk.mts.ru/pages/viewpage.action?pageId=42960827).
 
@@ -122,7 +163,6 @@ Run -> Edit Configurations -> New -> pytest:
 Run -> Edit Configurations -> Copy Configuration **Test All**:
 
 
-
 Testing
 ~~~~~~~~
 
@@ -139,8 +179,3 @@ Wait initialization of every service
 Now you can run tests with configuration **Test All**.
 
 .. usage
-
-Usage
-------------
-
-# TBD
