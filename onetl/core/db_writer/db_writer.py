@@ -21,10 +21,10 @@ class DBWriter:
     Parameters
     ----------
     connection : :obj:`onetl.connection.DBConnection`
-        Class which contain DB connection properties. See :ref:`db-connections` section.
+        Class which contains DB connection properties. See :ref:`db-connections` section.
 
     table : str
-        Table from which we read. You need to specify the full path to the table, including the schema.
+        Table which is read data from. You need to specify the full path to the table, including the schema.
         Like ``schema.name``
 
     options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``

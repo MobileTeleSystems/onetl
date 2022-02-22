@@ -19,13 +19,13 @@ if TYPE_CHECKING:
 
 @dataclass
 class DBReader:
-    """Class allows you to read data from a table with specified connection
+    """The DBReader class allows you to read data from a table with specified connection
     and parameters and save it as Spark dataframe
 
     Parameters
     ----------
     connection : :obj:`onetl.connection.DBConnection`
-        Class which contain DB connection properties. See :ref:`db-connections` section
+        Class which contains DB connection properties. See :ref:`db-connections` section
 
     table : str
         Table name from which to read. You need to specify the full path to the table, including the schema.

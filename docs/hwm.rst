@@ -3,10 +3,10 @@
 HWM
 =====
 
-What is it
+What is it ?
 -----------
 
-Sometimes it is need to read only changed rows from a table.
+Sometimes it's necessary to read only changed rows from a table.
 
 For example, there is a table with the following schema:
 
@@ -17,25 +17,25 @@ For example, there is a table with the following schema:
         data  varchar(40)
     );
 
-``id`` column is a autoincrement field, so its values are increasing all the time,
-e.g. ``1000``, ``1001``, ``1002`` and so on.
+``id`` column is an autoincremental field, that's why its values are increasing all the time,
+e.g. ``1000``, ``1001``, ``1002`` and etc.
 
 New rows are constantly added into the table.
 
 For example,
-yesterday the maximum ``id`` value in the table was 1010.
-Today all values have ``id`` above ``1010`` and below ``1020``.
+in the table yesterday's ``id`` maximum value was ``1010``.
+Each today's ``id`` values is more than ``1010``, but less than ``1020``.
 
 So we can use value of this column to mark rows we already read.
-Whose which value is above specified are new ones.
+Value, that's bigger than specified one, is considered to be the new one.
 
-Such a column is called ``High watermark`` or ``HWM`` for short.
+This column is called ``High WaterMark`` or ``HWM`` for short.
 
 
 How it is used
 ---------------
 
-Firstly we need to get the maximum value of ``id`` column:
+Firstly, we need to get the maximum value of ``id`` column:
 
 .. code:: sql
 
@@ -51,14 +51,14 @@ Then it is possible to use this HWM value to get only new data:
 
     It is highly recommended for HWM column values to be unique, like table primary key.
 
-    Otherwise new rows with the same column value will be skipped
+    Otherwise, new rows with the same column value will be skipped
     because they will not satisfy the condition.
 
 
 HWM types
 ---------
 
-HWM column could be one of the following types:
+HWM column have to be one of the following types:
 
 1. Integer (of any length, like ``INTEGER``, ``SHORT``, ``LONG``).
 

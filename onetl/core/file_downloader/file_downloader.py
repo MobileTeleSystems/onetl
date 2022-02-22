@@ -17,15 +17,15 @@ log = getLogger(__name__)
 @dataclass
 # TODO:(@mivasil6) make check_history functional
 class FileDownloader:
-    """Class specifies file source from where you can download files. Download files **only** in local directory.
+    """Class specifies file source where you can download files. Download files **only** in local directory.
 
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
-        Class which contain File system connection properties. See in FileConnection section.
+        Class which contains File system connection properties. See in FileConnection section.
 
     source_path : str
-        Path on remote source where you get files.
+        Path on remote source where you got files.
 
     local_path : str
         Local path where you download files
