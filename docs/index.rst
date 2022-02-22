@@ -1,0 +1,106 @@
+.. include:: ../README.rst
+    :end-before: documentation
+
+.. toctree::
+    :maxdepth: 2
+    :caption: onETL
+    :hidden:
+
+    self
+    concepts
+    quickstart
+
+.. toctree::
+    :maxdepth: 2
+    :caption: How to
+    :hidden:
+
+    install
+    develop
+
+..
+    TODO (@msmarty5): убрать блоки ниже после перехода на тему Furo.
+
+    В теме ReadTheDocs все заголовки по-умолчанию свернуты, и переопределить это не удается
+    Из-за чего документация выглядит не очень
+
+.. toctree::
+    :maxdepth: 2
+    :caption: DB Connection
+    :hidden:
+
+    db_connection/clickhouse
+    db_connection/hive
+    db_connection/mssql
+    db_connection/mysql
+    db_connection/oracle
+    db_connection/postgres
+    db_connection/teradata
+
+.. toctree::
+    :maxdepth: 2
+    :caption: File Connection
+    :glob:
+    :hidden:
+
+    file_connection/ftp
+    file_connection/ftps
+    file_connection/hdfs
+    file_connection/samba
+    file_connection/sftp
+
+.. toctree::
+    :maxdepth: 2
+    :caption: DB Reader
+    :hidden:
+
+    core/db_reader
+
+.. toctree::
+    :maxdepth: 2
+    :caption: DB Reader
+    :hidden:
+
+    core/db_writer
+
+.. toctree::
+    :maxdepth: 2
+    :caption: File Downloader
+    :hidden:
+
+    core/file_downloader
+
+.. toctree::
+    :maxdepth: 2
+    :caption: File Uploader
+    :hidden:
+
+    core/file_uploader
+
+..
+    Заменить на блок ниже
+..
+    .. toctree::
+        :maxdepth: 2
+        :caption: Connection
+        :glob:
+        :hidden:
+
+        db_connection/index
+        file_connection/index
+
+    .. toctree::
+        :maxdepth: 2
+        :caption: Core
+        :hidden:
+
+        core/index
+
+.. toctree::
+    :maxdepth: 2
+    :caption: HWM and incremental reads
+    :hidden:
+
+    hwm
+    strategy/index
+    hwm_store/index

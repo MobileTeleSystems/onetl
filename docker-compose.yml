@@ -1,0 +1,89 @@
+version: '3.5'
+
+# NOTE: Только для разработки и локального/CI тестирования
+services:
+  postgres:
+    # TODO: fix later
+    build:
+      dockerfile: ./docker/postgres/Dockerfile
+      context: .
+    env_file: onetl_local.default.env
+    restart: always
+    networks: [onetl]
+    ports:
+    - 5432:5432
+
+  hive2:
+    # TODO: fix later
+    build:
+      dockerfile: ./docker/hive2/Dockerfile
+      context: .
+    env_file: onetl_local.default.env
+    hostname: hive2
+    networks: [onetl]
+    depends_on:
+    - postgres
+    ports:
+    - 50010:50010
+    - 50020:50020
+    - 50070:50070
+    - 50075:50075
+    - 10000:10000
+    - 10020:10020
+    - 19888:19888
+    - 9000:9000
+    - 8030:8030
+    - 8031:8031
+    - 8032:8032
+    - 8033:8033
+    - 8040:8040
+    - 8042:8042
+    - 8088:8088
+
+  oracle:
+    build:
+      dockerfile: ./docker/oracle/Dockerfile
+      context: .
+    restart: always
+    ports:
+    - 1522:1521
+    - 5501:5500
+    networks: [onetl]
+
+  clickhouse:
+    image: yandex/clickhouse-server
+    env_file: onetl_local.default.env
+    ports:
+    - 8123:8123
+    - 9001:9000
+    networks: [onetl]
+
+  mysql:
+    image: mysql
+    env_file: onetl_local.default.env
+    ports:
+    - 3306:3306
+    networks: [onetl]
+
+  mssql:
+    image: mcmoe/mssqldocker
+    env_file: onetl_local.default.env
+    ports:
+    - 1433:1433
+    networks: [onetl]
+
+  atlas:
+    image: docker.rep.msk.mts.ru/dev/atlas:2.1
+    env_file: onetl_local.default.env
+    ports:
+    - 21000:21000
+    networks: [onetl]
+
+# Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
+#  тогда содержимое БД будет сохраняться между подъемами docker-compose.
+volumes:
+  tmp:
+
+networks:
+  onetl:
+    name: onetl

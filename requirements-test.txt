@@ -1,0 +1,29 @@
+-r requirements.txt
+clickhouse-driver
+
+# coverage
+coverage==4.5.4
+
+# Oracle client
+cx_Oracle
+
+mtspark
+
+omegaconf
+psycopg2-binary
+pyftpdlib
+pymssql
+PyMySQL
+pyodbc
+pyopenssl
+pyspark < 3
+pytest
+pytest-cov
+
+pyyaml>5
+
+sftpserver
+sqlalchemy
+
+# mypy
+types-PyYAML

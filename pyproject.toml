@@ -1,0 +1,24 @@
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.black]
+line-length = 120
+target-version = ['py37', 'py38'] # указываем версии python, с которыми должна сохраняться совместимость
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''

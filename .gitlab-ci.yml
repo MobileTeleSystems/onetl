@@ -1,0 +1,288 @@
+### --------------- List of tags that are used to select a runner. --------------- ###
+## Обязательный блок для запуска gitlab-ci. Определяет, на каких runner-ах будет запущен CI/CD путем выбора его с помощью tag'а. ##
+
+default:
+  tags:
+  - bigdata
+  - dmz
+  - docker
+
+### --------------- Defines a job stage. --------------- ###
+## Stage .pre выполняется перед всем остальным кодом. stage .post выполняется после всего остального кода. ##
+## Так же можо задать порядок выполнения stage-ов, указав их по порядку в этом блоке. ##
+
+stages:
+#- pre-commit
+- static analysis
+- build
+- tests
+- sonarqube_check
+- artifactory
+- deploy
+
+### --------------- Include gitlab-ci-templates --------------- ###
+## Добавляет в текущую конфигурацию CI\CD template's из DevOps репозитория для переиспользования. ##
+
+include:
+# VAULT
+- project: DevOps/cicd-store/gitlabci/vault
+  ref: v3
+  file: .base_devops_get_cicd_secrets.yml
+
+# DOCKER
+- project: DevOps/cicd-store/gitlabci/docker
+  ref: v4
+  file: .base_docker_build.yml
+- project: DevOps/cicd-store/gitlabci/docker
+  ref: v4
+  file: .base_docker_cleaner.yml
+
+# SONARQUBE
+- project: DevOps/cicd-store/gitlabci/sonarqube
+  ref: v1
+  file: .base_check_sonarqube.yml
+
+# PIP BUILD AND DEPLOY TO JFROG
+- project: DevOps/cicd-store/gitlabci/pip
+  ref: v2
+  file: .base_pip_pkg_build_and_deploy_to_jfrog.yml
+
+# Pages
+- project: DevOps/cicd-store/gitlabci/pages
+  ref: v1
+  file: .base_pages_deploy_sphinx.yml
+
+### --------------- Get VAULT SECRET --------------- ###
+## Переиспользование добавленного template'а по добавлению SSH-ключа пользователя ansible. ##
+devops_get_cicd_secrets:
+  extends: .base_devops_get_cicd_secrets
+
+# TODO: сделать в отдельной задаче
+#pre-commit:
+#  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+#  variables:
+#    PYTHON_VERSION: '3.7'
+#  stage: pre-commit
+#  script:
+#  - yum install -y git
+#  - pip install pre-commit
+#  - pre-commit run --all-files
+
+mypy:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: static analysis
+  script:
+  - pip install mypy types-PyYAML
+  - python3 -m mypy --config-file setup.cfg onetl
+
+flake8:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: static analysis
+  script:
+  - pip install wemake-python-styleguide
+  - python3 -m flake8 --format=default . 2>&1 | tee flake8.txt
+  - ls
+  artifacts:
+    when: always
+    paths: [flake8.txt]
+
+black:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: static analysis
+  script:
+  - pip install black
+  - python3 -m black . --check
+
+.build_docker_images:
+  extends: .base_docker_build
+  stage: build
+  variables:
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+  dependencies:
+  - devops_get_cicd_secrets
+
+build_docker_image:
+  extends: .build_docker_images
+  variables:
+    DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_ID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
+    DOCKER_CACHE_FROM: $CI_REGISTRY/$CI_PROJECT_PATH:dev
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+    variables:
+      DOCKER_ADDITIONAL_TAGS: dev
+  - if: $CI_COMMIT_TAG
+    variables:
+      DOCKER_ADDITIONAL_TAGS: latest,$CI_COMMIT_TAG
+  - when: on_success
+build_docker_image_postgres:
+  extends: .build_docker_images
+  variables:
+    DOCKER_FILE_PATH: ./docker/postgres/Dockerfile
+    DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres
+build_docker_image_oracle:
+  extends: .build_docker_images
+  variables:
+    DOCKER_FILE_PATH: ./docker/oracle/Dockerfile
+    DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle
+build_docker_image_hive2:
+  extends: .build_docker_images
+  variables:
+    DOCKER_FILE_PATH: ./docker/hive2/Dockerfile
+    DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2
+
+tests:
+  image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
+  stage: tests
+  variables:
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+    # Postgres
+    POSTGRES_USER: onetl
+    POSTGRES_DB: onetl
+    POSTGRES_HOST: postgres
+    POSTGRES_PASSWORD: onetl
+    # Oracle
+    ORACLE_BASE: /opt/oracle
+    ORACLE_HOME: /opt/oracle/product/18c/dbhomeXE
+    ORACLE_SID: XE
+    ORACLE_ALLOW_REMOTE: 'true'
+    # MySQL
+    MYSQL_ROOT_PASSWORD: onetl
+    MYSQL_DATABASE: onetl
+    MYSQL_USER: onetl
+    MYSQL_PASSWORD: onetl
+    MYSQL_HOST: mysql
+    MYSQL_TCP_PORT: '3306'
+    # MSSQL
+    MSSQL_DB: onetl
+    MSSQL_USER: onetl
+    MSSQL_PASSWORD: 7ellowEl7akey
+    ACCEPT_EULA: Y
+    SA_PASSWORD: 2astazeY
+    # Hive
+    TZ: Europe/Moscow
+    # Enables creation of a Docker network per build with the docker executor
+    FF_NETWORK_PER_BUILD: 1
+    # Test results files
+    COVERAGE_FILE: coverage.xml
+    JUNIT_FILE: junitxml.xml
+  services:
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_ID}
+    alias: postgres
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_ID}
+    alias: hive2
+  - name: yandex/clickhouse-server
+    alias: clickhouse
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_ID}
+    alias: oracle
+  - name: mysql
+    alias: mysql
+  - name: mcmoe/mssqldocker
+    alias: mssql
+  - name: ${CI_REGISTRY}/dev/atlas:2.1
+    alias: atlas
+  script:
+  - pytest tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
+  after_script:
+  - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
+  artifacts:
+    when: always
+    paths:
+    - coverage.xml
+    reports:
+      junit:
+      - junitxml.xml
+      cobertura:
+      - coverage.xml
+
+sonarqube_check:
+  extends: .base_check_sonarqube
+  stage: sonarqube_check
+  variables:
+    SONAR_SOURCES: onetl
+
+build_and_deploy:
+  extends: .base_pip_pkg_build_and_deploy_to_jfrog
+  stage: artifactory
+  only:
+  - master
+  - develop
+  - tags
+  variables:
+    PYTHON_VERSION: '3.7'
+
+# TODO: rewrite for versions before release
+build_and_publish_docs:
+  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  variables:
+    PYTHON_VERSION: '3.7'
+  stage: artifactory
+  only:
+  - master
+  - develop
+  - tags
+  before_script:
+  - export VERSION=$(python setup.py --version)
+  script:
+  - printenv
+  - pip install -r requirements.txt -r requirements-docs.txt
+  - cd docs
+  - make html
+  - tar cvzf html-${VERSION}.tar.gz -C _build/html .
+  - >
+    if [ "$CI_COMMIT_TAG" != "" ];
+    then cp html-${VERSION}.tar.gz html-latest.tar.gz;
+    curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz;
+    fi
+  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-${VERSION}.tar.gz
+
+### --------------- DEPLOY --------------- ###
+pages:
+  extends: .base_pages_deploy_sphinx
+  stage: deploy
+  dependencies:
+  - build_and_publish_docs
+  variables:
+    CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
+  only:
+  - master
+  - develop
+  - tags
+
+.clean_docker_repo:
+  extends: .base_docker_cleaner
+  stage: .post
+  variables:
+    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
+
+clean_docker_repo_hive2:
+  extends: .clean_docker_repo
+  variables:
+    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/hive2
+    CICD_STORE_DEBUG: 'false'
+  when: always
+clean_docker_repo_postgres:
+  extends: .clean_docker_repo
+  variables:
+    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/postgres
+    CICD_STORE_DEBUG: 'false'
+  when: always
+clean_docker_repo_oracle:
+  extends: .clean_docker_repo
+  variables:
+    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/oracle
+    CICD_STORE_DEBUG: 'false'
+  when: always
+clean_docker_repo:
+  extends: .clean_docker_repo
+  variables:
+    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH
+    CICD_STORE_DEBUG: 'false'
+  when: always

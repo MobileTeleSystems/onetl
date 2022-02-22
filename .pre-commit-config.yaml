@@ -1,0 +1,79 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  - id: check-ast
+  - id: check-case-conflict
+  - id: check-docstring-first
+  - id: check-executables-have-shebangs
+  - id: check-merge-conflict
+  - id: check-toml
+  - id: check-vcs-permalinks
+  - id: check-yaml
+  - id: file-contents-sorter
+    files: ^(\.env.*|\.gitignore|\.dockerignore)$
+  - id: requirements-txt-fixer
+    files: ^(requirements.*\.txt)$
+  - id: end-of-file-fixer
+  - id: fix-byte-order-marker
+  - id: fix-encoding-pragma
+    args: [--remove]
+  - id: name-tests-test
+    files: ^tests/(test_integration|test_unit)/.*\.py$
+    args: [--django]
+  - id: trailing-whitespace
+- repo: https://github.com/Lucas-C/pre-commit-hooks
+  rev: v1.1.12
+  hooks:
+  - id: remove-tabs
+    exclude: ^docs/(make.bat|Makefile)
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.1.0
+  hooks:
+  - id: codespell
+    args: [-w]
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.2.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
+- repo: https://github.com/lovesegfault/beautysh
+  rev: v6.2.1
+  hooks:
+  - id: beautysh
+- repo: https://github.com/IamTheFij/docker-pre-commit
+  rev: v2.0.1
+  hooks:
+  - id: docker-compose-check
+    files: ^docker-compose.*\.(yaml|yml)$
+- repo: https://github.com/pycqa/isort
+  rev: 5.10.1
+  hooks:
+  - id: isort
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: v1.9.0
+  hooks:
+  - id: python-no-log-warn
+  - id: python-no-eval
+  - id: rst-backticks
+  - id: rst-directive-colons
+  - id: rst-inline-touching-normal
+  - id: text-unicode-replacement-char
+- repo: https://github.com/asottile/pyupgrade
+  rev: v2.31.0
+  hooks:
+  - id: pyupgrade
+    args: [--py37-plus, --keep-runtime-typing]
+- repo: https://github.com/ambv/black
+  rev: 22.1.0
+  hooks:
+  - id: black
+    language_version: python3
+- repo: https://github.com/asottile/blacken-docs
+  rev: v1.12.1
+  hooks:
+  - id: blacken-docs
+- repo: meta
+  hooks:
+  - id: check-hooks-apply
+  - id: check-useless-excludes

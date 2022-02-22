@@ -1,0 +1,15 @@
+**/*.log
+**/*.pyc
+**/.pytest_cache
+**/__pycache__
+**/metastore_db
+**/spark_warehouse
+.env
+.git/
+.idea/
+.venv
+ENV
+env
+ve
+venv
+virtualenv
