@@ -71,7 +71,12 @@ class Postgres(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
+        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
+
+        if params_str:
+            params_str = f"?{params_str}"
+
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
 
     @property
     def instance_url(self) -> str:

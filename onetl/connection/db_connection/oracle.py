@@ -88,10 +88,15 @@ class Oracle(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        if self.sid:
-            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
+        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
 
-        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
+        if params_str:
+            params_str = f"?{params_str}"
+
+        if self.sid:
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}{params_str}"
+
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}{params_str}"
 
     @property
     def instance_url(self) -> str:
