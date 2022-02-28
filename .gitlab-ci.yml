@@ -103,14 +103,14 @@ black:
   extends: .base_docker_build
   stage: build
   variables:
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_IID
   dependencies:
   - devops_get_cicd_secrets
 
 build_docker_image:
   extends: .build_docker_images
   variables:
-    DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_ID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
+    DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_IID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
     DOCKER_CACHE_FROM: $CI_REGISTRY/$CI_PROJECT_PATH:dev
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -142,7 +142,7 @@ tests:
   image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
   stage: tests
   variables:
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAG: $CI_PIPELINE_IID
     # Postgres
     POSTGRES_USER: onetl
     POSTGRES_DB: onetl
@@ -174,13 +174,13 @@ tests:
     COVERAGE_FILE: coverage.xml
     JUNIT_FILE: junitxml.xml
   services:
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_IID}
     alias: postgres
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_IID}
     alias: hive2
   - name: yandex/clickhouse-server
     alias: clickhouse
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_IID}
     alias: oracle
   - name: mysql
     alias: mysql
@@ -260,7 +260,7 @@ pages:
   extends: .base_docker_cleaner
   stage: .post
   variables:
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAGS: $CI_PIPELINE_IID
 
 clean_docker_repo_hive2:
   extends: .clean_docker_repo
