@@ -21,6 +21,7 @@ class TestIntegrationONETLHive:
 
         with caplog.at_level(logging.INFO):
             hive.check()
+
         assert "Connection is available" in caplog.text
 
     def test_hive_reader(self, spark, processing, prepare_schema_table):
