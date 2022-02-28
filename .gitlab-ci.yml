@@ -17,6 +17,7 @@ stages:
 - build
 - tests
 - sonarqube_check
+- build_docs
 - artifactory
 - deploy
 
@@ -51,6 +52,11 @@ include:
 - project: DevOps/cicd-store/gitlabci/pages
   ref: v1
   file: .base_pages_deploy_sphinx.yml
+
+# Artifactory
+- project: DevOps/cicd-store/gitlabci/artifactory
+  ref: v3
+  file: .base_rt_upload.yml
 
 ### --------------- Get VAULT SECRET --------------- ###
 ## Переиспользование добавленного template'а по добавлению SSH-ключа пользователя ansible. ##
@@ -219,19 +225,18 @@ build_and_deploy:
     PYTHON_VERSION: '3.7'
 
 # TODO: rewrite for versions before release
-build_and_publish_docs:
+build_docs:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
   variables:
     PYTHON_VERSION: '3.7'
-  stage: artifactory
+  stage: build_docs
   only:
-  - master
-  - develop
-  - tags
+    - master
+    - develop
+    - tags
   before_script:
   - export VERSION=$(python setup.py --version)
   script:
-  - printenv
   - pip install -r requirements.txt -r requirements-docs.txt
   - cd docs
   - make html
@@ -239,16 +244,31 @@ build_and_publish_docs:
   - >
     if [ "$CI_COMMIT_TAG" != "" ];
     then cp html-${VERSION}.tar.gz html-latest.tar.gz;
-    curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz;
     fi
-  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-${VERSION}.tar.gz
+  artifacts:
+    paths:
+      - docs/html-*.tar.gz
+
+publish_docs:
+  extends: .base_rt_upload
+  stage: artifactory
+  only:
+    - master
+    - develop
+    - tags
+  variables:
+    JFROG_RT_ARTIFACTS_PATTERN: "docs/html-*.tar.gz"
+    JFROG_RT_UPLOAD_PATH: "files/onetools/onetl/"
+  dependencies:
+    - build_docs
+    - devops_get_cicd_secrets
 
 ### --------------- DEPLOY --------------- ###
 pages:
   extends: .base_pages_deploy_sphinx
   stage: deploy
   dependencies:
-  - build_and_publish_docs
+  - publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   only:
