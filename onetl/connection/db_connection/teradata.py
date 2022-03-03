@@ -73,6 +73,8 @@ class Teradata(JDBCConnection):
     package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.10.00.25"
     port: int = 1025
 
+    _check_query: ClassVar[str] = "SELECT 1 AS check_result"
+
     @property
     def jdbc_url(self) -> str:
         prop = self.extra.copy()

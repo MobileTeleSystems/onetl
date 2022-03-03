@@ -173,9 +173,16 @@ class TestJDBCConnection:
     # ORACLE
 
     def test_oracle_driver_and_uri(self):
-        conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=self.spark)
+        conn = Oracle(
+            host="some_host",
+            user="user",
+            password="passwd",
+            sid="PE",
+            spark=self.spark,
+            extra={"tcpKeepAlive": "false", "connectTimeout": "10"},
+        )
 
-        assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:PE"
+        assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:PE?tcpKeepAlive=false&connectTimeout=10"
         assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
         assert Oracle.package == "com.oracle:ojdbc7:12.1.0.2"
         assert Oracle.port == 1521
@@ -207,9 +214,16 @@ class TestJDBCConnection:
             Postgres(host="some_host", user="user", password="passwd", spark=self.spark)
 
     def test_postgres_driver_and_uri(self):
-        conn = Postgres(host="some_host", user="user", password="passwd", database="default", spark=self.spark)
+        conn = Postgres(
+            host="some_host",
+            user="user",
+            password="passwd",
+            database="default",
+            spark=self.spark,
+            extra={"ssl": "true", "autosave": "always"},
+        )
 
-        assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/default"
+        assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/default?ssl=true&autosave=always"
         assert Postgres.driver == "org.postgresql.Driver"
         assert Postgres.package == "org.postgresql:postgresql:42.2.5"
         assert Postgres.port == 5432

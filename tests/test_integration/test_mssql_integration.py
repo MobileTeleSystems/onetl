@@ -28,6 +28,7 @@ class TestIntegrationONETLMSSQL:
 
         with caplog.at_level(logging.INFO):
             mssql.check()
+
         assert "Connection is available" in caplog.text
 
     def test_mssql_wrong_connection_check(self, spark):

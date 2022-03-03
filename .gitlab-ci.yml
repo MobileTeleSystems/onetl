@@ -17,6 +17,7 @@ stages:
 - build
 - tests
 - sonarqube_check
+- build_docs
 - artifactory
 - deploy
 
@@ -31,11 +32,10 @@ include:
 
 # DOCKER
 - project: DevOps/cicd-store/gitlabci/docker
-  ref: v4
-  file: .base_docker_build.yml
-- project: DevOps/cicd-store/gitlabci/docker
-  ref: v4
-  file: .base_docker_cleaner.yml
+  ref: v5
+  file:
+  - .base_docker_build.yml
+  - .base_docker_cleaner.yml
 
 # SONARQUBE
 - project: DevOps/cicd-store/gitlabci/sonarqube
@@ -52,10 +52,16 @@ include:
   ref: v1
   file: .base_pages_deploy_sphinx.yml
 
+# Artifactory
+- project: DevOps/cicd-store/gitlabci/artifactory
+  ref: v3
+  file: .base_rt_upload.yml
+
 ### --------------- Get VAULT SECRET --------------- ###
 ## Переиспользование добавленного template'а по добавлению SSH-ключа пользователя ansible. ##
 devops_get_cicd_secrets:
   extends: .base_devops_get_cicd_secrets
+  interruptible: true
 
 # TODO: сделать в отдельной задаче
 #pre-commit:
@@ -76,6 +82,7 @@ mypy:
   script:
   - pip install mypy types-PyYAML
   - python3 -m mypy --config-file setup.cfg onetl
+  interruptible: true
 
 flake8:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
@@ -83,12 +90,13 @@ flake8:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install wemake-python-styleguide
+  - pip install wemake-python-styleguide bandit==1.7.2
   - python3 -m flake8 --format=default . 2>&1 | tee flake8.txt
   - ls
   artifacts:
     when: always
     paths: [flake8.txt]
+  interruptible: true
 
 black:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
@@ -98,30 +106,34 @@ black:
   script:
   - pip install black
   - python3 -m black . --check
+  interruptible: true
 
 .build_docker_images:
   extends: .base_docker_build
   stage: build
   variables:
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAG: ${CI_COMMIT_REF_SLUG}
+    STOP_IF_EXISTS: 'false'
   dependencies:
   - devops_get_cicd_secrets
-
-build_docker_image:
-  extends: .build_docker_images
-  variables:
-    DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_ID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
-    DOCKER_CACHE_FROM: $CI_REGISTRY/$CI_PROJECT_PATH:dev
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     when: never
   - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
     variables:
-      DOCKER_ADDITIONAL_TAGS: dev
+      DOCKER_IMAGE_TAG: dev
   - if: $CI_COMMIT_TAG
     variables:
-      DOCKER_ADDITIONAL_TAGS: latest,$CI_COMMIT_TAG
+      DOCKER_ADDITIONAL_TAGS: latest
+      DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
   - when: on_success
+  interruptible: true
+
+build_docker_image:
+  extends: .build_docker_images
+  variables:
+    DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_IID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}:dev
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
@@ -142,7 +154,7 @@ tests:
   image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
   stage: tests
   variables:
-    DOCKER_IMAGE_TAG: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAG: ${CI_COMMIT_REF_SLUG}
     # Postgres
     POSTGRES_USER: onetl
     POSTGRES_DB: onetl
@@ -173,14 +185,24 @@ tests:
     # Test results files
     COVERAGE_FILE: coverage.xml
     JUNIT_FILE: junitxml.xml
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+    variables:
+      DOCKER_IMAGE_TAG: dev
+  - if: $CI_COMMIT_TAG
+    variables:
+      DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
+  - when: on_success
   services:
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${DOCKER_IMAGE_TAG}
     alias: postgres
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${DOCKER_IMAGE_TAG}
     alias: hive2
   - name: yandex/clickhouse-server
     alias: clickhouse
-  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${CI_PIPELINE_ID}
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:${DOCKER_IMAGE_TAG}
     alias: oracle
   - name: mysql
     alias: mysql
@@ -201,12 +223,14 @@ tests:
       - junitxml.xml
       cobertura:
       - coverage.xml
+  interruptible: true
 
 sonarqube_check:
   extends: .base_check_sonarqube
   stage: sonarqube_check
   variables:
     SONAR_SOURCES: onetl
+  interruptible: true
 
 build_and_deploy:
   extends: .base_pip_pkg_build_and_deploy_to_jfrog
@@ -217,13 +241,14 @@ build_and_deploy:
   - tags
   variables:
     PYTHON_VERSION: '3.7'
+  interruptible: true
 
 # TODO: rewrite for versions before release
-build_and_publish_docs:
+build_docs:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
   variables:
     PYTHON_VERSION: '3.7'
-  stage: artifactory
+  stage: build_docs
   only:
   - master
   - develop
@@ -231,7 +256,6 @@ build_and_publish_docs:
   before_script:
   - export VERSION=$(python setup.py --version)
   script:
-  - printenv
   - pip install -r requirements.txt -r requirements-docs.txt
   - cd docs
   - make html
@@ -239,50 +263,69 @@ build_and_publish_docs:
   - >
     if [ "$CI_COMMIT_TAG" != "" ];
     then cp html-${VERSION}.tar.gz html-latest.tar.gz;
-    curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-latest.tar.gz;
     fi
-  - curl -u "${USER_ARTIFACTORY_DOCKER_LOGIN}":"${USER_ARTIFACTORY_DOCKER_TOKEN}" -X PUT "${ARTIFACTORY_URL}/artifactory/files/onetools/onetl/docs/" -T html-${VERSION}.tar.gz
+  artifacts:
+    paths:
+    - docs/html-*.tar.gz
+  interruptible: true
+
+publish_docs:
+  extends: .base_rt_upload
+  stage: artifactory
+  only:
+  - master
+  - develop
+  - tags
+  variables:
+    JFROG_RT_ARTIFACTS_PATTERN: docs/html-*.tar.gz
+    JFROG_RT_UPLOAD_PATH: files/onetools/onetl/
+  dependencies:
+  - build_docs
+  - devops_get_cicd_secrets
+  interruptible: true
 
 ### --------------- DEPLOY --------------- ###
 pages:
   extends: .base_pages_deploy_sphinx
   stage: deploy
   dependencies:
-  - build_and_publish_docs
+  - publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   only:
   - master
   - develop
   - tags
+  interruptible: true
 
 .clean_docker_repo:
   extends: .base_docker_cleaner
   stage: .post
   variables:
-    DOCKER_IMAGE_TAGS: $CI_PIPELINE_ID
+    DOCKER_IMAGE_TAGS: ${CI_COMMIT_REF_SLUG}
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+    when: never
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: always
+  interruptible: false
 
 clean_docker_repo_hive2:
   extends: .clean_docker_repo
   variables:
-    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/hive2
-    CICD_STORE_DEBUG: 'false'
-  when: always
+    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/hive2
 clean_docker_repo_postgres:
   extends: .clean_docker_repo
   variables:
-    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/postgres
-    CICD_STORE_DEBUG: 'false'
-  when: always
+    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/postgres
 clean_docker_repo_oracle:
   extends: .clean_docker_repo
   variables:
-    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH/oracle
-    CICD_STORE_DEBUG: 'false'
-  when: always
+    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/oracle
 clean_docker_repo:
   extends: .clean_docker_repo
   variables:
-    DOCKER_IMAGE_NAME: $CI_PROJECT_PATH
-    CICD_STORE_DEBUG: 'false'
-  when: always
+    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}

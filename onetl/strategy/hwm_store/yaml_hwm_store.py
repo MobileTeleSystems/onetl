@@ -152,9 +152,10 @@ class YAMLHWMStore(BaseHWMStore):
         latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
         return HWMTypeRegistry.parse(latest)
 
-    def save(self, hwm: HWM) -> None:
+    def save(self, hwm: HWM) -> Path:
         data = self._load(hwm.qualified_name)
         self._dump(hwm.qualified_name, [hwm.serialize()] + data)
+        return self.get_file_path(hwm.qualified_name)
 
     @classmethod
     def cleanup_file_name(cls, name: str) -> str:
@@ -166,9 +167,12 @@ class YAMLHWMStore(BaseHWMStore):
         result = cls.PROHIBITED_SYMBOLS_PATTERN.sub("_", result)
         return re.sub("_{2,}", "__", result)
 
+    def get_file_path(self, name: str) -> Path:
+        file_name = self.cleanup_file_name(name)
+        return self.path / f"{file_name}.yml"
+
     def _load(self, name: str) -> list[dict]:
-        name = self.cleanup_file_name(name)
-        path = self.path / f"{name}.yml"
+        path = self.get_file_path(name)
         if not path.exists():
             return []
 
@@ -176,7 +180,6 @@ class YAMLHWMStore(BaseHWMStore):
             return yaml.safe_load(file)
 
     def _dump(self, name: str, data: list[dict]) -> None:
-        name = self.cleanup_file_name(name)
-        path = self.path / f"{name}.yml"
+        path = self.get_file_path(name)
         with path.open("w", encoding=self.encoding) as file:
             yaml.dump(data, file)

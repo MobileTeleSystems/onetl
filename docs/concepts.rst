@@ -146,7 +146,7 @@ Options
     reader = DBReader(
         connection=mssql,
         table="dbo.demo_table",
-        options=MSSQL.Options(fetchsize=1000) # or options={"fetchsize": "1000"}
+        options=MSSQL.Options(fetchsize=1000),  # or options={"fetchsize": "1000"}
     )
 
 The difference between the rest of the class parameters and the "options" parameter is that they can be logically divided according to what they describe:
@@ -162,7 +162,7 @@ The difference between the rest of the class parameters and the "options" parame
         table="dbo.demo_table",
         columns=["column_1", "column_2"],
         # How do we extract?
-        options=MSSQL.Options(fetchsize=1000, sessionInitStatement="select 1")
+        options=MSSQL.Options(fetchsize=1000, sessionInitStatement="select 1"),
     )
 
     writer = DBWriter(
@@ -205,4 +205,5 @@ For example, an incremental strategy allows you to get only new data from the so
 
     # second run
     with IncrementalStrategy():
-        df = reader.run() # only data, that appeared in the source within the last hour will be received
+        # only data, that appeared in the source within the last hour will be received
+        df = reader.run()

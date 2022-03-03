@@ -28,6 +28,7 @@ class TestIntegrationONETLPostgres:
 
         with caplog.at_level(logging.INFO):
             postgres.check()
+
         assert "Connection is available" in caplog.text
 
     def test_postgres_wrong_connection_check(self, spark):
