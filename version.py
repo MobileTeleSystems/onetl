@@ -1,6 +1,6 @@
 import os
 
-version = "0.1.1"  # Bump minor version here
+version = "0.1.2"  # Bump minor version here
 
 
 def get_version():
