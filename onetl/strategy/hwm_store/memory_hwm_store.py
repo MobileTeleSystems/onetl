@@ -62,12 +62,7 @@ class MemoryHWMStore(BaseHWMStore):
     _data: dict[str, HWM] = field(init=False, repr=False, default_factory=dict)
 
     def get(self, name: str) -> HWM | None:
-        result = self._data.get(name, None)
-
-        if result is not None:
-            return result
-
-        return None
+        return self._data.get(name, None)
 
     def save(self, hwm: HWM) -> None:
         self._data[hwm.qualified_name] = hwm

@@ -70,12 +70,12 @@ class AtlasHWMStore(BaseHWMStore):
 
     """
 
-    url: InitVar[str]
+    url: str
     user: InitVar[str | None] = field(default=None)
     password: InitVar[str | None] = field(default=None)
     _client: MTSAtlasClient = field(init=False)
 
-    def __post_init__(self, url, user, password):
+    def __post_init__(self, user, password):
         auth = None
         if user or password:
             if user and password:
@@ -85,15 +85,11 @@ class AtlasHWMStore(BaseHWMStore):
                     f"You can pass to {self.__class__.__name__} only both user and password or none of them",
                 )
 
-        self._client = MTSAtlasClient(url, auth)  # noqa: WPS601
+        self._client = MTSAtlasClient(self.url, auth)  # noqa: WPS601
 
     def get(self, name: str) -> HWM | None:
-        result = self._client.get_hwm(name)
+        return self._client.get_hwm(name)
 
-        if result is not None:
-            return result
-
-        return None
-
-    def save(self, hwm: HWM) -> None:
-        self._client.set_hwm(hwm)
+    def save(self, hwm: HWM) -> str:
+        guid = self._client.set_hwm(hwm)
+        return f"{self.url}/index.html#!/detailPage/{guid}"

@@ -41,7 +41,7 @@ MSSQL → Hive
         table="dbo.demo_table",
         columns=["on", "etl"],
         # Set some MSSQL read options:
-        options= MSSQL.Options(fetchsize=10000)
+        options=MSSQL.Options(fetchsize=10000),
     )
 
     # Read data to DataFrame
@@ -49,6 +49,7 @@ MSSQL → Hive
 
     # Apply any PySpark transformations
     from pyspark.sql.functions import lit
+
     df_to_write = df.withColumn("engine", lit("onetl"))
 
 
@@ -71,7 +72,7 @@ MSSQL → Hive
 SFTP → HDFS
 -----------
 
-`Download files from FTP & upload them to HDFS`
+`Download files from FTP & upload them to HDFS.`
 
 .. code:: python
 
@@ -96,8 +97,8 @@ SFTP → HDFS
     # Initiate downloader
     downloader = FileDownloader(
         connection=sftp,
-        source_path="/home/tests/Report", # sftp_path
-        local_path="/home/onetl/Report", # local fs path
+        source_path="/home/tests/Report",  # sftp_path
+        local_path="/home/onetl/Report",  # local fs path
         delete_source=False,
         source_exclude_dirs=["/home/tests/Report/exclude_dir/"],
         source_file_pattern="*.json",
@@ -113,23 +114,23 @@ SFTP → HDFS
     # >>> [PosixPath('/home/onetl/Report/file_1.json'), PosixPath('/home/onetl/Report/file_2.json')]
 
     # Do any kind of magic with files: rename files, remove header for csv files, ...
-    renamed_downloaded_files =  my_rename_function(downloaded_files)
+    renamed_downloaded_files = my_rename_function(downloaded_files)
 
     # Initiate HDFS connection
     hdfs = HDFS(
         host="my-nn-001.msk.ru",
         user="onetl",
-        password='onetl', # or keytab
+        password="onetl",  # or keytab
     )
 
     # Initiate uploader
     uploader = FileUploader(
         connection=hdfs,
-        target_path="/user/onetl/Report/", # hdfs path
+        target_path="/user/onetl/Report/",  # hdfs path
     )
 
     # Upload files from local fs to HDFS
     uploaded_files = uploader.run(renamed_downloaded_files)
 
-    uploaded_files # return list of uploaded files:
+    uploaded_files  # return list of uploaded files:
     # >>> [PosixPath('/user/onetl/Report/rename_file_1.json'), PosixPath('/user/onetl/Report/rename_file_2.json')]

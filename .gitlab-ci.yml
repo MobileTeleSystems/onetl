@@ -33,9 +33,9 @@ include:
 # DOCKER
 - project: DevOps/cicd-store/gitlabci/docker
   ref: v5
-  file: 
-    - .base_docker_build.yml
-    - .base_docker_cleaner.yml
+  file:
+  - .base_docker_build.yml
+  - .base_docker_cleaner.yml
 
 # SONARQUBE
 - project: DevOps/cicd-store/gitlabci/sonarqube
@@ -113,7 +113,7 @@ black:
   stage: build
   variables:
     DOCKER_IMAGE_TAG: ${CI_COMMIT_REF_SLUG}
-    STOP_IF_EXISTS: "false"
+    STOP_IF_EXISTS: 'false'
   dependencies:
   - devops_get_cicd_secrets
   rules:
@@ -250,9 +250,9 @@ build_docs:
     PYTHON_VERSION: '3.7'
   stage: build_docs
   only:
-    - master
-    - develop
-    - tags
+  - master
+  - develop
+  - tags
   before_script:
   - export VERSION=$(python setup.py --version)
   script:
@@ -266,22 +266,22 @@ build_docs:
     fi
   artifacts:
     paths:
-      - docs/html-*.tar.gz
+    - docs/html-*.tar.gz
   interruptible: true
 
 publish_docs:
   extends: .base_rt_upload
   stage: artifactory
   only:
-    - master
-    - develop
-    - tags
+  - master
+  - develop
+  - tags
   variables:
-    JFROG_RT_ARTIFACTS_PATTERN: "docs/html-*.tar.gz"
-    JFROG_RT_UPLOAD_PATH: "files/onetools/onetl/"
+    JFROG_RT_ARTIFACTS_PATTERN: docs/html-*.tar.gz
+    JFROG_RT_UPLOAD_PATH: files/onetools/onetl/
   dependencies:
-    - build_docs
-    - devops_get_cicd_secrets
+  - build_docs
+  - devops_get_cicd_secrets
   interruptible: true
 
 ### --------------- DEPLOY --------------- ###

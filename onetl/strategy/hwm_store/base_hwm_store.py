@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+from typing import Any
 
 from etl_entities import HWM
 
@@ -42,5 +43,5 @@ class BaseHWMStore:
         ...  # noqa: WPS428
 
     @abstractmethod
-    def save(self, hwm: HWM) -> None:
+    def save(self, hwm: HWM) -> Any:
         ...  # noqa: WPS428
