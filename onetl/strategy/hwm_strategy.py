@@ -81,8 +81,11 @@ class HWMStrategy(BaseStrategy):
             log.info(" " * LOG_INDENT + f"value = {self.hwm.value}")
             log.info(" " * LOG_INDENT + f"qualified_name = {self.hwm.qualified_name}")
 
-            hwm_store.save(self.hwm)
+            location = hwm_store.save(self.hwm)
             log.info(f"{log_prefix} HWM has been saved")
+
+            if location:
+                log.info(" " * LOG_INDENT + f"location = {location}")
         else:
             log.debug(f"{log_prefix} HWM will not been saved, skipping")
 

@@ -23,7 +23,7 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.12
+  rev: v1.1.13
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
@@ -33,7 +33,7 @@ repos:
   - id: codespell
     args: [-w]
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.2.0
+  rev: v2.3.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
