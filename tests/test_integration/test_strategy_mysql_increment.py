@@ -141,21 +141,21 @@ def test_mysql_strategy_incremental_wrong_hwm_type(spark, processing, prepare_sc
         (
             "hwm_int",
             "hwm1_int",
-            "(text_string+0) AS hwm1_int",
+            "(text_string+0)",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "STR_TO_DATE(text_string, '%Y-%m-%d') AS hwm1_date",  # noqa: WPS323
+            "STR_TO_DATE(text_string, '%Y-%m-%d')",  # noqa: WPS323
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f') AS hwm1_datetime",  # noqa: WPS323
+            "HWM1_DATETIME",
+            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f')",  # noqa: WPS323
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -183,8 +183,7 @@ def test_mysql_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=mysql,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between

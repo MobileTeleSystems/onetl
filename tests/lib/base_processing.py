@@ -128,7 +128,12 @@ class BaseProcessing:
         df = self.fix_pandas_df(df.toPandas())
         other_frame = self.fix_pandas_df(other_frame)
 
-        assert_frame_equal(left=df, right=other_frame, check_dtype=False, **kwargs)
+        assert_frame_equal(
+            left=df.sort_index(axis=1),
+            right=other_frame.sort_index(axis=1),
+            check_dtype=False,
+            **kwargs,
+        )
 
     def assert_subset_df(
         self,
@@ -145,5 +150,5 @@ class BaseProcessing:
         df = self.fix_pandas_df(df.toPandas())
         other_frame = self.fix_pandas_df(other_frame)
 
-        for column in df:  # noqa: WPS528
+        for column in set(df.columns).union(other_frame.columns):  # noqa: WPS528
             assert df[column].isin(other_frame[column]).all()  # noqa: S101

@@ -99,11 +99,17 @@ def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_expr, hwm_type, func",
+    "hwm_source, hwm_expr, hwm_column, hwm_type, func",
     [
-        ("hwm_int", "CAST(text_string AS INT) AS hwm", IntHWM, str),
-        ("hwm_date", "CAST(text_string AS DATE) AS hwm", DateHWM, lambda x: x.isoformat()),  # noqa: WPS323
-        ("hwm_datetime", "CAST(text_string AS TIMESTAMP) AS hwm", DateTimeHWM, lambda x: x.isoformat()),  # noqa: WPS323
+        ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", IntHWM, str),
+        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),  # noqa: WPS323
+        (
+            "hwm_datetime",
+            "CAST(text_string AS TIMESTAMP)",
+            "HWM1_DATETIME",
+            DateTimeHWM,
+            lambda x: x.isoformat(),
+        ),  # noqa: WPS323
     ],
 )
 def test_hive_strategy_incremental_with_hwm_expr(
@@ -112,6 +118,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     prepare_schema_table,
     hwm_source,
     hwm_expr,
+    hwm_column,
     hwm_type,
     func,
 ):
@@ -120,8 +127,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=hive,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column="hwm",
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -141,11 +147,11 @@ def test_hive_strategy_incremental_with_hwm_expr(
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
     first_span_with_hwm = first_span.copy()
-    first_span_with_hwm["hwm"] = first_span[hwm_source]
+    first_span_with_hwm[hwm_column] = first_span[hwm_source]
 
     second_span["text_string"] = second_span[hwm_source].apply(func)
     second_span_with_hwm = second_span.copy()
-    second_span_with_hwm["hwm"] = second_span[hwm_source]
+    second_span_with_hwm[hwm_column] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(

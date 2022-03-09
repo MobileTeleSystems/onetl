@@ -121,11 +121,11 @@ class Hive(DBConnection):
                 "Hive reader does not support options.",
             )
 
-        sql_text = self.get_sql_query_cte(
+        sql_text = self.get_sql_query(
             table=table,
-            cte_columns=columns,
+            columns=columns,
             where=where,
-            cte_hint=hint,
+            hint=hint,
         )
 
         df = self._execute_sql(sql_text)
@@ -151,24 +151,23 @@ class Hive(DBConnection):
     def get_min_max_bounds(  # type: ignore[override]
         self,
         table: str,
-        for_column: str,
-        columns: Optional[List[str]],
+        column: str,
+        expression: str,
         hint: Optional[str],
         where: Optional[str],
         options: Options,
     ) -> Tuple[Any, Any]:
 
-        log.info(f"|Spark| Getting min and max values for column '{for_column}'")
+        log.info(f"|Spark| Getting min and max values for column '{column}'")
 
-        sql_text = self.get_sql_query_cte(
+        sql_text = self.get_sql_query(
             table=table,
             columns=[
-                self._get_min_value_sql(for_column, "min_value"),
-                self._get_max_value_sql(for_column, "max_value"),
+                self.expression_with_alias(self._get_min_value_sql(expression), f"min_{column}"),
+                self.expression_with_alias(self._get_max_value_sql(expression), f"max_{column}"),
             ],
             where=where,
-            cte_columns=columns,
-            cte_hint=hint,
+            hint=hint,
         )
 
         log.info(f"|{self.__class__.__name__}| SQL statement:")
@@ -176,11 +175,11 @@ class Hive(DBConnection):
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
-        min_value, max_value = row["min_value"], row["max_value"]
+        min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
 
         log.info("|Spark| Received values:")
-        log.info(" " * LOG_INDENT + f"MIN({for_column}) = {min_value}")
-        log.info(" " * LOG_INDENT + f"MAX({for_column}) = {max_value}")
+        log.info(" " * LOG_INDENT + f"MIN({column}) = {min_value}")
+        log.info(" " * LOG_INDENT + f"MAX({column}) = {max_value}")
 
         return min_value, max_value
 
@@ -212,7 +211,7 @@ class Hive(DBConnection):
         table_columns = self.spark.table(table).columns
 
         # But names could have different cases, this should not cause errors
-        table_columns_lower = list(map(lambda column: column.lower(), table_columns))
+        table_columns_lower = [column.lower() for column in table_columns]
 
         table_columns_set = set(table_columns_lower)
         df_columns_lower = {column.lower() for column in df_columns}

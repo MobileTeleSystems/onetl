@@ -87,8 +87,8 @@ class DBConnection(ConnectionABC):
     def get_min_max_bounds(
         self,
         table: str,
-        for_column: str,
-        columns: Optional[List[str]],
+        column: str,
+        expression: str,
         hint: Optional[str],
         where: Optional[str],
         options: Options,
@@ -124,29 +124,12 @@ class DBConnection(ConnectionABC):
             ),
         )
 
-    def get_sql_query_cte(
-        self,
-        table: str,
-        columns: Optional[List[str]] = None,
-        where: Optional[str] = None,
-        hint: Optional[str] = None,
-        cte_columns: Optional[List[str]] = None,
-        cte_where: Optional[str] = None,
-        cte_hint: Optional[str] = None,
-    ) -> str:
+    def expression_with_alias(self, expression: str, alias: str) -> str:
         """
-        Wraps a SQL query into CTE clause using input arguments
+        Return "expression AS alias" statement
         """
 
-        if columns is None:
-            columns = ["*"]
-
-        if cte_columns is None:
-            cte_columns = ["*"]
-
-        cte = self.get_sql_query(table, columns=cte_columns, hint=cte_hint, where=cte_where)
-
-        return f"WITH cte AS ({cte}) " + self.get_sql_query(table="cte", columns=columns, hint=hint, where=where)
+        return f"{expression} AS {alias}"
 
     def to_options(
         self,
@@ -224,20 +207,20 @@ class DBConnection(ConnectionABC):
         result = value.isoformat()
         return f"'{result}'"
 
-    def _get_max_value_sql(self, value: Any, alias: str) -> str:
+    def _get_max_value_sql(self, value: Any) -> str:
         """
-        Generate `MAX(value) AS alias` clause for given value and alias
-        """
-
-        result = self._get_value_sql(value)
-
-        return f"MAX({result}) AS {alias}"
-
-    def _get_min_value_sql(self, value: Any, alias: str) -> str:
-        """
-        Generate `MIN(value) AS alias` clause for given value and alias
+        Generate `MAX(value)` clause for given value
         """
 
         result = self._get_value_sql(value)
 
-        return f"MIN({result}) AS {alias}"
+        return f"MAX({result})"
+
+    def _get_min_value_sql(self, value: Any) -> str:
+        """
+        Generate `MIN(value)` clause for given value
+        """
+
+        result = self._get_value_sql(value)
+
+        return f"MIN({result})"

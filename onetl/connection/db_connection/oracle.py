@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -112,15 +112,3 @@ class Oracle(JDBCConnection):
     def _get_date_value_sql(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
         return f"TO_DATE('{result}', 'YYYY-MM-DD')"
-
-    def _get_max_value_sql(self, value: Any, alias: str) -> str:
-        # `column AS alias` is not supported by Oracle
-        # so using `column alias` instead
-        result = self._get_value_sql(value)
-
-        return f"MAX({result}) {alias}"
-
-    def _get_min_value_sql(self, value: Any, alias: str) -> str:
-        result = self._get_value_sql(value)
-
-        return f"MIN({result}) {alias}"

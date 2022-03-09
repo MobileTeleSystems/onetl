@@ -85,11 +85,11 @@ class JDBCConnection(DBConnection):
         where: Optional[str],
         options: Options,
     ) -> "pyspark.sql.DataFrame":
-        sql_text = self.get_sql_query_cte(
+        sql_text = self.get_sql_query(
             table=table,
+            columns=columns,
             where=where,
-            cte_columns=columns,
-            cte_hint=hint,
+            hint=hint,
         )
 
         read_options = self.set_lower_upper_bound(
@@ -200,25 +200,24 @@ class JDBCConnection(DBConnection):
     def get_min_max_bounds(  # type: ignore
         self,
         table: str,
-        for_column: str,
-        columns: Optional[List[str]],
+        column: str,
+        expression: str,
         hint: Optional[str],
         where: Optional[str],
         options: Options,
     ) -> Tuple[Any, Any]:
 
-        log.info(f'|Spark| Getting min and max values for column "{for_column}"')
+        log.info(f"|Spark| Getting min and max values for column '{column}'")
 
         options = options.copy(update={"fetchsize": "1"})
-        sql_text = self.get_sql_query_cte(
+        sql_text = self.get_sql_query(
             table=table,
             columns=[
-                self._get_min_value_sql(for_column, "min_value"),
-                self._get_max_value_sql(for_column, "max_value"),
+                self.expression_with_alias(self._get_min_value_sql(expression), f"min_{column}"),
+                self.expression_with_alias(self._get_max_value_sql(expression), f"max_{column}"),
             ],
             where=where,
-            cte_columns=columns,
-            cte_hint=hint,
+            hint=hint,
         )
 
         log.info(f"|{self.__class__.__name__}| SQL statement:")
@@ -230,12 +229,10 @@ class JDBCConnection(DBConnection):
             table=f"({sql_text}) T",
         )
 
-        row = df.collect()[0]
-        min_value, max_value = row["min_value"], row["max_value"]
-
+        min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log.info(" " * LOG_INDENT + f"MIN({for_column}) = {min_value}")
-        log.info(" " * LOG_INDENT + f"MAX({for_column}) = {max_value}")
+        log.info(" " * LOG_INDENT + f"MIN({column}) = {min_value}")
+        log.info(" " * LOG_INDENT + f"MAX({column}) = {max_value}")
 
         return min_value, max_value
 
@@ -273,8 +270,8 @@ class JDBCConnection(DBConnection):
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(
             table=table,
-            for_column=options.partition_column,
-            columns=columns,
+            column=options.partition_column,
+            expression=options.partition_column,
             where=where,
             hint=hint,
             options=options,

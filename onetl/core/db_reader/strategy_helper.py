@@ -53,6 +53,7 @@ class NonHWMStrategyHelper(StrategyHelper):
 class HWMStrategyHelper(StrategyHelper):
     reader: DBReader
     hwm_column: Column
+    hwm_expression: str | None = None
     strategy: HWMStrategy = field(init=False)
 
     def __post_init__(self):
@@ -92,8 +93,8 @@ class HWMStrategyHelper(StrategyHelper):
             )
 
     def detect_hwm_column_type(self) -> type[HWM]:
-        schema = self.reader.get_schema()
-        hwm_column_type = schema[self.hwm_column.name].dataType.typeName()
+        schema = {field.name.lower(): field for field in self.reader.get_schema()}
+        hwm_column_type = schema[self.hwm_column.name.lower()].dataType.typeName()
         return HWMClassRegistry.get(hwm_column_type)
 
     def init_hwm(self) -> None:
@@ -133,7 +134,7 @@ class HWMStrategyHelper(StrategyHelper):
             # values already set by previous reader runs within the strategy
             return
 
-        min_hwm_value, max_hwm_value = self.reader.get_min_max_bounds(self.hwm_column.name)
+        min_hwm_value, max_hwm_value = self.reader.get_min_max_bounds(self.hwm_column.name, self.hwm_expression)
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
@@ -165,7 +166,7 @@ class HWMStrategyHelper(StrategyHelper):
         if self.strategy.current_value is not None and self.strategy.hwm is not None:
             compare = self.reader.get_compare_statement(
                 self.strategy.current_value_comparator,
-                self.strategy.hwm.name,
+                self.hwm_expression or self.strategy.hwm.name,
                 self.strategy.current_value,
             )
             result.append(compare)
@@ -173,7 +174,7 @@ class HWMStrategyHelper(StrategyHelper):
         if self.strategy.next_value is not None and self.strategy.hwm is not None:
             compare = self.reader.get_compare_statement(
                 self.strategy.next_value_comparator,
-                self.strategy.hwm.name,
+                self.hwm_expression or self.strategy.hwm.name,
                 self.strategy.next_value,
             )
             result.append(compare)
