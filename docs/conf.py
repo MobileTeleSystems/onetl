@@ -107,7 +107,7 @@ context = {
     "versions": versions,
     "downloads": [("html", f"https://rep.msk.mts.ru/artifactory/files/onetools/onetl/docs/html-{release}.tar.gz")],
     "single_version": False,
-    "gitlab_host": "gitlab.bd.msk.mts.ru",
+    "gitlab_host": "gitlab.services.mts.ru",
     "gitlab_user": "bigdata/platform/onetools",
     "gitlab_repo": "onetl",
     "gitlab_version": version if on_tag else "master",
