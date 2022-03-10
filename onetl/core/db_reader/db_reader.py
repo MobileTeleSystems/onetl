@@ -251,7 +251,7 @@ class DBReader:
                 log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "Options")
+        log.info(" " * LOG_INDENT + "Options:")
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
