@@ -12,18 +12,10 @@ from onetl.strategy import IncrementalBatchStrategy, IncrementalStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
 
 
-@pytest.mark.parametrize(
-    "hwm_column",
-    [
-        "unknown_column",
-        "HWM_INT",  # wrong case
-    ],
-)
 def test_postgres_strategy_incremental_unknown_hwm_column(
     spark,
     processing,
     prepare_schema_table,
-    hwm_column,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -37,10 +29,36 @@ def test_postgres_strategy_incremental_unknown_hwm_column(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        hwm_column=hwm_column,
+        hwm_column="unknown_column",  # there is no such column in a table
     )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(Exception):
+        with IncrementalStrategy():
+            reader.run()
+
+
+def test_postgres_strategy_incremental_duplicated_hwm_column(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
+        hwm_column="hwm_int",
+    )
+
+    with pytest.raises(Exception):
         with IncrementalStrategy():
             reader.run()
 
@@ -333,7 +351,12 @@ def test_postgres_strategy_incremental_offset(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=["*", hwm_column],
+        hwm_column=hwm_column,
+    )
 
     # there are 2 spans with a gap between
 
@@ -445,21 +468,21 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
         (
             "hwm_int",
             "hwm1_int",
-            "text_string::int AS hwm1_int",
+            "text_string::int",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "text_string::date AS hwm1_date",
+            "text_string::date",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "text_string::timestamp AS hwm1_datetime",
+            "HWM1_DATETIME",
+            "text_string::timestamp",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -487,8 +510,9 @@ def test_postgres_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        # hwm_column is present in the dataframe even if it was not passed in columns list
+        columns=[column for column in processing.column_names if column != hwm_column],
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -508,11 +532,11 @@ def test_postgres_strategy_incremental_with_hwm_expr(
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
     first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column] = first_span[hwm_source]
+    first_span_with_hwm[hwm_column.lower()] = first_span[hwm_source]
 
     second_span["text_string"] = second_span[hwm_source].apply(func)
     second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column] = second_span[hwm_source]
+    second_span_with_hwm[hwm_column.lower()] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(
@@ -572,18 +596,10 @@ def test_postgres_reader_strategy_incremental_batch_outside_loop(
             reader.run()
 
 
-@pytest.mark.parametrize(
-    "hwm_column",
-    [
-        "unknown_column",
-        "HWM_INT",  # wrong case
-    ],
-)
 def test_postgres_strategy_incremental_batch_unknown_hwm_column(
     spark,
     processing,
     prepare_schema_table,
-    hwm_column,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -597,10 +613,37 @@ def test_postgres_strategy_incremental_batch_unknown_hwm_column(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        hwm_column=hwm_column,
+        hwm_column="unknown_column",
     )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(Exception):
+        with IncrementalBatchStrategy(step=1) as batches:
+            for _ in batches:
+                reader.run()
+
+
+def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
+        hwm_column="hwm_int",
+    )
+
+    with pytest.raises(Exception):
         with IncrementalBatchStrategy(step=1) as batches:
             for _ in batches:
                 reader.run()
@@ -1004,7 +1047,13 @@ def test_postgres_strategy_incremental_batch_offset(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        # the error is raised if hwm_expr is set, and hwm_column in the columns list
+        # but if columns list is not passed, this is not an error
+        hwm_column=(hwm_column, hwm_column),
+    )
 
     # there are 2 spans with a gap between
 
@@ -1067,7 +1116,7 @@ def test_postgres_strategy_incremental_batch_offset(
         (
             "hwm_int",
             "hwm1_int",
-            "text_string::int AS hwm1_int",
+            "text_string::int",
             IntHWM,
             10,
             str,
@@ -1075,15 +1124,15 @@ def test_postgres_strategy_incremental_batch_offset(
         (
             "hwm_date",
             "hwm1_date",
-            "text_string::date AS hwm1_date",
+            "text_string::date",
             DateHWM,
             timedelta(days=10),
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "text_string::timestamp AS hwm1_datetime",
+            "HWM1_DATETIME",
+            "text_string::timestamp",
             DateTimeHWM,
             timedelta(hours=100),
             lambda x: x.isoformat(),
@@ -1113,8 +1162,10 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        # the error is raised if hwm_expr is set, and hwm_column in the columns list
+        # but here hwm_column is not in the columns list, no error
+        columns=["*"],
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -1134,11 +1185,11 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
     first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column] = first_span[hwm_source]
+    first_span_with_hwm[hwm_column.lower()] = first_span[hwm_source]
 
     second_span["text_string"] = second_span[hwm_source].apply(func)
     second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column] = second_span[hwm_source]
+    second_span_with_hwm[hwm_column.lower()] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(

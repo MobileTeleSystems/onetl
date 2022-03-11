@@ -15,6 +15,7 @@ repos:
   - id: requirements-txt-fixer
     files: ^(requirements.*\.txt)$
   - id: end-of-file-fixer
+    exclude: ^.*/VERSION$
   - id: fix-byte-order-marker
   - id: fix-encoding-pragma
     args: [--remove]

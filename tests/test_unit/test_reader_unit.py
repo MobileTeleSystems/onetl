@@ -68,8 +68,10 @@ class TestDBReader:
             "cde, ,abc",
             "*,*,cde",
             "abc,abc,cde",
+            "abc,ABC,cde",
             ["*", "*", "cde"],
             ["abc", "abc", "cde"],
+            ["abc", "ABC", "cde"],
         ],
     )
     def test_reader_invalid_columns(self, columns):
@@ -99,6 +101,131 @@ class TestDBReader:
         )
 
         assert reader.columns == real_columns
+
+    @pytest.mark.parametrize(
+        "hwm_column",
+        [  # noqa: WPS317
+            "wrong/name",
+            "wrong@name",
+            "wrong=name",
+            "wrong#name",
+            [],
+            {},
+            (),
+            set(),
+            frozenset(),
+            ("name",),
+            ["name"],
+            {"name"},
+            ("wrong/name", "statement"),
+            ("wrong@name", "statement"),
+            ("wrong=name", "statement"),
+            ("wrong#name", "statement"),
+            ["wrong/name", "statement"],
+            ["wrong@name", "statement"],
+            ["wrong=name", "statement"],
+            ["wrong#name", "statement"],
+            ("wrong/name", "statement", "too", "many"),
+            ("wrong@name", "statement", "too", "many"),
+            ("wrong=name", "statement", "too", "many"),
+            ("wrong#name", "statement", "too", "many"),
+            ["wrong/name", "statement", "too", "many"],
+            ["wrong@name", "statement", "too", "many"],
+            ["wrong=name", "statement", "too", "many"],
+            ["wrong#name", "statement", "too", "many"],
+            {"wrong/name", "statement", "too", "many"},
+            {"wrong@name", "statement", "too", "many"},
+            {"wrong=name", "statement", "too", "many"},
+            {"wrong#name", "statement", "too", "many"},
+            (None, "statement"),
+            [None, "statement"],
+            # this is the same as hwm_column="name",
+            # but if user implicitly passed a tuple
+            # both of values should be set to avoid unexpected errors
+            ("name", None),
+            ["name", None],
+        ],
+    )
+    def test_reader_invalid_hwm_column(self, hwm_column):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="schema.table",
+                hwm_column=hwm_column,
+            )
+
+    @pytest.mark.parametrize(
+        "hwm_column, real_hwm_column, real_hwm_expression",
+        [
+            ("hwm_column", "hwm_column", None),  # noqa: WPS317
+            (("hwm_column", "expression"), "hwm_column", "expression"),  # noqa: WPS317
+            (("hwm_column", "hwm_column"), "hwm_column", "hwm_column"),
+        ],
+    )
+    def test_reader_valid_hwm_column(self, hwm_column, real_hwm_column, real_hwm_expression):
+        reader = DBReader(
+            connection=Hive(spark=self.spark),
+            table="schema.table",
+            hwm_column=hwm_column,
+        )
+
+        assert reader.hwm_column.name == real_hwm_column
+        assert reader.hwm_expression == real_hwm_expression
+
+    @pytest.mark.parametrize(
+        "columns, hwm_column",
+        [  # noqa: WPS317
+            (["a", "b", "c", "d"], "d"),
+            (["a", "b", "c", "d"], "D"),
+            (["a", "b", "c", "D"], "d"),
+            ("a, b, c, d", "d"),
+            ("a, b, c, d", "D"),
+            ("a, b, c, D", "d"),
+            (["*", "d"], "d"),
+            (["*", "d"], "D"),
+            (["*", "D"], "d"),
+            ("*, d", "d"),
+            ("*, d", "D"),
+            ("*, D", "d"),
+            (["*"], "d"),
+            (["*"], "D"),
+            (["*"], ("d", "cast")),
+            (["*"], ("D", "cast")),
+        ],
+    )
+    def test_reader_hwm_column_and_columns_are_not_in_conflict(self, columns, hwm_column):
+        DBReader(
+            connection=Hive(spark=self.spark),
+            table="schema.table",
+            columns=columns,
+            hwm_column=hwm_column,
+        )
+
+    @pytest.mark.parametrize(
+        "columns, hwm_column",
+        [  # noqa: WPS317
+            (["a", "b", "c", "d"], ("d", "cast")),
+            (["a", "b", "c", "d"], ("D", "cast")),
+            (["a", "b", "c", "D"], ("d", "cast")),
+            ("a, b, c, d", ("d", "cast")),
+            ("a, b, c, d", ("D", "cast")),
+            ("a, b, c, D", ("d", "cast")),
+            (["*", "d"], ("d", "cast")),
+            (["*", "d"], ("D", "cast")),
+            (["*", "D"], ("d", "cast")),
+            ("*, d", ("d", "cast")),
+            ("*, d", ("D", "cast")),
+            ("*, D", ("d", "cast")),
+        ],
+    )
+    def test_reader_hwm_column_and_columns_are_in_conflict(self, columns, hwm_column):
+        with pytest.raises(ValueError):
+            DBReader(
+                connection=Hive(spark=self.spark),
+                table="schema.table",
+                columns=columns,
+                hwm_column=hwm_column,
+            )
 
     def test_reader_jdbc_num_partitions_without_partition_column(self):
         with pytest.raises(ValueError):

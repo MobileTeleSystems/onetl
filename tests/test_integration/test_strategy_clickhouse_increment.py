@@ -139,21 +139,21 @@ def test_clickhouse_strategy_incremental_wrong_type(spark, processing, prepare_s
         (
             "hwm_int",
             "hwm1_int",
-            "CAST(text_string AS Integer) AS hwm1_int",
+            "CAST(text_string AS Integer)",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "CAST(text_string AS Date) AS hwm1_date",
+            "CAST(text_string AS Date)",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "CAST(text_string AS DateTime) AS hwm1_datetime",
+            "HWM1_DATETIME",
+            "CAST(text_string AS DateTime)",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -180,8 +180,7 @@ def test_clickhouse_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=clickhouse,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between

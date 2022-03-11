@@ -162,6 +162,59 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
             break
 
 
+def test_postgres_strategy_snapshot_batch_unknown_hwm_column(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column="unknown_column",  # there is no such column in a table
+    )
+
+    with pytest.raises(Exception):
+        with SnapshotBatchStrategy(step=1) as batches:
+            for _ in batches:
+                reader.run()
+
+
+def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
+        hwm_column="hwm_int",
+    )
+
+    with pytest.raises(Exception):
+        with SnapshotBatchStrategy(step=1) as batches:
+            for _ in batches:
+                reader.run()
+
+
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
@@ -288,7 +341,12 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=[hwm_column, "*"],
+        hwm_column=hwm_column,
+    )
 
     # there are 2 spans with a gap between
     # 0..100
@@ -481,21 +539,21 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
         (
             "hwm_int",
             "hwm1_int",
-            "text_string::int AS hwm1_int",
+            "text_string::int",
             10,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "text_string::date AS hwm1_date",
+            "text_string::date",
             timedelta(days=10),
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "text_string::timestamp AS hwm1_datetime",
+            "HWM1_DATETIME",
+            "text_string::timestamp",
             timedelta(hours=100),
             lambda x: x.isoformat(),
         ),
@@ -523,8 +581,8 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        columns=processing.column_names,
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there is a span 0..100
@@ -534,7 +592,7 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
 
     span["text_string"] = span[hwm_source].apply(func)
     span_with_hwm = span.copy()
-    span_with_hwm[hwm_column] = span[hwm_source]
+    span_with_hwm[hwm_column.lower()] = span[hwm_source]
 
     # insert first span
     processing.insert_data(
