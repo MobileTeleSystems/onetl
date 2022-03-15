@@ -13,4 +13,10 @@ def get_version():
     version = version_file.read_text().strip()  # noqa: WPS410
 
     build_num = os.environ.get("CI_PIPELINE_IID", "")
-    return f"{version}.dev{build_num}"
+    branch_name = os.environ.get("CI_COMMIT_REF_SLUG", "")
+    branches_protect = ["master", "develop"]
+
+    if branch_name in branches_protect:
+        return f"{version}.dev{build_num}"
+
+    return f"{version}.dev{build_num}+{branch_name}"
