@@ -6,12 +6,16 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from logging import getLogger
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
+
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
+    from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
 
@@ -29,7 +33,7 @@ class DBConnection(ConnectionABC):
     spark: pyspark.sql.SparkSession
 
     _check_query: ClassVar[str] = "SELECT 1"
-    _compare_statements: ClassVar[Dict[Callable, str]] = {
+    _compare_statements: ClassVar[dict[Callable, str]] = {
         operator.ge: "{} >= {}",
         operator.gt: "{} > {}",
         operator.le: "{} <= {}",
@@ -55,52 +59,85 @@ class DBConnection(ConnectionABC):
         """Instance URL"""
 
     @abstractmethod
-    def save_df(
-        self,
-        df: pyspark.sql.DataFrame,
-        table: str,
-        options: Options,
-    ) -> None:
-        """"""
+    def check(self) -> None:
+        """
+        Check if database is accessible.
 
-    @abstractmethod
-    def read_table(
-        self,
-        table: str,
-        columns: Optional[List[str]],
-        hint: Optional[str],
-        where: Optional[str],
-        options: Options,
-    ) -> pyspark.sql.DataFrame:
-        """"""
+        If not, an exception will be raised.
+
+        Executes some simple query, like ``SELECT 1``, in the database.
+
+        Examples
+        --------
+
+        Database is online:
+
+        .. code:: python
+
+            connection.check()
+
+        Database is offline or not accessible:
+
+        .. code:: python
+
+            connection.check()  # raises RuntimeError exception
+        """
 
     @abstractmethod
     def get_schema(
         self,
         table: str,
-        columns: Optional[List[str]],
-        options: Options,
-    ) -> pyspark.sql.types.StructType:
-        """"""
+        columns: list[str] | None = None,
+        options: Options | None = None,
+    ) -> StructType:
+        """
+        Get table schema
+        """
+
+    @abstractmethod
+    def read_table(
+        self,
+        table: str,
+        columns: list[str] | None = None,
+        hint: str | None = None,
+        where: str | None = None,
+        options: Options | None = None,
+    ) -> DataFrame:
+        """
+        Reads the table to dataframe
+        """
+
+    @abstractmethod
+    def save_df(
+        self,
+        df: DataFrame,
+        table: str,
+        options: Options | None = None,
+    ) -> None:
+        """
+        Saves dataframe to a specific table
+        """
 
     @abstractmethod
     def get_min_max_bounds(
         self,
         table: str,
         column: str,
-        expression: str,
-        hint: Optional[str],
-        where: Optional[str],
-        options: Options,
-    ) -> Tuple[Any, Any]:
-        """"""
+        expression: str | None = None,
+        hint: str | None = None,
+        where: str | None = None,
+        options: Options | None = None,
+    ) -> tuple[Any, Any]:
+        """
+        Get MIN and MAX values for the column
+        """
 
     def get_sql_query(
         self,
         table: str,
-        columns: Optional[List[str]] = None,
-        where: Optional[str] = None,
-        hint: Optional[str] = None,
+        columns: list[str] | None = None,
+        where: str | None = None,
+        hint: str | None = None,
     ) -> str:
         """
         Generates a SQL query using input arguments
@@ -133,8 +170,8 @@ class DBConnection(ConnectionABC):
 
     def to_options(
         self,
-        options: Union[Options, Dict],
-    ) -> Options:
+        options: Options | dict | None = None,
+    ):
         """
         Сonverting <options> is performed depending on which class the <options> parameter was passed.
         If a parameter inherited from the Option class was passed, then it will be returned unchanged.
@@ -142,6 +179,9 @@ class DBConnection(ConnectionABC):
         If the JDBC connect class was used and the Hive options class was used,
         then a ValueError exception will be thrown. If it is the other way around, an exception will also be thrown.
         """
+
+        if not options:
+            return self.Options()
 
         if isinstance(options, dict):
             options = self.Options.parse_obj(options)
@@ -159,12 +199,12 @@ class DBConnection(ConnectionABC):
 
     def log_parameters(self):
         log.info("|Spark| Using connection parameters:")
-        log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
+        log_with_indent(f"type = {self.__class__.__name__}")
         for attr in sorted(self._log_fields() - self._log_exclude_fields()):
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+                log_with_indent(f"{attr} = {value_attr}")
 
     @classmethod
     def _log_fields(cls) -> set[str]:

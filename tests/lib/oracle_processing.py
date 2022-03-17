@@ -47,6 +47,10 @@ class OracleProcessing(BaseProcessing):
         return os.getenv("ONETL_ORA_CONN_HOST")
 
     @property
+    def port(self) -> int:
+        return int(os.getenv("ONETL_ORA_CONN_PORT"))
+
+    @property
     def database(self) -> str:
         return os.getenv("ONETL_ORA_CONN_DATABASE")
 
@@ -55,15 +59,27 @@ class OracleProcessing(BaseProcessing):
         sid = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
         return f"oracle://{self.user}:{self.password}@{sid}"
 
-    @property
-    def port(self) -> int:
-        return int(os.getenv("ONETL_ORA_CONN_PORT"))
+    def get_conn(self) -> cx_Oracle.Connection:
+        try:
+            cx_Oracle.init_oracle_client(lib_dir=os.getenv("ONETL_ORA_CLIENT_PATH"))
+        except Exception:
+            logger.debug("cx_Oracle client is already initialized.", exc_info=True)
+        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
+        return cx_Oracle.connect(user=self.user, password=self.password, dsn=dsn)
+
+    def create_schema_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"CREATE SCHEMA AUTHORIZATION {schema}"
 
     def create_schema(
         self,
         schema: str,
     ) -> None:
-        """"""
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.create_schema_ddl(schema))
+            self.connection.commit()
 
     def create_table(
         self,
@@ -72,17 +88,29 @@ class OracleProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-            cursor.execute(f"CREATE TABLE {schema}.{table} ({str_fields})")
+            cursor.execute(self.create_table_ddl(table, fields, schema))
             self.connection.commit()
+
+    def drop_database_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"DROP DATABASE {schema}"
 
     def drop_database(
         self,
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE {schema}")
+            cursor.execute(self.drop_database_ddl(schema))
             self.connection.commit()
+
+    def drop_table_ddl(
+        self,
+        table: str,
+        schema: str,
+    ) -> str:
+        return f"DROP TABLE {schema}.{table} PURGE"
 
     def drop_table(
         self,
@@ -90,16 +118,8 @@ class OracleProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE {schema}.{table}")
+            cursor.execute(self.drop_table_ddl(table, schema))
             self.connection.commit()
-
-    def get_conn(self) -> cx_Oracle.Connection:
-        try:
-            cx_Oracle.init_oracle_client(lib_dir=os.getenv("ONETL_ORA_CLIENT_PATH"))
-        except Exception:
-            logger.debug("cx_Oracle client is already initialized.", exc_info=True)
-        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
-        return cx_Oracle.connect(user=self.user, password=self.password, dsn=dsn)
 
     def insert_data(
         self,
@@ -125,13 +145,7 @@ class OracleProcessing(BaseProcessing):
         table: str,
         order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-
-        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
-
-        if order_by:
-            statement += f" ORDER BY {order_by}"
-
-        return pd.read_sql_query(statement, con=self.connection)
+        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by), con=self.connection)
 
     def fix_pandas_df(
         self,

@@ -24,8 +24,6 @@ setup(
     author_email="mivasil6@mts.ru",
     python_requires=">=3.7",
     install_requires=requirements,
-    # dependency_links=[
-    #     'http://rep.msk.mts.ru/artifactory/api/pypi/pypi-dev-local/simple',
-    #     'http://rep.msk.mts.ru/artifactory/api/pypi/pypi/simple',
-    # ],
+    include_package_data=True,
+    zip_safe=False,
 )

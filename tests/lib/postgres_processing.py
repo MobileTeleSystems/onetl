@@ -44,6 +44,10 @@ class PostgressProcessing(BaseProcessing):
         return os.getenv("ONETL_PG_CONN_HOST")
 
     @property
+    def port(self) -> int:
+        return int(os.getenv("ONETL_PG_CONN_PORT"))
+
+    @property
     def database(self) -> str:
         return os.getenv("ONETL_PG_CONN_DATABASE")
 
@@ -51,16 +55,31 @@ class PostgressProcessing(BaseProcessing):
     def url(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/"
 
-    @property
-    def port(self) -> int:
-        return int(os.getenv("ONETL_PG_CONN_PORT"))
+    def get_conn(self) -> connection:
+        return pg_connect(self.url)
+
+    def create_schema_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"CREATE SCHEMA IF NOT EXISTS {schema}"
 
     def create_schema(
         self,
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+            cursor.execute(self.create_schema_ddl(schema))
+            self.connection.commit()
+
+    def create_table_ddl(
+        self,
+        table: str,
+        fields: Dict[str, str],
+        schema: str,
+    ) -> str:
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        return f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})"
 
     def create_table(
         self,
@@ -69,8 +88,7 @@ class PostgressProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-            cursor.execute(f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})")
+            cursor.execute(self.create_table_ddl(table, fields, schema))
             self.connection.commit()
 
     def drop_database(
@@ -78,7 +96,7 @@ class PostgressProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {schema}")
+            cursor.execute(self.drop_database_ddl(schema))
             self.connection.commit()
 
     def drop_table(
@@ -87,11 +105,8 @@ class PostgressProcessing(BaseProcessing):
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
+            cursor.execute(self.drop_table_ddl(table, schema))
             self.connection.commit()
-
-    def get_conn(self) -> connection:
-        return pg_connect(self.url)
 
     def insert_data(
         self,
@@ -117,10 +132,4 @@ class PostgressProcessing(BaseProcessing):
         table: str,
         order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-
-        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
-
-        if order_by:
-            statement += f" ORDER BY {order_by}"
-
-        return pd.read_sql_query(f"{statement};", con=self.connection)
+        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by) + ";", con=self.connection)

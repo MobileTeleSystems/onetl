@@ -6,4 +6,4 @@ Hive connection
 .. currentmodule:: onetl.connection.db_connection.hive
 
 .. autoclass:: Hive
-    :members: __init__
+    :members: check, sql, execute

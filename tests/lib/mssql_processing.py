@@ -55,51 +55,6 @@ class MSSQLProcessing(BaseProcessing):
     def url(self) -> str:
         return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-    @staticmethod  # noqa: WPS605
-    def current_datetime() -> datetime:
-        # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
-        return datetime.now().replace(microsecond=0)
-
-    def create_schema(
-        self,
-        schema: str,
-    ) -> None:
-        with self.connection.cursor() as cursor:
-            cursor.execute(
-                f"""IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{schema}'))
-                    BEGIN
-                        EXEC ('CREATE SCHEMA [{schema}]')
-                    END""",
-            )
-
-    def create_table(
-        self,
-        table: str,
-        fields: Dict[str, str],
-        schema: str,
-    ) -> None:
-        with self.connection.cursor() as cursor:
-            str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-            cursor.execute(f"CREATE TABLE {schema}.{table} ({str_fields})")
-            self.connection.commit()
-
-    def drop_database(
-        self,
-        schema: str,
-    ) -> None:
-        with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {schema}")
-            self.connection.commit()
-
-    def drop_table(
-        self,
-        table: str,
-        schema: str,
-    ) -> None:
-        with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
-            self.connection.commit()
-
     def get_conn(self):
         return pymssql.connect(
             host=self.host,
@@ -108,6 +63,56 @@ class MSSQLProcessing(BaseProcessing):
             password=self.password,
             database=self.database,
         )
+
+    @staticmethod  # noqa: WPS605
+    def current_datetime() -> datetime:
+        # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
+        return datetime.now().replace(microsecond=0)
+
+    def create_schema_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"""
+            IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{schema}'))
+            BEGIN
+                EXEC ('CREATE SCHEMA [{schema}]')
+            END
+        """
+
+    def create_schema(
+        self,
+        schema: str,
+    ) -> None:
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.create_schema_ddl(schema))
+
+    def create_table(
+        self,
+        table: str,
+        fields: Dict[str, str],
+        schema: str,
+    ) -> None:
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.create_table_ddl(table, fields, schema))
+            self.connection.commit()
+
+    def drop_database(
+        self,
+        schema: str,
+    ) -> None:
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.drop_database_ddl(schema))
+            self.connection.commit()
+
+    def drop_table(
+        self,
+        table: str,
+        schema: str,
+    ) -> None:
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.drop_table_ddl(table, schema))
+            self.connection.commit()
 
     def insert_data(
         self,
@@ -133,10 +138,4 @@ class MSSQLProcessing(BaseProcessing):
         table: str,
         order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-
-        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
-
-        if order_by:
-            statement += f" ORDER BY {order_by}"
-
-        return pd.read_sql_query(f"{statement};", con=self.connection)
+        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by) + ";", con=self.connection)

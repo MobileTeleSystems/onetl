@@ -149,6 +149,7 @@ def get_mtspark_session(request):
         fix_pyspark=False,
     )
     yield spark
+    spark.sparkContext.stop()
     spark.stop()
 
 
@@ -180,9 +181,8 @@ def processing(request, spark):
 
 
 @pytest.fixture
-def get_schema_table(request, processing):
-    test_function = request.function
-    table = f"{test_function.__name__}_{secrets.token_hex(5)}"
+def get_schema_table(processing):
+    table = f"test_{secrets.token_hex(5)}"
     schema = "onetl"
 
     full_name = f"{schema}.{table}"
@@ -191,16 +191,17 @@ def get_schema_table(request, processing):
 
     yield PreparedDbInfo(full_name=full_name, schema=schema, table=table)
 
-    processing.drop_table(
-        table=table,
-        schema=schema,
-    )
+    try:
+        processing.drop_table(
+            table=table,
+            schema=schema,
+        )
+    except Exception:  # noqa: S110
+        pass
 
 
 @pytest.fixture
 def prepare_schema_table(processing, request, get_schema_table):
-    entities = ["reader", "writer", "strategy", "hwm"]
-
     test_function = request.function
 
     test_entity = test_function.__name__.split("_")[2]
@@ -209,25 +210,24 @@ def prepare_schema_table(processing, request, get_schema_table):
 
     preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
 
-    if test_entity in entities:
-        _, schema, table = get_schema_table
+    _, schema, table = get_schema_table
 
-        try:
-            processing.create_schema(schema=schema)
-            processing.create_table(schema=schema, table=table, fields=fields)
+    try:
+        processing.create_schema(schema=schema)
+        processing.create_table(schema=schema, table=table, fields=fields)
 
-            if preloading_data:
-                processing.insert_data(
-                    schema=schema,
-                    table=table,
-                    values=processing.create_pandas_df(),
-                )
+        if preloading_data:
+            processing.insert_data(
+                schema=schema,
+                table=table,
+                values=processing.create_pandas_df(),
+            )
 
-        except Exception as error:
-            log.exception(error)
-            raise error
+    except Exception as error:
+        log.exception(error)
+        raise error
 
-        return get_schema_table
+    return get_schema_table
 
 
 @pytest.fixture(scope="function", autouse=True)  # noqa: WPS325

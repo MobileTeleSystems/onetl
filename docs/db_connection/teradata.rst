@@ -6,4 +6,4 @@ Teradata connection
 .. currentmodule:: onetl.connection.db_connection.teradata
 
 .. autoclass:: Teradata
-    :members: __init__
+    :members: check, sql, fetch, execute, close

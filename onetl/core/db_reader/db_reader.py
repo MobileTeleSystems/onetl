@@ -210,7 +210,7 @@ class DBReader:
         return self.connection.get_min_max_bounds(
             table=str(self.table),
             column=column,
-            expression=expression or column,
+            expression=expression,
             hint=self.hint,
             where=self.where,
             options=self.options,
@@ -236,7 +236,6 @@ class DBReader:
         .. code::
 
             df = reader.run()
-
         """
 
         # avoid circular imports
@@ -384,7 +383,4 @@ class DBReader:
         return result
 
     def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        if options:
-            return self.connection.to_options(options)
-
-        return self.connection.Options()
+        return self.connection.to_options(options)
