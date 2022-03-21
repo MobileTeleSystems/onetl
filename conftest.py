@@ -1,4 +1,5 @@
 import logging
+import shutil
 import os
 import secrets
 from collections import namedtuple
@@ -84,6 +85,20 @@ def test_files(resource_path):
         resources / "newsage-zp-2018_03_05_10_00_00.csv",
         resources / "newsage-zp-2018_03_05_10_10_00.csv",
     ]
+
+
+@pytest.fixture
+def make_test_files_copy(test_files, tmp_path_factory):
+    temp_test_files = []
+
+    tmp_dir = tmp_path_factory.mktemp("tmp_test_files")
+
+    for file in test_files:
+        new_temp_file = tmp_dir / file.name
+        shutil.copy(file, str(new_temp_file))
+        temp_test_files.append(new_temp_file)
+
+    return temp_test_files
 
 
 @pytest.fixture(scope="session")

@@ -31,6 +31,12 @@ class FileUploader:
 
         Default value: ``/tmp/``
 
+    delete_local: bool, default: ``False``
+        Delete local files after successful upload.
+
+        .. warning ::
+            USE WITH CAUTION BECAUSE FILES WILL BE PERMANENTLY DELETED
+
     Examples
     --------
     Simple Uploader creation
@@ -65,9 +71,9 @@ class FileUploader:
     """
 
     connection: FileConnection
-
     target_path: InitVar[str | os.PathLike]
     _target_path: PurePosixPath = field(init=False)
+    delete_local: bool = False
 
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
     _temp_path: PurePosixPath = field(init=False)
@@ -99,6 +105,9 @@ class FileUploader:
 
             uploaded_files = uploader.run(files_list)
         """
+
+        if self.delete_local:
+            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED !!!")
 
         entity_boundary_log(msg="FileUploader starts")
         connection_class_name = self.connection.__class__.__name__
@@ -146,6 +155,11 @@ class FileUploader:
 
                 successfully_uploaded_files.append(target_file)
                 files_size += file_size
+
+                # Remove files
+                if self.delete_local:
+                    file_path.unlink()
+
             except Exception as e:
                 log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir:")
                 log.exception(" " * LOG_INDENT + f"file = {file_path} ")
