@@ -1,6 +1,7 @@
 import logging
 import tempfile
 from pathlib import Path, PurePosixPath
+import secrets
 
 import pytest
 
@@ -43,6 +44,18 @@ class TestHDFS:
         uploaded_files = uploader.run(test_files)
 
         assert uploaded_files == [target_path / test_file.name for test_file in test_files]
+
+    def test_hdsf_file_uploader_delete_source(self, make_test_files_copy, hdfs_server):
+
+        hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
+
+        target_path = PurePosixPath(f"/user/onetl/test_upload_{secrets.token_hex(5)}")
+        uploader = FileUploader(connection=hdfs, target_path=target_path, delete_local=True)
+        uploader.run(make_test_files_copy)
+
+        # Check out the source folder. The folder must be empty.
+        for file in make_test_files_copy:
+            assert not file.is_file()
 
     def test_hdfs_file_downloader_empty_dir(self, hdfs_server, source_path):
         hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
