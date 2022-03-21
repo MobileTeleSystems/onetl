@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -26,7 +26,16 @@ class HiveProcessing(BaseProcessing):
         self,
         schema: str,
     ) -> None:
-        self.connection.sql(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+        self.connection.sql(self.create_schema_ddl(schema))
+
+    def create_table_ddl(
+        self,
+        table: str,
+        fields: Dict[str, str],
+        schema: str,
+    ) -> str:
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        return f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) STORED AS ORC"
 
     def create_table(
         self,
@@ -34,21 +43,27 @@ class HiveProcessing(BaseProcessing):
         fields: Dict[str, str],
         schema: str,
     ) -> None:
-        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-        self.connection.sql(f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) STORED AS ORC")
+        self.connection.sql(self.create_table_ddl(table, fields, schema))
 
     def drop_database(
         self,
         schema: str,
     ) -> None:
-        self.connection.sql(f"DROP DATABASE IF EXISTS {schema}")
+        self.connection.sql(self.drop_database_ddl(schema))
+
+    def drop_table_ddl(
+        self,
+        table: str,
+        schema: str,
+    ) -> str:
+        return f"DROP TABLE IF EXISTS {schema}.{table} PURGE"
 
     def drop_table(
         self,
         table: str,
         schema: str,
     ) -> None:
-        self.connection.sql(f"DROP TABLE IF EXISTS {schema}.{table}")
+        self.connection.sql(self.drop_table_ddl(table, schema))
 
     def insert_data(
         self,
@@ -64,11 +79,12 @@ class HiveProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        order_by: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
     ) -> "pandas.core.frame.DataFrame":
         values = {column_name: [] for column_name in self.column_names}
 
-        df = self.connection.read.table(f"{schema}.{table}").select(*self.column_names)
+        df = self.connection.sql(self.get_expected_dataframe_ddl(schema, table, order_by))
+
         if order_by:
             df = df.orderBy(order_by)
 

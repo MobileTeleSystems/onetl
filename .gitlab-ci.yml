@@ -56,7 +56,7 @@ include:
 # Artifactory
 - project: DevOps/cicd-store/gitlabci/artifactory
   ref: v3
-  file: 
+  file:
   - .base_rt_upload.yml
   - .base_rt_cli.yml
 
@@ -291,36 +291,36 @@ start_review:
     name: review/$CI_COMMIT_REF_SLUG
     on_stop: stop_review
   script:
-    - echo "Start review"
+  - echo "Start review"
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
-      when: never
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: always
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+    when: never
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: always
 
 stop_review:
   extends: .base_rt_cli
   stage: clean_repo
   script:
     # Remove artifacts for feature/bug branch
-    - export CI_COMMIT_REF_SLUG=$(echo $CI_COMMIT_REF_SLUG | tr '-' '.')
-    - jfrog rt delete files/onetools/onetl/docs/*+${CI_COMMIT_REF_SLUG}*
-    - jfrog rt delete pypi-local/onetl/*+${CI_COMMIT_REF_SLUG}
+  - export CI_COMMIT_REF_SLUG=$(echo $CI_COMMIT_REF_SLUG | tr '-' '.')
+  - jfrog rt delete files/onetools/onetl/docs/*+${CI_COMMIT_REF_SLUG}*
+  - jfrog rt delete pypi-local/onetl/*+${CI_COMMIT_REF_SLUG}
   environment:
     name: review/$CI_COMMIT_REF_SLUG
     action: stop
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
-      when: never
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: manual
-      allow_failure: true
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+    when: never
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: manual
+    allow_failure: true
 
 .clean_docker_repo:
   extends: .base_docker_cleaner

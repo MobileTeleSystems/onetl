@@ -6,4 +6,4 @@ MySQL connection
 .. currentmodule:: onetl.connection.db_connection.mysql
 
 .. autoclass:: MySQL
-    :members: __init__
+    :members: check, sql, fetch, execute, close
