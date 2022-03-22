@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from etl_entities import Column, Table
 
+from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.connection.db_connection import DBConnection
 from onetl.log import LOG_INDENT, entity_boundary_log
 
@@ -37,12 +38,17 @@ class DBReader:
     where : str, default: ``None``
         Custom ``where`` for SQL query
 
-    hwm_column : str, default: ``None``
-        Column to be used as :ref:`hwm` value
+    hwm_column : str or tuple[str, str], default: ``None``
+        Column to be used as :ref:`hwm` value.
 
-        .. warning ::
+        If you want to use some SQL expression as HWM value, you can pass it as tuple
+        ``("column_name", "expression")``, like:
 
-            For :ref:`oracle` you must specify ``hwm_column`` name in UPPERCASE.
+        .. code:: python
+
+            hwm_column = ("hwm_column", "cast(hwm_column_orig as date)")
+
+        HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
 
     hint : str, default: ``None``
         Add hint to SQL query
@@ -51,7 +57,7 @@ class DBReader:
         Spark JDBC read options.
         For example:
 
-        .. code::
+        .. code:: python
 
             Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
 
@@ -80,16 +86,18 @@ class DBReader:
     --------
     Simple Reader creation:
 
-    .. code::
+    .. code:: python
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
@@ -103,16 +111,18 @@ class DBReader:
 
     Reader creation with JDBC options:
 
-    .. code::
+    .. code:: python
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
@@ -123,22 +133,24 @@ class DBReader:
         )
         options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
         # or (it is the same):
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100"}
+        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
 
         reader = DBReader(postgres, table="fiddle.dummy", options=options)
 
     Reader creation with all parameters:
 
-    .. code::
+    .. code:: python
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="test-db-vip.msk.mts.ru",
@@ -147,7 +159,7 @@ class DBReader:
             database="target_db",
             spark=spark,
         )
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100"}
+        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
 
         reader = DBReader(
             connection=postgres,
@@ -166,6 +178,7 @@ class DBReader:
     hint: str | None
     columns: list[str]
     hwm_column: Column | None
+    hwm_expression: str | None
     options: DBConnection.Options
 
     def __init__(
@@ -175,29 +188,29 @@ class DBReader:
         columns: str | list[str] = "*",
         where: str | None = None,
         hint: str | None = None,
-        hwm_column: str | None = None,
+        hwm_column: str | tuple[str, str] | None = None,
         options: DBConnection.Options | dict | None = None,
     ):
         self.connection = connection
         self.table = self._handle_table(table)
         self.where = where
         self.hint = hint
-        self.hwm_column = self._handle_hwm_column(hwm_column)
+        self.hwm_column, self.hwm_expression = self._handle_hwm_column(hwm_column)  # noqa: WPS414
         self.columns = self._handle_columns(columns)
         self.options = self._handle_options(options)
 
     def get_schema(self) -> StructType:
         return self.connection.get_schema(
             table=str(self.table),
-            columns=self._resolve_columns(),
+            columns=self._resolve_all_columns(),
             options=self.options,
         )
 
-    def get_min_max_bounds(self, column: str) -> tuple[Any, Any]:
+    def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
         return self.connection.get_min_max_bounds(
             table=str(self.table),
-            for_column=column,
-            columns=self._resolve_columns(),
+            column=column,
+            expression=expression,
             hint=self.hint,
             where=self.where,
             options=self.options,
@@ -223,7 +236,6 @@ class DBReader:
         .. code::
 
             df = reader.run()
-
         """
 
         # avoid circular imports
@@ -251,7 +263,7 @@ class DBReader:
                 log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "Options")
+        log.info(" " * LOG_INDENT + "Options:")
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
@@ -259,13 +271,13 @@ class DBReader:
 
         helper: StrategyHelper
         if self.hwm_column:
-            helper = HWMStrategyHelper(self, self.hwm_column)
+            helper = HWMStrategyHelper(self, self.hwm_column, self.hwm_expression)
         else:
             helper = NonHWMStrategyHelper(self)
 
         df = self.connection.read_table(
             table=str(self.table),
-            columns=self._resolve_columns(),
+            columns=self._resolve_all_columns(),
             hint=self.hint,
             where=helper.where,
             options=self.options,
@@ -278,7 +290,12 @@ class DBReader:
         return df
 
     def _resolve_columns(self) -> list[str]:
+        """
+        Unwraps "*" in columns list to real column names from existing table
+        """
+
         columns: list[str] = []
+
         for column in self.columns:
             if column == "*":
                 schema = self.connection.get_schema(
@@ -286,10 +303,34 @@ class DBReader:
                     columns=["*"],
                     options=self.options,
                 )
-                real_columns = schema.fieldNames()
-                columns.extend(real_columns)
+                field_names = schema.fieldNames()
+                columns.extend(field_names)
             else:
                 columns.append(column)
+
+        return uniq_ignore_case(columns)
+
+    def _resolve_all_columns(self) -> list[str]:
+        """
+        Like self._resolve_columns(), but adds hwm_column to result if it is not present
+        """
+
+        columns = self._resolve_columns()
+
+        if not self.hwm_column:
+            return columns
+
+        hwm_statement = self.hwm_column.name
+        if self.hwm_expression:
+            hwm_statement = self.connection.expression_with_alias(self.hwm_expression, self.hwm_column.name)
+
+        columns_lower = [column_name.lower() for column_name in columns]
+
+        if self.hwm_column.name.lower() in columns_lower:
+            column_index = columns_lower.index(self.hwm_column.name.lower())
+            columns[column_index] = hwm_statement
+        else:
+            columns.append(hwm_statement)
 
         return columns
 
@@ -297,11 +338,21 @@ class DBReader:
         return Table(name=table, instance=self.connection.instance_url)
 
     @staticmethod
-    def _handle_hwm_column(hwm_column: str | None) -> Column | None:
-        return Column(name=hwm_column) if hwm_column else None
+    def _handle_hwm_column(hwm_column: str | tuple[str, str] | None) -> tuple[None, None] | tuple[Column, str | None]:
+        if hwm_column is None:
+            return None, None
 
-    @staticmethod
-    def _handle_columns(columns: str | list[str]) -> list[str]:
+        hwm_expression: str | None = None
+        if not isinstance(hwm_column, str):
+            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
+            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
+
+            if not hwm_expression:
+                raise ValueError("hwm_column should be a tuple('column_name', 'expression'), but expression is not set")
+
+        return Column(name=hwm_column), hwm_expression
+
+    def _handle_columns(self, columns: str | list[str]) -> list[str]:  # noqa: WPS238
         items: list[str]
         if isinstance(columns, str):
             items = columns.split(",")
@@ -312,6 +363,7 @@ class DBReader:
             raise ValueError("Columns list cannot be empty")
 
         result: list[str] = []
+        result_lower: list[str] = []
 
         for item in items:
             column = item.strip()
@@ -319,15 +371,16 @@ class DBReader:
             if not column:
                 raise ValueError(f"Column name cannot be empty string, got '{item}'")
 
-            if column in result:
+            if column.lower() in result_lower:
                 raise ValueError(f"Duplicated column name: '{item}'")
 
+            if self.hwm_expression and self.hwm_column and self.hwm_column.name.lower() == column.lower():
+                raise ValueError(f"'{item}' is an alias for HWM, it cannot be used as column name")
+
             result.append(column)
+            result_lower.append(column.lower())
 
         return result
 
     def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        if options:
-            return self.connection.to_options(options)
-
-        return self.connection.Options()
+        return self.connection.to_options(options)

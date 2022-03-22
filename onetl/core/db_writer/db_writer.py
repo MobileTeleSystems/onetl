@@ -233,7 +233,7 @@ class DBWriter:
                 log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "Options")
+        log.info(" " * LOG_INDENT + "Options:")
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 
@@ -262,7 +262,4 @@ class DBWriter:
         return Table(name=table, instance=self.connection.instance_url)
 
     def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        if options:
-            return self.connection.to_options(options)
-
-        return self.connection.Options()
+        return self.connection.to_options(options)

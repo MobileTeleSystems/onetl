@@ -79,11 +79,33 @@ class ClickhouseProcessing(BaseProcessing):
 
         return pd.DataFrame(data=values)
 
+    def create_schema_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"CREATE DATABASE IF NOT EXISTS {schema}"
+
     def create_schema(
         self,
         schema: str,
     ) -> None:
-        self.connection.execute(f"create database if not exists {schema}")
+        self.connection.execute(self.create_schema_ddl(schema))
+
+    def create_table_ddl(
+        self,
+        table: str,
+        fields: Dict[str, str],
+        schema: str,
+    ) -> str:
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        first_field = list(fields.keys())[0]
+
+        return f"""
+            CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})
+            ENGINE = MergeTree()
+            ORDER BY {first_field}
+            PRIMARY KEY {first_field}
+        """
 
     def create_table(
         self,
@@ -91,30 +113,20 @@ class ClickhouseProcessing(BaseProcessing):
         fields: Dict[str, str],
         schema: str,
     ) -> None:
-        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-        first_field = list(fields.keys())[0]
-
-        self.connection.execute(
-            f"""
-            create table if not exists {schema}.{table} ({str_fields})
-            engine = MergeTree()
-            order by {first_field}
-            primary key {first_field}
-            """,
-        )
+        self.connection.execute(self.create_table_ddl(table, fields, schema))
 
     def drop_database(
         self,
         schema: str,
     ) -> None:
-        self.connection.execute(f"DROP DATABASE IF EXISTS {schema}")
+        self.connection.execute(self.drop_database_ddl(schema))
 
     def drop_table(
         self,
         table: str,
         schema: str,
     ) -> None:
-        self.connection.execute(f"DROP TABLE IF EXISTS {schema}.{table}")
+        self.connection.execute(self.drop_table_ddl(table, schema))
 
     def get_conn(self) -> "clickhouse_driver.client.Client":
         return clickhouse_driver.Client(host=self.host, port=self.client_port)
@@ -134,10 +146,4 @@ class ClickhouseProcessing(BaseProcessing):
         table: str,
         order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":
-
-        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
-
-        if order_by:
-            statement += f" ORDER BY {order_by}"
-
-        return self.connection.query_dataframe(statement)
+        return self.connection.query_dataframe(self.get_expected_dataframe_ddl(schema, table, order_by))

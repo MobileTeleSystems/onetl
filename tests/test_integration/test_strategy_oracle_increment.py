@@ -127,21 +127,21 @@ def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_s
         (
             "hwm_int",
             "HWM1_INT",
-            "TO_NUMBER(TEXT_STRING) HWM1_INT",
+            "TO_NUMBER(TEXT_STRING)",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "HWM1_DATE",
-            "TO_DATE(TEXT_STRING, 'YYYY-MM-DD') HWM1_DATE",
+            "TO_DATE(TEXT_STRING, 'YYYY-MM-DD')",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "HWM1_DATETIME",
-            "TO_DATE(TEXT_STRING, 'YYYY-MM-DD HH24:MI:SS') HWM1_DATETIME",
+            "hwm1_datetime",
+            "TO_DATE(TEXT_STRING, 'YYYY-MM-DD HH24:MI:SS')",
             DateTimeHWM,
             lambda x: x.strftime("%Y-%m-%d %H:%M:%S"),
         ),
@@ -169,8 +169,7 @@ def test_oracle_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=oracle,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -190,11 +189,11 @@ def test_oracle_strategy_incremental_with_hwm_expr(
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
     first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column] = first_span[hwm_source]
+    first_span_with_hwm[hwm_column.upper()] = first_span[hwm_source]
 
     second_span["text_string"] = second_span[hwm_source].apply(func)
     second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column] = second_span[hwm_source]
+    second_span_with_hwm[hwm_column.upper()] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(

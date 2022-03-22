@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar
 
-from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection, StatementType
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -75,6 +80,16 @@ class Clickhouse(JDBCConnection):
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
+
+    @staticmethod
+    def _build_statement(
+        statement: str,
+        statement_type: StatementType,
+        jdbc_connection,
+        statement_args,
+    ):
+        # Clickhouse does not support prepared statements, as well as calling functions/procedures
+        return jdbc_connection.createStatement(*statement_args)
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")

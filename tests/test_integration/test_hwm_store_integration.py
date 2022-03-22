@@ -43,31 +43,31 @@ hwm_store = [
 hwm_delta = [
     (
         IntHWM(
-            source=Table(name="abc", db="cde", instance="proto://domain.com"),
-            column=Column(name="int"),
+            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+            column=Column(name=secrets.token_hex(5)),
             value=10,
         ),
         5,
     ),
     (
         DateHWM(
-            source=Table(name="abc", db="cde", instance="proto://domain.com"),
-            column=Column(name="date"),
+            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+            column=Column(name=secrets.token_hex(5)),
             value=date(year=2022, month=8, day=15),
         ),
         timedelta(days=31),
     ),
     (
         DateTimeHWM(
-            source=Table(name="abc", db="cde", instance="proto://domain.com"),
-            column=Column(name="datetime"),
+            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+            column=Column(name=secrets.token_hex(5)),
             value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
         ),
         timedelta(seconds=50),
     ),
     (
         FileListHWM(
-            source=RemoteFolder(name="/absolute/path", instance="ftp://ftp.server:21"),
+            source=RemoteFolder(name=f"/absolute/{secrets.token_hex(5)}", instance="ftp://ftp.server:21"),
             value=["some/path", "another.file"],
         ),
         "third.file",
@@ -91,7 +91,7 @@ def test_hwm_store_integration(hwm_store, hwm, delta):
 @pytest.mark.parametrize("hwm, delta", hwm_delta)
 def test_hwm_store_integration_yaml_path(tmp_path_factory, hwm, delta):
     folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
+    path = folder / secrets.token_hex(5)
 
     store = YAMLHWMStore(path)
 
@@ -113,7 +113,7 @@ def test_hwm_store_integration_yaml_path(tmp_path_factory, hwm, delta):
 
 def test_hwm_store_integration_yaml_path_not_folder(tmp_path_factory):
     folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
+    path = folder / secrets.token_hex(5)
     path.touch()
 
     with pytest.raises(OSError):
@@ -123,7 +123,7 @@ def test_hwm_store_integration_yaml_path_not_folder(tmp_path_factory):
 @pytest.mark.parametrize("hwm, delta", hwm_delta)
 def test_hwm_store_integration_yaml_path_no_access(tmp_path_factory, hwm, delta):
     folder = tmp_path_factory.mktemp("someconf")
-    path = folder / secrets.token_hex()
+    path = folder / secrets.token_hex(5)
     path.mkdir()
     path.chmod(000)
 
@@ -155,8 +155,8 @@ def test_hwm_store_integration_atlas_wrong_input(user, password):
         ("http://unknown.url", ATLAS_USER, ATLAS_PASSWORD),
         (ATLAS_HOST, ATLAS_USER, ATLAS_PASSWORD),  # closed port
         (f"{ATLAS_HOST}:{ATLAS_PORT}", ATLAS_USER, ATLAS_PASSWORD),  # no schema
-        (ATLAS_URL, secrets.token_hex(), ATLAS_PASSWORD),  # wrong user
-        (ATLAS_URL, ATLAS_USER, secrets.token_hex()),  # wrong password
+        (ATLAS_URL, secrets.token_hex(5), ATLAS_PASSWORD),  # wrong user
+        (ATLAS_URL, ATLAS_USER, secrets.token_hex(5)),  # wrong password
     ],
 )
 @pytest.mark.parametrize("hwm, delta", hwm_delta)

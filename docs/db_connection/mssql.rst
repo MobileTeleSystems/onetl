@@ -6,4 +6,4 @@ MSSQL connection
 .. currentmodule:: onetl.connection.db_connection.mssql
 
 .. autoclass:: MSSQL
-    :members: __init__
+    :members: check, sql, fetch, execute, close

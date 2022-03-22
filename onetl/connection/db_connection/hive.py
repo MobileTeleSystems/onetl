@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from logging import getLogger
 from textwrap import dedent
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from pydantic import Field, validator
 
+from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection, WriteMode
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
+
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
+    from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
 
@@ -78,21 +85,142 @@ class Hive(DBConnection):
     def instance_url(self) -> str:
         return "rnd-dwh"
 
+    def sql(  # type: ignore[override]
+        self,
+        query: str,
+        options: Options | dict | None = None,
+    ) -> DataFrame:
+        """
+        Lazily execute SELECT statement and return DataFrame.
+
+        Same as ``spark.sql(query)``.
+
+        Parameters
+        ----------
+        query : str
+
+            SQL query to be executed, like:
+
+            * ``SELECT ... FROM ...``
+            * ``WITH ... AS (...) SELECT ... FROM ...``
+            * ``SHOW ...`` queries are also supported, like ``SHOW TABLES``
+
+        Returns
+        -------
+        df : pyspark.sql.dataframe.DataFrame
+
+            Spark dataframe
+
+        Examples
+        --------
+
+        Read data from Hive table:
+
+        .. code:: python
+
+            connection = Hive(spark=spark)
+
+            df = connection.sql("SELECT * FROM mytable")
+        """
+
+        query = clear_statement(query)
+        self._handle_read_options(options)
+
+        log.info(f"|{self.__class__.__name__}| Executing SQL query:")
+        log_with_indent(query)
+        df = self._execute_sql(query)
+        log.info("|Spark| DataFrame successfully created from SQL statement")
+        return df
+
+    def execute(  # type: ignore[override]
+        self,
+        statement: str,
+        options: Options | dict | None = None,
+    ) -> None:
+        """
+        Execute DDL or DML statement.
+
+        Parameters
+        ----------
+        statement : str
+
+            Statement to be executed, like:
+
+            DML statements:
+
+            * ``INSERT INTO target_table SELECT * FROM source_table``
+            * ``TRUNCATE TABLE mytable``
+
+            DDL statements:
+
+            * ``CREATE TABLE mytable (...)``
+            * ``ALTER TABLE mytable ...``
+            * ``DROP TABLE mytable``
+            * ``MSCK REPAIR TABLE mytable``
+
+            The exact list of supported statements depends on Hive version,
+            for example some new versions support ``CREATE FUNCTION`` syntax.
+
+        Examples
+        --------
+
+        Create table:
+
+        .. code:: python
+
+            connection = Hive(spark=spark)
+
+            connection.execute(
+                "CREATE TABLE mytable (id NUMBER, data VARCHAR) PARTITIONED BY (date DATE)"
+            )
+
+        Drop table partition:
+
+        .. code:: python
+
+            connection = Hive(spark=spark)
+
+            connection.execute("ALTER TABLE mytable DROP PARTITION(date='2022-02-01')")
+        """
+
+        statement = clear_statement(statement)
+        self._handle_read_options(options)
+
+        log.info(f"|{self.__class__.__name__}| Executing statement:")
+        log_with_indent(statement)
+        self._execute_sql(statement).collect()
+        log.info(f"|{self.__class__.__name__}| Call succeeded")
+
+    def check(self) -> None:
+        self.log_parameters()
+
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+
+        try:
+            self.sql(self._check_query)
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
+        except Exception as e:
+            msg = f"Connection is unavailable:\n{e}"
+            log.exception(f"|{self.__class__.__name__}| {msg}")
+            raise RuntimeError(msg) from e
+
     def save_df(  # type: ignore[override]
         self,
-        df: "pyspark.sql.DataFrame",
+        df: DataFrame,
         table: str,
-        options: Options,
+        options: Options | dict | None = None,
     ) -> None:
-        if options.insert_into:
+        write_options = self.to_options(options)
+
+        if write_options.insert_into:
             columns = self._sort_df_columns_like_table(table, df.columns)
             writer = df.select(*columns).write
 
-            mode = WriteMode(options.mode)
+            mode = WriteMode(write_options.mode)
             writer.insertInto(table, overwrite=mode == WriteMode.OVERWRITE)  # overwrite is boolean
         else:
             writer = df.write
-            for method, value in options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
+            for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
                 # <value> is the arguments that will be passed to the <method>
                 # format orc, parquet methods and format simultaneously
                 if hasattr(writer, method):
@@ -103,108 +231,91 @@ class Hive(DBConnection):
                 else:
                     writer = writer.option(method, value)
 
-            writer.saveAsTable(table)  # type: ignore
+            writer.saveAsTable(table)
 
         log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
 
-    def read_table(  # type: ignore
+    def read_table(  # type: ignore[override]
         self,
         table: str,
-        columns: Optional[List[str]],
-        hint: Optional[str],
-        where: Optional[str],
-        options: Options,
-    ) -> "pyspark.sql.DataFrame":
-        if options.dict(exclude_unset=True):
-            raise ValueError(
-                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
-                "Hive reader does not support options.",
-            )
-
-        sql_text = self.get_sql_query_cte(
+        columns: list[str] | None = None,
+        hint: str | None = None,
+        where: str | None = None,
+        options: Options | dict | None = None,
+    ) -> DataFrame:
+        sql_text = self.get_sql_query(
             table=table,
-            cte_columns=columns,
+            columns=columns,
             where=where,
-            cte_hint=hint,
+            hint=hint,
         )
 
-        df = self._execute_sql(sql_text)
-        log.info("|Spark| DataFrame successfully created from SQL statement")
-
-        return df
+        return self.sql(sql_text, options)
 
     def get_schema(  # type: ignore[override]
         self,
         table: str,
-        columns: Optional[List[str]],
-        options: Options,
-    ) -> "pyspark.sql.types.StructType":
+        columns: list[str] | None = None,
+        options: Options | dict | None = None,
+    ) -> StructType:
+        self._handle_read_options(options)
 
         query_schema = self.get_sql_query(table, columns=columns, where="1=0")
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
+        log.info(f"|{self.__class__.__name__}| SQL statement:")
+        log_with_indent(query_schema)
 
         df = self._execute_sql(query_schema)
-
         return df.schema
 
     def get_min_max_bounds(  # type: ignore[override]
         self,
         table: str,
-        for_column: str,
-        columns: Optional[List[str]],
-        hint: Optional[str],
-        where: Optional[str],
-        options: Options,
+        column: str,
+        expression: str | None = None,
+        hint: str | None = None,
+        where: str | None = None,
+        options: Options | dict | None = None,
     ) -> Tuple[Any, Any]:
 
-        log.info(f"|Spark| Getting min and max values for column '{for_column}'")
+        self._handle_read_options(options)
+        log.info(f"|Spark| Getting min and max values for column '{column}'")
 
-        sql_text = self.get_sql_query_cte(
+        sql_text = self.get_sql_query(
             table=table,
             columns=[
-                self._get_min_value_sql(for_column, "min_value"),
-                self._get_max_value_sql(for_column, "max_value"),
+                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
+                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
             ],
             where=where,
-            cte_columns=columns,
-            cte_hint=hint,
+            hint=hint,
         )
 
         log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + sql_text)
+        log_with_indent(sql_text)
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
-        min_value, max_value = row["min_value"], row["max_value"]
+        min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
 
         log.info("|Spark| Received values:")
-        log.info(" " * LOG_INDENT + f"MIN({for_column}) = {min_value}")
-        log.info(" " * LOG_INDENT + f"MAX({for_column}) = {max_value}")
+        log_with_indent(f"MIN({column}) = {min_value}")
+        log_with_indent(f"MAX({column}) = {max_value}")
 
         return min_value, max_value
 
-    def check(self):
-        self.log_parameters()
-
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + self._check_query)
-
-        try:
-            self._execute_sql(self._check_query).collect()
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
-        except Exception as e:
-            msg = f"Connection is unavailable:\n{e}"
-            log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg)
-
-    def _execute_sql(self, query: str) -> "pyspark.sql.DataFrame":
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log.info(" " * LOG_INDENT + query)
+    def _execute_sql(self, query: str) -> DataFrame:
         return self.spark.sql(query)
 
-    def _sort_df_columns_like_table(self, table: str, df_columns: List[str]) -> List[str]:
+    def _handle_read_options(self, options: Options | dict | None):
+        if self.to_options(options).dict(exclude_unset=True):
+            raise ValueError(
+                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
+                "Hive reader does not support options.",
+            )
+
+    def _sort_df_columns_like_table(self, table: str, df_columns: list[str]) -> list[str]:
         # Hive is inserting columns by the order, not by their name
         # so if you're inserting dataframe with columns B, A, C to table with columns A, B, C, data will be damaged
         # so it is important to sort columns in dataframe to match columns in the table.
@@ -212,7 +323,7 @@ class Hive(DBConnection):
         table_columns = self.spark.table(table).columns
 
         # But names could have different cases, this should not cause errors
-        table_columns_lower = list(map(lambda column: column.lower(), table_columns))
+        table_columns_lower = [column.lower() for column in table_columns]
 
         table_columns_set = set(table_columns_lower)
         df_columns_lower = {column.lower() for column in df_columns}

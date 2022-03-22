@@ -16,12 +16,27 @@ class BaseProcessing:
 
     column_names: List = ["id_int", "text_string", "hwm_int", "hwm_date", "hwm_datetime", "float_value"]
 
+    def create_schema_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"CREATE SCHEMA IF NOT EXISTS {schema}"
+
     @abstractmethod
     def create_schema(
         self,
         schema: str,
     ) -> None:
         """"""
+
+    def create_table_ddl(
+        self,
+        table: str,
+        fields: Dict[str, str],
+        schema: str,
+    ) -> str:
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        return f"CREATE TABLE {schema}.{table} ({str_fields})"
 
     @abstractmethod
     def create_table(
@@ -32,12 +47,25 @@ class BaseProcessing:
     ) -> None:
         """"""
 
+    def drop_database_ddl(
+        self,
+        schema: str,
+    ) -> str:
+        return f"DROP DATABASE IF EXISTS {schema}"
+
     @abstractmethod
     def drop_database(
         self,
         schema: str,
     ) -> None:
         """"""
+
+    def drop_table_ddl(
+        self,
+        table: str,
+        schema: str,
+    ) -> str:
+        return f"DROP TABLE IF EXISTS {schema}.{table}"
 
     @abstractmethod
     def drop_table(
@@ -55,6 +83,19 @@ class BaseProcessing:
         values: list,
     ) -> None:
         """"""
+
+    def get_expected_dataframe_ddl(
+        self,
+        schema: str,
+        table: str,
+        order_by: Optional[str] = None,
+    ) -> str:
+        statement = f"SELECT {', '.join(self.column_names)} FROM {schema}.{table}"
+
+        if order_by:
+            statement += f" ORDER BY {order_by}"
+
+        return statement
 
     @abstractmethod
     def get_expected_dataframe(
@@ -116,7 +157,7 @@ class BaseProcessing:
         df: "pyspark.sql.DataFrame",
         schema: Optional[str] = None,
         table: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
         other_frame: Optional["pandas.core.frame.DataFrame"] = None,
         **kwargs,
     ) -> None:
@@ -125,10 +166,26 @@ class BaseProcessing:
         if other_frame is None:
             other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
 
-        df = self.fix_pandas_df(df.toPandas())
-        other_frame = self.fix_pandas_df(other_frame)
+        left_df = self.fix_pandas_df(df.toPandas())
+        right_df = self.fix_pandas_df(other_frame)
 
-        assert_frame_equal(left=df, right=other_frame, check_dtype=False, **kwargs)
+        if order_by:
+            left_df = left_df.sort_values(by=order_by)
+            right_df = right_df.sort_values(by=order_by)
+
+            left_df.reset_index(inplace=True, drop=True)
+            right_df.reset_index(inplace=True, drop=True)
+
+        # ignore columns order
+        left_df = left_df.sort_index(axis=1)
+        right_df = right_df.sort_index(axis=1)
+
+        assert_frame_equal(
+            left=left_df,
+            right=right_df,
+            check_dtype=False,
+            **kwargs,
+        )
 
     def assert_subset_df(
         self,
@@ -145,5 +202,5 @@ class BaseProcessing:
         df = self.fix_pandas_df(df.toPandas())
         other_frame = self.fix_pandas_df(other_frame)
 
-        for column in df:  # noqa: WPS528
+        for column in set(df.columns).union(other_frame.columns):  # noqa: WPS528
             assert df[column].isin(other_frame[column]).all()  # noqa: S101

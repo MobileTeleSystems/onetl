@@ -141,21 +141,21 @@ def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema
         (
             "hwm_int",
             "hwm1_int",
-            "CAST(text_string AS int) AS hwm1_int",
+            "CAST(text_string AS int)",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "CAST(text_string AS Date) AS hwm1_date",
+            "CAST(text_string AS Date)",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "hwm1_datetime",
-            "CAST(text_string AS datetime2) AS hwm1_datetime",
+            "HWM1_DATETIME",
+            "CAST(text_string AS datetime2)",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -183,8 +183,7 @@ def test_mssql_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=mssql,
         table=prepare_schema_table.full_name,
-        columns=["*", hwm_expr],
-        hwm_column=hwm_column,
+        hwm_column=(hwm_column, hwm_expr),
     )
 
     # there are 2 spans with a gap between
