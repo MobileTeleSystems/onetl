@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
-from pathlib import Path, PosixPath
+from pathlib import Path, PosixPath, PurePosixPath
 from typing import Iterator
 
 import humanize
@@ -159,7 +159,7 @@ class FileDownloader:
         # TODO:(@mivasil6) не выводить лог, если папка есть
         create_local_dir(self.local_path)
 
-        for remote_file_path in self.remote_files_listing(self.source_path):
+        for remote_file_path in self.view_files():
             try:
                 filename = remote_file_path.name
                 local_file_path = PosixPath(self.local_path) / filename
@@ -196,3 +196,25 @@ class FileDownloader:
         entity_boundary_log(msg=msg, char="-")
 
         return downloaded_files
+
+    def view_files(self) -> list[PurePosixPath]:
+        """
+        Method to show list of downloaded files from source
+
+        Returns
+        -------
+        List[Path]
+            List of downloaded files.
+
+        Examples
+        --------
+
+        View files
+
+        .. code::
+
+            view_files = downloader.view_files()
+
+        """
+
+        return list(self.remote_files_listing(self.source_path))

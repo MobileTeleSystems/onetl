@@ -74,6 +74,20 @@ class TestHDFS:
             files = downloader.run()
             assert not files
 
+    def test_hdfs_file_downloader_view_file(self, hdfs_server, source_path, hdfs_files):
+        hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
+
+        downloader = FileDownloader(
+            connection=hdfs,
+            source_path=source_path,
+            local_path=Path("/some/path"),
+        )
+
+        files_list = downloader.view_files()
+
+        for file_path in hdfs_files:
+            assert file_path in files_list
+
     def test_hdfs_file_downloader(self, hdfs_server, source_path, resource_path, hdfs_files):
         hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
 

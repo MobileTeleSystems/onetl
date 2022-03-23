@@ -74,6 +74,20 @@ class TestSFTP:
             files = downloader.run()
             assert not files
 
+    def test_sftp_file_downloader_view_file(self, sftp_server, source_path, sftp_files):
+        sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path=source_path,
+            local_path=Path("/some/path"),
+        )
+
+        files_list = downloader.view_files()
+
+        for file_path in sftp_files:
+            assert file_path in files_list
+
     def test_sftp_file_downloader(self, sftp_server, source_path, resource_path, sftp_files):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
 
