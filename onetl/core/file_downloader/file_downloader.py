@@ -30,7 +30,7 @@ class FileDownloader:
     local_path : str
         Local path where you download files
 
-    source_file_pattern : str, default: ``*``
+    file_pattern : str, default: ``*``
         Fnmatch check for file_name. For example: ``*.csv``.
 
     delete_source : bool, default: ``False``
@@ -71,14 +71,14 @@ class FileDownloader:
             local_path="/path/to/local",
             delete_source=True,
             source_exclude_dirs=["path/to/remote/source/exclude_dir"],
-            source_file_pattern="*.txt",
+            file_pattern="*.txt",
         )
     """
 
     connection: FileConnection
     source_path: Path | str
     local_path: Path | str
-    source_file_pattern: str | None = "*"
+    file_pattern: str | None = "*"
     delete_source: bool = False
     source_exclude_dirs: list = field(default_factory=list)
 
@@ -109,7 +109,7 @@ class FileDownloader:
             for res_file in files:
                 log.info(f"|{self.connection.__class__.__name__}| Checking file: {PosixPath(root) / res_file}")
                 try:
-                    check_pattern(res_file, self.source_file_pattern)
+                    check_pattern(res_file, self.file_pattern)
                 except Exception as e:
                     log.info(e)
                     continue
@@ -145,7 +145,7 @@ class FileDownloader:
             f" to local directory: '{self.local_path}'",
         )
         log.info(f"|{self.__class__.__name__}| Using parameters:")
-        log.info(" " * indent + f"source_file_pattern = {self.source_file_pattern}")
+        log.info(" " * indent + f"file_pattern = {self.file_pattern}")
         log.info(" " * indent + f"delete_source = {self.delete_source}")
         log.info(" " * indent + f"source_exclude_dirs = {self.source_exclude_dirs}")
         log.info(f"|{self.__class__.__name__}| Using connection:")

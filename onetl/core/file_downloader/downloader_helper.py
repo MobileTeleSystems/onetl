@@ -14,7 +14,7 @@ def create_local_dir(local_path: str) -> None:
         raise last_exception
 
 
-def check_pattern(res_file: str, remote_source_file_pattern: str = None) -> bool:
-    if not remote_source_file_pattern or PosixPath(res_file).match(remote_source_file_pattern):
+def check_pattern(res_file: str, remote_file_pattern: str = None) -> bool:
+    if not remote_file_pattern or PosixPath(res_file).match(remote_file_pattern):
         return True
-    raise RuntimeError(f"File is not matched with pattern: {remote_source_file_pattern}")
+    raise RuntimeError(f"File is not matched with pattern: {remote_file_pattern}")
