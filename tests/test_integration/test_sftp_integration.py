@@ -68,7 +68,7 @@ class TestSFTP:
                 connection=sftp,
                 source_path=source_path,
                 local_path=local_path,
-                source_file_pattern=file_pattern,
+                file_pattern=file_pattern,
             )
 
             files = downloader.run()
@@ -109,7 +109,7 @@ class TestSFTP:
                 connection=sftp,
                 source_path=source_path,
                 local_path=local_path,
-                source_file_pattern=file_pattern,
+                file_pattern=file_pattern,
             )
 
             files = downloader.run()
@@ -138,7 +138,7 @@ class TestSFTP:
                 connection=sftp,
                 source_path=source_path,
                 local_path=local_path,
-                source_file_pattern=file_pattern,
+                file_pattern=file_pattern,
             )
 
             files = downloader.run()
