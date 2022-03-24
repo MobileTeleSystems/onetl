@@ -98,6 +98,22 @@ class TestFTPS:
                 assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
                 assert hashfile(original_file) == hashfile(local_path / original_file.name)
 
+    def test_ftps_file_downloader_view_file(self, ftps_server, source_path, ftps_files):
+        ftps = FTPS(user=ftps_server.user, password=ftps_server.password, host=ftps_server.host, port=ftps_server.port)
+
+        downloader = FileDownloader(
+            connection=ftps,
+            source_path=source_path,
+            local_path=Path("/some/path"),
+        )
+
+        files_list = downloader.view_files()
+
+        print(files_list)
+
+        for file_path in ftps_files:
+            assert file_path in files_list
+
     def test_ftps_file_downloader_with_pattern(self, ftps_server, source_path, resource_path, ftps_files):
         ftps = FTPS(user=ftps_server.user, password=ftps_server.password, host=ftps_server.host, port=ftps_server.port)
         file_pattern = "*.csv"

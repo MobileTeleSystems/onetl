@@ -45,6 +45,20 @@ class TestFTP:
 
         assert uploaded_files == [target_path / test_file.name for test_file in test_files]
 
+    def test_ftp_file_downloader_view_file(self, ftp_server, source_path, ftp_files):
+        ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
+
+        downloader = FileDownloader(
+            connection=ftp,
+            source_path=source_path,
+            local_path=Path("/some/path"),
+        )
+
+        files_list = downloader.view_files()
+
+        for file_path in ftp_files:
+            assert file_path in files_list
+
     def test_ftp_file_uploader_delete_source(self, make_test_files_copy, ftp_server):
 
         ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
