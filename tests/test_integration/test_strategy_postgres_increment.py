@@ -809,6 +809,7 @@ def test_postgres_reader_strategy_incremental_batch_wrong_step(
                 reader.run()
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [

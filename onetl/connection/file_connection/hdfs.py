@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import PosixPath
 
-from hdfs import HdfsError, InsecureClient
+from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -105,6 +105,11 @@ class HDFS(FileConnection):
         return self.client.status(target_hdfs_path, strict=False)
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+
+        if not self.path_exists(path):
+            log.info(f"|{self.__class__.__name__}| Directory {path} does not exist, nothing to remove")
+            return
+
         self.client.delete(path, recursive=recursive)
         log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
 
@@ -121,8 +126,6 @@ class HDFS(FileConnection):
         self.client.download(remote_file_path, local_file_path)
 
     def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        if not self.path_exists(remote_file_path):
-            raise HdfsError(f"{remote_file_path} doesn`t exists")
         self.client.delete(remote_file_path, recursive=False)
 
     def _listdir(self, path: os.PathLike | str) -> list:

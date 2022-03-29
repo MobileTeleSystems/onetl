@@ -45,13 +45,15 @@ class TestHDFS:
 
         assert uploaded_files == [target_path / test_file.name for test_file in test_files]
 
-    def test_hdsf_file_uploader_delete_source(self, make_test_files_copy, hdfs_server):
+    @pytest.mark.parametrize("path_type", [str, Path])
+    @pytest.mark.parametrize("run_path_type", [str, PurePosixPath])
+    def test_hdsf_file_uploader_delete_source(self, make_test_files_copy, hdfs_server, path_type, run_path_type):
 
         hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
 
-        target_path = PurePosixPath(f"/user/onetl/test_upload_{secrets.token_hex(5)}")
+        target_path = path_type(f"/user/onetl/test_upload_{secrets.token_hex(5)}")
         uploader = FileUploader(connection=hdfs, target_path=target_path, delete_local=True)
-        uploader.run(make_test_files_copy)
+        uploader.run([run_path_type(file) for file in make_test_files_copy])
 
         # Check out the source folder. The folder must be empty.
         for file in make_test_files_copy:
@@ -158,21 +160,20 @@ class TestHDFS:
             files = downloader.run()
             assert not files
 
-    def test_hdfs_file_downloader_delete_source(self, hdfs_server, source_path, resource_path, hdfs_files):
+    @pytest.mark.parametrize("path_type", [str, Path])
+    def test_hdfs_file_downloader_delete_source(self, hdfs_server, source_path, resource_path, hdfs_files, path_type):
         hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
             downloader = FileDownloader(
                 connection=hdfs,
-                source_path=source_path,
-                local_path=local_path,
+                source_path=path_type(source_path),
+                local_path=path_type(temp_dir),
                 delete_source=True,
             )
 
             files = downloader.run()
-            local_files = [local_path / file.name for file in hdfs_files]
+            local_files = [Path(temp_dir) / file.name for file in hdfs_files]
 
             assert len(files) == len(local_files)
             assert set(files) == set(local_files)
@@ -189,5 +190,5 @@ class TestHDFS:
             original_files = [resource_path / file.relative_to(source_path) for file in hdfs_files]
 
             for original_file in original_files:
-                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
-                assert hashfile(original_file) == hashfile(local_path / original_file.name)
+                assert original_file.stat().st_size == (Path(temp_dir) / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(Path(temp_dir) / original_file.name)

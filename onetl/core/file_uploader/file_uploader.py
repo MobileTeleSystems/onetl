@@ -82,7 +82,7 @@ class FileUploader:
         self._target_path = PurePosixPath(target_path)  # noqa: WPS601
         self._temp_path = PurePosixPath(temp_path)  # noqa: WPS601
 
-    def run(self, files_list: list[str | os.PathLike]) -> list[Path]:  # noqa: WPS213
+    def run(self, files_list: list[str | os.PathLike]) -> list[Path]:  # noqa: WPS213, WPS231
         """
         Method for uploading files to remote host.
 
@@ -144,8 +144,10 @@ class FileUploader:
 
             file_path = Path(file)
 
-            tmp_file = current_temp_dir / file.name
-            target_file = self._target_path / file.name
+            file_name = Path(file).name
+
+            tmp_file = current_temp_dir / file_name
+            target_file = self._target_path / file_name
 
             try:
                 file_size = file_path.stat().st_size
