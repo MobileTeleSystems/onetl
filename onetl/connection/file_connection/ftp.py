@@ -77,6 +77,11 @@ class FTP(FileConnection):
         return self.client.stat(path=path, _exception_for_missing_path=False)
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+
+        if not self.path_exists(path):
+            log.info(f"|{self.__class__.__name__}| Directory {path} does not exist, nothing to remove")
+            return
+
         if recursive:
             self.client.rmtree(path)
         else:

@@ -45,13 +45,15 @@ class TestSFTP:
 
         assert uploaded_files == [target_path / test_file.name for test_file in test_files]
 
-    def test_sftp_file_uploader_delete_source(self, make_test_files_copy, sftp_server):
+    @pytest.mark.parametrize("path_type", [str, Path])
+    @pytest.mark.parametrize("run_path_type", [str, PurePosixPath])
+    def test_sftp_file_uploader_delete_source(self, make_test_files_copy, sftp_server, path_type, run_path_type):
 
         sftp = SFTP(user=sftp_server.user, password=sftp_server.password, host=sftp_server.host, port=sftp_server.port)
 
-        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
         uploader = FileUploader(connection=sftp, target_path=target_path, delete_local=True)
-        uploader.run(make_test_files_copy)
+        uploader.run([run_path_type(file) for file in make_test_files_copy])
 
         # Check out the source folder. The folder must be empty.
         for file in make_test_files_copy:
@@ -158,21 +160,20 @@ class TestSFTP:
             files = downloader.run()
             assert not files
 
-    def test_sftp_file_downloader_delete_source(self, sftp_server, source_path, resource_path, sftp_files):
+    @pytest.mark.parametrize("path_type", [str, Path])
+    def test_sftp_file_downloader_delete_source(self, sftp_server, source_path, resource_path, sftp_files, path_type):
         sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
             downloader = FileDownloader(
                 connection=sftp,
-                source_path=source_path,
-                local_path=local_path,
+                source_path=path_type(source_path),
+                local_path=path_type(temp_dir),
                 delete_source=True,
             )
 
             files = downloader.run()
-            local_files = [local_path / file.name for file in sftp_files]
+            local_files = [Path(temp_dir) / file.name for file in sftp_files]
 
             assert len(files) == len(local_files)
             assert set(files) == set(local_files)
@@ -189,5 +190,5 @@ class TestSFTP:
             original_files = [resource_path / file.relative_to(source_path) for file in sftp_files]
 
             for original_file in original_files:
-                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
-                assert hashfile(original_file) == hashfile(local_path / original_file.name)
+                assert original_file.stat().st_size == (Path(temp_dir) / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(Path(temp_dir) / original_file.name)
