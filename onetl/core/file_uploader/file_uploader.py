@@ -106,9 +106,6 @@ class FileUploader:
             uploaded_files = uploader.run(files_list)
         """
 
-        if self.delete_local:
-            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED !!!")
-
         entity_boundary_log(msg="FileUploader starts")
         connection_class_name = self.connection.__class__.__name__
 
@@ -122,7 +119,12 @@ class FileUploader:
         log.info(" " * LOG_INDENT + f"host = {self.connection.host}")
         log.info(" " * LOG_INDENT + f"user = {self.connection.user}")
 
+        if self.delete_local:
+            log.warning(" ")
+            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
+
         if not files_list:
+            log.warning(" ")
             log.warning(f"|{self.__class__.__name__}| Files list is empty. Please, provide files to upload.")
             return []
 

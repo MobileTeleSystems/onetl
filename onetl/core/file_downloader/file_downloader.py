@@ -152,10 +152,16 @@ class FileDownloader:
         log.info(" " * indent + f"type = {self.connection.__class__.__name__}")
         log.info(" " * indent + f"host = {self.connection.host}")
         log.info(" " * indent + f"user = {self.connection.user}")
+
+        if self.delete_source:
+            log.warning(" ")
+            log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
+
         downloaded_files = []
         downloaded_remote_files = []
         files_size = 0
         last_exception = None
+
         # TODO:(@mivasil6) не выводить лог, если папка есть
         create_local_dir(self.local_path)
 
