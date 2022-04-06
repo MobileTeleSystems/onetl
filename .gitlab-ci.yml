@@ -250,6 +250,7 @@ build_docs:
   stage: build_docs
   before_script:
   - export VERSION=$(python setup.py --version)
+  - echo "VERSION=$VERSION" >> deploy.env
   script:
   - pip install -r requirements.txt -r requirements-docs.txt
   - cd docs
@@ -262,6 +263,8 @@ build_docs:
   artifacts:
     paths:
     - docs/html-*.tar.gz
+    reports:
+      dotenv: deploy.env
   interruptible: true
 
 publish_docs:
@@ -279,16 +282,17 @@ publish_docs:
 pages:
   extends: .base_pages_deploy_sphinx
   stage: deploy
-  dependencies:
-  - publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   interruptible: true
 
 start_review:
   stage: clean_repo
+  dependencies:
+  - build_docs
   environment:
     name: review/$CI_COMMIT_REF_SLUG
+    url: ${CI_PAGES_URL}/${VERSION}/
     on_stop: stop_review
   script:
   - echo "Start review"
