@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 import os
+from enum import Enum
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from functools import wraps
 from logging import getLogger
 from pathlib import Path, PosixPath
 from typing import Any, Callable, Generator
+from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
 from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
+
+
+class WriteMode(Enum):
+    ERROR = "error"
+    IGNORE = "ignore"
+    OVERWRITE = "overwrite"
+    DELETE_ALL = "delete_all"
 
 
 # Workaround for cached_property
@@ -35,6 +44,16 @@ class FileConnection(ConnectionABC):
     user: str
     port: int
     password: str = field(repr=False, default="")
+
+    class Options(BaseModel):  # noqa: WPS431
+        """File write options"""
+
+        mode: WriteMode = WriteMode.ERROR
+        delete_source: bool = False
+
+        class Config:  # noqa: WPS431
+            allow_population_by_field_name = True
+            frozen = True
 
     @abstractmethod
     def get_client(self) -> Any:

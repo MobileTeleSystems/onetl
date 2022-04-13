@@ -9,7 +9,9 @@ from pathlib import Path, PurePosixPath
 import humanize
 
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.file_connection import WriteMode
 from onetl.log import LOG_INDENT, entity_boundary_log
+
 
 log = getLogger(__name__)
 
@@ -31,11 +33,8 @@ class FileUploader:
 
         Default value: ``/tmp/``
 
-    delete_local: bool, default: ``False``
-        Delete local files after successful upload.
-
-        .. warning ::
-            USE WITH CAUTION BECAUSE FILES WILL BE PERMANENTLY DELETED
+    options: Options | dict | None, default: ``None``
+        File upload options
 
     Examples
     --------
@@ -72,8 +71,9 @@ class FileUploader:
 
     connection: FileConnection
     target_path: InitVar[str | os.PathLike]
+    options: FileConnection.Options | dict | None = None
     _target_path: PurePosixPath = field(init=False)
-    delete_local: bool = False
+    _options: FileConnection.Options = field(init=False)
 
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
     _temp_path: PurePosixPath = field(init=False)
@@ -81,6 +81,11 @@ class FileUploader:
     def __post_init__(self, target_path: str | os.PathLike, temp_path: str | os.PathLike):
         self._target_path = PurePosixPath(target_path)  # noqa: WPS601
         self._temp_path = PurePosixPath(temp_path)  # noqa: WPS601
+
+        self._options = self.options or self.connection.Options()  # noqa: WPS601
+
+        if isinstance(self.options, dict):
+            self._options = self.connection.Options.parse_obj(self.options)  # noqa: WPS601
 
     def run(self, files_list: list[str | os.PathLike]) -> list[Path]:  # noqa: WPS213, WPS231
         """
@@ -119,7 +124,7 @@ class FileUploader:
         log.info(" " * LOG_INDENT + f"host = {self.connection.host}")
         log.info(" " * LOG_INDENT + f"user = {self.connection.user}")
 
-        if self.delete_local:
+        if self._options.delete_source:
             log.warning(" ")
             log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
 
@@ -140,28 +145,48 @@ class FileUploader:
             log.info(f"|{connection_class_name}| Creating temp directory: {current_temp_dir}")
             self.connection.mkdir(current_temp_dir)
 
+        # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
+        if self._options.mode == WriteMode.DELETE_ALL:
+            self.connection.rmdir(self._target_path, recursive=True)
+            self.connection.mkdir(self._target_path)
+
         log.info(f"|{self.__class__.__name__}| Start uploading files")
         for count, file in enumerate(files_list):
             log.info(f"|{self.__class__.__name__}| Uploading {count + 1}/{len(files_list)}")
 
             file_path = Path(file)
 
-            file_name = Path(file).name
+            tmp_file = current_temp_dir / file_path.name
+            target_file = self._target_path / file_path.name
 
-            tmp_file = current_temp_dir / file_name
-            target_file = self._target_path / file_name
+            if self.connection.path_exists(self._target_path / file_path.name):
+                error_message = f"|{self.__class__.__name__}| Target directory already contains file '" f"{file}'"
+                if self._options.mode == WriteMode.ERROR:
+                    raise RuntimeError(error_message)
+
+                if self._options.mode == WriteMode.IGNORE:
+                    log.warning(error_message + ", skipping")
+                    continue  # noqa: WPS220
+
+                if self._options.mode == WriteMode.OVERWRITE:
+                    log.warning(error_message + ", overwriting")
+                    self.connection.remove_file(self._target_path / file_path.name)  # noqa: WPS220
 
             try:
                 file_size = file_path.stat().st_size
 
                 self.connection.upload_file(file_path, tmp_file)
+
+                # Files are loaded to temporary directory before moving them to target dir.
+                # This prevents operations with partly uploaded files
+
                 self.connection.rename(tmp_file, target_file)
 
                 successfully_uploaded_files.append(target_file)
                 files_size += file_size
 
                 # Remove files
-                if self.delete_local:
+                if self._options.delete_source:
                     file_path.unlink()
 
             except Exception as e:

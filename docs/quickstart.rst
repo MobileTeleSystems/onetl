@@ -99,7 +99,6 @@ SFTP → HDFS
         connection=sftp,
         source_path="/home/tests/Report",  # sftp_path
         local_path="/home/onetl/Report",  # local fs path
-        delete_source=False,
         source_exclude_dirs=["/home/tests/Report/exclude_dir/"],
         source_file_pattern="*.json",
     )

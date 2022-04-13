@@ -4,11 +4,13 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from pathlib import Path, PosixPath, PurePosixPath
 from typing import Iterator
+import shutil
 
 import humanize
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.core.file_downloader.downloader_helper import check_pattern, create_local_dir
+from onetl.connection.file_connection.file_connection import WriteMode
 from onetl.log import entity_boundary_log
 
 log = getLogger(__name__)
@@ -33,11 +35,11 @@ class FileDownloader:
     file_pattern : str, default: ``*``
         Fnmatch check for file_name. For example: ``*.csv``.
 
-    delete_source : bool, default: ``False``
-        Parameter responsible for configuring the deletion of downloaded files on source.
-
     source_exclude_dirs : list of str, default: ``None``
         A list of dirs excluded from loading. Must contain full path to excluded dir.
+
+    options: Options | dict | None, default: ``None``
+        File downloading options
 
     Examples
     --------
@@ -69,7 +71,6 @@ class FileDownloader:
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            delete_source=True,
             source_exclude_dirs=["path/to/remote/source/exclude_dir"],
             file_pattern="*.txt",
         )
@@ -78,13 +79,19 @@ class FileDownloader:
     connection: FileConnection
     source_path: Path | str
     local_path: Path | str
+    options: FileConnection.Options | dict | None = None
     file_pattern: str | None = "*"
-    delete_source: bool = False
     source_exclude_dirs: list = field(default_factory=list)
+    _options: FileConnection.Options = field(init=False)
 
     def __post_init__(self):
         self.source_path = PosixPath(self.source_path)
         self.local_path = Path(self.local_path)
+
+        self._options = self.options or self.connection.Options()  # noqa: WPS601
+
+        if isinstance(self._options, dict):
+            self._options = self.connection.Options.parse_obj(self.options)  # noqa: WPS601
 
     def remote_files_listing(self, source_path: Path | str) -> Iterator:
         log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: {source_path}")
@@ -146,14 +153,14 @@ class FileDownloader:
         )
         log.info(f"|{self.__class__.__name__}| Using parameters:")
         log.info(" " * indent + f"file_pattern = {self.file_pattern}")
-        log.info(" " * indent + f"delete_source = {self.delete_source}")
+        log.info(" " * indent + f"delete_source = {self._options.delete_source}")
         log.info(" " * indent + f"source_exclude_dirs = {self.source_exclude_dirs}")
         log.info(f"|{self.__class__.__name__}| Using connection:")
         log.info(" " * indent + f"type = {self.connection.__class__.__name__}")
         log.info(" " * indent + f"host = {self.connection.host}")
         log.info(" " * indent + f"user = {self.connection.user}")
 
-        if self.delete_source:
+        if self._options.delete_source:
             log.warning(" ")
             log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
 
@@ -165,16 +172,36 @@ class FileDownloader:
         # TODO:(@mivasil6) не выводить лог, если папка есть
         create_local_dir(self.local_path)
 
+        # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
+        if self._options.mode == WriteMode.DELETE_ALL:
+            shutil.rmtree(self.local_path)
+            self.local_path.mkdir()
+
         for remote_file_path in self.view_files():
+            filename = remote_file_path.name
+            local_file_path = Path(self.local_path) / filename
+
             try:
-                filename = remote_file_path.name
-                local_file_path = PosixPath(self.local_path) / filename
+                if local_file_path.exists():
+                    error_message = (
+                        f"|{self.__class__.__name__}| Target directory already contains file '" f"{local_file_path}'"
+                    )
+                    if self._options.mode == WriteMode.ERROR:
+                        raise RuntimeError(error_message)  # noqa: WPS220
+
+                    if self._options.mode == WriteMode.IGNORE:
+                        log.warning(error_message + ", skipping")  # noqa: WPS220
+                        continue  # noqa: WPS220
+
+                    if self._options.mode == WriteMode.OVERWRITE:
+                        log.warning(error_message + ", overwriting")  # noqa: WPS220
+                        local_file_path.unlink()  # noqa: WPS220
 
                 # Download
                 self.connection.download_file(remote_file_path, local_file_path)
 
                 # Delete Remote
-                if self.delete_source:
+                if self._options.delete_source:
                     self.connection.remove_file(remote_file_path)
 
                 file_size = local_file_path.stat().st_size

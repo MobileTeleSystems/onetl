@@ -1,9 +1,11 @@
 import tempfile
 from pathlib import Path, PurePosixPath
+import os
 
 import pytest
 
 from onetl.core import FileDownloader
+from onetl.connection.file_connection.file_connection import FileConnection
 from tests.lib.common import hashfile
 
 
@@ -15,7 +17,7 @@ class TestDownloader:
                 connection=file_connection,
                 source_path=path_type(source_path),
                 local_path=path_type(temp_dir),
-                delete_source=True,
+                options=file_connection.Options(delete_source=True),
             )
 
             downloaded_files = downloader.run()
@@ -134,3 +136,121 @@ class TestDownloader:
 
             downloaded_files = downloader.run()
             assert not downloaded_files
+
+    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
+    def test_download_mode_error(self, file_connection, source_path, resource_path, upload_test_files, options):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            pre_downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+            )
+
+            pre_downloader.run()  # preload
+
+            downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+                options=options(mode="error"),
+            )
+
+            with pytest.raises(RuntimeError):
+                downloader.run()
+
+    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
+    def test_download_mode_ignore(self, file_connection, source_path, resource_path, upload_test_files, options):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            pre_downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+            )
+
+            pre_downloader.run()  # preload
+
+            downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+                options=options(mode="ignore"),
+            )
+
+            downloaded_files = downloader.run()
+
+            assert not len(downloaded_files)
+            assert set(downloaded_files) == set()
+
+    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
+    def test_download_mode_overwrite(self, file_connection, source_path, resource_path, upload_test_files, options):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            pre_downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+            )
+
+            pre_downloader.run()  # preload
+
+            downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+                options=options(mode="overwrite"),
+            )
+
+            with tempfile.NamedTemporaryFile(mode="w+") as temp_file:
+                temp_file.write("overwrited")
+                temp_file.flush()
+
+                file_connection.remove_file(source_path / "news_parse_zp" / "exclude_dir" / "file_1.txt")
+                file_connection.upload_file(
+                    local_file_path=Path("tmp") / temp_file.name,
+                    remote_file_path=source_path / "news_parse_zp" / "exclude_dir" / "file_1.txt",
+                )
+
+            downloaded_files = downloader.run()
+
+            with open(local_path / "file_1.txt") as temp_file:
+                assert temp_file.read() == "overwrited"
+
+            local_files = [local_path / file.name for file in upload_test_files]
+
+            assert len(downloaded_files) == len(local_files)
+            assert set(downloaded_files) == set(local_files)
+
+    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
+    def test_download_mode_delete_all(self, file_connection, source_path, resource_path, upload_test_files, options):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            pre_downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+            )
+
+            pre_downloader.run()  # preload
+
+            downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+                options=options(mode="delete_all"),
+            )
+
+            (local_path / "file_9.txt").touch()
+
+            downloaded_files = downloader.run()
+
+            local_files = [local_path / file.name for file in upload_test_files]
+
+            assert len(downloaded_files) == len(local_files)
+            assert set(downloaded_files) == set(local_files)
+            assert len(os.listdir(local_path)) == len(downloaded_files)
