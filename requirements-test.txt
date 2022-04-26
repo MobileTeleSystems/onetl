@@ -7,7 +7,7 @@ coverage==4.5.4
 # Oracle client
 cx_Oracle
 
-mtspark
+mtspark[spark2.3]
 
 omegaconf
 psycopg2-binary

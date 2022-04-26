@@ -8,9 +8,9 @@ import shutil
 
 import humanize
 
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.core.file_downloader.downloader_helper import check_pattern, create_local_dir
-from onetl.connection.file_connection.file_connection import WriteMode
+from onetl.core.file_filter.file_filter import BaseFileFilter
+from onetl.core.file_downloader.downloader_helper import create_local_dir
+from onetl.connection.file_connection.file_connection import WriteMode, FileConnection
 from onetl.log import entity_boundary_log
 
 log = getLogger(__name__)
@@ -32,11 +32,8 @@ class FileDownloader:
     local_path : str
         Local path where you download files
 
-    file_pattern : str, default: ``*``
-        Fnmatch check for file_name. For example: ``*.csv``.
-
-    source_exclude_dirs : list of str, default: ``None``
-        A list of dirs excluded from loading. Must contain full path to excluded dir.
+    filter : BaseFileFilter
+        Options of the file filtering. See :obj:`onetl.core.file_filter.file_filter.FileFilter`
 
     options: Options | dict | None, default: ``None``
         File downloading options
@@ -72,16 +69,15 @@ class FileDownloader:
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
             source_exclude_dirs=["path/to/remote/source/exclude_dir"],
-            file_pattern="*.txt",
+            filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
         )
     """
 
     connection: FileConnection
     source_path: Path | str
     local_path: Path | str
+    filter: BaseFileFilter | None = None
     options: FileConnection.Options | dict | None = None
-    file_pattern: str | None = "*"
-    source_exclude_dirs: list = field(default_factory=list)
     _options: FileConnection.Options = field(init=False)
 
     def __post_init__(self):
@@ -98,10 +94,9 @@ class FileDownloader:
 
         try:
             ftp_walk = self.connection.walk(
-                source_path,
-                topdown=True,
+                top=source_path,
                 onerror=log.exception,
-                exclude_dirs=self.source_exclude_dirs,
+                filter=self.filter,
             )
         except Exception as e:
             raise RuntimeError(
@@ -114,12 +109,6 @@ class FileDownloader:
                 f'Listing dir f"{root}", dirs: {len(dirs)} files: {len(files)}',
             )
             for res_file in files:
-                log.info(f"|{self.connection.__class__.__name__}| Checking file: {PosixPath(root) / res_file}")
-                try:
-                    check_pattern(res_file, self.file_pattern)
-                except Exception as e:
-                    log.info(e)
-                    continue
 
                 file_path = PosixPath(root) / res_file
                 log.info(f"Add file to batch: {file_path}")
@@ -144,6 +133,7 @@ class FileDownloader:
             downloaded_files = downloader.run()
 
         """
+
         entity_boundary_log(msg="FileDownloader starts")
         indent = len(f"|{self.__class__.__name__}| ") + 2
 
@@ -152,9 +142,11 @@ class FileDownloader:
             f" to local directory: '{self.local_path}'",
         )
         log.info(f"|{self.__class__.__name__}| Using parameters:")
-        log.info(" " * indent + f"file_pattern = {self.file_pattern}")
+
+        if self.filter:
+            self.filter.log_options()
+
         log.info(" " * indent + f"delete_source = {self._options.delete_source}")
-        log.info(" " * indent + f"source_exclude_dirs = {self.source_exclude_dirs}")
         log.info(f"|{self.__class__.__name__}| Using connection:")
         log.info(" " * indent + f"type = {self.connection.__class__.__name__}")
         log.info(" " * indent + f"host = {self.connection.host}")

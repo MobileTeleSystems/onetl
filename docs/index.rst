@@ -58,7 +58,7 @@
 
 .. toctree::
     :maxdepth: 2
-    :caption: DB Reader
+    :caption: DB Writer
     :hidden:
 
     core/db_writer
@@ -76,6 +76,13 @@
     :hidden:
 
     core/file_uploader
+
+.. toctree::
+    :maxdepth: 2
+    :caption: File Filter
+    :hidden:
+
+    core/file_filter
 
 ..
     Заменить на блок ниже
