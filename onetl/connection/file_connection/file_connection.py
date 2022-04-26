@@ -7,11 +7,14 @@ from dataclasses import dataclass, field
 from functools import wraps
 from logging import getLogger
 from pathlib import Path, PosixPath
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Iterator, TYPE_CHECKING
 from pydantic import BaseModel
 
 from onetl.connection.connection_abc import ConnectionABC
 from onetl.log import LOG_INDENT
+
+if TYPE_CHECKING:
+    from onetl.core.file_filter.file_filter import BaseFileFilter
 
 log = getLogger(__name__)
 
@@ -120,39 +123,45 @@ class FileConnection(ConnectionABC):
     def walk(
         self,
         top: os.PathLike | str,
-        topdown: bool = True,
+        filter: BaseFileFilter | None = None,  # noqa: WPS125
         onerror: Callable = None,
-        exclude_dirs: list[str] = None,
-    ) -> Generator[str, list[str], list[str]]:
+    ) -> Iterator[tuple[str, list[str], list[str]]] | None:
         """
         Iterate over directory tree and return a tuple (dirpath,
         dirnames, filenames) on each iteration, like the `os.walk`
         function (see https://docs.python.org/library/os.html#os.walk ).
         """
-        if not exclude_dirs:
-            exclude_dirs = []
+
         try:
-            items = self._listdir(top)
+            listed_directories = self._listdir(top)
         except Exception as err:
             if onerror:
                 onerror(err)
             return
-        dirs, nondirs = [], []
-        for item in items:
-            name = self.get_name(item)
+
+        dirs, files = [], []
+        for directory in listed_directories:
+            name = self.get_name(directory)
             full_name = PosixPath(top) / name
-            if self.is_dir(top, item):
-                if not self.excluded_dir(full_name, exclude_dirs):
+            if self.is_dir(top, directory):
+                log.info(f"|{self.__class__.__name__}| Checking directory: {full_name}")
+
+                if not filter or filter.match_dir(full_name):
+                    log.info(f"|{self.__class__.__name__}| Directory approved.")
                     dirs.append(name)
+
             else:
-                nondirs.append(name)
-        if topdown:
-            yield top, dirs, nondirs
+                log.info(f"|{self.__class__.__name__}| Checking file: {full_name}")
+
+                if not filter or filter.match_file(full_name):
+                    log.info(f"|{self.__class__.__name__}| File approved.")
+                    files.append(name)
+
         for name in dirs:
             path = PosixPath(top) / name
-            yield from self.walk(path, topdown, onerror, exclude_dirs)
-        if not topdown:
-            yield top, dirs, nondirs
+            yield from self.walk(top=path, onerror=onerror, filter=filter)
+
+        yield top, dirs, files  # root dir, included dirs, included files
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if not self.path_exists(path):
@@ -171,12 +180,6 @@ class FileConnection(ConnectionABC):
 
         self.client.rmdir(os.fspath(path))
         log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
-
-    def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: list[os.PathLike | str]) -> bool:
-        for exclude_dir in exclude_dirs:
-            if PosixPath(exclude_dir) == PosixPath(full_name):
-                return True
-        return False
 
     @abstractmethod
     def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:

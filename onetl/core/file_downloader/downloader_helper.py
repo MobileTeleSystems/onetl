@@ -1,6 +1,5 @@
 import os
 from logging import getLogger
-from pathlib import PosixPath
 
 log = getLogger(__name__)
 
@@ -12,9 +11,3 @@ def create_local_dir(local_path: str) -> None:
     except Exception as last_exception:
         log.error(f"|Local FS| Cannot create directory: {local_path}. Exception:\n{last_exception}")
         raise last_exception
-
-
-def check_pattern(res_file: str, remote_file_pattern: str = None) -> bool:
-    if not remote_file_pattern or PosixPath(res_file).match(remote_file_pattern):
-        return True
-    raise RuntimeError(f"File is not matched with pattern: {remote_file_pattern}")

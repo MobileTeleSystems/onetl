@@ -6,6 +6,7 @@ import pytest
 
 from onetl.core import FileDownloader
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.core.file_filter import FileFilter
 from tests.lib.common import hashfile
 
 
@@ -51,13 +52,40 @@ class TestDownloader:
                 connection=file_connection,
                 source_path=source_path,
                 local_path=local_path,
-                file_pattern=file_pattern,
+                filter=FileFilter(glob=file_pattern),
             )
 
             downloaded_files = downloader.run()
             assert not downloaded_files
 
-    def test_with_pattern(self, file_connection, source_path, resource_path, upload_test_files):
+    @pytest.mark.parametrize("path_type", [str, Path])
+    def test_with_filter_exclude_dir(self, file_connection, source_path, resource_path, upload_test_files, path_type):
+        exclude_dir = path_type("/export/news_parse/exclude_dir")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_path = Path(temp_dir)
+
+            downloader = FileDownloader(
+                connection=file_connection,
+                source_path=source_path,
+                local_path=local_path,
+                filter=FileFilter(exclude_dirs=[exclude_dir]),
+            )
+
+            downloaded_files = downloader.run()
+
+            matching_files = [file for file in upload_test_files if PurePosixPath(exclude_dir) not in file.parents]
+            local_files = [local_path / file.name for file in matching_files]
+
+            assert len(downloaded_files) == len(local_files)
+            assert set(downloaded_files) == set(local_files)
+
+            original_files = [resource_path / file.relative_to(source_path) for file in matching_files]
+            for original_file in original_files:
+                assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
+                assert hashfile(original_file) == hashfile(local_path / original_file.name)
+
+    def test_with_filter_glob(self, file_connection, source_path, resource_path, upload_test_files):
         file_pattern = "*.csv"
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -67,7 +95,7 @@ class TestDownloader:
                 connection=file_connection,
                 source_path=source_path,
                 local_path=local_path,
-                file_pattern=file_pattern,
+                filter=FileFilter(glob=file_pattern),
             )
 
             downloaded_files = downloader.run()
@@ -131,7 +159,7 @@ class TestDownloader:
                 connection=file_connection,
                 source_path=source_path,
                 local_path=local_path,
-                file_pattern=file_pattern,
+                filter=FileFilter(glob=file_pattern),
             )
 
             downloaded_files = downloader.run()
