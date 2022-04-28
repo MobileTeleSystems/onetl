@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
-from onetl.connection.connection_abc import ConnectionABC
+from onetl.base import BaseConnection
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
-class WriteMode(Enum):
+class DBWriteMode(Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
     IGNORE = "ignore"
@@ -28,7 +28,7 @@ class WriteMode(Enum):
 
 
 @dataclass(frozen=True)
-class DBConnection(ConnectionABC):
+class DBConnection(BaseConnection):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: pyspark.sql.SparkSession
 
@@ -45,7 +45,7 @@ class DBConnection(ConnectionABC):
     class Options(BaseModel):  # noqa: WPS431
         """Hive or JDBC options"""
 
-        mode: WriteMode = WriteMode.APPEND
+        mode: DBWriteMode = DBWriteMode.APPEND
 
         class Config:  # noqa: WPS431
             use_enum_values = True

@@ -127,10 +127,9 @@ class TestDownloader:
 
         files_list = downloader.view_files()
 
-        print(files_list)
-
-        for file_path in upload_test_files:
-            assert file_path in files_list
+        assert files_list
+        assert len(files_list) == len(upload_test_files)
+        assert set(files_list) == set(upload_test_files)
 
     def test_run(self, file_connection, source_path, resource_path, upload_test_files):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -364,7 +363,7 @@ class TestDownloader:
                 options=options(mode="error"),
             )
 
-            with pytest.raises(RuntimeError):
+            with pytest.raises(FileExistsError):
                 downloader.run()
 
     @pytest.mark.parametrize("options", [dict, FileConnection.Options])

@@ -53,7 +53,7 @@ class FTPS(FTP):
         )
     """
 
-    def get_client(self) -> "ftputil.host.FTPHost":
+    def _get_client(self) -> FTPHost:
         """
         Returns a FTPS connection object
         """

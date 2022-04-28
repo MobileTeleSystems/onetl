@@ -1,35 +1,30 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from pathlib import PurePath
-from dataclasses import dataclass, field
+import os
 from logging import getLogger
+from pathlib import PurePosixPath
+from typing import List, Optional, Union
+
+from pydantic import BaseModel, Field, validator
+
+from onetl.base import BaseFileFilter, PathProtocol
 
 log = getLogger(__name__)
 
 
-class BaseFileFilter(ABC):
-    @abstractmethod
-    def match_dir(self, path: PurePath) -> bool:
-        pass  # noqa: WPS420
-
-    @abstractmethod
-    def match_file(self, path: PurePath) -> bool:
-        pass  # noqa: WPS420
-
-
-@dataclass
-class FileFilter(BaseFileFilter):
-    """Class needed to determine HOW files are loaded.
+class FileFilter(BaseFileFilter, BaseModel):
+    """Class needed to determine WHICH files are loaded.
 
     Parameters
     ----------
 
-    glob: str | None
-        pattern according to which only files matching it will be taken
+    glob : str | None, default ``None``
 
-    exclude_dirs: list
-        list of directories files from which will not be included in the download
+        Pattern according to which only files matching it will be taken
+
+    exclude_dirs : list[os.PathLike | str], default ``[]``
+
+        List of directories files from which will not be included in the download
 
 
     Examples
@@ -37,44 +32,37 @@ class FileFilter(BaseFileFilter):
 
     Create exclude_dir filter:
 
-    .. code::
+    .. code:: python
 
-        downloader = FileDownloader(
-                    connection=file_connection,
-                    source_path=source_path,
-                    local_path=local_path,
-                    filter=FileFilter(exclude_dirs=["/export/news_parse/exclude_dir"]),
-                )
+        file_filter = FileFilter(exclude_dirs=["/export/news_parse/exclude_dir"])
 
     Create glob filter:
 
-    .. code::
+    .. code:: python
 
-        downloader = FileDownloader(
-                    connection=file_connection,
-                    source_path=source_path,
-                    local_path=local_path,
-                    filter=FileFilter(glob="*.csv"),
-                )
-
+        file_filter = FileFilter(glob="*.csv")
     """
 
-    glob: str | None = None
-    exclude_dirs: list = field(default_factory=list)
+    class Config:  # noqa: WPS431
+        arbitrary_types_allowed = True
 
-    def match_dir(self, path: PurePath) -> bool:
-        if self.exclude_dirs:
+    glob: Optional[str] = None
+    exclude_dirs: List[PurePosixPath] = Field(default_factory=list)
+
+    @validator("exclude_dirs", each_item=True, pre=True)
+    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> PurePosixPath:  # noqa: N805
+        return PurePosixPath(value)
+
+    def match(self, path: PathProtocol) -> bool:
+        if self.exclude_dirs and path.is_dir():
             for exclude_dir in self.exclude_dirs:
-                if PurePath(exclude_dir) in path.parents or PurePath(exclude_dir) == path:
-                    return False  # Exclude directory
+                if exclude_dir in path.parents or exclude_dir == path:
+                    return False
+
+        if self.glob and path.is_file():
+            return path.match(self.glob)
 
         return True
-
-    def match_file(self, path: PurePath):
-        if not self.glob:
-            return True
-
-        return path.match(self.glob)
 
     def log_options(self):
         indent = len(f"|{self.__class__.__name__}| ") + 2

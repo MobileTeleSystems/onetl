@@ -3,12 +3,16 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from logging import getLogger
-from pathlib import PosixPath
-from stat import S_ISDIR
+from pathlib import Path, PurePosixPath
+from stat import S_ISDIR, S_ISREG
 
-import paramiko
+from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
+from paramiko.sftp_attr import SFTPAttributes
+from paramiko.sftp_client import SFTPClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
+
+SSH_CONFIG_PATH = Path("~/.ssh/config").expanduser().resolve()
 
 log = getLogger(__name__)
 
@@ -58,16 +62,21 @@ class SFTP(FileConnection):
     host_key_check: bool = False
     compress: bool = True
 
-    def get_client(self) -> paramiko.sftp_client.SFTPClient:
-        log.info("creating ssh client")
+    def path_exists(self, path: os.PathLike | str) -> bool:
+        try:
+            self.client.stat(os.fspath(path))
+            return True
+        except FileNotFoundError:
+            return False
 
-        host_proxy, key_file = self.parse_user_ssh_config(self.key_file)
+    def _get_client(self) -> SFTPClient:
+        host_proxy, key_file = self._parse_user_ssh_config()
 
-        client = paramiko.SSHClient()
+        client = SSHClient()
         client.load_system_host_keys()
         if not self.host_key_check:
             # Default is RejectPolicy
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.set_missing_host_key_policy(AutoAddPolicy())
 
         if self.password:
             client.connect(
@@ -92,31 +101,19 @@ class SFTP(FileConnection):
 
         return client.open_sftp()
 
-    def is_dir(self, top, item) -> bool:
-        return S_ISDIR(item.st_mode)
-
-    def get_name(self, item) -> str | PosixPath:
-        return PosixPath(item.filename)
-
-    def path_exists(self, path: os.PathLike | str) -> bool:
-        try:
-            self.client.stat(os.fspath(path))
-            return True
-        except FileNotFoundError:
-            return False
-
-    def parse_user_ssh_config(self, key_file):
-        user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
+    def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None
-        if os.path.isfile(user_ssh_config_filename):
-            ssh_conf = paramiko.SSHConfig()
-            ssh_conf.parse(open(user_ssh_config_filename))  # NOQA WPS515
+        key_file = self.key_file
+
+        if SSH_CONFIG_PATH.exists() and SSH_CONFIG_PATH.is_file():
+            ssh_conf = SSHConfig()
+            ssh_conf.parse(SSH_CONFIG_PATH.read_text())
             host_info = ssh_conf.lookup(self.host) or {}
             if host_info.get("proxycommand"):
-                host_proxy = paramiko.ProxyCommand(host_info.get("proxycommand"))
+                host_proxy = ProxyCommand(host_info.get("proxycommand"))
 
             if not (self.password or key_file) and host_info.get("identityfile"):
-                key_file = host_info.get("identityfile")[0]  # NOQA WPS220
+                key_file = host_info.get("identityfile")[0]
 
         return host_proxy, key_file
 
@@ -124,13 +121,13 @@ class SFTP(FileConnection):
         try:
             self.client.stat(os.fspath(path))
         except Exception:
-            abs_path = "/"
-            for directory in PosixPath(path).parts:
-                abs_path = PosixPath(abs_path) / directory
+            for parent in reversed(PurePosixPath(path).parents):
                 try:  # noqa: WPS505
-                    self.client.stat(os.fspath(abs_path))
+                    self.client.stat(os.fspath(parent))
                 except Exception:
-                    self.client.mkdir(os.fspath(abs_path))
+                    self.client.mkdir(os.fspath(parent))
+
+            self.client.mkdir(os.fspath(path))
 
     def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
@@ -141,8 +138,34 @@ class SFTP(FileConnection):
     def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
 
+    def _rmdir(self, path: os.PathLike | str) -> None:
+        self.client.rmdir(os.fspath(path))
+
     def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir_attr(os.fspath(path))
+
+    def _is_dir(self, path: os.PathLike | str) -> bool:
+        stat: SFTPAttributes = self.client.stat(os.fspath(path))
+        return S_ISDIR(stat.st_mode)
+
+    def _is_file(self, path: os.PathLike | str) -> bool:
+        stat: SFTPAttributes = self.client.stat(os.fspath(path))
+        return S_ISREG(stat.st_mode)
+
+    def _get_stat(self, path: os.PathLike | str) -> SFTPAttributes:
+        return self.client.stat(os.fspath(path))
+
+    def _get_item_name(self, item: SFTPAttributes) -> str:
+        return item.filename
+
+    def _is_item_dir(self, top: os.PathLike | str, item: SFTPAttributes) -> bool:
+        return S_ISDIR(item.st_mode)
+
+    def _is_item_file(self, top: os.PathLike | str, item: SFTPAttributes) -> bool:
+        return S_ISREG(item.st_mode)
+
+    def _get_item_stat(self, top: os.PathLike | str, item: SFTPAttributes) -> SFTPAttributes:
+        return item

@@ -15,7 +15,7 @@ def get_version():
     branch_name = os.environ.get("CI_COMMIT_REF_SLUG", "")
     branches_protect = ["master", "develop"]
 
-    if branch_name in branches_protect:
+    if not branch_name or branch_name in branches_protect:
         return f"{version}.dev{build_num}"
 
     return f"{version}.dev{build_num}+{branch_name}"

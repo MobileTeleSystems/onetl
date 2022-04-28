@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from logging import getLogger
-from pathlib import PosixPath
 
 from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
+from onetl.impl import RemoteFileStat
 
 log = getLogger(__name__)
 
@@ -81,7 +81,10 @@ class HDFS(FileConnection):
         if self.keytab and self.password:
             raise ValueError("Please provide only `keytab` or only `password` for kinit")
 
-    def get_client(self) -> KerberosClient | InsecureClient:
+    def path_exists(self, path: os.PathLike | str) -> bool:
+        return self.client.status(path, strict=False)
+
+    def _get_client(self) -> KerberosClient | InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
         if self.keytab or self.password:
             kinit(
@@ -92,26 +95,14 @@ class HDFS(FileConnection):
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
             client = InsecureClient(conn_str, user=self.user)
+
         return client
 
-    def is_dir(self, top: os.PathLike | str, item: os.PathLike | str) -> bool:
-        if self.client.status(self.get_name(top) / self.get_name(item))["type"] == "DIRECTORY":
-            return True
+    def _rmdir_recursive(self, path: os.PathLike | str) -> None:
+        self.client.delete(path, recursive=True)
 
-    def get_name(self, item: os.PathLike | str) -> PosixPath:
-        return PosixPath(item)
-
-    def path_exists(self, target_hdfs_path: os.PathLike | str) -> bool:
-        return self.client.status(target_hdfs_path, strict=False)
-
-    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
-
-        if not self.path_exists(path):
-            log.info(f"|{self.__class__.__name__}| Directory {path} does not exist, nothing to remove")
-            return
-
-        self.client.delete(path, recursive=recursive)
-        log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
+    def _rmdir(self, path: os.PathLike | str) -> None:
+        self.client.delete(path, recursive=False)
 
     def _mkdir(self, path: os.PathLike | str) -> None:
         self.client.makedirs(path)
@@ -130,3 +121,13 @@ class HDFS(FileConnection):
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.list(path)
+
+    def _is_file(self, path: os.PathLike | str) -> bool:
+        return self.client.status(path)["type"] == "FILE"
+
+    def _is_dir(self, path: os.PathLike | str) -> bool:
+        return self.client.status(path)["type"] == "DIRECTORY"
+
+    def _get_stat(self, path: os.PathLike | str) -> RemoteFileStat:
+        stat = self.client.status(path)
+        return RemoteFileStat(st_size=stat["length"], st_mtime=stat["modificationTime"])
