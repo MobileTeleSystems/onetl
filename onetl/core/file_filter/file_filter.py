@@ -37,7 +37,7 @@ class FileFilter(BaseFileFilter):
 
     Create exclude_dir filter:
 
-    ..code::
+    .. code::
 
         downloader = FileDownloader(
                     connection=file_connection,
@@ -48,7 +48,7 @@ class FileFilter(BaseFileFilter):
 
     Create glob filter:
 
-    ..code::
+    .. code::
 
         downloader = FileDownloader(
                     connection=file_connection,

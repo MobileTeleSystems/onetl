@@ -12,4 +12,10 @@ class ConnectionABC(ABC):
 
     @abstractmethod
     def check(self):
-        """Check source availability"""
+        """Check source availability.
+
+        Raises
+        ------
+        RuntimeError
+            If the connection is not available.
+        """
