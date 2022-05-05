@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import os
+import shutil
+from dataclasses import InitVar, dataclass, field
 from logging import getLogger
 from pathlib import Path, PosixPath, PurePosixPath
 from typing import Iterator
-import shutil
 
 import humanize
 
+from onetl.connection.file_connection.file_connection import FileConnection, WriteMode
 from onetl.core.file_filter.file_filter import BaseFileFilter
-from onetl.core.file_downloader.downloader_helper import create_local_dir
-from onetl.connection.file_connection.file_connection import WriteMode, FileConnection
 from onetl.log import entity_boundary_log
 
 log = getLogger(__name__)
@@ -19,17 +19,20 @@ log = getLogger(__name__)
 @dataclass
 # TODO:(@mivasil6) make check_history functional
 class FileDownloader:
-    """Class specifies file source where you can download files. Download files **only** in local directory.
+    """Class specifies file source where you can download files. Download files **only** to local directory.
 
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
         Class which contains File system connection properties. See in FileConnection section.
 
-    source_path : str
-        Path on remote source where you got files.
+    source_path : os.PathLike | str | None, default: ``None``
+        Path on remote source to download files from.
 
-    local_path : str
+        Could be ``None``, but only if you pass file paths directly to
+        :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.run` method
+
+    local_path : os.PathLike | str
         Local path where you download files
 
     filter : BaseFileFilter
@@ -68,26 +71,32 @@ class FileDownloader:
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            source_exclude_dirs=["path/to/remote/source/exclude_dir"],
             filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
         )
     """
 
     connection: FileConnection
-    source_path: Path | str
-    local_path: Path | str
+    local_path: InitVar[os.PathLike | str]
+    _local_path: Path = field(init=False)
+    source_path: InitVar[os.PathLike | str | None] = field(default=None)
+    _source_path: PurePosixPath | None = field(init=False)
     filter: BaseFileFilter | None = None
-    options: FileConnection.Options | dict | None = None
+    options: InitVar[FileConnection.Options | dict | None] = field(default=None)
     _options: FileConnection.Options = field(init=False)
 
-    def __post_init__(self):
-        self.source_path = PosixPath(self.source_path)
-        self.local_path = Path(self.local_path)
+    def __post_init__(
+        self,
+        local_path: os.PathLike | str,
+        source_path: os.PathLike | str | None,
+        options: FileConnection.Options | dict | None,
+    ):
+        self._local_path = Path(local_path).resolve()  # noqa: WPS601
+        self._source_path = PurePosixPath(source_path) if source_path else None  # noqa: WPS601
 
-        self._options = self.options or self.connection.Options()  # noqa: WPS601
-
-        if isinstance(self._options, dict):
-            self._options = self.connection.Options.parse_obj(self.options)  # noqa: WPS601
+        if isinstance(options, dict):
+            self._options = self.connection.Options.parse_obj(options)  # noqa: WPS601
+        else:
+            self._options = options or self.connection.Options()  # noqa: WPS601
 
     def remote_files_listing(self, source_path: Path | str) -> Iterator:
         log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: {source_path}")
@@ -114,32 +123,107 @@ class FileDownloader:
                 log.info(f"Add file to batch: {file_path}")
                 yield file_path
 
-    def run(self) -> list[Path]:  # noqa: WPS231, WPS213
+    def run(self, files_list: list[str | os.PathLike] | None = None) -> list[Path]:  # noqa: WPS231, WPS213
         """
         Method for downloading files from source to local directory.
 
+        Parameters
+        ----------
+
+        files_list : list[str | os.PathLike] | None, default ``None``
+            List files to download.
+
+            If empty, download files from ``source_path``, applying ``filter`` to each one (if set).
+
+            If not, download input files without any filtering
+
         Returns
         -------
-        downloaded_files : List[str]
+        downloaded_files : List[Path]
             List of downloaded files
+
+        Raises
+        -------
+        Exception
+            Errors during data loading
 
         Examples
         --------
 
-        Download files
+        Download files from ``source_path``
 
         .. code::
 
+            from pathlib import Path
+            from onetl.core import FileDownloader
+
+            downloader = FileDownloader(source_path="/remote/path", local_path="/local/path")
+
             downloaded_files = downloader.run()
 
+            assert downloaded_files == [
+                Path("/local/path/file1.txt"),
+                Path("/local/path/file2.txt"),
+                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+            ]
+
+        Download only certaing files from ``source_path``
+
+        .. code::
+
+            from pathlib import Path
+            from onetl.core import FileDownloader
+
+            downloader = FileDownloader(source_path="/remote/path", local_path="/local/path")
+
+            downloaded_files = downloader.run([
+                "/remote/path/file1.txt",
+                "/remote/path/nested/file3.txt",
+            ])
+
+            # relative paths can be used too
+            downloaded_files = downloader.run([
+                "file1.txt",
+                "nested/file3.txt",
+            ])
+
+            assert downloaded_files == == [
+                Path("/local/path/file1.txt"),
+                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+            ]
+
+        Download certain files from any folder
+
+        .. code::
+
+            from pathlib import Path
+            from onetl.core import FileDownloader
+
+            # no ``source_path``
+            downloader = FileDownloader(local_path="/local/path")
+
+            # only absolute paths in this case
+            downloaded_files = downloader.run([
+                "/remote/path/file1.txt",
+                "/remote/path/nested/file3.txt",
+            ])
+
+            assert downloaded_files == == [
+                Path("/local/path/file1.txt"),
+                Path("/local/path/file3.txt"),  # directory structure is not preserved
+            ]
+
         """
+
+        if files_list is None and not self._source_path:
+            raise ValueError(f"|{self.__class__.__name__}| No list of files to upload nor ``source_path`` passed")
 
         entity_boundary_log(msg="FileDownloader starts")
         indent = len(f"|{self.__class__.__name__}| ") + 2
 
         log.info(
-            f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files from path '{self.source_path}'"
-            f" to local directory: '{self.local_path}'",
+            f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files from path '{self._source_path}'"
+            f" to local directory: '{self._local_path}'",
         )
         log.info(f"|{self.__class__.__name__}| Using parameters:")
 
@@ -152,6 +236,8 @@ class FileDownloader:
         log.info(" " * indent + f"host = {self.connection.host}")
         log.info(" " * indent + f"user = {self.connection.user}")
 
+        self.connection.check()
+
         if self._options.delete_source:
             log.warning(" ")
             log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
@@ -161,36 +247,37 @@ class FileDownloader:
         files_size = 0
         last_exception = None
 
-        # TODO:(@mivasil6) не выводить лог, если папка есть
-        create_local_dir(self.local_path)
-
         # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
         if self._options.mode == WriteMode.DELETE_ALL:
-            shutil.rmtree(self.local_path)
-            self.local_path.mkdir()
+            shutil.rmtree(self._local_path)
 
-        for remote_file_path in self.view_files():
-            filename = remote_file_path.name
-            local_file_path = Path(self.local_path) / filename
+        self._local_path.mkdir(exist_ok=True, parents=True)
 
+        if files_list is None:
+            files_list = self.view_files()
+
+        for remote_file_path, local_file_path in self._validate_files_list(files_list):
             try:
                 if local_file_path.exists():
                     error_message = (
-                        f"|{self.__class__.__name__}| Target directory already contains file '" f"{local_file_path}'"
+                        f"|{self.__class__.__name__}| Target directory already contains file '{local_file_path}'"
                     )
+
                     if self._options.mode == WriteMode.ERROR:
-                        raise RuntimeError(error_message)  # noqa: WPS220
+                        raise RuntimeError(error_message)
 
                     if self._options.mode == WriteMode.IGNORE:
-                        log.warning(error_message + ", skipping")  # noqa: WPS220
-                        continue  # noqa: WPS220
+                        log.warning(error_message + ", skipping")
+                        continue
 
-                    if self._options.mode == WriteMode.OVERWRITE:
-                        log.warning(error_message + ", overwriting")  # noqa: WPS220
-                        local_file_path.unlink()  # noqa: WPS220
+                    log.warning(error_message + ", overwriting")
+                    local_file_path.unlink()
+
+                # sequential creation of folders from the root
+                local_file_path.parent.mkdir(exist_ok=True, parents=True)
 
                 # Download
-                self.connection.download_file(remote_file_path, local_file_path)
+                self.connection.download_file(remote_file_path=remote_file_path, local_file_path=local_file_path)
 
                 # Delete Remote
                 if self._options.delete_source:
@@ -202,7 +289,7 @@ class FileDownloader:
                 last_exception = e
                 log.error(
                     f"|{self.connection.__class__.__name__}| Download file {remote_file_path} "
-                    f"from remote to {self.local_path} failed with:\n{last_exception}",
+                    f"from remote to {self._local_path} failed with:\n{last_exception}",
                 )
             else:
                 downloaded_files.append(local_file_path)
@@ -242,4 +329,40 @@ class FileDownloader:
 
         """
 
-        return list(self.remote_files_listing(self.source_path))
+        return list(self.remote_files_listing(self._source_path))
+
+    def _validate_files_list(self, remote_files: list[os.PathLike | str]) -> list[tuple[PurePosixPath, Path]]:
+        result = []
+
+        for remote_file in remote_files:
+            remote_file_path = PurePosixPath(remote_file)
+
+            if not self._source_path:
+                # Download into a flat structure
+                if not remote_file_path.is_absolute():
+                    raise ValueError(
+                        f"|{self.__class__.__name__}| Cannot pass relative file path with empty ``source_path``",
+                    )
+
+                filename = remote_file_path.name
+                local_file_path = self._local_path / filename
+            else:
+                # Download according to source folder structure
+                if self._source_path in remote_file_path.parents:
+                    # Make relative local path
+                    local_file_path = self._local_path / remote_file_path.relative_to(self._source_path)
+
+                elif not remote_file_path.is_absolute():
+                    # Passed already relative path
+                    local_file_path = self._local_path / remote_file_path
+                    remote_file_path = self._source_path / remote_file_path
+                else:
+                    # Wrong path (not relative path and source path not in the path to the file)
+                    raise ValueError(
+                        f"|{self.__class__.__name__}| File path '{remote_file_path}' "
+                        f"does not match source_path '{self._source_path}'",
+                    )
+
+            result.append((remote_file_path, local_file_path))
+
+        return result
