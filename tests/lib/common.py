@@ -35,14 +35,9 @@ def upload_files(
     local_path = Path(source_path)
 
     if local_path.exists() and local_path.is_dir():
-        file_connection.mkdir(remote_path)
-
-        for root_path, dir_names, file_names in os.walk(local_path):
+        for root_path, _dir_names, file_names in os.walk(local_path):
             local_root = Path(root_path)
             remote_root = remote_path / local_root.relative_to(local_path)
-
-            for sub_dir in dir_names:
-                file_connection.mkdir(remote_root / sub_dir)
 
             for filename in file_names:
                 local_filename = local_root / filename

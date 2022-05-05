@@ -8,3 +8,4 @@ platformdirs
 pydantic
 PySmbClient
 pyyaml
+typing_extensions

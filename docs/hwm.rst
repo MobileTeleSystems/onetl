@@ -4,7 +4,7 @@ HWM
 =====
 
 What is it ?
------------
+-------------
 
 Sometimes it's necessary to read only changed rows from a table.
 

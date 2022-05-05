@@ -76,6 +76,7 @@
     :hidden:
 
     core/file_uploader
+    core/upload_result
 
 .. toctree::
     :maxdepth: 2

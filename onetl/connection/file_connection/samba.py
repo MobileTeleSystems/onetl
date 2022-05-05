@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from logging import getLogger
-from pathlib import Path
+from typing import List, Tuple
 
 from smbclient import SambaClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.impl import RemoteFileStat
 
 log = getLogger(__name__)
+
+# Result type of listdir or glob methods is: [(filename, modes, size, date), ...]
+ItemType = List[Tuple[str, int, int, datetime]]
 
 
 @dataclass(frozen=True)
@@ -54,8 +59,10 @@ class Samba(FileConnection):
     domain: str | None = None
     schema: str | None = None
 
-    def get_client(self) -> SambaClient:
+    def path_exists(self, path: os.PathLike | str) -> bool:
+        return self.client.exists(path)
 
+    def _get_client(self) -> SambaClient:
         return SambaClient(
             server=self.host,
             share=self.schema,
@@ -66,20 +73,8 @@ class Samba(FileConnection):
             password=self.password + "\n",
         )
 
-    def is_dir(self, top, item) -> bool:
-        return "D" in item[1]
-
-    def get_name(self, item) -> Path:
-        return Path(item[0])
-
-    def path_exists(self, path: os.PathLike | str) -> bool:
-        return self.client.exists(path)
-
     def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
-
-    def _listdir(self, path: os.PathLike | str) -> list:
-        return self.client.lsdir(path)
 
     def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.run(remote_file_path, local_file_path)
@@ -90,5 +85,33 @@ class Samba(FileConnection):
     def _mkdir(self, path: os.PathLike | str) -> None:
         self.client.mkdir(path)
 
+    def _rmdir(self, path: os.PathLike | str) -> None:
+        self.client.rmdir(os.fspath(path))
+
     def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         self.client.run(local_file_path, remote_file_path)
+
+    def _listdir(self, path: os.PathLike | str) -> list:
+        return self.client.lsdir(path)
+
+    def _is_dir(self, path: os.PathLike | str) -> bool:
+        return self.client.self.client.isdir(path)
+
+    def _is_file(self, path: os.PathLike | str) -> bool:
+        return self.client.self.client.isfile(path)
+
+    def _get_stat(self, path: os.PathLike | str) -> RemoteFileStat:
+        item: ItemType = next(self.client.self.client.glob(path))
+        return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
+
+    def _get_item_name(self, item: ItemType) -> str:
+        return item[0]
+
+    def _is_item_dir(self, top: os.PathLike | str, item: ItemType) -> bool:
+        return "D" in item[1]
+
+    def _is_item_file(self, top: os.PathLike | str, item: ItemType) -> bool:
+        return not self._is_item_dir(top, item)
+
+    def _get_item_stat(self, top: os.PathLike | str, item: ItemType) -> RemoteFileStat:
+        return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())

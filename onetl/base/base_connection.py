@@ -3,19 +3,17 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class ConnectionABC(ABC):
+class BaseConnection(ABC):
     """
-    Airflow-like connection object.
-
-    Checkout airflow.models.connection.Connection for more info.
+    Generic connection class
     """
 
     @abstractmethod
-    def check(self):
+    def check(self) -> None:
         """Check source availability.
 
         Raises
         ------
         RuntimeError
-            If the connection is not available.
+            If the connection is not available
         """

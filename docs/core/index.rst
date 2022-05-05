@@ -12,4 +12,5 @@ Core classes
     db_writer
     file_downloader
     file_uploader
+    upload_result
     file_filter
