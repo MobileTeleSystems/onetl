@@ -93,9 +93,8 @@ flake8:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install wemake-python-styleguide bandit==1.7.2
+  - pip install wemake-python-styleguide
   - python3 -m flake8 --format=default . 2>&1 | tee flake8.txt
-  - ls
   artifacts:
     when: always
     paths: [flake8.txt]
