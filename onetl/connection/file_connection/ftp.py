@@ -81,9 +81,6 @@ class FTP(FileConnection):
 
     def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
-        # TODO (@msmarty5): remove after fix https://todo.sr.ht/~sschwarzer/ftputil/150
-        self.client.stat_cache.invalidate(os.fspath(source))
-        self.client.stat_cache.invalidate(os.fspath(target))
 
     def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
         self.client.download(remote_file_path, local_file_path)
