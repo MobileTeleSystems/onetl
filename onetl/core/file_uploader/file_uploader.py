@@ -7,6 +7,7 @@ from logging import getLogger
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Sized
 
+from onetl.core.file_result import FileSet
 from onetl.base import BaseFileConnection
 from onetl.connection.file_connection.file_connection import (
     FileConnection,
@@ -35,6 +36,11 @@ class FileUploader:
         Remote path where files uploaded firstly
 
         Default value: ``/tmp/``
+
+    local_path : str
+        The local directory from which the data is loaded.
+
+        Default value: None
 
     options : Options | dict | None, default: ``None``
         File upload options
@@ -68,6 +74,7 @@ class FileUploader:
             connection=hdfs,
             target_path="/path/to/remote/source",
             temp_path="/home/onetl",
+            local_path="/some/local/directory"
         )
 
     """
@@ -83,22 +90,30 @@ class FileUploader:
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
     _temp_path: PurePosixPath = field(init=False)
 
-    def __post_init__(self, target_path: str | os.PathLike, temp_path: str | os.PathLike):
+    _local_path: Path | None = field(init=False)
+    local_path: InitVar[os.PathLike | str | None] = None
+
+    def __post_init__(
+        self,
+        target_path: str | os.PathLike,
+        temp_path: str | os.PathLike,
+        local_path: str | os.PathLike | None,
+    ):
         self._target_path = PurePosixPath(target_path)
         self._temp_path = PurePosixPath(temp_path)
-
+        self._local_path = Path(local_path) if local_path else None
         self._options = self.options or self.connection.Options()
 
         if isinstance(self.options, dict):
             self._options = self.connection.Options.parse_obj(self.options)
 
-    def run(self, files: Iterable[str | os.PathLike]) -> UploadResult:  # noqa:WPS231 NOSONAR
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231 NOSONAR
         """
         Method for uploading files to remote host.
 
         Parameters
         ----------
-        files : Iterable[str | os.PathLike]
+        files : Iterable[str | os.PathLike] | None
             List of files on local storage
 
         Returns
@@ -130,6 +145,10 @@ class FileUploader:
                 ]
             )
 
+            # or without the list of files
+
+            uploaded_files = uploader.run()
+
             assert uploaded_files.success == {
                 RemoteFile("/remote/file1"),
                 RemoteFile("/remote/file2"),
@@ -139,10 +158,24 @@ class FileUploader:
             assert uploaded_files.missing == {PurePath("/missing/file")}
         """
 
-        if not files:
+        if files is None:
             log.warning(" ")
-            log.warning(f"|{self.__class__.__name__}| Files list is empty. Please, provide files to upload.")
-            return UploadResult()
+            log.warning(f"|{self.__class__.__name__}| Files list is empty. Loading from local directory.")
+
+            if not self._local_path:
+                raise ValueError(f"|{self.__class__.__name__}| Local directory not passed. Please, provide local_path.")
+
+            if self._local_path.is_dir():
+                files = self.view_files()
+            else:
+                log.warning(f"|{self.__class__.__name__}| Local directory does not exists.")
+                return UploadResult()
+
+        if self._local_path and files:
+            log.warning(
+                f"|{self.__class__.__name__}| Passed local_path and files parameters at the same time. The data will "
+                f"be loaded from the list of files and not from the local directory.",
+            )
 
         entity_boundary_log(msg="FileUploader starts")
         connection_class_name = self.connection.__class__.__name__
@@ -232,3 +265,47 @@ class FileUploader:
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
 
         return result
+
+    def view_files(self) -> FileSet[Path]:
+        """
+        Show list of files in the local directory
+
+        Returns
+        -------
+        List[Path]
+            List of uploaded files.
+
+        Examples
+        --------
+
+        View files
+
+        .. code:: python
+
+            from onetl.core import FileUploader
+
+            uploader = FileUploader(target_path="/remote", ...)
+
+            view_files = uploader.view_files()
+
+            assert view_files == [
+                Path("/local/path/file1.txt"),
+                Path("/local/path/file3.txt"),
+                Path("/local/path/nested/file3.txt"),
+            ]
+        """
+
+        log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: '{self._local_path}'")
+
+        file_set = FileSet()
+
+        try:
+            for root, _, files in os.walk(self._local_path):
+                for file in files:
+                    file_set.add(Path(root) / file)
+        except Exception as e:
+            raise RuntimeError(
+                f"Couldn't read directory tree from remote dir {self._local_path}",
+            ) from e
+
+        return file_set

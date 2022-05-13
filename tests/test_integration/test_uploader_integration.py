@@ -1,4 +1,5 @@
 import logging
+import os
 import secrets
 import shutil
 import tempfile
@@ -14,8 +15,8 @@ class TestUploader:
     @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
     @pytest.mark.parametrize(
         "run_path_type",
-        [str, PurePosixPath],
-        ids=["run_path_type str", "run_path_type PurePosixPath"],
+        [str, Path],
+        ids=["run_path_type str", "run_path_type Path"],
     )
     def test_run(self, file_connection, test_files, run_path_type, path_type):
         target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -52,6 +53,73 @@ class TestUploader:
                 temp_file = temp_root / success_file.name
                 file_connection.download_file(remote_file, temp_file)
                 assert temp_file.read_bytes() == test_file.read_bytes()
+
+    @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
+    def test_view_files(self, file_connection, resource_path, test_files, path_type):
+        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        # upload files
+        uploader = FileUploader(
+            connection=file_connection,
+            target_path=target_path,
+            local_path=resource_path,
+        )
+
+        local_files = uploader.view_files()
+
+        local_files_list = []
+
+        for root, _, files in os.walk(resource_path):
+            for file in files:
+                local_files_list.append(Path(root) / file)
+
+        assert sorted(local_files) == sorted(local_files_list)  # in order to be able to compare
+
+    @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
+    def test_run_with_local_path(self, file_connection, resource_path, test_files, path_type):
+        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        # upload files
+        uploader = FileUploader(
+            connection=file_connection,
+            target_path=target_path,
+            local_path=resource_path,
+        )
+
+        upload_result = uploader.run()
+
+        assert not upload_result.failed
+        assert not upload_result.missing
+
+        local_files_list = []
+
+        for root, _, files in os.walk(resource_path):
+            for file_name in files:
+                local_files_list.append(Path(root) / file_name)
+
+        assert upload_result.success
+        assert len(upload_result.success) == len(local_files_list)
+        assert upload_result.success == {Path(target_path) / file.name for file in local_files_list}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+
+            for success_file in upload_result.success:
+                test_file = next(file for file in local_files_list if file.name == success_file.name)
+                assert success_file == Path(target_path) / test_file.name
+
+                remote_file = PurePosixPath(target_path) / success_file.name
+
+                # file size is same as expected
+                assert file_connection.get_stat(remote_file).st_size == os.path.getsize(test_file)
+                assert file_connection.get_stat(remote_file).st_mtime >= os.path.getmtime(test_file)
+
+                # file content is same as expected
+                temp_file = temp_root / success_file.name
+                file_connection.download_file(remote_file, temp_file)
+
+                with open(test_file, "rb") as file:
+                    assert temp_file.read_bytes() == file.read()
 
     def test_run_missing_file(self, file_connection, test_files):
         target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -333,17 +401,46 @@ class TestUploader:
         assert len(upload_result.success) == len(test_files)
         assert upload_result.success == {Path(target_path) / test_file.name for test_file in test_files}
 
-    def test_with_empty_file_list(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/")
+    def test_without_file_list_with_local_path(self, file_connection, caplog):
+        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/some/path")
 
         with caplog.at_level(logging.INFO):
-            upload_result = uploader.run([])
-            assert "Files list is empty. Please, provide files to upload." in caplog.text
+            upload_result = uploader.run()
+            assert "Files list is empty. Loading from local directory." in caplog.text
 
         assert not upload_result.success
         assert not upload_result.failed
         assert not upload_result.skipped
         assert not upload_result.missing
+
+    def test_without_file_list_and_without_local_path(self, file_connection, caplog):
+        uploader = FileUploader(connection=file_connection, target_path="/target/path/")
+
+        with pytest.raises(ValueError):
+            uploader.run()
+
+    def test_without_file_list_and_with_local_path(self, file_connection, caplog):
+        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/local/path")
+
+        with caplog.at_level(logging.INFO):
+            uploader.run()
+            assert "Local directory does not exists." in caplog.text
+
+    def test_with_file_list_and_local_path(self, file_connection, caplog):
+        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/some/path")
+
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(["/path/1", "/path/2"])
+            assert (
+                "Passed local_path and files parameters at the same time. The data will be loaded from the list "
+                "of files and not from the local directory."
+            ) in caplog.text
+            assert "Local directory does not exists." not in caplog.text
+
+        assert not upload_result.success
+        assert not upload_result.failed
+        assert not upload_result.skipped
+        assert upload_result.missing
 
     def test_source_check(self, file_connection, caplog):
         with caplog.at_level(logging.INFO):
