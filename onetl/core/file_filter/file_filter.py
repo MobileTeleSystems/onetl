@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import glob
 import os
+import re
 from logging import getLogger
 from pathlib import PurePosixPath
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 
@@ -13,18 +15,32 @@ log = getLogger(__name__)
 
 
 class FileFilter(BaseFileFilter, BaseModel):
-    """Class needed to determine WHICH files are loaded.
+    r"""Filter files or directories by their path.
 
     Parameters
     ----------
 
     glob : str | None, default ``None``
 
-        Pattern according to which only files matching it will be taken
+        Pattern (e.g. ``*.csv``) for which any **file** (only file) path should match
+
+        .. warning::
+
+            Mutually exclusive with ``regexp``
+
+    regexp : str | re.Pattern | None, default ``None``
+
+        Regular expression (e.g. ``\d+\.csv``) for which any **file** (only file) path should match.
+
+        If input is a string, regular expression will be compiles using ``re.IGNORECASE`` and ``re.DOTALL`` flags
+
+        .. warning::
+
+            Mutually exclusive with ``glob``
 
     exclude_dirs : list[os.PathLike | str], default ``[]``
 
-        List of directories files from which will not be included in the download
+        List of directories which should not be a part of a file or directory path
 
 
     Examples
@@ -41,26 +57,77 @@ class FileFilter(BaseFileFilter, BaseModel):
     .. code:: python
 
         file_filter = FileFilter(glob="*.csv")
+
+    Create regexp filter:
+
+    .. code:: python
+
+        file_filter = FileFilter(regexp=r"\d+\.csv")
+
+        # or
+
+        import re
+
+        file_filter = FileFilter(regexp=re.compile("\d+\.csv"))
+
+    Not allowed:
+
+    .. code:: python
+
+        FileFilter()  # will raise ValueError, at least one argument should be passed
     """
 
     class Config:  # noqa: WPS431
         arbitrary_types_allowed = True
 
     glob: Optional[str] = None
+    regexp: Optional[re.Pattern] = None
     exclude_dirs: List[PurePosixPath] = Field(default_factory=list)
+
+    @validator("glob", pre=True)
+    def check_glob(cls, value: str) -> str:  # noqa: N805
+        if not glob.has_magic(value):
+            raise ValueError("Invalid glob")
+
+        return value
+
+    @validator("regexp", pre=True)
+    def check_regexp(cls, value: Union[re.Pattern, str]) -> re.Pattern:  # noqa: N805
+        if isinstance(value, str):
+            return re.compile(value, re.IGNORECASE | re.DOTALL)
+
+        return value
 
     @validator("exclude_dirs", each_item=True, pre=True)
     def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> PurePosixPath:  # noqa: N805
         return PurePosixPath(value)
 
+    @root_validator
+    def disallow_empty_fields(cls, value: dict) -> dict:  # noqa: N805
+        if value.get("glob") is None and value.get("regexp") is None and not value.get("exclude_dirs"):
+            raise ValueError("One of the following fields must be set: `glob`, `regexp`, `exclude_dirs`")
+
+        return value
+
+    @root_validator
+    def disallow_both_glob_and_regexp(cls, value: dict) -> dict:  # noqa: N805
+        if value.get("glob") and value.get("regexp"):
+            raise ValueError("Only one of `glob`, `regexp` fields can passed, not both")
+
+        return value
+
     def match(self, path: PathProtocol) -> bool:
-        if self.exclude_dirs and path.is_dir():
+        if self.exclude_dirs:
+            path = path if path.is_dir() else path.parent
             for exclude_dir in self.exclude_dirs:
                 if exclude_dir in path.parents or exclude_dir == path:
                     return False
 
         if self.glob and path.is_file():
             return path.match(self.glob)
+
+        if self.regexp and path.is_file():
+            return self.regexp.search(os.fspath(path)) is not None
 
         return True
 
