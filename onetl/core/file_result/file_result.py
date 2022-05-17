@@ -50,7 +50,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from pathlib import Path
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 success={Path("/some/file"), Path("/some/another.file")},
@@ -72,7 +72,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from onetl.impl import RemoteFile
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 failed={RemoteFile("/some/file"), RemoteFile("/some/another.file")},
@@ -94,7 +94,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from pathlib import Path
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 skipped={Path("/some/file"), Path("/some/another.file")},
@@ -116,7 +116,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from pathlib import PurePath
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 missing={PurePath("/some/file"), PurePath("/some/another.file")},
@@ -140,7 +140,7 @@ class FileResult(BaseModel):
             from pathlib import Path, PurePath
 
             from onetl.impl import RemoteFile
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 success={Path("/local/file"), Path("/local/another.file")},
@@ -165,7 +165,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from pathlib import Path
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 success={Path("/some/file"), Path("/some/another.file")},
@@ -187,7 +187,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from onetl.impl import RemoteFile
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 failed={RemoteFile("/some/file"), RemoteFile("/some/another.file")},
@@ -209,7 +209,7 @@ class FileResult(BaseModel):
         .. code:: python
 
             from pathlib import Path
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 skipped={Path("/some/file"), Path("/some/another.file")},
@@ -233,7 +233,7 @@ class FileResult(BaseModel):
             from pathlib import Path, PurePath
 
             from onetl.impl import RemoteFile
-            from onet.core.file_result.file_result import FileResult
+            from onet.core import FileResult
 
             file_result = FileResult(
                 success={Path("/local/file"), Path("/local/another.file")},

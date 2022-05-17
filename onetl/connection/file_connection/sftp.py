@@ -169,3 +169,19 @@ class SFTP(FileConnection):
 
     def _get_item_stat(self, top: os.PathLike | str, item: SFTPAttributes) -> SFTPAttributes:
         return item
+
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        with self.client.open(os.fspath(path), mode="r", **kwargs) as file:
+            return file.read().decode(encoding)
+
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        with self.client.open(os.fspath(path), mode="r", **kwargs) as file:
+            return file.read()
+
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
+            file.write(content.encode(encoding))
+
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
+            file.write(content)

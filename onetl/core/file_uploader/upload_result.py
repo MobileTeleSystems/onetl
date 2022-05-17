@@ -5,7 +5,7 @@ from typing import Set
 
 from pydantic import Field
 
-from onetl.core.file_result import FileResult, FileSet
+from onetl.core import FileResult, FileSet
 from onetl.impl import FailedLocalFile, RemoteFile
 
 
@@ -15,10 +15,10 @@ class UploadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * ``success`` - successfully handled files
-    * ``failed`` - file paths which were handled with some failures
-    * ``skipped`` - file paths which were skipped because of some reason
-    * ``missing`` - unknown paths which cannot be handled
+    * ``success`` - successfully handled files (remote)
+    * ``failed`` - file paths (local) which were handled with some failures
+    * ``skipped`` - file paths (local) which were skipped because of some reason
+    * ``missing`` - file paths (local) which are not present in the file system
 
     Examples
     --------

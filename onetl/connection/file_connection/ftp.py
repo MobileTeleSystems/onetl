@@ -102,3 +102,19 @@ class FTP(FileConnection):
 
     def _get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
         return self.client.stat(path)
+
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        with self.client.open(path, mode="r", encoding=encoding, **kwargs) as file:
+            return file.read()
+
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        with self.client.open(path, mode="rb", **kwargs) as file:
+            return file.read()
+
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(path, mode="w", encoding=encoding, **kwargs) as file:
+            file.write(content)
+
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+        with self.client.open(path, mode="wb", **kwargs) as file:
+            file.write(content)

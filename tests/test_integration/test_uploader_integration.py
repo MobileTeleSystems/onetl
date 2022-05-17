@@ -7,8 +7,9 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from onetl.connection import FileConnection
+from onetl.connection import FileConnection, FileWriteMode
 from onetl.core import FileUploader
+from onetl.exception import DirectoryNotFoundError
 
 
 class TestUploader:
@@ -54,9 +55,8 @@ class TestUploader:
                 file_connection.download_file(remote_file, temp_file)
                 assert temp_file.read_bytes() == test_file.read_bytes()
 
-    @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
-    def test_view_files(self, file_connection, resource_path, test_files, path_type):
-        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_view_files(self, file_connection, resource_path):
+        target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
 
         # upload files
         uploader = FileUploader(
@@ -69,21 +69,22 @@ class TestUploader:
 
         local_files_list = []
 
-        for root, _, files in os.walk(resource_path):
+        for root, _dirs, files in os.walk(resource_path):
             for file in files:
                 local_files_list.append(Path(root) / file)
 
-        assert sorted(local_files) == sorted(local_files_list)  # in order to be able to compare
+        assert local_files
+        assert sorted(local_files) == sorted(local_files_list)
 
     @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
-    def test_run_with_local_path(self, file_connection, resource_path, test_files, path_type):
-        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_run_with_local_path(self, file_connection, resource_path, path_type):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         # upload files
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            local_path=resource_path,
+            local_path=path_type(resource_path),
         )
 
         upload_result = uploader.run()
@@ -99,7 +100,7 @@ class TestUploader:
 
         assert upload_result.success
         assert len(upload_result.success) == len(local_files_list)
-        assert sorted([path.path for path in upload_result.success]) == sorted(
+        assert sorted(path for path in upload_result.success) == sorted(
             {Path(target_path) / file.relative_to(resource_path) for file in local_files_list},
         )  # in order to be able to compare
 
@@ -123,8 +124,8 @@ class TestUploader:
                 with open(test_file, "rb") as file:
                     assert temp_file.read_bytes() == file.read()
 
-    def test_run_missing_file(self, file_connection, test_files):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_run_missing_file(self, file_connection, test_files, caplog):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         # upload files
         uploader = FileUploader(
@@ -132,8 +133,12 @@ class TestUploader:
             target_path=target_path,
         )
 
-        missing_file = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
-        upload_result = uploader.run(test_files + [missing_file])
+        missing_file = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(test_files + [missing_file])
+
+            assert f"Missing file '{missing_file}', skipping" in caplog.text
 
         assert not upload_result.failed
         assert not upload_result.skipped
@@ -148,8 +153,8 @@ class TestUploader:
         for missing_file in upload_result.missing:
             assert not missing_file.exists()
 
-    def test_delete_source(self, test_files, file_connection):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_delete_source(self, test_files, file_connection, caplog):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         uploader = FileUploader(
             connection=file_connection,
@@ -157,7 +162,10 @@ class TestUploader:
             options=file_connection.Options(delete_source=True),
         )
 
-        upload_result = uploader.run(test_files)
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(test_files)
+
+            assert "LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!" in caplog.text
 
         assert not upload_result.failed
         assert not upload_result.skipped
@@ -170,9 +178,12 @@ class TestUploader:
         # source files are removed
         assert all(not file.exists() for file in test_files)
 
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_upload_options_error(self, file_connection, test_files, options, tmp_path_factory):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    @pytest.mark.parametrize(
+        "options",
+        [{"mode": "error"}, FileConnection.Options(mode="error"), FileConnection.Options(mode=FileWriteMode.ERROR)],
+    )
+    def test_mode_error(self, file_connection, test_files, options, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         pre_uploader = FileUploader(
             connection=file_connection,
@@ -202,7 +213,7 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=options(mode="error"),
+            options=options,
         )
 
         upload_result = uploader.run(new_files)
@@ -238,9 +249,8 @@ class TestUploader:
                 file_connection.download_file(remote_file, temp_file)
                 assert temp_file.read_bytes() == original_file.read_bytes()
 
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_upload_options_ignore(self, file_connection, test_files, options, tmp_path_factory):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_mode_ignore(self, file_connection, test_files, caplog, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         pre_uploader = FileUploader(
             connection=file_connection,
@@ -256,12 +266,15 @@ class TestUploader:
 
         new_files = set(new_source.iterdir())
 
+        target_files = []
         for new_file in new_files:
             # change new files content
             new_file.write_bytes(secrets.token_bytes())
 
             remote_file = target_path / new_file.name
             remote_file_stat = file_connection.get_stat(remote_file)
+
+            target_files.append(remote_file)
 
             # check that file is different now
             assert remote_file_stat.st_size != new_file.stat().st_size
@@ -270,10 +283,14 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=options(mode="ignore"),
+            options=FileConnection.Options(mode=FileWriteMode.IGNORE),
         )
 
-        upload_result = uploader.run(new_files)
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(new_files)
+
+            for target_file in target_files:
+                assert f"Target directory already contains file '{target_file}', skipping" in caplog.text
 
         assert not upload_result.success
         assert not upload_result.missing
@@ -303,9 +320,8 @@ class TestUploader:
                 file_connection.download_file(remote_file, temp_file)
                 assert temp_file.read_bytes() == original_file.read_bytes()
 
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_upload_options_overwrite(self, file_connection, test_files, options, tmp_path_factory):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_mode_overwrite(self, file_connection, test_files, caplog, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         pre_uploader = FileUploader(
             connection=file_connection,
@@ -321,12 +337,15 @@ class TestUploader:
 
         new_files = set(new_source.iterdir())
 
+        target_files = []
         for new_file in new_files:
             # change new files content
             new_file.write_bytes(secrets.token_bytes())
 
             remote_file = target_path / new_file.name
             remote_file_stat = file_connection.get_stat(remote_file)
+
+            target_files.append(remote_file)
 
             # check that file is different now
             assert remote_file_stat.st_size != new_file.stat().st_size
@@ -335,10 +354,14 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=options(mode="overwrite"),
+            options=FileConnection.Options(mode=FileWriteMode.OVERWRITE),
         )
 
-        upload_result = uploader.run(new_files)
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(new_files)
+
+            for target_file in target_files:
+                assert f"Target directory already contains file '{target_file}', overwriting" in caplog.text
 
         assert not upload_result.failed
         assert not upload_result.skipped
@@ -371,9 +394,8 @@ class TestUploader:
                 assert temp_file.read_bytes() != original_file.read_bytes()
                 assert temp_file.read_bytes() == changed_file.read_bytes()
 
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_upload_options_delete_all(self, file_connection, test_files, options):
-        target_path = Path(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    def test_mode_delete_all(self, file_connection, test_files, caplog):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         with tempfile.NamedTemporaryFile("w") as file:
             file.write(secrets.token_hex())
@@ -390,10 +412,12 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=options(mode="delete_all"),
+            options=FileConnection.Options(mode=FileWriteMode.DELETE_ALL),
         )
 
-        upload_result = uploader.run(test_files)
+        with caplog.at_level(logging.WARNING):
+            upload_result = uploader.run(test_files)
+            assert "TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!" in caplog.text
 
         assert not upload_result.failed
         assert not upload_result.skipped
@@ -403,41 +427,61 @@ class TestUploader:
         assert len(upload_result.success) == len(test_files)
         assert upload_result.success == {Path(target_path) / test_file.name for test_file in test_files}
 
-    def test_without_file_list_with_local_path(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/some/path")
+    def test_local_path_does_not_exist(self, file_connection, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-        with caplog.at_level(logging.INFO):
-            upload_result = uploader.run()
-            assert "Files list is empty. Loading from local directory." in caplog.text
+        local_path_parent = tmp_path_factory.mktemp("local_path")
+        local_path = local_path_parent / "abc"
 
-        assert not upload_result.success
-        assert not upload_result.failed
-        assert not upload_result.skipped
-        assert not upload_result.missing
+        uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=local_path)
 
-    def test_without_file_list_and_without_local_path(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/")
-
-        with pytest.raises(ValueError):
+        with pytest.raises(DirectoryNotFoundError, match=f"'{local_path}' does not exist"):
             uploader.run()
 
-    def test_without_file_list_and_with_local_path(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/local/path")
+    def test_local_path_not_a_directory(self, file_connection):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-        with caplog.at_level(logging.INFO):
+        with tempfile.NamedTemporaryFile() as file:
+            uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
+
+            with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
+                uploader.run()
+
+    def test_target_path_not_a_directory(self, request, file_connection, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        file_connection.write_text(target_path, "abc")
+
+        def finalizer():
+            file_connection.remove_file(target_path)
+
+        request.addfinalizer(finalizer)
+
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=local_path)
+
+        with pytest.raises(NotADirectoryError, match=f"'{target_path}' is not a directory"):
             uploader.run()
-            assert "Local directory does not exists." in caplog.text
 
-    def test_with_file_list_and_local_path(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/some/path")
+    def test_without_files_and_without_local_path(self, file_connection):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        uploader = FileUploader(connection=file_connection, target_path=target_path)
+
+        with pytest.raises(ValueError, match="Neither file collection nor ``local_path`` are passed"):
+            uploader.run()
+
+    def test_with_files_and_local_path(self, file_connection, caplog, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=local_path)
 
         with caplog.at_level(logging.WARNING):
-            upload_result = uploader.run(["/some/path/1", "/some/path/2"])
+            upload_result = uploader.run([local_path / "path1", local_path / "path2"])
             assert (
-                "Passed local_path and files parameters at the same time. The data will be loaded from the list "
-                "of files and not from the local directory."
+                "Passed both ``local_path`` and file collection at the same time. File collection will be used"
             ) in caplog.text
-            assert "Local directory does not exists." not in caplog.text
 
         assert not upload_result.success
         assert not upload_result.failed
@@ -445,7 +489,7 @@ class TestUploader:
         assert upload_result.missing
 
     @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
-    def test_with_file_list_relative_path_and_local_path(self, file_connection, resource_path, test_files, path_type):
+    def test_with_file_list_relative_path_and_local_path(self, file_connection, resource_path, path_type):
         target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         # upload files
@@ -491,11 +535,22 @@ class TestUploader:
                 with open(resource_path / test_file, "rb") as file:
                     assert temp_file.read_bytes() == file.read()
 
-    def test_path_in_file_list_not_match_local_path_error(self, file_connection, caplog):
-        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/another/path")
+    def test_path_in_file_list_not_match_local_path_error(self, file_connection, tmp_path_factory):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        local_path = tmp_path_factory.mktemp("local_path")
 
-        with pytest.raises(ValueError):
+        uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=local_path)
+
+        with pytest.raises(ValueError, match=f"File path '/some/path/1' does not match source_path '{local_path}'"):
             uploader.run(["/some/path/1", "/some/path/2"])
+
+    def test_run_relative_paths_without_local_path(self, file_connection):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        uploader = FileUploader(connection=file_connection, target_path=target_path)
+
+        with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``local_path``"):
+            uploader.run(["some/path/1", "some/path/2"])
 
     def test_source_check(self, file_connection, caplog):
         with caplog.at_level(logging.INFO):

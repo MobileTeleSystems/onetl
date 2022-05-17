@@ -103,5 +103,35 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
         """
-        Returns stats, e.g. file file, for a specific path on remote filesystem
+        Returns stats for a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def get_file(self, path: os.PathLike | str) -> SizedPathProtocol:
+        """
+        Returns file with stats for a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
+        """
+        Returns string content of a file at specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        """
+        Returns binary content of a file at specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> SizedPathProtocol:
+        """
+        Writes string to a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> SizedPathProtocol:
+        """
+        Writes bytes to a specific path on remote filesystem
         """
