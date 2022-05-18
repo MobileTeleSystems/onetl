@@ -107,7 +107,7 @@ class FileUploader:
         if isinstance(self.options, dict):
             self._options = self.connection.Options.parse_obj(self.options)
 
-    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231 NOSONAR
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231, WPS238 NOSONAR
         """
         Method for uploading files to remote host.
 
@@ -207,11 +207,10 @@ class FileUploader:
         if isinstance(files, Sized):
             step_suffix = f" of {len(files)}"
 
-        for i, file in enumerate(files):
+        for i, (file, target_file, tmp_file) in enumerate(  # noqa: WPS352
+            self._validate_files_list(local_files=files, current_temp_dir=current_temp_dir),
+        ):
             file_path = Path(file)
-
-            tmp_file = current_temp_dir / file_path.name
-            target_file = self._target_path / file_path.name
 
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1}{step_suffix}")
             log.info(" " * LOG_INDENT + f"from = '{file_path}'")
@@ -309,3 +308,46 @@ class FileUploader:
             ) from e
 
         return file_set
+
+    def _validate_files_list(
+        self,
+        local_files: list[os.PathLike | str],
+        current_temp_dir: os.PathLike | str,
+    ) -> list[tuple[Path, PurePosixPath, PurePosixPath]]:
+        valid_file_list = []
+        tmp_file: PurePosixPath
+
+        for file in local_files:
+            file_path = Path(file)
+
+            if not self._local_path:
+                # Upload into a flat structure
+                if not file_path.is_absolute():
+                    raise ValueError(
+                        f"|{self.__class__.__name__}| Cannot pass relative file path with empty ``local_path``",
+                    )
+
+                filename = file_path.name
+                target_file = self._target_path / filename
+                tmp_file = current_temp_dir / filename
+            else:
+                # Upload according to source folder structure
+                if self._local_path in file_path.parents:
+                    # Make relative remote path
+                    target_file = self._target_path / file_path.relative_to(self._local_path)
+                    tmp_file = current_temp_dir / file_path.relative_to(self._local_path)
+                elif not file_path.is_absolute():
+                    # Passed already relative path
+                    relative_path = file_path
+                    file_path = self._local_path / relative_path
+                    target_file = self._target_path / relative_path
+                    tmp_file = current_temp_dir / relative_path
+                else:
+                    # Wrong path (not relative path and source path not in the path to the file)
+                    raise ValueError(
+                        f"|{self.__class__.__name__}| File path '{file_path}' "
+                        f"does not match source_path '{self._local_path}'",
+                    )
+            valid_file_list.append((file_path, target_file, tmp_file))
+
+        return valid_file_list
