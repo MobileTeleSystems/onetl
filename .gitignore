@@ -11,6 +11,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+/jar
 build/
 develop-eggs/
 dist/
@@ -115,6 +116,7 @@ virtualenv/
 ENV/
 env.bak/
 venv.bak/
+env
 
 # Spyder project settings
 .spyderproject

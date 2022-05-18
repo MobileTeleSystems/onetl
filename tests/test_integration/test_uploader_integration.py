@@ -99,16 +99,18 @@ class TestUploader:
 
         assert upload_result.success
         assert len(upload_result.success) == len(local_files_list)
-        assert upload_result.success == {Path(target_path) / file.name for file in local_files_list}
+        assert sorted([path.path for path in upload_result.success]) == sorted(
+            {Path(target_path) / file.relative_to(resource_path) for file in local_files_list},
+        )  # in order to be able to compare
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
 
             for success_file in upload_result.success:
                 test_file = next(file for file in local_files_list if file.name == success_file.name)
-                assert success_file == Path(target_path) / test_file.name
+                assert success_file == Path(target_path) / test_file.relative_to(resource_path)
 
-                remote_file = PurePosixPath(target_path) / success_file.name
+                remote_file = PurePosixPath(target_path) / success_file.relative_to(target_path)
 
                 # file size is same as expected
                 assert file_connection.get_stat(remote_file).st_size == os.path.getsize(test_file)
@@ -430,7 +432,7 @@ class TestUploader:
         uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/some/path")
 
         with caplog.at_level(logging.WARNING):
-            upload_result = uploader.run(["/path/1", "/path/2"])
+            upload_result = uploader.run(["/some/path/1", "/some/path/2"])
             assert (
                 "Passed local_path and files parameters at the same time. The data will be loaded from the list "
                 "of files and not from the local directory."
@@ -441,6 +443,59 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.skipped
         assert upload_result.missing
+
+    @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
+    def test_with_file_list_relative_path_and_local_path(self, file_connection, resource_path, test_files, path_type):
+        target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        # upload files
+        uploader = FileUploader(
+            connection=file_connection,
+            target_path=target_path,
+            local_path=resource_path,
+        )
+
+        local_relative_path_files_list = []
+        for root, _, files in os.walk(resource_path):
+            for file_name in files:
+                abs_path_file = Path(root) / file_name
+                local_relative_path_files_list.append(abs_path_file.relative_to(resource_path))
+
+        upload_result = uploader.run(local_relative_path_files_list)
+
+        assert not upload_result.failed
+        assert not upload_result.missing
+        assert upload_result.success
+        assert sorted(path for path in upload_result.success) == sorted(
+            {PurePosixPath(target_path) / file for file in local_relative_path_files_list},
+        )  # in order to be able to compare
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+
+            for success_file in upload_result.success:
+                test_file = next(file for file in local_relative_path_files_list if file.name == success_file.name)
+                assert success_file == PurePosixPath(target_path) / test_file
+
+                local_path = resource_path / test_file
+
+                # file size is same as expected
+                remote_file = target_path / test_file
+                assert file_connection.get_stat(remote_file).st_size == local_path.stat().st_size
+                assert file_connection.get_stat(remote_file).st_mtime >= local_path.stat().st_mtime
+
+                # file content is same as expected
+                temp_file = temp_root / success_file.name
+                file_connection.download_file(remote_file, temp_file)
+
+                with open(resource_path / test_file, "rb") as file:
+                    assert temp_file.read_bytes() == file.read()
+
+    def test_path_in_file_list_not_match_local_path_error(self, file_connection, caplog):
+        uploader = FileUploader(connection=file_connection, target_path="/target/path/", local_path="/another/path")
+
+        with pytest.raises(ValueError):
+            uploader.run(["/some/path/1", "/some/path/2"])
 
     def test_source_check(self, file_connection, caplog):
         with caplog.at_level(logging.INFO):
