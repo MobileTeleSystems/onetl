@@ -17,5 +17,11 @@ class NotAFileError(OSError):
 
 class DirectoryNotEmptyError(OSError):
     """
-    Is raised when trying to remove directory contains some files or other directories
+    Raised when trying to remove directory contains some files or other directories
+    """
+
+
+class FileResultError(OSError):
+    """
+    Raised when something went wrong while working with FileResult object
     """
