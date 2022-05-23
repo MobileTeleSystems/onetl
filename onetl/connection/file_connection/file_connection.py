@@ -99,6 +99,35 @@ class FileConnection(BaseFileConnection):
 
         return self._get_stat(path)
 
+    def get_file(self, path: os.PathLike | str) -> RemoteFile:
+        stat = self.get_stat(path)
+
+        return RemoteFile(path=path, stats=stat)
+
+    def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
+        if not self.is_file(path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{path}' is not a file")
+
+        return self._read_text(path, encoding=encoding, **kwargs)
+
+    def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        if not self.is_file(path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{path}' is not a file")
+
+        return self._read_bytes(path, **kwargs)
+
+    def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
+        self.mkdir(PurePosixPath(path).parent)
+        self._write_text(path, content=content, encoding=encoding, **kwargs)
+
+        return self.get_file(path)
+
+    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> RemoteFile:
+        self.mkdir(PurePosixPath(path).parent)
+        self._write_bytes(path, content=content, **kwargs)
+
+        return self.get_file(path)
+
     def download_file(
         self,
         remote_file_path: os.PathLike | str,
@@ -176,9 +205,9 @@ class FileConnection(BaseFileConnection):
 
         self._mkdir(remote_file.parent)
         self._upload_file(local_file, remote_file)
-        stat = self.get_stat(remote_file)
+        result = self.get_file(remote_file)
         log.info(f"|{self.__class__.__name__}| Successfully uploaded file: '{remote_file}'")
-        return RemoteFile(path=remote_file, stats=stat)
+        return result
 
     def rename_file(
         self,
@@ -206,10 +235,12 @@ class FileConnection(BaseFileConnection):
         self._rename(source_file_path, target_file)
         log.info(f"|{self.__class__.__name__}| Successfully renamed file '{source_file_path}' to '{target_file}'")
 
-        stat = self.get_stat(target_file)
-        return RemoteFile(path=target_file, stats=stat)
+        return self.get_file(target_file)
 
     def listdir(self, path: os.PathLike | str) -> list[RemoteDirectory | RemoteFile]:
+        if not self.is_dir(path):
+            raise NotADirectoryError(f"|{self.__class__.__name__}| '{path}' is not a directory")
+
         result = []
         for item in self._listdir(path):
             name = self._get_item_name(item)
@@ -232,6 +263,9 @@ class FileConnection(BaseFileConnection):
         dirnames, filenames) on each iteration, like the `os.walk`
         function (see https://docs.python.org/library/os.html#os.walk ).
         """
+
+        if not self.is_dir(top):
+            raise NotADirectoryError(f"|{self.__class__.__name__}| '{top}' is not a directory")
 
         root = RemoteDirectory(path=top)
         dirs, files = [], []
@@ -341,4 +375,20 @@ class FileConnection(BaseFileConnection):
 
     @abstractmethod
     def _rmdir(self, path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        """"""
+
+    @abstractmethod
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        """"""
+
+    @abstractmethod
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        """"""
+
+    @abstractmethod
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
         """"""

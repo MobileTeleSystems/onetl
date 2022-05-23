@@ -23,7 +23,7 @@ class FileSet(set, Generic[T]):  # noqa: WPS600
         .. code:: python
 
             from pathlib import Path
-            from onet.core.file_result.file_set import FileSet
+            from onet.core import FileSet
 
             file_set = FileSet({Path("/some/file"), Path("/some/another.file")})
 

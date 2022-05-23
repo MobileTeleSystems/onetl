@@ -1,469 +1,641 @@
+import logging
+import secrets
 import tempfile
 from pathlib import Path, PurePosixPath
 
 import pytest
 
-from onetl.connection import FileConnection
-from onetl.core import FileDownloader, FileFilter
-from tests.lib.common import hashfile
+from onetl.connection import FileConnection, FileWriteMode
+from onetl.core import FileDownloader, FileFilter, FileSet
+from onetl.exception import DirectoryNotFoundError
+from onetl.impl import RemoteFile
 
 
 class TestDownloader:
-    @pytest.mark.parametrize("path_type", [str, Path])
-    def test_delete_source(self, file_connection, source_path, resource_path, upload_test_files, path_type):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = path_type(temp_dir)
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=path_type(source_path),
-                local_path=local_path,
-                options=file_connection.Options(delete_source=True),
-            )
-
-            downloaded_files = downloader.run()
-
-            local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
-
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
-
-            current_ftps_files = set()
-            for root, _dirs, downloaded_files in file_connection.walk(source_path):
-                root_path = PurePosixPath(root)
-
-                for filename in downloaded_files:
-                    current_ftps_files.add(root_path / filename)
-
-            assert not current_ftps_files
-
-            original_files = [resource_path / file.relative_to(source_path) for file in upload_test_files]
-
-            for original_file in original_files:
-                local_file = local_path / original_file.relative_to(resource_path)
-                assert original_file.stat().st_size == local_file.stat().st_size
-                assert hashfile(original_file) == hashfile(local_file)
-
-    def test_with_wrong_pattern(self, file_connection, source_path, upload_test_files):
-        file_pattern = "*.wng"
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                filter=FileFilter(glob=file_pattern),
-            )
-
-            downloaded_files = downloader.run()
-            assert not downloaded_files
-
-    @pytest.mark.parametrize("path_type", [str, Path])
-    def test_with_filter_exclude_dir(self, file_connection, source_path, resource_path, upload_test_files, path_type):
-        exclude_dir = path_type("/export/news_parse/exclude_dir")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                filter=FileFilter(exclude_dirs=[exclude_dir]),
-            )
-
-            downloaded_files = downloader.run()
-
-            matching_files = [file for file in upload_test_files if PurePosixPath(exclude_dir) not in file.parents]
-
-            local_files = [local_path / file.relative_to(source_path) for file in matching_files]
-
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
-
-            original_files = [resource_path / file.relative_to(source_path) for file in matching_files]
-
-            for original_file in original_files:
-                local_file = local_path / original_file.relative_to(resource_path)
-                assert original_file.stat().st_size == local_file.stat().st_size
-                assert hashfile(original_file) == hashfile(local_file)
-
-    def test_with_filter_glob(self, file_connection, source_path, resource_path, upload_test_files):
-        file_pattern = "*.csv"
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                filter=FileFilter(glob=file_pattern),
-            )
-
-            downloaded_files = downloader.run()
-
-            matching_files = [file for file in upload_test_files if file.match(file_pattern)]
-            local_files = [local_path / file.relative_to(source_path) for file in matching_files]
-
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
-
-            original_files = [
-                resource_path / file.relative_to(source_path) for file in upload_test_files if file.match(file_pattern)
-            ]
-            for original_file in original_files:
-                local_file = local_path / original_file.relative_to(resource_path)
-                assert original_file.stat().st_size == local_file.stat().st_size
-                assert hashfile(original_file) == hashfile(local_file)
-
     def test_view_file(self, file_connection, source_path, upload_test_files):
         downloader = FileDownloader(
             connection=file_connection,
             source_path=source_path,
-            local_path=Path("/some/path"),
+            local_path="/some/path",
         )
 
-        files_list = downloader.view_files()
+        remote_files = downloader.view_files()
+        remote_files_list = []
 
-        assert files_list
-        assert len(files_list) == len(upload_test_files)
-        assert set(files_list) == set(upload_test_files)
+        for root, _dirs, files in file_connection.walk(source_path):
+            for file in files:
+                remote_files_list.append(PurePosixPath(root) / file)
 
-    def test_run(self, file_connection, source_path, resource_path, upload_test_files):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        assert remote_files
+        assert sorted(remote_files) == sorted(remote_files_list)
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
+    @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type PurePosixPath"])
+    @pytest.mark.parametrize(
+        "run_path_type",
+        [str, Path],
+        ids=["run_path_type str", "run_path_type Path"],
+    )
+    def test_run(self, file_connection, source_path, upload_test_files, path_type, run_path_type, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
 
-            downloaded_files = downloader.run()
-            local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=path_type(source_path),
+            local_path=run_path_type(local_path),
+        )
 
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
+        download_result = downloader.run()
 
-            original_files = [resource_path / file.relative_to(source_path) for file in upload_test_files]
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
 
-            for original_file in original_files:
-                local_file = local_path / original_file.relative_to(resource_path)
-                assert original_file.stat().st_size == local_file.stat().st_size
-                assert hashfile(original_file) == hashfile(local_file)
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path) for file in upload_test_files
+        )
+
+        for local_file in download_result.success:
+            assert local_file.exists()
+            assert local_file.is_file()
+            assert not local_file.is_dir()
+
+            remote_file_path = source_path / local_file.relative_to(local_path)
+            remote_file = file_connection.get_file(remote_file_path)
+
+            # file size is same as expected
+            assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+
+            # file content is same as expected
+            assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+
+    def test_delete_source(
+        self,
+        file_connection,
+        source_path,
+        resource_path,
+        upload_test_files,
+        tmp_path_factory,
+        caplog,
+    ):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            options=file_connection.Options(delete_source=True),
+        )
+
+        with caplog.at_level(logging.WARNING):
+            download_result = downloader.run()
+
+            assert "SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!" in caplog.text
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
+
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path) for file in upload_test_files
+        )
+
+        for local_file in download_result.success:
+            assert local_file.exists()
+            assert local_file.is_file()
+            assert not local_file.is_dir()
+
+            # source_path contain a copy of files from resource_path
+            # so check downloaded files content using them as a reference
+            original_file = resource_path / local_file.relative_to(local_path)
+
+            assert local_file.stat().st_size == original_file.stat().st_size
+            assert local_file.read_bytes() == original_file.read_bytes()
+
+        remote_files = FileSet()
+        for root, _dirs, files in file_connection.walk(source_path):
+            for file in files:
+                remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
+
+        assert not remote_files
+
+    def test_with_wrong_pattern(self, file_connection, source_path, upload_test_files, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+        file_pattern = "*.wng"
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            filter=FileFilter(glob=file_pattern),
+        )
+
+        download_result = downloader.run()
+
+        assert not download_result.failed
+        assert not download_result.missing
+        assert not download_result.skipped
+        assert not download_result.success
+
+    @pytest.mark.parametrize("path_type", [str, Path])
+    def test_with_filter_exclude_dir(
+        self,
+        file_connection,
+        source_path,
+        upload_test_files,
+        path_type,
+        tmp_path_factory,
+    ):
+        local_path = tmp_path_factory.mktemp("local_path")
+        exclude_dir = path_type("/export/news_parse/exclude_dir")
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            filter=FileFilter(exclude_dirs=[exclude_dir]),
+        )
+
+        download_result = downloader.run()
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
+
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path)
+            for file in upload_test_files
+            if PurePosixPath(exclude_dir) not in file.parents
+        )
+
+    def test_with_filter_glob(self, file_connection, source_path, upload_test_files, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+        file_pattern = "*.csv"
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            filter=FileFilter(glob=file_pattern),
+        )
+
+        download_result = downloader.run()
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
+
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path) for file in upload_test_files if file.match(file_pattern)
+        )
 
     @pytest.mark.parametrize(
-        "source_path_param",
+        "source_path_value",
         [None, "/export/news_parse"],
         ids=["Without source_path", "With source path"],
     )
-    def test_run_with_files_list_absolute(
+    def test_run_with_files_absolute(
         self,
         file_connection,
         source_path,
-        resource_path,
         upload_test_files,
-        source_path_param,
+        source_path_value,
+        tmp_path_factory,
+        caplog,
     ):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        local_path = tmp_path_factory.mktemp("local_path")
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path_param,
-                local_path=local_path,
-            )
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path_value,
+            local_path=local_path,
+        )
 
-            downloaded_files = downloader.run(files_list=upload_test_files)
+        with caplog.at_level(logging.WARNING):
+            download_result = downloader.run(upload_test_files)
 
-            if source_path_param:
-                local_files = [local_path / file.relative_to(source_path_param) for file in upload_test_files]
+            if source_path_value:
+                assert (
+                    "Passed both ``source_path`` and file collection at the same time. File collection will be used"
+                ) in caplog.text
 
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
+
+        if source_path_value:
+            local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
+        else:
+            # no source path - do not preserve folder structure
+            local_files = [local_path / file.name for file in upload_test_files]
+
+        assert sorted(download_result.success) == sorted(local_files)
+
+        for remote_file_path in upload_test_files:
+            if source_path_value:
+                local_file = local_path / remote_file_path.relative_to(source_path)
             else:
-                local_files = [local_path / file.name for file in upload_test_files]
+                local_file = local_path / remote_file_path.name
 
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
+            assert local_file.exists()
+            assert local_file.is_file()
+            assert not local_file.is_dir()
 
-            original_files = [resource_path / file.relative_to(source_path) for file in upload_test_files]
+            remote_file = file_connection.get_file(remote_file_path)
 
-            for original_file in original_files:
-                if not source_path_param:
-                    assert original_file.stat().st_size == (local_path / original_file.name).stat().st_size
-                    assert hashfile(original_file) == hashfile(local_path / original_file.name)
-                if source_path_param:
-                    local_file = local_path / original_file.relative_to(resource_path)
-                    assert original_file.stat().st_size == local_file.stat().st_size
-                    assert hashfile(original_file) == hashfile(local_file)
+            # file size is same as expected
+            assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+            assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
 
-    def test_run_with_files_list_relative(
+            # file content is same as expected
+            assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+
+    def test_run_with_files_relative(
         self,
         file_connection,
         source_path,
-        resource_path,
         upload_test_files,
+        tmp_path_factory,
     ):
+        local_path = tmp_path_factory.mktemp("local_path")
         relative_files_path = [file.relative_to(source_path) for file in upload_test_files]
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+        )
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
+        download_result = downloader.run(file for file in relative_files_path)
 
-            downloaded_files = downloader.run(files_list=relative_files_path)
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert download_result.success
 
-            local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
+        assert sorted(download_result.success) == sorted(local_path / file for file in relative_files_path)
 
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
+        for remote_file_path in upload_test_files:
+            local_file = local_path / remote_file_path.relative_to(source_path)
 
-            original_files = [resource_path / file.relative_to(source_path) for file in upload_test_files]
+            assert local_file.exists()
+            assert local_file.is_file()
+            assert not local_file.is_dir()
 
-            for original_file in original_files:
-                local_file = local_path / original_file.relative_to(resource_path)
-                assert original_file.stat().st_size == local_file.stat().st_size
-                assert hashfile(original_file) == hashfile(local_file)
+            remote_file = file_connection.get_file(remote_file_path)
 
-    def test_run_without_source_path_and_file_list_fail(
-        self,
-        file_connection,
-        source_path,
-        resource_path,
-        upload_test_files,
-    ):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+            # file size is same as expected
+            assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+            assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                local_path=local_path,
-            )
+            # file content is same as expected
+            assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
 
-            with pytest.raises(ValueError):
-                downloader.run()
+    def test_run_without_source_path_and_file_list(self, file_connection, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
 
-    def test_run_without_source_path_with_empty_files_list(
-        self,
-        file_connection,
-    ):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        downloader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+        )
+        with pytest.raises(ValueError, match="Neither file collection nor ``source_path`` are passed"):
+            downloader.run()
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                local_path=local_path,
-            )
+    @pytest.mark.parametrize(
+        "source_path_value",
+        [None, "/export/news_parse"],
+        ids=["Without source_path", "With source path"],
+    )
+    def test_run_with_empty_files(self, file_connection, source_path_value, upload_test_files, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
 
-            downloaded_files = downloader.run([])
+        downloader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+            source_path=source_path_value,
+        )
 
-            assert not len(downloaded_files)
-            assert set(downloaded_files) == set()
+        download_result = downloader.run([])
 
-    def test_run_with_empty_files_list(
-        self,
-        file_connection,
-        source_path,
-        resource_path,
-        upload_test_files,
-    ):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert not download_result.success
 
-            downloader = FileDownloader(
-                connection=file_connection,
-                local_path=local_path,
-                source_path=source_path,
-            )
+    def test_run_relative_path_without_source_path(self, file_connection, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
 
-            downloaded_files = downloader.run([])
+        downloader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+        )
 
-            assert not len(downloaded_files)
-            assert set(downloaded_files) == set()
-
-    def test_run_relative_path_without_source_path(
-        self,
-        file_connection,
-        source_path,
-        resource_path,
-        upload_test_files,
-    ):
-        relative_files_path = [*upload_test_files, PurePosixPath("some/relative/path/file.txt")]
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                local_path=local_path,
-            )
-
-            with pytest.raises(ValueError):
-                downloader.run(relative_files_path)
+        with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``source_path``"):
+            downloader.run(["some/relative/path/file.txt"])
 
     def test_run_absolute_path_not_match_with_source_path(
         self,
         file_connection,
         source_path,
-        resource_path,
-        upload_test_files,
+        tmp_path_factory,
     ):
-        relative_files_path = [*upload_test_files, PurePosixPath("/some/relative/path/file.txt")]
+        local_path = tmp_path_factory.mktemp("local_path")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+        )
 
+        error_message = f"File path '/some/relative/path/file.txt' does not match source_path '{source_path}'"
+        with pytest.raises(ValueError, match=error_message):
+            downloader.run(["/some/relative/path/file.txt"])
+
+    def test_empty_dir(self, file_connection, source_path, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+        )
+
+        download_result = downloader.run()
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert not download_result.success
+
+    @pytest.mark.parametrize(
+        "options",
+        [{"mode": "error"}, FileConnection.Options(mode="error"), FileConnection.Options(mode=FileWriteMode.ERROR)],
+    )
+    def test_mode_error(self, file_connection, source_path, upload_test_files, options, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        # make copy of files to download in the local_path
+        local_files = []
+        local_files_stat = {}
+        for test_file in upload_test_files:
+            local_file = local_path / test_file.relative_to(source_path)
+
+            local_file.parent.mkdir(parents=True, exist_ok=True)
+            local_file.write_text("unchanged")
+            local_files.append(local_file)
+            local_files_stat[local_file] = local_file.stat()
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            options=options,
+        )
+
+        download_result = downloader.run()
+
+        assert not download_result.success
+        assert not download_result.missing
+        assert not download_result.skipped
+        assert download_result.failed
+
+        assert sorted(download_result.failed) == sorted(upload_test_files)
+
+        for remote_file in download_result.failed:
+            assert remote_file.exists()
+            assert remote_file.is_file()
+            assert not remote_file.is_dir()
+
+            assert isinstance(remote_file.exception, FileExistsError)
+
+            local_file = local_path / remote_file.relative_to(source_path)
+            assert f"Local directory already contains file '{local_file}'" in str(remote_file.exception)
+
+            # file size wasn't changed
+            assert local_file.stat().st_size != remote_file.stat().st_size
+            assert local_file.stat().st_size == local_files_stat[local_file].st_size
+
+            # file content wasn't changed
+            assert local_file.read_text() == "unchanged"
+
+    def test_mode_ignore(self, file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        # make copy of files to download in the local_path
+        local_files = []
+        local_files_stat = {}
+        for test_file in upload_test_files:
+            local_file = local_path / test_file.relative_to(source_path)
+
+            local_file.parent.mkdir(parents=True, exist_ok=True)
+            local_file.write_text("unchanged")
+            local_files.append(local_file)
+            local_files_stat[local_file] = local_file.stat()
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            options=FileConnection.Options(mode=FileWriteMode.IGNORE),
+        )
+
+        with caplog.at_level(logging.WARNING):
+            download_result = downloader.run()
+
+            for file in local_files:
+                assert f"Local directory already contains file '{file}', skipping" in caplog.text
+
+        assert not download_result.success
+        assert not download_result.failed
+        assert not download_result.missing
+        assert download_result.skipped
+
+        assert sorted(download_result.skipped) == sorted(upload_test_files)
+
+        for remote_file in download_result.skipped:
+            assert remote_file.exists()
+            assert remote_file.is_file()
+            assert not remote_file.is_dir()
+
+            local_file = local_path / remote_file.relative_to(source_path)
+
+            # file size wasn't changed
+            assert local_file.stat().st_size != remote_file.stat().st_size
+            assert local_file.stat().st_size == local_files_stat[local_file].st_size
+
+            # file content wasn't changed
+            assert local_file.read_text() == "unchanged"
+
+    def test_mode_overwrite(self, file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        # make copy of files to download in the local_path
+        local_files = []
+        local_files_stat = {}
+        for test_file in upload_test_files:
+            local_file = local_path / test_file.relative_to(source_path)
+
+            local_file.parent.mkdir(parents=True, exist_ok=True)
+            local_file.write_text("unchanged")
+            local_files.append(local_file)
+            local_files_stat[local_file] = local_file.stat()
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            options=FileConnection.Options(mode=FileWriteMode.OVERWRITE),
+        )
+
+        with caplog.at_level(logging.WARNING):
+            download_result = downloader.run()
+
+            for changed_file in local_files:
+                assert f"Local directory already contains file '{changed_file}', overwriting" in caplog.text
+
+        assert not download_result.failed
+        assert not download_result.missing
+        assert not download_result.skipped
+        assert download_result.success
+
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path) for file in upload_test_files
+        )
+
+        for remote_file_path in upload_test_files:
+            local_file = local_path / remote_file_path.relative_to(source_path)
+
+            assert local_file.exists()
+            assert local_file.is_file()
+            assert not local_file.is_dir()
+
+            remote_file = file_connection.get_file(remote_file_path)
+
+            # file size was changed
+            assert local_file.stat().st_size != local_files_stat[local_file].st_size
+            assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+            assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+
+            # file content was changed
+            assert local_file.read_text() != "unchanged"
+            assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+
+    def test_mode_delete_all(self, file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        new_local_file = local_path / secrets.token_hex(5)
+        new_local_file.touch()
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+            options=FileConnection.Options(mode=FileWriteMode.DELETE_ALL),
+        )
+
+        with caplog.at_level(logging.WARNING):
+            download_result = downloader.run()
+            assert "LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!" in caplog.text
+
+        assert not download_result.failed
+        assert not download_result.missing
+        assert not download_result.skipped
+        assert download_result.success
+
+        assert sorted(download_result.success) == sorted(
+            local_path / file.relative_to(source_path) for file in upload_test_files
+        )
+
+        assert not new_local_file.exists()
+
+    def test_run_missing_file(self, request, file_connection, upload_test_files, tmp_path_factory, caplog):
+        local_path = tmp_path_factory.mktemp("local_path")
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        file_connection.mkdir(target_path)
+
+        def finalizer():
+            file_connection.rmdir(target_path, recursive=True)
+
+        request.addfinalizer(finalizer)
+
+        # upload files
+        uploader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+        )
+
+        missing_file = target_path / "missing"
+
+        with caplog.at_level(logging.WARNING):
+            download_result = uploader.run(upload_test_files + [missing_file])
+
+            assert f"Missing file '{missing_file}', skipping" in caplog.text
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert download_result.missing
+        assert download_result.success
+
+        assert len(download_result.success) == len(upload_test_files)
+        assert len(download_result.missing) == 1
+
+        assert download_result.missing == {missing_file}
+
+    def test_source_path_does_not_exist(self, file_connection, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+        source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+        )
+
+        with pytest.raises(DirectoryNotFoundError, match=f"'{source_path}' does not exist"):
+            downloader.run()
+
+    def test_source_path_not_a_directory(self, request, file_connection, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        file_connection.write_text(source_path, "abc")
+
+        def finalizer():
+            file_connection.remove_file(source_path)
+
+        request.addfinalizer(finalizer)
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            source_path=source_path,
+            local_path=local_path,
+        )
+
+        with pytest.raises(NotADirectoryError, match=f"'{source_path}' is not a directory"):
+            downloader.run()
+
+        file_connection.remove_file(source_path)
+
+    def test_local_path_not_a_directory(self, request, file_connection):
+        source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        file_connection.mkdir(source_path)
+
+        def finalizer():
+            file_connection.rmdir(source_path)
+
+        request.addfinalizer(finalizer)
+
+        with tempfile.NamedTemporaryFile() as file:
             downloader = FileDownloader(
                 connection=file_connection,
                 source_path=source_path,
-                local_path=local_path,
+                local_path=file.name,
             )
 
-            with pytest.raises(ValueError):
-                downloader.run(relative_files_path)
-
-    def test_empty_dir(self, file_connection, source_path):
-        file_pattern = "*.csv"
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                filter=FileFilter(glob=file_pattern),
-            )
-
-            downloaded_files = downloader.run()
-            assert not downloaded_files
-
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_download_mode_error(self, file_connection, source_path, resource_path, upload_test_files, options):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            pre_downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
-
-            pre_downloader.run()  # preload
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                options=options(mode="error"),
-            )
-
-            with pytest.raises(FileExistsError):
+            with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
                 downloader.run()
-
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_download_mode_ignore(self, file_connection, source_path, resource_path, upload_test_files, options):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            pre_downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
-
-            pre_downloader.run()  # preload
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                options=options(mode="ignore"),
-            )
-
-            downloaded_files = downloader.run()
-
-            assert not len(downloaded_files)
-            assert set(downloaded_files) == set()
-
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_download_mode_overwrite(self, file_connection, source_path, resource_path, upload_test_files, options):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            pre_downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
-
-            pre_downloader.run()  # preload
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                options=options(mode="overwrite"),
-            )
-
-            with tempfile.NamedTemporaryFile(mode="w+") as temp_file:
-                temp_file.write("overwrited")
-                temp_file.flush()
-
-                # remove from source old file
-                file_connection.remove_file(source_path / "news_parse_zp" / "exclude_dir" / "file_1.txt")
-
-                # Upload to source overwrited file
-                file_connection.upload_file(
-                    local_file_path=Path("tmp") / temp_file.name,
-                    remote_file_path=source_path / "news_parse_zp" / "exclude_dir" / "file_1.txt",
-                )
-
-            downloaded_files = downloader.run()
-
-            # find path to overwrited file
-            for file in downloaded_files:
-                if file.name == "file_1.txt":
-                    overwrited_file_path = file
-
-            with open(overwrited_file_path) as temp_file:
-                assert temp_file.read() == "overwrited"
-
-            local_files = [local_path / local.relative_to(source_path) for local in upload_test_files]
-
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)
-
-    @pytest.mark.parametrize("options", [dict, FileConnection.Options])
-    def test_download_mode_delete_all(self, file_connection, source_path, resource_path, upload_test_files, options):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            local_path = Path(temp_dir)
-
-            pre_downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-            )
-
-            pre_downloader.run()  # preload
-
-            downloader = FileDownloader(
-                connection=file_connection,
-                source_path=source_path,
-                local_path=local_path,
-                options=options(mode="delete_all"),
-            )
-
-            (local_path / "file_9.txt").touch()
-
-            downloaded_files = downloader.run()
-
-            local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
-
-            assert len(downloaded_files) == len(local_files)
-            assert set(downloaded_files) == set(local_files)

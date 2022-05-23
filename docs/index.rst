@@ -69,6 +69,7 @@
     :hidden:
 
     core/file_downloader
+    core/download_result
 
 .. toctree::
     :maxdepth: 2

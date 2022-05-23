@@ -115,3 +115,19 @@ class Samba(FileConnection):
 
     def _get_item_stat(self, top: os.PathLike | str, item: ItemType) -> RemoteFileStat:
         return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
+
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        with self.client.open(path, mode="rb", **kwargs) as file:
+            return file.read().decode(encoding)
+
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        with self.client.open(path, mode="rb", **kwargs) as file:
+            return file.read()
+
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(path, mode="wb", **kwargs) as file:
+            file.write(content.encode(encoding))
+
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+        with self.client.open(path, mode="wb", **kwargs) as file:
+            file.write(content)

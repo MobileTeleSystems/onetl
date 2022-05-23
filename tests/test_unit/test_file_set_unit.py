@@ -1,4 +1,4 @@
-from onetl.core.file_result.file_set import FileSet
+from onetl.core import FileSet
 from onetl.impl import RemoteFile, RemoteFileStat
 
 

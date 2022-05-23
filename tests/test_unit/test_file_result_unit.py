@@ -1,7 +1,6 @@
 from pathlib import Path, PurePath
 
-from onetl.core.file_result.file_result import FileResult
-from onetl.core.file_result.file_set import FileSet
+from onetl.core import FileResult, FileSet
 from onetl.impl import FailedRemoteFile, RemoteFile, RemoteFileStat
 
 
