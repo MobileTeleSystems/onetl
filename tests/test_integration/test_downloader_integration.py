@@ -69,7 +69,7 @@ class TestDownloader:
             # file content is same as expected
             assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
 
-    def test_delete_source(
+    def test_run_delete_source(
         self,
         file_connection,
         source_path,
@@ -120,26 +120,8 @@ class TestDownloader:
 
         assert not remote_files
 
-    def test_with_wrong_pattern(self, file_connection, source_path, upload_test_files, tmp_path_factory):
-        local_path = tmp_path_factory.mktemp("local_path")
-        file_pattern = "*.wng"
-
-        downloader = FileDownloader(
-            connection=file_connection,
-            source_path=source_path,
-            local_path=local_path,
-            filter=FileFilter(glob=file_pattern),
-        )
-
-        download_result = downloader.run()
-
-        assert not download_result.failed
-        assert not download_result.missing
-        assert not download_result.skipped
-        assert not download_result.success
-
     @pytest.mark.parametrize("path_type", [str, Path])
-    def test_with_filter_exclude_dir(
+    def test_run_with_filter_exclude_dir(
         self,
         file_connection,
         source_path,
@@ -254,7 +236,7 @@ class TestDownloader:
             # file content is same as expected
             assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
 
-    def test_run_with_files_relative(
+    def test_run_with_files_relative_and_source_path(
         self,
         file_connection,
         source_path,
@@ -295,7 +277,7 @@ class TestDownloader:
             # file content is same as expected
             assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
 
-    def test_run_without_source_path_and_file_list(self, file_connection, tmp_path_factory):
+    def test_run_without_files_and_source_path(self, file_connection, tmp_path_factory):
         local_path = tmp_path_factory.mktemp("local_path")
 
         downloader = FileDownloader(
@@ -306,20 +288,54 @@ class TestDownloader:
             downloader.run()
 
     @pytest.mark.parametrize(
-        "source_path_value",
-        [None, "/export/news_parse"],
-        ids=["Without source_path", "With source path"],
+        "pass_source_path",
+        [False, True],
+        ids=["Without source_path", "With source_path"],
     )
-    def test_run_with_empty_files(self, file_connection, source_path_value, upload_test_files, tmp_path_factory):
+    def test_run_with_empty_files_input(self, request, file_connection, pass_source_path, tmp_path_factory):
+        source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        file_connection.mkdir(source_path)
+
+        def finalizer():
+            file_connection.rmdir(source_path, recursive=True)
+
+        request.addfinalizer(finalizer)
+
         local_path = tmp_path_factory.mktemp("local_path")
 
         downloader = FileDownloader(
             connection=file_connection,
             local_path=local_path,
-            source_path=source_path_value,
+            source_path=source_path if pass_source_path else None,
         )
 
         download_result = downloader.run([])
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert not download_result.success
+
+    def test_run_with_empty_source_path(self, request, file_connection, tmp_path_factory):
+        source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        file_connection.mkdir(source_path)
+
+        def finalizer():
+            file_connection.rmdir(source_path, recursive=True)
+
+        request.addfinalizer(finalizer)
+
+        local_path = tmp_path_factory.mktemp("local_path")
+
+        downloader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+            source_path=source_path,
+        )
+
+        download_result = downloader.run()
 
         assert not download_result.failed
         assert not download_result.skipped
@@ -337,7 +353,7 @@ class TestDownloader:
         with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``source_path``"):
             downloader.run(["some/relative/path/file.txt"])
 
-    def test_run_absolute_path_not_match_with_source_path(
+    def test_run_absolute_path_not_match_source_path(
         self,
         file_connection,
         source_path,
@@ -354,22 +370,6 @@ class TestDownloader:
         error_message = f"File path '/some/relative/path/file.txt' does not match source_path '{source_path}'"
         with pytest.raises(ValueError, match=error_message):
             downloader.run(["/some/relative/path/file.txt"])
-
-    def test_empty_dir(self, file_connection, source_path, tmp_path_factory):
-        local_path = tmp_path_factory.mktemp("local_path")
-
-        downloader = FileDownloader(
-            connection=file_connection,
-            source_path=source_path,
-            local_path=local_path,
-        )
-
-        download_result = downloader.run()
-
-        assert not download_result.failed
-        assert not download_result.skipped
-        assert not download_result.missing
-        assert not download_result.success
 
     @pytest.mark.parametrize(
         "options",
