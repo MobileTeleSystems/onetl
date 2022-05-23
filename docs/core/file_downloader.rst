@@ -6,4 +6,4 @@ File Downloader
 .. currentmodule:: onetl.core.file_downloader.file_downloader
 
 .. autoclass:: FileDownloader
-    :members:
+    :members: run, view_files
