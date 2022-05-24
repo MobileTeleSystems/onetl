@@ -2,9 +2,11 @@ import logging
 import os
 import secrets
 import tempfile
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 import pytest
+from etl_entities import Process
 
 from onetl.connection import FileConnection, FileWriteMode
 from onetl.core import FileUploader
@@ -567,6 +569,36 @@ class TestUploader:
 
         with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``local_path``"):
             uploader.run(["some/path/1", "some/path/2"])
+
+    @pytest.mark.flaky(reruns=5)
+    @pytest.mark.parametrize(
+        "temp_path, real_temp_path",
+        [
+            (None, PurePosixPath("/tmp")),
+            ("/abc", PurePosixPath("/abc")),
+        ],
+    )
+    def test_generate_temp_path(self, file_connection, tmp_path_factory, temp_path, real_temp_path):
+        kwargs = {
+            "connection": file_connection,
+            "local_path": tmp_path_factory.mktemp("local_path"),
+            "target_path": f"/tmp/tmp_{secrets.token_hex()}",
+        }
+        if temp_path:
+            kwargs["temp_path"] = temp_path
+
+        uploader = FileUploader(**kwargs)
+        dt_prefix = datetime.now().strftime("%Y%m%d%H%M")  # up to minutes, not seconds
+
+        with Process(name="me", host="currenthost"):
+            temp_path = os.fspath(uploader.generate_temp_path())
+            expected = os.fspath(real_temp_path / "onetl" / "currenthost" / "me" / dt_prefix)
+            assert temp_path.startswith(expected)
+
+        with Process(name="me", host="currenthost", dag="abc", task="cde"):
+            temp_path = os.fspath(uploader.generate_temp_path())
+            expected = os.fspath(real_temp_path / "onetl" / "currenthost" / "abc.cde.me" / dt_prefix)
+            assert temp_path.startswith(expected)
 
     def test_source_check(self, file_connection, caplog):
         with caplog.at_level(logging.INFO):

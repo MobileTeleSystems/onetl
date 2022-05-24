@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import os
-import uuid
 from dataclasses import InitVar, dataclass, field
+from datetime import datetime
 from logging import getLogger
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Sized
+from typing import ClassVar, Iterable, Sized
+
+from etl_entities import ProcessStackManager
 
 from onetl.base import BaseFileConnection
-from onetl.connection.file_connection.file_connection import (
-    FileConnection,
-    FileWriteMode,
-)
+from onetl.connection import FileConnection, FileWriteMode
 from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
 from onetl.exception import DirectoryNotFoundError
@@ -36,12 +35,12 @@ class FileUploader:
     temp_path : str, default: ``/tmp``
         Remote path where files uploaded firstly
 
-        Default value: ``/tmp/``
+        Default value: ``/tmp``
 
     local_path : str
         The local directory from which the data is loaded.
 
-        Default value: None
+        Default value: ``None``
 
     options : Options | dict | None, default: ``None``
         File upload options
@@ -93,6 +92,9 @@ class FileUploader:
 
     options: InitVar[FileConnection.Options | dict | None] = field(default=None)
     _options: FileConnection.Options = field(init=False)
+
+    # e.g. 20220524122150
+    DATETIME_FORMAT: ClassVar[str] = "%Y%m%d%H%M%S"  # noqa: WPS323
 
     def __post_init__(
         self,
@@ -222,11 +224,11 @@ class FileUploader:
         if isinstance(files, Sized):
             step_suffix = f" of {len(files)}"
 
-        current_temp_dir = self._temp_path / uuid.uuid4().hex
-        result = UploadResult()
+        current_temp_dir = self.generate_temp_path()
+        self.connection.mkdir(current_temp_dir)
 
         log.info(f"|{self.__class__.__name__}| Start uploading files")
-        self.connection.mkdir(current_temp_dir)
+        result = UploadResult()
 
         for i, (file, target_file, tmp_file) in enumerate(  # noqa: WPS352
             self._validate_files_list(local_files=files, current_temp_dir=current_temp_dir),
@@ -346,6 +348,45 @@ class FileUploader:
             ) from e
 
         return result
+
+    def generate_temp_path(self) -> PurePosixPath:
+        """
+        Returns path prefix which will be used for creating temp directory
+
+        Returns
+        -------
+        PurePosixPath
+            Temp path on remote file system, containing current host name, process name and datetime
+
+        Examples
+        --------
+
+        View files
+
+        .. code:: python
+
+            from etl_entities import Process
+
+            from pathlib import PurePosixPath
+            from onetl.core import FileUploader
+
+            uploader1 = FileUploader(local_path="/local/path", ...)
+
+            assert uploader1.generate_temp_path() == PurePosixPath(
+                "/tmp/onetl/currenthost/myprocess/20220524122150",
+            )
+
+            uploader2 = FileUploader(local_path="/local/path", temp_path="/abc")
+            with Process(dag="mydag", task="mytask"):
+                temp_parent_path = uploader2.generate_temp_path()
+                assert temp_parent_path == PurePosixPath(
+                    "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
+                )
+        """
+
+        current_process = ProcessStackManager.get_current()
+        current_dt = datetime.now().strftime(self.DATETIME_FORMAT)
+        return self._temp_path / "onetl" / current_process.host / current_process.full_name / current_dt
 
     def _validate_files_list(
         self,
