@@ -7,6 +7,8 @@ from logging import getLogger
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
+from ordered_set import OrderedSet
+
 from onetl.base import BaseFileFilter
 from onetl.connection import FileConnection, FileWriteMode
 from onetl.core.file_downloader.download_result import DownloadResult
@@ -248,6 +250,7 @@ class FileDownloader:
             files = self.view_files()
 
         to_download = self._validate_files(files)
+        total_files = len(to_download)
 
         # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
         if self._options.mode == FileWriteMode.DELETE_ALL:
@@ -255,10 +258,8 @@ class FileDownloader:
             shutil.rmtree(self._local_path)
             self._local_path.mkdir()
 
-        log.info(f"|{self.__class__.__name__}| Starting downloading files")
-
+        log.info(f"|{self.__class__.__name__}| Starting downloading {total_files} file(s)")
         result = DownloadResult()
-        total_files = len(to_download)
 
         for i, (source_file, local_file) in enumerate(to_download):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
@@ -374,8 +375,8 @@ class FileDownloader:
 
         return result
 
-    def _validate_files(self, remote_files: Iterable[os.PathLike | str]) -> list[tuple[PurePosixPath, Path]]:
-        result = []
+    def _validate_files(self, remote_files: Iterable[os.PathLike | str]) -> OrderedSet[tuple[PurePosixPath, Path]]:
+        result = OrderedSet()
 
         for remote_file in remote_files:
             remote_file_path = PurePosixPath(remote_file)
@@ -401,7 +402,7 @@ class FileDownloader:
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{remote_file_path}' does not match source_path '{self._source_path}'")
 
-            result.append((remote_file_path, local_file_path))
+            result.add((remote_file_path, local_file_path))
 
         return result
 

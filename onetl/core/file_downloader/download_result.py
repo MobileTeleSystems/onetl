@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
-from typing import Set
 
+from ordered_set import OrderedSet
 from pydantic import Field
 
 from onetl.core.file_result import FileResult, FileSet
@@ -57,4 +57,4 @@ class DownloadResult(FileResult):
     success: FileSet[Path] = Field(default_factory=FileSet)
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
-    missing: Set[PurePosixPath] = Field(default_factory=set)
+    missing: OrderedSet[PurePosixPath] = Field(default_factory=OrderedSet)

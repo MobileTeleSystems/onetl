@@ -5,9 +5,10 @@ from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from logging import getLogger
 from pathlib import Path, PurePosixPath
-from typing import ClassVar, Iterable, Sized
+from typing import ClassVar, Iterable
 
 from etl_entities import ProcessStackManager
+from ordered_set import OrderedSet
 
 from onetl.base import BaseFileConnection
 from onetl.connection import FileConnection, FileWriteMode
@@ -214,28 +215,24 @@ class FileUploader:
             log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
 
+        current_temp_dir = self.generate_temp_path()
+        to_upload = self._validate_files(local_files=files, current_temp_dir=current_temp_dir)
+        total_files = len(to_upload)
+
         # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
         if self._options.mode == FileWriteMode.DELETE_ALL:
             log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
             self.connection.rmdir(self._target_path, recursive=True)
             self.connection.mkdir(self._target_path)
-
-        step_suffix = ""
-        if isinstance(files, Sized):
-            step_suffix = f" of {len(files)}"
-
-        current_temp_dir = self.generate_temp_path()
         self.connection.mkdir(current_temp_dir)
 
-        log.info(f"|{self.__class__.__name__}| Start uploading files")
+        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
         result = UploadResult()
 
-        for i, (file, target_file, tmp_file) in enumerate(  # noqa: WPS352
-            self._validate_files_list(local_files=files, current_temp_dir=current_temp_dir),
-        ):
+        for i, (file, target_file, tmp_file) in enumerate(to_upload):  # noqa: WPS352
             file_path = Path(file)
 
-            log.info(f"|{self.__class__.__name__}| Uploading file {i+1}{step_suffix}")
+            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
             log.info(" " * LOG_INDENT + f"from = '{file_path}'")
             log.info(" " * LOG_INDENT + f"to = '{target_file}'")
 
@@ -388,13 +385,12 @@ class FileUploader:
         current_dt = datetime.now().strftime(self.DATETIME_FORMAT)
         return self._temp_path / "onetl" / current_process.host / current_process.full_name / current_dt
 
-    def _validate_files_list(
+    def _validate_files(
         self,
-        local_files: list[os.PathLike | str],
-        current_temp_dir: os.PathLike | str,
-    ) -> list[tuple[Path, PurePosixPath, PurePosixPath]]:
-        valid_file_list = []
-        tmp_file: PurePosixPath
+        local_files: Iterable[os.PathLike | str],
+        current_temp_dir: PurePosixPath,
+    ) -> OrderedSet[tuple[Path, PurePosixPath, PurePosixPath]]:
+        result = OrderedSet()
 
         for file in local_files:
             file_path = Path(file)
@@ -422,9 +418,10 @@ class FileUploader:
                 else:
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{file_path}' does not match source_path '{self._local_path}'")
-            valid_file_list.append((file_path, target_file, tmp_file))
 
-        return valid_file_list
+            result.add((file_path, target_file, tmp_file))
+
+        return result
 
     def _check_local_path(self):
         if not self._local_path.exists():

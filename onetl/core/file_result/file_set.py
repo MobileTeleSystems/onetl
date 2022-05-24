@@ -1,15 +1,20 @@
 from typing import Generic, TypeVar
 
+from ordered_set import OrderedSet
+
 from onetl.base import SizedPathProtocol
 
 T = TypeVar("T", bound=SizedPathProtocol)
 
 
-class FileSet(set, Generic[T]):  # noqa: WPS600
+class FileSet(OrderedSet, Generic[T]):  # noqa: WPS600
     """
-    Set of pathlib-like objects.
+    Ordered set of pathlib-like objects.
 
-    Just like a generic set, but with additional ``total_size`` helper method
+    It has all the methods of generic set (e.g. ``add``, ``difference``, ``intersection``),
+    as well as list (e.g. ``append``, ``index``, ``[]``).
+
+    It also has a ``total_size`` helper method.
     """
 
     @property

@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import re
 import textwrap
-from typing import Iterable, Set, TypeVar
+from typing import Iterable, TypeVar
 
 from humanize import naturalsize
+from ordered_set import OrderedSet
 from pydantic import BaseModel, Field, validator
 
 from onetl.core.file_result.file_set import FileSet
@@ -33,15 +34,15 @@ class FileResult(BaseModel):  # noqa: WPS214
     success: FileSet[GenericPath] = Field(default_factory=FileSet)
     failed: FileSet[GenericPath] = Field(default_factory=FileSet)
     skipped: FileSet[GenericPath] = Field(default_factory=FileSet)
-    missing: Set[GenericPath] = Field(default_factory=set)
+    missing: OrderedSet[GenericPath] = Field(default_factory=OrderedSet)
 
     @validator("success", "failed", "skipped")
     def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:  # noqa: N805
         return FileSet(value)
 
     @validator("missing")
-    def validate_missing(cls, value: Iterable[GenericPath]) -> set[GenericPath]:  # noqa: N805
-        return set(value)
+    def validate_missing_container(cls, value: Iterable[GenericPath]) -> OrderedSet[GenericPath]:  # noqa: N805
+        return OrderedSet(value)
 
     @property
     def success_count(self) -> int:
@@ -433,15 +434,15 @@ class FileResult(BaseModel):  # noqa: WPS214
             # ''')
         """
 
-        if not self.success:
-            return
-
         lines = []
-        for file in sorted(self.success):
+        for file in self.success:
             if not file.exists() or file.stat().st_size > 0:
                 continue
 
             lines.append(os.fspath(file))
+
+        if not lines:
+            return
 
         lines_str = textwrap.indent(os.linesep.join(lines), INDENT)
         error_message = f"{len(lines)} file(s) out of {self.success_count} have zero size:{os.linesep}{lines_str}"
@@ -638,8 +639,9 @@ class FileResult(BaseModel):  # noqa: WPS214
             return self._success_header
 
         lines = []
-        for file in sorted(self.success):
+        for file in self.success:
             size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
+
             lines.append(f"{os.fspath(file)} ({size})")
 
         if self.success_count > 1:
@@ -656,9 +658,10 @@ class FileResult(BaseModel):  # noqa: WPS214
             return self._failed_header
 
         lines = []
-        for file in sorted(self.failed):
+        for file in self.failed:
             size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
             prefix = f"{os.fspath(file)} ({size})"
+
             exception_formatted = ""
             if hasattr(file, "exception"):
                 exception = re.sub(r"(\\r)?\\n", os.linesep, repr(file.exception))
@@ -679,8 +682,9 @@ class FileResult(BaseModel):  # noqa: WPS214
             return self._skipped_header
 
         lines = []
-        for file in sorted(self.skipped):
+        for file in self.skipped:
             size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
+
             lines.append(f"{os.fspath(file)} ({size})")
 
         if self.skipped_count > 1:
@@ -696,7 +700,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.missing:
             return self._missing_header
 
-        lines = [os.fspath(file) for file in sorted(self.missing)]
+        lines = [os.fspath(file) for file in self.missing]
 
         if self.missing_count > 1:
             header = f"{self._missing_header}:{os.linesep}{INDENT}"
