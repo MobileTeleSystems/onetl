@@ -98,6 +98,14 @@ class HDFS(FileConnection):
 
         return client
 
+    def _is_client_closed(self) -> bool:
+        # Underlying client does not support closing
+        return False
+
+    def _close_client(self) -> None:  # NOSONAR
+        # Underlying client does not support closing
+        pass  # noqa: WPS420
+
     def _rmdir_recursive(self, path: os.PathLike | str) -> None:
         self.client.delete(os.fspath(path), recursive=True)
 

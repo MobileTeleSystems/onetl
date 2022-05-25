@@ -73,6 +73,13 @@ class Samba(FileConnection):
             password=self.password + "\n",
         )
 
+    def _is_client_closed(self) -> bool:
+        # Underlying client does not have `closed` attribute
+        return False
+
+    def _close_client(self) -> None:
+        self._client.close()
+
     def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
         self.client.rename(source, target)
 
