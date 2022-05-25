@@ -3,6 +3,7 @@ import textwrap
 from pathlib import Path, PurePath
 
 import pytest
+from ordered_set import OrderedSet
 
 from onetl.core import FileResult, FileSet
 from onetl.exception import FileResultError
@@ -199,8 +200,8 @@ def test_file_result_missing():
 
     assert file_result.missing
 
-    assert isinstance(file_result.missing, set)
-    assert file_result.missing == set(missing)
+    assert isinstance(file_result.missing, OrderedSet)
+    assert file_result.missing == OrderedSet(missing)
 
     assert len(file_result.missing) == 3
     assert file_result.missing_count == 3
