@@ -10,28 +10,28 @@ from onetl.exception import FileResultError
 from onetl.impl import FailedRemoteFile, RemoteFile, RemoteFileStat
 
 
-def test_file_result_success():
-    success = [
-        RemoteFile(path="/success1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        RemoteFile(path="/success1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        RemoteFile(path="/success2", stats=RemoteFileStat(st_size=20 * 1024, st_mtime=50)),
+def test_file_result_successful():
+    successful = [
+        RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful2", stats=RemoteFileStat(st_size=20 * 1024, st_mtime=50)),
         Path("cannot/detect/size1"),
     ]
 
-    file_result = FileResult(success=success)
+    file_result = FileResult(successful=successful)
 
-    assert file_result.success
-    assert isinstance(file_result.success, FileSet)
-    assert file_result.success == FileSet(success)
+    assert file_result.successful
+    assert isinstance(file_result.successful, FileSet)
+    assert file_result.successful == FileSet(successful)
 
-    assert len(file_result.success) == 3
-    assert file_result.success_count == 3
-    assert file_result.success_size == (10 + 20) * 1024
+    assert len(file_result.successful) == 3
+    assert file_result.successful_count == 3
+    assert file_result.successful_size == (10 + 20) * 1024
 
     details = """
         Successful 3 file(s) (30.7 kB):
-            /success1 (10.2 kB)
-            /success2 (20.5 kB)
+            /successful1 (10.2 kB)
+            /successful2 (20.5 kB)
             cannot/detect/size1 (? Bytes)
     """
 
@@ -39,23 +39,23 @@ def test_file_result_success():
     assert "Successful 3 file(s) (30.7 kB)" in str(file_result)
 
 
-def test_file_result_raise_if_no_success():
-    success = [
+def test_file_result_raise_if_no_successful():
+    successful = [
         RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
-        RemoteFile(path="/success", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
         Path("just/deleted"),
     ]
 
-    assert not FileResult(success=success).raise_if_no_success()
+    assert not FileResult(successful=successful).raise_if_no_successful()
 
     with pytest.raises(FileResultError, match="There are no successful files in the result"):
-        FileResult().raise_if_no_success()
+        FileResult().raise_if_no_successful()
 
 
 def test_file_result_raise_if_zero_size():
-    success = [
+    successful = [
         RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
-        RemoteFile(path="/success", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
         Path("cannot/detect/size1"),  # missing file does not mean zero size
     ]
 
@@ -67,9 +67,9 @@ def test_file_result_raise_if_zero_size():
     error_message = re.escape(textwrap.dedent(details).strip())
 
     with pytest.raises(FileResultError, match=error_message):
-        FileResult(success=success).raise_if_zero_size()
+        FileResult(successful=successful).raise_if_zero_size()
 
-    # empty success files does not mean zero files size
+    # empty successful files does not mean zero files size
     assert not FileResult().raise_if_zero_size()
 
 
@@ -242,17 +242,17 @@ def test_file_result_raise_if_missing():
 def test_file_result_empty():
     file_result = FileResult()
 
-    assert not file_result.success
+    assert not file_result.successful
     assert not file_result.failed
     assert not file_result.skipped
     assert not file_result.missing
 
-    assert file_result.success_count == 0
+    assert file_result.successful_count == 0
     assert file_result.failed_count == 0
     assert file_result.skipped_count == 0
     assert file_result.missing_count == 0
 
-    assert file_result.success_size == 0
+    assert file_result.successful_size == 0
     assert file_result.failed_size == 0
     assert file_result.skipped_size == 0
 
@@ -273,7 +273,7 @@ def test_file_result_empty():
 
 def test_file_result_raise_if_empty():
     assert not FileResult(
-        success=[RemoteFile(path="/success", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50))],
+        successful=[RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50))],
     ).raise_if_empty()
 
     assert not FileResult(
@@ -299,8 +299,8 @@ def test_file_result_raise_if_empty():
 
 def test_file_result_total():
     file_result = FileResult(
-        success={
-            RemoteFile(path="/success1", stats=RemoteFileStat(st_size=1024 * 1024 * 1024, st_mtime=50)),
+        successful={
+            RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=1024 * 1024 * 1024, st_mtime=50)),
         },
         failed={
             FailedRemoteFile(
@@ -331,7 +331,7 @@ def test_file_result_total():
     details = """
         Total 4 file(s) (6.4 GB)
 
-        Successful: /success1 (1.1 GB)
+        Successful: /successful1 (1.1 GB)
 
         Failed: /failed1 (2.1 GB) FileExistsError('abc')
 

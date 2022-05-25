@@ -34,11 +34,11 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.missing
         assert not upload_result.skipped
-        assert upload_result.success
+        assert upload_result.successful
 
-        assert sorted(upload_result.success) == sorted(PurePosixPath(target_path) / file.name for file in test_files)
+        assert sorted(upload_result.successful) == sorted(PurePosixPath(target_path) / file.name for file in test_files)
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -90,7 +90,7 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.missing
         assert not upload_result.skipped
-        assert upload_result.success
+        assert upload_result.successful
 
         local_files_list = []
 
@@ -98,11 +98,11 @@ class TestUploader:
             for file_name in files:
                 local_files_list.append(Path(root) / file_name)
 
-        assert sorted(path for path in upload_result.success) == sorted(
+        assert sorted(path for path in upload_result.successful) == sorted(
             Path(target_path) / file.relative_to(resource_path) for file in local_files_list
         )
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -136,8 +136,8 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.skipped
 
-        assert upload_result.success
-        assert len(upload_result.success) == len(test_files)
+        assert upload_result.successful
+        assert len(upload_result.successful) == len(test_files)
 
         assert upload_result.missing
         assert len(upload_result.missing) == 1
@@ -174,16 +174,16 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.skipped
         assert not upload_result.missing
-        assert upload_result.success
+        assert upload_result.successful
 
-        assert sorted(upload_result.success) == sorted(target_path / file.name for file in test_files)
+        assert sorted(upload_result.successful) == sorted(target_path / file.name for file in test_files)
 
         existing_files = []
         for root, _dirs, files in os.walk(resource_path):
             for file_name in files:
                 existing_files.append(Path(root) / file_name)
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -232,7 +232,7 @@ class TestUploader:
 
         upload_result = uploader.run(test_files)
 
-        assert not upload_result.success
+        assert not upload_result.successful
         assert not upload_result.missing
         assert not upload_result.skipped
         assert upload_result.failed
@@ -283,7 +283,7 @@ class TestUploader:
             for file in remote_files:
                 assert f"Target directory already contains file '{file}', skipping" in caplog.text
 
-        assert not upload_result.success
+        assert not upload_result.successful
         assert not upload_result.missing
         assert not upload_result.failed
         assert upload_result.skipped
@@ -334,11 +334,11 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.skipped
         assert not upload_result.missing
-        assert upload_result.success
+        assert upload_result.successful
 
-        assert sorted(upload_result.success) == sorted(PurePosixPath(file) for file in remote_files)
+        assert sorted(upload_result.successful) == sorted(PurePosixPath(file) for file in remote_files)
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -382,9 +382,9 @@ class TestUploader:
         assert not upload_result.failed
         assert not upload_result.skipped
         assert not upload_result.missing
-        assert upload_result.success
+        assert upload_result.successful
 
-        assert sorted(upload_result.success) == sorted(target_path / test_file.name for test_file in test_files)
+        assert sorted(upload_result.successful) == sorted(target_path / test_file.name for test_file in test_files)
 
         assert not file_connection.path_exists(new_remote_file)
 
@@ -442,7 +442,7 @@ class TestUploader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert not download_result.success
+        assert not download_result.successful
 
     def test_run_with_empty_local_path(self, file_connection, tmp_path_factory):
         target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -459,7 +459,7 @@ class TestUploader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert not download_result.success
+        assert not download_result.successful
 
     def test_without_files_and_without_local_path(self, file_connection):
         target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -493,12 +493,12 @@ class TestUploader:
 
         assert not upload_result.failed
         assert not upload_result.missing
-        assert upload_result.success
-        assert sorted(path for path in upload_result.success) == sorted(
+        assert upload_result.successful
+        assert sorted(path for path in upload_result.successful) == sorted(
             PurePosixPath(target_path) / file for file in local_files_list
         )
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -535,12 +535,12 @@ class TestUploader:
 
         assert not upload_result.failed
         assert not upload_result.missing
-        assert upload_result.success
-        assert sorted(path for path in upload_result.success) == sorted(
+        assert upload_result.successful
+        assert sorted(path for path in upload_result.successful) == sorted(
             PurePosixPath(target_path) / file.relative_to(resource_path) for file in local_files_list
         )
 
-        for remote_file in upload_result.success:
+        for remote_file in upload_result.successful:
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()

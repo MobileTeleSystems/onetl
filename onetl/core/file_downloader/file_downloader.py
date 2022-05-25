@@ -148,7 +148,7 @@ class FileDownloader:
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
             downloaded_files = downloader.run()
 
-            assert downloaded_files.success == {
+            assert downloaded_files.successful == {
                 Path("/local/path/file1.txt"),
                 Path("/local/path/file2.txt"),
                 Path("/local/path/nested/file3.txt"),  # directory structure is preserved
@@ -175,7 +175,7 @@ class FileDownloader:
                 ]
             )
 
-            assert downloaded_files.success == {
+            assert downloaded_files.successful == {
                 Path("/local/path/file1.txt"),
                 Path("/local/path/nested/file3.txt"),  # directory structure is preserved
             }
@@ -200,7 +200,7 @@ class FileDownloader:
                 ]
             )
 
-            assert downloaded_files.success == {
+            assert downloaded_files.successful == {
                 Path("/local/path/file1.txt"),
                 Path("/local/path/file3.txt"),  # directory structure is not preserved
             }
@@ -295,7 +295,7 @@ class FileDownloader:
                 if self._options.delete_source:
                     self.connection.remove_file(remote_file)
 
-                result.success.add(local_file)
+                result.successful.add(local_file)
 
             except Exception as e:
                 log.exception(

@@ -171,7 +171,7 @@ class FileUploader:
 
             uploaded_files = uploader.run()
 
-            assert uploaded_files.success == {
+            assert uploaded_files.successful == {
                 RemoteFile("/remote/file1"),
                 RemoteFile("/remote/file2"),
             }
@@ -268,7 +268,7 @@ class FileUploader:
                     file_path.unlink()
                     log.warning(f"|LocalFS| Successfully removed file: '{file_path}'")
 
-                result.success.add(uploaded_file)
+                result.successful.add(uploaded_file)
 
             except Exception as e:
                 log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)

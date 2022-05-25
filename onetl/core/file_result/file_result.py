@@ -22,7 +22,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
     Container for file paths, divided into certain categories:
 
-    * ``success`` - successfully handled files
+    * ``successful`` - successfully handled files
     * ``failed`` - file paths which were handled with some failures
     * ``skipped`` - file paths which were skipped because of some reason
     * ``missing`` - unknown paths which cannot be handled
@@ -31,12 +31,12 @@ class FileResult(BaseModel):  # noqa: WPS214
     class Config:  # noqa: WPS431
         arbitrary_types_allowed = True
 
-    success: FileSet[GenericPath] = Field(default_factory=FileSet)
+    successful: FileSet[GenericPath] = Field(default_factory=FileSet)
     failed: FileSet[GenericPath] = Field(default_factory=FileSet)
     skipped: FileSet[GenericPath] = Field(default_factory=FileSet)
     missing: OrderedSet[GenericPath] = Field(default_factory=OrderedSet)
 
-    @validator("success", "failed", "skipped")
+    @validator("successful", "failed", "skipped")
     def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:  # noqa: N805
         return FileSet(value)
 
@@ -45,9 +45,9 @@ class FileResult(BaseModel):  # noqa: WPS214
         return OrderedSet(value)
 
     @property
-    def success_count(self) -> int:
+    def successful_count(self) -> int:
         """
-        Get number of success files
+        Get number of successful files
 
         Examples
         --------
@@ -58,13 +58,13 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result = FileResult(
-                success={Path("/some/file"), Path("/some/another.file")},
+                successful={Path("/some/file"), Path("/some/another.file")},
             )
 
-            assert file_result.success_count == 2
+            assert file_result.successful_count == 2
         """
 
-        return len(self.success)
+        return len(self.successful)
 
     @property
     def failed_count(self) -> int:
@@ -148,7 +148,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result = FileResult(
-                success={Path("/local/file"), Path("/local/another.file")},
+                successful={Path("/local/file"), Path("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
                 skipped={Path("/skipped/file")},
                 missing={PurePath("/missing/file")},
@@ -157,12 +157,12 @@ class FileResult(BaseModel):  # noqa: WPS214
             assert file_result.total_count == 6
         """
 
-        return self.success_count + self.failed_count + self.missing_count + self.skipped_count
+        return self.successful_count + self.failed_count + self.missing_count + self.skipped_count
 
     @property
-    def success_size(self) -> int:
+    def successful_size(self) -> int:
         """
-        Get size (in bytes) of success files
+        Get size (in bytes) of successful files
 
         Examples
         --------
@@ -173,13 +173,13 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result = FileResult(
-                success={Path("/some/file"), Path("/some/another.file")},
+                successful={Path("/some/file"), Path("/some/another.file")},
             )
 
-            assert file_result.success_size == 1_000_000  # in bytes
+            assert file_result.successful_size == 1_000_000  # in bytes
         """
 
-        return self.success.total_size
+        return self.successful.total_size
 
     @property
     def failed_size(self) -> int:
@@ -241,7 +241,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result = FileResult(
-                success={Path("/local/file"), Path("/local/another.file")},
+                successful={Path("/local/file"), Path("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
                 skipped={Path("/skipped/file")},
                 missing={PurePath("/missing/file")},
@@ -250,7 +250,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             assert file_result.total_size == 10_000_000  # in bytes
         """
 
-        return self.success_size + self.failed_size + self.skipped_size
+        return self.successful_size + self.failed_size + self.skipped_size
 
     def raise_if_failed(self) -> None:
         """
@@ -369,15 +369,15 @@ class FileResult(BaseModel):  # noqa: WPS214
         if self.skipped:
             raise FileResultError(self._skipped_message)
 
-    def raise_if_no_success(self) -> None:
+    def raise_if_no_successful(self) -> None:
         """
-        Raise exception if there are no files in ``success`` attribute
+        Raise exception if there are no files in ``successful`` attribute
 
         Raises
         ------
         FileResultError
 
-            ``success`` file set is empty
+            ``successful`` file set is empty
 
         Examples
         --------
@@ -391,22 +391,22 @@ class FileResult(BaseModel):  # noqa: WPS214
 
             file_result = FileResult()
 
-            file_result.raise_if_no_success()
+            file_result.raise_if_no_successful()
             # will raise FileResultError("There are no successful files in the result")
         """
 
-        if not self.success:
+        if not self.successful:
             raise FileResultError("There are no successful files in the result")
 
     def raise_if_zero_size(self) -> None:
         """
-        Raise exception if ``success`` attribute contains a file with zero size
+        Raise exception if ``successful`` attribute contains a file with zero size
 
         Raises
         ------
         FileResultError
 
-            ``success`` file set contains a file with zero size
+            ``successful`` file set contains a file with zero size
 
         Examples
         --------
@@ -419,7 +419,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result = FileResult(
-                success={
+                successful={
                     Path("/local/empty1.file"),
                     Path("/local/empty2.file"),
                     Path("/local/normal.file"),
@@ -435,7 +435,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         """
 
         lines = []
-        for file in self.success:
+        for file in self.successful:
             if not file.exists() or file.stat().st_size > 0:
                 continue
 
@@ -445,19 +445,19 @@ class FileResult(BaseModel):  # noqa: WPS214
             return
 
         lines_str = textwrap.indent(os.linesep.join(lines), INDENT)
-        error_message = f"{len(lines)} file(s) out of {self.success_count} have zero size:{os.linesep}{lines_str}"
+        error_message = f"{len(lines)} file(s) out of {self.successful_count} have zero size:{os.linesep}{lines_str}"
 
         raise FileResultError(error_message)
 
     def raise_if_empty(self) -> None:
         """
-        Raise exception if there are no files in ``success``, ``failed`` and ``skipped`` attributes
+        Raise exception if there are no files in ``successful``, ``failed`` and ``skipped`` attributes
 
         Raises
         ------
         FileResultError
 
-            ``success``, ``failed`` and ``skipped`` file sets are empty
+            ``successful``, ``failed`` and ``skipped`` file sets are empty
 
         Examples
         --------
@@ -475,7 +475,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             # will raise FileResultError("There are no files in the result")
         """
 
-        if not self.failed and not self.success and not self.skipped:
+        if not self.failed and not self.successful and not self.skipped:
             raise FileResultError("There are no files in the result")
 
     @property
@@ -494,7 +494,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                success={Path("/local/file"), Path("/local/another.file")},
+                successful={Path("/local/file"), Path("/local/another.file")},
                 failed={
                     FailedRemoteFile(
                         path="/remote/file1",
@@ -513,8 +513,8 @@ class FileResult(BaseModel):  # noqa: WPS214
                 Total 8 file(s) (10.4 MB)
 
                 Successful 2 file(s) (30.7 kB):
-                    /success1 (10.2 kB)
-                    /success2 (20.5 kB)
+                    /successful1 (10.2 kB)
+                    /successful2 (20.5 kB)
 
                 Failed 2 file(s) (10MB):
                     /remote/file1 (1 MB) NotAFileError("'/remote/file1' is not a file")
@@ -547,10 +547,10 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         result = []
 
-        if self.success or self.failed or self.missing or self.skipped:
+        if self.successful or self.failed or self.missing or self.skipped:
             result.append(self._total_header)
 
-        result.append(self._success_message)
+        result.append(self._successful_message)
         result.append(self._failed_message)
         result.append(self._skipped_message)
         result.append(self._missing_message)
@@ -572,7 +572,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                success={Path("/local/file"), Path("/local/another.file")},
+                successful={Path("/local/file"), Path("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
                 skipped={Path("/skipped/file")},
                 missing={PurePath("/missing/file")},
@@ -600,17 +600,17 @@ class FileResult(BaseModel):  # noqa: WPS214
 
     @property
     def _total_header(self) -> str:
-        if self.success or self.failed or self.missing or self.skipped:
+        if self.successful or self.failed or self.missing or self.skipped:
             return f"Total {self.total_count} file(s) ({naturalsize(self.total_size)})"
 
         return "No files"
 
     @property
-    def _success_header(self) -> str:
-        if not self.success:
+    def _successful_header(self) -> str:
+        if not self.successful:
             return "No successful files"
 
-        return f"Successful {self.success_count} file(s) ({naturalsize(self.success_size)})"
+        return f"Successful {self.successful_count} file(s) ({naturalsize(self.successful_size)})"
 
     @property
     def _failed_header(self) -> str:
@@ -634,18 +634,18 @@ class FileResult(BaseModel):  # noqa: WPS214
         return f"Missing {self.missing_count} file(s)"
 
     @property
-    def _success_message(self) -> str:
-        if not self.success:
-            return self._success_header
+    def _successful_message(self) -> str:
+        if not self.successful:
+            return self._successful_header
 
         lines = []
-        for file in self.success:
+        for file in self.successful:
             size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
 
             lines.append(f"{os.fspath(file)} ({size})")
 
-        if self.success_count > 1:
-            header = f"{self._success_header}:{os.linesep}{INDENT}"
+        if self.successful_count > 1:
+            header = f"{self._successful_header}:{os.linesep}{INDENT}"
         else:
             header = "Successful: "
 
@@ -714,8 +714,8 @@ class FileResult(BaseModel):  # noqa: WPS214
     def _total_message(self) -> str:
         result = [self._total_header]
 
-        if self.success:
-            result.append(self._success_header)
+        if self.successful:
+            result.append(self._successful_header)
 
         if self.failed:
             result.append(self._failed_header)
