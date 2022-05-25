@@ -15,7 +15,7 @@ class DownloadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * ``success`` - successfully handled files (local)
+    * ``successful`` - successfully handled files (local)
     * ``failed`` - file paths (remote) which were handled with some failures
     * ``skipped`` - file paths (remote) which were skipped because of some reason
     * ``missing`` - file paths (remote) which are not present in the file system
@@ -44,7 +44,7 @@ class DownloadResult(FileResult):
         )
 
         assert downloaded_files == DownloadResult(
-            success={
+            successful={
                 RemoteFile("/local/file1"),
                 RemoteFile("/local/file2"),
             },
@@ -54,7 +54,7 @@ class DownloadResult(FileResult):
         )
     """
 
-    success: FileSet[Path] = Field(default_factory=FileSet)
+    successful: FileSet[Path] = Field(default_factory=FileSet)
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
     missing: OrderedSet[PurePosixPath] = Field(default_factory=OrderedSet)

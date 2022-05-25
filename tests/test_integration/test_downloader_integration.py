@@ -49,13 +49,13 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path) for file in upload_test_files
         )
 
-        for local_file in download_result.success:
+        for local_file in download_result.successful:
             assert local_file.exists()
             assert local_file.is_file()
             assert not local_file.is_dir()
@@ -95,13 +95,13 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path) for file in upload_test_files
         )
 
-        for local_file in download_result.success:
+        for local_file in download_result.successful:
             assert local_file.exists()
             assert local_file.is_file()
             assert not local_file.is_dir()
@@ -144,9 +144,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path)
             for file in upload_test_files
             if PurePosixPath(exclude_dir) not in file.parents
@@ -168,9 +168,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path) for file in upload_test_files if file.match(file_pattern)
         )
 
@@ -207,7 +207,7 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
         if source_path_value:
             local_files = [local_path / file.relative_to(source_path) for file in upload_test_files]
@@ -215,7 +215,7 @@ class TestDownloader:
             # no source path - do not preserve folder structure
             local_files = [local_path / file.name for file in upload_test_files]
 
-        assert sorted(download_result.success) == sorted(local_files)
+        assert sorted(download_result.successful) == sorted(local_files)
 
         for remote_file_path in upload_test_files:
             if source_path_value:
@@ -257,9 +257,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(local_path / file for file in relative_files_path)
+        assert sorted(download_result.successful) == sorted(local_path / file for file in relative_files_path)
 
         for remote_file_path in upload_test_files:
             local_file = local_path / remote_file_path.relative_to(source_path)
@@ -315,7 +315,7 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert not download_result.success
+        assert not download_result.successful
 
     def test_run_with_empty_source_path(self, request, file_connection, tmp_path_factory):
         source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -340,7 +340,7 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert not download_result.missing
-        assert not download_result.success
+        assert not download_result.successful
 
     def test_run_relative_path_without_source_path(self, file_connection, tmp_path_factory):
         local_path = tmp_path_factory.mktemp("local_path")
@@ -398,7 +398,7 @@ class TestDownloader:
 
         download_result = downloader.run()
 
-        assert not download_result.success
+        assert not download_result.successful
         assert not download_result.missing
         assert not download_result.skipped
         assert download_result.failed
@@ -449,7 +449,7 @@ class TestDownloader:
             for file in local_files:
                 assert f"Local directory already contains file '{file}', skipping" in caplog.text
 
-        assert not download_result.success
+        assert not download_result.successful
         assert not download_result.failed
         assert not download_result.missing
         assert download_result.skipped
@@ -500,9 +500,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.missing
         assert not download_result.skipped
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path) for file in upload_test_files
         )
 
@@ -544,9 +544,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.missing
         assert not download_result.skipped
-        assert download_result.success
+        assert download_result.successful
 
-        assert sorted(download_result.success) == sorted(
+        assert sorted(download_result.successful) == sorted(
             local_path / file.relative_to(source_path) for file in upload_test_files
         )
 
@@ -579,9 +579,9 @@ class TestDownloader:
         assert not download_result.failed
         assert not download_result.skipped
         assert download_result.missing
-        assert download_result.success
+        assert download_result.successful
 
-        assert len(download_result.success) == len(upload_test_files)
+        assert len(download_result.successful) == len(upload_test_files)
         assert len(download_result.missing) == 1
 
         assert download_result.missing == {missing_file}
