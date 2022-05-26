@@ -217,9 +217,7 @@ class DBWriter:
 
         entity_boundary_log(msg="DBWriter starts")
 
-        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table")
-
-        log.info(f"|{self.__class__.__name__}| Parameters:")
+        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
         for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
             if attr in {
                 "connection",
@@ -233,7 +231,7 @@ class DBWriter:
                 log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "Options:")
+        log.info(" " * LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
 

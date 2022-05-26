@@ -10,6 +10,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
 
@@ -132,8 +133,6 @@ class FileFilter(BaseFileFilter, BaseModel):
         return True
 
     def log_options(self):
-        indent = len(f"|{self.__class__.__name__}| ") + 2
-
-        log.info(" " * indent + "filter:\n")
-        for option in self.__dict__:  # noqa: WPS528
-            log.info(" " * indent + f"{option} = {self.__dict__[option]}")
+        log.info(" " * LOG_INDENT + "filter:")
+        for key, value in self.__dict__.items():  # noqa: WPS528
+            log.info(" " * LOG_INDENT + f"{key} = {value}")

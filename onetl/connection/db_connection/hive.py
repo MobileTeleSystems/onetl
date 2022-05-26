@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 from pydantic import Field, validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
-from onetl.connection.db_connection.db_connection import DBConnection, DBWriteMode
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:

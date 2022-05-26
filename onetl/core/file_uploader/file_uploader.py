@@ -9,13 +9,13 @@ from typing import ClassVar, Iterable
 
 from etl_entities import ProcessStackManager
 from ordered_set import OrderedSet
+from pydantic import BaseModel
 
 from onetl.base import BaseFileConnection
-from onetl.connection import FileConnection, FileWriteMode
 from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
 from onetl.exception import DirectoryNotFoundError
-from onetl.impl import FailedLocalFile
+from onetl.impl import FailedLocalFile, FileWriteMode
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -43,7 +43,7 @@ class FileUploader:
 
         Default value: ``None``
 
-    options : Options | dict | None, default: ``None``
+    options : :obj:`onetl.core.file_uploader.file_uploader.FileUploader.Options` | dict | None, default: ``None``
         File upload options
 
     Examples
@@ -76,9 +76,37 @@ class FileUploader:
             target_path="/path/to/remote/source",
             temp_path="/home/onetl",
             local_path="/some/local/directory",
+            options=FileUploader.Options(delete_local=True, mode="overwrite"),
         )
 
     """
+
+    class Options(BaseModel):  # noqa: WPS431
+        """File uploader options
+
+        Parameters
+        ----------
+        mode : :obj:`onetl.impl.file_write_mode.FileWriteMode`
+            How to handle existing files in the target directory.
+
+            Possible values:
+                * ``error`` (default) - do nothing, mark file as failed
+                * ``ignore`` - do nothing, mark file as ignored
+                * ``overwrite`` - replace existing file with a new one
+                * ``delete_all`` - delete local directory content before downloading files
+
+        delete_local : bool
+            If ``True``, remove local file after successful download.
+
+            If download failed, file will left intact.
+
+        """
+
+        mode: FileWriteMode = FileWriteMode.ERROR
+        delete_local: bool = False
+
+        class Config:  # noqa: WPS431
+            frozen = True
 
     connection: BaseFileConnection
 
@@ -91,8 +119,8 @@ class FileUploader:
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
     _temp_path: PurePosixPath = field(init=False)
 
-    options: InitVar[FileConnection.Options | dict | None] = field(default=None)
-    _options: FileConnection.Options = field(init=False)
+    options: InitVar[Options | dict | None] = field(default=None)
+    _options: Options = field(init=False)
 
     # e.g. 20220524122150
     DATETIME_FORMAT: ClassVar[str] = "%Y%m%d%H%M%S"  # noqa: WPS323
@@ -107,10 +135,10 @@ class FileUploader:
         self._target_path = PurePosixPath(target_path)
         self._local_path = Path(local_path) if local_path else None
         self._temp_path = PurePosixPath(temp_path)
-        self._options = options or self.connection.Options()
+        self._options = options or self.Options()
 
         if isinstance(options, dict):
-            self._options = self.connection.Options.parse_obj(options)
+            self._options = self.Options.parse_obj(options)
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231, WPS238 NOSONAR
         """
@@ -187,20 +215,28 @@ class FileUploader:
         entity_boundary_log(msg="FileUploader starts")
         connection_class_name = self.connection.__class__.__name__
 
-        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files to path: {self._target_path} ")
-        log.info(f"|{self.__class__.__name__}| Parameters:")
+        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files using parameters:'")
         log.info(" " * LOG_INDENT + f"target_path = {self._target_path}")
+        log.info(" " * LOG_INDENT + f"local_path = {self._local_path}")
         log.info(" " * LOG_INDENT + f"temp_path = {self._temp_path}")
+
+        log.info("")
+        log.info(" " * LOG_INDENT + "options:")
+        for option, value in self._options.dict().items():
+            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+        log.info("")
+
+        if self._options.delete_local:
+            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
+
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
 
         if files and self._local_path:
             log.warning(
                 f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
                 "File collection will be used",
             )
-
-        if self._options.delete_source:
-            log.warning(" ")
-            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
 
         # Check everything
         if self._local_path:
@@ -233,8 +269,8 @@ class FileUploader:
             file_path = Path(file)
 
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(" " * LOG_INDENT + f"from = '{file_path}'")
-            log.info(" " * LOG_INDENT + f"to = '{target_file}'")
+            log.info(" " * LOG_INDENT + f"from = {file_path}")
+            log.info(" " * LOG_INDENT + f"to = {target_file}")
 
             try:
                 if not file_path.exists():
@@ -264,7 +300,7 @@ class FileUploader:
                 uploaded_file = self.connection.rename_file(tmp_file, target_file, replace=replace)
 
                 # Remove files
-                if self._options.delete_source:
+                if self._options.delete_local:
                     file_path.unlink()
                     log.warning(f"|LocalFS| Successfully removed file: '{file_path}'")
 
@@ -326,18 +362,14 @@ class FileUploader:
             }
         """
 
-        log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: '{self._local_path}'")
+        log.info(f"|Local FS| Getting files list from path: '{self._local_path}'")
 
         self._check_local_path()
         result = FileSet()
 
         try:
             for root, dirs, files in os.walk(self._local_path):
-                log.debug(
-                    f"|{self.connection.__class__.__name__}| "
-                    f"Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}",
-                )
-
+                log.debug(f"|Local FS| Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}")
                 result.update(Path(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(

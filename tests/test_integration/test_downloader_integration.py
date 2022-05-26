@@ -5,10 +5,9 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from onetl.connection import FileConnection, FileWriteMode
 from onetl.core import FileDownloader, FileFilter, FileSet
 from onetl.exception import DirectoryNotFoundError
-from onetl.impl import RemoteFile
+from onetl.impl import FileWriteMode, RemoteFile
 
 
 class TestDownloader:
@@ -84,7 +83,7 @@ class TestDownloader:
             connection=file_connection,
             source_path=source_path,
             local_path=local_path,
-            options=file_connection.Options(delete_source=True),
+            options=FileDownloader.Options(delete_source=True),
         )
 
         with caplog.at_level(logging.WARNING):
@@ -373,7 +372,7 @@ class TestDownloader:
 
     @pytest.mark.parametrize(
         "options",
-        [{"mode": "error"}, FileConnection.Options(mode="error"), FileConnection.Options(mode=FileWriteMode.ERROR)],
+        [{"mode": "error"}, FileDownloader.Options(mode="error"), FileDownloader.Options(mode=FileWriteMode.ERROR)],
     )
     def test_mode_error(self, file_connection, source_path, upload_test_files, options, tmp_path_factory):
         local_path = tmp_path_factory.mktemp("local_path")
@@ -440,7 +439,7 @@ class TestDownloader:
             connection=file_connection,
             source_path=source_path,
             local_path=local_path,
-            options=FileConnection.Options(mode=FileWriteMode.IGNORE),
+            options=FileDownloader.Options(mode=FileWriteMode.IGNORE),
         )
 
         with caplog.at_level(logging.WARNING):
@@ -488,7 +487,7 @@ class TestDownloader:
             connection=file_connection,
             source_path=source_path,
             local_path=local_path,
-            options=FileConnection.Options(mode=FileWriteMode.OVERWRITE),
+            options=FileDownloader.Options(mode=FileWriteMode.OVERWRITE),
         )
 
         with caplog.at_level(logging.WARNING):
@@ -534,7 +533,7 @@ class TestDownloader:
             connection=file_connection,
             source_path=source_path,
             local_path=local_path,
-            options=FileConnection.Options(mode=FileWriteMode.DELETE_ALL),
+            options=FileDownloader.Options(mode=FileWriteMode.DELETE_ALL),
         )
 
         with caplog.at_level(logging.WARNING):
