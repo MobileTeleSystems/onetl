@@ -4,7 +4,7 @@ Quick start
 MSSQL → Hive
 ------------
 
-`Read data from MSSQL, transform & write to Hive.`
+Read data from MSSQL, transform & write to Hive.
 
 .. code:: python
 
@@ -72,7 +72,7 @@ MSSQL → Hive
 SFTP → HDFS
 -----------
 
-`Download files from FTP & upload them to HDFS.`
+Download files from FTP & upload them to HDFS.
 
 .. code:: python
 
@@ -80,7 +80,7 @@ SFTP → HDFS
     from onetl.connection import SFTP, HDFS
 
     # Import onETL classes to download & upload files
-    from onetl.core import FileDownloader, FileUploader
+    from onetl.core import FileDownloader, FileUploader, FileFilter
 
     # Initiate SFTP connection
     sftp = SFTP(
@@ -97,23 +97,42 @@ SFTP → HDFS
     # Initiate downloader
     downloader = FileDownloader(
         connection=sftp,
-        source_path="/home/tests/Report",  # sftp_path
-        local_path="/home/onetl/Report",  # local fs path
-        source_exclude_dirs=["/home/tests/Report/exclude_dir/"],
-        source_file_pattern="*.json",
+        source_path="/remote/tests/Report",  # sftp_path
+        local_path="/local/onetl/Report",  # local fs path
+        filter=FileFilter(
+            glob="*.json",  # download only files matching the glob
+            exclude_dirs=[  # exclude files from those directoryes
+                "/remote/tests/Report/exclude_dir/",
+            ],
+        ),
+        options=FileDownloader.Options(
+            delete_source=True,  # delete files from SFTP after successful download
+            mode="error",  # mark file as failed if it already exist in local_path
+        ),
     )
 
-
     # Download files to local filesystem
-    downloaded_files = downloader.run()
+    download_result = downloader.run()
 
-    # Method run returns a list of downloaded files, i.e. list of full path for each downloaded file:
-    downloaded_files
+    # Method run returns a DownloadResult object,
+    # which contains collection of downloaded files, divided to 4 categories
+    download_result
 
-    # >>> [PosixPath('/home/onetl/Report/file_1.json'), PosixPath('/home/onetl/Report/file_2.json')]
+    #  DownloadResult(
+    #      successful=[Path('/local/onetl/Report/file_1.json'), Path('/local/onetl/Report/file_2.json')],
+    #      failed=[FailedRemoteFile('/remote/onetl/Report/file_3.json')],
+    #      ignored=[RemoteFile('/remote/onetl/Report/file_4.json')],
+    #      missing=[],
+    #  )
+
+    # Raise exception if there are failed files, or there were no files in the remote filesystem
+    download_result.raise_if_failed() or download_result.raise_if_empty()
 
     # Do any kind of magic with files: rename files, remove header for csv files, ...
-    renamed_downloaded_files = my_rename_function(downloaded_files)
+    renamed_files = my_rename_function(download_result.success)
+
+    # function removed "_" from file names
+    # [Path('/home/onetl/Report/file1.json'), Path('/home/onetl/Report/file2.json')]
 
     # Initiate HDFS connection
     hdfs = HDFS(
@@ -129,7 +148,18 @@ SFTP → HDFS
     )
 
     # Upload files from local fs to HDFS
-    uploaded_files = uploader.run(renamed_downloaded_files)
+    upload_result = uploader.run(renamed_files)
 
-    uploaded_files  # return list of uploaded files:
-    # >>> [PosixPath('/user/onetl/Report/rename_file_1.json'), PosixPath('/user/onetl/Report/rename_file_2.json')]
+    # Method run returns a UploadResult object,
+    # which contains collection of uploaded files, divided to 4 categories
+    upload_result
+
+    #  UploadResult(
+    #      successful=[RemoteFile('/user/onetl/Report/file1.json')],
+    #      failed=[FailedRemoteFile('/local/onetl/Report/file2.json')],
+    #      ignored=[],
+    #      missing=[],
+    #  )
+
+    # Raise exception if there are failed files, or there were no files in the local filesystem, or some input file is missing
+    upload_result.raise_if_failed() or upload_result.raise_if_empty() or upload_result.raise_if_missing()
