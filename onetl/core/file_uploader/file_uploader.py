@@ -105,7 +105,7 @@ class FileUploader:
         options: str | os.FileConnection.Options | dict | None,
     ):
         self._target_path = PurePosixPath(target_path)
-        self._local_path = Path(local_path) if local_path else None
+        self._local_path = Path(local_path).resolve() if local_path else None
         self._temp_path = PurePosixPath(temp_path)
         self._options = options or self.connection.Options()
 
