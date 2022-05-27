@@ -3,13 +3,10 @@ from __future__ import annotations
 import os
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
 from functools import wraps
 from logging import getLogger
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
-
-from pydantic import BaseModel
 
 from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
 from onetl.exception import (
@@ -21,13 +18,6 @@ from onetl.impl import RemoteDirectory, RemoteFile
 from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
-
-
-class FileWriteMode(Enum):
-    ERROR = "error"
-    IGNORE = "ignore"
-    OVERWRITE = "overwrite"
-    DELETE_ALL = "delete_all"
 
 
 # Workaround for cached_property
@@ -51,16 +41,6 @@ class FileConnection(BaseFileConnection):
     user: str
     port: int
     password: str = field(repr=False, default="")
-
-    class Options(BaseModel):  # noqa: WPS431
-        """File write options"""
-
-        mode: FileWriteMode = FileWriteMode.ERROR
-        delete_source: bool = False
-
-        class Config:  # noqa: WPS431
-            allow_population_by_field_name = True
-            frozen = True
 
     @property
     @cached
@@ -170,7 +150,6 @@ class FileConnection(BaseFileConnection):
             if not self.is_dir(path):
                 raise NotADirectoryError(f"|{self.__class__.__name__}| '{path}' is not a directory")
 
-            log.info(f"|{self.__class__.__name__}| Directory '{path}' already exist")
             return RemoteDirectory(path=path)
 
         self._mkdir(path)
@@ -274,23 +253,21 @@ class FileConnection(BaseFileConnection):
             name = self._get_item_name(item)
             if self._is_item_dir(root, item):
                 folder = RemoteDirectory(path=root / name)
-                log.info(f"|{self.__class__.__name__}| Checking directory: '{folder}'")
 
                 if filter and not filter.match(folder):
-                    log.info(f"|{self.__class__.__name__}| Directory does not match the filter, skipping")
+                    log.info(f"|{self.__class__.__name__}| Directory '{folder}' does not match the filter, skipping")
                 else:
-                    log.info(f"|{self.__class__.__name__}| Directory does match the filter")
+                    log.info(f"|{self.__class__.__name__}| Directory '{folder}' does match the filter")
                     dirs.append(RemoteDirectory(path=name))
 
             else:
                 stat = self._get_item_stat(top, item)
                 file = RemoteFile(path=root / name, stats=stat)
-                log.info(f"|{self.__class__.__name__}| Checking file: '{file}'")
 
                 if filter and not filter.match(file):
-                    log.info(f"|{self.__class__.__name__}| File does not match the filter, skipping")
+                    log.info(f"|{self.__class__.__name__}| File '{file}' does not match the filter, skipping")
                 else:
-                    log.info(f"|{self.__class__.__name__}| File does match the filter")
+                    log.info(f"|{self.__class__.__name__}| File '{file}' does match the filter")
                     files.append(RemoteFile(path=name, stats=stat))
 
         for name in dirs:
@@ -301,7 +278,6 @@ class FileConnection(BaseFileConnection):
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if not self.path_exists(path):
-            log.info(f"|{self.__class__.__name__}| Directory '{path}' does not exist, nothing to remove")
             return
 
         if not self.is_dir(path):

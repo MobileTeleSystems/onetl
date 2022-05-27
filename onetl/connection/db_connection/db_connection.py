@@ -4,13 +4,13 @@ import operator
 from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
 from onetl.base import BaseConnection
+from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -18,13 +18,6 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
-
-
-class DBWriteMode(Enum):
-    APPEND = "append"
-    OVERWRITE = "overwrite"
-    IGNORE = "ignore"
-    ERROR = "error"
 
 
 @dataclass(frozen=True)

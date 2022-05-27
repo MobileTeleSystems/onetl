@@ -247,9 +247,7 @@ class DBReader:
 
         entity_boundary_log(msg="DBReader starts")
 
-        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame")
-
-        log.info(f"|{self.__class__.__name__}| Parameters:")
+        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
         for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
             if attr in {
                 "connection",
@@ -263,9 +261,10 @@ class DBReader:
                 log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "Options:")
+        log.info(" " * LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
             log.info(" " * LOG_INDENT + f"    {option} = {value}")
+        log.info("")
 
         self.connection.log_parameters()
 

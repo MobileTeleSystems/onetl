@@ -8,9 +8,9 @@ from pathlib import Path, PurePosixPath
 import pytest
 from etl_entities import Process
 
-from onetl.connection import FileConnection, FileWriteMode
 from onetl.core import FileUploader
 from onetl.exception import DirectoryNotFoundError
+from onetl.impl import FileWriteMode
 
 
 class TestUploader:
@@ -146,13 +146,13 @@ class TestUploader:
         for missing_file in upload_result.missing:
             assert not missing_file.exists()
 
-    def test_run_delete_source(self, resource_path, test_files, file_connection, caplog):
+    def test_run_delete_local(self, resource_path, test_files, file_connection, caplog):
         target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=file_connection.Options(delete_source=True),
+            options=FileUploader.Options(delete_local=True),
         )
 
         local_files_list = []
@@ -207,7 +207,7 @@ class TestUploader:
 
     @pytest.mark.parametrize(
         "options",
-        [{"mode": "error"}, FileConnection.Options(mode="error"), FileConnection.Options(mode=FileWriteMode.ERROR)],
+        [{"mode": "error"}, FileUploader.Options(mode="error"), FileUploader.Options(mode=FileWriteMode.ERROR)],
     )
     def test_run_mode_error(self, request, file_connection, test_files, options):
         target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
@@ -274,7 +274,7 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=FileConnection.Options(mode=FileWriteMode.IGNORE),
+            options=FileUploader.Options(mode=FileWriteMode.IGNORE),
         )
 
         with caplog.at_level(logging.WARNING):
@@ -322,7 +322,7 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=FileConnection.Options(mode=FileWriteMode.OVERWRITE),
+            options=FileUploader.Options(mode=FileWriteMode.OVERWRITE),
         )
 
         with caplog.at_level(logging.WARNING):
@@ -372,7 +372,7 @@ class TestUploader:
         uploader = FileUploader(
             connection=file_connection,
             target_path=target_path,
-            options=FileConnection.Options(mode=FileWriteMode.DELETE_ALL),
+            options=FileUploader.Options(mode=FileWriteMode.DELETE_ALL),
         )
 
         with caplog.at_level(logging.WARNING):

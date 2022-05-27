@@ -8,12 +8,13 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from ordered_set import OrderedSet
+from pydantic import BaseModel
 
 from onetl.base import BaseFileFilter
-from onetl.connection import FileConnection, FileWriteMode
+from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_result import FileSet
-from onetl.impl import FailedRemoteFile, RemoteFile
+from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -41,7 +42,7 @@ class FileDownloader:
     filter : BaseFileFilter
         Options of the file filtering. See :obj:`onetl.core.file_filter.file_filter.FileFilter`
 
-    options : Options | dict | None, default: ``None``
+    options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options
 
     Examples
@@ -66,7 +67,7 @@ class FileDownloader:
     .. code::
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader
+        from onetl.core import FileDownloader, FileFilter
 
         sftp = SFTP(...)
 
@@ -75,8 +76,36 @@ class FileDownloader:
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
             filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
+            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
         )
     """
+
+    class Options(BaseModel):  # noqa: WPS431
+        """File downloader options
+
+        Parameters
+        ----------
+        mode : :obj:`onetl.impl.file_write_mode.FileWriteMode`
+            How to handle existing files in the local directory.
+
+            Possible values:
+                * ``error`` (default) - do nothing, mark file as failed
+                * ``ignore`` - do nothing, mark file as ignored
+                * ``overwrite`` - replace existing file with a new one
+                * ``delete_all`` - delete local directory content before downloading files
+
+        delete_source : bool
+            If ``True``, remove source file after successful download.
+
+            If download failed, file will left intact.
+
+        """
+
+        mode: FileWriteMode = FileWriteMode.ERROR
+        delete_source: bool = False
+
+        class Config:  # noqa: WPS431
+            frozen = True
 
     connection: FileConnection
     local_path: InitVar[os.PathLike | str]
@@ -87,8 +116,8 @@ class FileDownloader:
 
     filter: BaseFileFilter | None = None
 
-    options: InitVar[FileConnection.Options | dict | None] = field(default=None)
-    _options: FileConnection.Options = field(init=False)
+    options: InitVar[Options | dict | None] = field(default=None)
+    _options: Options = field(init=False)
 
     def __post_init__(
         self,
@@ -100,9 +129,9 @@ class FileDownloader:
         self._source_path = PurePosixPath(source_path) if source_path else None
 
         if isinstance(options, dict):
-            self._options = self.connection.Options.parse_obj(options)
+            self._options = self.Options.parse_obj(options)
         else:
-            self._options = options or self.connection.Options()
+            self._options = options or self.Options()
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231, WPS213 NOSONAR
         """
@@ -214,22 +243,27 @@ class FileDownloader:
 
         # Log all options
         entity_boundary_log(msg="FileDownloader starts")
-        indent = len(f"|{self.__class__.__name__}| ") + 2
 
-        log.info(
-            f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files from path '{self._source_path}'"
-            f" to local directory: '{self._local_path}'",
-        )
-        log.info(f"|{self.__class__.__name__}| Using parameters:")
-        log.info(" " * indent + f"delete_source = {self._options.delete_source}")
+        log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
+        log.info(" " * LOG_INDENT + f"local_path = {self._local_path}")
+        log.info(" " * LOG_INDENT + f"source_path = {self._source_path}")
 
         if self.filter:
+            log.info("")
             self.filter.log_options()
         else:
-            log.info(" " * indent + "filter = None")
+            log.info(" " * LOG_INDENT + "filter = None")
+
+        log.info(" " * LOG_INDENT + "options:")
+        for option, value in self._options.dict().items():
+            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+        log.info("")
 
         if self._options.delete_source:
             log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
+
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!")
 
         if files and self._source_path:
             log.warning(
@@ -254,7 +288,6 @@ class FileDownloader:
 
         # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
         if self._options.mode == FileWriteMode.DELETE_ALL:
-            log.warning(f"|{self.__class__.__name__}| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!")
             shutil.rmtree(self._local_path)
             self._local_path.mkdir()
 
@@ -263,8 +296,8 @@ class FileDownloader:
 
         for i, (source_file, local_file) in enumerate(to_download):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(" " * LOG_INDENT + f"from = '{source_file}'")
-            log.info(" " * LOG_INDENT + f"to = '{local_file}'")
+            log.info(" " * LOG_INDENT + f"from = {source_file}")
+            log.info(" " * LOG_INDENT + f"to = {local_file}")
 
             if not self.connection.path_exists(source_file):
                 log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
