@@ -113,3 +113,10 @@
     hwm
     strategy/index
     hwm_store/index
+
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Misc
+
+    logging
