@@ -599,9 +599,3 @@ class TestUploader:
             temp_path = os.fspath(uploader.generate_temp_path())
             expected = os.fspath(real_temp_path / "onetl" / "currenthost" / "abc.cde.me" / dt_prefix)
             assert temp_path.startswith(expected)
-
-    def test_source_check(self, file_connection, caplog):
-        with caplog.at_level(logging.INFO):
-            file_connection.check()
-
-        assert "Connection is available" in caplog.text

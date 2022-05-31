@@ -70,6 +70,12 @@ class FTP(FileConnection):
             session_factory=session_factory,
         )
 
+    def _is_client_closed(self) -> bool:
+        return self._client.closed
+
+    def _close_client(self) -> None:
+        self._client.close()
+
     def _rmdir_recursive(self, path: os.PathLike | str) -> None:
         self.client.rmtree(path)
 

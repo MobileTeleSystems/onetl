@@ -3,10 +3,11 @@ from __future__ import annotations
 import os
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from functools import wraps
 from logging import getLogger
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
+
+from pydantic import BaseModel
 
 from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
 from onetl.exception import (
@@ -14,25 +15,10 @@ from onetl.exception import (
     DirectoryNotFoundError,
     NotAFileError,
 )
-from onetl.impl import RemoteDirectory, RemoteFile
+from onetl.impl import FileWriteMode, RemoteDirectory, RemoteFile
 from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
-
-
-# Workaround for cached_property
-def cached(f):
-    @wraps(f)  # NOQA: WPS430
-    def wrapped(self, *args, **kwargs):  # NOQA: WPS430
-        key = f"{self.__class__.__name__}_{f.__name__}_{self.user}_{self.host}_cached_val"
-        existing = getattr(wrapped, key, None)
-        if existing is not None:
-            return existing
-        result = f(self, *args, **kwargs)
-        setattr(wrapped, key, result)
-        return result
-
-    return wrapped
 
 
 @dataclass(frozen=True)  # noqa: WPS214
@@ -42,10 +28,60 @@ class FileConnection(BaseFileConnection):
     port: int
     password: str = field(repr=False, default="")
 
+    _client: Any = field(init=False, repr=False, default=None)
+
+    class Options(BaseModel):  # noqa: WPS431
+        """File write options"""
+
+        mode: FileWriteMode = FileWriteMode.ERROR
+        delete_source: bool = False
+
+        class Config:  # noqa: WPS431
+            allow_population_by_field_name = True
+            frozen = True
+
     @property
-    @cached
     def client(self):
-        return self._get_client()
+        if self._client and not self._is_client_closed():
+            return self._client
+
+        client = self._get_client()
+        object.__setattr__(self, "_client", client)  # noqa: WPS609
+        return client
+
+    def close(self):
+        """
+        Close all connections, opened by other methods call.
+
+        Examples
+        --------
+
+        Get directory content and close connection:
+
+        .. code:: python
+
+            content = connection.listdir("/mydir")
+            assert content
+            connection.close()
+
+            # or
+
+            with connection:
+                content = connection.listdir("/mydir")
+                content = connection.listdir("/mydir/abc")
+
+        """
+
+        if self._client:
+            self._close_client()
+
+        object.__setattr__(self, "_client", None)  # noqa: WPS609
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        self.close()
 
     def check(self) -> None:
         try:
@@ -319,6 +355,14 @@ class FileConnection(BaseFileConnection):
 
     @abstractmethod
     def _get_client(self) -> Any:
+        """"""
+
+    @abstractmethod
+    def _is_client_closed(self) -> bool:
+        """"""
+
+    @abstractmethod
+    def _close_client(self) -> None:
         """"""
 
     @abstractmethod

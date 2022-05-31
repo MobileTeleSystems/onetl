@@ -101,6 +101,12 @@ class SFTP(FileConnection):
 
         return client.open_sftp()
 
+    def _is_client_closed(self) -> bool:
+        return not self._client.sock or self._client.sock.closed
+
+    def _close_client(self) -> None:
+        self._client.close()
+
     def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None
         key_file = self.key_file

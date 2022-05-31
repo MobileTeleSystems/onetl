@@ -2,12 +2,12 @@ from typing import Generic, TypeVar
 
 from ordered_set import OrderedSet
 
-from onetl.base import SizedPathProtocol
+from onetl.base import PathProtocol, SizedPathProtocol
 
-T = TypeVar("T", bound=SizedPathProtocol)
+T = TypeVar("T", bound=PathProtocol)
 
 
-class FileSet(OrderedSet, Generic[T]):  # noqa: WPS600
+class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
     """
     Ordered set of pathlib-like objects.
 
@@ -35,4 +35,4 @@ class FileSet(OrderedSet, Generic[T]):  # noqa: WPS600
             assert file_set.total_size == 1_000_000  # in bytes
         """
 
-        return sum(file.stat().st_size for file in self if file.exists())
+        return sum(file.stat().st_size for file in self if isinstance(file, SizedPathProtocol) and file.exists())

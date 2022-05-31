@@ -1,13 +1,12 @@
+import logging
 from getpass import getuser
 from pathlib import PurePosixPath
 from unittest.mock import patch
 
 import pytest
-from hdfs import Client
 from hdfs.ext.kerberos import KerberosClient
-from paramiko import SFTPClient
 
-from onetl.connection import HDFS, SFTP
+from onetl.connection import HDFS
 from onetl.connection.file_connection import hdfs
 
 
@@ -48,22 +47,25 @@ class TestFileConnectionIntegration:
 
     @pytest.mark.parametrize("path_type", [str, PurePosixPath])
     def test_rename_file(self, file_connection, upload_test_files, path_type):
-        file_connection.rename_file(
-            source_file_path=path_type("/export/news_parse/exclude_dir/file_5.txt"),
-            target_file_path=path_type("/export/news_parse/exclude_dir/file_55.txt"),
-        )
+        with file_connection as connection:
+            connection.rename_file(
+                source_file_path=path_type("/export/news_parse/exclude_dir/file_5.txt"),
+                target_file_path=path_type("/export/news_parse/exclude_dir/file_55.txt"),
+            )
 
         list_dir = file_connection.listdir("/export/news_parse/exclude_dir/")
 
         assert PurePosixPath("file_55.txt") in list_dir
         assert PurePosixPath("file_5.txt") not in list_dir
 
-    def test_rewrite_cached_property_client(self, sftp_server, hdfs_server):
-        sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
-        ssh_client = sftp.client
+    def test_check(self, file_connection, caplog):
+        # client is not opened, not an error
+        file_connection.close()
 
-        hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port, user=getuser(), password="")
-        hdfs_client = hdfs.client
+        with caplog.at_level(logging.INFO):
+            file_connection.check()
+            file_connection.close()
+            # `close` called twice is not an error
+            file_connection.close()
 
-        assert isinstance(ssh_client, SFTPClient)
-        assert isinstance(hdfs_client, Client)
+        assert "Connection is available" in caplog.text
