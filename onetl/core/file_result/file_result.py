@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import textwrap
 from typing import Iterable, TypeVar
 
@@ -11,6 +10,7 @@ from pydantic import BaseModel, Field, validator
 
 from onetl.core.file_result.file_set import FileSet
 from onetl.exception import FileResultError
+from onetl.impl import humanize_path
 
 GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
@@ -288,8 +288,11 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result.raise_if_failed()
             # will raise FileResultError('''
             #    Failed 2 file(s) (10MB):
-            #        /remote/file1 (1 MB) NotAFileError("'/remote/file1' is not a file")
-            #        /remote/file2 (9 MB) FileMissingError("'/remote/file2' does not exist")
+            #        /remote/file1 (1 MB)
+            #           NotAFileError("'/remote/file1' is not a file")
+            #
+            #        /remote/file2 (9 MB)
+            #           FileMissingError("'/remote/file2' does not exist")
             # ''')
         """
 
@@ -517,8 +520,11 @@ class FileResult(BaseModel):  # noqa: WPS214
                     /successful2 (20.5 kB)
 
                 Failed 2 file(s) (10MB):
-                    /remote/file1 (1 MB) NotAFileError("'/remote/file1' is not a file")
-                    /remote/file2 (9 MB) FileMissingError("'/remote/file2' does not exist")
+                    /remote/file1 (1 MB)
+                        NotAFileError("'/remote/file1' is not a file")
+
+                    /remote/file2 (9 MB)
+                        FileMissingError("'/remote/file2' does not exist")
 
                 Skipped 2 file(s) (15 kB):
                     /skipped/file1 (10kB)
@@ -638,11 +644,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.successful:
             return self._successful_header
 
-        lines = []
-        for file in self.successful:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
-
-            lines.append(f"{os.fspath(file)} ({size})")
+        lines = [humanize_path(file) for file in self.successful]
 
         if self.successful_count > 1:
             header = f"{self._successful_header}:{os.linesep}{INDENT}"
@@ -657,16 +659,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.failed:
             return self._failed_header
 
-        lines = []
-        for file in self.failed:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
-            prefix = f"{os.fspath(file)} ({size})"
-
-            exception_formatted = ""
-            if hasattr(file, "exception"):
-                exception = re.sub(r"(\\r)?\\n", os.linesep, repr(file.exception))
-                exception_formatted = " " + textwrap.indent(exception, " " * (len(prefix) + 2)).strip()
-            lines.append(prefix + exception_formatted)
+        lines = [humanize_path(file) for file in self.failed]
 
         if self.failed_count > 1:
             header = f"{self._failed_header}:{os.linesep}{INDENT}"
@@ -681,11 +674,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.skipped:
             return self._skipped_header
 
-        lines = []
-        for file in self.skipped:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
-
-            lines.append(f"{os.fspath(file)} ({size})")
+        lines = [humanize_path(file) for file in self.skipped]
 
         if self.skipped_count > 1:
             header = f"{self._skipped_header}:{os.linesep}{INDENT}"
@@ -700,7 +689,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.missing:
             return self._missing_header
 
-        lines = [os.fspath(file) for file in self.missing]
+        lines = [humanize_path(file) for file in self.missing]
 
         if self.missing_count > 1:
             header = f"{self._missing_header}:{os.linesep}{INDENT}"

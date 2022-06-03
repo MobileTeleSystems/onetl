@@ -32,7 +32,7 @@ def test_file_result_successful():
         Successful 3 file(s) (30.7 kB):
             /successful1 (10.2 kB)
             /successful2 (20.5 kB)
-            cannot/detect/size1 (? Bytes)
+            cannot/detect/size1
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
@@ -100,10 +100,14 @@ def test_file_result_failed():
 
     details = """
         Failed 3 file(s) (34.6 MB):
-            /failed1 (11.5 MB) FileExistsError('abc')
-            /failed2 (23.1 MB) FileExistsError('cde
-                                def')
-            cannot/detect/size2 (? Bytes)
+            /failed1 (11.5 MB)
+                FileExistsError('abc')
+
+            /failed2 (23.1 MB)
+                FileExistsError('cde
+                def')
+
+            cannot/detect/size2
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
@@ -127,10 +131,14 @@ def test_file_result_raise_if_failed():
 
     details = """
         Failed 3 file(s) (34.6 MB):
-            /failed1 (11.5 MB) FileExistsError('abc')
-            /failed2 (23.1 MB) FileExistsError('cde
-                                def')
-            cannot/detect/size2 (? Bytes)
+            /failed1 (11.5 MB)
+                FileExistsError('abc')
+
+            /failed2 (23.1 MB)
+                FileExistsError('cde
+                def')
+
+            cannot/detect/size2
     """
 
     error_message = re.escape(textwrap.dedent(details).strip())
@@ -162,7 +170,7 @@ def test_file_result_skipped():
     details = """
         Skipped 2 file(s) (12.9 GB):
             /skipped1 (12.9 GB)
-            cannot/detect/size3 (? Bytes)
+            cannot/detect/size3
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
@@ -178,7 +186,7 @@ def test_file_result_raise_if_skipped():
     details = """
         Skipped 2 file(s) (12.9 GB):
             /skipped1 (12.9 GB)
-            cannot/detect/size3 (? Bytes)
+            cannot/detect/size3
     """
 
     error_message = re.escape(textwrap.dedent(details).strip())
@@ -333,7 +341,8 @@ def test_file_result_total():
 
         Successful: /successful1 (1.1 GB)
 
-        Failed: /failed1 (2.1 GB) FileExistsError('abc')
+        Failed: /failed1 (2.1 GB)
+                FileExistsError('abc')
 
         Skipped: /skipped1 (3.2 GB)
 
