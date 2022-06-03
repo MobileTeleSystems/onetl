@@ -10,7 +10,7 @@ from etl_entities import Process
 
 from onetl.core import FileUploader
 from onetl.exception import DirectoryNotFoundError, NotAFileError
-from onetl.impl import FileWriteMode
+from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
 
 
 class TestUploader:
@@ -39,6 +39,8 @@ class TestUploader:
         assert sorted(upload_result.successful) == sorted(PurePosixPath(target_path) / file.name for file in test_files)
 
         for remote_file in upload_result.successful:
+            assert isinstance(remote_file, RemoteFile)
+
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -69,7 +71,7 @@ class TestUploader:
 
         for root, _dirs, files in os.walk(resource_path):
             for file in files:
-                local_files_list.append(Path(root) / file)
+                local_files_list.append(LocalPath(root) / file)
 
         assert local_files
         assert sorted(local_files) == sorted(local_files_list)
@@ -144,6 +146,7 @@ class TestUploader:
         assert upload_result.missing == {missing_file}
 
         for missing_file in upload_result.missing:
+            assert isinstance(missing_file, LocalPath)
             assert not missing_file.exists()
 
     def test_run_delete_local(self, resource_path, test_files, file_connection, caplog):
@@ -184,6 +187,8 @@ class TestUploader:
                 existing_files.append(Path(root) / file_name)
 
         for remote_file in upload_result.successful:
+            assert isinstance(remote_file, RemoteFile)
+
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -240,6 +245,8 @@ class TestUploader:
         assert sorted(upload_result.failed) == sorted(test_files)
 
         for local_file in upload_result.failed:
+            assert isinstance(local_file, FailedLocalFile)
+
             assert local_file.exists()
             assert local_file.is_file()
             assert not local_file.is_dir()
@@ -291,6 +298,8 @@ class TestUploader:
         assert sorted(upload_result.skipped) == sorted(test_files)
 
         for local_file in upload_result.skipped:
+            assert isinstance(local_file, LocalPath)
+
             assert local_file.exists()
             assert local_file.is_file()
             assert not local_file.is_dir()

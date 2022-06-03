@@ -1,13 +1,13 @@
 import re
 import textwrap
-from pathlib import Path, PurePath
+from pathlib import PurePath
 
 import pytest
 from ordered_set import OrderedSet
 
 from onetl.core import FileResult, FileSet
 from onetl.exception import FileResultError
-from onetl.impl import FailedRemoteFile, RemoteFile, RemoteFileStat
+from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemoteFileStat
 
 
 def test_file_result_successful():
@@ -15,7 +15,7 @@ def test_file_result_successful():
         RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
         RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
         RemoteFile(path="/successful2", stats=RemoteFileStat(st_size=20 * 1024, st_mtime=50)),
-        Path("cannot/detect/size1"),
+        LocalPath("cannot/detect/size1"),
     ]
 
     file_result = FileResult(successful=successful)
@@ -43,7 +43,7 @@ def test_file_result_raise_if_no_successful():
     successful = [
         RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
         RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        Path("just/deleted"),
+        LocalPath("just/deleted"),
     ]
 
     assert not FileResult(successful=successful).raise_if_no_successful()
@@ -56,7 +56,7 @@ def test_file_result_raise_if_zero_size():
     successful = [
         RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
         RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        Path("cannot/detect/size1"),  # missing file does not mean zero size
+        LocalPath("cannot/detect/size1"),  # missing file does not mean zero size
     ]
 
     details = """
@@ -85,7 +85,7 @@ def test_file_result_failed():
             stats=RemoteFileStat(st_size=22 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("cde\ndef"),
         ),
-        Path("cannot/detect/size2"),
+        LocalPath("cannot/detect/size2"),
     ]
 
     file_result = FileResult(failed=failed)
@@ -126,7 +126,7 @@ def test_file_result_raise_if_failed():
             stats=RemoteFileStat(st_size=22 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("cde\ndef"),
         ),
-        Path("cannot/detect/size2"),
+        LocalPath("cannot/detect/size2"),
     ]
 
     details = """
@@ -153,7 +153,7 @@ def test_file_result_skipped():
     skipped = [
         RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
         RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
-        Path("cannot/detect/size3"),
+        LocalPath("cannot/detect/size3"),
     ]
 
     file_result = FileResult(skipped=skipped)
@@ -180,7 +180,7 @@ def test_file_result_skipped():
 def test_file_result_raise_if_skipped():
     skipped = [
         RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
-        Path("cannot/detect/size3"),
+        LocalPath("cannot/detect/size3"),
     ]
 
     details = """
@@ -201,7 +201,7 @@ def test_file_result_missing():
     missing = [
         PurePath("/missing1"),
         PurePath("/missing2"),
-        Path("missing"),
+        LocalPath("missing"),
     ]
 
     file_result = FileResult(missing=missing)
@@ -229,7 +229,7 @@ def test_file_result_raise_if_missing():
     missing = [
         PurePath("/missing1"),
         PurePath("/missing2"),
-        Path("missing"),
+        LocalPath("missing"),
     ]
 
     details = """
@@ -302,7 +302,7 @@ def test_file_result_raise_if_empty():
         FileResult().raise_if_empty()
 
     with pytest.raises(FileResultError, match="There are no files in the result"):
-        FileResult(missing=[Path("missing/file")]).raise_if_empty()
+        FileResult(missing=[PurePath("missing/file")]).raise_if_empty()
 
 
 def test_file_result_total():

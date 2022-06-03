@@ -9,7 +9,7 @@ from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
-from onetl.impl import RemoteFileStat
+from onetl.impl import LocalPath, RemoteFileStat, RemotePath
 
 log = getLogger(__name__)
 
@@ -34,7 +34,7 @@ class HDFS(FileConnection):
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
     kinit : str, default: ``None``
-        Path to keytab file.
+        LocalPath to keytab file.
 
         .. warning ::
 
@@ -74,7 +74,7 @@ class HDFS(FileConnection):
 
     port: int = 50070
     user: str = ""
-    keytab: str | None = None  # TODO: change to Path
+    keytab: str | None = None  # TODO: change to LocalPath
     timeout: int | None = None
 
     def __post_init__(self):
@@ -106,50 +106,50 @@ class HDFS(FileConnection):
         # Underlying client does not support closing
         pass  # noqa: WPS420
 
-    def _rmdir_recursive(self, path: os.PathLike | str) -> None:
-        self.client.delete(os.fspath(path), recursive=True)
+    def _rmdir_recursive(self, root: RemotePath) -> None:
+        self.client.delete(os.fspath(root), recursive=True)
 
-    def _rmdir(self, path: os.PathLike | str) -> None:
+    def _rmdir(self, path: RemotePath) -> None:
         self.client.delete(os.fspath(path), recursive=False)
 
-    def _mkdir(self, path: os.PathLike | str) -> None:
+    def _mkdir(self, path: RemotePath) -> None:
         self.client.makedirs(os.fspath(path))
 
-    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         self.client.upload(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+    def _rename(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
 
-    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.delete(os.fspath(remote_file_path), recursive=False)
 
-    def _listdir(self, path: os.PathLike | str) -> list:
+    def _listdir(self, path: RemotePath) -> list:
         return self.client.list(os.fspath(path))
 
-    def _is_file(self, path: os.PathLike | str) -> bool:
+    def _is_file(self, path: RemotePath) -> bool:
         return self.client.status(os.fspath(path))["type"] == "FILE"
 
-    def _is_dir(self, path: os.PathLike | str) -> bool:
+    def _is_dir(self, path: RemotePath) -> bool:
         return self.client.status(os.fspath(path))["type"] == "DIRECTORY"
 
-    def _get_stat(self, path: os.PathLike | str) -> RemoteFileStat:
+    def _get_stat(self, path: RemotePath) -> RemoteFileStat:
         stat = self.client.status(os.fspath(path))
         return RemoteFileStat(st_size=stat["length"], st_mtime=stat["modificationTime"])
 
-    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.read(os.fspath(path), encoding=encoding, **kwargs) as file:
             return file.read()
 
-    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
         with self.client.read(os.fspath(path), **kwargs) as file:
             return file.read()
 
-    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
         self.client.write(os.fspath(path), data=content, encoding=encoding, overwrite=True, **kwargs)
 
-    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)

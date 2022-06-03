@@ -54,11 +54,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/some/file"), Path("/some/another.file")},
+                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.successful_count == 2
@@ -98,11 +98,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/some/file"), Path("/some/another.file")},
+                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.skipped_count == 2
@@ -120,11 +120,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import PurePath
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                missing={PurePath("/some/file"), PurePath("/some/another.file")},
+                missing={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.missing_count == 2
@@ -142,16 +142,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             assert file_result.total_count == 6
@@ -169,11 +167,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/some/file"), Path("/some/another.file")},
+                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.successful_size == 1_000_000  # in bytes
@@ -213,11 +211,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/some/file"), Path("/some/another.file")},
+                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.skipped_size == 1_000_000  # in bytes
@@ -235,16 +233,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             assert file_result.total_size == 10_000_000  # in bytes
@@ -267,9 +263,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             files_with_exception = [
@@ -314,15 +308,13 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
                 missing={
-                    PurePath("/missing/file1"),
-                    PurePath("/missing/file2"),
+                    LocalPath("/missing/file1"),
+                    LocalPath("/missing/file2"),
                 },
             )
 
@@ -352,13 +344,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/skipped/file1"), Path("/skipped/file2")},
+                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
             )
 
             file_result.raise_if_skipped()
@@ -387,9 +377,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult()
@@ -416,16 +404,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
                 successful={
-                    Path("/local/empty1.file"),
-                    Path("/local/empty2.file"),
-                    Path("/local/normal.file"),
+                    LocalPath("/local/empty1.file"),
+                    LocalPath("/local/empty2.file"),
+                    LocalPath("/local/normal.file"),
                 },
             )
 
@@ -467,9 +453,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult()
@@ -491,13 +475,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={
                     FailedRemoteFile(
                         path="/remote/file1",
@@ -508,8 +490,8 @@ class FileResult(BaseModel):  # noqa: WPS214
                         exception=FileMissingError("'/remote/file2' does not exist"),
                     ),
                 },
-                skipped={Path("/skipped/file1"), Path("/skipped/file2")},
-                missing={PurePath("/missing/file1"), PurePath("/missing/file2")},
+                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
+                missing={LocalPath("/missing/file1"), LocalPath("/missing/file2")},
             )
 
             details1 = """
@@ -572,16 +554,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             result = """

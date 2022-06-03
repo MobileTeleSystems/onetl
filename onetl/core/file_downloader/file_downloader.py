@@ -4,7 +4,6 @@ import os
 import shutil
 from dataclasses import InitVar, dataclass, field
 from logging import getLogger
-from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from ordered_set import OrderedSet
@@ -15,7 +14,13 @@ from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_result import FileSet
 from onetl.exception import NotAFileError
-from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile
+from onetl.impl import (
+    FailedRemoteFile,
+    FileWriteMode,
+    LocalPath,
+    RemoteFile,
+    RemotePath,
+)
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -32,7 +37,7 @@ class FileDownloader:
         Class which contains File system connection properties. See in FileConnection section.
 
     source_path : os.PathLike | str | None, default: ``None``
-        Path on remote source to download files from.
+        Remote path to download files from.
 
         Could be ``None``, but only if you pass file paths directly to
         :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.run` method
@@ -110,10 +115,10 @@ class FileDownloader:
 
     connection: FileConnection
     local_path: InitVar[os.PathLike | str]
-    _local_path: Path = field(init=False)
+    _local_path: LocalPath = field(init=False)
 
     source_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _source_path: PurePosixPath | None = field(init=False)
+    _source_path: RemotePath | None = field(init=False)
 
     filter: BaseFileFilter | None = None
 
@@ -126,8 +131,8 @@ class FileDownloader:
         source_path: os.PathLike | str | None,
         options: FileConnection.Options | dict | None,
     ):
-        self._local_path = Path(local_path).resolve()
-        self._source_path = PurePosixPath(source_path) if source_path else None
+        self._local_path = LocalPath(local_path).resolve()
+        self._source_path = RemotePath(source_path) if source_path else None
 
         if isinstance(options, dict):
             self._options = self.Options.parse_obj(options)
@@ -171,28 +176,26 @@ class FileDownloader:
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
             downloaded_files = downloader.run()
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/file2.txt"),
-                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/file2.txt"),
+                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
             }
             assert downloaded_files.failed == {FailedRemoteFile("/failed/file")}
             assert downloaded_files.skipped == {RemoteFile("/existing/file")}
-            assert downloaded_files.missing == {PurePosixPath("/missing/file")}
+            assert downloaded_files.missing == {RemotePath("/missing/file")}
 
         Download only certaing files from ``source_path``
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
@@ -206,8 +209,8 @@ class FileDownloader:
             )
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -217,8 +220,7 @@ class FileDownloader:
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(local_path="/local", ...)  # no source_path set
@@ -231,8 +233,8 @@ class FileDownloader:
             )
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/file3.txt"),  # directory structure is not preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/file3.txt"),  # directory structure is not preserved
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -367,11 +369,11 @@ class FileDownloader:
     def _validate_files(  # noqa: WPS231
         self,
         remote_files: Iterable[os.PathLike | str],
-    ) -> OrderedSet[tuple[PurePosixPath, Path]]:
+    ) -> OrderedSet[tuple[RemotePath, LocalPath]]:
         result = OrderedSet()
 
         for remote_file in remote_files:
-            remote_file_path = PurePosixPath(remote_file)
+            remote_file_path = RemotePath(remote_file)
 
             if not self._source_path:
                 # Download into a flat structure
@@ -411,7 +413,7 @@ class FileDownloader:
 
         self._local_path.mkdir(exist_ok=True, parents=True)
 
-    def _download_files(self, to_download: OrderedSet[tuple[PurePosixPath, Path]]) -> DownloadResult:
+    def _download_files(self, to_download: OrderedSet[tuple[RemotePath, LocalPath]]) -> DownloadResult:
         total_files = len(to_download)
 
         log.info(f"|{self.__class__.__name__}| Starting downloading {total_files} file(s)")
@@ -426,7 +428,7 @@ class FileDownloader:
 
         return result
 
-    def _download_file(self, source_file: PurePosixPath, local_file: Path, result: DownloadResult) -> None:
+    def _download_file(self, source_file: RemotePath, local_file: LocalPath, result: DownloadResult) -> None:
         if not self.connection.path_exists(source_file):
             log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
             result.missing.add(source_file)

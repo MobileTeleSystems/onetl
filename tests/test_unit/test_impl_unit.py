@@ -1,15 +1,16 @@
 import os
 import textwrap
-from pathlib import Path, PurePosixPath
 
 import pytest
 
 from onetl.impl import (
     FailedLocalFile,
     FailedRemoteFile,
+    LocalPath,
     RemoteDirectory,
     RemoteFile,
     RemoteFileStat,
+    RemotePath,
     humanize_path,
 )
 
@@ -18,30 +19,35 @@ from onetl.impl import (
     "path",
     [
         "a/b/c",
-        PurePosixPath("a/b/c"),
+        RemotePath("a/b/c"),
     ],
 )
 def test_remote_directory(path):
     remote_directory = RemoteDirectory(path)
 
-    assert remote_directory.path == PurePosixPath(path)
+    assert remote_directory.path == RemotePath(path)
     assert remote_directory.exists()
     assert remote_directory.is_dir()
     assert not remote_directory.is_file()
+
+    assert isinstance(remote_directory.parent, RemoteDirectory)
+
+    for parent in remote_directory.parents:
+        assert isinstance(parent, RemoteDirectory)
 
 
 @pytest.mark.parametrize(
     "path",
     [
         "a/b/c",
-        PurePosixPath("a/b/c"),
+        RemotePath("a/b/c"),
     ],
 )
 def test_remote_file(path):
     file_stat = RemoteFileStat(st_size=10, st_mtime=50)
     remote_file = RemoteFile(path, stats=file_stat)
 
-    assert remote_file.path == PurePosixPath(path)
+    assert remote_file.path == RemotePath(path)
     assert remote_file.stats == file_stat
 
     assert remote_file.exists()
@@ -49,19 +55,24 @@ def test_remote_file(path):
     assert remote_file.is_file()
     assert remote_file.stat() == file_stat
 
+    assert isinstance(remote_file.parent, RemoteDirectory)
+
+    for parent in remote_file.parents:
+        assert isinstance(parent, RemoteDirectory)
+
 
 @pytest.mark.parametrize(
     "path",
     [
         __file__,
-        Path(__file__),
+        LocalPath(__file__),
     ],
 )
 def test_failed_local_file(path):
     exception = FileNotFoundError("abc")
     remote_file = FailedLocalFile(path, exception)
 
-    assert remote_file.path == Path(path)
+    assert remote_file.path == LocalPath(path)
     assert remote_file.exception == exception
 
     assert remote_file.exists()
@@ -74,7 +85,7 @@ def test_failed_local_file(path):
     "path",
     [
         "a/b/c",
-        PurePosixPath("a/b/c"),
+        RemotePath("a/b/c"),
     ],
 )
 def test_failed_remote_file(path):
@@ -82,7 +93,7 @@ def test_failed_remote_file(path):
     file_stat = RemoteFileStat(st_size=10, st_mtime=50)
     remote_file = FailedRemoteFile(path=path, stats=file_stat, exception=exception)
 
-    assert remote_file.path == PurePosixPath(path)
+    assert remote_file.path == RemotePath(path)
     assert remote_file.exception == exception
     assert remote_file.stats == file_stat
 
@@ -90,6 +101,11 @@ def test_failed_remote_file(path):
     assert not remote_file.is_dir()
     assert remote_file.is_file()
     assert remote_file.stat() == file_stat
+
+    assert isinstance(remote_file.parent, RemoteDirectory)
+
+    for parent in remote_file.parents:
+        assert isinstance(parent, RemoteDirectory)
 
 
 def test_file_stat():
@@ -113,11 +129,11 @@ def test_file_stat():
 @pytest.mark.parametrize(
     "item1, item2",
     [
-        (PurePosixPath("a/b/c"), RemoteDirectory(path="a/b/c")),
-        (Path("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
-        (PurePosixPath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
+        (RemotePath("a/b/c"), RemoteDirectory(path="a/b/c")),
+        (LocalPath("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
+        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
         (
-            PurePosixPath("a/b/c"),
+            RemotePath("a/b/c"),
             FailedRemoteFile(
                 path="a/b/c",
                 stats=RemoteFileStat(st_size=0, st_mtime=0),
@@ -160,11 +176,11 @@ def test_path_compat(item1, item2):
 @pytest.mark.parametrize(
     "item1, item2",
     [
-        (PurePosixPath("a/b/c"), RemoteDirectory(path="a/b/c")),
-        (Path("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
-        (PurePosixPath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
+        (RemotePath("a/b/c"), RemoteDirectory(path="a/b/c")),
+        (LocalPath("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
+        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
         (
-            PurePosixPath("a/b/c"),
+            RemotePath("a/b/c"),
             FailedRemoteFile(
                 path="a/b/c",
                 stats=RemoteFileStat(st_size=0, st_mtime=0),
@@ -252,9 +268,9 @@ def test_failed_remote_file_eq():
 def test_humanize_path():
     assert humanize_path("a/b/c") == "a/b/c"
     assert humanize_path("/a/b/c/") == "/a/b/c"
-    assert humanize_path(PurePosixPath("a/b/c")) == "a/b/c"
+    assert humanize_path(RemotePath("a/b/c")) == "a/b/c"
     assert humanize_path(RemoteDirectory("a/b/c")) == "a/b/c (folder)"
-    assert humanize_path(Path("a/b/c")) == "a/b/c (missing)"
+    assert humanize_path(LocalPath("a/b/c")) == "a/b/c (missing)"
     assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "a/b/c (10 Bytes)"
 
     failed_file1 = FailedRemoteFile(
