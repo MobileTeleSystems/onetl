@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from onetl.base import BaseFileConnection
 from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
-from onetl.exception import DirectoryNotFoundError
+from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import FailedLocalFile, FileWriteMode
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
@@ -417,7 +417,7 @@ class FileUploader:
         current_dt = datetime.now().strftime(self.DATETIME_FORMAT)
         return self._temp_path / "onetl" / current_process.host / current_process.full_name / current_dt
 
-    def _validate_files(
+    def _validate_files(  # noqa: WPS231
         self,
         local_files: Iterable[os.PathLike | str],
         current_temp_dir: PurePosixPath,
@@ -425,39 +425,42 @@ class FileUploader:
         result = OrderedSet()
 
         for file in local_files:
-            file_path = Path(file)
+            local_file_path = Path(file)
 
             if not self._local_path:
                 # Upload into a flat structure
-                if not file_path.is_absolute():
+                if not local_file_path.is_absolute():
                     raise ValueError("Cannot pass relative file path with empty ``local_path``")
 
-                filename = file_path.name
+                filename = local_file_path.name
                 target_file = self._target_path / filename
                 tmp_file = current_temp_dir / filename
             else:
                 # Upload according to source folder structure
-                if self._local_path in file_path.parents:
+                if self._local_path in local_file_path.parents:
                     # Make relative remote path
-                    target_file = self._target_path / file_path.relative_to(self._local_path)
-                    tmp_file = current_temp_dir / file_path.relative_to(self._local_path)
-                elif not file_path.is_absolute():
+                    target_file = self._target_path / local_file_path.relative_to(self._local_path)
+                    tmp_file = current_temp_dir / local_file_path.relative_to(self._local_path)
+                elif not local_file_path.is_absolute():
                     # Passed already relative path
-                    relative_path = file_path
-                    file_path = self._local_path / relative_path
+                    relative_path = local_file_path
+                    local_file_path = self._local_path / relative_path
                     target_file = self._target_path / relative_path
                     tmp_file = current_temp_dir / relative_path
                 else:
                     # Wrong path (not relative path and source path not in the path to the file)
-                    raise ValueError(f"File path '{file_path}' does not match source_path '{self._local_path}'")
+                    raise ValueError(f"File path '{local_file_path}' does not match source_path '{self._local_path}'")
 
-            result.add((file_path, target_file, tmp_file))
+            if local_file_path.exists() and not local_file_path.is_file():
+                raise NotAFileError(f"|Local FS| '{local_file_path}' is not a file")
+
+            result.add((local_file_path, target_file, tmp_file))
 
         return result
 
     def _check_local_path(self):
         if not self._local_path.exists():
-            raise DirectoryNotFoundError(f"'{self._local_path}' does not exist")
+            raise DirectoryNotFoundError(f"|Local FS| '{self._local_path}' does not exist")
 
         if not self._local_path.is_dir():
-            raise NotADirectoryError(f"'{self._local_path}' is not a directory")
+            raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")

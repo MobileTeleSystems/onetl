@@ -6,7 +6,7 @@ from pathlib import Path, PurePosixPath
 import pytest
 
 from onetl.core import FileDownloader, FileFilter, FileSet
-from onetl.exception import DirectoryNotFoundError
+from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import FileWriteMode, RemoteFile
 
 
@@ -638,3 +638,24 @@ class TestDownloader:
 
             with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
                 downloader.run()
+
+    def test_run_input_is_not_file(self, request, file_connection, tmp_path_factory):
+        local_path = tmp_path_factory.mktemp("local_path")
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+        not_a_file = target_path / "not_a_file"
+
+        file_connection.mkdir(not_a_file)
+
+        def finalizer():
+            file_connection.rmdir(target_path, recursive=True)
+
+        request.addfinalizer(finalizer)
+
+        # upload files
+        downloader = FileDownloader(
+            connection=file_connection,
+            local_path=local_path,
+        )
+
+        with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
+            downloader.run([not_a_file])
