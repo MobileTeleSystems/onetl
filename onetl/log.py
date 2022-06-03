@@ -10,6 +10,9 @@ LOG_INDENT = 9
 LOG_FORMAT = "{asctime} [{levelname:8s}] {message}"
 CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
 
+DISABLED = 9999
+logging.addLevelName(DISABLED, "DISABLED")
+
 
 def setup_notebook_logging(level: int = logging.INFO) -> None:
     """Set up onETL logging. Should bese used only in Jupyter notebooks or scripts.
@@ -48,7 +51,7 @@ def disable_clients_logging() -> None:
     """
 
     for client_module in CLIENT_MODULES:
-        logging.getLogger(client_module).disabled = True
+        logging.getLogger(client_module).setLevel(DISABLED)
 
 
 def set_default_logging_format() -> None:

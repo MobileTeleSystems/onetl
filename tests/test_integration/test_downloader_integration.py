@@ -563,7 +563,7 @@ class TestDownloader:
         request.addfinalizer(finalizer)
 
         # upload files
-        uploader = FileDownloader(
+        downloader = FileDownloader(
             connection=file_connection,
             local_path=local_path,
         )
@@ -571,7 +571,7 @@ class TestDownloader:
         missing_file = target_path / "missing"
 
         with caplog.at_level(logging.WARNING):
-            download_result = uploader.run(upload_test_files + [missing_file])
+            download_result = downloader.run(upload_test_files + [missing_file])
 
             assert f"Missing file '{missing_file}', skipping" in caplog.text
 
