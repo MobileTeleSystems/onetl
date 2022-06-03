@@ -255,7 +255,7 @@ class Oracle(JDBCConnection):
             level_name = logging.getLevelName(error.level)
             prefix = f"[{level_name}] Line {error.line}, position {error.position}:"
             text = "\n" + messages.strip()
-            error_lines.append(prefix + indent(text, " " * LOG_INDENT))
+            error_lines.append(prefix + indent(text, LOG_INDENT))
 
         return "\n".join(error_lines)
 

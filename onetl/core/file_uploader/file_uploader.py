@@ -140,7 +140,7 @@ class FileUploader:
         if isinstance(options, dict):
             self._options = self.Options.parse_obj(options)
 
-    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231, WPS238 NOSONAR
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
         Method for uploading files to remote host.
 
@@ -211,32 +211,7 @@ class FileUploader:
         if files is None and not self._local_path:
             raise ValueError("Neither file collection nor ``local_path`` are passed")
 
-        # Log all options
-        entity_boundary_log(msg="FileUploader starts")
-        connection_class_name = self.connection.__class__.__name__
-
-        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files using parameters:'")
-        log.info(" " * LOG_INDENT + f"target_path = {self._target_path}")
-        log.info(" " * LOG_INDENT + f"local_path = {self._local_path}")
-        log.info(" " * LOG_INDENT + f"temp_path = {self._temp_path}")
-
-        log.info("")
-        log.info(" " * LOG_INDENT + "options:")
-        for option, value in self._options.dict().items():
-            log.info(" " * LOG_INDENT + f"    {option} = {value}")
-        log.info("")
-
-        if self._options.delete_local:
-            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
-
-        if self._options.mode == FileWriteMode.DELETE_ALL:
-            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
-
-        if files and self._local_path:
-            log.warning(
-                f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
-                "File collection will be used",
-            )
+        self._log_options(files)
 
         # Check everything
         if self._local_path:
@@ -248,78 +223,21 @@ class FileUploader:
         self.connection.mkdir(self._target_path)
 
         if files is None:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
 
         current_temp_dir = self.generate_temp_path()
         to_upload = self._validate_files(local_files=files, current_temp_dir=current_temp_dir)
-        total_files = len(to_upload)
 
-        # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
+        # remove folder only after everything is checked
         if self._options.mode == FileWriteMode.DELETE_ALL:
-            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
             self.connection.rmdir(self._target_path, recursive=True)
             self.connection.mkdir(self._target_path)
+
         self.connection.mkdir(current_temp_dir)
+        result = self._upload_files(to_upload)
+        self._remove_temp_dir(current_temp_dir)
 
-        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
-        result = UploadResult()
-
-        for i, (file, target_file, tmp_file) in enumerate(to_upload):  # noqa: WPS352
-            file_path = Path(file)
-
-            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(" " * LOG_INDENT + f"from = {file_path}")
-            log.info(" " * LOG_INDENT + f"to = {target_file}")
-
-            try:
-                if not file_path.exists():
-                    log.warning(f"|{self.__class__.__name__}| Missing file '{file_path}', skipping")
-                    result.missing.add(file_path)
-                    continue
-
-                replace = False
-                if self.connection.path_exists(target_file):
-                    error_message = f"Target directory already contains file '{target_file}'"
-                    if self._options.mode == FileWriteMode.ERROR:
-                        raise FileExistsError(error_message)
-
-                    if self._options.mode == FileWriteMode.IGNORE:
-                        log.warning(f"|{self.__class__.__name__}| {error_message}, skipping")
-                        result.skipped.add(file_path)
-                        continue
-
-                    replace = True
-                    log.warning(f"|{self.__class__.__name__}| {error_message}, overwriting")
-
-                self.connection.upload_file(file_path, tmp_file)
-
-                # Files are loaded to temporary directory before moving them to target dir.
-                # This prevents operations with partly uploaded files
-
-                uploaded_file = self.connection.rename_file(tmp_file, target_file, replace=replace)
-
-                # Remove files
-                if self._options.delete_local:
-                    file_path.unlink()
-                    log.warning(f"|LocalFS| Successfully removed file: '{file_path}'")
-
-                result.successful.add(uploaded_file)
-
-            except Exception as e:
-                log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)
-                result.failed.add(FailedLocalFile(path=file_path, exception=e))
-
-        try:
-            log.info(f"|{connection_class_name}| Removing temp directory: '{current_temp_dir}'")
-            self.connection.rmdir(current_temp_dir, recursive=True)
-        except Exception:
-            log.exception(f"|{self.__class__.__name__}| Error while removing temp directory")
-
-        log.info(f"|{self.__class__.__name__}| Upload result:")
-        log_with_indent(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
-
+        self._log_result(result)
         return result
 
     def view_files(self) -> FileSet[Path]:
@@ -417,6 +335,35 @@ class FileUploader:
         current_dt = datetime.now().strftime(self.DATETIME_FORMAT)
         return self._temp_path / "onetl" / current_process.host / current_process.full_name / current_dt
 
+    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(msg="FileUploader starts")
+
+        log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
+        log.info(LOG_INDENT + f"target_path = {self._target_path}")
+        log.info(LOG_INDENT + f"local_path = {self._local_path}")
+        log.info(LOG_INDENT + f"temp_path = {self._temp_path}")
+
+        log.info("")
+        log.info(LOG_INDENT + "options:")
+        for option, value in self._options.dict().items():
+            log.info(LOG_INDENT + f"    {option} = {value}")
+        log.info("")
+
+        if self._options.delete_local:
+            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
+
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
+
+        if files and self._local_path:
+            log.warning(
+                f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
+                "File collection will be used",
+            )
+
+        if not files:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
+
     def _validate_files(  # noqa: WPS231
         self,
         local_files: Iterable[os.PathLike | str],
@@ -464,3 +411,75 @@ class FileUploader:
 
         if not self._local_path.is_dir():
             raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
+
+    def _upload_files(self, to_upload: OrderedSet[tuple[Path, PurePosixPath, PurePosixPath]]) -> UploadResult:
+        total_files = len(to_upload)
+
+        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
+        result = UploadResult()
+
+        for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
+            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
+            log.info(LOG_INDENT + f"from = {local_file}")
+            log.info(LOG_INDENT + f"to = {target_file}")
+
+            self._upload_file(local_file, target_file, tmp_file, result)
+
+        return result
+
+    def _upload_file(
+        self,
+        local_file: Path,
+        target_file: PurePosixPath,
+        tmp_file: PurePosixPath,
+        result: UploadResult,
+    ) -> None:
+        if not local_file.exists():
+            log.warning(f"|{self.__class__.__name__}| Missing file '{local_file}', skipping")
+            result.missing.add(local_file)
+            return
+
+        try:
+            replace = False
+            if self.connection.path_exists(target_file):
+                error_message = f"Target directory already contains file '{target_file}'"
+                if self._options.mode == FileWriteMode.ERROR:
+                    raise FileExistsError(error_message)
+
+                if self._options.mode == FileWriteMode.IGNORE:
+                    log.warning(f"|{self.__class__.__name__}| {error_message}, skipping")
+                    result.skipped.add(local_file)
+                    return
+
+                replace = True
+                log.warning(f"|{self.__class__.__name__}| {error_message}, overwriting")
+
+            self.connection.upload_file(local_file, tmp_file)
+
+            # Files are loaded to temporary directory before moving them to target dir.
+            # This prevents operations with partly uploaded files
+
+            uploaded_file = self.connection.rename_file(tmp_file, target_file, replace=replace)
+
+            # Remove files
+            if self._options.delete_local:
+                local_file.unlink()
+                log.warning(f"|LocalFS| Successfully removed file: '{local_file}'")
+
+            result.successful.add(uploaded_file)
+
+        except Exception as e:
+            log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)
+            result.failed.add(FailedLocalFile(path=local_file, exception=e))
+
+    def _remove_temp_dir(self, temp_dir: PurePosixPath) -> None:
+        try:
+            log.info(f"|{self.connection.__class__.__name__}| Removing temp directory: '{temp_dir}'")
+            self.connection.rmdir(temp_dir, recursive=True)
+        except Exception:
+            log.exception(f"|{self.__class__.__name__}| Error while removing temp directory")
+
+    def _log_result(self, result: UploadResult) -> None:
+        log.info(f"|{self.__class__.__name__}| Upload result:")
+        log_with_indent(str(result))
+        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")

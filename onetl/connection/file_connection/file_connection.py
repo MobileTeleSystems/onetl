@@ -87,9 +87,9 @@ class FileConnection(BaseFileConnection):
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
-            log.info(" " * LOG_INDENT + f"type = {self.__class__.__name__}")
-            log.info(" " * LOG_INDENT + f"host = {self.host}")
-            log.info(" " * LOG_INDENT + f"user = {self.user}")
+            log.info(LOG_INDENT + f"type = {self.__class__.__name__}")
+            log.info(LOG_INDENT + f"host = {self.host}")
+            log.info(LOG_INDENT + f"user = {self.user}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
