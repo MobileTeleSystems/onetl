@@ -9,7 +9,7 @@ import pytest
 from etl_entities import Process
 
 from onetl.core import FileUploader
-from onetl.exception import DirectoryNotFoundError
+from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import FileWriteMode
 
 
@@ -421,6 +421,19 @@ class TestUploader:
 
         with pytest.raises(NotADirectoryError, match=f"'{target_path}' is not a directory"):
             uploader.run()
+
+    def test_run_input_is_not_file(self, file_connection, test_files):
+        target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+        # upload files
+        uploader = FileUploader(
+            connection=file_connection,
+            target_path=target_path,
+        )
+
+        with tempfile.TemporaryDirectory() as not_a_file:
+            with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
+                uploader.run([not_a_file])
 
     @pytest.mark.parametrize(
         "pass_local_path",

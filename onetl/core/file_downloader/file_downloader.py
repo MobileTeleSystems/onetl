@@ -14,6 +14,7 @@ from onetl.base import BaseFileFilter
 from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_result import FileSet
+from onetl.exception import NotAFileError
 from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
@@ -408,7 +409,10 @@ class FileDownloader:
 
         return result
 
-    def _validate_files(self, remote_files: Iterable[os.PathLike | str]) -> OrderedSet[tuple[PurePosixPath, Path]]:
+    def _validate_files(  # noqa: WPS231
+        self,
+        remote_files: Iterable[os.PathLike | str],
+    ) -> OrderedSet[tuple[PurePosixPath, Path]]:
         result = OrderedSet()
 
         for remote_file in remote_files:
@@ -435,16 +439,19 @@ class FileDownloader:
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{remote_file_path}' does not match source_path '{self._source_path}'")
 
+            if self.connection.path_exists(remote_file_path) and not self.connection.is_file(remote_file_path):
+                raise NotAFileError(f"|{self.connection.__class__.__name__}| '{remote_file_path}' is not a file")
+
             result.add((remote_file_path, local_file_path))
 
         return result
 
     def _check_source_path(self):
         if not self.connection.is_dir(self._source_path):
-            raise NotADirectoryError(f"'{self._source_path}' is not a directory")
+            raise NotADirectoryError(f"|{self.connection.__class__.__name__}| '{self._source_path}' is not a directory")
 
     def _check_local_path(self):
         if self._local_path.exists() and not self._local_path.is_dir():
-            raise NotADirectoryError(f"'{self._local_path}' is not a directory")
+            raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
 
         self._local_path.mkdir(exist_ok=True, parents=True)
