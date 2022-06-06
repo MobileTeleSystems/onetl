@@ -1,4 +1,5 @@
 import os
+import textwrap
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -9,6 +10,7 @@ from onetl.impl import (
     RemoteDirectory,
     RemoteFile,
     RemoteFileStat,
+    humanize_path,
 )
 
 
@@ -245,3 +247,35 @@ def test_failed_remote_file_eq():
 
     assert FailedRemoteFile(path1, stats1, exception1) != FailedRemoteFile(path1, stats1, exception2)
     assert FailedRemoteFile(path1, stats1, exception2) != FailedRemoteFile(path1, stats1, exception1)
+
+
+def test_humanize_path():
+    assert humanize_path("a/b/c") == "a/b/c"
+    assert humanize_path("/a/b/c/") == "/a/b/c"
+    assert humanize_path(PurePosixPath("a/b/c")) == "a/b/c"
+    assert humanize_path(RemoteDirectory("a/b/c")) == "a/b/c (folder)"
+    assert humanize_path(Path("a/b/c")) == "a/b/c (missing)"
+    assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "a/b/c (10 Bytes)"
+
+    failed_file1 = FailedRemoteFile(
+        path="a/b/c",
+        stats=RemoteFileStat(st_size=55 * 1024, st_mtime=0),
+        exception=FileNotFoundError("abc"),
+    )
+    failed_file1_str = """
+        a/b/c (56.3 kB)
+            FileNotFoundError('abc')
+    """
+    assert humanize_path(failed_file1).strip() == textwrap.dedent(failed_file1_str).strip()
+
+    failed_file2 = FailedRemoteFile(
+        path="a/b/c",
+        stats=RemoteFileStat(st_size=55 * 1024, st_mtime=0),
+        exception=FileExistsError("cde\ndef"),
+    )
+    failed_file2_str = """
+        a/b/c (56.3 kB)
+            FileExistsError('cde
+            def')
+    """
+    assert humanize_path(failed_file2).strip() == textwrap.dedent(failed_file2_str).strip()
