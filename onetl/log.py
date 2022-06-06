@@ -6,7 +6,7 @@ onetl_log = logging.getLogger("onetl")
 root_log = logging.getLogger()
 
 HALF_SCREEN_SIZE = 45
-LOG_INDENT = 9
+LOG_INDENT = " " * 9
 LOG_FORMAT = "{asctime} [{levelname:8s}] {message}"
 CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
 
@@ -71,7 +71,7 @@ def set_default_logging_format() -> None:
 
 def log_with_indent(inp: str, level: int = logging.INFO) -> None:
     for line in dedent(inp).splitlines():
-        log.log(level, " " * LOG_INDENT + line)
+        log.log(level, LOG_INDENT + line)
 
 
 def entity_boundary_log(msg: str, char: str = "=") -> None:

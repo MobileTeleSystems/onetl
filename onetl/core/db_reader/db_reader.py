@@ -258,12 +258,12 @@ class DBReader:
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+                log.info(LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "options:")
+        log.info(LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
-            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+            log.info(LOG_INDENT + f"    {option} = {value}")
         log.info("")
 
         self.connection.log_parameters()
