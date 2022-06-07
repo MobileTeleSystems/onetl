@@ -35,6 +35,8 @@ def test_remote_directory(path):
     for parent in remote_directory.parents:
         assert isinstance(parent, RemoteDirectory)
 
+    assert repr(remote_directory) == "RemoteDirectory('a/b/c')"
+
 
 @pytest.mark.parametrize(
     "path",
@@ -60,6 +62,8 @@ def test_remote_file(path):
     for parent in remote_file.parents:
         assert isinstance(parent, RemoteDirectory)
 
+    assert repr(remote_file) == "RemoteFile('a/b/c')"
+
 
 @pytest.mark.parametrize(
     "path",
@@ -79,6 +83,8 @@ def test_failed_local_file(path):
     assert not remote_file.is_dir()
     assert remote_file.is_file()
     assert remote_file.stat()
+
+    assert repr(remote_file) == f"FailedLocalFile('{path}', FileNotFoundError('abc'))"
 
 
 @pytest.mark.parametrize(
@@ -106,6 +112,8 @@ def test_failed_remote_file(path):
 
     for parent in remote_file.parents:
         assert isinstance(parent, RemoteDirectory)
+
+    assert repr(remote_file) == "FailedRemoteFile('a/b/c', FileNotFoundError('abc'))"
 
 
 def test_file_stat():
@@ -269,7 +277,7 @@ def test_humanize_path():
     assert humanize_path("a/b/c") == "a/b/c"
     assert humanize_path("/a/b/c/") == "/a/b/c"
     assert humanize_path(RemotePath("a/b/c")) == "a/b/c"
-    assert humanize_path(RemoteDirectory("a/b/c")) == "a/b/c (folder)"
+    assert humanize_path(RemoteDirectory("a/b/c")) == "a/b/c (directory)"
     assert humanize_path(LocalPath("a/b/c")) == "a/b/c (missing)"
     assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "a/b/c (10 Bytes)"
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from onetl.impl.local_path import LocalPath
@@ -17,6 +18,9 @@ class FailedLocalFile(PathContainer[LocalPath]):
     def __post_init__(self):
         # frozen=True does not allow to change any field in __post_init__, small hack here
         object.__setattr__(self, "path", LocalPath(self.path))  # noqa: WPS609
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{os.fspath(self.path)}', {self.exception!r})"
 
     # exceptions are not allowed to compare, another small hack
     def _compare_tuple(self, args) -> tuple:

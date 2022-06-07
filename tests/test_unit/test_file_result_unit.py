@@ -3,7 +3,6 @@ import textwrap
 from pathlib import PurePath
 
 import pytest
-from ordered_set import OrderedSet
 
 from onetl.core import FileResult, FileSet
 from onetl.exception import FileResultError
@@ -29,14 +28,15 @@ def test_file_result_successful():
     assert file_result.successful_size == (10 + 20) * 1024
 
     details = """
-        Successful 3 file(s) (30.7 kB):
+        Successful 3 files (30.7 kB):
             /successful1 (10.2 kB)
             /successful2 (20.5 kB)
             cannot/detect/size1
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
-    assert "Successful 3 file(s) (30.7 kB)" in str(file_result)
+    assert textwrap.dedent(details).strip() in str(file_result)
+    assert "Successful: 3 files (30.7 kB)" in file_result.summary
 
 
 def test_file_result_raise_if_no_successful():
@@ -60,7 +60,7 @@ def test_file_result_raise_if_zero_size():
     ]
 
     details = """
-        1 file(s) out of 3 have zero size:
+        1 file out of 3 have zero size:
             /empty
     """
 
@@ -99,7 +99,7 @@ def test_file_result_failed():
     assert file_result.failed_size == (11 + 22) * 1024 * 1024
 
     details = """
-        Failed 3 file(s) (34.6 MB):
+        Failed 3 files (34.6 MB):
             /failed1 (11.5 MB)
                 FileExistsError('abc')
 
@@ -111,7 +111,8 @@ def test_file_result_failed():
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
-    assert "Failed 3 file(s) (34.6 MB)" in str(file_result)
+    assert textwrap.dedent(details).strip() in str(file_result)
+    assert "Failed: 3 files (34.6 MB)" in file_result.summary
 
 
 def test_file_result_raise_if_failed():
@@ -130,7 +131,7 @@ def test_file_result_raise_if_failed():
     ]
 
     details = """
-        Failed 3 file(s) (34.6 MB):
+        Failed 3 files (34.6 MB):
             /failed1 (11.5 MB)
                 FileExistsError('abc')
 
@@ -168,13 +169,14 @@ def test_file_result_skipped():
     assert file_result.skipped_size == 12 * 1024 * 1024 * 1024
 
     details = """
-        Skipped 2 file(s) (12.9 GB):
+        Skipped 2 files (12.9 GB):
             /skipped1 (12.9 GB)
             cannot/detect/size3
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
-    assert "Skipped 2 file(s) (12.9 GB)" in str(file_result)
+    assert textwrap.dedent(details).strip() in str(file_result)
+    assert "Skipped: 2 files (12.9 GB)" in file_result.summary
 
 
 def test_file_result_raise_if_skipped():
@@ -184,7 +186,7 @@ def test_file_result_raise_if_skipped():
     ]
 
     details = """
-        Skipped 2 file(s) (12.9 GB):
+        Skipped 2 files (12.9 GB):
             /skipped1 (12.9 GB)
             cannot/detect/size3
     """
@@ -201,42 +203,43 @@ def test_file_result_missing():
     missing = [
         PurePath("/missing1"),
         PurePath("/missing2"),
-        LocalPath("missing"),
+        LocalPath("cannot/detect/size4"),
     ]
 
     file_result = FileResult(missing=missing)
 
     assert file_result.missing
 
-    assert isinstance(file_result.missing, OrderedSet)
-    assert file_result.missing == OrderedSet(missing)
+    assert isinstance(file_result.missing, FileSet)
+    assert file_result.missing == FileSet(missing)
 
     assert len(file_result.missing) == 3
     assert file_result.missing_count == 3
 
     details = """
-        Missing 3 file(s):
+        Missing 3 files:
             /missing1
             /missing2
-            missing
+            cannot/detect/size4 (missing)
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
-    assert "Missing 3 file(s)" in str(file_result)
+    assert textwrap.dedent(details).strip() in str(file_result)
+    assert "Missing: 3 files" in file_result.summary
 
 
 def test_file_result_raise_if_missing():
     missing = [
         PurePath("/missing1"),
         PurePath("/missing2"),
-        LocalPath("missing"),
+        LocalPath("cannot/detect/size4"),
     ]
 
     details = """
-        Missing 3 file(s):
+        Missing 3 files:
             /missing1
             /missing2
-            missing
+            cannot/detect/size4 (missing)
     """
 
     error_message = re.escape(textwrap.dedent(details).strip())
@@ -264,7 +267,7 @@ def test_file_result_empty():
     assert file_result.failed_size == 0
     assert file_result.skipped_size == 0
 
-    assert str(file_result) == "No files"
+    assert file_result.summary == "No files"
 
     details = """
         No successful files
@@ -276,7 +279,7 @@ def test_file_result_empty():
         No missing files
     """
 
-    assert textwrap.dedent(details).strip() == file_result.details
+    assert textwrap.dedent(details).strip() == file_result.details == str(file_result)
 
 
 def test_file_result_raise_if_empty():
@@ -326,27 +329,31 @@ def test_file_result_total():
     assert file_result.total_count == 4
     assert file_result.total_size == 6 * 1024 * 1024 * 1024
 
-    total = """
-        Total 4 file(s) (6.4 GB)
-        Successful 1 file(s) (1.1 GB)
-        Failed 1 file(s) (2.1 GB)
-        Skipped 1 file(s) (3.2 GB)
-        Missing 1 file(s)
+    summary = """
+        Total: 4 files (6.4 GB)
+        Successful: 1 file (1.1 GB)
+        Failed: 1 file (2.1 GB)
+        Skipped: 1 file (3.2 GB)
+        Missing: 1 file
     """
 
-    assert textwrap.dedent(total).strip() == str(file_result)
+    assert textwrap.dedent(summary).strip() == file_result.summary
 
     details = """
-        Total 4 file(s) (6.4 GB)
+        Total: 4 files (6.4 GB)
 
-        Successful: /successful1 (1.1 GB)
+        Successful 1 file (1.1 GB):
+            /successful1 (1.1 GB)
 
-        Failed: /failed1 (2.1 GB)
+        Failed 1 file (2.1 GB):
+            /failed1 (2.1 GB)
                 FileExistsError('abc')
 
-        Skipped: /skipped1 (3.2 GB)
+        Skipped 1 file (3.2 GB):
+            /skipped1 (3.2 GB)
 
-        Missing: /missing1
+        Missing 1 file:
+            /missing1
     """
 
-    assert textwrap.dedent(details).strip() == file_result.details
+    assert textwrap.dedent(details).strip() == file_result.details == str(file_result)

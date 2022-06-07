@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from onetl.base import FileStatProtocol
@@ -19,6 +20,9 @@ class RemoteFile(PathContainer[RemotePath]):
     def __post_init__(self):
         # frozen=True does not allow to change any field in __post_init__, small hack here
         object.__setattr__(self, "path", RemotePath(self.path))  # noqa: WPS609
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{os.fspath(self.path)}')"
 
     def is_dir(self) -> bool:
         return False
@@ -48,6 +52,9 @@ class FailedRemoteFile(RemoteFile):
     """
 
     exception: Exception
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{os.fspath(self.path)}', {self.exception!r})"
 
     # exceptions are not allowed to compare, small hack here
     def _compare_tuple(self, args) -> tuple:
