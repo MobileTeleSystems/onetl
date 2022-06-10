@@ -27,10 +27,10 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileSet
 
-            file_set = FileSet({Path("/some/file"), Path("/some/another.file")})
+            file_set = FileSet({LocalPath("/some/file"), LocalPath("/some/another.file")})
 
             assert file_set.total_size == 1_000_000  # in bytes
         """

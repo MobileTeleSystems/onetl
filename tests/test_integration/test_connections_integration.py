@@ -8,6 +8,7 @@ from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection import HDFS
 from onetl.connection.file_connection import hdfs
+from onetl.impl import RemotePath
 
 
 class TestFileConnectionIntegration:
@@ -43,7 +44,7 @@ class TestFileConnectionIntegration:
     def test_mkdir(self, file_connection, upload_test_files, path_type):
         file_connection.mkdir(path_type("/some_dir"))
 
-        assert PurePosixPath("some_dir") in file_connection.listdir("/")
+        assert RemotePath("some_dir") in file_connection.listdir("/")
 
     @pytest.mark.parametrize("path_type", [str, PurePosixPath])
     def test_rename_file(self, file_connection, upload_test_files, path_type):
@@ -55,8 +56,8 @@ class TestFileConnectionIntegration:
 
         list_dir = file_connection.listdir("/export/news_parse/exclude_dir/")
 
-        assert PurePosixPath("file_55.txt") in list_dir
-        assert PurePosixPath("file_5.txt") not in list_dir
+        assert RemotePath("file_55.txt") in list_dir
+        assert RemotePath("file_5.txt") not in list_dir
 
     def test_check(self, file_connection, caplog):
         # client is not opened, not an error

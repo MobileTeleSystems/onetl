@@ -4,7 +4,6 @@ import os
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from logging import getLogger
-from pathlib import Path, PurePosixPath
 from typing import ClassVar, Iterable
 
 from etl_entities import ProcessStackManager
@@ -15,7 +14,7 @@ from onetl.base import BaseFileConnection
 from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
 from onetl.exception import DirectoryNotFoundError, NotAFileError
-from onetl.impl import FailedLocalFile, FileWriteMode
+from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemotePath
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -31,7 +30,7 @@ class FileUploader:
         Class which contains File system connection properties. See in FileConnection section.
 
     target_path : str
-        Path on remote source where you upload files.
+        Remote path where want you upload files to.
 
     temp_path : str, default: ``/tmp``
         Remote path where files uploaded firstly
@@ -111,13 +110,13 @@ class FileUploader:
     connection: BaseFileConnection
 
     target_path: InitVar[str | os.PathLike]
-    _target_path: PurePosixPath = field(init=False)
+    _target_path: RemotePath = field(init=False)
 
     local_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _local_path: Path | None = field(init=False)
+    _local_path: LocalPath | None = field(init=False)
 
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
-    _temp_path: PurePosixPath = field(init=False)
+    _temp_path: RemotePath = field(init=False)
 
     options: InitVar[Options | dict | None] = field(default=None)
     _options: Options = field(init=False)
@@ -132,9 +131,9 @@ class FileUploader:
         temp_path: str | os.PathLike,
         options: str | os.FileConnection.Options | dict | None,
     ):
-        self._target_path = PurePosixPath(target_path)
-        self._local_path = Path(local_path).resolve() if local_path else None
-        self._temp_path = PurePosixPath(temp_path)
+        self._target_path = RemotePath(target_path)
+        self._local_path = LocalPath(local_path).resolve() if local_path else None
+        self._temp_path = RemotePath(temp_path)
         self._options = options or self.Options()
 
         if isinstance(options, dict):
@@ -179,8 +178,10 @@ class FileUploader:
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import (
+                RemoteFile,
+                LocalPath,
+            )
             from onetl.core import FileUploader
 
             uploader = FileUploader(local_path="/local", target_path="/remote", ...)
@@ -204,8 +205,8 @@ class FileUploader:
                 RemoteFile("/remote/file2"),
             }
             assert uploaded_files.failed == {FailedLocalFile("/failed/file")}
-            assert uploaded_files.skipped == {Path("/existing/file")}
-            assert uploaded_files.missing == {PurePath("/missing/file")}
+            assert uploaded_files.skipped == {LocalPath("/existing/file")}
+            assert uploaded_files.missing == {LocalPath("/missing/file")}
         """
 
         if files is None and not self._local_path:
@@ -240,7 +241,7 @@ class FileUploader:
         self._log_result(result)
         return result
 
-    def view_files(self) -> FileSet[Path]:
+    def view_files(self) -> FileSet[LocalPath]:
         """
         Get file collection in the ``local_path``
 
@@ -256,7 +257,7 @@ class FileUploader:
 
         Returns
         -------
-        FileSet[Path]
+        FileSet[LocalPath]
             Set of files in ``local_path``
 
         Examples
@@ -266,7 +267,7 @@ class FileUploader:
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onetl.core import FileUploader
 
             uploader = FileUploader(local_path="/local/path", ...)
@@ -274,9 +275,9 @@ class FileUploader:
             view_files = uploader.view_files()
 
             assert view_files == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/file3.txt"),
-                Path("/local/path/nested/file3.txt"),
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/file3.txt"),
+                LocalPath("/local/path/nested/file3.txt"),
             }
         """
 
@@ -288,7 +289,7 @@ class FileUploader:
         try:
             for root, dirs, files in os.walk(self._local_path):
                 log.debug(f"|Local FS| Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}")
-                result.update(Path(root) / file for file in files)
+                result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
                 f"Couldn't read directory tree from local dir {self._local_path}",
@@ -296,13 +297,13 @@ class FileUploader:
 
         return result
 
-    def generate_temp_path(self) -> PurePosixPath:
+    def generate_temp_path(self) -> RemotePath:
         """
         Returns path prefix which will be used for creating temp directory
 
         Returns
         -------
-        PurePosixPath
+        RemotePath
             Temp path on remote file system, containing current host name, process name and datetime
 
         Examples
@@ -314,19 +315,19 @@ class FileUploader:
 
             from etl_entities import Process
 
-            from pathlib import PurePosixPath
+            from onetl.impl import RemotePath
             from onetl.core import FileUploader
 
             uploader1 = FileUploader(local_path="/local/path", ...)
 
-            assert uploader1.generate_temp_path() == PurePosixPath(
+            assert uploader1.generate_temp_path() == RemotePath(
                 "/tmp/onetl/currenthost/myprocess/20220524122150",
             )
 
             uploader2 = FileUploader(local_path="/local/path", temp_path="/abc")
             with Process(dag="mydag", task="mytask"):
                 temp_parent_path = uploader2.generate_temp_path()
-                assert temp_parent_path == PurePosixPath(
+                assert temp_parent_path == RemotePath(
                     "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
                 )
         """
@@ -367,12 +368,12 @@ class FileUploader:
     def _validate_files(  # noqa: WPS231
         self,
         local_files: Iterable[os.PathLike | str],
-        current_temp_dir: PurePosixPath,
-    ) -> OrderedSet[tuple[Path, PurePosixPath, PurePosixPath]]:
+        current_temp_dir: RemotePath,
+    ) -> OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]:
         result = OrderedSet()
 
         for file in local_files:
-            local_file_path = Path(file)
+            local_file_path = LocalPath(file)
 
             if not self._local_path:
                 # Upload into a flat structure
@@ -412,7 +413,7 @@ class FileUploader:
         if not self._local_path.is_dir():
             raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
 
-    def _upload_files(self, to_upload: OrderedSet[tuple[Path, PurePosixPath, PurePosixPath]]) -> UploadResult:
+    def _upload_files(self, to_upload: OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]) -> UploadResult:
         total_files = len(to_upload)
 
         log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
@@ -429,9 +430,9 @@ class FileUploader:
 
     def _upload_file(
         self,
-        local_file: Path,
-        target_file: PurePosixPath,
-        tmp_file: PurePosixPath,
+        local_file: LocalPath,
+        target_file: RemotePath,
+        tmp_file: RemotePath,
         result: UploadResult,
     ) -> None:
         if not local_file.exists():
@@ -472,7 +473,7 @@ class FileUploader:
             log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)
             result.failed.add(FailedLocalFile(path=local_file, exception=e))
 
-    def _remove_temp_dir(self, temp_dir: PurePosixPath) -> None:
+    def _remove_temp_dir(self, temp_dir: RemotePath) -> None:
         try:
             log.info(f"|{self.connection.__class__.__name__}| Removing temp directory: '{temp_dir}'")
             self.connection.rmdir(temp_dir, recursive=True)

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from logging import getLogger
-from pathlib import Path, PurePosixPath
 from stat import S_ISDIR, S_ISREG
 
 from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
@@ -11,8 +10,9 @@ from paramiko.sftp_attr import SFTPAttributes
 from paramiko.sftp_client import SFTPClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.impl import LocalPath, RemotePath
 
-SSH_CONFIG_PATH = Path("~/.ssh/config").expanduser().resolve()
+SSH_CONFIG_PATH = LocalPath("~/.ssh/config").expanduser().resolve()
 
 log = getLogger(__name__)
 
@@ -123,11 +123,11 @@ class SFTP(FileConnection):
 
         return host_proxy, key_file
 
-    def _mkdir(self, path: os.PathLike | str) -> None:
+    def _mkdir(self, path: RemotePath) -> None:
         try:
             self.client.stat(os.fspath(path))
         except Exception:
-            for parent in reversed(PurePosixPath(path).parents):
+            for parent in reversed(path.parents):
                 try:  # noqa: WPS505
                     self.client.stat(os.fspath(parent))
                 except Exception:
@@ -135,59 +135,59 @@ class SFTP(FileConnection):
 
             self.client.mkdir(os.fspath(path))
 
-    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+    def _upload_file(self, local_file_path: RemotePath, remote_file_path: RemotePath) -> None:
         self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
+    def _rename(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
 
-    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: RemotePath) -> None:
         self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rmdir(self, path: os.PathLike | str) -> None:
+    def _rmdir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
 
-    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _listdir(self, path: os.PathLike | str) -> list:
+    def _listdir(self, path: RemotePath) -> list:
         return self.client.listdir_attr(os.fspath(path))
 
-    def _is_dir(self, path: os.PathLike | str) -> bool:
+    def _is_dir(self, path: RemotePath) -> bool:
         stat: SFTPAttributes = self.client.stat(os.fspath(path))
         return S_ISDIR(stat.st_mode)
 
-    def _is_file(self, path: os.PathLike | str) -> bool:
+    def _is_file(self, path: RemotePath) -> bool:
         stat: SFTPAttributes = self.client.stat(os.fspath(path))
         return S_ISREG(stat.st_mode)
 
-    def _get_stat(self, path: os.PathLike | str) -> SFTPAttributes:
+    def _get_stat(self, path: RemotePath) -> SFTPAttributes:
         return self.client.stat(os.fspath(path))
 
     def _get_item_name(self, item: SFTPAttributes) -> str:
         return item.filename
 
-    def _is_item_dir(self, top: os.PathLike | str, item: SFTPAttributes) -> bool:
+    def _is_item_dir(self, top: RemotePath, item: SFTPAttributes) -> bool:
         return S_ISDIR(item.st_mode)
 
-    def _is_item_file(self, top: os.PathLike | str, item: SFTPAttributes) -> bool:
+    def _is_item_file(self, top: RemotePath, item: SFTPAttributes) -> bool:
         return S_ISREG(item.st_mode)
 
-    def _get_item_stat(self, top: os.PathLike | str, item: SFTPAttributes) -> SFTPAttributes:
+    def _get_item_stat(self, top: RemotePath, item: SFTPAttributes) -> SFTPAttributes:
         return item
 
-    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.open(os.fspath(path), mode="r", **kwargs) as file:
             return file.read().decode(encoding)
 
-    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
         with self.client.open(os.fspath(path), mode="r", **kwargs) as file:
             return file.read()
 
-    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content.encode(encoding))
 
-    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content)

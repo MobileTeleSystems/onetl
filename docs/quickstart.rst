@@ -132,7 +132,7 @@ Download files from FTP & upload them to HDFS.
     download_result
 
     #  DownloadResult(
-    #      successful=[Path('/local/onetl/Report/file_1.json'), Path('/local/onetl/Report/file_2.json')],
+    #      successful=[LocalPath('/local/onetl/Report/file_1.json'), LocalPath('/local/onetl/Report/file_2.json')],
     #      failed=[FailedRemoteFile('/remote/onetl/Report/file_3.json')],
     #      ignored=[RemoteFile('/remote/onetl/Report/file_4.json')],
     #      missing=[],
@@ -145,7 +145,7 @@ Download files from FTP & upload them to HDFS.
     renamed_files = my_rename_function(download_result.success)
 
     # function removed "_" from file names
-    # [Path('/home/onetl/Report/file1.json'), Path('/home/onetl/Report/file2.json')]
+    # [LocalPath('/home/onetl/Report/file1.json'), LocalPath('/home/onetl/Report/file2.json')]
 
     # Initiate HDFS connection
     hdfs = HDFS(

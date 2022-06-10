@@ -7,7 +7,13 @@ import pytest
 
 from onetl.core import FileDownloader, FileFilter, FileSet
 from onetl.exception import DirectoryNotFoundError, NotAFileError
-from onetl.impl import FileWriteMode, RemoteFile
+from onetl.impl import (
+    FailedRemoteFile,
+    FileWriteMode,
+    LocalPath,
+    RemoteFile,
+    RemotePath,
+)
 
 
 class TestDownloader:
@@ -23,7 +29,7 @@ class TestDownloader:
 
         for root, _dirs, files in file_connection.walk(source_path):
             for file in files:
-                remote_files_list.append(PurePosixPath(root) / file)
+                remote_files_list.append(RemotePath(root) / file)
 
         assert remote_files
         assert sorted(remote_files) == sorted(remote_files_list)
@@ -55,6 +61,8 @@ class TestDownloader:
         )
 
         for local_file in download_result.successful:
+            assert isinstance(local_file, LocalPath)
+
             assert local_file.exists()
             assert local_file.is_file()
             assert not local_file.is_dir()
@@ -405,6 +413,8 @@ class TestDownloader:
         assert sorted(download_result.failed) == sorted(upload_test_files)
 
         for remote_file in download_result.failed:
+            assert isinstance(remote_file, FailedRemoteFile)
+
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -456,6 +466,8 @@ class TestDownloader:
         assert sorted(download_result.skipped) == sorted(upload_test_files)
 
         for remote_file in download_result.skipped:
+            assert isinstance(remote_file, RemoteFile)
+
             assert remote_file.exists()
             assert remote_file.is_file()
             assert not remote_file.is_dir()
@@ -584,6 +596,7 @@ class TestDownloader:
         assert len(download_result.missing) == 1
 
         assert download_result.missing == {missing_file}
+        assert isinstance(download_result.missing[0], RemotePath)
 
     def test_source_path_does_not_exist(self, file_connection, tmp_path_factory):
         local_path = tmp_path_factory.mktemp("local_path")
