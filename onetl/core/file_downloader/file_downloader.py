@@ -337,8 +337,8 @@ class FileDownloader:
         entity_boundary_log(msg="FileDownloader starts")
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
-        log.info(LOG_INDENT + f"local_path = {self._local_path}")
         log.info(LOG_INDENT + f"source_path = {self._source_path}")
+        log.info(LOG_INDENT + f"local_path = {self._local_path}")
 
         if self.filter:
             log.info("")

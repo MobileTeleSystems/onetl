@@ -340,8 +340,8 @@ class FileUploader:
         entity_boundary_log(msg="FileUploader starts")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
-        log.info(LOG_INDENT + f"target_path = {self._target_path}")
         log.info(LOG_INDENT + f"local_path = {self._local_path}")
+        log.info(LOG_INDENT + f"target_path = {self._target_path}")
         log.info(LOG_INDENT + f"temp_path = {self._temp_path}")
 
         log.info("")
