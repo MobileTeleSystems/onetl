@@ -135,4 +135,4 @@ class FileFilter(BaseFileFilter, BaseModel):
     def log_options(self):
         log.info(LOG_INDENT + "filter:")
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(LOG_INDENT + f"{key} = {value}")
+            log.info(LOG_INDENT + f"    {key} = {value}")
