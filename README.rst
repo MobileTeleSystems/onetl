@@ -22,9 +22,9 @@ onETL
 What is onETL?
 --------------
 
-* `onETL` is a Python ETL framework powered by `Apache Spark <https://spark.apache.org/>`_ & other open-source tools
-* `onETL` provides unified classes to read & write data to various stores (**E/L**). Different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ are available
-* `onETL` **does not do T = Transformation**. We highly recommend to use PySpark/Python for this
+* ``onETL`` is a Python ETL framework powered by `Apache Spark <https://spark.apache.org/>`_ & other open-source tools
+* ``onETL``` provides unified classes to read & write data to various stores (**E/L**). Different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ are available
+* ``onETL`` **does not do T = Transformation**. We highly recommend to use PySpark/Python for this
 * (TBD) onETL can send data lineage to data catalog (`Apache Atlas <https://atlas.apache.org/#/>`_)
 
 
