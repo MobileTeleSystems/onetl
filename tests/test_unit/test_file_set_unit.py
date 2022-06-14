@@ -1,5 +1,7 @@
+import textwrap
+
 from onetl.core import FileSet
-from onetl.impl import RemoteFile, RemoteFileStat
+from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemoteFileStat
 
 
 def test_file_set():
@@ -46,3 +48,29 @@ def test_file_set():
     empty_file_set = FileSet()
     assert not empty_file_set
     assert len(empty_file_set) == 0  # noqa: WPS507
+
+
+def test_file_set_details():
+    path1 = RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))
+    path2 = RemoteDirectory("a/b/c/d")
+    path3 = LocalPath("a/b/c/e")
+    path4 = "a/b/c/f"
+
+    items = [path1, path2, path3, path4]
+
+    file_set = FileSet(items)
+
+    summary = "4 files (10 Bytes)"
+    details = """
+        4 files (10 Bytes):
+            a/b/c (10 Bytes)
+            a/b/c/d (directory)
+            a/b/c/e (missing)
+            a/b/c/f
+    """
+
+    assert file_set.details == str(file_set) == textwrap.dedent(details).strip()
+    assert file_set.summary == summary
+
+    empty_file_set = FileSet()
+    assert empty_file_set.details == empty_file_set.summary == str(empty_file_set) == "No files"

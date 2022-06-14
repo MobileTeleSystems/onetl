@@ -21,7 +21,7 @@ def humanize_path(path: os.PathLike | str) -> str:
             result = result + " (missing)"
 
         elif path.is_dir():
-            result = result + " (folder)"
+            result = result + " (directory)"
 
         elif isinstance(path, SizedPathProtocol):
             size = naturalsize(path.stat().st_size)

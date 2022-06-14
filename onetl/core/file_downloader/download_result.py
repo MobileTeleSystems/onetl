@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ordered_set import OrderedSet
 from pydantic import Field
 
 from onetl.core.file_result import FileResult, FileSet
@@ -54,4 +53,4 @@ class DownloadResult(FileResult):
     successful: FileSet[LocalPath] = Field(default_factory=FileSet)
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
-    missing: OrderedSet[RemotePath] = Field(default_factory=OrderedSet)
+    missing: FileSet[RemotePath] = Field(default_factory=FileSet)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from onetl.impl.path_container import PathContainer
@@ -32,3 +33,6 @@ class RemoteDirectory(PathContainer[RemotePath]):
     @property
     def parents(self) -> list[RemoteDirectory]:
         return [RemoteDirectory(parent) for parent in self.path.parents]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{os.fspath(self.path)}')"
