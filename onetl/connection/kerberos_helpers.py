@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
+from shlex import quote
 from subprocess import check_call
 
 log = getLogger(__name__)
@@ -14,8 +15,9 @@ def kinit(user: str, keytab: os.PathLike | None = None, password: str | None = N
     if keytab:
         log_cmd = cmd = f"kinit {user} -k -t {os.fspath(keytab)}"  # noqa: WPS429
     elif password:
-        cmd = f"echo '{password}' | kinit {user}"
-        log_cmd = cmd.replace(password, "***")
+        quoted_password = quote(password)
+        cmd = f"echo {quoted_password} | kinit {user}"
+        log_cmd = cmd.replace(quoted_password, "***")
 
     log.info(f"|onETL| Executing kerberos auth command: {log_cmd}")
     check_call(cmd, shell=True)  # noqa: S602
