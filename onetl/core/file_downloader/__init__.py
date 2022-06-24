@@ -1,1 +1,2 @@
+from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_downloader.file_downloader import FileDownloader

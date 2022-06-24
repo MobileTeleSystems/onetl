@@ -1,7 +1,7 @@
 import logging
-import shutil
 import os
 import secrets
+import shutil
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
 from time import sleep
@@ -72,12 +72,16 @@ def hdfs_server():
     )
 
 
-@pytest.fixture(scope="session")
-def resource_path():
-    return Path(__file__).parent / "tests" / "resources" / "src"
+@pytest.fixture(scope="function")
+def resource_path(tmp_path_factory):
+    original_files = Path(__file__).parent / "tests" / "resources" / "src"
+
+    temp_dir = tmp_path_factory.mktemp("test_files") / secrets.token_hex(5)
+    shutil.copytree(original_files, temp_dir)
+    return temp_dir
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_files(resource_path):
     resources = resource_path / "news_parse_zp" / "2018_03_05_10_00_00"
 
@@ -85,61 +89,6 @@ def test_files(resource_path):
         resources / "newsage-zp-2018_03_05_10_00_00.csv",
         resources / "newsage-zp-2018_03_05_10_10_00.csv",
     ]
-
-
-@pytest.fixture
-def make_test_files_copy(test_files, tmp_path_factory):
-    temp_test_files = []
-
-    tmp_dir = tmp_path_factory.mktemp("tmp_test_files")
-
-    for file in test_files:
-        new_temp_file = tmp_dir / file.name
-        shutil.copy(file, str(new_temp_file))
-        temp_test_files.append(new_temp_file)
-
-    return temp_test_files
-
-
-@pytest.fixture(scope="session")
-def source_path():
-    return PurePosixPath("/export/news_parse")
-
-
-@pytest.fixture(scope="function")  # noqa: WPS231
-def sftp_files(sftp_server, resource_path, source_path):
-    sftp = SFTP(user=sftp_server.user, password=sftp_server.user, host=sftp_server.host, port=sftp_server.port)
-
-    yield upload_files(resource_path, source_path, sftp)
-
-    sftp.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def ftp_files(ftp_server, resource_path, source_path):
-    ftp = FTP(user=ftp_server.user, password=ftp_server.password, host=ftp_server.host, port=ftp_server.port)
-
-    yield upload_files(resource_path, source_path, ftp)
-
-    ftp.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def ftps_files(ftps_server, resource_path, source_path):
-    ftps = FTPS(user=ftps_server.user, password=ftps_server.password, host=ftps_server.host, port=ftps_server.port)
-
-    yield upload_files(resource_path, source_path, ftps)
-
-    ftps.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def hdfs_files(hdfs_server, resource_path, source_path):
-    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
-
-    yield upload_files(resource_path, source_path, hdfs)
-
-    hdfs.rmdir(source_path, recursive=True)
 
 
 @pytest.fixture(scope="session", name="spark")
@@ -256,3 +205,53 @@ def use_memory_hwm_store(request):
 
     else:
         yield None
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(FTP, marks=pytest.mark.FTP),
+        pytest.param(FTPS, marks=pytest.mark.FTPS),
+        pytest.param(HDFS, marks=pytest.mark.HDFS),
+        pytest.param(SFTP, marks=pytest.mark.SFTP),
+    ],
+)
+def file_connection_class(request):
+    return request.param
+
+
+@pytest.fixture(scope="function")
+def file_server(request, file_connection_class):
+    return request.getfixturevalue(f"{file_connection_class.__name__.lower()}_server")
+
+
+@pytest.fixture(scope="function")
+def file_connection(file_connection_class, file_server):
+    mandatory_options = {"host", "port"}
+    options = {"user", "password", "key_file"}
+
+    kwargs = {}
+
+    for option in mandatory_options:
+        kwargs[option] = getattr(file_server, option)
+
+    for option in options:
+        if hasattr(file_server, option):
+            kwargs[option] = getattr(file_server, option)
+
+    return file_connection_class(**kwargs)
+
+
+@pytest.fixture(scope="function")
+def source_path(file_connection):
+    source_path = PurePosixPath("/export/news_parse")
+
+    file_connection.rmdir(source_path, recursive=True)
+    file_connection.mkdir(source_path)
+    yield source_path
+    file_connection.rmdir(source_path, recursive=True)
+
+
+@pytest.fixture(scope="function")
+def upload_test_files(file_connection, resource_path, source_path):
+    return upload_files(resource_path, source_path, file_connection)

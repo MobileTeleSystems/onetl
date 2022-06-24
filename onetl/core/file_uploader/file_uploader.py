@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import os
-import uuid
 from dataclasses import InitVar, dataclass, field
+from datetime import datetime
 from logging import getLogger
 from pathlib import Path, PurePosixPath
+from typing import ClassVar, Iterable
 
-import humanize
+from etl_entities import ProcessStackManager
+from ordered_set import OrderedSet
+from pydantic import BaseModel
 
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.log import LOG_INDENT, entity_boundary_log
+from onetl.base import BaseFileConnection
+from onetl.core.file_result import FileSet
+from onetl.core.file_uploader.upload_result import UploadResult
+from onetl.exception import DirectoryNotFoundError
+from onetl.impl import FailedLocalFile, FileWriteMode
+from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
 
@@ -29,19 +36,21 @@ class FileUploader:
     temp_path : str, default: ``/tmp``
         Remote path where files uploaded firstly
 
-        Default value: ``/tmp/``
+        Default value: ``/tmp``
 
-    delete_local: bool, default: ``False``
-        Delete local files after successful upload.
+    local_path : str
+        The local directory from which the data is loaded.
 
-        .. warning ::
-            USE WITH CAUTION BECAUSE FILES WILL BE PERMANENTLY DELETED
+        Default value: ``None``
+
+    options : :obj:`onetl.core.file_uploader.file_uploader.FileUploader.Options` | dict | None, default: ``None``
+        File upload options
 
     Examples
     --------
     Simple Uploader creation
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import HDFS
         from onetl.core import FileUploader
@@ -55,7 +64,7 @@ class FileUploader:
 
     Uploader with all parameters
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import HDFS
         from onetl.core import FileUploader
@@ -65,112 +74,390 @@ class FileUploader:
         uploader = FileUploader(
             connection=hdfs,
             target_path="/path/to/remote/source",
-            temp_path="/home/onetl"
+            temp_path="/home/onetl",
+            local_path="/some/local/directory",
+            options=FileUploader.Options(delete_local=True, mode="overwrite"),
         )
 
     """
 
-    connection: FileConnection
+    class Options(BaseModel):  # noqa: WPS431
+        """File uploader options
+
+        Parameters
+        ----------
+        mode : :obj:`onetl.impl.file_write_mode.FileWriteMode`
+            How to handle existing files in the target directory.
+
+            Possible values:
+                * ``error`` (default) - do nothing, mark file as failed
+                * ``ignore`` - do nothing, mark file as ignored
+                * ``overwrite`` - replace existing file with a new one
+                * ``delete_all`` - delete local directory content before downloading files
+
+        delete_local : bool
+            If ``True``, remove local file after successful download.
+
+            If download failed, file will left intact.
+
+        """
+
+        mode: FileWriteMode = FileWriteMode.ERROR
+        delete_local: bool = False
+
+        class Config:  # noqa: WPS431
+            frozen = True
+
+    connection: BaseFileConnection
+
     target_path: InitVar[str | os.PathLike]
     _target_path: PurePosixPath = field(init=False)
-    delete_local: bool = False
+
+    local_path: InitVar[os.PathLike | str | None] = field(default=None)
+    _local_path: Path | None = field(init=False)
 
     temp_path: InitVar[str | os.PathLike] = field(default="/tmp")
     _temp_path: PurePosixPath = field(init=False)
 
-    def __post_init__(self, target_path: str | os.PathLike, temp_path: str | os.PathLike):
-        self._target_path = PurePosixPath(target_path)  # noqa: WPS601
-        self._temp_path = PurePosixPath(temp_path)  # noqa: WPS601
+    options: InitVar[Options | dict | None] = field(default=None)
+    _options: Options = field(init=False)
 
-    def run(self, files_list: list[str | os.PathLike]) -> list[Path]:  # noqa: WPS213
+    # e.g. 20220524122150
+    DATETIME_FORMAT: ClassVar[str] = "%Y%m%d%H%M%S"  # noqa: WPS323
+
+    def __post_init__(
+        self,
+        target_path: str | os.PathLike,
+        local_path: str | os.PathLike | None,
+        temp_path: str | os.PathLike,
+        options: str | os.FileConnection.Options | dict | None,
+    ):
+        self._target_path = PurePosixPath(target_path)
+        self._local_path = Path(local_path).resolve() if local_path else None
+        self._temp_path = PurePosixPath(temp_path)
+        self._options = options or self.Options()
+
+        if isinstance(options, dict):
+            self._options = self.Options.parse_obj(options)
+
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:  # noqa:WPS231, WPS238 NOSONAR
         """
         Method for uploading files to remote host.
 
         Parameters
         ----------
-        files_list : List[str | os.PathLike]
-            List of files on local storage
+
+        files : Iterator[str | os.PathLike] | None, default ``None``
+            File collection to upload.
+
+            If empty, upload files from ``local_path``.
 
         Returns
         -------
-        uploaded_files : List[PurePosixPath]
-            List of uploaded files
+        uploaded_files : :obj:`onetl.core.file_uploader.upload_result.UploadResult`
+
+            Upload result object
+
+        Raises
+        -------
+        DirectoryNotFoundError
+
+            ``local_path`` does not found
+
+        NotADirectoryError
+
+            ``local_path`` is not a directory
+
+        ValueError
+
+            File in ``files`` argument does not match ``local_path``
 
         Examples
         --------
 
-        Upload files
+        Upload files and get result
 
-        .. code::
+        .. code:: python
 
-            uploaded_files = uploader.run(files_list)
+            from pathlib import Path, PurePath
+            from onetl.impl import RemoteFile
+            from onetl.core import FileUploader
+
+            uploader = FileUploader(local_path="/local", target_path="/remote", ...)
+
+            uploaded_files = uploader.run(
+                [
+                    "/local/file1",
+                    "/local/file2",
+                    "/failed/file",
+                    "/existing/file",
+                    "/missing/file",
+                ]
+            )
+
+            # or without the list of files
+
+            uploaded_files = uploader.run()
+
+            assert uploaded_files.successful == {
+                RemoteFile("/remote/file1"),
+                RemoteFile("/remote/file2"),
+            }
+            assert uploaded_files.failed == {FailedLocalFile("/failed/file")}
+            assert uploaded_files.skipped == {Path("/existing/file")}
+            assert uploaded_files.missing == {PurePath("/missing/file")}
         """
 
-        if self.delete_local:
-            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED !!!")
+        if files is None and not self._local_path:
+            raise ValueError("Neither file collection nor ``local_path`` are passed")
 
+        # Log all options
         entity_boundary_log(msg="FileUploader starts")
         connection_class_name = self.connection.__class__.__name__
 
-        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files to path: {self._target_path} ")
-        log.info(f"|{self.__class__.__name__}| Parameters:")
+        log.info(f"|Local FS| -> |{connection_class_name}| Uploading files using parameters:'")
         log.info(" " * LOG_INDENT + f"target_path = {self._target_path}")
+        log.info(" " * LOG_INDENT + f"local_path = {self._local_path}")
         log.info(" " * LOG_INDENT + f"temp_path = {self._temp_path}")
 
-        log.info(f"|{self.__class__.__name__}| Using connection:")
-        log.info(" " * LOG_INDENT + f"type = {self.connection.__class__.__name__}")
-        log.info(" " * LOG_INDENT + f"host = {self.connection.host}")
-        log.info(" " * LOG_INDENT + f"user = {self.connection.user}")
+        log.info("")
+        log.info(" " * LOG_INDENT + "options:")
+        for option, value in self._options.dict().items():
+            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+        log.info("")
 
-        if not files_list:
-            log.warning(f"|{self.__class__.__name__}| Files list is empty. Please, provide files to upload.")
-            return []
+        if self._options.delete_local:
+            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
 
-        if not self.connection.path_exists(self._target_path):
-            log.info(f"|{connection_class_name}| There is no target directory {self._target_path}, creating ...")
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
+
+        if files and self._local_path:
+            log.warning(
+                f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
+                "File collection will be used",
+            )
+
+        # Check everything
+        if self._local_path:
+            self._check_local_path()
+
+        self.connection.check()
+        log.info("")
+
+        self.connection.mkdir(self._target_path)
+
+        if files is None:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
+            files = self.view_files()
+
+        current_temp_dir = self.generate_temp_path()
+        to_upload = self._validate_files(local_files=files, current_temp_dir=current_temp_dir)
+        total_files = len(to_upload)
+
+        # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
+            self.connection.rmdir(self._target_path, recursive=True)
             self.connection.mkdir(self._target_path)
+        self.connection.mkdir(current_temp_dir)
 
-        successfully_uploaded_files = []
-        files_size = 0
+        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
+        result = UploadResult()
 
-        current_temp_dir = self._temp_path / uuid.uuid4().hex
-        if not self.connection.path_exists(current_temp_dir):
-            log.info(f"|{connection_class_name}| Creating temp directory: {current_temp_dir}")
-            self.connection.mkdir(current_temp_dir)
-
-        log.info(f"|{self.__class__.__name__}| Start uploading files")
-        for count, file in enumerate(files_list):
-            log.info(f"|{self.__class__.__name__}| Uploading {count + 1}/{len(files_list)}")
-
+        for i, (file, target_file, tmp_file) in enumerate(to_upload):  # noqa: WPS352
             file_path = Path(file)
 
-            tmp_file = current_temp_dir / file.name
-            target_file = self._target_path / file.name
+            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
+            log.info(" " * LOG_INDENT + f"from = {file_path}")
+            log.info(" " * LOG_INDENT + f"to = {target_file}")
 
             try:
-                file_size = file_path.stat().st_size
+                if not file_path.exists():
+                    log.warning(f"|{self.__class__.__name__}| Missing file '{file_path}', skipping")
+                    result.missing.add(file_path)
+                    continue
+
+                replace = False
+                if self.connection.path_exists(target_file):
+                    error_message = f"Target directory already contains file '{target_file}'"
+                    if self._options.mode == FileWriteMode.ERROR:
+                        raise FileExistsError(error_message)
+
+                    if self._options.mode == FileWriteMode.IGNORE:
+                        log.warning(f"|{self.__class__.__name__}| {error_message}, skipping")
+                        result.skipped.add(file_path)
+                        continue
+
+                    replace = True
+                    log.warning(f"|{self.__class__.__name__}| {error_message}, overwriting")
 
                 self.connection.upload_file(file_path, tmp_file)
-                self.connection.rename(tmp_file, target_file)
 
-                successfully_uploaded_files.append(target_file)
-                files_size += file_size
+                # Files are loaded to temporary directory before moving them to target dir.
+                # This prevents operations with partly uploaded files
+
+                uploaded_file = self.connection.rename_file(tmp_file, target_file, replace=replace)
 
                 # Remove files
-                if self.delete_local:
+                if self._options.delete_local:
                     file_path.unlink()
+                    log.warning(f"|LocalFS| Successfully removed file: '{file_path}'")
+
+                result.successful.add(uploaded_file)
 
             except Exception as e:
-                log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir:")
-                log.exception(" " * LOG_INDENT + f"file = {file_path} ")
-                log.exception(" " * LOG_INDENT + f"target_file = {target_file}")
-                log.exception(" " * LOG_INDENT + f"error = {e}")
+                log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)
+                result.failed.add(FailedLocalFile(path=file_path, exception=e))
 
-        log.info(f"|{connection_class_name}| Removing temp directory: {current_temp_dir}")
-        self.connection.rmdir(current_temp_dir, recursive=True)
+        try:
+            log.info(f"|{connection_class_name}| Removing temp directory: '{current_temp_dir}'")
+            self.connection.rmdir(current_temp_dir, recursive=True)
+        except Exception:
+            log.exception(f"|{self.__class__.__name__}| Error while removing temp directory")
 
-        log.info(f"|{connection_class_name}| Files successfully uploaded from Local FS")
-        msg = f"Uploaded: {len(successfully_uploaded_files)} file(s) {humanize.naturalsize(files_size)}"
-        entity_boundary_log(msg=msg, char="-")
+        log.info(f"|{self.__class__.__name__}| Upload result:")
+        log_with_indent(str(result))
+        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
 
-        return successfully_uploaded_files
+        return result
+
+    def view_files(self) -> FileSet[Path]:
+        """
+        Get file collection in the ``local_path``
+
+        Raises
+        -------
+        DirectoryNotFoundError
+
+            ``local_path`` does not found
+
+        NotADirectoryError
+
+            ``local_path`` is not a directory
+
+        Returns
+        -------
+        FileSet[Path]
+            Set of files in ``local_path``
+
+        Examples
+        --------
+
+        View files
+
+        .. code:: python
+
+            from pathlib import Path
+            from onetl.core import FileUploader
+
+            uploader = FileUploader(local_path="/local/path", ...)
+
+            view_files = uploader.view_files()
+
+            assert view_files == {
+                Path("/local/path/file1.txt"),
+                Path("/local/path/file3.txt"),
+                Path("/local/path/nested/file3.txt"),
+            }
+        """
+
+        log.info(f"|Local FS| Getting files list from path: '{self._local_path}'")
+
+        self._check_local_path()
+        result = FileSet()
+
+        try:
+            for root, dirs, files in os.walk(self._local_path):
+                log.debug(f"|Local FS| Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}")
+                result.update(Path(root) / file for file in files)
+        except Exception as e:
+            raise RuntimeError(
+                f"Couldn't read directory tree from local dir {self._local_path}",
+            ) from e
+
+        return result
+
+    def generate_temp_path(self) -> PurePosixPath:
+        """
+        Returns path prefix which will be used for creating temp directory
+
+        Returns
+        -------
+        PurePosixPath
+            Temp path on remote file system, containing current host name, process name and datetime
+
+        Examples
+        --------
+
+        View files
+
+        .. code:: python
+
+            from etl_entities import Process
+
+            from pathlib import PurePosixPath
+            from onetl.core import FileUploader
+
+            uploader1 = FileUploader(local_path="/local/path", ...)
+
+            assert uploader1.generate_temp_path() == PurePosixPath(
+                "/tmp/onetl/currenthost/myprocess/20220524122150",
+            )
+
+            uploader2 = FileUploader(local_path="/local/path", temp_path="/abc")
+            with Process(dag="mydag", task="mytask"):
+                temp_parent_path = uploader2.generate_temp_path()
+                assert temp_parent_path == PurePosixPath(
+                    "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
+                )
+        """
+
+        current_process = ProcessStackManager.get_current()
+        current_dt = datetime.now().strftime(self.DATETIME_FORMAT)
+        return self._temp_path / "onetl" / current_process.host / current_process.full_name / current_dt
+
+    def _validate_files(
+        self,
+        local_files: Iterable[os.PathLike | str],
+        current_temp_dir: PurePosixPath,
+    ) -> OrderedSet[tuple[Path, PurePosixPath, PurePosixPath]]:
+        result = OrderedSet()
+
+        for file in local_files:
+            file_path = Path(file)
+
+            if not self._local_path:
+                # Upload into a flat structure
+                if not file_path.is_absolute():
+                    raise ValueError("Cannot pass relative file path with empty ``local_path``")
+
+                filename = file_path.name
+                target_file = self._target_path / filename
+                tmp_file = current_temp_dir / filename
+            else:
+                # Upload according to source folder structure
+                if self._local_path in file_path.parents:
+                    # Make relative remote path
+                    target_file = self._target_path / file_path.relative_to(self._local_path)
+                    tmp_file = current_temp_dir / file_path.relative_to(self._local_path)
+                elif not file_path.is_absolute():
+                    # Passed already relative path
+                    relative_path = file_path
+                    file_path = self._local_path / relative_path
+                    target_file = self._target_path / relative_path
+                    tmp_file = current_temp_dir / relative_path
+                else:
+                    # Wrong path (not relative path and source path not in the path to the file)
+                    raise ValueError(f"File path '{file_path}' does not match source_path '{self._local_path}'")
+
+            result.add((file_path, target_file, tmp_file))
+
+        return result
+
+    def _check_local_path(self):
+        if not self._local_path.exists():
+            raise DirectoryNotFoundError(f"'{self._local_path}' does not exist")
+
+        if not self._local_path.is_dir():
+            raise NotADirectoryError(f"'{self._local_path}' is not a directory")

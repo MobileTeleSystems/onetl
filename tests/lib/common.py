@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 from pathlib import Path, PurePosixPath
@@ -8,21 +7,6 @@ from pathlib import Path, PurePosixPath
 from onetl.connection.file_connection.file_connection import FileConnection
 
 log = logging.getLogger(__name__)
-
-
-def hashfile(file):
-    buf_size = 65536
-    sha256 = hashlib.sha256()
-
-    with open(file, "rb") as f:
-        while True:
-            data = f.read(buf_size)
-            if not data:
-                break
-
-            sha256.update(data)
-
-    return sha256.hexdigest()
 
 
 def upload_files(
@@ -35,14 +19,9 @@ def upload_files(
     local_path = Path(source_path)
 
     if local_path.exists() and local_path.is_dir():
-        file_connection.mkdir(remote_path)
-
-        for root_path, dir_names, file_names in os.walk(local_path):
+        for root_path, _dir_names, file_names in os.walk(local_path):
             local_root = Path(root_path)
             remote_root = remote_path / local_root.relative_to(local_path)
-
-            for sub_dir in dir_names:
-                file_connection.mkdir(remote_root / sub_dir)
 
             for filename in file_names:
                 local_filename = local_root / filename

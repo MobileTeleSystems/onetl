@@ -5,10 +5,16 @@ from abc import abstractmethod
 from dataclasses import dataclass, field
 from functools import wraps
 from logging import getLogger
-from pathlib import Path, PosixPath
-from typing import Any, Callable, Generator
+from pathlib import Path, PurePosixPath
+from typing import Any, Iterator
 
-from onetl.connection.connection_abc import ConnectionABC
+from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
+from onetl.exception import (
+    DirectoryNotEmptyError,
+    DirectoryNotFoundError,
+    NotAFileError,
+)
+from onetl.impl import RemoteDirectory, RemoteFile
 from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
@@ -29,23 +35,19 @@ def cached(f):
     return wrapped
 
 
-@dataclass(frozen=True)
-class FileConnection(ConnectionABC):
+@dataclass(frozen=True)  # noqa: WPS214
+class FileConnection(BaseFileConnection):
     host: str
     user: str
     port: int
     password: str = field(repr=False, default="")
 
-    @abstractmethod
-    def get_client(self) -> Any:
-        """"""
-
     @property
     @cached
     def client(self):
-        return self.get_client()
+        return self._get_client()
 
-    def check(self):
+    def check(self) -> None:
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
@@ -59,108 +61,272 @@ class FileConnection(ConnectionABC):
             log.exception(f"|{self.__class__.__name__}| {msg}")
             raise RuntimeError(msg)
 
-    def download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self._download_file(remote_file_path, local_file_path)
-        log.info(f"|Local FS| Successfully downloaded file: {local_file_path} ")
+    def is_file(self, path: os.PathLike | str) -> bool:
+        if not self.path_exists(path):
+            raise FileNotFoundError(f"|{self.__class__.__name__}| File '{path}' does not exist")
+
+        return self._is_file(path)
+
+    def is_dir(self, path: os.PathLike | str) -> bool:
+        if not self.path_exists(path):
+            raise DirectoryNotFoundError(f"|{self.__class__.__name__}| Directory '{path}' does not exist")
+
+        return self._is_dir(path)
+
+    def get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
+        if not self.is_file(path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{path}' is not a file")
+
+        return self._get_stat(path)
+
+    def get_file(self, path: os.PathLike | str) -> RemoteFile:
+        stat = self.get_stat(path)
+
+        return RemoteFile(path=path, stats=stat)
+
+    def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
+        if not self.is_file(path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{path}' is not a file")
+
+        return self._read_text(path, encoding=encoding, **kwargs)
+
+    def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        if not self.is_file(path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{path}' is not a file")
+
+        return self._read_bytes(path, **kwargs)
+
+    def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
+        self.mkdir(PurePosixPath(path).parent)
+        self._write_text(path, content=content, encoding=encoding, **kwargs)
+
+        return self.get_file(path)
+
+    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> RemoteFile:
+        self.mkdir(PurePosixPath(path).parent)
+        self._write_bytes(path, content=content, **kwargs)
+
+        return self.get_file(path)
+
+    def download_file(
+        self,
+        remote_file_path: os.PathLike | str,
+        local_file_path: os.PathLike | str,
+        replace: bool = True,
+    ) -> Path:
+        if not self.is_file(remote_file_path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file_path}' is not a file")
+
+        local_file = Path(local_file_path)
+        if local_file.exists():
+            if not local_file.is_file():
+                raise NotAFileError(f"|LocalFS| '{local_file_path}' is not a file")
+
+            error_msg = f"|LocalFS| '{local_file_path}' already exist"
+            if not replace:
+                raise FileExistsError(error_msg)
+
+            log.warning(f"{error_msg}, replacing")
+            local_file.unlink()
+
+        local_file.parent.mkdir(parents=True, exist_ok=True)
+        self._download_file(remote_file_path, local_file)
+        log.info(f"|Local FS| Successfully downloaded file: '{local_file}'")
+        return local_file
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         if not self.path_exists(remote_file_path):
-            log.info(f"|{self.__class__.__name__}| File {remote_file_path} does not exist, nothing to remove")
+            log.warning(f"|{self.__class__.__name__}| File '{remote_file_path}' does not exist, nothing to remove")
             return
 
+        if not self.is_file(remote_file_path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file_path}' is not a file")
+
         self._remove_file(remote_file_path)
-        log.info(f"|{self.__class__.__name__}| Successfully removed file: {remote_file_path} ")
+        log.info(f"|{self.__class__.__name__}| Successfully removed file: '{remote_file_path}'")
 
-    def mkdir(self, path: os.PathLike | str) -> None:
+    def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
+        if self.path_exists(path):
+            if not self.is_dir(path):
+                raise NotADirectoryError(f"|{self.__class__.__name__}| '{path}' is not a directory")
+
+            return RemoteDirectory(path=path)
+
         self._mkdir(path)
-        log.info(f"|{self.__class__.__name__}| Successfully created directory: {path}")
+        log.info(f"|{self.__class__.__name__}| Successfully created directory: '{path}'")
+        return RemoteDirectory(path=path)
 
-    def upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self._upload_file(local_file_path, remote_file_path)
-        log.info(f"|{self.__class__.__name__}| Successfully uploaded file: {remote_file_path}")
+    def upload_file(  # noqa: WPS238
+        self,
+        local_file_path: os.PathLike | str,
+        remote_file_path: os.PathLike | str,
+        replace: bool = False,
+    ) -> RemoteFile:
+        local_file = Path(local_file_path)
+        if not local_file.exists():
+            raise FileNotFoundError(f"|LocalFS| File '{local_file_path}' does not exist")
 
-    def rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        self._rename(source, target)
-        log.info(f"|{self.__class__.__name__}| Successfully renamed file {source} to {target}")
+        if not local_file.is_file():
+            raise NotAFileError(f"|LocalFS| '{local_file_path}' is not a file")
 
-    @abstractmethod
-    def is_dir(self, top, item) -> bool:
-        """"""
+        remote_file = PurePosixPath(remote_file_path)
 
-    @abstractmethod
-    def get_name(self, item) -> Path:
-        """"""
+        if self.path_exists(remote_file):
+            if not self.is_file(remote_file):
+                raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
 
-    @abstractmethod
-    def path_exists(self, path: os.PathLike | str) -> bool:
-        """"""
+            error_msg = f"|{self.__class__.__name__}| File '{remote_file}' already exists"
+            if not replace:
+                raise FileExistsError(error_msg)
 
-    def listdir(self, path: os.PathLike | str) -> list[Path]:
-        return [self.get_name(item) for item in self._listdir(path)]
+            log.warning(f"{error_msg}, removing")
+            self._remove_file(remote_file)
+
+        self._mkdir(remote_file.parent)
+        self._upload_file(local_file, remote_file)
+        result = self.get_file(remote_file)
+        log.info(f"|{self.__class__.__name__}| Successfully uploaded file: '{remote_file}'")
+        return result
+
+    def rename_file(
+        self,
+        source_file_path: os.PathLike | str,
+        target_file_path: os.PathLike | str,
+        replace: bool = False,
+    ) -> RemoteFile:
+        if not self.is_file(source_file_path):
+            raise NotAFileError(f"|{self.__class__.__name__}| '{source_file_path}' is not a file")
+
+        target_file = PurePosixPath(target_file_path)
+
+        if self.path_exists(target_file_path):
+            if not self.is_file(target_file_path):
+                raise NotAFileError(f"|{self.__class__.__name__}| '{target_file_path}' is not a file")
+
+            error_msg = f"|{self.__class__.__name__}| File '{target_file_path}' already exists"
+            if not replace:
+                raise FileExistsError(error_msg)
+
+            log.warning(f"{error_msg}, removing")
+            self._remove_file(target_file_path)
+
+        self._mkdir(target_file.parent)
+        self._rename(source_file_path, target_file)
+        log.info(f"|{self.__class__.__name__}| Successfully renamed file '{source_file_path}' to '{target_file}'")
+
+        return self.get_file(target_file)
+
+    def listdir(self, path: os.PathLike | str) -> list[RemoteDirectory | RemoteFile]:
+        if not self.is_dir(path):
+            raise NotADirectoryError(f"|{self.__class__.__name__}| '{path}' is not a directory")
+
+        result = []
+        for item in self._listdir(path):
+            name = self._get_item_name(item)
+
+            if self._is_item_dir(path, item):
+                result.append(RemoteDirectory(path=name))
+            else:
+                stat = self._get_item_stat(path, item)
+                result.append(RemoteFile(path=name, stats=stat))
+
+        return result
 
     def walk(
         self,
         top: os.PathLike | str,
-        topdown: bool = True,
-        onerror: Callable = None,
-        exclude_dirs: list[str] = None,
-    ) -> Generator[str, list[str], list[str]]:
+        filter: BaseFileFilter | None = None,  # noqa: WPS125
+    ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
         """
         Iterate over directory tree and return a tuple (dirpath,
         dirnames, filenames) on each iteration, like the `os.walk`
         function (see https://docs.python.org/library/os.html#os.walk ).
         """
-        if not exclude_dirs:
-            exclude_dirs = []
-        try:
-            items = self._listdir(top)
-        except Exception as err:
-            if onerror:
-                onerror(err)
-            return
-        dirs, nondirs = [], []
-        for item in items:
-            name = self.get_name(item)
-            full_name = PosixPath(top) / name
-            if self.is_dir(top, item):
-                if not self.excluded_dir(full_name, exclude_dirs):
-                    dirs.append(name)
+
+        if not self.is_dir(top):
+            raise NotADirectoryError(f"|{self.__class__.__name__}| '{top}' is not a directory")
+
+        root = RemoteDirectory(path=top)
+        dirs, files = [], []
+
+        for item in self._listdir(root):
+            name = self._get_item_name(item)
+            if self._is_item_dir(root, item):
+                folder = RemoteDirectory(path=root / name)
+
+                if filter and not filter.match(folder):
+                    log.info(f"|{self.__class__.__name__}| Directory '{folder}' does not match the filter, skipping")
+                else:
+                    log.info(f"|{self.__class__.__name__}| Directory '{folder}' does match the filter")
+                    dirs.append(RemoteDirectory(path=name))
+
             else:
-                nondirs.append(name)
-        if topdown:
-            yield top, dirs, nondirs
+                stat = self._get_item_stat(top, item)
+                file = RemoteFile(path=root / name, stats=stat)
+
+                if filter and not filter.match(file):
+                    log.info(f"|{self.__class__.__name__}| File '{file}' does not match the filter, skipping")
+                else:
+                    log.info(f"|{self.__class__.__name__}| File '{file}' does match the filter")
+                    files.append(RemoteFile(path=name, stats=stat))
+
         for name in dirs:
-            path = PosixPath(top) / name
-            yield from self.walk(path, topdown, onerror, exclude_dirs)
-        if not topdown:
-            yield top, dirs, nondirs
+            path = root / name
+            yield from self.walk(top=path, filter=filter)
+
+        yield top, dirs, files
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         if not self.path_exists(path):
-            log.info(f"|{self.__class__.__name__}| Directory {path} does not exist, nothing to remove")
             return
 
+        if not self.is_dir(path):
+            raise NotADirectoryError(f"|{self.__class__.__name__}| '{path}' is not a directory")
+
+        if not recursive and self._listdir(path):
+            raise DirectoryNotEmptyError(f"Cannot delete non-empty directory: '{path}'")
+
         if recursive:
-            for file in self._listdir(path):
-                name = self.get_name(file)
-                full_name = PosixPath(path) / name
+            self._rmdir_recursive(path)
+        else:
+            self._rmdir(path)
 
-                if self.is_dir(path, file):
-                    self.rmdir(full_name, recursive=True)
-                else:
-                    self.remove_file(full_name)
+        log.info(f"|{self.__class__.__name__}| Successfully removed directory: '{path}'")
 
-        self.client.rmdir(os.fspath(path))
-        log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
+    def _rmdir_recursive(self, path: os.PathLike | str) -> None:
+        for item in self._listdir(path):
+            name = self._get_item_name(item)
+            full_name = PurePosixPath(path) / name
 
-    def excluded_dir(self, full_name: os.PathLike | str, exclude_dirs: list[os.PathLike | str]) -> bool:
-        for exclude_dir in exclude_dirs:
-            if PosixPath(exclude_dir) == PosixPath(full_name):
-                return True
-        return False
+            if self._is_item_dir(path, item):
+                self._rmdir_recursive(full_name)
+            else:
+                self._remove_file(full_name)
+
+        self._rmdir(path)
+
+    def _get_item_name(self, item: str) -> str:
+        return item
+
+    def _is_item_dir(self, top: os.PathLike | str, item: str) -> bool:
+        return self._is_dir(PurePosixPath(top) / self._get_item_name(item))
+
+    def _is_item_file(self, top: os.PathLike | str, item: str) -> bool:
+        return self._is_file(PurePosixPath(top) / self._get_item_name(item))
+
+    def _get_item_stat(self, top: os.PathLike | str, item: str) -> FileStatProtocol:
+        return self._get_stat(PurePosixPath(top) / self._get_item_name(item))
 
     @abstractmethod
-    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
+    def _get_client(self) -> Any:
+        """"""
+
+    @abstractmethod
+    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> Path:
+        """"""
+
+    @abstractmethod
+    def _get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
         """"""
 
     @abstractmethod
@@ -172,7 +338,7 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
+    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> RemoteFile:
         """"""
 
     @abstractmethod
@@ -180,5 +346,25 @@ class FileConnection(ConnectionABC):
         """"""
 
     @abstractmethod
-    def _listdir(self, path: os.PathLike) -> list:
+    def _listdir(self, path: os.PathLike | str) -> list:
+        """"""
+
+    @abstractmethod
+    def _rmdir(self, path: os.PathLike | str) -> None:
+        """"""
+
+    @abstractmethod
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        """"""
+
+    @abstractmethod
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        """"""
+
+    @abstractmethod
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        """"""
+
+    @abstractmethod
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
         """"""

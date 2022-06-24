@@ -1,10 +1,12 @@
 etl-entities>=1.0,<1.1
-ftputil
+ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize
 mts_apache_atlas>=0.3.3,<0.4
+ordered-set
 paramiko
 platformdirs
 pydantic
 PySmbClient
 pyyaml
+typing_extensions

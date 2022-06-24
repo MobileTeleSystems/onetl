@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 from pydantic import Field, validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
-from onetl.connection.db_connection.db_connection import DBConnection, WriteMode
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -69,8 +70,8 @@ class Hive(DBConnection):
 
             if insert_into:
                 if mode:
-                    mode = WriteMode(mode)
-                    if mode not in {WriteMode.APPEND, WriteMode.OVERWRITE}:
+                    mode = DBWriteMode(mode)
+                    if mode not in {DBWriteMode.APPEND, DBWriteMode.OVERWRITE}:
                         raise ValueError(  # noqa: WPS220
                             f"Write mode {mode} cannot be used with `insert_into=True` option",
                         )
@@ -216,8 +217,8 @@ class Hive(DBConnection):
             columns = self._sort_df_columns_like_table(table, df.columns)
             writer = df.select(*columns).write
 
-            mode = WriteMode(write_options.mode)
-            writer.insertInto(table, overwrite=mode == WriteMode.OVERWRITE)  # overwrite is boolean
+            mode = DBWriteMode(write_options.mode)
+            writer.insertInto(table, overwrite=mode == DBWriteMode.OVERWRITE)  # overwrite is boolean
         else:
             writer = df.write
             for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():

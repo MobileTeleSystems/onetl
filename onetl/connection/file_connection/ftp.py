@@ -4,11 +4,11 @@ import ftplib  # noqa: S402
 import os
 from dataclasses import dataclass
 from logging import getLogger
-from pathlib import PosixPath
 
 from ftputil import FTPHost
 from ftputil import session as ftp_session
 
+from onetl.base import FileStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 
 log = getLogger(__name__)
@@ -48,7 +48,10 @@ class FTP(FileConnection):
 
     port: int = 21
 
-    def get_client(self) -> ftputil.host.FTPHost:
+    def path_exists(self, path: os.PathLike | str) -> bool:
+        return self.client.path.exists(path)
+
+    def _get_client(self) -> FTPHost:
         """
         Returns a FTP connection object
         """
@@ -67,21 +70,11 @@ class FTP(FileConnection):
             session_factory=session_factory,
         )
 
-    def is_dir(self, top: os.PathLike | str, item: str | os.PathLike) -> bool:
-        return self.client.path.isdir(self.get_name(top) / self.get_name(item))
+    def _rmdir_recursive(self, path: os.PathLike | str) -> None:
+        self.client.rmtree(path)
 
-    def get_name(self, item: str | os.PathLike) -> PosixPath:
-        return PosixPath(item)
-
-    def path_exists(self, path: os.PathLike | str) -> bool:
-        return self.client.stat(path=path, _exception_for_missing_path=False)
-
-    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
-        if recursive:
-            self.client.rmtree(path)
-        else:
-            self.client.rmdir(path)
-        log.info(f"|{self.__class__.__name__}| Successfully removed directory {path}")
+    def _rmdir(self, path: os.PathLike | str) -> None:
+        self.client.rmdir(path)
 
     def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
         self.client.upload(local_file_path, remote_file_path)
@@ -100,3 +93,28 @@ class FTP(FileConnection):
 
     def _listdir(self, path: os.PathLike | str) -> list:
         return self.client.listdir(path)
+
+    def _is_dir(self, path: os.PathLike | str) -> bool:
+        return self.client.path.isdir(path)
+
+    def _is_file(self, path: os.PathLike | str) -> bool:
+        return self.client.path.isfile(path)
+
+    def _get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
+        return self.client.stat(path)
+
+    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
+        with self.client.open(path, mode="r", encoding=encoding, **kwargs) as file:
+            return file.read()
+
+    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        with self.client.open(path, mode="rb", **kwargs) as file:
+            return file.read()
+
+    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(path, mode="w", encoding=encoding, **kwargs) as file:
+            file.write(content)
+
+    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
+        with self.client.open(path, mode="wb", **kwargs) as file:
+            file.write(content)
