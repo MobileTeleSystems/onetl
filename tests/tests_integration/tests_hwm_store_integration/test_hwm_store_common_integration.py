@@ -1,18 +1,7 @@
 import os
-import secrets
 import tempfile
-from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities import (
-    Column,
-    DateHWM,
-    DateTimeHWM,
-    FileListHWM,
-    IntHWM,
-    RemoteFolder,
-    Table,
-)
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -40,44 +29,10 @@ hwm_store = [
     ),
 ]
 
-hwm_delta = [
-    (
-        IntHWM(
-            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
-            column=Column(name=secrets.token_hex(5)),
-            value=10,
-        ),
-        5,
-    ),
-    (
-        DateHWM(
-            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
-            column=Column(name=secrets.token_hex(5)),
-            value=date(year=2022, month=8, day=15),
-        ),
-        timedelta(days=31),
-    ),
-    (
-        DateTimeHWM(
-            source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
-            column=Column(name=secrets.token_hex(5)),
-            value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
-        ),
-        timedelta(seconds=50),
-    ),
-    (
-        FileListHWM(
-            source=RemoteFolder(name=f"/absolute/{secrets.token_hex(5)}", instance="ftp://ftp.server:21"),
-            value=["some/path", "another.file"],
-        ),
-        "third.file",
-    ),
-]
-
 
 @pytest.mark.parametrize("hwm_store", hwm_store)
-@pytest.mark.parametrize("hwm, delta", hwm_delta)
-def test_hwm_store_integration(hwm_store, hwm, delta):
+def test_hwm_store_integration(hwm_store, hwm_delta):
+    hwm, delta = hwm_delta
     assert hwm_store.get(hwm.qualified_name) is None
 
     hwm_store.save(hwm)

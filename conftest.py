@@ -6,6 +6,7 @@ from collections import namedtuple
 from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
+from datetime import date, datetime, timedelta
 
 import pytest
 from mtspark import get_spark
@@ -21,6 +22,15 @@ from onetl.connection import (
     Oracle,
     Postgres,
     Teradata,
+)
+from etl_entities import (
+    Column,
+    DateHWM,
+    DateTimeHWM,
+    FileListHWM,
+    IntHWM,
+    RemoteFolder,
+    Table,
 )
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
@@ -255,3 +265,42 @@ def source_path(file_connection):
 @pytest.fixture(scope="function")
 def upload_test_files(file_connection, resource_path, source_path):
     return upload_files(resource_path, source_path, file_connection)
+
+
+@pytest.fixture(
+    params=[
+        (
+            IntHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=10,
+            ),
+            5,
+        ),
+        (
+            DateHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=date(year=2022, month=8, day=15),
+            ),
+            timedelta(days=31),
+        ),
+        (
+            DateTimeHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
+            ),
+            timedelta(seconds=50),
+        ),
+        (
+            FileListHWM(
+                source=RemoteFolder(name=f"/absolute/{secrets.token_hex(5)}", instance="ftp://ftp.server:21"),
+                value=["some/path", "another.file"],
+            ),
+            "third.file",
+        ),
+    ],
+)
+def hwm_delta(request):
+    return request.param
