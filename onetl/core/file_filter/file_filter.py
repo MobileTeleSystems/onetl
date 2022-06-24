@@ -4,12 +4,12 @@ import glob
 import os
 import re
 from logging import getLogger
-from pathlib import PurePosixPath
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.impl import RemotePath
 from onetl.log import LOG_INDENT
 
 log = getLogger(__name__)
@@ -83,7 +83,7 @@ class FileFilter(BaseFileFilter, BaseModel):
 
     glob: Optional[str] = None
     regexp: Optional[re.Pattern] = None
-    exclude_dirs: List[PurePosixPath] = Field(default_factory=list)
+    exclude_dirs: List[RemotePath] = Field(default_factory=list)
 
     @validator("glob", pre=True)
     def check_glob(cls, value: str) -> str:  # noqa: N805
@@ -100,8 +100,8 @@ class FileFilter(BaseFileFilter, BaseModel):
         return value
 
     @validator("exclude_dirs", each_item=True, pre=True)
-    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> PurePosixPath:  # noqa: N805
-        return PurePosixPath(value)
+    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> RemotePath:  # noqa: N805
+        return RemotePath(value)
 
     @root_validator
     def disallow_empty_fields(cls, value: dict) -> dict:  # noqa: N805
@@ -133,6 +133,6 @@ class FileFilter(BaseFileFilter, BaseModel):
         return True
 
     def log_options(self):
-        log.info(" " * LOG_INDENT + "filter:")
+        log.info(LOG_INDENT + "filter:")
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(" " * LOG_INDENT + f"{key} = {value}")
+            log.info(LOG_INDENT + f"    {key} = {value}")

@@ -11,11 +11,17 @@ Read data from MSSQL, transform & write to Hive.
     # Import mtspark to initialize the SparkSession
     from mtspark import get_spark
 
+    # import function to setup onETL logging
+    from onetl.log import setup_notebook_logging
+
     # Import required connections
     from onetl.connection import MSSQL, Hive
 
     # Import onETL classes to read & write data
     from onetl.core import DBReader, DBWriter
+
+    # change logging level to INFO, and set up default logging format and handler
+    setup_notebook_logging()
 
     # Initiate new SparkSession
     spark = get_spark({"appName": "spark_app_onetl_demo"})
@@ -76,11 +82,18 @@ Download files from FTP & upload them to HDFS.
 
 .. code:: python
 
+    # import function to setup onETL logging
+    from onetl.log import setup_notebook_logging
+
     # Import required connections
     from onetl.connection import SFTP, HDFS
 
     # Import onETL classes to download & upload files
     from onetl.core import FileDownloader, FileUploader, FileFilter
+
+    # change logging level to INFO, and set up default logging format and handler
+    setup_notebook_logging()
+
 
     # Initiate SFTP connection
     sftp = SFTP(
@@ -119,7 +132,7 @@ Download files from FTP & upload them to HDFS.
     download_result
 
     #  DownloadResult(
-    #      successful=[Path('/local/onetl/Report/file_1.json'), Path('/local/onetl/Report/file_2.json')],
+    #      successful=[LocalPath('/local/onetl/Report/file_1.json'), LocalPath('/local/onetl/Report/file_2.json')],
     #      failed=[FailedRemoteFile('/remote/onetl/Report/file_3.json')],
     #      ignored=[RemoteFile('/remote/onetl/Report/file_4.json')],
     #      missing=[],
@@ -132,7 +145,7 @@ Download files from FTP & upload them to HDFS.
     renamed_files = my_rename_function(download_result.success)
 
     # function removed "_" from file names
-    # [Path('/home/onetl/Report/file1.json'), Path('/home/onetl/Report/file2.json')]
+    # [LocalPath('/home/onetl/Report/file1.json'), LocalPath('/home/onetl/Report/file2.json')]
 
     # Initiate HDFS connection
     hdfs = HDFS(

@@ -9,7 +9,8 @@ from typing import List, Tuple
 from smbclient import SambaClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import RemoteFileStat
+from onetl.impl import RemoteFileStat, RemotePath
+from onetl.impl.local_path import LocalPath
 
 log = getLogger(__name__)
 
@@ -60,7 +61,7 @@ class Samba(FileConnection):
     schema: str | None = None
 
     def path_exists(self, path: os.PathLike | str) -> bool:
-        return self.client.exists(path)
+        return self.client.exists(os.fspath(path))
 
     def _get_client(self) -> SambaClient:
         return SambaClient(
@@ -73,61 +74,68 @@ class Samba(FileConnection):
             password=self.password + "\n",
         )
 
-    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        self.client.rename(source, target)
+    def _is_client_closed(self) -> bool:
+        # Underlying client does not have `closed` attribute
+        return False
 
-    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self.client.run(remote_file_path, local_file_path)
+    def _close_client(self) -> None:
+        self._client.close()
 
-    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        self.client.unlink(remote_file_path)
+    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+        self.client.rename(os.fspath(source), os.fspath(target))
 
-    def _mkdir(self, path: os.PathLike | str) -> None:
-        self.client.mkdir(path)
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
+        self.client.run(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rmdir(self, path: os.PathLike | str) -> None:
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
+        self.client.unlink(os.fspath(remote_file_path))
+
+    def _mkdir(self, path: RemotePath) -> None:
+        self.client.mkdir(os.fspath(path))
+
+    def _rmdir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
 
-    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.run(local_file_path, remote_file_path)
+    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
+        self.client.run(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _listdir(self, path: os.PathLike | str) -> list:
-        return self.client.lsdir(path)
+    def _listdir(self, path: RemotePath) -> list:
+        return self.client.lsdir(os.fspath(path))
 
-    def _is_dir(self, path: os.PathLike | str) -> bool:
-        return self.client.self.client.isdir(path)
+    def _is_dir(self, path: RemotePath) -> bool:
+        return self.client.self.client.isdir(os.fspath(path))
 
-    def _is_file(self, path: os.PathLike | str) -> bool:
-        return self.client.self.client.isfile(path)
+    def _is_file(self, path: RemotePath) -> bool:
+        return self.client.self.client.isfile(os.fspath(path))
 
-    def _get_stat(self, path: os.PathLike | str) -> RemoteFileStat:
-        item: ItemType = next(self.client.self.client.glob(path))
+    def _get_stat(self, path: RemotePath) -> RemoteFileStat:
+        item: ItemType = next(self.client.self.client.glob(os.fspath(path)))
         return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
 
     def _get_item_name(self, item: ItemType) -> str:
         return item[0]
 
-    def _is_item_dir(self, top: os.PathLike | str, item: ItemType) -> bool:
+    def _is_item_dir(self, top: RemotePath, item: ItemType) -> bool:
         return "D" in item[1]
 
-    def _is_item_file(self, top: os.PathLike | str, item: ItemType) -> bool:
+    def _is_item_file(self, top: RemotePath, item: ItemType) -> bool:
         return not self._is_item_dir(top, item)
 
-    def _get_item_stat(self, top: os.PathLike | str, item: ItemType) -> RemoteFileStat:
+    def _get_item_stat(self, top: RemotePath, item: ItemType) -> RemoteFileStat:
         return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
 
-    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
-        with self.client.open(path, mode="rb", **kwargs) as file:
+    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
+        with self.client.open(os.fspath(path), mode="rb", **kwargs) as file:
             return file.read().decode(encoding)
 
-    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
-        with self.client.open(path, mode="rb", **kwargs) as file:
+    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
+        with self.client.open(os.fspath(path), mode="rb", **kwargs) as file:
             return file.read()
 
-    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
-        with self.client.open(path, mode="wb", **kwargs) as file:
+    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="wb", **kwargs) as file:
             file.write(content.encode(encoding))
 
-    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
-        with self.client.open(path, mode="wb", **kwargs) as file:
+    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="wb", **kwargs) as file:
             file.write(content)

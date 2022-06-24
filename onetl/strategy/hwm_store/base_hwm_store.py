@@ -24,7 +24,7 @@ class BaseHWMStore:
         if options:
             log.info(f"|{self.__class__.__name__}| Using options:")
             for option, value in options.items():
-                log.info(" " * LOG_INDENT + f"{option} = {value}")
+                log.info(LOG_INDENT + f"{option} = {value}")
 
         return self
 

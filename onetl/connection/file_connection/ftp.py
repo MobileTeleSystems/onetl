@@ -10,6 +10,7 @@ from ftputil import session as ftp_session
 
 from onetl.base import FileStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.impl import LocalPath, RemotePath
 
 log = getLogger(__name__)
 
@@ -49,7 +50,7 @@ class FTP(FileConnection):
     port: int = 21
 
     def path_exists(self, path: os.PathLike | str) -> bool:
-        return self.client.path.exists(path)
+        return self.client.path.exists(os.fspath(path))
 
     def _get_client(self) -> FTPHost:
         """
@@ -70,51 +71,57 @@ class FTP(FileConnection):
             session_factory=session_factory,
         )
 
-    def _rmdir_recursive(self, path: os.PathLike | str) -> None:
-        self.client.rmtree(path)
+    def _is_client_closed(self) -> bool:
+        return self._client.closed
 
-    def _rmdir(self, path: os.PathLike | str) -> None:
-        self.client.rmdir(path)
+    def _close_client(self) -> None:
+        self._client.close()
 
-    def _upload_file(self, local_file_path: os.PathLike | str, remote_file_path: os.PathLike | str) -> None:
-        self.client.upload(local_file_path, remote_file_path)
+    def _rmdir_recursive(self, root: RemotePath) -> None:
+        self.client.rmtree(os.fspath(root))
 
-    def _rename(self, source: os.PathLike | str, target: os.PathLike | str) -> None:
-        self.client.rename(source, target)
+    def _rmdir(self, path: RemotePath) -> None:
+        self.client.rmdir(os.fspath(path))
 
-    def _download_file(self, remote_file_path: os.PathLike | str, local_file_path: os.PathLike | str) -> None:
-        self.client.download(remote_file_path, local_file_path)
+    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
+        self.client.upload(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        self.client.remove(remote_file_path)
+    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+        self.client.rename(os.fspath(source), os.fspath(target))
 
-    def _mkdir(self, path: os.PathLike | str) -> None:
-        self.client.makedirs(path, exist_ok=True)
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
+        self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _listdir(self, path: os.PathLike | str) -> list:
-        return self.client.listdir(path)
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
+        self.client.remove(os.fspath(remote_file_path))
 
-    def _is_dir(self, path: os.PathLike | str) -> bool:
-        return self.client.path.isdir(path)
+    def _mkdir(self, path: RemotePath) -> None:
+        self.client.makedirs(os.fspath(path), exist_ok=True)
 
-    def _is_file(self, path: os.PathLike | str) -> bool:
-        return self.client.path.isfile(path)
+    def _listdir(self, path: RemotePath) -> list:
+        return self.client.listdir(os.fspath(path))
 
-    def _get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
-        return self.client.stat(path)
+    def _is_dir(self, path: RemotePath) -> bool:
+        return self.client.path.isdir(os.fspath(path))
 
-    def _read_text(self, path: os.PathLike | str, encoding: str, **kwargs) -> str:
-        with self.client.open(path, mode="r", encoding=encoding, **kwargs) as file:
+    def _is_file(self, path: RemotePath) -> bool:
+        return self.client.path.isfile(os.fspath(path))
+
+    def _get_stat(self, path: RemotePath) -> FileStatProtocol:
+        return self.client.stat(os.fspath(path))
+
+    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
+        with self.client.open(os.fspath(path), mode="r", encoding=encoding, **kwargs) as file:
             return file.read()
 
-    def _read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
-        with self.client.open(path, mode="rb", **kwargs) as file:
+    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
+        with self.client.open(os.fspath(path), mode="rb", **kwargs) as file:
             return file.read()
 
-    def _write_text(self, path: os.PathLike | str, content: str, encoding: str, **kwargs) -> None:
-        with self.client.open(path, mode="w", encoding=encoding, **kwargs) as file:
+    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="w", encoding=encoding, **kwargs) as file:
             file.write(content)
 
-    def _write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> None:
-        with self.client.open(path, mode="wb", **kwargs) as file:
+    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+        with self.client.open(os.fspath(path), mode="wb", **kwargs) as file:
             file.write(content)

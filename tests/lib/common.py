@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path, PurePosixPath
 
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.impl import LocalPath, RemotePath
 
 log = logging.getLogger(__name__)
 
@@ -13,14 +13,14 @@ def upload_files(
     source_path: os.PathLike | str,
     remote_path: os.PathLike | str,
     file_connection: FileConnection,
-) -> list[PurePosixPath]:
+) -> list[RemotePath]:
     remote_files = []
 
-    local_path = Path(source_path)
+    local_path = LocalPath(source_path)
 
     if local_path.exists() and local_path.is_dir():
         for root_path, _dir_names, file_names in os.walk(local_path):
-            local_root = Path(root_path)
+            local_root = LocalPath(root_path)
             remote_root = remote_path / local_root.relative_to(local_path)
 
             for filename in file_names:
@@ -31,7 +31,7 @@ def upload_files(
 
     if not remote_files:
         raise RuntimeError(
-            f"Could not load file examples from {local_path}. Path should be exists and should contain samples",
+            f"Could not load file examples from {local_path}. Path should exist and should contain samples",
         )
 
     return remote_files

@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path, PurePosixPath
-
-from ordered_set import OrderedSet
 from pydantic import Field
 
 from onetl.core.file_result import FileResult, FileSet
-from onetl.impl import FailedRemoteFile, RemoteFile
+from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePath
 
 
 class DownloadResult(FileResult):
@@ -27,8 +24,7 @@ class DownloadResult(FileResult):
 
     .. code:: python
 
-        from pathlib import Path, PurePath
-        from onetl.impl import RemoteFile, FailedLocalFile
+        from onetl.impl import LocalPath, RemoteFile, FailedLocalFile
         from onetl.core import FileDownloader, DownloadResult
 
         downloader = FileDownloader(local_path="/local", ...)
@@ -49,12 +45,12 @@ class DownloadResult(FileResult):
                 RemoteFile("/local/file2"),
             },
             failed={FailedLocalFile("/failed/file")},
-            skipped={Path("/existing/file")},
-            missing={PurePath("/missing/file")},
+            skipped={LocalPath("/existing/file")},
+            missing={LocalPath("/missing/file")},
         )
     """
 
-    successful: FileSet[Path] = Field(default_factory=FileSet)
+    successful: FileSet[LocalPath] = Field(default_factory=FileSet)
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
-    missing: OrderedSet[PurePosixPath] = Field(default_factory=OrderedSet)
+    missing: FileSet[RemotePath] = Field(default_factory=FileSet)

@@ -228,15 +228,15 @@ class DBWriter:
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log.info(" " * LOG_INDENT + f"{attr} = {value_attr}")
+                log.info(LOG_INDENT + f"{attr} = {value_attr}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "options:")
+        log.info(LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
-            log.info(" " * LOG_INDENT + f"    {option} = {value}")
+            log.info(LOG_INDENT + f"    {option} = {value}")
 
         log.info("")
-        log.info(" " * LOG_INDENT + "DataFrame schema")
+        log.info(LOG_INDENT + "DataFrame schema")
 
         schema_tree = io.StringIO()
         with redirect_stdout(schema_tree):
@@ -245,7 +245,7 @@ class DBWriter:
             df.printSchema()
 
         for line in schema_tree.getvalue().splitlines():
-            log.info(" " * LOG_INDENT + f"    {line}")
+            log.info(LOG_INDENT + f"    {line}")
 
         self.connection.log_parameters()
         self.connection.save_df(

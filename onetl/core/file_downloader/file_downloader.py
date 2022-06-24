@@ -4,7 +4,6 @@ import os
 import shutil
 from dataclasses import InitVar, dataclass, field
 from logging import getLogger
-from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from ordered_set import OrderedSet
@@ -14,7 +13,14 @@ from onetl.base import BaseFileFilter
 from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_result import FileSet
-from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile
+from onetl.exception import NotAFileError
+from onetl.impl import (
+    FailedRemoteFile,
+    FileWriteMode,
+    LocalPath,
+    RemoteFile,
+    RemotePath,
+)
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -31,7 +37,7 @@ class FileDownloader:
         Class which contains File system connection properties. See in FileConnection section.
 
     source_path : os.PathLike | str | None, default: ``None``
-        Path on remote source to download files from.
+        Remote path to download files from.
 
         Could be ``None``, but only if you pass file paths directly to
         :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.run` method
@@ -109,10 +115,10 @@ class FileDownloader:
 
     connection: FileConnection
     local_path: InitVar[os.PathLike | str]
-    _local_path: Path = field(init=False)
+    _local_path: LocalPath = field(init=False)
 
     source_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _source_path: PurePosixPath | None = field(init=False)
+    _source_path: RemotePath | None = field(init=False)
 
     filter: BaseFileFilter | None = None
 
@@ -125,15 +131,15 @@ class FileDownloader:
         source_path: os.PathLike | str | None,
         options: FileConnection.Options | dict | None,
     ):
-        self._local_path = Path(local_path).resolve()
-        self._source_path = PurePosixPath(source_path) if source_path else None
+        self._local_path = LocalPath(local_path).resolve()
+        self._source_path = RemotePath(source_path) if source_path else None
 
         if isinstance(options, dict):
             self._options = self.Options.parse_obj(options)
         else:
             self._options = options or self.Options()
 
-    def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231, WPS213 NOSONAR
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:
         """
         Method for downloading files from source to local directory.
 
@@ -170,28 +176,26 @@ class FileDownloader:
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
             downloaded_files = downloader.run()
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/file2.txt"),
-                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/file2.txt"),
+                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
             }
             assert downloaded_files.failed == {FailedRemoteFile("/failed/file")}
             assert downloaded_files.skipped == {RemoteFile("/existing/file")}
-            assert downloaded_files.missing == {PurePosixPath("/missing/file")}
+            assert downloaded_files.missing == {RemotePath("/missing/file")}
 
         Download only certaing files from ``source_path``
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
@@ -205,8 +209,8 @@ class FileDownloader:
             )
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -216,8 +220,7 @@ class FileDownloader:
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onetl.core import FileDownloader
 
             downloader = FileDownloader(local_path="/local", ...)  # no source_path set
@@ -230,8 +233,8 @@ class FileDownloader:
             )
 
             assert downloaded_files.successful == {
-                Path("/local/path/file1.txt"),
-                Path("/local/path/file3.txt"),  # directory structure is not preserved
+                LocalPath("/local/path/file1.txt"),
+                LocalPath("/local/path/file3.txt"),  # directory structure is not preserved
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -241,35 +244,7 @@ class FileDownloader:
         if files is None and not self._source_path:
             raise ValueError("Neither file collection nor ``source_path`` are passed")
 
-        # Log all options
-        entity_boundary_log(msg="FileDownloader starts")
-
-        log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
-        log.info(" " * LOG_INDENT + f"local_path = {self._local_path}")
-        log.info(" " * LOG_INDENT + f"source_path = {self._source_path}")
-
-        if self.filter:
-            log.info("")
-            self.filter.log_options()
-        else:
-            log.info(" " * LOG_INDENT + "filter = None")
-
-        log.info(" " * LOG_INDENT + "options:")
-        for option, value in self._options.dict().items():
-            log.info(" " * LOG_INDENT + f"    {option} = {value}")
-        log.info("")
-
-        if self._options.delete_source:
-            log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
-
-        if self._options.mode == FileWriteMode.DELETE_ALL:
-            log.warning(f"|{self.__class__.__name__}| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!")
-
-        if files and self._source_path:
-            log.warning(
-                f"|{self.__class__.__name__}| Passed both ``source_path`` and file collection at the same time. "
-                "File collection will be used",
-            )
+        self._log_options(files)
 
         # Check everything
         self._check_local_path()
@@ -280,67 +255,17 @@ class FileDownloader:
             self._check_source_path()
 
         if files is None:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
-
         to_download = self._validate_files(files)
-        total_files = len(to_download)
 
-        # TODO:(@dypedchenk) discuss the need for a mode DELETE_ALL
+        # remove folder only after everything is checked
         if self._options.mode == FileWriteMode.DELETE_ALL:
             shutil.rmtree(self._local_path)
             self._local_path.mkdir()
 
-        log.info(f"|{self.__class__.__name__}| Starting downloading {total_files} file(s)")
-        result = DownloadResult()
+        result = self._download_files(to_download)
 
-        for i, (source_file, local_file) in enumerate(to_download):
-            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(" " * LOG_INDENT + f"from = {source_file}")
-            log.info(" " * LOG_INDENT + f"to = {local_file}")
-
-            if not self.connection.path_exists(source_file):
-                log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
-                result.missing.add(source_file)
-                continue
-
-            try:
-                remote_file = self.connection.get_file(source_file)
-
-                replace = False
-                if local_file.exists():
-                    error_message = f"Local directory already contains file '{local_file}'"
-                    if self._options.mode == FileWriteMode.ERROR:
-                        raise FileExistsError(error_message)
-
-                    if self._options.mode == FileWriteMode.IGNORE:
-                        log.warning(f"|LocalFS| {error_message}, skipping")
-                        result.skipped.add(remote_file)
-                        continue
-
-                    replace = True
-                    log.warning(f"|LocalFS| {error_message}, overwriting")
-
-                # Download
-                self.connection.download_file(remote_file, local_file, replace=replace)
-
-                # Delete Remote
-                if self._options.delete_source:
-                    self.connection.remove_file(remote_file)
-
-                result.successful.add(local_file)
-
-            except Exception as e:
-                log.exception(
-                    f"|{self.__class__.__name__}| Couldn't download file from target dir: {e}",
-                    exc_info=False,
-                )
-                result.failed.add(FailedRemoteFile(path=remote_file.path, stats=remote_file.stats, exception=e))
-
-        log.info(f"|{self.__class__.__name__}| Download result:")
-        log_with_indent(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
-
+        self._log_result(result)
         return result
 
     def view_files(self) -> FileSet[RemoteFile]:
@@ -408,11 +333,47 @@ class FileDownloader:
 
         return result
 
-    def _validate_files(self, remote_files: Iterable[os.PathLike | str]) -> OrderedSet[tuple[PurePosixPath, Path]]:
+    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(msg="FileDownloader starts")
+
+        log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
+        log.info(LOG_INDENT + f"source_path = {self._source_path}")
+        log.info(LOG_INDENT + f"local_path = {self._local_path}")
+
+        if self.filter:
+            log.info("")
+            self.filter.log_options()
+        else:
+            log.info(LOG_INDENT + "filter = None")
+
+        log.info(LOG_INDENT + "options:")
+        for option, value in self._options.dict().items():
+            log.info(LOG_INDENT + f"    {option} = {value}")
+        log.info("")
+
+        if self._options.delete_source:
+            log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
+
+        if self._options.mode == FileWriteMode.DELETE_ALL:
+            log.warning(f"|{self.__class__.__name__}| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!")
+
+        if files and self._source_path:
+            log.warning(
+                f"|{self.__class__.__name__}| Passed both ``source_path`` and file collection at the same time. "
+                "File collection will be used",
+            )
+
+        if not files:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
+
+    def _validate_files(  # noqa: WPS231
+        self,
+        remote_files: Iterable[os.PathLike | str],
+    ) -> OrderedSet[tuple[RemotePath, LocalPath]]:
         result = OrderedSet()
 
         for remote_file in remote_files:
-            remote_file_path = PurePosixPath(remote_file)
+            remote_file_path = RemotePath(remote_file)
 
             if not self._source_path:
                 # Download into a flat structure
@@ -435,16 +396,78 @@ class FileDownloader:
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{remote_file_path}' does not match source_path '{self._source_path}'")
 
+            if self.connection.path_exists(remote_file_path) and not self.connection.is_file(remote_file_path):
+                raise NotAFileError(f"|{self.connection.__class__.__name__}| '{remote_file_path}' is not a file")
+
             result.add((remote_file_path, local_file_path))
 
         return result
 
     def _check_source_path(self):
         if not self.connection.is_dir(self._source_path):
-            raise NotADirectoryError(f"'{self._source_path}' is not a directory")
+            raise NotADirectoryError(f"|{self.connection.__class__.__name__}| '{self._source_path}' is not a directory")
 
     def _check_local_path(self):
         if self._local_path.exists() and not self._local_path.is_dir():
-            raise NotADirectoryError(f"'{self._local_path}' is not a directory")
+            raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
 
         self._local_path.mkdir(exist_ok=True, parents=True)
+
+    def _download_files(self, to_download: OrderedSet[tuple[RemotePath, LocalPath]]) -> DownloadResult:
+        total_files = len(to_download)
+
+        log.info(f"|{self.__class__.__name__}| Starting downloading {total_files} file(s)")
+        result = DownloadResult()
+
+        for i, (source_file, local_file) in enumerate(to_download):
+            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
+            log.info(LOG_INDENT + f"from = {source_file}")
+            log.info(LOG_INDENT + f"to = {local_file}")
+
+            self._download_file(source_file, local_file, result)
+
+        return result
+
+    def _download_file(self, source_file: RemotePath, local_file: LocalPath, result: DownloadResult) -> None:
+        if not self.connection.path_exists(source_file):
+            log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
+            result.missing.add(source_file)
+            return
+
+        try:
+            remote_file = self.connection.get_file(source_file)
+
+            replace = False
+            if local_file.exists():
+                error_message = f"Local directory already contains file '{local_file}'"
+                if self._options.mode == FileWriteMode.ERROR:
+                    raise FileExistsError(error_message)
+
+                if self._options.mode == FileWriteMode.IGNORE:
+                    log.warning(f"|LocalFS| {error_message}, skipping")
+                    result.skipped.add(remote_file)
+                    return
+
+                replace = True
+                log.warning(f"|LocalFS| {error_message}, overwriting")
+
+            # Download
+            self.connection.download_file(remote_file, local_file, replace=replace)
+
+            # Delete Remote
+            if self._options.delete_source:
+                self.connection.remove_file(remote_file)
+
+            result.successful.add(local_file)
+
+        except Exception as e:
+            log.exception(
+                f"|{self.__class__.__name__}| Couldn't download file from target dir: {e}",
+                exc_info=False,
+            )
+            result.failed.add(FailedRemoteFile(path=remote_file.path, stats=remote_file.stats, exception=e))
+
+    def _log_result(self, result: DownloadResult) -> None:
+        log.info(f"|{self.__class__.__name__}| Download result:")
+        log_with_indent(str(result))
+        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")

@@ -3,20 +3,20 @@ from __future__ import annotations
 import operator
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from typing import ClassVar
 
 import yaml
 from etl_entities import HWM, HWMTypeRegistry
 from platformdirs import user_data_dir
 
+from onetl.impl import LocalPath
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import (
     default_hwm_store_class,
     register_hwm_store_class,
 )
 
-DATA_PATH = Path(user_data_dir("onETL", "ONEtools"))
+DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
 
 @default_hwm_store_class
@@ -133,14 +133,14 @@ class YAMLHWMStore(BaseHWMStore):
           value: '1000'
     """
 
-    path: Path = DATA_PATH / "yml_hwm_store"
+    path: LocalPath = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
 
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
     def __post_init__(self):
-        self.path = Path(self.path).expanduser().absolute()  # noqa: WPS601
+        self.path = LocalPath(self.path).expanduser().absolute()  # noqa: WPS601
         self.path.mkdir(parents=True, exist_ok=True)
 
     def get(self, name: str) -> HWM | None:
@@ -152,7 +152,7 @@ class YAMLHWMStore(BaseHWMStore):
         latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
         return HWMTypeRegistry.parse(latest)
 
-    def save(self, hwm: HWM) -> Path:
+    def save(self, hwm: HWM) -> LocalPath:
         data = self._load(hwm.qualified_name)
         self._dump(hwm.qualified_name, [hwm.serialize()] + data)
         return self.get_file_path(hwm.qualified_name)
@@ -167,7 +167,7 @@ class YAMLHWMStore(BaseHWMStore):
         result = cls.PROHIBITED_SYMBOLS_PATTERN.sub("_", result)
         return re.sub("_{2,}", "__", result)
 
-    def get_file_path(self, name: str) -> Path:
+    def get_file_path(self, name: str) -> LocalPath:
         file_name = self.cleanup_file_name(name)
         return self.path / f"{file_name}.yml"
 

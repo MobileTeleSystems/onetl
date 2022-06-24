@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import os
-import re
 import textwrap
 from typing import Iterable, TypeVar
 
 from humanize import naturalsize
-from ordered_set import OrderedSet
 from pydantic import BaseModel, Field, validator
 
 from onetl.core.file_result.file_set import FileSet
@@ -34,15 +32,11 @@ class FileResult(BaseModel):  # noqa: WPS214
     successful: FileSet[GenericPath] = Field(default_factory=FileSet)
     failed: FileSet[GenericPath] = Field(default_factory=FileSet)
     skipped: FileSet[GenericPath] = Field(default_factory=FileSet)
-    missing: OrderedSet[GenericPath] = Field(default_factory=OrderedSet)
+    missing: FileSet[GenericPath] = Field(default_factory=FileSet)
 
-    @validator("successful", "failed", "skipped")
+    @validator("successful", "failed", "skipped", "missing")
     def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:  # noqa: N805
         return FileSet(value)
-
-    @validator("missing")
-    def validate_missing_container(cls, value: Iterable[GenericPath]) -> OrderedSet[GenericPath]:  # noqa: N805
-        return OrderedSet(value)
 
     @property
     def successful_count(self) -> int:
@@ -54,11 +48,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/some/file"), Path("/some/another.file")},
+                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.successful_count == 2
@@ -98,11 +92,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/some/file"), Path("/some/another.file")},
+                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.skipped_count == 2
@@ -120,11 +114,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import PurePath
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                missing={PurePath("/some/file"), PurePath("/some/another.file")},
+                missing={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.missing_count == 2
@@ -142,16 +136,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             assert file_result.total_count == 6
@@ -169,11 +161,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/some/file"), Path("/some/another.file")},
+                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.successful_size == 1_000_000  # in bytes
@@ -213,11 +205,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path
+            from onetl.impl import LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/some/file"), Path("/some/another.file")},
+                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
             )
 
             assert file_result.skipped_size == 1_000_000  # in bytes
@@ -235,16 +227,14 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             assert file_result.total_size == 10_000_000  # in bytes
@@ -267,9 +257,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             files_with_exception = [
@@ -287,9 +275,12 @@ class FileResult(BaseModel):  # noqa: WPS214
 
             file_result.raise_if_failed()
             # will raise FileResultError('''
-            #    Failed 2 file(s) (10MB):
-            #        /remote/file1 (1 MB) NotAFileError("'/remote/file1' is not a file")
-            #        /remote/file2 (9 MB) FileMissingError("'/remote/file2' does not exist")
+            #    Failed 2 files (10MB):
+            #        /remote/file1 (1 MB)
+            #           NotAFileError("'/remote/file1' is not a file")
+            #
+            #        /remote/file2 (9 MB)
+            #           FileMissingError("'/remote/file2' does not exist")
             # ''')
         """
 
@@ -311,21 +302,19 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
                 missing={
-                    PurePath("/missing/file1"),
-                    PurePath("/missing/file2"),
+                    LocalPath("/missing/file1"),
+                    LocalPath("/missing/file2"),
                 },
             )
 
             file_result.raise_if_missing()
             # will raise FileResultError('''
-            #    Missing 2 file(s):
+            #    Missing 2 files:
             #        /missing/file1
             #        /missing/file2
             # ''')
@@ -349,18 +338,16 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
-                skipped={Path("/skipped/file1"), Path("/skipped/file2")},
+                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
             )
 
             file_result.raise_if_skipped()
             # will raise FileResultError('''
-            #    Skipped 2 file(s) (15 kB):
+            #    Skipped 2 files (15 kB):
             #        /skipped/file1 (10kB)
             #        /skipped/file2 (5 kB)
             # ''')
@@ -384,9 +371,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult()
@@ -413,22 +398,20 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult(
                 successful={
-                    Path("/local/empty1.file"),
-                    Path("/local/empty2.file"),
-                    Path("/local/normal.file"),
+                    LocalPath("/local/empty1.file"),
+                    LocalPath("/local/empty2.file"),
+                    LocalPath("/local/normal.file"),
                 },
             )
 
             file_result.raise_if_zero_size()
             # will raise FileResultError('''
-            #    2 file(s) out of 3 have zero size:
+            #    2 files out of 3 have zero size:
             #        /local/empty1.file
             #        /local/empty2.file
             # ''')
@@ -445,7 +428,8 @@ class FileResult(BaseModel):  # noqa: WPS214
             return
 
         lines_str = textwrap.indent(os.linesep.join(lines), INDENT)
-        error_message = f"{len(lines)} file(s) out of {self.successful_count} have zero size:{os.linesep}{lines_str}"
+        file_number_str = f"{len(lines)} files" if len(lines) > 1 else "1 file"
+        error_message = f"{file_number_str} out of {self.successful_count} have zero size:{os.linesep}{lines_str}"
 
         raise FileResultError(error_message)
 
@@ -464,9 +448,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result = FileResult()
@@ -488,13 +470,11 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={
                     FailedRemoteFile(
                         path="/remote/file1",
@@ -505,26 +485,29 @@ class FileResult(BaseModel):  # noqa: WPS214
                         exception=FileMissingError("'/remote/file2' does not exist"),
                     ),
                 },
-                skipped={Path("/skipped/file1"), Path("/skipped/file2")},
-                missing={PurePath("/missing/file1"), PurePath("/missing/file2")},
+                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
+                missing={LocalPath("/missing/file1"), LocalPath("/missing/file2")},
             )
 
             details1 = """
-                Total 8 file(s) (10.4 MB)
+                Total: 8 files (10.4 MB)
 
-                Successful 2 file(s) (30.7 kB):
+                Successful 2 files (30.7 kB):
                     /successful1 (10.2 kB)
                     /successful2 (20.5 kB)
 
-                Failed 2 file(s) (10MB):
-                    /remote/file1 (1 MB) NotAFileError("'/remote/file1' is not a file")
-                    /remote/file2 (9 MB) FileMissingError("'/remote/file2' does not exist")
+                Failed 2 files (10MB):
+                    /remote/file1 (1 MB)
+                        NotAFileError("'/remote/file1' is not a file")
 
-                Skipped 2 file(s) (15 kB):
+                    /remote/file2 (9 MB)
+                        FileMissingError("'/remote/file2' does not exist")
+
+                Skipped 2 files (15 kB):
                     /skipped/file1 (10kB)
                     /skipped/file2 (5 kB)
 
-                Missing 2 file(s):
+                Missing 2 files:
                     /missing/file1
                     /missing/file2
             """
@@ -548,7 +531,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         result = []
 
         if self.successful or self.failed or self.missing or self.skipped:
-            result.append(self._total_header)
+            result.append(self._total_summary)
 
         result.append(self._successful_message)
         result.append(self._failed_message)
@@ -557,7 +540,8 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         return (os.linesep * 2).join(result)
 
-    def __str__(self):
+    @property
+    def summary(self) -> str:
         '''
         Return short summary about files in the result object
 
@@ -566,164 +550,118 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         .. code:: python
 
-            from pathlib import Path, PurePath
-
-            from onetl.impl import RemoteFile
+            from onetl.impl import RemoteFile, LocalPath
             from onet.core import FileResult
 
             file_result1 = FileResult(
-                successful={Path("/local/file"), Path("/local/another.file")},
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
                 failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={Path("/skipped/file")},
-                missing={PurePath("/missing/file")},
+                skipped={LocalPath("/skipped/file")},
+                missing={LocalPath("/missing/file")},
             )
 
             result = """
-                Total 6 file(s) (10.4 MB)
+                Total: 8 files (10.4 MB)
 
-                Successful 2 file(s) (30.7 kB)
+                Successful: 2 files (30.7 kB)
 
-                Failed 2 file(s) (10MB)
+                Failed: 2 files (10MB)
 
-                Skipped 2 file(s) (15 kB)
+                Skipped: 2 files (15 kB)
 
-                Missing 2 file(s)
+                Missing: 2 files
             """
 
-            assert str(file_result1) == result
+            assert file_result1.summary == result
 
             file_result2 = FileResult()
-            assert str(file_result1) == "No files"
+            assert file_result1.summary == "No files"
         '''
 
         return self._total_message
 
+    def __str__(self):
+        """Same as :obj:`onetl.core.file_result.FileResult.details`"""
+        return self.details
+
     @property
-    def _total_header(self) -> str:
+    def _total_summary(self) -> str:
         if self.successful or self.failed or self.missing or self.skipped:
-            return f"Total {self.total_count} file(s) ({naturalsize(self.total_size)})"
+            file_number_str = f"{self.total_count} files" if self.total_count > 1 else "1 file"
+            return f"Total: {file_number_str} ({naturalsize(self.total_size)})"
 
         return "No files"
 
     @property
-    def _successful_header(self) -> str:
+    def _successful_summary(self) -> str:
         if not self.successful:
             return "No successful files"
 
-        return f"Successful {self.successful_count} file(s) ({naturalsize(self.successful_size)})"
-
-    @property
-    def _failed_header(self) -> str:
-        if not self.failed:
-            return "No failed files"
-
-        return f"Failed {self.failed_count} file(s) ({naturalsize(self.failed_size)})"
-
-    @property
-    def _skipped_header(self) -> str:
-        if not self.skipped:
-            return "No skipped files"
-
-        return f"Skipped {self.skipped_count} file(s) ({naturalsize(self.skipped_size)})"
-
-    @property
-    def _missing_header(self) -> str:
-        if not self.missing:
-            return "No missing files"
-
-        return f"Missing {self.missing_count} file(s)"
+        return "Successful: " + self.successful.summary
 
     @property
     def _successful_message(self) -> str:
         if not self.successful:
-            return self._successful_header
+            return self._successful_summary
 
-        lines = []
-        for file in self.successful:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
+        return "Successful " + self.successful.details
 
-            lines.append(f"{os.fspath(file)} ({size})")
+    @property
+    def _failed_summary(self) -> str:
+        if not self.failed:
+            return "No failed files"
 
-        if self.successful_count > 1:
-            header = f"{self._successful_header}:{os.linesep}{INDENT}"
-        else:
-            header = "Successful: "
-
-        lines_str = textwrap.indent(os.linesep.join(lines), INDENT).strip()
-        return header + lines_str
+        return "Failed: " + self.failed.summary
 
     @property
     def _failed_message(self) -> str:
         if not self.failed:
-            return self._failed_header
+            return self._failed_summary
 
-        lines = []
-        for file in self.failed:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
-            prefix = f"{os.fspath(file)} ({size})"
+        return "Failed " + self.failed.details
 
-            exception_formatted = ""
-            if hasattr(file, "exception"):
-                exception = re.sub(r"(\\r)?\\n", os.linesep, repr(file.exception))
-                exception_formatted = " " + textwrap.indent(exception, " " * (len(prefix) + 2)).strip()
-            lines.append(prefix + exception_formatted)
+    @property
+    def _skipped_summary(self) -> str:
+        if not self.skipped:
+            return "No skipped files"
 
-        if self.failed_count > 1:
-            header = f"{self._failed_header}:{os.linesep}{INDENT}"
-        else:
-            header = "Failed: "
-
-        lines_str = textwrap.indent(os.linesep.join(lines), INDENT).strip()
-        return header + lines_str
+        return "Skipped: " + self.skipped.summary
 
     @property
     def _skipped_message(self) -> str:
         if not self.skipped:
-            return self._skipped_header
+            return self._skipped_summary
 
-        lines = []
-        for file in self.skipped:
-            size = naturalsize(file.stat().st_size) if file.exists() else "? Bytes"
+        return "Skipped " + self.skipped.details
 
-            lines.append(f"{os.fspath(file)} ({size})")
+    @property
+    def _missing_summary(self) -> str:
+        if not self.missing:
+            return "No missing files"
 
-        if self.skipped_count > 1:
-            header = f"{self._skipped_header}:{os.linesep}{INDENT}"
-        else:
-            header = "Skipped: "
-
-        lines_str = textwrap.indent(os.linesep.join(lines), INDENT).strip()
-        return header + lines_str
+        return "Missing: " + self.missing.summary.replace(" (0 Bytes)", "")
 
     @property
     def _missing_message(self) -> str:
         if not self.missing:
-            return self._missing_header
+            return self._missing_summary
 
-        lines = [os.fspath(file) for file in self.missing]
-
-        if self.missing_count > 1:
-            header = f"{self._missing_header}:{os.linesep}{INDENT}"
-        else:
-            header = "Missing: "
-
-        lines_str = textwrap.indent(os.linesep.join(lines), INDENT).strip()
-        return header + lines_str
+        return "Missing " + self.missing.details.replace(" (0 Bytes)", "")
 
     @property
     def _total_message(self) -> str:
-        result = [self._total_header]
+        result = [self._total_summary]
 
         if self.successful:
-            result.append(self._successful_header)
+            result.append(self._successful_summary)
 
         if self.failed:
-            result.append(self._failed_header)
+            result.append(self._failed_summary)
 
         if self.skipped:
-            result.append(self._skipped_header)
+            result.append(self._skipped_summary)
 
         if self.missing:
-            result.append(self._missing_header)
+            result.append(self._missing_summary)
 
         return os.linesep.join(result)
