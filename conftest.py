@@ -175,33 +175,27 @@ def get_schema_table(processing):
 
 
 @pytest.fixture
-def prepare_schema_table(processing, request, get_schema_table):
-    test_function = request.function
-
-    test_entity = test_function.__name__.split("_")[2]
-
+def prepare_schema_table(processing, get_schema_table):
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
-
-    preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
-
     _, schema, table = get_schema_table
 
-    try:
-        processing.create_schema(schema=schema)
-        processing.create_table(schema=schema, table=table, fields=fields)
-
-        if preloading_data:
-            processing.insert_data(
-                schema=schema,
-                table=table,
-                values=processing.create_pandas_df(),
-            )
-
-    except Exception as error:
-        log.exception(error)
-        raise error
+    processing.create_schema(schema=schema)
+    processing.create_table(schema=schema, table=table, fields=fields)
 
     return get_schema_table
+
+
+@pytest.fixture
+def load_table_data(prepare_schema_table, processing):
+    _, schema, table = prepare_schema_table
+
+    processing.insert_data(
+        schema=schema,
+        table=table,
+        values=processing.create_pandas_df(),
+    )
+
+    return prepare_schema_table
 
 
 @pytest.fixture(scope="function", autouse=True)  # noqa: WPS325

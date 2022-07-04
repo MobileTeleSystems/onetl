@@ -11,7 +11,7 @@ from onetl.connection import Clickhouse
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -20,11 +20,11 @@ def test_clickhouse_reader_connection_sql(spark, processing, prepare_schema_tabl
         database=processing.database,
         spark=spark,
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     df = clickhouse.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -37,7 +37,7 @@ def test_clickhouse_reader_connection_sql(spark, processing, prepare_schema_tabl
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_reader_connection_fetch(spark, processing, prepare_schema_table, suffix):
+def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -46,12 +46,12 @@ def test_clickhouse_reader_connection_fetch(spark, processing, prepare_schema_ta
         database=processing.database,
         spark=spark,
     )
-    schema = prepare_schema_table.schema
-    table = prepare_schema_table.full_name
+    schema = load_table_data.schema
+    table = load_table_data.full_name
     df = clickhouse.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -60,7 +60,7 @@ def test_clickhouse_reader_connection_fetch(spark, processing, prepare_schema_ta
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
     df = clickhouse.fetch(f"SHOW TABLES IN {schema}{suffix}")
-    result_df = pandas.DataFrame([[prepare_schema_table.table]], columns=["name"])
+    result_df = pandas.DataFrame([[load_table_data.table]], columns=["name"])
     processing.assert_equal_df(df=df, other_frame=result_df)
     # wrong syntax
     with pytest.raises(Exception):
@@ -68,7 +68,7 @@ def test_clickhouse_reader_connection_fetch(spark, processing, prepare_schema_ta
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_reader_connection_execute_ddl(spark, processing, get_schema_table, suffix):
+def test_clickhouse_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -118,7 +118,7 @@ def test_clickhouse_reader_connection_execute_ddl(spark, processing, get_schema_
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_reader_connection_execute_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_clickhouse_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -127,7 +127,7 @@ def test_clickhouse_reader_connection_execute_dml(request, spark, processing, pr
         database=processing.database,
         spark=spark,
     )
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
@@ -143,8 +143,8 @@ def test_clickhouse_reader_connection_execute_dml(request, spark, processing, pr
     assert df.count()
     processing.assert_equal_df(
         df=df,
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     # not supported by Clickhouse
@@ -158,11 +158,11 @@ def test_clickhouse_reader_connection_execute_dml(request, spark, processing, pr
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_reader_connection_execute_function(
+def test_clickhouse_connection_execute_function(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     clickhouse = Clickhouse(
@@ -173,11 +173,11 @@ def test_clickhouse_reader_connection_execute_function(
         database=processing.database,
         spark=spark,
     )
-    table = prepare_schema_table.full_name
-    func = f"{prepare_schema_table.table}_func"
+    table = load_table_data.full_name
+    func = f"{load_table_data.table}_func"
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     assert not clickhouse.execute(f"CREATE FUNCTION {func} AS (a, b) -> a + b{suffix}")

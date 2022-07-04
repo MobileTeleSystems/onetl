@@ -11,7 +11,7 @@ from onetl.connection import Postgres
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_postgres_connection_sql(spark, processing, load_table_data, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -21,12 +21,12 @@ def test_postgres_reader_connection_sql(spark, processing, prepare_schema_table,
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
 
     df = postgres.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -42,7 +42,7 @@ def test_postgres_reader_connection_sql(spark, processing, prepare_schema_table,
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_fetch(spark, processing, prepare_schema_table, suffix):
+def test_postgres_connection_fetch(spark, processing, load_table_data, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -52,12 +52,12 @@ def test_postgres_reader_connection_fetch(spark, processing, prepare_schema_tabl
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
 
     df = postgres.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df)
@@ -72,7 +72,7 @@ def test_postgres_reader_connection_fetch(spark, processing, prepare_schema_tabl
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_ddl(spark, processing, get_schema_table, suffix):
+def test_postgres_connection_ddl(spark, processing, get_schema_table, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -133,7 +133,7 @@ def test_postgres_reader_connection_ddl(spark, processing, get_schema_table, suf
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_postgres_connection_dml(request, spark, processing, load_table_data, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -143,14 +143,14 @@ def test_postgres_reader_connection_dml(request, spark, processing, prepare_sche
         spark=spark,
     )
 
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
 
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -238,11 +238,11 @@ def test_postgres_reader_connection_dml(request, spark, processing, prepare_sche
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_procedure(
+def test_postgres_connection_execute_procedure(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -254,8 +254,8 @@ def test_postgres_reader_connection_execute_procedure(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
-    proc = f"{prepare_schema_table.table}_proc"
+    table = load_table_data.full_name
+    proc = f"{load_table_data.table}_proc"
 
     assert not postgres.execute(
         f"""
@@ -346,11 +346,11 @@ def test_postgres_reader_connection_execute_procedure(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_procedure_arguments(
+def test_postgres_connection_execute_procedure_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -362,8 +362,8 @@ def test_postgres_reader_connection_execute_procedure_arguments(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
-    proc = f"{prepare_schema_table.table}_proc"
+    table = load_table_data.full_name
+    proc = f"{load_table_data.table}_proc"
 
     assert not postgres.execute(
         f"""
@@ -396,11 +396,11 @@ def test_postgres_reader_connection_execute_procedure_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_procedure_inout(
+def test_postgres_connection_execute_procedure_inout(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -412,12 +412,12 @@ def test_postgres_reader_connection_execute_procedure_inout(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
-    proc = f"{prepare_schema_table.table}_proc_inout"
+    table = load_table_data.full_name
+    proc = f"{load_table_data.table}_proc_inout"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -451,7 +451,7 @@ def test_postgres_reader_connection_execute_procedure_inout(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_procedure_ddl(
+def test_postgres_connection_execute_procedure_ddl(
     request,
     spark,
     processing,
@@ -490,7 +490,7 @@ def test_postgres_reader_connection_execute_procedure_ddl(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_procedure_dml(
+def test_postgres_connection_execute_procedure_dml(
     request,
     spark,
     processing,
@@ -535,11 +535,11 @@ def test_postgres_reader_connection_execute_procedure_dml(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_function(
+def test_postgres_connection_execute_function(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -551,7 +551,7 @@ def test_postgres_reader_connection_execute_function(
         spark=spark,
     )
 
-    func = f"{prepare_schema_table.table}_func"
+    func = f"{load_table_data.table}_func"
 
     assert not postgres.execute(
         f"""
@@ -669,11 +669,11 @@ def test_postgres_reader_connection_execute_function(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_function_arguments(
+def test_postgres_connection_execute_function_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -685,12 +685,12 @@ def test_postgres_reader_connection_execute_function_arguments(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
-    func = f"{prepare_schema_table.table}_func"
+    table = load_table_data.full_name
+    func = f"{load_table_data.table}_func"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -749,11 +749,11 @@ def test_postgres_reader_connection_execute_function_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_function_table(
+def test_postgres_connection_execute_function_table(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     postgres = Postgres(
@@ -765,12 +765,12 @@ def test_postgres_reader_connection_execute_function_table(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     func = f"{table}_func_table"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -802,7 +802,7 @@ def test_postgres_reader_connection_execute_function_table(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_function_ddl(
+def test_postgres_connection_execute_function_ddl(
     request,
     spark,
     processing,
@@ -863,7 +863,7 @@ def test_postgres_reader_connection_execute_function_ddl(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_reader_connection_execute_function_dml(
+def test_postgres_connection_execute_function_dml(
     request,
     spark,
     processing,
