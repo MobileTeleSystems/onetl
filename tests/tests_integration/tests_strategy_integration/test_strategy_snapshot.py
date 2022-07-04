@@ -102,10 +102,10 @@ def test_postgres_strategy_snapshot_batch_wrong_step(
                 reader.run()
 
 
-def test_postgres_reader_strategy_snapshot_batch_outside_loop(
+def test_postgres_strategy_snapshot_batch_outside_loop(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -118,7 +118,7 @@ def test_postgres_reader_strategy_snapshot_batch_outside_loop(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        table=load_table_data.full_name,
         hwm_column="hwm_int",
     )
 
@@ -127,7 +127,7 @@ def test_postgres_reader_strategy_snapshot_batch_outside_loop(
             reader.run()
 
 
-def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing, prepare_schema_table):
+def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_table_data):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -139,7 +139,7 @@ def test_postgres_reader_strategy_snapshot_batch_hwm_set_twice(spark, processing
 
     step = 1
 
-    table1 = prepare_schema_table.full_name
+    table1 = load_table_data.full_name
     table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
 
     hwm_column1 = "hwm_int"

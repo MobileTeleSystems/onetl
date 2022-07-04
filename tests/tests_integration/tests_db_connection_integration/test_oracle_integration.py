@@ -11,7 +11,7 @@ from onetl.connection import Oracle
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -22,11 +22,11 @@ def test_oracle_reader_connection_sql(spark, processing, prepare_schema_table, s
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -45,7 +45,7 @@ def test_oracle_reader_connection_sql(spark, processing, prepare_schema_table, s
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_fetch(spark, processing, prepare_schema_table, suffix):
+def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -56,12 +56,12 @@ def test_oracle_reader_connection_fetch(spark, processing, prepare_schema_table,
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
 
     df = oracle.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -80,7 +80,7 @@ def test_oracle_reader_connection_fetch(spark, processing, prepare_schema_table,
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_ddl(spark, processing, get_schema_table, suffix):
+def test_oracle_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -131,7 +131,7 @@ def test_oracle_reader_connection_execute_ddl(spark, processing, get_schema_tabl
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_oracle_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -142,14 +142,14 @@ def test_oracle_reader_connection_execute_dml(request, spark, processing, prepar
         sid=processing.sid,
     )
 
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
 
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -191,7 +191,7 @@ def test_oracle_reader_connection_execute_dml(request, spark, processing, prepar
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_procedure(request, spark, processing, prepare_schema_table, suffix):
+def test_oracle_connection_execute_procedure(request, spark, processing, load_table_data, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -202,7 +202,7 @@ def test_oracle_reader_connection_execute_procedure(request, spark, processing, 
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
 
     assert not oracle.execute(
@@ -320,11 +320,11 @@ def test_oracle_reader_connection_execute_procedure(request, spark, processing, 
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_procedure_arguments(
+def test_oracle_connection_execute_procedure_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     oracle = Oracle(
@@ -337,7 +337,7 @@ def test_oracle_reader_connection_execute_procedure_arguments(
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
 
     assert not oracle.execute(
@@ -443,11 +443,11 @@ def test_oracle_reader_connection_execute_procedure_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_procedure_inout(
+def test_oracle_connection_execute_procedure_inout(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     oracle = Oracle(
@@ -460,7 +460,7 @@ def test_oracle_reader_connection_execute_procedure_inout(
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc_inout"
 
     assert not oracle.execute(
@@ -512,7 +512,7 @@ def test_oracle_reader_connection_execute_procedure_inout(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_procedure_ddl(request, spark, processing, get_schema_table, suffix):
+def test_oracle_connection_execute_procedure_ddl(request, spark, processing, get_schema_table, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -544,7 +544,7 @@ def test_oracle_reader_connection_execute_procedure_ddl(request, spark, processi
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
+def test_oracle_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -587,7 +587,7 @@ def test_oracle_reader_connection_execute_procedure_dml(request, spark, processi
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_function(request, spark, processing, prepare_schema_table, suffix):
+def test_oracle_connection_execute_function(request, spark, processing, load_table_data, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -598,7 +598,7 @@ def test_oracle_reader_connection_execute_function(request, spark, processing, p
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     func = f"{table}_func"
 
     assert not oracle.execute(
@@ -732,11 +732,11 @@ def test_oracle_reader_connection_execute_function(request, spark, processing, p
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_function_arguments(
+def test_oracle_connection_execute_function_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     oracle = Oracle(
@@ -749,12 +749,12 @@ def test_oracle_reader_connection_execute_function_arguments(
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     func = f"{table}_func"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -806,11 +806,11 @@ def test_oracle_reader_connection_execute_function_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_function_table(
+def test_oracle_connection_execute_function_table(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     oracle = Oracle(
@@ -823,12 +823,12 @@ def test_oracle_reader_connection_execute_function_table(
         sid=processing.sid,
     )
 
-    table = prepare_schema_table.full_name
-    func = f"{prepare_schema_table.table}_func"
+    table = load_table_data.full_name
+    func = f"{load_table_data.table}_func"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -882,7 +882,7 @@ def test_oracle_reader_connection_execute_function_table(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_function_ddl(request, spark, processing, get_schema_table, suffix):
+def test_oracle_connection_execute_function_ddl(request, spark, processing, get_schema_table, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -937,7 +937,7 @@ def test_oracle_reader_connection_execute_function_ddl(request, spark, processin
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_oracle_reader_connection_execute_function_dml(request, spark, processing, get_schema_table, suffix):
+def test_oracle_connection_execute_function_dml(request, spark, processing, get_schema_table, suffix):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,

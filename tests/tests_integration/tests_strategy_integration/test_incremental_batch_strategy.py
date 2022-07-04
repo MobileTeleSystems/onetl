@@ -12,10 +12,10 @@ from onetl.strategy import IncrementalBatchStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
 
 
-def test_postgres_reader_strategy_incremental_batch_outside_loop(
+def test_postgres_strategy_incremental_batch_outside_loop(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -27,7 +27,7 @@ def test_postgres_reader_strategy_incremental_batch_outside_loop(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        table=load_table_data.full_name,
         hwm_column="hwm_int",
     )
 
@@ -87,10 +87,10 @@ def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
                 reader.run()
 
 
-def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(
+def test_postgres_strategy_incremental_batch_hwm_set_twice(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -103,7 +103,7 @@ def test_postgres_reader_strategy_incremental_batch_hwm_set_twice(
 
     step = 1
 
-    table1 = prepare_schema_table.full_name
+    table1 = load_table_data.full_name
     table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
 
     hwm_column1 = "hwm_int"
@@ -168,10 +168,10 @@ def test_postgres_strategy_incremental_batch_wrong_hwm_type(spark, processing, p
         ("hwm_datetime", "integer", timedelta(weeks=2)),
     ],
 )
-def test_postgres_reader_strategy_incremental_batch_different_hwm_type_in_store(
+def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     hwm_column,
     new_type,
     step,
@@ -185,17 +185,17 @@ def test_postgres_reader_strategy_incremental_batch_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
 
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
             reader.run()
 
-    processing.drop_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table)
+    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
 
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     new_fields[hwm_column] = new_type
-    processing.create_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table, fields=new_fields)
+    processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
     with pytest.raises(TypeError):
         with IncrementalBatchStrategy(step=step) as batches:
@@ -224,10 +224,10 @@ def test_postgres_reader_strategy_incremental_batch_different_hwm_type_in_store(
         ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_reader_strategy_incremental_batch_wrong_step(
+def test_postgres_strategy_incremental_batch_wrong_step(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     hwm_column,
     step,
 ):
@@ -239,7 +239,7 @@ def test_postgres_reader_strategy_incremental_batch_wrong_step(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
 
     with pytest.raises((TypeError, ValueError)):
         with IncrementalBatchStrategy(step=step) as part:
