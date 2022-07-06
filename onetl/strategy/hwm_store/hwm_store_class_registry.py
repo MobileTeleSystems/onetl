@@ -5,8 +5,6 @@ from typing import Any, Callable, ClassVar, Collection, Mapping
 
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 
-CONFIG_ROOT_KEY = "hwm_store"
-
 
 class HWMStoreClassRegistry:
     """Registry class of different HWM stores
@@ -43,6 +41,10 @@ class HWMStoreClassRegistry:
 
     @classmethod
     def add(cls, type_name: str, klass: type[BaseHWMStore]) -> None:
+
+        assert isinstance(type_name, str)  # noqa: S101
+        assert issubclass(klass, BaseHWMStore)  # noqa: S101
+
         cls._mapping[type_name] = klass
 
     @classmethod
@@ -116,20 +118,8 @@ def register_hwm_store_class(*type_names: str):
     return wrapper
 
 
-def get_root(config: Mapping) -> Any:
-    if CONFIG_ROOT_KEY in config:
-        return config.get(CONFIG_ROOT_KEY)
-
-    for _key, value in config.items():
-        if isinstance(value, Mapping):
-            result = get_root(value)
-            if result:
-                return result
-
-    return None
-
-
 def parse_config(value: Any) -> tuple[str, list, Mapping]:
+
     if not isinstance(value, (str, Mapping)):
         raise ValueError(f"Wrong value {value} for `hwm_store` config item")
 
@@ -169,8 +159,40 @@ def parse_child_item(child: Any) -> tuple[list, Mapping]:
     return store_args, store_kwargs
 
 
-def detect_hwm_store(func: Callable) -> Callable:
+def dict_item_getter(key: str) -> Callable:
+    def wrapper(conf):  # noqa: WPS430
+        return resolve_attr(conf, key)
+
+    return wrapper
+
+
+def resolve_attr(conf: Mapping, hwm_key: str) -> str | Mapping:
+    obj = {}
+
+    try:
+        if "." not in hwm_key:
+            obj = conf[hwm_key]
+        else:
+            for name in hwm_key.split("."):
+                obj = conf[name]
+                conf = obj
+    except Exception as e:
+        raise ValueError("The configuration does not contain a required key") from e
+
+    return obj
+
+
+def detect_hwm_store(key: str) -> Callable:
     """Detect HWM store by config object
+
+    Parameters
+    ----------
+    key : str
+        The name of the section in the config that stores information about hwm
+
+        .. warning ::
+
+            DON'T USE A DOT IN THE PARAMETER NAME IN THE CONFIG
 
     Examples
     --------
@@ -225,23 +247,37 @@ def detect_hwm_store(func: Callable) -> Callable:
     .. code::
 
         @hydra.main(config="../conf")
-        @detect_hwm_store
+        @detect_hwm_store(key="myetl.env.hwm_store")
         def main(config: OmniConf):
             pass
 
     """
 
-    @wraps(func)
-    def wrapper(config: Mapping, *args, **kwargs):
-        root = get_root(config)
+    if not isinstance(key, str):
+        raise ValueError("key name must be a string")
 
-        if not root:
-            return func(config, *args, **kwargs)
+    def pre_wrapper(func: Callable):  # noqa: WPS430
+        @wraps(func)
+        def wrapper(config: Mapping, *args, **kwargs):
 
-        store_type, store_args, store_kwargs = parse_config(root)
-        store = HWMStoreClassRegistry.get(store_type)
+            if not config:
+                raise ValueError("Config must be specified")
 
-        with store(*store_args, **store_kwargs):
-            return func(config, *args, **kwargs)
+            if not key:
+                raise ValueError("Key value must be specified")
 
-    return wrapper
+            get_hwm_spec = dict_item_getter(key)
+            root = get_hwm_spec(config)
+
+            if not root:
+                return func(config, *args, **kwargs)
+
+            store_type, store_args, store_kwargs = parse_config(root)
+            store = HWMStoreClassRegistry.get(store_type)
+
+            with store(*store_args, **store_kwargs):
+                return func(config, *args, **kwargs)
+
+        return wrapper
+
+    return pre_wrapper
