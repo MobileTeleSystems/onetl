@@ -118,6 +118,8 @@ class FileFilter(BaseFileFilter, BaseModel):
         return value
 
     def match(self, path: PathProtocol) -> bool:
+        """False means it does not match the template by which you want to receive files"""
+
         if self.exclude_dirs:
             path = path if path.is_dir() else path.parent
             for exclude_dir in self.exclude_dirs:

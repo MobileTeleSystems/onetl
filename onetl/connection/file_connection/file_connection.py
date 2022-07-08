@@ -286,7 +286,7 @@ class FileConnection(BaseFileConnection):
 
         return result
 
-    def walk(
+    def walk(  # noqa: WPS231
         self,
         top: os.PathLike | str,
         filter: BaseFileFilter | None = None,  # noqa: WPS125
@@ -330,6 +330,7 @@ class FileConnection(BaseFileConnection):
                     log.info(f"|{self.__class__.__name__}| File '{os.fspath(file)}' does match the filter")
                     files.append(RemoteFile(path=name, stats=stat))
 
+        # if a nested directory was encountered, then the same method is called recursively
         for name in dirs:
             path = root / name
             yield from self.walk(top=path, filter=filter)

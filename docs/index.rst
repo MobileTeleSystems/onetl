@@ -86,6 +86,13 @@
 
     core/file_filter
 
+.. toctree::
+    :maxdepth: 2
+    :caption: File Limit
+    :hidden:
+
+    core/file_limit
+
 ..
     Заменить на блок ниже
 ..
