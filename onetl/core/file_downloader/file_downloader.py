@@ -22,6 +22,8 @@ from onetl.impl import (
     RemotePath,
 )
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
+from onetl.core.file_limit.file_limit import FileLimit
+from onetl.base.base_file_limit import BaseFileLimit
 
 log = getLogger(__name__)
 
@@ -48,6 +50,10 @@ class FileDownloader:
     filter : BaseFileFilter
         Options of the file filtering. See :obj:`onetl.core.file_filter.file_filter.FileFilter`
 
+    limit : BaseFileLimit
+        Options of the file  limiting. See :obj:`onetl.core.file_limit.file_limit.FileLimit`
+        Default value for the amount of the files is 100
+
     options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options
 
@@ -73,7 +79,7 @@ class FileDownloader:
     .. code::
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader, FileFilter
+        from onetl.core import FileDownloader, FileFilter, FileLimit
 
         sftp = SFTP(...)
 
@@ -83,6 +89,7 @@ class FileDownloader:
             local_path="/path/to/local",
             filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),
+            limit=FileLimit(count_limit=10),
         )
     """
 
@@ -114,22 +121,25 @@ class FileDownloader:
             frozen = True
 
     connection: FileConnection
+
     local_path: InitVar[os.PathLike | str]
     _local_path: LocalPath = field(init=False)
 
-    source_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _source_path: RemotePath | None = field(init=False)
-
     filter: BaseFileFilter | None = None
+
+    limit: BaseFileLimit = FileLimit()
 
     options: InitVar[Options | dict | None] = field(default=None)
     _options: Options = field(init=False)
 
+    source_path: InitVar[os.PathLike | str | None] = field(default=None)
+    _source_path: RemotePath | None = field(init=False)
+
     def __post_init__(
         self,
         local_path: os.PathLike | str,
-        source_path: os.PathLike | str | None,
         options: FileConnection.Options | dict | None,
+        source_path: os.PathLike | str | None,
     ):
         self._local_path = LocalPath(local_path).resolve()
         self._source_path = RemotePath(source_path) if source_path else None
@@ -316,15 +326,32 @@ class FileDownloader:
 
         self._check_source_path()
         result = FileSet()
+        self.limit.reset_state()
 
         try:
             for root, dirs, files in self.connection.walk(self._source_path, filter=self.filter):
+                # when iterating over files, it should be checked for a limit on the number of files.
+                # when the limit on the number of files is reached,
+                # it is necessary to stop and download files that have not yet been uploaded.
+
                 log.debug(
                     f"|{self.connection.__class__.__name__}| "
                     f"Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}",
                 )
 
-                result.update(RemoteFile(path=root / file, stats=file.stats) for file in files)
+                file_list = []
+
+                for file in files:
+                    file_list.append(RemoteFile(path=root / file, stats=file.stats))
+                    if self.limit.verify():
+                        break  # noqa: WPS220
+
+                if file_list:
+                    result.update(file_list)
+
+                if self.limit.is_reached:
+                    log.warning("File amount limit reached !")
+                    break
 
         except Exception as e:
             raise RuntimeError(
@@ -340,11 +367,13 @@ class FileDownloader:
         log.info(LOG_INDENT + f"source_path = {self._source_path}")
         log.info(LOG_INDENT + f"local_path = {self._local_path}")
 
-        if self.filter:
+        if self.filter is not None:
             log.info("")
             self.filter.log_options()
         else:
             log.info(LOG_INDENT + "filter = None")
+
+        self.limit.log_options()
 
         log.info(LOG_INDENT + "options:")
         for option, value in self._options.dict().items():
