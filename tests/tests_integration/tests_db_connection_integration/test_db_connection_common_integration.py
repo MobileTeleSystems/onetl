@@ -40,6 +40,7 @@ def test_mssql_connection_check(spark, processing, caplog):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     with caplog.at_level(logging.INFO):
         mssql.check()
@@ -47,7 +48,14 @@ def test_mssql_connection_check(spark, processing, caplog):
 
 
 def test_mssql_wrong_connection_check(spark):
-    mssql = MSSQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+    mssql = MSSQL(
+        host="host",
+        user="some_user",
+        password="pwd",
+        database="abc",
+        spark=spark,
+        extra={"trustServerCertificate": "true"},
+    )
     with pytest.raises(RuntimeError):
         mssql.check()
 

@@ -10,6 +10,7 @@ def test_mssql_reader_snapshot(spark, processing, load_table_data):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     reader = DBReader(
         connection=mssql,
@@ -31,6 +32,7 @@ def test_mssql_reader_snapshot_with_columns(spark, processing, load_table_data):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     reader1 = DBReader(
         connection=mssql,
@@ -54,6 +56,7 @@ def test_mssql_reader_snapshot_with_where(spark, processing, load_table_data):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     reader = DBReader(
         connection=mssql,
@@ -103,6 +106,7 @@ def test_mssql_reader_snapshot_with_columns_and_where(spark, processing, load_ta
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     reader1 = DBReader(
         connection=mssql,

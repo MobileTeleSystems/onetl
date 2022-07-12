@@ -11,6 +11,7 @@ def test_mssql_writer_snapshot(spark, processing, prepare_schema_table):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     writer = DBWriter(
         connection=mssql,

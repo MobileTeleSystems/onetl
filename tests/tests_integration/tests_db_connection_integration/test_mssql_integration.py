@@ -19,6 +19,7 @@ def test_mssql_connection_sql(spark, processing, load_table_data, suffix):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = load_table_data.full_name
     df = mssql.sql(f"SELECT * FROM {table}{suffix}")
@@ -45,6 +46,7 @@ def test_mssql_connection_fetch(spark, processing, load_table_data, suffix):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = load_table_data.full_name
     df = mssql.fetch(f"SELECT * FROM {table}{suffix}")
@@ -71,6 +73,7 @@ def test_mssql_connection_execute_ddl(spark, processing, get_schema_table, suffi
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table_name, schema, table = get_schema_table
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
@@ -113,6 +116,7 @@ def test_mssql_connection_execute_dml(request, spark, processing, load_table_dat
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
@@ -160,6 +164,7 @@ def test_mssql_connection_execute_procedure(request, spark, processing, load_tab
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = load_table_data.full_name
     proc = f"{table}_proc"
@@ -244,6 +249,7 @@ def test_mssql_connection_execute_procedure_arguments(
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = load_table_data.full_name
     proc = f"{table}_proc"
@@ -318,6 +324,7 @@ def test_mssql_connection_execute_procedure_out(
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = load_table_data.full_name
     proc = f"{table}_proc_out"
@@ -368,6 +375,7 @@ def test_mssql_connection_execute_procedure_ddl(request, spark, processing, get_
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = get_schema_table.full_name
     proc = f"{table}_proc_ddl"
@@ -402,6 +410,7 @@ def test_mssql_connection_execute_procedure_dml(request, spark, processing, get_
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = get_schema_table.full_name
     proc = f"{table}_proc_dml"

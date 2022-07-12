@@ -40,6 +40,7 @@ def test_mssql_strategy_incremental(
         password=processing.password,
         spark=spark,
         database=processing.database,
+        extra={"trustServerCertificate": "true"},
     )
     reader = DBReader(connection=mssql, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
@@ -117,6 +118,7 @@ def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema
         password=processing.password,
         spark=spark,
         database=processing.database,
+        extra={"trustServerCertificate": "true"},
     )
     reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
@@ -178,6 +180,7 @@ def test_mssql_strategy_incremental_with_hwm_expr(
         password=processing.password,
         spark=spark,
         database=processing.database,
+        extra={"trustServerCertificate": "true"},
     )
 
     reader = DBReader(
