@@ -50,7 +50,11 @@ class MSSQL(JDBCConnection):
         from onetl.connection import MSSQL
         from mtspark import get_spark
 
-        extra = {"connectRetryCount": 3, "connectRetryInterval": 10}
+        extra = {
+            "connectRetryCount": 3,
+            "connectRetryInterval": 10,
+            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+        }
 
         spark = get_spark({
             "appName": "spark-app-name",
@@ -68,7 +72,7 @@ class MSSQL(JDBCConnection):
     """
 
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8"
+    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
     port: int = 1433
 
     _check_query: ClassVar[str] = "SELECT 1 AS field"
