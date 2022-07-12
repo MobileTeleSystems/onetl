@@ -19,7 +19,7 @@ def test_oracle_driver_and_uri():
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:PE?tcpKeepAlive=false&connectTimeout=10"
     assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
-    assert Oracle.package == "com.oracle:ojdbc7:12.1.0.2"
+    assert Oracle.package == "com.oracle:ojdbc8:19.3.0.0"
     assert Oracle.port == 1521
 
 

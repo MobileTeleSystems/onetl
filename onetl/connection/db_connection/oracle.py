@@ -106,7 +106,7 @@ class Oracle(JDBCConnection):
     """
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle:ojdbc7:12.1.0.2"
+    package: ClassVar[str] = "com.oracle:ojdbc8:19.3.0.0"
     port: int = 1521
     sid: str = ""
     service_name: str = ""
