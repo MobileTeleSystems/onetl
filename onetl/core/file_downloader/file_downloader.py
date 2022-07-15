@@ -24,6 +24,9 @@ from onetl.impl import (
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 from onetl.core.file_limit.file_limit import FileLimit
 from onetl.base.base_file_limit import BaseFileLimit
+from onetl.strategy import BaseStrategy, StrategyManager
+from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
+from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)
 
@@ -56,6 +59,12 @@ class FileDownloader:
 
     options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options
+
+    hwm_type : str | None, default: ``None``
+        hwm type to be used.
+
+        .. warning ::
+            Used only in incremental strategy.
 
     Examples
     --------
@@ -91,6 +100,30 @@ class FileDownloader:
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),
             limit=FileLimit(count_limit=10),
         )
+
+    Incremental loading:
+
+    .. code::
+
+        from onetl.connection import SFTP
+        from onetl.core import FileDownloader, FileFilter, FileLimit
+        from onetl.strategy import IncrementalStrategy
+
+        sftp = SFTP(...)
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/path/to/remote/source",
+            local_path="/path/to/local",
+            filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
+            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
+            limit=FileLimit(count_limit=10),
+            hwm_type="file_list",
+        )
+
+        with IncrementalStrategy():
+            downloader.run()
+
     """
 
     class Options(BaseModel):  # noqa: WPS431
@@ -134,6 +167,8 @@ class FileDownloader:
 
     source_path: InitVar[os.PathLike | str | None] = field(default=None)
     _source_path: RemotePath | None = field(init=False)
+
+    hwm_type: str | None = None
 
     def __post_init__(
         self,
@@ -250,6 +285,20 @@ class FileDownloader:
             assert not downloaded_files.skipped
             assert not downloaded_files.missing
         """
+
+        strategy: BaseStrategy = StrategyManager.get_current()
+
+        if self.hwm_type:
+            if not isinstance(strategy, HWMStrategy):
+                raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in snapshot strategy.")
+
+            if isinstance(strategy, BatchHWMStrategy):
+                raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")
+
+            if not self._source_path:
+                raise ValueError(
+                    f"|{self.__class__.__name__}| If `hwm_type` is passed, `source_path` must be specified",
+                )
 
         if files is None and not self._source_path:
             raise ValueError("Neither file collection nor ``source_path`` are passed")
