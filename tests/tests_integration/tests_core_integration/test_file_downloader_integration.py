@@ -1,6 +1,7 @@
 import logging
 import secrets
 import tempfile
+from datetime import timedelta
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -14,6 +15,7 @@ from onetl.impl import (
     RemoteFile,
     RemotePath,
 )
+from onetl.strategy import SnapshotBatchStrategy, IncrementalBatchStrategy, IncrementalStrategy
 
 
 def test_downloader_view_file(file_connection, source_path, upload_test_files):
@@ -704,3 +706,84 @@ def test_downloader_file_limit(file_connection, source_path, upload_test_files, 
         assert "count_limit = 2" in caplog.text
 
     assert len(download_result.successful) == limit
+
+
+def test_downloader_hwm_type_without_source_path_error(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="If `hwm_type` is passed, `source_path` must be specified"):
+        with IncrementalStrategy():
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_snap_batch_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+        with SnapshotBatchStrategy(step=100500):
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_inc_batch_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+        with IncrementalBatchStrategy(
+            step=timedelta(days=5),
+        ):
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_snapshot_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
+        downloader.run()
