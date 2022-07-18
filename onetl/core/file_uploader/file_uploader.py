@@ -224,6 +224,7 @@ class FileUploader:
         self.connection.mkdir(self._target_path)
 
         if files is None:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
 
         current_temp_dir = self.generate_temp_path()
@@ -361,9 +362,6 @@ class FileUploader:
                 f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
                 "File collection will be used",
             )
-
-        if not files:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
 
     def _validate_files(  # noqa: WPS231
         self,

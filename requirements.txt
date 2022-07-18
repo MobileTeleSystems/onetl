@@ -1,4 +1,5 @@
 etl-entities>=1.0,<1.1
+evacuator>=1.0,<1.1
 ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize

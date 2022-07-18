@@ -8,7 +8,14 @@ from humanize import naturalsize
 from pydantic import BaseModel, Field, validator
 
 from onetl.core.file_result.file_set import FileSet
-from onetl.exception import FileResultError
+from onetl.exception import (
+    EmptyFileResultError,
+    FailedFileResultError,
+    MissingFileResultError,
+    NoSuccessfulFileResultError,
+    SkippedFileResultError,
+    ZeroSizeFileResultError,
+)
 
 GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
@@ -248,7 +255,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        FailedFileResultError
 
             ``failed`` file set is not empty
 
@@ -274,7 +281,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result = FileResult(failed=files_with_exception)
 
             file_result.raise_if_failed()
-            # will raise FileResultError('''
+            # will raise FailedFileResultError('''
             #    Failed 2 files (10MB):
             #        /remote/file1 (1 MB)
             #           NotAFileError("'/remote/file1' is not a file")
@@ -285,7 +292,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         """
 
         if self.failed:
-            raise FileResultError(self._failed_message)
+            raise FailedFileResultError(self._failed_message)
 
     def raise_if_missing(self) -> None:
         """
@@ -293,7 +300,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        MissingFileResultError
 
             ``missing`` file set is not empty
 
@@ -313,7 +320,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             )
 
             file_result.raise_if_missing()
-            # will raise FileResultError('''
+            # will raise MissingFileResultError('''
             #    Missing 2 files:
             #        /missing/file1
             #        /missing/file2
@@ -321,7 +328,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         """
 
         if self.missing:
-            raise FileResultError(self._missing_message)
+            raise MissingFileResultError(self._missing_message)
 
     def raise_if_skipped(self) -> None:
         """
@@ -329,7 +336,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        SkippedFileResultError
 
             ``skipped`` file set is not empty
 
@@ -346,7 +353,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             )
 
             file_result.raise_if_skipped()
-            # will raise FileResultError('''
+            # will raise SkippedFileResultError('''
             #    Skipped 2 files (15 kB):
             #        /skipped/file1 (10kB)
             #        /skipped/file2 (5 kB)
@@ -354,7 +361,7 @@ class FileResult(BaseModel):  # noqa: WPS214
         """
 
         if self.skipped:
-            raise FileResultError(self._skipped_message)
+            raise SkippedFileResultError(self._skipped_message)
 
     def raise_if_no_successful(self) -> None:
         """
@@ -362,7 +369,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        NoSuccessfulFileResultError
 
             ``successful`` file set is empty
 
@@ -377,11 +384,11 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result = FileResult()
 
             file_result.raise_if_no_successful()
-            # will raise FileResultError("There are no successful files in the result")
+            # will raise NoSuccessfulFileResultError("There are no successful files in the result")
         """
 
         if not self.successful:
-            raise FileResultError("There are no successful files in the result")
+            raise NoSuccessfulFileResultError("There are no successful files in the result")
 
     def raise_if_zero_size(self) -> None:
         """
@@ -389,7 +396,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        ZeroSizeFileResultError
 
             ``successful`` file set contains a file with zero size
 
@@ -410,7 +417,7 @@ class FileResult(BaseModel):  # noqa: WPS214
             )
 
             file_result.raise_if_zero_size()
-            # will raise FileResultError('''
+            # will raise ZeroSizeFileResultError('''
             #    2 files out of 3 have zero size:
             #        /local/empty1.file
             #        /local/empty2.file
@@ -431,7 +438,31 @@ class FileResult(BaseModel):  # noqa: WPS214
         file_number_str = f"{len(lines)} files" if len(lines) > 1 else "1 file"
         error_message = f"{file_number_str} out of {self.successful_count} have zero size:{os.linesep}{lines_str}"
 
-        raise FileResultError(error_message)
+        raise ZeroSizeFileResultError(error_message)
+
+    @property
+    def is_empty(self) -> bool:
+        """
+        Returns ``True`` if there are no files in ``successful``, ``failed`` and ``skipped`` attributes
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.impl import LocalPath
+            from onet.core import FileResult
+
+            file_result1 = FileResult()
+            assert file_result1.is_empty
+
+            file_result2 = FileResult(
+                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
+            )
+            assert not file_result2.is_empty
+        """
+
+        return not self.failed and not self.successful and not self.skipped
 
     def raise_if_empty(self) -> None:
         """
@@ -439,7 +470,7 @@ class FileResult(BaseModel):  # noqa: WPS214
 
         Raises
         ------
-        FileResultError
+        EmptyFileResultError
 
             ``successful``, ``failed`` and ``skipped`` file sets are empty
 
@@ -454,11 +485,11 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result = FileResult()
 
             file_result.raise_if_empty()
-            # will raise FileResultError("There are no files in the result")
+            # will raise EmptyFileResultError("There are no files in the result")
         """
 
-        if not self.failed and not self.successful and not self.skipped:
-            raise FileResultError("There are no files in the result")
+        if self.is_empty:
+            raise EmptyFileResultError("There are no files in the result")
 
     @property
     def details(self) -> str:
