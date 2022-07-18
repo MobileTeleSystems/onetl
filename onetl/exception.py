@@ -1,3 +1,6 @@
+from evacuator import NeedEvacuation
+
+
 class DirectoryNotFoundError(OSError):
     """
     Like ``FileNotFoundError``, but for directory.
@@ -21,7 +24,49 @@ class DirectoryNotEmptyError(OSError):
     """
 
 
-class FileResultError(OSError):
+class NoDataError(NeedEvacuation):
+    """
+    Raised when there is no data in FileResult or DataFrame
+    """
+
+
+class FileResultError(RuntimeError):
     """
     Raised when something went wrong while working with FileResult object
+    """
+
+
+class SkippedFileResultError(FileResultError):
+    """
+    Raised when FileResult object contains skipped files
+    """
+
+
+class FailedFileResultError(FileResultError):
+    """
+    Raised when FileResult object contains failed files
+    """
+
+
+class MissingFileResultError(FileResultError):
+    """
+    Raised when FileResult object contains missing files
+    """
+
+
+class ZeroSizeFileResultError(FileResultError):
+    """
+    Raised when FileResult object contains any zero-sized file
+    """
+
+
+class NoSuccessfulFileResultError(FileResultError):
+    """
+    Raised when FileResult object does not contain any successful files
+    """
+
+
+class EmptyFileResultError(FileResultError, NoDataError):
+    """
+    Raised when FileResult object is empty
     """

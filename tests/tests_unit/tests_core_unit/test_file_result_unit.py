@@ -5,7 +5,14 @@ from pathlib import PurePath
 import pytest
 
 from onetl.core import FileResult, FileSet
-from onetl.exception import FileResultError
+from onetl.exception import (
+    EmptyFileResultError,
+    FailedFileResultError,
+    MissingFileResultError,
+    NoSuccessfulFileResultError,
+    SkippedFileResultError,
+    ZeroSizeFileResultError,
+)
 from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemoteFileStat
 
 
@@ -20,6 +27,8 @@ def test_file_result_successful():
     file_result = FileResult(successful=successful)
 
     assert file_result.successful
+    assert not file_result.is_empty
+
     assert isinstance(file_result.successful, FileSet)
     assert file_result.successful == FileSet(successful)
 
@@ -48,7 +57,7 @@ def test_file_result_raise_if_no_successful():
 
     assert not FileResult(successful=successful).raise_if_no_successful()
 
-    with pytest.raises(FileResultError, match="There are no successful files in the result"):
+    with pytest.raises(NoSuccessfulFileResultError, match="There are no successful files in the result"):
         FileResult().raise_if_no_successful()
 
 
@@ -66,7 +75,7 @@ def test_file_result_raise_if_zero_size():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(FileResultError, match=error_message):
+    with pytest.raises(ZeroSizeFileResultError, match=error_message):
         FileResult(successful=successful).raise_if_zero_size()
 
     # empty successful files does not mean zero files size
@@ -91,6 +100,8 @@ def test_file_result_failed():
     file_result = FileResult(failed=failed)
 
     assert file_result.failed
+    assert not file_result.is_empty
+
     assert isinstance(file_result.failed, FileSet)
     assert file_result.failed == FileSet(failed)
 
@@ -144,7 +155,7 @@ def test_file_result_raise_if_failed():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(FileResultError, match=error_message):
+    with pytest.raises(FailedFileResultError, match=error_message):
         FileResult(failed=failed).raise_if_failed()
 
     assert not FileResult().raise_if_failed()
@@ -160,6 +171,7 @@ def test_file_result_skipped():
     file_result = FileResult(skipped=skipped)
 
     assert file_result.skipped
+    assert not file_result.is_empty
 
     assert isinstance(file_result.skipped, FileSet)
     assert file_result.skipped == FileSet(skipped)
@@ -193,7 +205,7 @@ def test_file_result_raise_if_skipped():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(FileResultError, match=error_message):
+    with pytest.raises(SkippedFileResultError, match=error_message):
         FileResult(skipped=skipped).raise_if_skipped()
 
     assert not FileResult().raise_if_skipped()
@@ -209,6 +221,7 @@ def test_file_result_missing():
     file_result = FileResult(missing=missing)
 
     assert file_result.missing
+    assert file_result.is_empty
 
     assert isinstance(file_result.missing, FileSet)
     assert file_result.missing == FileSet(missing)
@@ -244,7 +257,7 @@ def test_file_result_raise_if_missing():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(FileResultError, match=error_message):
+    with pytest.raises(MissingFileResultError, match=error_message):
         FileResult(missing=missing).raise_if_missing()
 
     assert not FileResult().raise_if_missing()
@@ -257,6 +270,7 @@ def test_file_result_empty():
     assert not file_result.failed
     assert not file_result.skipped
     assert not file_result.missing
+    assert file_result.is_empty
 
     assert file_result.successful_count == 0
     assert file_result.failed_count == 0
@@ -301,10 +315,10 @@ def test_file_result_raise_if_empty():
         skipped=[RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50))],
     ).raise_if_empty()
 
-    with pytest.raises(FileResultError, match="There are no files in the result"):
+    with pytest.raises(EmptyFileResultError, match="There are no files in the result"):
         FileResult().raise_if_empty()
 
-    with pytest.raises(FileResultError, match="There are no files in the result"):
+    with pytest.raises(EmptyFileResultError, match="There are no files in the result"):
         FileResult(missing=[PurePath("missing/file")]).raise_if_empty()
 
 
