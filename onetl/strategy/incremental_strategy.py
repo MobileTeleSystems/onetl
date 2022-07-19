@@ -64,6 +64,12 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             This could cause reading duplicated values from the table.
             You probably need additional deduplication step to handle them
 
+        .. warning::
+
+            If `hwm_type` in the :obj:`onetl.core.file_downloader.file_downloader.FileDownloader`
+            is passed you can't specify an offset
+
+
     Examples
     --------
 

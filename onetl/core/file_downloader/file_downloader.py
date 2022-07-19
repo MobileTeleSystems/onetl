@@ -184,7 +184,7 @@ class FileDownloader:
         else:
             self._options = options or self.Options()
 
-    def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:
+    def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
         Method for downloading files from source to local directory.
 
@@ -291,6 +291,9 @@ class FileDownloader:
         if self.hwm_type:
             if not isinstance(strategy, HWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in snapshot strategy.")
+            elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
+                # but the logic is quite messy
+                raise ValueError(f"|{self.__class__.__name__}| If `hwm_type` is passed you can't specify an `offset`")
 
             if isinstance(strategy, BatchHWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")

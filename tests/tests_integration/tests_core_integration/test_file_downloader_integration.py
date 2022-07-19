@@ -787,3 +787,47 @@ def test_downloader_detect_hwm_type_snapshot_strategy(
 
     with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
         downloader.run()
+
+
+def test_downloader_file_hwm_strategy_with_wrong_parameters(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="files_list",
+        source_path=source_path,
+    )
+
+    with pytest.raises(ValueError, match="If `hwm_type` is passed you can't specify an `offset`"):
+        with IncrementalStrategy(offset=1):
+            downloader.run()
+
+    with IncrementalStrategy():
+        downloader.run()
+
+
+def test_downloader_file_hwm_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="files_list",
+        source_path=source_path,
+    )
+
+    with IncrementalStrategy():
+        downloader.run()
