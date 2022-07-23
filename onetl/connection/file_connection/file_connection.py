@@ -337,6 +337,10 @@ class FileConnection(BaseFileConnection):
 
         yield top, dirs, files
 
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
+
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         remote_directory = RemotePath(path)
 

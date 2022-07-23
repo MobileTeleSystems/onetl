@@ -135,3 +135,8 @@ class BaseFileConnection(BaseConnection):
         """
         Writes bytes to a specific path on remote filesystem
         """
+
+    @property
+    @abstractmethod
+    def instance_url(self):
+        """Instance URL"""
