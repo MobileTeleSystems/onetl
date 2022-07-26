@@ -1,22 +1,38 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from logging import getLogger
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
-from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
 
+PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 log = getLogger(__name__)
+
+
+class HiveWriteMode(str, Enum):  # noqa: WPS600
+    APPEND = "append"
+    OVERWRITE_TABLE = "overwrite_table"
+    OVERWRITE_PARTITIONS = "overwrite_partitions"
+
+    @classmethod  # noqa: WPS120
+    def _missing_(cls, value: object):
+        if str(value) == "overwrite":
+            log.warning(
+                "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 0.5.0, "
+                "use `overwrite_partitions` instead",
+            )
+            return cls.OVERWRITE_PARTITIONS
 
 
 @dataclass(frozen=True)
@@ -51,8 +67,8 @@ class Hive(DBConnection):
         bucket_by: Optional[Tuple[int, Union[List[str], str]]] = Field(alias="bucketBy")  # noqa: WPS234
         sort_by: Optional[Union[List[str], str]] = Field(alias="sortBy")
         compression: Optional[str] = None
-        insert_into: bool = Field(alias="insertInto", default=False)
         format: str = "orc"
+        mode: HiveWriteMode = HiveWriteMode.APPEND
 
         @validator("sort_by")
         def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):  # noqa: N805
@@ -63,23 +79,21 @@ class Hive(DBConnection):
 
             return sort_by
 
-        @validator("insert_into")
-        def insert_into_cannot_be_used_with_other_options(cls, insert_into, values):  # noqa: N805
-            options = {key: value for key, value in values.items() if value is not None}
-            mode = options.pop("mode", None)
+        @root_validator
+        def partition_overwrite_mode_is_not_allowed(cls, values):  # noqa: N805
+            if values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode"):
+                raise ValueError(
+                    "`partitionOverwriteMode` option should be replaced "
+                    "with mode='overwrite_partitions' or 'overwrite_table'",
+                )
 
-            if insert_into:
-                if mode:
-                    mode = DBWriteMode(mode)
-                    if mode not in {DBWriteMode.APPEND, DBWriteMode.OVERWRITE}:
-                        raise ValueError(  # noqa: WPS220
-                            f"Write mode {mode} cannot be used with `insert_into=True` option",
-                        )
+            if values.get("insert_into") is not None or values.get("insertInto") is not None:
+                raise ValueError(
+                    "`insertInto` option was removed in onETL 0.4.0, "
+                    "now df.write.insertInto or df.write.saveAsTable is selected based on table existence",
+                )
 
-                if options:
-                    raise ValueError(f"Options like {options.keys()} cannot be used with `insert_into=True`")
-
-            return insert_into
+            return values
 
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
@@ -213,28 +227,22 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.to_options(options)
 
-        if write_options.insert_into:
-            columns = self._sort_df_columns_like_table(table, df.columns)
-            writer = df.select(*columns).write
+        try:
+            self.get_schema(table)
+            table_exists = True
 
-            mode = DBWriteMode(write_options.mode)
-            writer.insertInto(table, overwrite=mode == DBWriteMode.OVERWRITE)  # overwrite is boolean
+            log.info(f"|{self.__class__.__name__}| Table '{table}' already exists")
+        except Exception:
+            table_exists = False
+
+        if table_exists and write_options.mode != HiveWriteMode.OVERWRITE_TABLE:
+            # using saveAsTable on existing table does not handle
+            # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
+            self._insert_into(df, table, options)
         else:
-            writer = df.write
-            for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"insert_into"}).items():
-                # <value> is the arguments that will be passed to the <method>
-                # format orc, parquet methods and format simultaneously
-                if hasattr(writer, method):
-                    if isinstance(value, Iterable) and not isinstance(value, str):
-                        writer = getattr(writer, method)(*value)  # noqa: WPS220
-                    else:
-                        writer = getattr(writer, method)(value)  # noqa: WPS220
-                else:
-                    writer = writer.option(method, value)
-
-            writer.saveAsTable(table)
-
-        log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
+            # if someone needs to recreate the entire table using new set of options, like partitionBy or bucketBy,
+            # mode="overwrite_table" should be used
+            self._save_as_table(df, table, options)
 
     def read_table(  # type: ignore[override]
         self,
@@ -325,39 +333,112 @@ class Hive(DBConnection):
 
         # But names could have different cases, this should not cause errors
         table_columns_lower = [column.lower() for column in table_columns]
+        df_columns_lower = [column.lower() for column in df_columns]
 
-        table_columns_set = set(table_columns_lower)
-        df_columns_lower = {column.lower() for column in df_columns}
-
-        missing_columns_df = df_columns_lower - table_columns_set
-        missing_columns_table = table_columns_set - df_columns_lower
+        missing_columns_df = [column for column in df_columns_lower if column not in table_columns_lower]
+        missing_columns_table = [column for column in table_columns_lower if column not in df_columns_lower]
 
         if missing_columns_df or missing_columns_table:
             missing_columns_df_message = ""
             if missing_columns_df:
                 missing_columns_df_message = f"""
                     These columns present only in dataframe:
-                    {', '.join(missing_columns_df)}
+                        {', '.join(missing_columns_df)}
                     """
 
             missing_columns_table_message = ""
             if missing_columns_table:
                 missing_columns_table_message = f"""
                     These columns present only in table:
-                    {', '.join(missing_columns_table)}
+                        {', '.join(missing_columns_table)}
                     """
 
             raise ValueError(
                 dedent(
                     f"""
+                    Inconsistent columns between a table and the dataframe!
+
                     Table "{table}" has columns:
-                    {', '.join(table_columns)}
+                        {', '.join(table_columns)}
 
                     Dataframe has columns:
-                    {', '.join(df_columns)}
+                        {', '.join(df_columns)}
                     {missing_columns_df_message}{missing_columns_table_message}
                     """,
-                ),
+                ).strip(),
             )
 
         return sorted(df_columns, key=lambda column: table_columns_lower.index(column.lower()))
+
+    def _insert_into(
+        self,
+        df: DataFrame,
+        table: str,
+        options: Options | dict | None = None,
+    ) -> None:
+        write_options = self.to_options(options)
+
+        log.info(f"|{self.__class__.__name__}| Inserting data into existing table '{table}'")
+
+        for key, value in write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"}).items():
+            log.warning(
+                f"|{self.__class__.__name__}| Option {key}={value} is not supported "
+                "while inserting into existing table, ignoring...",
+            )
+
+        # Hive is inserting data to table by column position, not by name
+        # So we should sort columns according their order in the existing table
+        # instead of using order from the dataframe
+        columns = self._sort_df_columns_like_table(table, df.columns)
+        writer = df.select(*columns).write
+
+        overwrite_mode: str | None
+        if write_options.mode == HiveWriteMode.OVERWRITE_PARTITIONS:
+            overwrite_mode = "dynamic"
+        elif write_options.mode == HiveWriteMode.OVERWRITE_TABLE:
+            overwrite_mode = "static"
+        else:
+            overwrite_mode = None
+
+        # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
+        # so using a workaround with patching Spark config and then setting up the previous value
+        original_partition_overwrite_mode = self.spark.conf.get(PARTITION_OVERWRITE_MODE_PARAM, None)
+
+        try:  # noqa: WPS501
+            if overwrite_mode:
+                self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, overwrite_mode)
+
+            writer.insertInto(table, overwrite=bool(overwrite_mode))
+        finally:
+            self.spark.conf.unset(PARTITION_OVERWRITE_MODE_PARAM)
+            if original_partition_overwrite_mode:
+                self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, original_partition_overwrite_mode)
+
+        log.info(f"|{self.__class__.__name__}| Data is successfully inserted to table '{table}'")
+
+    def _save_as_table(
+        self,
+        df: DataFrame,
+        table: str,
+        options: Options | dict | None = None,
+    ) -> None:
+        write_options = self.to_options(options)
+
+        log.info(f"|{self.__class__.__name__}| Saving data to a table '{table}'")
+
+        writer = df.write
+        for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"}).items():
+            # <value> is the arguments that will be passed to the <method>
+            # format orc, parquet methods and format simultaneously
+            if hasattr(writer, method):
+                if isinstance(value, Iterable) and not isinstance(value, str):
+                    writer = getattr(writer, method)(*value)  # noqa: WPS220
+                else:
+                    writer = getattr(writer, method)(value)  # noqa: WPS220
+            else:
+                writer = writer.option(method, value)
+
+        overwrite = write_options.mode != HiveWriteMode.APPEND
+        writer.mode("overwrite" if overwrite else "append").saveAsTable(table)
+
+        log.info(f"|{self.__class__.__name__}| Table '{table}' successfully created")

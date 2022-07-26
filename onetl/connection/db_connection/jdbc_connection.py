@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
@@ -18,6 +19,16 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
+class JDBCWriteMode(str, Enum):  # noqa: WPS600
+    APPEND = "append"
+    OVERWRITE = "overwrite"
+    IGNORE = "ignore"
+    ERROR = "error"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass(frozen=True)  # noqa: WPS338
 class JDBCConnection(DBConnection, JDBCMixin):
     host: str
@@ -33,6 +44,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
     package: ClassVar[str] = ""
 
     class Options(DBConnection.Options, JDBCMixin.Options):  # noqa: WPS431
+        mode: JDBCWriteMode = JDBCWriteMode.APPEND
+
         batchsize: Optional[int] = None
         session_init_statement: Optional[str] = Field(alias="sessionInitStatement", default=None)
         truncate: Optional[bool] = None
