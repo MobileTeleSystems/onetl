@@ -24,5 +24,5 @@ def test_postgres_driver_and_uri():
 
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/default?ssl=true&autosave=always"
     assert Postgres.driver == "org.postgresql.Driver"
-    assert Postgres.package == "org.postgresql:postgresql:42.2.5"
+    assert Postgres.package == "org.postgresql:postgresql:42.4.0"
     assert Postgres.port == 5432

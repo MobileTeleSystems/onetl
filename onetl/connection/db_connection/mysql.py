@@ -11,6 +11,10 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class MySQL(JDBCConnection):
     """Class for MySQL jdbc connection.
 
+    .. note::
+
+        Supported MySQL server versions: >= 5.6
+
     Parameters
     ----------
     host : str
