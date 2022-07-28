@@ -310,12 +310,12 @@ class FileConnection(BaseFileConnection):
                 folder = RemoteDirectory(path=root / name)
 
                 if filter and not filter.match(folder):
-                    log.info(
+                    log.debug(
                         f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' "
-                        "does not match the filter, skipping",
+                        "does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.info(f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' does match the filter")
+                    log.debug(f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' is matching the filter")
                     dirs.append(RemoteDirectory(path=name))
 
             else:
@@ -323,11 +323,11 @@ class FileConnection(BaseFileConnection):
                 file = RemoteFile(path=root / name, stats=stat)
 
                 if filter and not filter.match(file):
-                    log.info(
-                        f"|{self.__class__.__name__}| File '{os.fspath(file)}' does not match the filter, skipping",
+                    log.debug(
+                        f"|{self.__class__.__name__}| File '{os.fspath(file)}' does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.info(f"|{self.__class__.__name__}| File '{os.fspath(file)}' does match the filter")
+                    log.debug(f"|{self.__class__.__name__}| File '{os.fspath(file)}' is matching the filter")
                     files.append(RemoteFile(path=name, stats=stat))
 
         # if a nested directory was encountered, then the same method is called recursively
