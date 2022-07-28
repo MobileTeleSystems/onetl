@@ -4,7 +4,7 @@ import os
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from logging import getLogger
-from typing import ClassVar, Iterable
+from typing import ClassVar, Iterable, Tuple
 
 from etl_entities import ProcessStackManager
 from ordered_set import OrderedSet
@@ -18,6 +18,8 @@ from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemotePath
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
+
+UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, RemotePath]]
 
 
 @dataclass
@@ -367,7 +369,7 @@ class FileUploader:
         self,
         local_files: Iterable[os.PathLike | str],
         current_temp_dir: RemotePath,
-    ) -> OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]:
+    ) -> UPLOAD_ITEMS_TYPE:
         result = OrderedSet()
 
         for file in local_files:
@@ -411,12 +413,15 @@ class FileUploader:
         if not self._local_path.is_dir():
             raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
 
-    def _upload_files(self, to_upload: OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]) -> UploadResult:
+    def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         total_files = len(to_upload)
+        files = FileSet(item[0] for item in to_upload)
 
-        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
+        log.info(f"|{self.__class__.__name__}| Files to be uploaded:")
+        log_with_indent(str(files))
+        log.info(f"|{self.__class__.__name__}| Starting the upload process")
+
         result = UploadResult()
-
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
             log.info(LOG_INDENT + f"from = {local_file}")
