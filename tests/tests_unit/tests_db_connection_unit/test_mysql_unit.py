@@ -10,7 +10,7 @@ def test_mysql_driver_and_uri():
 
     assert conn.jdbc_url == "jdbc:mysql://some_host:3306/default?useUnicode=yes&characterEncoding=UTF-8"
     assert MySQL.driver == "com.mysql.jdbc.Driver"
-    assert MySQL.package == "mysql:mysql-connector-java:8.0.26"
+    assert MySQL.package == "mysql:mysql-connector-java:8.0.30"
     assert MySQL.port == 3306
 
 
