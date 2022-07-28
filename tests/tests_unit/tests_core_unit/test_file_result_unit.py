@@ -6,12 +6,11 @@ import pytest
 
 from onetl.core import FileResult, FileSet
 from onetl.exception import (
-    EmptyFileResultError,
-    FailedFileResultError,
-    MissingFileResultError,
-    NoSuccessfulFileResultError,
-    SkippedFileResultError,
-    ZeroSizeFileResultError,
+    EmptyFilesError,
+    FailedFilesError,
+    MissingFilesError,
+    SkippedFilesError,
+    ZeroFileSizeError,
 )
 from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemoteFileStat
 
@@ -48,20 +47,7 @@ def test_file_result_successful():
     assert "Successful: 3 files (30.7 kB)" in file_result.summary
 
 
-def test_file_result_raise_if_no_successful():
-    successful = [
-        RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
-        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        LocalPath("just/deleted"),
-    ]
-
-    assert not FileResult(successful=successful).raise_if_no_successful()
-
-    with pytest.raises(NoSuccessfulFileResultError, match="There are no successful files in the result"):
-        FileResult().raise_if_no_successful()
-
-
-def test_file_result_raise_if_zero_size():
+def test_file_result_raise_if_contains_zero_size():
     successful = [
         RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
         RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
@@ -75,11 +61,11 @@ def test_file_result_raise_if_zero_size():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(ZeroSizeFileResultError, match=error_message):
-        FileResult(successful=successful).raise_if_zero_size()
+    with pytest.raises(ZeroFileSizeError, match=error_message):
+        FileResult(successful=successful).raise_if_contains_zero_size()
 
-    # empty successful files does not mean zero files size
-    assert not FileResult().raise_if_zero_size()
+    # empty file set does not mean zero files size
+    assert not FileResult().raise_if_contains_zero_size()
 
 
 def test_file_result_failed():
@@ -155,7 +141,7 @@ def test_file_result_raise_if_failed():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(FailedFileResultError, match=error_message):
+    with pytest.raises(FailedFilesError, match=error_message):
         FileResult(failed=failed).raise_if_failed()
 
     assert not FileResult().raise_if_failed()
@@ -205,7 +191,7 @@ def test_file_result_raise_if_skipped():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(SkippedFileResultError, match=error_message):
+    with pytest.raises(SkippedFilesError, match=error_message):
         FileResult(skipped=skipped).raise_if_skipped()
 
     assert not FileResult().raise_if_skipped()
@@ -257,7 +243,7 @@ def test_file_result_raise_if_missing():
 
     error_message = re.escape(textwrap.dedent(details).strip())
 
-    with pytest.raises(MissingFileResultError, match=error_message):
+    with pytest.raises(MissingFilesError, match=error_message):
         FileResult(missing=missing).raise_if_missing()
 
     assert not FileResult().raise_if_missing()
@@ -315,10 +301,10 @@ def test_file_result_raise_if_empty():
         skipped=[RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50))],
     ).raise_if_empty()
 
-    with pytest.raises(EmptyFileResultError, match="There are no files in the result"):
+    with pytest.raises(EmptyFilesError, match="There are no files in the result"):
         FileResult().raise_if_empty()
 
-    with pytest.raises(EmptyFileResultError, match="There are no files in the result"):
+    with pytest.raises(EmptyFilesError, match="There are no files in the result"):
         FileResult(missing=[PurePath("missing/file")]).raise_if_empty()
 
 

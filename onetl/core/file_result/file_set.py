@@ -6,6 +6,7 @@ from humanize import naturalsize
 from ordered_set import OrderedSet
 
 from onetl.base import PathProtocol, SizedPathProtocol
+from onetl.exception import EmptyFilesError, ZeroFileSizeError
 from onetl.impl import humanize_path
 
 T = TypeVar("T", bound=PathProtocol)
@@ -41,6 +42,80 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
         """
 
         return sum(file.stat().st_size for file in self if isinstance(file, SizedPathProtocol) and file.exists())
+
+    def raise_if_empty(self) -> None:
+        """
+        Raise exception if there are no files in the set
+
+        Raises
+        ------
+        EmptyFilesError
+
+            File set is empty
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onet.core import FileSet
+
+            file_set = FileSet()
+
+            file_set.raise_if_empty()
+            # will raise EmptyFilesError("There are no files in the set")
+        """
+
+        if not self:
+            raise EmptyFilesError("There are no files in the set")
+
+    def raise_if_contains_zero_size(self) -> None:
+        """
+        Raise exception if file set contains a file with zero size
+
+        Raises
+        ------
+        ZeroFileSizeError
+
+            File set contains a file with zero size
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.impl import RemoteFile, LocalPath
+            from onet.core import FileSet
+
+            file_set = FileSet(
+                LocalPath("/local/empty1.file"),
+                LocalPath("/local/empty2.file"),
+                LocalPath("/local/normal.file"),
+            )
+
+            file_set.raise_if_contains_zero_size()
+            # will raise ZeroFileSizeError('''
+            #    2 files out of 3 have zero size:
+            #        /local/empty1.file
+            #        /local/empty2.file
+            # ''')
+        """
+
+        lines = []
+        for file in self:
+            if not file.exists() or file.stat().st_size > 0:
+                continue
+
+            lines.append(os.fspath(file))
+
+        if not lines:
+            return
+
+        lines_str = textwrap.indent(os.linesep.join(lines), INDENT)
+        file_number_str = f"{len(lines)} files" if len(lines) > 1 else "1 file"
+        error_message = f"{file_number_str} out of {len(self)} have zero size:{os.linesep}{lines_str}"
+
+        raise ZeroFileSizeError(error_message)
 
     @property
     def summary(self) -> str:
@@ -116,5 +191,5 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
         return summary + lines_str
 
     def __str__(self) -> str:
-        """Same as :obj:`onetl.core.file_result.file_set.FileSet.details`"""
+        """Same as :obj:`onetl.core.file_set.file_set.FileSet.details`"""
         return self.details

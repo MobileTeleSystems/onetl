@@ -1,6 +1,10 @@
+import re
 import textwrap
 
+import pytest
+
 from onetl.core import FileSet
+from onetl.exception import EmptyFilesError, ZeroFileSizeError
 from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemoteFileStat
 
 
@@ -74,3 +78,33 @@ def test_file_set_details():
 
     empty_file_set = FileSet()
     assert empty_file_set.details == empty_file_set.summary == str(empty_file_set) == "No files"
+
+
+def test_file_set_raise_if_empty():
+    empty_file_set = FileSet()
+
+    with pytest.raises(EmptyFilesError, match="There are no files in the set"):
+        empty_file_set.raise_if_empty()
+
+    FileSet([LocalPath("some")]).raise_if_empty()
+
+
+def test_file_set_raise_if_contains_zero_size():
+    files = [
+        RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
+        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        LocalPath("cannot/detect/size1"),  # missing file does not mean zero size
+    ]
+
+    details = """
+        1 file out of 3 have zero size:
+            /empty
+    """
+
+    error_message = re.escape(textwrap.dedent(details).strip())
+
+    with pytest.raises(ZeroFileSizeError, match=error_message):
+        FileSet(files).raise_if_contains_zero_size()
+
+    # empty successful files does not mean zero files size
+    assert not FileSet().raise_if_contains_zero_size()
