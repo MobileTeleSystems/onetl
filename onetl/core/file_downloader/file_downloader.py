@@ -4,14 +4,16 @@ import os
 import shutil
 from dataclasses import InitVar, dataclass, field
 from logging import getLogger
-from typing import Iterable
+from typing import Iterable, Tuple
 
+from etl_entities import FileListHWM, RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import BaseModel
 
-from onetl.base import BaseFileFilter
+from onetl.base import BaseFileFilter, BaseFileLimit
 from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
+from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
 from onetl.exception import NotAFileError
 from onetl.impl import (
@@ -22,16 +24,14 @@ from onetl.impl import (
     RemotePath,
 )
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
-from onetl.core.file_limit.file_limit import FileLimit
-from onetl.base.base_file_limit import BaseFileLimit
 from onetl.strategy import BaseStrategy, StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
-from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
-from etl_entities import RemoteFolder, FileListHWM
-
+from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)
+
+DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath]]
 
 
 @dataclass
@@ -58,7 +58,7 @@ class FileDownloader:
 
     limit : BaseFileLimit
         Options of the file  limiting. See :obj:`onetl.core.file_limit.file_limit.FileLimit`
-        Default value for the amount of the files is 100
+        Default file count limit is 100
 
     options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options
@@ -393,7 +393,7 @@ class FileDownloader:
                     result.update(file_list)
 
                 if self.limit.is_reached:
-                    log.warning("File amount limit reached !")
+                    log.warning("File limit reached !")
                     break
 
         except Exception as e:
@@ -421,7 +421,7 @@ class FileDownloader:
                     f"|{self.__class__.__name__}| If `hwm_type` is passed, `source_path` must be specified",
                 )
 
-    def _hwm_processing(self, to_download: OrderedSet) -> DownloadResult:
+    def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
         remote_file_folder = RemoteFolder(name=self._source_path, instance=self.connection.instance_url)
         file_hwm = FileListHWM(source=remote_file_folder)
         file_hwm_name = file_hwm.qualified_name
@@ -480,7 +480,7 @@ class FileDownloader:
     def _validate_files(  # noqa: WPS231
         self,
         remote_files: Iterable[os.PathLike | str],
-    ) -> OrderedSet[tuple[RemotePath, LocalPath]]:
+    ) -> DOWNLOAD_ITEMS_TYPE:
         result = OrderedSet()
 
         for remote_file in remote_files:
@@ -526,16 +526,19 @@ class FileDownloader:
 
     def _download_files(
         self,
-        to_download: OrderedSet[tuple[RemotePath, LocalPath]],
+        to_download: DOWNLOAD_ITEMS_TYPE,
         current_hwm_store: HWMStoreManager | None = None,
         file_hwm_name: str | None = None,
         remote_file_folder: RemoteFolder | None = None,
     ) -> DownloadResult:
         total_files = len(to_download)
+        files = FileSet(item[0] for item in to_download)
 
-        log.info(f"|{self.__class__.__name__}| Starting downloading {total_files} file(s)")
+        log.info(f"|{self.__class__.__name__}| Files to be downloaded:")
+        log_with_indent(str(files))
+        log.info(f"|{self.__class__.__name__}| Starting the download process")
+
         result = DownloadResult()
-
         for i, (source_file, local_file) in enumerate(to_download):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
             log.info(LOG_INDENT + f"from = {source_file}")
