@@ -66,7 +66,7 @@ class MySQL(JDBCConnection):
     """
 
     driver: ClassVar[str] = "com.mysql.jdbc.Driver"
-    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.26"
+    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.30"
     port: int = 3306
 
     @property
