@@ -10,11 +10,10 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 from pydantic import BaseModel
 
 from onetl.base import BaseConnection
-from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
@@ -23,7 +22,7 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class DBConnection(BaseConnection):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
-    spark: pyspark.sql.SparkSession
+    spark: SparkSession
 
     _check_query: ClassVar[str] = "SELECT 1"
     _compare_statements: ClassVar[dict[Callable, str]] = {
@@ -38,10 +37,7 @@ class DBConnection(BaseConnection):
     class Options(BaseModel):  # noqa: WPS431
         """Hive or JDBC options"""
 
-        mode: DBWriteMode = DBWriteMode.APPEND
-
         class Config:  # noqa: WPS431
-            use_enum_values = True
             allow_population_by_field_name = True
             frozen = True
             extra = "allow"

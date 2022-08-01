@@ -3,12 +3,21 @@ import os
 import secrets
 import shutil
 from collections import namedtuple
+from datetime import date, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
-from datetime import date, datetime, timedelta
 
 import pytest
+from etl_entities import (
+    Column,
+    DateHWM,
+    DateTimeHWM,
+    FileListHWM,
+    IntHWM,
+    RemoteFolder,
+    Table,
+)
 from mtspark import get_spark
 
 from onetl.connection import (
@@ -23,15 +32,6 @@ from onetl.connection import (
     Postgres,
     Teradata,
 )
-from etl_entities import (
-    Column,
-    DateHWM,
-    DateTimeHWM,
-    FileListHWM,
-    IntHWM,
-    RemoteFolder,
-    Table,
-)
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
@@ -43,6 +43,8 @@ from tests.lib.oracle_processing import OracleProcessing
 from tests.lib.postgres_processing import PostgressProcessing
 
 log = logging.getLogger(__name__)
+
+PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
 @pytest.fixture(scope="session")
@@ -102,7 +104,7 @@ def test_files(resource_path):
 
 
 @pytest.fixture(scope="session", name="spark")
-def get_mtspark_session(request):
+def get_spark_session(request):
     config = {
         "appName": "onetl",
         "spark.jars.packages": [
@@ -156,12 +158,11 @@ def processing(request, spark):
 
 @pytest.fixture
 def get_schema_table(processing):
-    table = f"test_{secrets.token_hex(5)}"
     schema = "onetl"
+    processing.create_schema(schema=schema)
 
+    table = f"test_{secrets.token_hex(5)}"
     full_name = f"{schema}.{table}"
-
-    PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
     yield PreparedDbInfo(full_name=full_name, schema=schema, table=table)
 
@@ -179,7 +180,6 @@ def prepare_schema_table(processing, get_schema_table):
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     _, schema, table = get_schema_table
 
-    processing.create_schema(schema=schema)
     processing.create_table(schema=schema, table=table, fields=fields)
 
     return get_schema_table
