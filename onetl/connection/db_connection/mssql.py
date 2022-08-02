@@ -11,6 +11,10 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class MSSQL(JDBCConnection):
     """Class for MSSQL jdbc connection.
 
+    .. note::
+
+        Supported SQL Server versions: >= 2012
+
     Parameters
     ----------
     host : str
