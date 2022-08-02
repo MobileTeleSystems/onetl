@@ -30,43 +30,37 @@ class NoDataError(NeedEvacuation):
     """
 
 
-class FileResultError(RuntimeError):
+class FilesError(RuntimeError):
     """
-    Raised when something went wrong while working with FileResult object
-    """
-
-
-class SkippedFileResultError(FileResultError):
-    """
-    Raised when FileResult object contains skipped files
+    Raised when something went wrong while working with file collection
     """
 
 
-class FailedFileResultError(FileResultError):
+class SkippedFilesError(FilesError):
     """
-    Raised when FileResult object contains failed files
-    """
-
-
-class MissingFileResultError(FileResultError):
-    """
-    Raised when FileResult object contains missing files
+    Raised when file collection contains skipped files
     """
 
 
-class ZeroSizeFileResultError(FileResultError):
+class FailedFilesError(FilesError):
     """
-    Raised when FileResult object contains any zero-sized file
-    """
-
-
-class NoSuccessfulFileResultError(FileResultError):
-    """
-    Raised when FileResult object does not contain any successful files
+    Raised when file collection contains failed files
     """
 
 
-class EmptyFileResultError(FileResultError, NoDataError):
+class MissingFilesError(FilesError):
     """
-    Raised when FileResult object is empty
+    Raised when file collection contains missing files
+    """
+
+
+class ZeroFileSizeError(FilesError):
+    """
+    Raised when file collection contains some zero-sized file
+    """
+
+
+class EmptyFilesError(FilesError, NoDataError):
+    """
+    Raised when file collection is empty
     """
