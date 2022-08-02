@@ -22,8 +22,6 @@ log = getLogger(__name__)
 class JDBCWriteMode(str, Enum):  # noqa: WPS600
     APPEND = "append"
     OVERWRITE = "overwrite"
-    IGNORE = "ignore"
-    ERROR = "error"
 
     def __str__(self) -> str:
         return self.value
