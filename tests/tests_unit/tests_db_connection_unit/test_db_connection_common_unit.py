@@ -26,11 +26,21 @@ def test_jdbc_default_fetchsize():
     assert options.fetchsize == 100000
 
 
-def test_jdbc_wrong_mode_option():
+@pytest.mark.parametrize(
+    "options",
+    [
+        # disallowed modes
+        {"mode": "error"},
+        {"mode": "ignore"},
+        # wrong mode
+        {"mode": "wrong_mode"},
+    ],
+)
+def test_jdbc_wrong_mode_option(options):
     oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark)
 
-    with pytest.raises(ValueError):
-        oracle.Options(mode="wrong_mode")  # wrong mode
+    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+        oracle.Options(**options)
 
 
 @pytest.mark.parametrize("hint, real_hint", [(None, ""), ("NOWAIT", " /*+ NOWAIT */")])
