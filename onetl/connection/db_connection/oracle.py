@@ -45,6 +45,10 @@ class ErrorPosition:
 class Oracle(JDBCConnection):
     """Class for Oracle jdbc connection.
 
+    .. note::
+
+        Supported Oracle Server versions: 21c, 19c, 18c, and 12.2
+
     Parameters
     ----------
     host : str
@@ -106,7 +110,7 @@ class Oracle(JDBCConnection):
     """
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle:ojdbc8:19.3.0.0"
+    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
     port: int = 1521
     sid: str = ""
     service_name: str = ""
