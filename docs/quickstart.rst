@@ -24,9 +24,16 @@ Read data from MSSQL, transform & write to Hive.
     setup_notebook_logging()
 
     # Initiate new SparkSession
-    spark = get_spark({"appName": "spark_app_onetl_demo"})
+    spark = get_spark(
+        {
+            "appName": "spark_app_onetl_demo",
+            "spark.jars.packages": [
+                MSSQL.package,
+            ],
+        }
+    )
 
-    # Initiate MSSQL connection
+    # Initiate MSSQL connection and check it
     mssql = MSSQL(
         host="mssqldb.demo.com",
         user="onetl",
@@ -34,10 +41,7 @@ Read data from MSSQL, transform & write to Hive.
         database="Telecom",
         spark=spark,
         extra={"ApplicationIntent": "ReadOnly"},
-    )
-
-    # Сheck database availability
-    mssql.check()
+    ).check()
 
     # >>> INFO:|MSSQL| Connection is available.
 
@@ -89,34 +93,33 @@ Download files from FTP & upload them to HDFS.
     from onetl.connection import SFTP, HDFS
 
     # Import onETL classes to download & upload files
-    from onetl.core import FileDownloader, FileUploader, FileFilter
+    from onetl.core import FileDownloader, FileUploader, FileFilter, FileLimit
 
     # change logging level to INFO, and set up default logging format and handler
     setup_notebook_logging()
 
-
-    # Initiate SFTP connection
+    # Initiate SFTP connection and check it
     sftp = SFTP(
         host="sftp.test.com",
         user="onetl",
         password="onetl",
-    )
-
-    # Сheck server availability
-    sftp.check()
+    ).check()
 
     # >>> INFO:|SFTP| Connection is available.
 
     # Initiate downloader
     downloader = FileDownloader(
         connection=sftp,
-        source_path="/remote/tests/Report",  # sftp_path
+        source_path="/remote/tests/Report",  # path on SFTP
         local_path="/local/onetl/Report",  # local fs path
         filter=FileFilter(
             glob="*.json",  # download only files matching the glob
-            exclude_dirs=[  # exclude files from those directoryes
+            exclude_dirs=[  # exclude files from those directories
                 "/remote/tests/Report/exclude_dir/",
             ],
+        ),
+        limit=FileLimit(
+            count_limit=1000,  # download max 1000 files per run
         ),
         options=FileDownloader.Options(
             delete_source=True,  # delete files from SFTP after successful download

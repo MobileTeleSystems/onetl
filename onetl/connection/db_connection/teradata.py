@@ -28,7 +28,7 @@ class Teradata(JDBCConnection):
     database : str
         Database in rdbms. To provide schema, use DBReader class
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization

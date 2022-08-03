@@ -9,7 +9,7 @@ class BaseConnection(ABC):
     """
 
     @abstractmethod
-    def check(self) -> None:
+    def check(self):
         """Check source availability.
 
         Raises

@@ -34,7 +34,7 @@ class MSSQL(JDBCConnection):
 
         See https://www.educba.com/postgresql-database-vs-schema/ for more details
 
-    spark : pyspark.sql.SparkSession, default: ``None``
+    spark : :obj:`pyspark.sql.SparkSession`, default: ``None``
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization

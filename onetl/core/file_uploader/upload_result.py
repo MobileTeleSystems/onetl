@@ -12,10 +12,10 @@ class UploadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * ``successful`` - successfully handled files (remote)
-    * ``failed`` - file paths (local) which were handled with some failures
-    * ``skipped`` - file paths (local) which were skipped because of some reason
-    * ``missing`` - file paths (local) which are not present in the file system
+    * :obj:`successful`
+    * :obj:`failed`
+    * :obj:`skipped`
+    * :obj:`missing`
 
     Examples
     --------
@@ -51,6 +51,13 @@ class UploadResult(FileResult):
     """
 
     successful: FileSet[RemoteFile] = Field(default_factory=FileSet)
+    "File paths (remote) which were uploaded successfully"
+
     failed: FileSet[FailedLocalFile] = Field(default_factory=FileSet)
+    "File paths (local) which were not uploaded because of some failure"
+
     skipped: FileSet[LocalPath] = Field(default_factory=FileSet)
+    "File paths (local) which were skipped because of some reason"
+
     missing: FileSet[LocalPath] = Field(default_factory=FileSet)
+    "File paths (local) which are not present in the local file system"

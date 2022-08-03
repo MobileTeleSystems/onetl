@@ -6,7 +6,7 @@ from logging import getLogger
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
-from pydantic import Field, root_validator, validator
+from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -41,7 +41,7 @@ class Hive(DBConnection):
 
     Parameters
     ----------
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for connection to hive.
 
         You can use ``mtspark`` for spark session initialization.
@@ -51,7 +51,7 @@ class Hive(DBConnection):
 
     Hive connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Hive
         from mtspark import get_spark
@@ -61,14 +61,200 @@ class Hive(DBConnection):
         hive = Hive(spark=spark)
     """
 
-    # TODO(@dypedchenk): add documentation for values
     class Options(DBConnection.Options):  # noqa: WPS431
-        partition_by: Optional[Union[List[str], str]] = Field(alias="partitionBy")
-        bucket_by: Optional[Tuple[int, Union[List[str], str]]] = Field(alias="bucketBy")  # noqa: WPS234
-        sort_by: Optional[Union[List[str], str]] = Field(alias="sortBy")
-        compression: Optional[str] = None
-        format: str = "orc"
+        """Class for writing options, related to Hive source.
+
+        You can pass here key-value items which then will be converted to calls
+        of :obj:`pyspark.sql.readwriter.DataFrameWriter` methods.
+
+        For example, ``Hive.Options(mode="append", partitionBy="reg_id")`` will
+        be converted to ``df.write.mode("append").partitionBy("reg_id")`` call, and so on.
+
+        .. note::
+
+            You can pass any method and its value
+            `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
+            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+
+            The set of supported options depends on Spark version used.
+
+        Examples
+        --------
+
+        Writing options initialization
+
+        .. code:: python
+
+            options = Hive.Options(mode="append", partitionBy="reg_id", someNewOption="value")
+        """
+
         mode: HiveWriteMode = HiveWriteMode.APPEND
+        """Mode of writing data into target table.
+
+        Possible values:
+            * ``append`` (default)
+                Appends data into existing partition/table, or create partition/table if it does not exist.
+
+                Almost like Spark's ``insertInto(overwrite=False)``.
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class (``format``, ``compression``, etc).
+
+                * Table exists, but not partitioned
+                    Data is appended to a table. Table is still not partitioned (DDL is unchanged)
+
+                * Table exists and partitioned, but partition is present only in dataframe
+                    Partition is created based on table's ``PARTITIONED BY (...)`` options
+
+                * Table exists and partitioned, partition is present in both dataframe and table
+                    Data is appended to existing partition
+
+                * Table exists and partitioned, but partition is present only in table
+                    Existing partition is left intact
+
+            * ``overwrite_partitions``
+                Overwrites data in the existing partition, or create partition/table if it does not exist.
+
+                Almost like Spark's ``insertInto(overwrite=True)`` +
+                ``spark.sql.sources.partitionOverwriteMode=dynamic``.
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class (``format``, ``compression``, etc).
+
+                * Table exists, but not partitioned
+                    Data is **overwritten in all the table**. Table is still not partitioned (DDL is unchanged)
+
+                * Table exists and partitioned, but partition is present only in dataframe
+                    Partition is created based on table's ``PARTITIONED BY (...)`` options
+
+                * Table exists and partitioned, partition is present in both dataframe and table
+                    Data is **overwritten in existing partition**
+
+                * Table exists and partitioned, but partition is present only in table
+                    Existing partition is left intact
+
+            * ``overwrite_table``
+                **Recreates table** (via ``DROP + CREATE``), **overwriting all existing data**.
+                **All existing partitions are dropped.**
+
+                Same as Spark's ``saveAsTable(mode=overwrite)`` +
+                ``spark.sql.sources.partitionOverwriteMode=static`` (NOT ``insertInto``)!
+
+                .. warning::
+
+                    Table is recreated using other options from current class (``format``, ``compression``, etc)
+                    **instead of using original table options**. Be careful
+
+        .. note::
+
+            ``error`` and ``ignore`` modes are not supported.
+
+        .. note::
+
+            Unlike Spark, config option ``spark.sql.sources.partitionOverwriteMode``
+            does not affect behavior of any ``mode``
+
+        .. warning::
+
+            Used **only** while **writing** data to a table
+        """
+
+        format: str = "orc"
+        """Format of files which should be used for storing table data.
+
+        Examples: ``orc`` (default), ``parquet``, ``csv`` (NOT recommended)
+
+        .. note::
+
+            It's better to use column-based formats like ``orc`` or ``parquet``,
+            not row-based (``csv``, ``json``)
+
+        .. warning::
+
+            Used **only** while **creating new table**, or if ``mode=overwrite_table``
+        """
+
+        partition_by: Optional[Union[List[str], str]] = None
+        """
+        List of columns should be used for data partitioning. ``None`` means partitioning is disabled.
+
+        Each partition is a folder in HDFS which contains only files with the specific column value,
+        like ``myschema.db/mytable/col1=value1``, ``myschema.db/mytable/col1=value2``, and so on.
+
+        Multiple partitions columns means nested folder structure, like ``col1=val1/col2/val``.
+
+        If ``WHERE`` clause in the query contains expression like ``partition = value``,
+        Hive automatically filters up only specific partition.
+
+        Examples: ``reg_id`` or ``["reg_id", "business_dt"]``
+
+        .. note::
+
+            Values should be scalars (integers, strings),
+            and either static (``countryId``) or incrementing (dates, years), with low
+            number of distinct values.
+
+            Columns like ``userId`` or ``datetime``/``timestamp`` cannot be used for partitioning.
+
+        .. warning::
+
+            Used **only** while **creating new table**, or if ``mode=overwrite_table``
+        """
+
+        bucket_by: Optional[Tuple[int, Union[List[str], str]]] = None  # noqa: WPS234
+        """Number of buckets plus bucketing columns. ``None`` means bucketing is disabled.
+
+        Each bucket is created as a file with name ``hash(columns) mod num_buckets``,
+        and used to avoid data skew.
+        Useful for decreasing memory consumption by ``GROUP BY`` queries.
+
+        Examples: ``(10, "user_id")``, ``(10, ["user_id", "user_phone"])``
+
+        .. note::
+
+            Bucketing should be used on columns containing values which have a lot of unique values,
+            like ``userId``.
+
+            Columns like ``countryId`` or ``date`` cannot be used for bucketing
+            because of too low number of unique values.
+
+        .. warning::
+
+            Used **only** while **creating new table**, or if ``mode=overwrite_table``
+        """
+
+        sort_by: Optional[Union[List[str], str]] = None
+        """Each file in a bucket will be sorted by these columns value. ``None`` means sorting is disabled.
+
+        Examples: ``user_id`` or ``["user_id", "user_phone"]``
+
+        .. note::
+
+            Sorting columns should contain values which are used in ``ORDER BY`` clauses.
+
+        .. warning::
+
+            Could be used only with :obj:`bucket_by` option
+
+        .. warning::
+
+            Used **only** while **creating new table**, or if ``mode=overwrite_table``
+        """
+
+        compression: Optional[str] = None
+        """Compressing algorithm which should be used for compressing created files in HDFS.
+        ``None`` means compression is disabled.
+
+        Examples: ``snappy``, ``zlib``
+
+        .. warning::
+
+            Used **only** while **creating new table**, or if ``mode=overwrite_table``
+        """
 
         @validator("sort_by")
         def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):  # noqa: N805
@@ -206,7 +392,7 @@ class Hive(DBConnection):
         self._execute_sql(statement).collect()
         log.info(f"|{self.__class__.__name__}| Call succeeded")
 
-    def check(self) -> None:
+    def check(self):
         self.log_parameters()
 
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
@@ -218,6 +404,8 @@ class Hive(DBConnection):
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
             raise RuntimeError(msg) from e
+
+        return self
 
     def save_df(  # type: ignore[override]
         self,
