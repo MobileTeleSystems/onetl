@@ -54,33 +54,16 @@ class DBReader:
         Add hint to SQL query
 
     options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
-        Spark JDBC read options.
+        Spark read options.
         For example:
 
         .. code:: python
 
-            Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
-
-        List of options:
-
-            * ``partitionColumn``
-            * ``lowerBound``
-            * ``upperBound``
-            * ``numPartitions``
-            * ``queryTimeout``
-            * ``fetchsize``
-            * ``sessionInitStatement``
-            * ``customSchema``
-            * ``pushDownPredicate``
-
-        You can find a description of the options at the link below:
-
-        https://spark.apache.org/docs/2.4.0/sql-data-sources-jdbc.html
+            Postgres.Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
 
         .. warning ::
 
             :ref:`hive` does not accept read options
-
 
     Examples
     --------
@@ -149,7 +132,7 @@ class DBReader:
             {
                 "appName": "spark-app-name",
                 "spark.jars.packages": [Postgres.package],
-            }
+            },
         )
 
         postgres = Postgres(
