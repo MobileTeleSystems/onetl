@@ -52,7 +52,7 @@ def test_file_connection_check(file_connection, caplog):
     file_connection.close()
 
     with caplog.at_level(logging.INFO):
-        file_connection.check()
+        assert file_connection.check() == file_connection
         file_connection.close()
         # `close` called twice is not an error
         file_connection.close()

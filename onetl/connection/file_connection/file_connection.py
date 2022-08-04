@@ -82,7 +82,7 @@ class FileConnection(BaseFileConnection):
     def __exit__(self, _exc_type, _exc_value, _traceback):
         self.close()
 
-    def check(self) -> None:
+    def check(self):
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
@@ -95,6 +95,8 @@ class FileConnection(BaseFileConnection):
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
             raise RuntimeError(msg)
+
+        return self
 
     def is_file(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(path)

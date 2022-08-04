@@ -5,7 +5,6 @@ import pytest
 from onetl.connection import Hive, Oracle, Postgres
 from onetl.core import DBReader
 
-
 spark = Mock()
 
 
@@ -276,11 +275,10 @@ def test_reader_set_lower_upper_bound():
             "isolationLevel": "NONE",
             "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
             "truncate": True,
-            "createTableOptions": "name CHAR(64)",
-            "createTableColumnTypes": "name CHAR(64)",
-            "customSchema": "id DECIMAL(38, 0)",
-            "unknownProperty": "SomeValue",
             "mode": "append",
+            "snake_case_option": "left unchanged",
+            "camelCaseOption": "left unchanged",
+            "PamelCaseOption": "left unchanged",
         },
         Postgres.Options(
             lowerBound=10,
@@ -292,11 +290,10 @@ def test_reader_set_lower_upper_bound():
             isolationLevel="NONE",
             sessionInitStatement="BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
             truncate=True,
-            createTableOptions="name CHAR(64)",
-            createTableColumnTypes="name CHAR(64)",
-            customSchema="id DECIMAL(38, 0)",
-            unknownProperty="SomeValue",
             mode="append",
+            snake_case_option="left unchanged",
+            camelCaseOption="left unchanged",
+            PamelCaseOption="left unchanged",
         ),
         Postgres.Options(
             lower_bound=10,
@@ -308,14 +305,13 @@ def test_reader_set_lower_upper_bound():
             isolation_level="NONE",
             session_init_statement="BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
             truncate=True,
-            create_table_options="name CHAR(64)",
-            create_table_column_types="name CHAR(64)",
-            custom_schema="id DECIMAL(38, 0)",
-            unknownProperty="SomeValue",
             mode="append",
+            snake_case_option="left unchanged",
+            camelCaseOption="left unchanged",
+            PamelCaseOption="left unchanged",
         ),
     ],
-    ids=["Options as dictionary.", "Options with camel case.", "Options with snake case."],
+    ids=["Options as dictionary", "Options with camel case", "Options with snake case"],
 )
 def test_reader_generate_jdbc_options(options):
     reader = DBReader(
@@ -342,17 +338,17 @@ def test_reader_generate_jdbc_options(options):
         "mode": "append",
         "properties": {
             "batchsize": "1000",
-            "createTableColumnTypes": "name CHAR(64)",
-            "createTableOptions": "name CHAR(64)",
-            "customSchema": "id DECIMAL(38, 0)",
             "driver": "org.postgresql.Driver",
             "fetchsize": "1000",
             "isolationLevel": "NONE",
             "password": "1234",
-            "sessionInitStatement": "BEGIN execute immediate 'alter " "session set " "'_serial_direct_read'=true",
+            "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
             "truncate": "true",
-            "unknownProperty": "SomeValue",
             "user": "admin",
+            "queryTimeout": "0",
+            "snake_case_option": "left unchanged",
+            "camelCaseOption": "left unchanged",
+            "PamelCaseOption": "left unchanged",
         },
         "upperBound": "1000",
         "url": "jdbc:postgresql://local:5432/default",

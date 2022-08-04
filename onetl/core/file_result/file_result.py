@@ -24,19 +24,26 @@ class FileResult(BaseModel):  # noqa: WPS214
 
     Container for file paths, divided into certain categories:
 
-    * ``successful`` - successfully handled files
-    * ``failed`` - file paths which were handled with some failures
-    * ``skipped`` - file paths which were skipped because of some reason
-    * ``missing`` - unknown paths which cannot be handled
+    * :obj`successful`
+    * :obj`failed`
+    * :obj`skipped`
+    * :obj`missing`
     """
 
     class Config:  # noqa: WPS431
         arbitrary_types_allowed = True
 
     successful: FileSet[GenericPath] = Field(default_factory=FileSet)
+    "Successfully handled files"
+
     failed: FileSet[GenericPath] = Field(default_factory=FileSet)
+    "File paths which were handled with some failures"
+
     skipped: FileSet[GenericPath] = Field(default_factory=FileSet)
+    "File paths which were skipped because of some reason"
+
     missing: FileSet[GenericPath] = Field(default_factory=FileSet)
+    "Unknown paths which cannot be handled"
 
     @validator("successful", "failed", "skipped", "missing")
     def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:  # noqa: N805

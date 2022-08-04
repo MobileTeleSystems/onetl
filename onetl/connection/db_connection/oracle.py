@@ -79,7 +79,7 @@ class Oracle(JDBCConnection):
 
             Be careful, for correct work you must provide ``sid`` or ``service_name``
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization
@@ -148,7 +148,7 @@ class Oracle(JDBCConnection):
     def execute(  # type: ignore[override]
         self,
         statement: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.Options | None = None,
     ) -> DataFrame | None:
 
         statement = clear_statement(statement)

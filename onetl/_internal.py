@@ -94,3 +94,18 @@ def stringify(inp: dict) -> dict[str, Any]:
                 result[str(key)] = "null"
 
     return result
+
+
+def to_camel(string: str) -> str:
+    """
+    Convert ``snake_case`` strings to ``camelCase`` (with first symbol in lowercase)
+
+    Examples
+    --------
+
+    .. code:: python
+
+        assert to_camel("some_value") == "someValue"
+    """
+
+    return "".join(word.capitalize() if index > 0 else word for index, word in enumerate(string.split("_")))

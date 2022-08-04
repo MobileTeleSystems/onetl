@@ -34,7 +34,7 @@ class Postgres(JDBCConnection):
 
         See https://www.educba.com/postgresql-database-vs-schema/ for more details
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization.
@@ -88,7 +88,7 @@ class Postgres(JDBCConnection):
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
 
-    def _options_to_connection_properties(self, options: JDBCConnection.Options):
+    def _options_to_connection_properties(self, options: JDBCConnection.Options):  # type: ignore[override]
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

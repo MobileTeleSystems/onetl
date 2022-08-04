@@ -83,28 +83,25 @@ class FileUploader:
     """
 
     class Options(BaseModel):  # noqa: WPS431
-        """File uploader options
-
-        Parameters
-        ----------
-        mode : :obj:`onetl.impl.file_write_mode.FileWriteMode`
-            How to handle existing files in the target directory.
-
-            Possible values:
-                * ``error`` (default) - do nothing, mark file as failed
-                * ``ignore`` - do nothing, mark file as ignored
-                * ``overwrite`` - replace existing file with a new one
-                * ``delete_all`` - delete local directory content before downloading files
-
-        delete_local : bool
-            If ``True``, remove local file after successful download.
-
-            If download failed, file will left intact.
-
-        """
+        """File uploader options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
+        """
+        How to handle existing files in the target directory.
+
+        Possible values:
+            * ``error`` (default) - do nothing, mark file as failed
+            * ``ignore`` - do nothing, mark file as ignored
+            * ``overwrite`` - replace existing file with a new one
+            * ``delete_all`` - delete local directory content before downloading files
+        """
+
         delete_local: bool = False
+        """
+        If ``True``, remove local file after successful download.
+
+        If download failed, file will left intact.
+        """
 
         class Config:  # noqa: WPS431
             frozen = True

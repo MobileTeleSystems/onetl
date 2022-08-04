@@ -12,10 +12,10 @@ class DownloadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * ``successful`` - successfully handled files (local)
-    * ``failed`` - file paths (remote) which were handled with some failures
-    * ``skipped`` - file paths (remote) which were skipped because of some reason
-    * ``missing`` - file paths (remote) which are not present in the file system
+    * :obj:`successful`
+    * :obj:`failed`
+    * :obj:`skipped`
+    * :obj:`missing`
 
     Examples
     --------
@@ -51,6 +51,13 @@ class DownloadResult(FileResult):
     """
 
     successful: FileSet[LocalPath] = Field(default_factory=FileSet)
+    "File paths (local) which were downloaded successfully"
+
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
+    "File paths (remote) which were not downloaded because of some failure"
+
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
+    "File paths (remote) which were skipped because of some reason"
+
     missing: FileSet[RemotePath] = Field(default_factory=FileSet)
+    "File paths (remote) which are not present in the remote file system"

@@ -5,7 +5,7 @@ from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from pydantic import Field, validator
+from pydantic import validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -42,22 +42,156 @@ class JDBCConnection(DBConnection, JDBCMixin):
     package: ClassVar[str] = ""
 
     class Options(DBConnection.Options, JDBCMixin.Options):  # noqa: WPS431
-        mode: JDBCWriteMode = JDBCWriteMode.APPEND
+        """Class for reading/writing options, related to JDBC sources.
 
-        batchsize: Optional[int] = None
-        session_init_statement: Optional[str] = Field(alias="sessionInitStatement", default=None)
-        truncate: Optional[bool] = None
-        create_table_options: Optional[str] = Field(alias="createTableOptions", default=None)
-        create_table_column_types: Optional[str] = Field(alias="createTableColumnTypes", default=None)
-        custom_schema: Optional[str] = Field(alias="customSchema", default=None)
-        cascade_truncate: Optional[bool] = Field(alias="cascadeTruncate", default=None)
-        push_down_predicate: Optional[str] = Field(alias="pushDownPredicate", default=None)
+        .. note ::
+
+            You can pass any value
+            `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
+            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+
+            The set of supported options depends on Spark version.
+
+        Examples
+        --------
+
+        Reading options initialization
+
+        .. code:: python
+
+            options = JDBC.Options(
+                partitionColumn="reg_id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+                someNewOption="value",
+            )
+
+        Writing options initialization
+
+        .. code:: python
+
+            options = JDBC.Options(mode="append", batchsize=20_000, someNewOption="value")
+        """
+
+        # write options
+        mode: JDBCWriteMode = JDBCWriteMode.APPEND
+        """Mode of writing data into target table.
+
+        Possible values:
+            * ``append`` (default)
+                Appends data into existing table.
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    Data is appended to a table. Table has the same DDL as before writing data
+
+            * ``overwrite``
+                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    Data is appended to a table.
+
+                    Table could either have the same DDL as before writing data (``truncate=True``),
+                    or can be recreated (``truncate=False`` or source does not support truncation).
+
+        .. note::
+
+            ``error`` and ``ignore`` modes are not supported.
+
+        .. warning::
+
+            Used **only** while **writing** data to a table.
+        """
 
         # Options in DataFrameWriter.jdbc() method
-        partition_column: Optional[str] = Field(alias="partitionColumn", default=None)
-        lower_bound: Optional[int] = Field(alias="lowerBound", default=None)
-        upper_bound: Optional[int] = Field(alias="upperBound", default=None)
-        num_partitions: Optional[int] = Field(alias="numPartitions", default=None)
+        partition_column: Optional[str] = None
+        """Options ``partitionColumn``, ``numPartitions``, ``lowerBound``, ``upperBound``
+        describe how to partition the table when reading in parallel from multiple workers.
+
+        ``partitionColumn`` must be a numeric, date, or timestamp column in the table.
+
+        Spark generates for each executor an SQL query like:
+
+        Executor 1:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (partitionColumn >= lowerBound
+                    OR partitionColumn IS NULL)
+            AND partitionColumn < lowerBound + stride
+
+        Executor 2:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE partitionColumn >= lowerBound + stride
+            AND partitionColumn < lowerBound + 2*stride
+
+        Executor N:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE partitionColumn >= lowerBound + (N-1) * stride
+            AND partitionColumn <= upperBound
+
+        Where ``stride=MAX(partitionColumn) - MIN(partitionColumn)) / numPartitions``.
+
+        .. note::
+
+            ``lowerBound`` and ``upperBound`` are used just to calculate the partition stride,
+            NOT for filtering the rows in table. So all rows in the table will be returned.
+
+        .. warning::
+
+            You can pass ``numPartitions``, ``lowerBound`` and ``upperBound`` only with
+            ``partitionColumn``.
+
+        .. warning::
+
+            Used **only** while **reading** data from a table
+        """
+
+        num_partitions: Optional[int] = None
+        lower_bound: Optional[int] = None
+        upper_bound: Optional[int] = None
+
+        # read options
+        session_init_statement: Optional[str] = None
+        '''After each database session is opened to the remote DB and before starting to read data,
+        this option executes a custom SQL statement (or a PL/SQL block).
+
+        Use this to implement session initialization code.
+
+        Example:
+
+        .. code:: python
+
+            sessionInitStatement = """
+                BEGIN
+                    execute immediate
+                    'alter session set "_serial_direct_read"=true';
+                END;
+            """
+
+        .. warning::
+
+            Used **only** while **reading** data from a table.
+        '''
 
         @validator("num_partitions", pre=True)
         def num_partitions_only_set_with_partition_column(cls, value, values):  # noqa: N805
@@ -310,7 +444,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
         In other cases returns ``None``.
 
-        There is no method like this in :obj:`pyspark.sql.SparkSession` object,
+        There is no method like this in :obj:`pyspark.sql.SparkSession`` object,
         but Spark internal methods works almost the same (but on executor side).
 
         .. note::
@@ -357,7 +491,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
                 This method is not designed to call statements like ``INSERT INTO ... VALUES ...``,
                 which accepts some input data.
 
-                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter`,
+                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter``,
                 or ``connection.save_df(dataframe, table, options)`` instead.
 
         options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
@@ -407,7 +541,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         log.info(message)
         return df
 
-    def check(self) -> None:
+    def check(self):
         self.log_parameters()
 
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
@@ -421,6 +555,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
             raise RuntimeError(msg) from e
+
+        return self
 
     def log_parameters(self):
         super().log_parameters()

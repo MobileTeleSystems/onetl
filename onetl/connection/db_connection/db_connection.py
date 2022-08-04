@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
+from onetl._internal import to_camel  # noqa: WPS436
 from onetl.base import BaseConnection
 from onetl.log import log_with_indent
 
@@ -38,6 +39,7 @@ class DBConnection(BaseConnection):
         """Hive or JDBC options"""
 
         class Config:  # noqa: WPS431
+            alias_generator = to_camel
             allow_population_by_field_name = True
             frozen = True
             extra = "allow"
@@ -48,7 +50,7 @@ class DBConnection(BaseConnection):
         """Instance URL"""
 
     @abstractmethod
-    def check(self) -> None:
+    def check(self):
         """
         Check if database is accessible.
 
