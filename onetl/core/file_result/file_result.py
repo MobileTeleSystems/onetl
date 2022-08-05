@@ -287,10 +287,10 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result.raise_if_failed()
             # will raise FailedFilesError('''
             #    Failed 2 files (10MB):
-            #        /remote/file1 (1 MB)
+            #        '/remote/file1' (1 MB)
             #           NotAFileError("'/remote/file1' is not a file")
             #
-            #        /remote/file2 (9 MB)
+            #        '/remote/file2' (9 MB)
             #           FileMissingError("'/remote/file2' does not exist")
             # ''')
         """
@@ -326,8 +326,8 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result.raise_if_missing()
             # will raise MissingFilesError('''
             #    Missing 2 files:
-            #        /missing/file1
-            #        /missing/file2
+            #        '/missing/file1'
+            #        '/missing/file2'
             # ''')
         """
 
@@ -359,8 +359,8 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result.raise_if_skipped()
             # will raise SkippedFilesError('''
             #    Skipped 2 files (15 kB):
-            #        /skipped/file1 (10kB)
-            #        /skipped/file2 (5 kB)
+            #        '/skipped/file1' (10kB)
+            #        '/skipped/file2' (5 kB)
             # ''')
         """
 
@@ -396,8 +396,8 @@ class FileResult(BaseModel):  # noqa: WPS214
             file_result.raise_if_contains_zero_size()
             # will raise ZeroFileSizeError('''
             #    2 files out of 3 have zero size:
-            #        /local/empty1.file
-            #        /local/empty2.file
+            #        '/local/empty1.file'
+            #        '/local/empty2.file'
             # ''')
         """
 
@@ -487,23 +487,23 @@ class FileResult(BaseModel):  # noqa: WPS214
                 Total: 8 files (10.4 MB)
 
                 Successful 2 files (30.7 kB):
-                    /successful1 (10.2 kB)
-                    /successful2 (20.5 kB)
+                    '/successful1' (10.2 kB)
+                    '/successful2' (20.5 kB)
 
                 Failed 2 files (10MB):
-                    /remote/file1 (1 MB)
+                    '/remote/file1' (1 MB)
                         NotAFileError("'/remote/file1' is not a file")
 
-                    /remote/file2 (9 MB)
+                    '/remote/file2' (9 MB)
                         FileMissingError("'/remote/file2' does not exist")
 
                 Skipped 2 files (15 kB):
-                    /skipped/file1 (10kB)
-                    /skipped/file2 (5 kB)
+                    '/skipped/file1' (10kB)
+                    '/skipped/file2' (5 kB)
 
                 Missing 2 files:
-                    /missing/file1
-                    /missing/file2
+                    '/missing/file1'
+                    '/missing/file2'
             """
 
             assert file_result1.details == details1

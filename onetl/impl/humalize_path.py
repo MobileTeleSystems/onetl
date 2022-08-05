@@ -14,14 +14,14 @@ def humanize_path(path: os.PathLike | str) -> str:
     if isinstance(path, (str, bytes)):
         path = PurePath(path)
 
-    result = os.fspath(path)
+    result = repr(os.fspath(path))
 
     if isinstance(path, PathProtocol):
         if not path.exists():
-            result = result + " (missing)"
+            result = f"{result} (missing)"
 
         elif path.is_dir():
-            result = result + " (directory)"
+            result = f"{result} (directory)"
 
         elif isinstance(path, SizedPathProtocol):
             size = naturalsize(path.stat().st_size)

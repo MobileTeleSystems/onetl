@@ -48,14 +48,14 @@ class HWMStrategy(BaseStrategy):
             hwm_store = HWMStoreManager.get_current()
 
             log.info(f"{log_prefix} Loading HWM from {hwm_store.__class__.__name__}:")
-            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name}")
+            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name!r}")
 
             value = hwm_store.get(self.hwm.qualified_name)
 
             if value is not None:
                 log.info(f"{log_prefix} Got HWM:")
                 log.info(LOG_INDENT + f"type = {value.__class__.__name__}")
-                log.info(LOG_INDENT + f"value = {value.value}")
+                log.info(LOG_INDENT + f"value = {value.value!r}")
                 self.hwm = value  # noqa: WPS601
             else:
                 log.warning(
@@ -78,8 +78,8 @@ class HWMStrategy(BaseStrategy):
             # TODO:(@mivasil6) подумать над __repr__ hwm
             log.info(f"{log_prefix} Saving HWM to {hwm_store.__class__.__name__}:")
             log.info(LOG_INDENT + f"type = {self.hwm.__class__.__name__}")
-            log.info(LOG_INDENT + f"value = {self.hwm.value}")
-            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name}")
+            log.info(LOG_INDENT + f"value = {self.hwm.value!r}")
+            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name!r}")
 
             location = hwm_store.save(self.hwm)
             log.info(f"{log_prefix} HWM has been saved")

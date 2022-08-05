@@ -24,7 +24,7 @@ class JDBCWriteMode(str, Enum):  # noqa: WPS600
     OVERWRITE = "overwrite"
 
     def __str__(self) -> str:
-        return self.value
+        return str(self.value)
 
 
 @dataclass(frozen=True)  # noqa: WPS338
@@ -584,7 +584,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
     def log_parameters(self):
         super().log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url}")
+        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
 
     def read_table(  # type: ignore[override]
         self,
@@ -623,7 +623,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         write_options = self.jdbc_params_creator(options)
         df.write.jdbc(table=table, **write_options)
-        log.info(f"|{self.__class__.__name__}| Table {table} successfully written")
+        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 
     def get_schema(  # type: ignore[override]
         self,
@@ -632,7 +632,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         options: Options | dict | None = None,
     ) -> StructType:
 
-        log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
+        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
 
         query = self.get_sql_query(table, columns=columns, where="1=0")
         read_options = self._exclude_partition_options(options, fetchsize=0)
@@ -692,7 +692,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         options: Options | dict | None = None,
     ) -> tuple[Any, Any]:
 
-        log.info(f"|Spark| Getting min and max values for column '{column}'")
+        log.info(f"|Spark| Getting min and max values for column {column!r}")
 
         read_options = self._exclude_partition_options(options, fetchsize=1)
 
@@ -713,8 +713,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value}")
-        log_with_indent(f"MAX({column}) = {max_value}")
+        log_with_indent(f"MIN({column}) = {min_value!r}")
+        log_with_indent(f"MAX({column}) = {max_value!r}")
 
         return min_value, max_value
 
@@ -752,9 +752,10 @@ class JDBCConnection(DBConnection, JDBCMixin):
             return result_options
 
         log.warning(
-            f"|Spark| numPartitions value is set to {result_options.num_partitions}, "
+            f"|Spark| Passed numPartitions = {result_options.num_partitions!r}, "
             f"but {' and '.join(missing_values)} value is not set. "
-            f"It will be detected automatically based on values in partitionColumn {result_options.partition_column}",
+            "It will be detected automatically based on values "
+            f"in partitionColumn {result_options.partition_column!r}",
         )
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(

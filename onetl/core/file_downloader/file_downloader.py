@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 from dataclasses import InitVar, dataclass, field
+from enum import Enum
 from logging import getLogger
 from typing import Iterable, Tuple
 
@@ -302,7 +303,13 @@ class FileDownloader:
             self._check_source_path()
 
         if files is None:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
+
+        if not files:
+            log.info(f"|{self.__class__.__name__}| No files to download!")
+            return DownloadResult()
+
         to_download = self._validate_files(files)
 
         # remove folder only after everything is checked
@@ -395,7 +402,7 @@ class FileDownloader:
 
         except Exception as e:
             raise RuntimeError(
-                f"Couldn't read directory tree from remote dir {self._source_path}",
+                f"Couldn't read directory tree from remote dir '{self._source_path}'",
             ) from e
 
         return result
@@ -443,8 +450,9 @@ class FileDownloader:
         entity_boundary_log(msg="FileDownloader starts")
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
-        log.info(LOG_INDENT + f"source_path = {self._source_path}")
-        log.info(LOG_INDENT + f"local_path = {self._local_path}")
+        source_path_str = f"'{self._source_path}'" if self._source_path else "None"
+        log.info(LOG_INDENT + f"source_path = {source_path_str}")
+        log.info(LOG_INDENT + f"local_path = '{self._local_path}'")
 
         if self.filter is not None:
             log.info("")
@@ -456,7 +464,8 @@ class FileDownloader:
 
         log.info(LOG_INDENT + "options:")
         for option, value in self._options.dict().items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
         log.info("")
 
         if self._options.delete_source:
@@ -470,9 +479,6 @@ class FileDownloader:
                 f"|{self.__class__.__name__}| Passed both ``source_path`` and file collection at the same time. "
                 "File collection will be used",
             )
-
-        if not files:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
 
     def _validate_files(  # noqa: WPS231
         self,
@@ -538,8 +544,8 @@ class FileDownloader:
         result = DownloadResult()
         for i, (source_file, local_file) in enumerate(to_download):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(LOG_INDENT + f"from = {source_file}")
-            log.info(LOG_INDENT + f"to = {local_file}")
+            log.info(LOG_INDENT + f"from = '{source_file}'")
+            log.info(LOG_INDENT + f"to = '{local_file}'")
 
             self._download_file(
                 source_file,

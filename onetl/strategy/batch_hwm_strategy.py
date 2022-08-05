@@ -84,7 +84,7 @@ class BatchHWMStrategy(HWMStrategy):
 
     def check_argument_is_set(self, name: str, value: Any) -> None:
         if value is None and not self.is_first_run:
-            raise ValueError(f"`{name}` argument of {self.__class__.__name__} cannot be empty!")
+            raise ValueError(f"{name!r} argument of {self.__class__.__name__} cannot be empty!")
 
     def check_hwm_increased(self, next_value: Any) -> None:
         if self.current_value is None:

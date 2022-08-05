@@ -67,10 +67,10 @@ def test_file_set_details():
     summary = "4 files (10 Bytes)"
     details = """
         4 files (10 Bytes):
-            a/b/c (10 Bytes)
-            a/b/c/d (directory)
-            a/b/c/e (missing)
-            a/b/c/f
+            'a/b/c' (10 Bytes)
+            'a/b/c/d' (directory)
+            'a/b/c/e' (missing)
+            'a/b/c/f'
     """
 
     assert file_set.details == str(file_set) == textwrap.dedent(details).strip()
@@ -98,7 +98,7 @@ def test_file_set_raise_if_contains_zero_size():
 
     details = """
         1 file out of 3 have zero size:
-            /empty
+            '/empty'
     """
 
     error_message = re.escape(textwrap.dedent(details).strip())

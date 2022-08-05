@@ -195,7 +195,7 @@ class DBConnection(BaseConnection):
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log_with_indent(f"{attr} = {value_attr}")
+                log_with_indent(f"{attr} = {value_attr!r}")
 
     @classmethod
     def _log_fields(cls) -> set[str]:
@@ -229,14 +229,14 @@ class DBConnection(BaseConnection):
         Transform the datetime value into supported by SQL Dialect
         """
         result = value.isoformat()
-        return f"'{result}'"
+        return repr(result)
 
     def _get_date_value_sql(self, value: date) -> str:
         """
         Transform the date value into supported by SQL Dialect
         """
         result = value.isoformat()
-        return f"'{result}'"
+        return repr(result)
 
     def _get_max_value_sql(self, value: Any) -> str:
         """

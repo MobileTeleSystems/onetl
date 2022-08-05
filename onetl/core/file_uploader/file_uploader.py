@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
+from enum import Enum
 from logging import getLogger
 from typing import ClassVar, Iterable, Tuple
 
@@ -226,6 +227,10 @@ class FileUploader:
             log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
 
+        if not files:
+            log.info(f"|{self.__class__.__name__}| No files to upload!")
+            return UploadResult()
+
         current_temp_dir = self.generate_temp_path()
         to_upload = self._validate_files(local_files=files, current_temp_dir=current_temp_dir)
 
@@ -292,7 +297,7 @@ class FileUploader:
                 result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
-                f"Couldn't read directory tree from local dir {self._local_path}",
+                f"Couldn't read directory tree from local dir '{self._local_path}'",
             ) from e
 
         return result
@@ -340,14 +345,16 @@ class FileUploader:
         entity_boundary_log(msg="FileUploader starts")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
-        log.info(LOG_INDENT + f"local_path = {self._local_path}")
-        log.info(LOG_INDENT + f"target_path = {self._target_path}")
-        log.info(LOG_INDENT + f"temp_path = {self._temp_path}")
+        local_path_str = f"'{self._local_path}'" if self._local_path else "None"
+        log.info(LOG_INDENT + f"local_path = {local_path_str}")
+        log.info(LOG_INDENT + f"target_path = '{self._target_path}'")
+        log.info(LOG_INDENT + f"temp_path = '{self._temp_path}'")
 
         log.info("")
         log.info(LOG_INDENT + "options:")
         for option, value in self._options.dict().items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
         log.info("")
 
         if self._options.delete_local:
@@ -421,8 +428,8 @@ class FileUploader:
         result = UploadResult()
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(LOG_INDENT + f"from = {local_file}")
-            log.info(LOG_INDENT + f"to = {target_file}")
+            log.info(LOG_INDENT + f"from = '{local_file}'")
+            log.info(LOG_INDENT + f"to = '{target_file}'")
 
             self._upload_file(local_file, target_file, tmp_file, result)
 

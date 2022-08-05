@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
+
 from pydantic import BaseModel, PrivateAttr
 
 from onetl.base.base_file_limit import BaseFileLimit
@@ -26,7 +27,7 @@ class FileLimit(BaseFileLimit, BaseModel):
 
     .. code:: python
 
-        limit=FileLimit(count_limit=1500)
+        limit = FileLimit(count_limit=1500)
 
     If you create a :obj:`onetl.core.file_downloader.file_downloader.FileDownloader` object without
     specifying the limit option, it will download with a limit of 100 files.
@@ -54,7 +55,7 @@ class FileLimit(BaseFileLimit, BaseModel):
     def log_options(self):
         log.info(LOG_INDENT + "limit:")
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(LOG_INDENT + f"    {key} = {value}")
+            log.info(LOG_INDENT + f"    {key} = {value!r}")
 
     def _increase_counter(self):
         self._counter += 1  # noqa: WPS601

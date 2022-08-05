@@ -25,6 +25,9 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
     OVERWRITE_TABLE = "overwrite_table"
     OVERWRITE_PARTITIONS = "overwrite_partitions"
 
+    def __str__(self):
+        return str(self.value)
+
     @classmethod  # noqa: WPS120
     def _missing_(cls, value: object):
         if str(value) == "overwrite":
@@ -429,7 +432,7 @@ class Hive(DBConnection):
             self.get_schema(table)
             table_exists = True
 
-            log.info(f"|{self.__class__.__name__}| Table '{table}' already exists")
+            log.info(f"|{self.__class__.__name__}| Table {table!r} already exists")
         except Exception:
             table_exists = False
 
@@ -469,7 +472,7 @@ class Hive(DBConnection):
 
         query_schema = self.get_sql_query(table, columns=columns, where="1=0")
 
-        log.info(f"|{self.__class__.__name__}| Fetching schema of {table}")
+        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
         log_with_indent(query_schema)
 
@@ -487,7 +490,7 @@ class Hive(DBConnection):
     ) -> Tuple[Any, Any]:
 
         self._handle_read_options(options)
-        log.info(f"|Spark| Getting min and max values for column '{column}'")
+        log.info(f"|Spark| Getting min and max values for column {column!r}")
 
         sql_text = self.get_sql_query(
             table=table,
@@ -507,8 +510,8 @@ class Hive(DBConnection):
         min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
 
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value}")
-        log_with_indent(f"MAX({column}) = {max_value}")
+        log_with_indent(f"MIN({column}) = {min_value!r}")
+        log_with_indent(f"MAX({column}) = {max_value!r}")
 
         return min_value, max_value
 
@@ -556,7 +559,7 @@ class Hive(DBConnection):
                     f"""
                     Inconsistent columns between a table and the dataframe!
 
-                    Table "{table}" has columns:
+                    Table {table!r} has columns:
                         {', '.join(table_columns)}
 
                     Dataframe has columns:
@@ -576,11 +579,11 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.to_options(options)
 
-        log.info(f"|{self.__class__.__name__}| Inserting data into existing table '{table}'")
+        log.info(f"|{self.__class__.__name__}| Inserting data into existing table {table!r}")
 
         for key, value in write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"}).items():
             log.warning(
-                f"|{self.__class__.__name__}| Option {key}={value} is not supported "
+                f"|{self.__class__.__name__}| Option {key}={value!r} is not supported "
                 "while inserting into existing table, ignoring...",
             )
 
@@ -612,7 +615,7 @@ class Hive(DBConnection):
             if original_partition_overwrite_mode:
                 self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, original_partition_overwrite_mode)
 
-        log.info(f"|{self.__class__.__name__}| Data is successfully inserted to table '{table}'")
+        log.info(f"|{self.__class__.__name__}| Data is successfully inserted into table {table!r}")
 
     def _save_as_table(
         self,
@@ -622,7 +625,7 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.to_options(options)
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table '{table}'")
+        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
 
         writer = df.write
         for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"}).items():
@@ -639,4 +642,4 @@ class Hive(DBConnection):
         overwrite = write_options.mode != HiveWriteMode.APPEND
         writer.mode("overwrite" if overwrite else "append").saveAsTable(table)
 
-        log.info(f"|{self.__class__.__name__}| Table '{table}' successfully created")
+        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully created")

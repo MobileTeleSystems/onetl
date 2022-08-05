@@ -263,7 +263,7 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
         writer.run(df)
 
         assert f"|Hive| Inserting data into existing table '{prepare_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Data is successfully inserted to table '{prepare_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{prepare_schema_table.full_name}'" in caplog.text
 
     processing.assert_equal_df(
         schema=prepare_schema_table.schema,
@@ -275,11 +275,11 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
 @pytest.mark.parametrize(
     "options, option_kv",
     [
-        (Hive.Options(partitionBy="str"), "partitionBy=str"),
+        (Hive.Options(partitionBy="str"), "partitionBy='str'"),
         (Hive.Options(bucketBy=(10, "id_int")), "bucketBy=(10, 'id_int')"),
-        (Hive.Options(bucketBy=(5, "id_int"), sortBy="hwm_int"), "sortBy=hwm_int"),
-        (Hive.Options(compression="snappy"), "compression=snappy"),
-        (Hive.Options(format="orc"), "format=orc"),
+        (Hive.Options(bucketBy=(5, "id_int"), sortBy="hwm_int"), "sortBy='hwm_int'"),
+        (Hive.Options(compression="snappy"), "compression='snappy'"),
+        (Hive.Options(format="orc"), "format='orc'"),
     ],
 )
 def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_table, options, option_kv, caplog):
@@ -565,7 +565,7 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     prefix = f"""
         Inconsistent columns between a table and the dataframe!
 
-        Table "{prepare_schema_table.full_name}" has columns:
+        Table '{prepare_schema_table.full_name}' has columns:
             id_int, text_string, hwm_int, hwm_date, hwm_datetime, float_value
         """.strip()
 
