@@ -40,7 +40,7 @@ class JDBCMixin:
     driver: str
 
     class Options(BaseModel):  # noqa: WPS431
-        fetchsize: int = 100000
+        fetchsize: int = 100_000
         """How many rows to fetch per round trip.
 
         Tuning this option can influence performance of writing.

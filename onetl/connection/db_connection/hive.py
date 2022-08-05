@@ -208,9 +208,10 @@ class Hive(DBConnection):
         bucket_by: Optional[Tuple[int, Union[List[str], str]]] = None  # noqa: WPS234
         """Number of buckets plus bucketing columns. ``None`` means bucketing is disabled.
 
-        Each bucket is created as a file with name ``hash(columns) mod num_buckets``,
-        and used to avoid data skew.
-        Useful for decreasing memory consumption by ``GROUP BY`` queries.
+        Each bucket is created as a set of files with name containing ``hash(columns) mod num_buckets``,
+        and used to remove shuffle from queries containing ``GROUP BY`` or ``JOIN`` over bucketing column,
+        and to reduce number of files read by query containing ``=`` and ``IN`` predicates
+        on bucketing column.
 
         Examples: ``(10, "user_id")``, ``(10, ["user_id", "user_phone"])``
 
@@ -221,6 +222,15 @@ class Hive(DBConnection):
 
             Columns like ``countryId`` or ``date`` cannot be used for bucketing
             because of too low number of unique values.
+
+        .. warning::
+
+            It is recommended to use this option **ONLY** if you have a large table
+            (hundreds of Gb or more), which is used mostly for JOINs with other tables,
+            and you're inserting data using ``mode=overwrite_partitions``.
+
+            Otherwise Spark will create a lot of small files
+            (one file for each bucket and each executor), drastically decreasing HDFS performance.
 
         .. warning::
 

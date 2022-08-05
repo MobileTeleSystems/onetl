@@ -115,6 +115,30 @@ class JDBCConnection(DBConnection, JDBCMixin):
             Used **only** while **writing** data to a table.
         """
 
+        batchsize: int = 20_000
+        """How many rows can be inserted per round trip.
+
+        Tuning this option can influence performance of writing.
+
+        .. warning::
+
+            Default value is different from Spark.
+
+            Spark uses quite small value ``1000``, which is absolutely not usable
+            in BigData world.
+
+            Thus we've overridden default value with ``20_000``,
+            which should increase writing performance.
+
+            You can increase it even more, up to ``50_000``,
+            but it depends on your database load and number of columns in the row.
+            Higher values does not increase performance.
+
+        .. warning::
+
+            Used **only** while **writing** data to a table.
+        """
+
         # Options in DataFrameWriter.jdbc() method
         partition_column: Optional[str] = None
         """Options ``partitionColumn``, ``numPartitions``, ``lowerBound``, ``upperBound``
@@ -444,7 +468,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
         In other cases returns ``None``.
 
-        There is no method like this in :obj:`pyspark.sql.SparkSession`` object,
+        There is no method like this in :obj:`pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
 
         .. note::
