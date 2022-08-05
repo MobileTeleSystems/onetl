@@ -207,6 +207,7 @@ class FileConnection(BaseFileConnection):
 
             return RemoteDirectory(path=remote_directory)
 
+        log.info(f"|{self.__class__.__name__}| Creating directory: '{remote_directory}'")
         self._mkdir(remote_directory)
         log.info(f"|{self.__class__.__name__}| Successfully created directory: '{remote_directory}'")
         return RemoteDirectory(path=remote_directory)
