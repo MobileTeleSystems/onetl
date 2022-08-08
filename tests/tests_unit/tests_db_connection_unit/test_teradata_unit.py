@@ -16,7 +16,7 @@ def test_teradata_driver_and_uri():
 
     assert conn.jdbc_url == "jdbc:teradata://some_host/STRICT_NAMES=OFF,FLATTEN=ON,DATABASE=default,DBS_PORT=1025"
     assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-    assert Teradata.package == "com.teradata.jdbc:terajdbc4:17.10.00.25"
+    assert Teradata.package == "com.teradata.jdbc:terajdbc4:17.20.00.08"
     assert Teradata.port == 1025
 
 
