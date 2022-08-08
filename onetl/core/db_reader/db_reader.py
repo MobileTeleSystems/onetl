@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -11,7 +12,6 @@ from onetl.connection.db_connection import DBConnection
 from onetl.log import LOG_INDENT, entity_boundary_log
 
 log = getLogger(__name__)
-# TODO:(@mivasil6) implement logging
 
 if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
@@ -54,33 +54,16 @@ class DBReader:
         Add hint to SQL query
 
     options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
-        Spark JDBC read options.
+        Spark read options.
         For example:
 
         .. code:: python
 
-            Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
-
-        List of options:
-
-            * ``partitionColumn``
-            * ``lowerBound``
-            * ``upperBound``
-            * ``numPartitions``
-            * ``queryTimeout``
-            * ``fetchsize``
-            * ``sessionInitStatement``
-            * ``customSchema``
-            * ``pushDownPredicate``
-
-        You can find a description of the options at the link below:
-
-        https://spark.apache.org/docs/2.4.0/sql-data-sources-jdbc.html
+            Postgres.Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
 
         .. warning ::
 
             :ref:`hive` does not accept read options
-
 
     Examples
     --------
@@ -149,7 +132,7 @@ class DBReader:
             {
                 "appName": "spark-app-name",
                 "spark.jars.packages": [Postgres.package],
-            }
+            },
         )
 
         postgres = Postgres(
@@ -247,25 +230,8 @@ class DBReader:
 
         entity_boundary_log(msg="DBReader starts")
 
-        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
-            if attr in {
-                "connection",
-                "options",
-            }:
-                continue
-
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log.info(LOG_INDENT + f"{attr} = {value_attr}")
-
-        log.info("")
-        log.info(LOG_INDENT + "options:")
-        for option, value in self.options.dict(exclude_none=True).items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
-        log.info("")
-
+        self._log_parameters()
+        self._log_options()
         self.connection.log_parameters()
 
         helper: StrategyHelper
@@ -287,6 +253,35 @@ class DBReader:
         entity_boundary_log(msg="DBReader ends", char="-")
 
         return df
+
+    def _log_parameters(self) -> None:
+        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
+        log.info(LOG_INDENT + f"table = '{self.table}'")
+        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
+            if attr in {
+                "connection",
+                "options",
+                "table",
+                "hwm_column",
+            }:
+                continue
+
+            value_attr = getattr(self, attr)
+
+            if value_attr:
+                log.info(LOG_INDENT + f"{attr} = {value_attr!r}")
+
+        if self.hwm_column:
+            log.info(LOG_INDENT + f"hwm_column = '{self.hwm_column}'")
+
+        log.info("")
+
+    def _log_options(self) -> None:
+        log.info(LOG_INDENT + "options:")
+        for option, value in self.options.dict(exclude_none=True).items():
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
+        log.info("")
 
     def _resolve_columns(self) -> list[str]:
         """
@@ -368,13 +363,13 @@ class DBReader:
             column = item.strip()
 
             if not column:
-                raise ValueError(f"Column name cannot be empty string, got '{item}'")
+                raise ValueError(f"Column name cannot be empty string, got {item!r}")
 
             if column.lower() in result_lower:
-                raise ValueError(f"Duplicated column name: '{item}'")
+                raise ValueError(f"Duplicated column name: {item!r}")
 
             if self.hwm_expression and self.hwm_column and self.hwm_column.name.lower() == column.lower():
-                raise ValueError(f"'{item}' is an alias for HWM, it cannot be used as column name")
+                raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as column name")
 
             result.append(column)
             result_lower.append(column.lower())

@@ -7,12 +7,12 @@ from enum import Enum, auto
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
 
-from onetl._internal import stringify  # noqa: WPS436
+from onetl._internal import stringify, to_camel  # noqa: WPS436
 
 log = getLogger(__name__)
 
@@ -40,9 +40,62 @@ class JDBCMixin:
     driver: str
 
     class Options(BaseModel):  # noqa: WPS431
-        fetchsize: int = 100000
-        isolation_level: Optional[str] = Field(alias="isolationLevel", default=None)
-        query_timeout: Optional[int] = Field(alias="queryTimeout", default=None)
+        fetchsize: int = 100_000
+        """How many rows to fetch per round trip.
+
+        Tuning this option can influence performance of writing.
+
+        .. warning::
+
+            Default value is different from Spark.
+
+            Spark uses driver's own value, and it may be different in different drivers,
+            and even versions of the same driver. For example, Oracle has
+            default ``fetchsize=10``, which is absolutely not usable.
+
+            Thus we've overridden default value with ``100_000``, which should increase reading performance.
+
+        .. warning::
+
+            Used **only** while **reading** data from a table.
+        """
+
+        isolation_level: str = "READ_UNCOMMITTED"
+        """The transaction isolation level, which applies to current connection.
+
+        Possible values:
+            * ``NONE`` (as string, not Python's ``None``)
+            * ``READ_COMMITTED``
+            * ``READ_UNCOMMITTED``
+            * ``REPEATABLE_READ``
+            * ``SERIALIZABLE``
+
+        Values correspond to transaction isolation levels defined by JDBC standard.
+        Please refer the documentation for
+        `java.sql.Connection <https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html>`_.
+
+        .. warning::
+
+            Used **only** while **reading** data from a table.
+        """
+
+        query_timeout: int = 0
+        """The number of seconds the driver will wait for a statement to execute.
+        Zero means there is no limit.
+
+        This option depends on driver implementation,
+        some drivers can check the timeout of each query instead of an entire JDBC batch.
+
+        .. note::
+
+            Used while both reading data from and writing data to a table.
+        """
+
+        class Config:  # noqa: WPS431
+            alias_generator = to_camel
+            allow_population_by_field_name = True
+            frozen = True
+            extra = "allow"
 
     # cached JDBC connection (Java object), plus corresponding Options (Python object)
     _last_connection_and_options: Optional[tuple[Any, Options]] = field(default=None, init=False)

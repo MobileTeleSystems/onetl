@@ -11,6 +11,10 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class MySQL(JDBCConnection):
     """Class for MySQL jdbc connection.
 
+    .. note::
+
+        Supported MySQL server versions: >= 5.6
+
     Parameters
     ----------
     host : str
@@ -28,7 +32,7 @@ class MySQL(JDBCConnection):
     database : str
         Database in rdbms. To provide schema, use DBReader class
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization
@@ -66,7 +70,7 @@ class MySQL(JDBCConnection):
     """
 
     driver: ClassVar[str] = "com.mysql.jdbc.Driver"
-    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.26"
+    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.30"
     port: int = 3306
 
     @property

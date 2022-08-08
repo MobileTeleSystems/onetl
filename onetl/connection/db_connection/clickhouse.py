@@ -14,6 +14,10 @@ log = logging.getLogger(__name__)
 class Clickhouse(JDBCConnection):
     """Class for Clickhouse jdbc connection.
 
+    .. note::
+
+        Supported Clickhouse server versions: >= 20.7
+
     Parameters
     ----------
     host : str
@@ -31,7 +35,7 @@ class Clickhouse(JDBCConnection):
     database : str
         Database in rdbms. To provide schema, use DBReader class
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization
@@ -69,7 +73,7 @@ class Clickhouse(JDBCConnection):
     """
 
     driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
-    package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.0"
+    package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
     port: int = 8123
 
     @property

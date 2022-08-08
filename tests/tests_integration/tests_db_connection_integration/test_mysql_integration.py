@@ -11,7 +11,7 @@ from onetl.connection import MySQL
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_mysql_connection_sql(spark, processing, load_table_data, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -21,12 +21,12 @@ def test_mysql_reader_connection_sql(spark, processing, prepare_schema_table, su
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
 
     df = mysql.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -46,7 +46,7 @@ def test_mysql_reader_connection_sql(spark, processing, prepare_schema_table, su
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_fetch(spark, processing, prepare_schema_table, suffix):
+def test_mysql_connection_fetch(spark, processing, load_table_data, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -56,13 +56,13 @@ def test_mysql_reader_connection_fetch(spark, processing, prepare_schema_table, 
         spark=spark,
     )
 
-    schema = prepare_schema_table.schema
-    table = prepare_schema_table.full_name
+    schema = load_table_data.schema
+    table = load_table_data.full_name
 
     df = mysql.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -72,7 +72,7 @@ def test_mysql_reader_connection_fetch(spark, processing, prepare_schema_table, 
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
     df = mysql.fetch(f"SHOW TABLES{suffix}")
-    result_df = pandas.DataFrame([[prepare_schema_table.table]], columns=[f"Tables_in_{schema}"])
+    result_df = pandas.DataFrame([[load_table_data.table]], columns=[f"Tables_in_{schema}"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
     # wrong syntax
@@ -81,7 +81,7 @@ def test_mysql_reader_connection_fetch(spark, processing, prepare_schema_table, 
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_ddl(spark, processing, get_schema_table, suffix):
+def test_mysql_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -134,7 +134,7 @@ def test_mysql_reader_connection_execute_ddl(spark, processing, get_schema_table
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_mysql_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -144,14 +144,14 @@ def test_mysql_reader_connection_execute_dml(request, spark, processing, prepare
         spark=spark,
     )
 
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
 
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -193,7 +193,7 @@ def test_mysql_reader_connection_execute_dml(request, spark, processing, prepare
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure(request, spark, processing, prepare_schema_table, suffix):
+def test_mysql_connection_execute_procedure(request, spark, processing, load_table_data, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -203,12 +203,12 @@ def test_mysql_reader_connection_execute_procedure(request, spark, processing, p
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -305,11 +305,11 @@ def test_mysql_reader_connection_execute_procedure(request, spark, processing, p
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure_arguments(
+def test_mysql_connection_execute_procedure_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mysql = MySQL(
@@ -321,12 +321,12 @@ def test_mysql_reader_connection_execute_procedure_arguments(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -378,11 +378,11 @@ def test_mysql_reader_connection_execute_procedure_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure_out(
+def test_mysql_connection_execute_procedure_out(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mysql = MySQL(
@@ -394,7 +394,7 @@ def test_mysql_reader_connection_execute_procedure_out(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc_out"
 
     assert not mysql.execute(
@@ -424,11 +424,11 @@ def test_mysql_reader_connection_execute_procedure_out(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure_inout(
+def test_mysql_connection_execute_procedure_inout(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mysql = MySQL(
@@ -440,7 +440,7 @@ def test_mysql_reader_connection_execute_procedure_inout(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc_inout"
 
     assert not mysql.execute(
@@ -475,7 +475,7 @@ def test_mysql_reader_connection_execute_procedure_inout(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure_ddl(
+def test_mysql_connection_execute_procedure_ddl(
     request,
     spark,
     processing,
@@ -526,7 +526,7 @@ def test_mysql_reader_connection_execute_procedure_ddl(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
+def test_mysql_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -565,7 +565,7 @@ def test_mysql_reader_connection_execute_procedure_dml(request, spark, processin
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_function(request, spark, processing, prepare_schema_table, suffix):
+def test_mysql_connection_execute_function(request, spark, processing, load_table_data, suffix):
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
@@ -586,7 +586,7 @@ def test_mysql_reader_connection_execute_function(request, spark, processing, pr
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     func = f"{table}_func"
 
     assert not mysql.execute(
@@ -660,11 +660,11 @@ def test_mysql_reader_connection_execute_function(request, spark, processing, pr
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_function_arguments(
+def test_mysql_connection_execute_function_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mysql_root = MySQL(
@@ -687,12 +687,12 @@ def test_mysql_reader_connection_execute_function_arguments(
         spark=spark,
     )
 
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     func = f"{table}_func"
 
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
 
@@ -746,7 +746,7 @@ def test_mysql_reader_connection_execute_function_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_function_ddl(spark, processing, get_schema_table, suffix):
+def test_mysql_connection_execute_function_ddl(spark, processing, get_schema_table, suffix):
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
@@ -785,7 +785,7 @@ def test_mysql_reader_connection_execute_function_ddl(spark, processing, get_sch
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mysql_reader_connection_execute_function_dml(request, spark, processing, get_schema_table, suffix):
+def test_mysql_connection_execute_function_dml(request, spark, processing, get_schema_table, suffix):
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,

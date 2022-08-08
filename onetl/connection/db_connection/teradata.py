@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
@@ -28,15 +28,22 @@ class Teradata(JDBCConnection):
     database : str
         Database in rdbms. To provide schema, use DBReader class
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization
 
     extra : dict, default: ``None``
-        Specifies one or more extra parameters by which clients can connect to the instance.
+        Specifies one or more extra parameters which should be appended to a connection string.
 
-        For example: ``{"LOGMECH": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``
+        For example: ``{"MODE": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``
+
+        .. note::
+
+            By default, ``STRICT_NAMES=OFF`` and ``FLATTEN=ON`` options are added to extra.
+
+            It is possible to pass different values for these options,
+            e.g. ``extra={"FLATTEN": "OFF"}``
 
     Examples
     --------
@@ -72,14 +79,19 @@ class Teradata(JDBCConnection):
 
     driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
     # TODO:(@mivasil6) think about workaround for case with several jar packages
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.10.00.25"
+    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.20.00.08"
     port: int = 1025
 
     _check_query: ClassVar[str] = "SELECT 1 AS check_result"
+    _default_extra: ClassVar[dict[str, Any]] = {
+        "STRICT_NAMES": "OFF",
+        "FLATTEN": "ON",
+    }
 
     @property
     def jdbc_url(self) -> str:
-        prop = self.extra.copy()
+        prop = self._default_extra.copy()
+        prop.update(self.extra)
 
         if self.database:
             prop["DATABASE"] = self.database

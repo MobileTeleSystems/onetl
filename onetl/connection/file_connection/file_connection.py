@@ -82,19 +82,22 @@ class FileConnection(BaseFileConnection):
     def __exit__(self, _exc_type, _exc_value, _traceback):
         self.close()
 
-    def check(self) -> None:
+    def check(self):
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
             log.info(LOG_INDENT + f"type = {self.__class__.__name__}")
-            log.info(LOG_INDENT + f"host = {self.host}")
-            log.info(LOG_INDENT + f"user = {self.user}")
+            log.info(LOG_INDENT + f"host = {self.host!r}")
+            log.info(LOG_INDENT + f"port = {self.port!r}")
+            log.info(LOG_INDENT + f"user = {self.user!r}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from e
+
+        return self
 
     def is_file(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(path)
@@ -205,6 +208,7 @@ class FileConnection(BaseFileConnection):
 
             return RemoteDirectory(path=remote_directory)
 
+        log.info(f"|{self.__class__.__name__}| Creating directory: '{remote_directory}'")
         self._mkdir(remote_directory)
         log.info(f"|{self.__class__.__name__}| Successfully created directory: '{remote_directory}'")
         return RemoteDirectory(path=remote_directory)
@@ -217,10 +221,10 @@ class FileConnection(BaseFileConnection):
     ) -> RemoteFile:
         local_file = LocalPath(local_file_path)
         if not local_file.exists():
-            raise FileNotFoundError(f"|LocalFS| File '{local_file_path}' does not exist")
+            raise FileNotFoundError(f"|LocalFS| File '{local_file}' does not exist")
 
         if not local_file.is_file():
-            raise NotAFileError(f"|LocalFS| '{local_file_path}' is not a file")
+            raise NotAFileError(f"|LocalFS| '{local_file}' is not a file")
 
         remote_file = RemotePath(remote_file_path)
         if self.path_exists(remote_file):
@@ -286,7 +290,7 @@ class FileConnection(BaseFileConnection):
 
         return result
 
-    def walk(
+    def walk(  # noqa: WPS231
         self,
         top: os.PathLike | str,
         filter: BaseFileFilter | None = None,  # noqa: WPS125
@@ -310,12 +314,11 @@ class FileConnection(BaseFileConnection):
                 folder = RemoteDirectory(path=root / name)
 
                 if filter and not filter.match(folder):
-                    log.info(
-                        f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' "
-                        "does not match the filter, skipping",
+                    log.debug(
+                        f"|{self.__class__.__name__}| Directory '{folder}' does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.info(f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' does match the filter")
+                    log.debug(f"|{self.__class__.__name__}| Directory '{folder}' is matching the filter")
                     dirs.append(RemoteDirectory(path=name))
 
             else:
@@ -323,18 +326,23 @@ class FileConnection(BaseFileConnection):
                 file = RemoteFile(path=root / name, stats=stat)
 
                 if filter and not filter.match(file):
-                    log.info(
-                        f"|{self.__class__.__name__}| File '{os.fspath(file)}' does not match the filter, skipping",
+                    log.debug(
+                        f"|{self.__class__.__name__}| File '{file}' does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.info(f"|{self.__class__.__name__}| File '{os.fspath(file)}' does match the filter")
+                    log.debug(f"|{self.__class__.__name__}| File '{file}' is matching the filter")
                     files.append(RemoteFile(path=name, stats=stat))
 
+        # if a nested directory was encountered, then the same method is called recursively
         for name in dirs:
             path = root / name
             yield from self.walk(top=path, filter=filter)
 
         yield top, dirs, files
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         remote_directory = RemotePath(path)

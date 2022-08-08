@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
+from onetl._internal import to_camel  # noqa: WPS436
 from onetl.base import BaseConnection
-from onetl.impl import DBWriteMode
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
@@ -23,7 +23,7 @@ log = getLogger(__name__)
 @dataclass(frozen=True)
 class DBConnection(BaseConnection):
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
-    spark: pyspark.sql.SparkSession
+    spark: SparkSession
 
     _check_query: ClassVar[str] = "SELECT 1"
     _compare_statements: ClassVar[dict[Callable, str]] = {
@@ -38,10 +38,8 @@ class DBConnection(BaseConnection):
     class Options(BaseModel):  # noqa: WPS431
         """Hive or JDBC options"""
 
-        mode: DBWriteMode = DBWriteMode.APPEND
-
         class Config:  # noqa: WPS431
-            use_enum_values = True
+            alias_generator = to_camel
             allow_population_by_field_name = True
             frozen = True
             extra = "allow"
@@ -52,7 +50,7 @@ class DBConnection(BaseConnection):
         """Instance URL"""
 
     @abstractmethod
-    def check(self) -> None:
+    def check(self):
         """
         Check if database is accessible.
 
@@ -197,7 +195,7 @@ class DBConnection(BaseConnection):
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log_with_indent(f"{attr} = {value_attr}")
+                log_with_indent(f"{attr} = {value_attr!r}")
 
     @classmethod
     def _log_fields(cls) -> set[str]:
@@ -231,14 +229,14 @@ class DBConnection(BaseConnection):
         Transform the datetime value into supported by SQL Dialect
         """
         result = value.isoformat()
-        return f"'{result}'"
+        return repr(result)
 
     def _get_date_value_sql(self, value: date) -> str:
         """
         Transform the date value into supported by SQL Dialect
         """
         result = value.isoformat()
-        return f"'{result}'"
+        return repr(result)
 
     def _get_max_value_sql(self, value: Any) -> str:
         """

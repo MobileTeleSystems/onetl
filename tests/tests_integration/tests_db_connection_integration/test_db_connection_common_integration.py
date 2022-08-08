@@ -14,8 +14,10 @@ def test_clickhouse_connection_check(spark, processing, caplog):
         database=processing.database,
         spark=spark,
     )
+
     with caplog.at_level(logging.INFO):
-        clickhouse.check()
+        assert clickhouse.check() == clickhouse
+
     assert "Connection is available" in caplog.text
 
 
@@ -28,7 +30,7 @@ def test_clickhouse_wrong_connection_check(spark):
 def test_hive_check(spark, caplog):
     hive = Hive(spark=spark)
     with caplog.at_level(logging.INFO):
-        hive.check()
+        assert hive.check() == hive
     assert "Connection is available" in caplog.text
 
 
@@ -40,14 +42,24 @@ def test_mssql_connection_check(spark, processing, caplog):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
+
     with caplog.at_level(logging.INFO):
-        mssql.check()
+        assert mssql.check() == mssql
+
     assert "Connection is available" in caplog.text
 
 
 def test_mssql_wrong_connection_check(spark):
-    mssql = MSSQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+    mssql = MSSQL(
+        host="host",
+        user="some_user",
+        password="pwd",
+        database="abc",
+        spark=spark,
+        extra={"trustServerCertificate": "true"},
+    )
     with pytest.raises(RuntimeError):
         mssql.check()
 
@@ -63,7 +75,7 @@ def test_mysql_connection_check(spark, processing, caplog):
     )
 
     with caplog.at_level(logging.INFO):
-        mysql.check()
+        assert mysql.check() == mysql
 
     assert "Connection is available" in caplog.text
 
@@ -87,7 +99,7 @@ def test_oracle_connection_check(spark, processing, caplog):
     )
 
     with caplog.at_level(logging.INFO):
-        oracle.check()
+        assert oracle.check() == oracle
 
     assert "Connection is available" in caplog.text
 
@@ -110,7 +122,7 @@ def test_postgres_connection_check(spark, processing, caplog):
     )
 
     with caplog.at_level(logging.INFO):
-        postgres.check()
+        assert postgres.check() == postgres
 
     assert "Connection is available" in caplog.text
 

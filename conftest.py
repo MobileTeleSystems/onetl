@@ -3,11 +3,21 @@ import os
 import secrets
 import shutil
 from collections import namedtuple
+from datetime import date, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
 
 import pytest
+from etl_entities import (
+    Column,
+    DateHWM,
+    DateTimeHWM,
+    FileListHWM,
+    IntHWM,
+    RemoteFolder,
+    Table,
+)
 from mtspark import get_spark
 
 from onetl.connection import (
@@ -33,6 +43,8 @@ from tests.lib.oracle_processing import OracleProcessing
 from tests.lib.postgres_processing import PostgressProcessing
 
 log = logging.getLogger(__name__)
+
+PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
 @pytest.fixture(scope="session")
@@ -92,7 +104,7 @@ def test_files(resource_path):
 
 
 @pytest.fixture(scope="session", name="spark")
-def get_mtspark_session(request):
+def get_spark_session(request):
     config = {
         "appName": "onetl",
         "spark.jars.packages": [
@@ -146,12 +158,11 @@ def processing(request, spark):
 
 @pytest.fixture
 def get_schema_table(processing):
-    table = f"test_{secrets.token_hex(5)}"
     schema = "onetl"
+    processing.create_schema(schema=schema)
 
+    table = f"test_{secrets.token_hex(5)}"
     full_name = f"{schema}.{table}"
-
-    PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
     yield PreparedDbInfo(full_name=full_name, schema=schema, table=table)
 
@@ -165,33 +176,26 @@ def get_schema_table(processing):
 
 
 @pytest.fixture
-def prepare_schema_table(processing, request, get_schema_table):
-    test_function = request.function
-
-    test_entity = test_function.__name__.split("_")[2]
-
+def prepare_schema_table(processing, get_schema_table):
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
-
-    preloading_data = test_entity == "reader"  # True if _reader_, if _writer_ then False
-
     _, schema, table = get_schema_table
 
-    try:
-        processing.create_schema(schema=schema)
-        processing.create_table(schema=schema, table=table, fields=fields)
-
-        if preloading_data:
-            processing.insert_data(
-                schema=schema,
-                table=table,
-                values=processing.create_pandas_df(),
-            )
-
-    except Exception as error:
-        log.exception(error)
-        raise error
+    processing.create_table(schema=schema, table=table, fields=fields)
 
     return get_schema_table
+
+
+@pytest.fixture
+def load_table_data(prepare_schema_table, processing):
+    _, schema, table = prepare_schema_table
+
+    processing.insert_data(
+        schema=schema,
+        table=table,
+        values=processing.create_pandas_df(),
+    )
+
+    return prepare_schema_table
 
 
 @pytest.fixture(scope="function", autouse=True)  # noqa: WPS325
@@ -255,3 +259,42 @@ def source_path(file_connection):
 @pytest.fixture(scope="function")
 def upload_test_files(file_connection, resource_path, source_path):
     return upload_files(resource_path, source_path, file_connection)
+
+
+@pytest.fixture(
+    params=[
+        (
+            IntHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=10,
+            ),
+            5,
+        ),
+        (
+            DateHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=date(year=2022, month=8, day=15),
+            ),
+            timedelta(days=31),
+        ),
+        (
+            DateTimeHWM(
+                source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
+                column=Column(name=secrets.token_hex(5)),
+                value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
+            ),
+            timedelta(seconds=50),
+        ),
+        (
+            FileListHWM(
+                source=RemoteFolder(name=f"/absolute/{secrets.token_hex(5)}", instance="ftp://ftp.server:21"),
+                value=["some/path", "another.file"],
+            ),
+            "third.file",
+        ),
+    ],
+)
+def hwm_delta(request):
+    return request.param

@@ -45,6 +45,10 @@ class ErrorPosition:
 class Oracle(JDBCConnection):
     """Class for Oracle jdbc connection.
 
+    .. note::
+
+        Supported Oracle Server versions: 21c, 19c, 18c, and 12.2
+
     Parameters
     ----------
     host : str
@@ -75,7 +79,7 @@ class Oracle(JDBCConnection):
 
             Be careful, for correct work you must provide ``sid`` or ``service_name``
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization
@@ -106,7 +110,7 @@ class Oracle(JDBCConnection):
     """
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle:ojdbc7:12.1.0.2"
+    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
     port: int = 1521
     sid: str = ""
     service_name: str = ""
@@ -144,7 +148,7 @@ class Oracle(JDBCConnection):
     def execute(  # type: ignore[override]
         self,
         statement: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.Options | None = None,
     ) -> DataFrame | None:
 
         statement = clear_statement(statement)

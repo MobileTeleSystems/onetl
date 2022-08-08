@@ -18,11 +18,11 @@ repos:
   - id: fix-encoding-pragma
     args: [--remove]
   - id: name-tests-test
-    files: ^tests/(test_integration|test_unit)/.*\.py$
+    files: ^tests/(tests_integration|tests_unit)/.*\.py$
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.2.0
+  rev: v1.3.0
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
@@ -32,7 +32,7 @@ repos:
   - id: codespell
     args: [-w]
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.3.0
+  rev: v2.4.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
@@ -59,12 +59,12 @@ repos:
   - id: rst-inline-touching-normal
   - id: text-unicode-replacement-char
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.34.0
+  rev: v2.37.1
   hooks:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/ambv/black
-  rev: 22.3.0
+  rev: 22.6.0
   hooks:
   - id: black
     language_version: python3

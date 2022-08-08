@@ -1,11 +1,12 @@
 import logging
 import secrets
 import tempfile
+from datetime import timedelta
 from pathlib import Path, PurePosixPath
 
 import pytest
 
-from onetl.core import FileDownloader, FileFilter, FileSet
+from onetl.core import FileDownloader, FileFilter, FileLimit, FileSet
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import (
     FailedRemoteFile,
@@ -14,6 +15,7 @@ from onetl.impl import (
     RemoteFile,
     RemotePath,
 )
+from onetl.strategy import SnapshotBatchStrategy, IncrementalBatchStrategy, IncrementalStrategy
 
 
 def test_downloader_view_file(file_connection, source_path, upload_test_files):
@@ -686,3 +688,146 @@ def test_downloader_run_input_is_not_file(request, file_connection, tmp_path_fac
 
     with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
         downloader.run([not_a_file])
+
+
+def test_downloader_file_limit(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+    limit = 2
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        limit=FileLimit(count_limit=limit),
+    )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "count_limit = 2" in caplog.text
+
+    assert len(download_result.successful) == limit
+
+
+def test_downloader_hwm_type_without_source_path_error(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="If `hwm_type` is passed, `source_path` must be specified"):
+        with IncrementalStrategy():
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_snap_batch_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+        with SnapshotBatchStrategy(step=100500):
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_inc_batch_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+        with IncrementalBatchStrategy(
+            step=timedelta(days=5),
+        ):
+            downloader.run()
+
+
+def test_downloader_detect_hwm_type_snapshot_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="file_list",
+    )
+
+    with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
+        downloader.run()
+
+
+def test_downloader_file_hwm_strategy_with_wrong_parameters(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="files_list",
+        source_path=source_path,
+    )
+
+    with pytest.raises(ValueError, match="If `hwm_type` is passed you can't specify an `offset`"):
+        with IncrementalStrategy(offset=1):
+            downloader.run()
+
+    with IncrementalStrategy():
+        downloader.run()
+
+
+def test_downloader_file_hwm_strategy(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        local_path=local_path,
+        hwm_type="files_list",
+        source_path=source_path,
+    )
+
+    with IncrementalStrategy():
+        downloader.run()

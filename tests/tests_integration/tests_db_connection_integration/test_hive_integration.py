@@ -11,14 +11,14 @@ from onetl.connection import Hive
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_hive_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_hive_connection_sql(spark, processing, load_table_data, suffix):
     hive = Hive(spark=spark)
-    schema = prepare_schema_table.schema
-    table = prepare_schema_table.full_name
+    schema = load_table_data.schema
+    table = load_table_data.full_name
     df = hive.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -32,7 +32,7 @@ def test_hive_reader_connection_sql(spark, processing, prepare_schema_table, suf
 
     df = hive.sql(f"SHOW TABLES IN {schema}")
     result_df = pandas.DataFrame(
-        [[schema, prepare_schema_table.table, False]],
+        [[schema, load_table_data.table, False]],
         columns=["database", "tableName", "isTemporary"],
     )
     processing.assert_equal_df(df=df, other_frame=result_df)
@@ -42,7 +42,7 @@ def test_hive_reader_connection_sql(spark, processing, prepare_schema_table, suf
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_hive_reader_connection_execute_ddl(spark, processing, get_schema_table, suffix):
+def test_hive_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     hive = Hive(spark=spark)
     table_name, schema, table = get_schema_table
     fields = {
@@ -84,14 +84,14 @@ def test_hive_reader_connection_execute_ddl(spark, processing, get_schema_table,
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_hive_reader_connection_execute_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_hive_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     hive = Hive(spark=spark)
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}

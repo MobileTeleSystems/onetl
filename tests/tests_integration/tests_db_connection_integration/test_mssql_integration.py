@@ -11,7 +11,7 @@ from onetl.connection import MSSQL
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_sql(spark, processing, prepare_schema_table, suffix):
+def test_mssql_connection_sql(spark, processing, load_table_data, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -19,12 +19,13 @@ def test_mssql_reader_connection_sql(spark, processing, prepare_schema_table, su
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     df = mssql.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -37,7 +38,7 @@ def test_mssql_reader_connection_sql(spark, processing, prepare_schema_table, su
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_fetch(spark, processing, prepare_schema_table, suffix):
+def test_mssql_connection_fetch(spark, processing, load_table_data, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -45,12 +46,13 @@ def test_mssql_reader_connection_fetch(spark, processing, prepare_schema_table, 
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     df = mssql.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
@@ -63,7 +65,7 @@ def test_mssql_reader_connection_fetch(spark, processing, prepare_schema_table, 
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_ddl(spark, processing, get_schema_table, suffix):
+def test_mssql_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -71,6 +73,7 @@ def test_mssql_reader_connection_execute_ddl(spark, processing, get_schema_table
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table_name, schema, table = get_schema_table
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
@@ -105,7 +108,7 @@ def test_mssql_reader_connection_execute_ddl(spark, processing, get_schema_table
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_dml(request, spark, processing, prepare_schema_table, suffix):
+def test_mssql_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -113,14 +116,15 @@ def test_mssql_reader_connection_execute_dml(request, spark, processing, prepare
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table_name, schema, table = prepare_schema_table
+    table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     assert not mssql.execute(processing.create_table_ddl(temp_name, fields, schema) + suffix)
@@ -152,7 +156,7 @@ def test_mssql_reader_connection_execute_dml(request, spark, processing, prepare
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_procedure(request, spark, processing, prepare_schema_table, suffix):
+def test_mssql_connection_execute_procedure(request, spark, processing, load_table_data, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -160,12 +164,13 @@ def test_mssql_reader_connection_execute_procedure(request, spark, processing, p
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     assert not mssql.execute(
@@ -230,11 +235,11 @@ def test_mssql_reader_connection_execute_procedure(request, spark, processing, p
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_procedure_arguments(
+def test_mssql_connection_execute_procedure_arguments(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mssql = MSSQL(
@@ -244,12 +249,13 @@ def test_mssql_reader_connection_execute_procedure_arguments(
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc"
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     assert not mssql.execute(
@@ -304,11 +310,11 @@ def test_mssql_reader_connection_execute_procedure_arguments(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_procedure_out(
+def test_mssql_connection_execute_procedure_out(
     request,
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     suffix,
 ):
     mssql = MSSQL(
@@ -318,12 +324,13 @@ def test_mssql_reader_connection_execute_procedure_out(
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
-    table = prepare_schema_table.full_name
+    table = load_table_data.full_name
     proc = f"{table}_proc_out"
     table_df = processing.get_expected_dataframe(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=load_table_data.schema,
+        table=load_table_data.table,
         order_by="id_int",
     )
     assert not mssql.execute(
@@ -360,7 +367,7 @@ def test_mssql_reader_connection_execute_procedure_out(
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_procedure_ddl(request, spark, processing, get_schema_table, suffix):
+def test_mssql_connection_execute_procedure_ddl(request, spark, processing, get_schema_table, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -368,6 +375,7 @@ def test_mssql_reader_connection_execute_procedure_ddl(request, spark, processin
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = get_schema_table.full_name
     proc = f"{table}_proc_ddl"
@@ -394,7 +402,7 @@ def test_mssql_reader_connection_execute_procedure_ddl(request, spark, processin
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_mssql_reader_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
+def test_mssql_connection_execute_procedure_dml(request, spark, processing, get_schema_table, suffix):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -402,6 +410,7 @@ def test_mssql_reader_connection_execute_procedure_dml(request, spark, processin
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
     table = get_schema_table.full_name
     proc = f"{table}_proc_dml"

@@ -1,9 +1,10 @@
-from onetl.core import DBWriter
 from onetl.connection import MSSQL
+from onetl.core import DBWriter
 
 
 def test_mssql_writer_snapshot(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
+
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -11,12 +12,15 @@ def test_mssql_writer_snapshot(spark, processing, prepare_schema_table):
         password=processing.password,
         database=processing.database,
         spark=spark,
+        extra={"trustServerCertificate": "true"},
     )
+
     writer = DBWriter(
         connection=mssql,
         table=prepare_schema_table.full_name,
     )
     writer.run(df)
+
     processing.assert_equal_df(
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,

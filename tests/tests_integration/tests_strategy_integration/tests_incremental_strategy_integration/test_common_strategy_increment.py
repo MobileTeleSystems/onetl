@@ -18,10 +18,10 @@ from onetl.strategy import IncrementalStrategy
         ("hwm_datetime", "integer"),
     ],
 )
-def test_postgres_reader_strategy_incremental_different_hwm_type_in_store(
+def test_postgres_strategy_incremental_different_hwm_type_in_store(
     spark,
     processing,
-    prepare_schema_table,
+    load_table_data,
     hwm_column,
     new_type,
 ):
@@ -34,23 +34,23 @@ def test_postgres_reader_strategy_incremental_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
 
     with IncrementalStrategy():
         reader.run()
 
-    processing.drop_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table)
+    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
 
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     new_fields[hwm_column] = new_type
-    processing.create_table(schema=prepare_schema_table.schema, table=prepare_schema_table.table, fields=new_fields)
+    processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
     with pytest.raises(TypeError):
         with IncrementalStrategy():
             reader.run()
 
 
-def test_postgres_reader_strategy_incremental_hwm_set_twice(spark, processing, prepare_schema_table):
+def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_table_data):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -60,7 +60,7 @@ def test_postgres_reader_strategy_incremental_hwm_set_twice(spark, processing, p
         spark=spark,
     )
 
-    table1 = prepare_schema_table.full_name
+    table1 = load_table_data.full_name
     table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
 
     hwm_column1 = "hwm_int"

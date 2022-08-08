@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
+from enum import Enum
 from logging import getLogger
-from typing import ClassVar, Iterable
+from typing import ClassVar, Iterable, Tuple
 
 from etl_entities import ProcessStackManager
 from ordered_set import OrderedSet
@@ -18,6 +19,8 @@ from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemotePath
 from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
+
+UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, RemotePath]]
 
 
 @dataclass
@@ -81,28 +84,25 @@ class FileUploader:
     """
 
     class Options(BaseModel):  # noqa: WPS431
-        """File uploader options
-
-        Parameters
-        ----------
-        mode : :obj:`onetl.impl.file_write_mode.FileWriteMode`
-            How to handle existing files in the target directory.
-
-            Possible values:
-                * ``error`` (default) - do nothing, mark file as failed
-                * ``ignore`` - do nothing, mark file as ignored
-                * ``overwrite`` - replace existing file with a new one
-                * ``delete_all`` - delete local directory content before downloading files
-
-        delete_local : bool
-            If ``True``, remove local file after successful download.
-
-            If download failed, file will left intact.
-
-        """
+        """File uploader options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
+        """
+        How to handle existing files in the target directory.
+
+        Possible values:
+            * ``error`` (default) - do nothing, mark file as failed
+            * ``ignore`` - do nothing, mark file as ignored
+            * ``overwrite`` - replace existing file with a new one
+            * ``delete_all`` - delete local directory content before downloading files
+        """
+
         delete_local: bool = False
+        """
+        If ``True``, remove local file after successful download.
+
+        If download failed, file will left intact.
+        """
 
         class Config:  # noqa: WPS431
             frozen = True
@@ -224,7 +224,12 @@ class FileUploader:
         self.connection.mkdir(self._target_path)
 
         if files is None:
+            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
             files = self.view_files()
+
+        if not files:
+            log.info(f"|{self.__class__.__name__}| No files to upload!")
+            return UploadResult()
 
         current_temp_dir = self.generate_temp_path()
         to_upload = self._validate_files(local_files=files, current_temp_dir=current_temp_dir)
@@ -292,7 +297,7 @@ class FileUploader:
                 result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
-                f"Couldn't read directory tree from local dir {self._local_path}",
+                f"Couldn't read directory tree from local dir '{self._local_path}'",
             ) from e
 
         return result
@@ -340,14 +345,16 @@ class FileUploader:
         entity_boundary_log(msg="FileUploader starts")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
-        log.info(LOG_INDENT + f"local_path = {self._local_path}")
-        log.info(LOG_INDENT + f"target_path = {self._target_path}")
-        log.info(LOG_INDENT + f"temp_path = {self._temp_path}")
+        local_path_str = f"'{self._local_path}'" if self._local_path else "None"
+        log.info(LOG_INDENT + f"local_path = {local_path_str}")
+        log.info(LOG_INDENT + f"target_path = '{self._target_path}'")
+        log.info(LOG_INDENT + f"temp_path = '{self._temp_path}'")
 
         log.info("")
         log.info(LOG_INDENT + "options:")
         for option, value in self._options.dict().items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
         log.info("")
 
         if self._options.delete_local:
@@ -362,14 +369,11 @@ class FileUploader:
                 "File collection will be used",
             )
 
-        if not files:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
-
     def _validate_files(  # noqa: WPS231
         self,
         local_files: Iterable[os.PathLike | str],
         current_temp_dir: RemotePath,
-    ) -> OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]:
+    ) -> UPLOAD_ITEMS_TYPE:
         result = OrderedSet()
 
         for file in local_files:
@@ -413,16 +417,19 @@ class FileUploader:
         if not self._local_path.is_dir():
             raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
 
-    def _upload_files(self, to_upload: OrderedSet[tuple[LocalPath, RemotePath, RemotePath]]) -> UploadResult:
+    def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         total_files = len(to_upload)
+        files = FileSet(item[0] for item in to_upload)
 
-        log.info(f"|{self.__class__.__name__}| Start uploading {total_files} file(s)")
+        log.info(f"|{self.__class__.__name__}| Files to be uploaded:")
+        log_with_indent(str(files))
+        log.info(f"|{self.__class__.__name__}| Starting the upload process")
+
         result = UploadResult()
-
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(LOG_INDENT + f"from = {local_file}")
-            log.info(LOG_INDENT + f"to = {target_file}")
+            log.info(LOG_INDENT + f"from = '{local_file}'")
+            log.info(LOG_INDENT + f"to = '{target_file}'")
 
             self._upload_file(local_file, target_file, tmp_file, result)
 

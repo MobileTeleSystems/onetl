@@ -3,15 +3,19 @@ from __future__ import annotations
 import io
 from contextlib import redirect_stdout
 from dataclasses import dataclass
+from enum import Enum
 from logging import getLogger
+from typing import TYPE_CHECKING
 
 from etl_entities import Table
 
 from onetl.connection.db_connection import DBConnection
 from onetl.log import LOG_INDENT, entity_boundary_log
 
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
+
 log = getLogger(__name__)
-# TODO:(@mivasil6) implement logging
 
 
 @dataclass
@@ -34,70 +38,6 @@ class DBWriter:
         ``{"mode": "overwrite", "compression": "snappy"}``
         or
         ``Hive.Options(mode="overwrite", compression="snappy")``
-
-        Hive and JDBC options:
-            * ``mode`` : str, default: ``append``
-                        The way of handling errors when the table is already exists.
-
-                        Possible values:
-                            * ``overwrite``
-                                Remove old table data and write new one
-                            * ``append``
-                                Append data to a table
-                            * ``ignore``
-                                Don't write anything
-                            * ``error``
-                                Raise exception
-        Hive options:
-            * ``format`` : str, default: ``orc``
-                Format of written data. Can be ``json``, ``parquet``, ``orc``, ``csv``, ``text``, ``avro``
-
-            * ``insertInto``: bool, default: ``False``
-                If you need to insert data into an existing table then set option as True.
-                Used pyspark method `insertInto <https://t.ly/0RRH>`_ under the hood.
-
-            * ``partitionBy``: str, List[str], default: ``None``
-                Column names which will be used for the output partitioning.
-
-                If set, the output is laid out on the file system similar
-                to Hive's partitioning scheme.
-
-            * ``bucketBy``: Tuple[int, str] or Tuple[int, List[str]], default: ``None``
-                Divide output to specific number of buckets over a column/columns.
-
-                If set, the output is laid out on the file system *similar* to Hive's bucketing scheme,
-                but with a **different bucket hash function** which is not compatible with Hive's bucketing.
-
-            * ``sortBy``: str or List[str], default: ``None``
-                Sorts the output in each bucket by the given columns.
-
-            * other options
-                Options that are written to the ``option`` method are specified without specifying the
-                ``option`` method
-
-                For example:
-
-                    .. code::
-
-                        DBWriter(
-                            connection=hive,
-                            table="onetl.some_table",
-                            options=Hive.Options(compression="snappy"),
-                        )
-
-        JDBC options:
-            * ``numPartitions``
-            * ``queryTimeout``
-            * ``batchsize``
-            * ``isolationLevel``
-            * ``truncate``
-            * ``cascadeTruncate``
-            * ``createTableOptions``
-            * ``createTableColumnTypes``
-
-        You can find a description of the options at the link below:
-
-        https://spark.apache.org/docs/2.4.0/sql-data-sources-jdbc.html
 
 
     Examples
@@ -196,7 +136,7 @@ class DBWriter:
         self.table = self._handle_table(table)
         self.options = self._handle_options(options)
 
-    def run(self, df):
+    def run(self, df: DataFrame):
         """
         Method for writing your df to specified table.
 
@@ -217,25 +157,30 @@ class DBWriter:
 
         entity_boundary_log(msg="DBWriter starts")
 
+        self._log_parameters()
+        self._log_dataframe_schema(df)
+
+        self.connection.log_parameters()
+        self.connection.save_df(
+            df=df,
+            table=str(self.table),
+            options=self.options,
+        )
+
+        entity_boundary_log(msg="DBWriter ends", char="-")
+
+    def _log_parameters(self) -> None:
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
-            if attr in {
-                "connection",
-                "options",
-            }:
-                continue
-
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log.info(LOG_INDENT + f"{attr} = {value_attr}")
+        log.info(LOG_INDENT + f"table = '{self.table}'")
 
         log.info("")
         log.info(LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
-
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
         log.info("")
+
+    def _log_dataframe_schema(self, df: DataFrame) -> None:
         log.info(LOG_INDENT + "DataFrame schema")
 
         schema_tree = io.StringIO()
@@ -246,15 +191,6 @@ class DBWriter:
 
         for line in schema_tree.getvalue().splitlines():
             log.info(LOG_INDENT + f"    {line}")
-
-        self.connection.log_parameters()
-        self.connection.save_df(
-            df=df,
-            table=str(self.table),
-            options=self.options,
-        )
-
-        entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)

@@ -9,7 +9,11 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 @dataclass(frozen=True)
 class Postgres(JDBCConnection):
-    """Class for Postgres jdbc connection.
+    """Class for PostgreSQL jdbc connection.
+
+    .. note::
+
+        Supported PostgreSQL server versions: >= 8.2
 
     Parameters
     ----------
@@ -30,7 +34,7 @@ class Postgres(JDBCConnection):
 
         See https://www.educba.com/postgresql-database-vs-schema/ for more details
 
-    spark : pyspark.sql.SparkSession
+    spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization.
@@ -61,7 +65,7 @@ class Postgres(JDBCConnection):
     """
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.2.5"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
     port: int = 5432
 
     def __post_init__(self):
@@ -83,6 +87,16 @@ class Postgres(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
+
+    def _options_to_connection_properties(self, options: JDBCConnection.Options):  # type: ignore[override]
+        # See https://github.com/pgjdbc/pgjdbc/pull/1252
+        # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
+        # Which is not a desired behavior, because `.fetch()` method should always be read-only
+
+        if not getattr(options, "readOnlyMode", None):
+            options = options.copy(update={"readOnlyMode": "always"})
+
+        return super()._options_to_connection_properties(options)
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()

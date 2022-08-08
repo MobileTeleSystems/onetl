@@ -138,7 +138,7 @@ class HWMStrategyHelper(StrategyHelper):
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
-                f"Table {self.reader.table} column {self.hwm_column} cannot be used as `hwm_column`",
+                f"Table '{self.reader.table}' column '{self.hwm_column}' cannot be used as `hwm_column`",
             )
 
         if not self.strategy.has_lower_limit and not self.strategy.hwm:
