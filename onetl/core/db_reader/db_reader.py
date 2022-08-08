@@ -232,7 +232,7 @@ class DBReader:
 
         self._log_parameters()
         self._log_options()
-        self.connection.log_parameters()
+        self.connection.check()
 
         helper: StrategyHelper
         if self.hwm_column:

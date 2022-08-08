@@ -83,13 +83,10 @@ class FileConnection(BaseFileConnection):
         self.close()
 
     def check(self):
+        log.info(f"|{self.__class__.__name__}| Check connection availability...")
+        self._log_parameters()
+
         try:
-            log.info(f"|{self.__class__.__name__}| Check connection availability...")
-            log.info("|onETL| Using connection:")
-            log_with_indent(f"type = {self.__class__.__name__}")
-            log_with_indent(f"host = {self.host!r}")
-            log_with_indent(f"port = {self.port!r}")
-            log_with_indent(f"user = {self.user!r}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
@@ -386,6 +383,29 @@ class FileConnection(BaseFileConnection):
 
     def _get_item_stat(self, top: RemotePath, item) -> FileStatProtocol:
         return self._get_stat(top / self._get_item_name(item))
+
+    @classmethod
+    def _log_fields(cls) -> set[str]:
+        # TODO(dypedchenk): until using pydantic dataclass
+        return {
+            field
+            for field in cls.__dataclass_fields__.keys()  # type: ignore[attr-defined]
+            if not field.startswith("_")
+        }
+
+    @classmethod
+    def _log_exclude_fields(cls) -> set[str]:
+        # TODO(dypedchenk): until using pydantic dataclass
+        return {"password"}
+
+    def _log_parameters(self):
+        log.info("|Spark| Using connection parameters:")
+        log_with_indent(f"type = {self.__class__.__name__}")
+        for attr in sorted(self._log_fields() - self._log_exclude_fields()):
+            value_attr = getattr(self, attr)
+
+            if value_attr != "" and value_attr is not None:
+                log_with_indent(f"{attr} = {value_attr!r}")
 
     @abstractmethod
     def _get_client(self) -> Any:

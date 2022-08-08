@@ -406,9 +406,8 @@ class Hive(DBConnection):
         log.info(f"|{self.__class__.__name__}| Call succeeded")
 
     def check(self):
-        self.log_parameters()
-
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
 
         try:
             self.sql(self._check_query)

@@ -566,9 +566,9 @@ class JDBCConnection(DBConnection, JDBCMixin):
         return df
 
     def check(self):
-        self.log_parameters()
-
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
         log_with_indent(self._check_query)
 
@@ -581,10 +581,6 @@ class JDBCConnection(DBConnection, JDBCMixin):
             raise RuntimeError(msg) from e
 
         return self
-
-    def log_parameters(self):
-        super().log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
 
     def read_table(  # type: ignore[override]
         self,
@@ -774,6 +770,10 @@ class JDBCConnection(DBConnection, JDBCMixin):
                 "upper_bound": result_options.upper_bound or max_partition_value,
             },
         )
+
+    def _log_parameters(self):
+        super()._log_parameters()
+        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

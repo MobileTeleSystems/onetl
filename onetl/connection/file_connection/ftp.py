@@ -15,7 +15,6 @@ from onetl.impl import LocalPath, RemotePath
 log = getLogger(__name__)
 
 
-# TODO: (@mivasil6) подумать на что можно поменять слова source/target
 @dataclass(frozen=True)
 class FTP(FileConnection):
     """Class for FTP file connection.

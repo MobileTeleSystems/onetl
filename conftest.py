@@ -19,6 +19,7 @@ from etl_entities import (
     Table,
 )
 from mtspark import get_spark
+from pytest_lazyfixture import lazy_fixture
 
 from onetl.connection import (
     FTP,
@@ -47,6 +48,7 @@ log = logging.getLogger(__name__)
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
+@pytest.mark.FTP
 @pytest.fixture(scope="session")
 def ftp_server(tmp_path_factory):
     server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
@@ -56,6 +58,12 @@ def ftp_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.fixture(scope="function")
+def ftp_connection(ftp_server):
+    return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
+
+
+@pytest.mark.FTPS
 @pytest.fixture(scope="session")
 def ftps_server(tmp_path_factory):
     server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
@@ -65,6 +73,12 @@ def ftps_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.fixture(scope="function")
+def ftps_connection(ftps_server):
+    return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
+
+
+@pytest.mark.SFTP
 @pytest.fixture(scope="session")
 def sftp_server(tmp_path_factory):
     server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
@@ -74,14 +88,25 @@ def sftp_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.fixture(scope="function")
+def sftp_connection(sftp_server):
+    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
+
+
+@pytest.mark.HDFS
 @pytest.fixture(scope="session")
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
     return HDFSServer(
         os.getenv("ONETL_HDFS_CONN_HOST", "hive2"),
-        os.getenv("ONETL_HDFS_CONN_PORT", 50070),
+        int(os.getenv("ONETL_HDFS_CONN_PORT", "50070")),
     )
+
+
+@pytest.fixture(scope="function")
+def hdfs_connection(hdfs_server):
+    return HDFS(host=hdfs_server.host, port=hdfs_server.port)
 
 
 @pytest.fixture(scope="function")
@@ -214,36 +239,14 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(FTP, marks=pytest.mark.FTP),
-        pytest.param(FTPS, marks=pytest.mark.FTPS),
-        pytest.param(HDFS, marks=pytest.mark.HDFS),
-        pytest.param(SFTP, marks=pytest.mark.SFTP),
+        lazy_fixture("ftp_connection"),
+        lazy_fixture("ftps_connection"),
+        lazy_fixture("sftp_connection"),
+        lazy_fixture("hdfs_connection"),
     ],
 )
-def file_connection_class(request):
+def file_connection(request):
     return request.param
-
-
-@pytest.fixture(scope="function")
-def file_server(request, file_connection_class):
-    return request.getfixturevalue(f"{file_connection_class.__name__.lower()}_server")
-
-
-@pytest.fixture(scope="function")
-def file_connection(file_connection_class, file_server):
-    mandatory_options = {"host", "port"}
-    options = {"user", "password", "key_file"}
-
-    kwargs = {}
-
-    for option in mandatory_options:
-        kwargs[option] = getattr(file_server, option)
-
-    for option in options:
-        if hasattr(file_server, option):
-            kwargs[option] = getattr(file_server, option)
-
-    return file_connection_class(**kwargs)
 
 
 @pytest.fixture(scope="function")

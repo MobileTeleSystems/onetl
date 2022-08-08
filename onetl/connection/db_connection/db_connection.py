@@ -188,13 +188,13 @@ class DBConnection(BaseConnection):
         template = self._compare_statements[comparator]
         return template.format(arg1, self._get_value_sql(arg2))
 
-    def log_parameters(self):
+    def _log_parameters(self):
         log.info("|Spark| Using connection parameters:")
         log_with_indent(f"type = {self.__class__.__name__}")
         for attr in sorted(self._log_fields() - self._log_exclude_fields()):
             value_attr = getattr(self, attr)
 
-            if value_attr:
+            if value_attr != "" and value_attr is not None:
                 log_with_indent(f"{attr} = {value_attr!r}")
 
     @classmethod

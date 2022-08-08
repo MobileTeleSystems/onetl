@@ -33,7 +33,7 @@ class HDFS(FileConnection):
 
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
-    kinit : str, default: ``None``
+    keytab : str, default: ``None``
         LocalPath to keytab file.
 
         .. warning ::
