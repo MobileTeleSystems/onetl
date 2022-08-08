@@ -19,7 +19,7 @@ Clickhouse connection
 
 .. currentmodule:: onetl.connection.db_connection.clickhouse.Clickhouse
 
-.. autoclass:: Clickhouse.Options
+.. autoclass:: Options
     :members:
     :member-order: bysource
     :inherited-members: BaseModel
