@@ -35,7 +35,7 @@ class HWMStoreClassRegistry:
 
         result = cls._mapping.get(type_name)
         if not result:
-            raise KeyError(f"Unknown HWM Store type {type_name}")
+            raise KeyError(f"Unknown HWM Store type {type_name!r}")
 
         return result
 
@@ -118,10 +118,9 @@ def register_hwm_store_class(*type_names: str):
     return wrapper
 
 
-def parse_config(value: Any) -> tuple[str, list, Mapping]:
-
+def parse_config(value: Any, key: str) -> tuple[str, list, Mapping]:
     if not isinstance(value, (str, Mapping)):
-        raise ValueError(f"Wrong value {value} for `hwm_store` config item")
+        raise ValueError(f"Wrong value {value!r} for {key!r} config item")
 
     store_type = "unknown"
     args: list[Any] = []
@@ -272,7 +271,7 @@ def detect_hwm_store(key: str) -> Callable:
             if not root:
                 return func(config, *args, **kwargs)
 
-            store_type, store_args, store_kwargs = parse_config(root)
+            store_type, store_args, store_kwargs = parse_config(root, key)
             store = HWMStoreClassRegistry.get(store_type)
 
             with store(*store_args, **store_kwargs):

@@ -96,8 +96,8 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
             file_set.raise_if_contains_zero_size()
             # will raise ZeroFileSizeError('''
             #    2 files out of 3 have zero size:
-            #        /local/empty1.file
-            #        /local/empty2.file
+            #        '/local/empty1.file'
+            #        '/local/empty2.file'
             # ''')
         """
 
@@ -106,7 +106,7 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
             if not file.exists() or file.stat().st_size > 0:
                 continue
 
-            lines.append(os.fspath(file))
+            lines.append(repr(os.fspath(file)))
 
         if not lines:
             return
@@ -171,8 +171,8 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
 
             details1 = """
                 2 files (30.7 kB):
-                    /local/file (10.2 kB)
-                    /local/another.file (20.5 kB)
+                    '/local/file' (10.2 kB)
+                    '/local/another.file' (20.5 kB)
             """
 
             assert path_set1.details == details1

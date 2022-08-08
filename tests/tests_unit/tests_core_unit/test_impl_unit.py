@@ -274,12 +274,12 @@ def test_failed_remote_file_eq():
 
 
 def test_humanize_path():
-    assert humanize_path("a/b/c") == "a/b/c"
-    assert humanize_path("/a/b/c/") == "/a/b/c"
-    assert humanize_path(RemotePath("a/b/c")) == "a/b/c"
-    assert humanize_path(RemoteDirectory("a/b/c")) == "a/b/c (directory)"
-    assert humanize_path(LocalPath("a/b/c")) == "a/b/c (missing)"
-    assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "a/b/c (10 Bytes)"
+    assert humanize_path("a/b/c") == "'a/b/c'"
+    assert humanize_path("/a/b/c/") == "'/a/b/c'"
+    assert humanize_path(RemotePath("a/b/c")) == "'a/b/c'"
+    assert humanize_path(RemoteDirectory("a/b/c")) == "'a/b/c' (directory)"
+    assert humanize_path(LocalPath("a/b/c")) == "'a/b/c' (missing)"
+    assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "'a/b/c' (10 Bytes)"
 
     failed_file1 = FailedRemoteFile(
         path="a/b/c",
@@ -287,7 +287,7 @@ def test_humanize_path():
         exception=FileNotFoundError("abc"),
     )
     failed_file1_str = """
-        a/b/c (56.3 kB)
+        'a/b/c' (56.3 kB)
             FileNotFoundError('abc')
     """
     assert humanize_path(failed_file1).strip() == textwrap.dedent(failed_file1_str).strip()
@@ -298,7 +298,7 @@ def test_humanize_path():
         exception=FileExistsError("cde\ndef"),
     )
     failed_file2_str = """
-        a/b/c (56.3 kB)
+        'a/b/c' (56.3 kB)
             FileExistsError('cde
             def')
     """

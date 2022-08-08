@@ -20,7 +20,7 @@ class FailedLocalFile(PathContainer[LocalPath]):
         object.__setattr__(self, "path", LocalPath(self.path))  # noqa: WPS609
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{os.fspath(self.path)}', {self.exception!r})"
+        return f"{self.__class__.__name__}({os.fspath(self.path)!r}, {self.exception!r})"
 
     # exceptions are not allowed to compare, another small hack
     def _compare_tuple(self, args) -> tuple:

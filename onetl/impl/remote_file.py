@@ -22,7 +22,7 @@ class RemoteFile(PathContainer[RemotePath]):
         object.__setattr__(self, "path", RemotePath(self.path))  # noqa: WPS609
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{os.fspath(self.path)}')"
+        return f"{self.__class__.__name__}({os.fspath(self.path)!r})"
 
     def is_dir(self) -> bool:
         return False
@@ -54,7 +54,7 @@ class FailedRemoteFile(RemoteFile):
     exception: Exception
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{os.fspath(self.path)}', {self.exception!r})"
+        return f"{self.__class__.__name__}({os.fspath(self.path)!r}, {self.exception!r})"
 
     # exceptions are not allowed to compare, small hack here
     def _compare_tuple(self, args) -> tuple:

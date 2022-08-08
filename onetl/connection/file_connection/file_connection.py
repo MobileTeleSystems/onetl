@@ -87,14 +87,15 @@ class FileConnection(BaseFileConnection):
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
             log.info(LOG_INDENT + f"type = {self.__class__.__name__}")
-            log.info(LOG_INDENT + f"host = {self.host}")
-            log.info(LOG_INDENT + f"user = {self.user}")
+            log.info(LOG_INDENT + f"host = {self.host!r}")
+            log.info(LOG_INDENT + f"port = {self.port!r}")
+            log.info(LOG_INDENT + f"user = {self.user!r}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
             msg = f"Connection is unavailable:\n{e}"
             log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from e
 
         return self
 
@@ -220,10 +221,10 @@ class FileConnection(BaseFileConnection):
     ) -> RemoteFile:
         local_file = LocalPath(local_file_path)
         if not local_file.exists():
-            raise FileNotFoundError(f"|LocalFS| File '{local_file_path}' does not exist")
+            raise FileNotFoundError(f"|LocalFS| File '{local_file}' does not exist")
 
         if not local_file.is_file():
-            raise NotAFileError(f"|LocalFS| '{local_file_path}' is not a file")
+            raise NotAFileError(f"|LocalFS| '{local_file}' is not a file")
 
         remote_file = RemotePath(remote_file_path)
         if self.path_exists(remote_file):
@@ -314,11 +315,10 @@ class FileConnection(BaseFileConnection):
 
                 if filter and not filter.match(folder):
                     log.debug(
-                        f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' "
-                        "does NOT MATCH the filter, skipping",
+                        f"|{self.__class__.__name__}| Directory '{folder}' does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.debug(f"|{self.__class__.__name__}| Directory '{os.fspath(folder)}' is matching the filter")
+                    log.debug(f"|{self.__class__.__name__}| Directory '{folder}' is matching the filter")
                     dirs.append(RemoteDirectory(path=name))
 
             else:
@@ -327,10 +327,10 @@ class FileConnection(BaseFileConnection):
 
                 if filter and not filter.match(file):
                     log.debug(
-                        f"|{self.__class__.__name__}| File '{os.fspath(file)}' does NOT MATCH the filter, skipping",
+                        f"|{self.__class__.__name__}| File '{file}' does NOT MATCH the filter, skipping",
                     )
                 else:
-                    log.debug(f"|{self.__class__.__name__}| File '{os.fspath(file)}' is matching the filter")
+                    log.debug(f"|{self.__class__.__name__}| File '{file}' is matching the filter")
                     files.append(RemoteFile(path=name, stats=stat))
 
         # if a nested directory was encountered, then the same method is called recursively

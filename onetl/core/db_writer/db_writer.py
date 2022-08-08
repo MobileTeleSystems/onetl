@@ -3,15 +3,19 @@ from __future__ import annotations
 import io
 from contextlib import redirect_stdout
 from dataclasses import dataclass
+from enum import Enum
 from logging import getLogger
+from typing import TYPE_CHECKING
 
 from etl_entities import Table
 
 from onetl.connection.db_connection import DBConnection
 from onetl.log import LOG_INDENT, entity_boundary_log
 
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
+
 log = getLogger(__name__)
-# TODO:(@mivasil6) implement logging
 
 
 @dataclass
@@ -132,7 +136,7 @@ class DBWriter:
         self.table = self._handle_table(table)
         self.options = self._handle_options(options)
 
-    def run(self, df):
+    def run(self, df: DataFrame):
         """
         Method for writing your df to specified table.
 
@@ -153,25 +157,30 @@ class DBWriter:
 
         entity_boundary_log(msg="DBWriter starts")
 
+        self._log_parameters()
+        self._log_dataframe_schema(df)
+
+        self.connection.log_parameters()
+        self.connection.save_df(
+            df=df,
+            table=str(self.table),
+            options=self.options,
+        )
+
+        entity_boundary_log(msg="DBWriter ends", char="-")
+
+    def _log_parameters(self) -> None:
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
-            if attr in {
-                "connection",
-                "options",
-            }:
-                continue
-
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log.info(LOG_INDENT + f"{attr} = {value_attr}")
+        log.info(LOG_INDENT + f"table = '{self.table}'")
 
         log.info("")
         log.info(LOG_INDENT + "options:")
         for option, value in self.options.dict(exclude_none=True).items():
-            log.info(LOG_INDENT + f"    {option} = {value}")
-
+            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
         log.info("")
+
+    def _log_dataframe_schema(self, df: DataFrame) -> None:
         log.info(LOG_INDENT + "DataFrame schema")
 
         schema_tree = io.StringIO()
@@ -182,15 +191,6 @@ class DBWriter:
 
         for line in schema_tree.getvalue().splitlines():
             log.info(LOG_INDENT + f"    {line}")
-
-        self.connection.log_parameters()
-        self.connection.save_df(
-            df=df,
-            table=str(self.table),
-            options=self.options,
-        )
-
-        entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)

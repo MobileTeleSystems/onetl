@@ -39,7 +39,7 @@ class HWMClassRegistry:
     def get(cls, type_name: str) -> type[HWM]:
         result = cls._mapping.get(type_name)
         if not result:
-            raise KeyError(f"Unknown HWM type {type_name}")
+            raise KeyError(f"Unknown HWM type {type_name!r}")
 
         return result
 
