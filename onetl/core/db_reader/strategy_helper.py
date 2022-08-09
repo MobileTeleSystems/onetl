@@ -150,8 +150,8 @@ class HWMStrategyHelper(StrategyHelper):
     def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812
 
+        log.info(f"|DBReader| Calculating max value for column {self.hwm_column.name!r} in the dataframe")
         max_df = df.select(F.max(self.hwm_column.name).alias("max_value"))
-
         row = max_df.collect()[0]
         max_hwm_value = row["max_value"]
 
