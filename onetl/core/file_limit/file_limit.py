@@ -5,7 +5,7 @@ from logging import getLogger
 from pydantic import BaseModel, PrivateAttr
 
 from onetl.base.base_file_limit import BaseFileLimit
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
 
 log = getLogger(__name__)
 
@@ -53,9 +53,9 @@ class FileLimit(BaseFileLimit, BaseModel):
         return self._counter >= self.count_limit
 
     def log_options(self):
-        log.info(LOG_INDENT + "limit:")
+        log_with_indent("limit:")
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(LOG_INDENT + f"    {key} = {value!r}")
+            log_with_indent(f"    {key} = {value!r}")
 
     def _increase_counter(self):
         self._counter += 1  # noqa: WPS601

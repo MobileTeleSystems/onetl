@@ -24,7 +24,7 @@ from onetl.impl import (
     RemoteFile,
     RemotePath,
 )
-from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
+from onetl.log import entity_boundary_log, log_with_indent
 from onetl.strategy import BaseStrategy, StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
@@ -451,21 +451,21 @@ class FileDownloader:
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
         source_path_str = f"'{self._source_path}'" if self._source_path else "None"
-        log.info(LOG_INDENT + f"source_path = {source_path_str}")
-        log.info(LOG_INDENT + f"local_path = '{self._local_path}'")
+        log_with_indent(f"source_path = {source_path_str}")
+        log_with_indent(f"local_path = '{self._local_path}'")
 
         if self.filter is not None:
             log.info("")
             self.filter.log_options()
         else:
-            log.info(LOG_INDENT + "filter = None")
+            log_with_indent("filter = None")
 
         self.limit.log_options()
 
-        log.info(LOG_INDENT + "options:")
+        log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
+            log_with_indent(f"    {option} = {value_wrapped}")
         log.info("")
 
         if self._options.delete_source:
@@ -544,8 +544,8 @@ class FileDownloader:
         result = DownloadResult()
         for i, (source_file, local_file) in enumerate(to_download):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(LOG_INDENT + f"from = '{source_file}'")
-            log.info(LOG_INDENT + f"to = '{local_file}'")
+            log_with_indent(f"from = '{source_file}'")
+            log_with_indent(f"to = '{local_file}'")
 
             self._download_file(
                 source_file,

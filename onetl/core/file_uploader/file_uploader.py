@@ -16,7 +16,7 @@ from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemotePath
-from onetl.log import LOG_INDENT, entity_boundary_log, log_with_indent
+from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
 
@@ -346,15 +346,15 @@ class FileUploader:
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
         local_path_str = f"'{self._local_path}'" if self._local_path else "None"
-        log.info(LOG_INDENT + f"local_path = {local_path_str}")
-        log.info(LOG_INDENT + f"target_path = '{self._target_path}'")
-        log.info(LOG_INDENT + f"temp_path = '{self._temp_path}'")
+        log_with_indent(f"local_path = {local_path_str}")
+        log_with_indent(f"target_path = '{self._target_path}'")
+        log_with_indent(f"temp_path = '{self._temp_path}'")
 
         log.info("")
-        log.info(LOG_INDENT + "options:")
+        log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
+            log_with_indent(f"    {option} = {value_wrapped}")
         log.info("")
 
         if self._options.delete_local:
@@ -428,8 +428,8 @@ class FileUploader:
         result = UploadResult()
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
             log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log.info(LOG_INDENT + f"from = '{local_file}'")
-            log.info(LOG_INDENT + f"to = '{target_file}'")
+            log_with_indent(f"from = '{local_file}'")
+            log_with_indent(f"to = '{target_file}'")
 
             self._upload_file(local_file, target_file, tmp_file, result)
 

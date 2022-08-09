@@ -6,7 +6,7 @@ from typing import Any
 
 from etl_entities import HWM
 
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class BaseHWMStore:
         if options:
             log.info(f"|{self.__class__.__name__}| Using options:")
             for option, value in options.items():
-                log.info(LOG_INDENT + f"{option} = {value!r}")
+                log_with_indent(f"{option} = {value!r}")
 
         return self
 

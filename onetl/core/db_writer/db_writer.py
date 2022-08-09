@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from etl_entities import Table
 
 from onetl.connection.db_connection import DBConnection
-from onetl.log import LOG_INDENT, entity_boundary_log
+from onetl.log import entity_boundary_log, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -171,17 +171,17 @@ class DBWriter:
 
     def _log_parameters(self) -> None:
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
-        log.info(LOG_INDENT + f"table = '{self.table}'")
+        log_with_indent(f"table = '{self.table}'")
 
         log.info("")
-        log.info(LOG_INDENT + "options:")
+        log_with_indent("options:")
         for option, value in self.options.dict(exclude_none=True).items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
+            log_with_indent(f"    {option} = {value_wrapped}")
         log.info("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
-        log.info(LOG_INDENT + "DataFrame schema")
+        log_with_indent("DataFrame schema")
 
         schema_tree = io.StringIO()
         with redirect_stdout(schema_tree):
@@ -190,7 +190,7 @@ class DBWriter:
             df.printSchema()
 
         for line in schema_tree.getvalue().splitlines():
-            log.info(LOG_INDENT + f"    {line}")
+            log_with_indent(f"    {line}")
 
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)
