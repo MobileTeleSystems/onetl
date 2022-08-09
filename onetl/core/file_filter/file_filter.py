@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import RemotePath
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
 
 log = getLogger(__name__)
 
@@ -135,6 +135,6 @@ class FileFilter(BaseFileFilter, BaseModel):
         return True
 
     def log_options(self):
-        log.info(LOG_INDENT + "filter:")
+        log_with_indent("filter:")
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(LOG_INDENT + f"    {key} = {value!r}")
+            log_with_indent(f"    {key} = {value!r}")

@@ -15,7 +15,7 @@ from onetl.exception import (
     NotAFileError,
 )
 from onetl.impl import FileWriteMode, LocalPath, RemoteDirectory, RemoteFile, RemotePath
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
 
 log = getLogger(__name__)
 
@@ -86,10 +86,10 @@ class FileConnection(BaseFileConnection):
         try:
             log.info(f"|{self.__class__.__name__}| Check connection availability...")
             log.info("|onETL| Using connection:")
-            log.info(LOG_INDENT + f"type = {self.__class__.__name__}")
-            log.info(LOG_INDENT + f"host = {self.host!r}")
-            log.info(LOG_INDENT + f"port = {self.port!r}")
-            log.info(LOG_INDENT + f"user = {self.user!r}")
+            log_with_indent(f"type = {self.__class__.__name__}")
+            log_with_indent(f"host = {self.host!r}")
+            log_with_indent(f"port = {self.port!r}")
+            log_with_indent(f"user = {self.user!r}")
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:

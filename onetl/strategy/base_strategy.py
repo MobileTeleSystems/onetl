@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from onetl.log import LOG_INDENT
+from onetl.log import log_with_indent
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class BaseStrategy:
         if options:
             log.info(f"|{self.__class__.__name__}| Using options:")
             for option, value in options.items():
-                log.info(LOG_INDENT + f"{option} = {value!r}")
+                log_with_indent(f"{option} = {value!r}")
 
         self.enter_hook()
         return self

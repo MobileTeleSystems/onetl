@@ -9,7 +9,7 @@ from etl_entities import Column, Table
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.connection.db_connection import DBConnection
-from onetl.log import LOG_INDENT, entity_boundary_log
+from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
 
@@ -256,7 +256,7 @@ class DBReader:
 
     def _log_parameters(self) -> None:
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
-        log.info(LOG_INDENT + f"table = '{self.table}'")
+        log_with_indent(f"table = '{self.table}'")
         for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
             if attr in {
                 "connection",
@@ -269,18 +269,18 @@ class DBReader:
             value_attr = getattr(self, attr)
 
             if value_attr:
-                log.info(LOG_INDENT + f"{attr} = {value_attr!r}")
+                log_with_indent(f"{attr} = {value_attr!r}")
 
         if self.hwm_column:
-            log.info(LOG_INDENT + f"hwm_column = '{self.hwm_column}'")
+            log_with_indent(f"hwm_column = '{self.hwm_column}'")
 
         log.info("")
 
     def _log_options(self) -> None:
-        log.info(LOG_INDENT + "options:")
+        log_with_indent("options:")
         for option, value in self.options.dict(exclude_none=True).items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
+            log_with_indent(f"    {option} = {value_wrapped}")
         log.info("")
 
     def _resolve_columns(self) -> list[str]:
