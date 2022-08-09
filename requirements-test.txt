@@ -19,6 +19,7 @@ pyopenssl
 pyspark < 3
 pytest
 pytest-cov
+pytest-lazy-fixture
 pytest-rerunfailures
 
 pyyaml>5

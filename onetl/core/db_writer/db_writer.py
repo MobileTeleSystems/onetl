@@ -160,7 +160,7 @@ class DBWriter:
         self._log_parameters()
         self._log_dataframe_schema(df)
 
-        self.connection.log_parameters()
+        self.connection.check()
         self.connection.save_df(
             df=df,
             table=str(self.table),

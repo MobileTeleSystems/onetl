@@ -1,4 +1,3 @@
-import logging
 from pathlib import PurePosixPath
 
 import pytest
@@ -22,13 +21,16 @@ def test_file_connection_rmdir_non_empty(file_connection, upload_test_files, pat
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_rmdir_fake_dir(file_connection, upload_test_files, path_type):
     # Does not raise Exception
-
     file_connection.rmdir(path_type("/some/fake/dir"))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_mkdir(file_connection, upload_test_files, path_type):
+    file_connection.close()
     file_connection.mkdir(path_type("/some_dir"))
+    file_connection.close()
+    # `close` called twice is not an error
+    file_connection.close()
 
     assert RemotePath("some_dir") in file_connection.listdir("/")
 
@@ -45,16 +47,3 @@ def test_file_connection_rename_file(file_connection, upload_test_files, path_ty
 
     assert RemotePath("file_55.txt") in list_dir
     assert RemotePath("file_5.txt") not in list_dir
-
-
-def test_file_connection_check(file_connection, caplog):
-    # client is not opened, not an error
-    file_connection.close()
-
-    with caplog.at_level(logging.INFO):
-        assert file_connection.check() == file_connection
-        file_connection.close()
-        # `close` called twice is not an error
-        file_connection.close()
-
-    assert "Connection is available" in caplog.text

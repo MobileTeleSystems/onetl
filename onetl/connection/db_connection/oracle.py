@@ -306,3 +306,8 @@ class Oracle(JDBCConnection):
     def _get_date_value_sql(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
         return f"TO_DATE('{result}', 'YYYY-MM-DD')"
+
+    @classmethod
+    def _log_exclude_fields(cls) -> set[str]:
+        fields = super()._log_exclude_fields()
+        return fields.union({"database"})
