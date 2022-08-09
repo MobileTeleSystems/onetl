@@ -246,7 +246,7 @@ build_docs:
   image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
   variables:
     PYTHON_VERSION: '3.7'
-  stage: build_docs
+  stage: artifactory
   before_script:
   - export VERSION=$(python setup.py --version)
   - echo "VERSION=$VERSION" >> deploy.env
@@ -268,7 +268,7 @@ build_docs:
 
 publish_docs:
   extends: .base_rt_upload
-  stage: artifactory
+  stage: deploy
   variables:
     JFROG_RT_ARTIFACTS_PATTERN: docs/html-*.tar.gz
     JFROG_RT_UPLOAD_PATH: files/onetools/onetl/
@@ -281,6 +281,8 @@ publish_docs:
 pages:
   extends: .base_pages_deploy_sphinx
   stage: deploy
+  dependencies:
+  - publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   interruptible: true

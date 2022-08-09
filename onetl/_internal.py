@@ -4,7 +4,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from pathlib import PurePath
 from typing import Any
+
+from etl_entities import ProcessStackManager
+
+# e.g. 20220524122150
+DATETIME_FORMAT = "%Y%m%d%H%M%S"  # noqa: WPS323
 
 
 def clear_statement(statement: str) -> str:
@@ -109,3 +116,38 @@ def to_camel(string: str) -> str:
     """
 
     return "".join(word.capitalize() if index > 0 else word for index, word in enumerate(string.split("_")))
+
+
+def generate_temp_path(root: PurePath) -> PurePath:
+    """
+    Returns prefix which will be used for creating temp directory
+
+    Returns
+    -------
+    RemotePath
+        Temp path, containing current host name, process name and datetime
+
+    Examples
+    --------
+
+    View files
+
+    .. code:: python
+
+        from etl_entities import Process
+
+        from pathlib import Path
+
+        assert generate_temp_path(Path("/tmp")) == Path(
+            "/tmp/onetl/currenthost/myprocess/20220524122150",
+        )
+
+        with Process(dag="mydag", task="mytask"):
+            assert generate_temp_path(Path("/abc")) == Path(
+                "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
+            )
+    """
+
+    current_process = ProcessStackManager.get_current()
+    current_dt = datetime.now().strftime(DATETIME_FORMAT)
+    return root / "onetl" / current_process.host / current_process.full_name / current_dt

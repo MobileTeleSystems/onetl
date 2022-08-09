@@ -1,4 +1,5 @@
 import logging
+import os
 import secrets
 import tempfile
 from datetime import timedelta
@@ -15,7 +16,11 @@ from onetl.impl import (
     RemoteFile,
     RemotePath,
 )
-from onetl.strategy import SnapshotBatchStrategy, IncrementalBatchStrategy, IncrementalStrategy
+from onetl.strategy import (
+    IncrementalBatchStrategy,
+    IncrementalStrategy,
+    SnapshotBatchStrategy,
+)
 
 
 def test_downloader_view_file(file_connection, source_path, upload_test_files):
@@ -546,11 +551,23 @@ def test_downloader_mode_overwrite(file_connection, source_path, upload_test_fil
         assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
 
 
-def test_downloader_mode_delete_all(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
-    local_path = tmp_path_factory.mktemp("local_path")
+@pytest.mark.parametrize("local_dir_exist", [True, False])
+def test_downloader_mode_delete_all(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    local_dir_exist,
+    caplog,
+):
+    if local_dir_exist:
+        local_path = tmp_path_factory.mktemp("local_path")
+    else:
+        local_path = Path(tempfile.gettempdir()) / secrets.token_hex()
 
     new_local_file = local_path / secrets.token_hex(5)
-    new_local_file.touch()
+    if local_dir_exist:
+        new_local_file.touch()
 
     downloader = FileDownloader(
         connection=file_connection,
@@ -568,10 +585,8 @@ def test_downloader_mode_delete_all(file_connection, source_path, upload_test_fi
     assert not download_result.skipped
     assert download_result.successful
 
-    assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in upload_test_files
-    )
-
+    # folder contains only downloaded files
+    assert sorted(item for item in local_path.glob("**/*") if item.is_file()) == sorted(download_result.successful)
     assert not new_local_file.exists()
 
 
@@ -831,3 +846,39 @@ def test_downloader_file_hwm_strategy(
 
     with IncrementalStrategy():
         downloader.run()
+
+
+@pytest.mark.parametrize(  # noqa: WPS317
+    "temp_path",
+    [
+        None,
+        os.fspath(Path(tempfile.gettempdir()) / secrets.token_hex(5)),
+        Path(tempfile.gettempdir()) / secrets.token_hex(5),
+    ],
+    ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
+)
+def test_downloader_with_temp_path(file_connection, source_path, upload_test_files, temp_path, tmp_path_factory):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        temp_path=temp_path,
+    )
+
+    download_result = downloader.run()
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    assert sorted(download_result.successful) == sorted(
+        local_path / file.relative_to(source_path) for file in upload_test_files
+    )
+
+    if temp_path:
+        # temp_path is not removed after download is finished,
+        # because this may conflict with processes running in parallel
+        assert Path(temp_path).is_dir()
