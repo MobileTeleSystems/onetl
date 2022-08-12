@@ -7,14 +7,19 @@ from logging import getLogger
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import BaseModel
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection
 from onetl.core.file_result import FileSet
 from onetl.core.file_uploader.upload_result import UploadResult
 from onetl.exception import DirectoryNotFoundError, NotAFileError
-from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemotePath
+from onetl.impl import (
+    FailedLocalFile,
+    FileWriteMode,
+    GenericOptions,
+    LocalPath,
+    RemotePath,
+)
 from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -97,7 +102,7 @@ class FileUploader:
 
     """
 
-    class Options(BaseModel):  # noqa: WPS431
+    class Options(GenericOptions):
         """File uploader options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
@@ -117,9 +122,6 @@ class FileUploader:
 
         If download failed, file will left intact.
         """
-
-        class Config:  # noqa: WPS431
-            frozen = True
 
     connection: BaseFileConnection
 
@@ -145,10 +147,7 @@ class FileUploader:
         self._target_path = RemotePath(target_path)
         self._local_path = LocalPath(local_path).resolve() if local_path else None
         self._temp_path = RemotePath(temp_path) if temp_path else None
-        self._options = options or self.Options()
-
-        if isinstance(options, dict):
-            self._options = self.Options.parse_obj(options)
+        self._options = self.Options.parse(options)
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """

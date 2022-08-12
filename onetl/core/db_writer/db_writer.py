@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from etl_entities import Table
 
 from onetl.connection.db_connection import DBConnection
+from onetl.impl.generic_options import GenericOptions
 from onetl.log import entity_boundary_log, log_with_indent
 
 if TYPE_CHECKING:
@@ -31,13 +32,13 @@ class DBWriter:
         Table which is read data from. You need to specify the full path to the table, including the schema.
         Like ``schema.name``
 
-    options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
-        Spark JDBC or Hive write options.
+    options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
+        Spark write options.
 
         For example:
         ``{"mode": "overwrite", "compression": "snappy"}``
         or
-        ``Hive.Options(mode="overwrite", compression="snappy")``
+        ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
 
 
     Examples
@@ -91,7 +92,7 @@ class DBWriter:
 
         options = {"truncate": "true", "batchsize": 1000}
         # or (it is the same):
-        options = Postgres.Options(truncate=True, batchsize=1000}
+        options = Postgres.WriteOptions(truncate=True, batchsize=1000}
 
         writer = DBWriter(
             connection=postgres,
@@ -113,7 +114,7 @@ class DBWriter:
 
         options = {"compression": "snappy", "partitionBy": "id"}
         # or (it is the same):
-        options = Hive.Options(compression="snappy", partitionBy="id")
+        options = Hive.WriteOptions(compression="snappy", partitionBy="id")
 
         writer = DBWriter(
             connection=hive,
@@ -124,13 +125,13 @@ class DBWriter:
 
     connection: DBConnection
     table: Table
-    options: DBConnection.Options
+    options: GenericOptions | None
 
     def __init__(
         self,
         connection: DBConnection,
         table: str,
-        options: DBConnection.Options | dict | None = None,
+        options: GenericOptions | dict | None = None,
     ):
         self.connection = connection
         self.table = self._handle_table(table)
@@ -161,10 +162,10 @@ class DBWriter:
         self._log_dataframe_schema(df)
 
         self.connection.check()
-        self.connection.save_df(
+        self.connection.save_df(  # type: ignore[call-arg]
             df=df,
             table=str(self.table),
-            options=self.options,
+            **self._get_write_kwargs(),
         )
 
         entity_boundary_log(msg="DBWriter ends", char="-")
@@ -174,10 +175,13 @@ class DBWriter:
         log_with_indent(f"table = '{self.table}'")
 
         log.info("")
-        log_with_indent("options:")
-        for option, value in self.options.dict(exclude_none=True).items():
-            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent(f"    {option} = {value_wrapped}")
+        if self.options:
+            log_with_indent("options:")
+            for option, value in self.options.dict(exclude_none=True).items():
+                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+                log_with_indent(f"    {option} = {value_wrapped}")
+        else:
+            log_with_indent("options = None")
         log.info("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
@@ -195,5 +199,20 @@ class DBWriter:
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)
 
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        return self.connection.to_options(options)
+    def _handle_options(self, options: GenericOptions | dict | None) -> GenericOptions | None:
+        write_options_class = getattr(self.connection, "WriteOptions", None)
+        if write_options_class:
+            return write_options_class.parse(options)
+
+        if options:
+            raise TypeError(
+                f"{self.connection.__class__.__name__} does not implement WriteOptions, but {options!r} is passed",
+            )
+
+        return None
+
+    def _get_write_kwargs(self) -> dict:
+        if self.options:
+            return {"options": self.options}
+
+        return {}

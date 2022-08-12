@@ -88,7 +88,7 @@ class Postgres(JDBCConnection):
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
 
-    def _options_to_connection_properties(self, options: JDBCConnection.Options):  # type: ignore[override]
+    def _options_to_connection_properties(self, options: JDBCConnection.JDBCOptions):  # noqa: WPS437
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

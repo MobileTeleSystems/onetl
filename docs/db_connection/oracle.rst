@@ -8,18 +8,23 @@ Oracle connection
 .. autosummary::
 
     Oracle
-    Oracle.check
-    Oracle.sql
-    Oracle.fetch
-    Oracle.execute
-    Oracle.Options
+    Oracle.ReadOptions
+    Oracle.WriteOptions
+    Oracle.JDBCOptions
 
 .. autoclass:: Oracle
     :members: check, sql, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.oracle.Oracle
 
-.. autoclass:: Options
-    :members:
+.. autoclass:: ReadOptions
+    :members: fetchsize, partition_column, num_partitions, lower_bound, upper_bound, session_init_statement
     :member-order: bysource
-    :inherited-members: BaseModel
+
+.. autoclass:: WriteOptions
+    :members: mode, batchsize, isolation_level, query_timeout
+    :member-order: bysource
+
+.. autoclass:: JDBCOptions
+    :members: query_timeout
+    :member-order: bysource

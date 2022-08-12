@@ -1,7 +1,7 @@
 import pytest
 
-from onetl.core import DBReader
 from onetl.connection import Postgres
+from onetl.core import DBReader
 
 
 def test_postgres_reader_snapshot(spark, processing, load_table_data):
@@ -151,7 +151,7 @@ def test_postgres_reader_snapshot_with_pydantic_options(spark, processing, load_
     reader = DBReader(
         connection=postgres,
         table=load_table_data.full_name,
-        options=Postgres.Options(batchsize=500),
+        options=Postgres.ReadOptions(fetchsize=500),
     )
 
     table_df = reader.run()

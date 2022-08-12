@@ -7,7 +7,6 @@ from logging import getLogger
 from typing import Any, Iterator
 
 from humanize import naturalsize
-from pydantic import BaseModel
 
 from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
 from onetl.exception import (
@@ -15,7 +14,7 @@ from onetl.exception import (
     DirectoryNotFoundError,
     NotAFileError,
 )
-from onetl.impl import FileWriteMode, LocalPath, RemoteDirectory, RemoteFile, RemotePath
+from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemotePath
 from onetl.log import log_with_indent
 
 log = getLogger(__name__)
@@ -29,16 +28,6 @@ class FileConnection(BaseFileConnection):
     password: str = field(repr=False, default="")
 
     _client: Any = field(init=False, repr=False, default=None)
-
-    class Options(BaseModel):  # noqa: WPS431
-        """File write options"""
-
-        mode: FileWriteMode = FileWriteMode.ERROR
-        delete_source: bool = False
-
-        class Config:  # noqa: WPS431
-            allow_population_by_field_name = True
-            frozen = True
 
     @property
     def client(self):

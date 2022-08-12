@@ -148,7 +148,7 @@ class Oracle(JDBCConnection):
     def execute(  # type: ignore[override]
         self,
         statement: str,
-        options: Oracle.Options | None = None,
+        options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
 
         statement = clear_statement(statement)
@@ -156,8 +156,9 @@ class Oracle(JDBCConnection):
         log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
         log_with_indent(statement)
 
-        df = self._call_on_driver(statement, options)
-        self._handle_compile_errors(statement.lower().strip(), options)
+        call_options = self.JDBCOptions.parse(options)
+        df = self._call_on_driver(statement, call_options)
+        self._handle_compile_errors(statement.lower().strip(), call_options)
 
         message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
@@ -196,7 +197,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.JDBCOptions,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -266,7 +267,7 @@ class Oracle(JDBCConnection):
     def _handle_compile_errors(
         self,
         statement: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.JDBCOptions,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.

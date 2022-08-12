@@ -9,6 +9,7 @@ from etl_entities import Column, Table
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.connection.db_connection import DBConnection
+from onetl.impl.generic_options import GenericOptions
 from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -53,17 +54,14 @@ class DBReader:
     hint : str, default: ``None``
         Add hint to SQL query
 
-    options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
+    options : dict, :obj:`onetl.connection.DBConnection.ReadOptions`, default: ``None``
         Spark read options.
+
         For example:
 
         .. code:: python
 
-            Postgres.Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
-
-        .. warning ::
-
-            :ref:`hive` does not accept read options
+            Postgres.ReadOptions(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
 
     Examples
     --------
@@ -116,7 +114,7 @@ class DBReader:
         )
         options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
         # or (it is the same):
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
+        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
         reader = DBReader(postgres, table="fiddle.dummy", options=options)
 
@@ -142,7 +140,7 @@ class DBReader:
             database="target_db",
             spark=spark,
         )
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
+        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
         reader = DBReader(
             connection=postgres,
@@ -162,7 +160,7 @@ class DBReader:
     columns: list[str]
     hwm_column: Column | None
     hwm_expression: str | None
-    options: DBConnection.Options
+    options: GenericOptions | None
 
     def __init__(
         self,
@@ -172,7 +170,7 @@ class DBReader:
         where: str | None = None,
         hint: str | None = None,
         hwm_column: str | tuple[str, str] | None = None,
-        options: DBConnection.Options | dict | None = None,
+        options: GenericOptions | dict | None = None,
     ):
         self.connection = connection
         self.table = self._handle_table(table)
@@ -183,20 +181,20 @@ class DBReader:
         self.options = self._handle_options(options)
 
     def get_schema(self) -> StructType:
-        return self.connection.get_schema(
+        return self.connection.get_schema(  # type: ignore[call-arg]
             table=str(self.table),
             columns=self._resolve_all_columns(),
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        return self.connection.get_min_max_bounds(
+        return self.connection.get_min_max_bounds(  # type: ignore[call-arg]
             table=str(self.table),
             column=column,
             expression=expression,
             hint=self.hint,
             where=self.where,
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
     def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
@@ -240,12 +238,12 @@ class DBReader:
         else:
             helper = NonHWMStrategyHelper(self)
 
-        df = self.connection.read_table(
+        df = self.connection.read_table(  # type: ignore[call-arg]
             table=str(self.table),
             columns=self._resolve_all_columns(),
             hint=self.hint,
             where=helper.where,
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
         df = helper.save(df)
@@ -277,10 +275,13 @@ class DBReader:
         log.info("")
 
     def _log_options(self) -> None:
-        log_with_indent("options:")
-        for option, value in self.options.dict(exclude_none=True).items():
-            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent(f"    {option} = {value_wrapped}")
+        if self.options:
+            log_with_indent("options:")
+            for option, value in self.options.dict(exclude_none=True).items():
+                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+                log_with_indent(f"    {option} = {value_wrapped}")
+        else:
+            log_with_indent("options = None")
         log.info("")
 
     def _resolve_columns(self) -> list[str]:
@@ -292,10 +293,10 @@ class DBReader:
 
         for column in self.columns:
             if column == "*":
-                schema = self.connection.get_schema(
+                schema = self.connection.get_schema(  # type: ignore[call-arg]
                     table=str(self.table),
                     columns=["*"],
-                    options=self.options,
+                    **self._get_read_kwargs(),
                 )
                 field_names = schema.fieldNames()
                 columns.extend(field_names)
@@ -376,5 +377,20 @@ class DBReader:
 
         return result
 
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        return self.connection.to_options(options)
+    def _handle_options(self, options: GenericOptions | dict | None) -> GenericOptions | None:
+        read_options_class = getattr(self.connection, "ReadOptions", None)
+        if read_options_class:
+            return read_options_class.parse(options)
+
+        if options:
+            raise TypeError(
+                f"{self.connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed",
+            )
+
+        return None
+
+    def _get_read_kwargs(self) -> dict:
+        if self.options:
+            return {"options": self.options}
+
+        return {}

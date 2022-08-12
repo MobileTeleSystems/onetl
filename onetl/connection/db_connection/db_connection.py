@@ -7,9 +7,6 @@ from datetime import date, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from pydantic import BaseModel
-
-from onetl._internal import to_camel  # noqa: WPS436
 from onetl.base import BaseConnection
 from onetl.log import log_with_indent
 
@@ -34,15 +31,6 @@ class DBConnection(BaseConnection):
         operator.eq: "{} == {}",
         operator.ne: "{} != {}",
     }
-
-    class Options(BaseModel):  # noqa: WPS431
-        """Hive or JDBC options"""
-
-        class Config:  # noqa: WPS431
-            alias_generator = to_camel
-            allow_population_by_field_name = True
-            frozen = True
-            extra = "allow"
 
     @property
     @abstractmethod
@@ -79,7 +67,6 @@ class DBConnection(BaseConnection):
         self,
         table: str,
         columns: list[str] | None = None,
-        options: Options | None = None,
     ) -> StructType:
         """
         Get table schema
@@ -92,7 +79,6 @@ class DBConnection(BaseConnection):
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | None = None,
     ) -> DataFrame:
         """
         Reads the table to dataframe
@@ -103,7 +89,6 @@ class DBConnection(BaseConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | None = None,
     ) -> None:
         """
         Saves dataframe to a specific table
@@ -117,7 +102,6 @@ class DBConnection(BaseConnection):
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | None = None,
     ) -> tuple[Any, Any]:
         """
         Get MIN and MAX values for the column
@@ -158,31 +142,6 @@ class DBConnection(BaseConnection):
         """
 
         return f"{expression} AS {alias}"
-
-    def to_options(
-        self,
-        options: Options | dict | None = None,
-    ):
-        """
-        Сonverting <options> is performed depending on which class the <options> parameter was passed.
-        If a parameter inherited from the Option class was passed, then it will be returned unchanged.
-        If a Dict object was passed it will be converted to Options.
-        If the JDBC connect class was used and the Hive options class was used,
-        then a ValueError exception will be thrown. If it is the other way around, an exception will also be thrown.
-        """
-
-        if not options:
-            return self.Options()
-
-        if isinstance(options, dict):
-            options = self.Options.parse_obj(options)
-
-        if not isinstance(options, self.Options):
-            raise TypeError(
-                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}",
-            )
-
-        return options
 
     def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
         template = self._compare_statements[comparator]

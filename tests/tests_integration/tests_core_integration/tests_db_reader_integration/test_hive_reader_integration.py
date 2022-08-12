@@ -95,18 +95,6 @@ def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_tab
     assert count_df.collect()[0][0] == table_df.count()
 
 
-def test_hive_reader_raise_exception(spark, load_table_data):
-    hive = Hive(spark=spark)
-    reader = DBReader(
-        connection=hive,
-        table=load_table_data.full_name,
-        options=Hive.Options(abc="cde"),  # Hive does not accept any read options
-    )
-
-    with pytest.raises(ValueError):
-        reader.run()
-
-
 def test_hive_reader_non_existing_table(spark, get_schema_table):
     from pyspark.sql.utils import AnalysisException
 

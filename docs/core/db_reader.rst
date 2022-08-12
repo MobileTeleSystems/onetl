@@ -11,4 +11,4 @@ DB Reader
     DBReader.run
 
 .. autoclass:: DBReader
-    :members:
+    :members: run

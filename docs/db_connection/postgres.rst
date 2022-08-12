@@ -8,18 +8,23 @@ Postgres connection
 .. autosummary::
 
     Postgres
-    Postgres.check
-    Postgres.sql
-    Postgres.fetch
-    Postgres.execute
-    Postgres.Options
+    Postgres.ReadOptions
+    Postgres.WriteOptions
+    Postgres.JDBCOptions
 
 .. autoclass:: Postgres
     :members: check, sql, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.postgres.Postgres
 
-.. autoclass:: Options
-    :members:
+.. autoclass:: ReadOptions
+    :members: fetchsize, partition_column, num_partitions, lower_bound, upper_bound, session_init_statement
     :member-order: bysource
-    :inherited-members: BaseModel
+
+.. autoclass:: WriteOptions
+    :members: mode, batchsize, isolation_level, query_timeout
+    :member-order: bysource
+
+.. autoclass:: JDBCOptions
+    :members: query_timeout
+    :member-order: bysource

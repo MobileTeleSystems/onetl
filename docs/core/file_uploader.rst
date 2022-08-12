@@ -19,4 +19,4 @@ File Uploader
 .. currentmodule:: onetl.core.file_uploader.file_uploader.FileUploader
 
 .. autoclass:: Options
-    :members:
+    :members: mode, delete_local

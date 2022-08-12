@@ -1,7 +1,7 @@
 import pytest
 
-from onetl.core import DBWriter
 from onetl.connection import Postgres
+from onetl.core import DBWriter
 
 
 def test_postgres_writer_snapshot(spark, processing, prepare_schema_table):
@@ -72,7 +72,7 @@ def test_postgres_writer_snapshot_with_pydantic_options(spark, processing, prepa
     writer = DBWriter(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        options=Postgres.Options(batchsize=500),
+        options=Postgres.WriteOptions(batchsize=500),
     )
 
     writer.run(df)
@@ -102,7 +102,7 @@ def test_postgres_writer_mode(spark, processing, prepare_schema_table, mode):
     writer = DBWriter(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        options=Postgres.Options(mode=mode),
+        options=Postgres.WriteOptions(mode=mode),
     )
 
     writer.run(df1)

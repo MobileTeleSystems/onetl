@@ -1,5 +1,6 @@
 from onetl.impl.failed_local_file import FailedLocalFile
 from onetl.impl.file_write_mode import FileWriteMode
+from onetl.impl.generic_options import GenericOptions
 from onetl.impl.humanize_path import humanize_path
 from onetl.impl.local_path import LocalPath
 from onetl.impl.remote_directory import RemoteDirectory
