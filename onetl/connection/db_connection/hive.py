@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from pydantic import root_validator, validator
 
-from onetl._internal import clear_statement  # noqa: WPS436
+from onetl._internal import clear_statement, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -64,13 +65,13 @@ class Hive(DBConnection):
         hive = Hive(spark=spark)
     """
 
-    class Options(DBConnection.Options):  # noqa: WPS431
+    class WriteOptions(GenericOptions):
         """Class for writing options, related to Hive source.
 
         You can pass here key-value items which then will be converted to calls
         of :obj:`pyspark.sql.readwriter.DataFrameWriter` methods.
 
-        For example, ``Hive.Options(mode="append", partitionBy="reg_id")`` will
+        For example, ``Hive.WriteOptions(mode="append", partitionBy="reg_id")`` will
         be converted to ``df.write.mode("append").partitionBy("reg_id")`` call, and so on.
 
         .. note::
@@ -88,8 +89,12 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            options = Hive.Options(mode="append", partitionBy="reg_id", someNewOption="value")
+            options = Hive.WriteOptions(mode="append", partitionBy="reg_id", someNewOption="value")
         """
+
+        class Config:
+            alias_generator = to_camel
+            extra = "allow"
 
         mode: HiveWriteMode = HiveWriteMode.APPEND
         """Mode of writing data into target table.
@@ -294,6 +299,14 @@ class Hive(DBConnection):
 
             return values
 
+    class Options(WriteOptions):
+        def __init__(self, *args, **kwargs):
+            log.warning(
+                "`Hive.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
+                "Please use `Hive.WriteOptions` class instead",
+            )
+            super().__init__(*args, **kwargs)
+
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
     def instance_url(self) -> str:
@@ -302,7 +315,6 @@ class Hive(DBConnection):
     def sql(  # type: ignore[override]
         self,
         query: str,
-        options: Options | dict | None = None,
     ) -> DataFrame:
         """
         Lazily execute SELECT statement and return DataFrame.
@@ -338,10 +350,10 @@ class Hive(DBConnection):
         """
 
         query = clear_statement(query)
-        self._handle_read_options(options)
 
         log.info(f"|{self.__class__.__name__}| Executing SQL query:")
         log_with_indent(query)
+
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
@@ -349,7 +361,6 @@ class Hive(DBConnection):
     def execute(  # type: ignore[override]
         self,
         statement: str,
-        options: Options | dict | None = None,
     ) -> None:
         """
         Execute DDL or DML statement.
@@ -398,10 +409,10 @@ class Hive(DBConnection):
         """
 
         statement = clear_statement(statement)
-        self._handle_read_options(options)
 
         log.info(f"|{self.__class__.__name__}| Executing statement:")
         log_with_indent(statement)
+
         self._execute_sql(statement).collect()
         log.info(f"|{self.__class__.__name__}| Call succeeded")
 
@@ -422,9 +433,9 @@ class Hive(DBConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         try:
             self.get_schema(table)
@@ -449,7 +460,6 @@ class Hive(DBConnection):
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
     ) -> DataFrame:
         sql_text = self.get_sql_query(
             table=table,
@@ -458,16 +468,13 @@ class Hive(DBConnection):
             hint=hint,
         )
 
-        return self.sql(sql_text, options)
+        return self.sql(sql_text)
 
     def get_schema(  # type: ignore[override]
         self,
         table: str,
         columns: list[str] | None = None,
-        options: Options | dict | None = None,
     ) -> StructType:
-        self._handle_read_options(options)
-
         query_schema = self.get_sql_query(table, columns=columns, where="1=0")
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
@@ -484,10 +491,7 @@ class Hive(DBConnection):
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
     ) -> Tuple[Any, Any]:
-
-        self._handle_read_options(options)
         log.info(f"|Spark| Getting min and max values for column {column!r}")
 
         sql_text = self.get_sql_query(
@@ -515,13 +519,6 @@ class Hive(DBConnection):
 
     def _execute_sql(self, query: str) -> DataFrame:
         return self.spark.sql(query)
-
-    def _handle_read_options(self, options: Options | dict | None):
-        if self.to_options(options).dict(exclude_unset=True):
-            raise ValueError(
-                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
-                "Hive reader does not support options.",
-            )
 
     def _sort_df_columns_like_table(self, table: str, df_columns: list[str]) -> list[str]:
         # Hive is inserting columns by the order, not by their name
@@ -573,9 +570,9 @@ class Hive(DBConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         log.info(f"|{self.__class__.__name__}| Inserting data into existing table {table!r}")
 
@@ -619,9 +616,9 @@ class Hive(DBConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
 

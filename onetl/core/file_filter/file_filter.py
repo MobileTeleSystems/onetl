@@ -78,7 +78,7 @@ class FileFilter(BaseFileFilter, BaseModel):
         FileFilter()  # will raise ValueError, at least one argument should be passed
     """
 
-    class Config:  # noqa: WPS431
+    class Config:
         arbitrary_types_allowed = True
 
     glob: Optional[str] = None

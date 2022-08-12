@@ -9,7 +9,6 @@ from typing import Iterable, Optional, Tuple
 
 from etl_entities import FileListHWM, RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import BaseModel
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileFilter, BaseFileLimit
@@ -21,6 +20,7 @@ from onetl.exception import NotAFileError
 from onetl.impl import (
     FailedRemoteFile,
     FileWriteMode,
+    GenericOptions,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -148,7 +148,7 @@ class FileDownloader:
 
     """
 
-    class Options(BaseModel):  # noqa: WPS431
+    class Options(GenericOptions):
         """File downloader options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
@@ -168,9 +168,6 @@ class FileDownloader:
 
         If download failed, file will left intact.
         """
-
-        class Config:  # noqa: WPS431
-            frozen = True
 
     connection: FileConnection
 
@@ -201,11 +198,7 @@ class FileDownloader:
         self._local_path = LocalPath(local_path).resolve()
         self._temp_path = LocalPath(temp_path).resolve() if temp_path else None
         self._source_path = RemotePath(source_path) if source_path else None
-
-        if isinstance(options, dict):
-            self._options = self.Options.parse_obj(options)
-        else:
-            self._options = options or self.Options()
+        self._options = self.Options.parse(options)
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """

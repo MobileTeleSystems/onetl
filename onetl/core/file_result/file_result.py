@@ -30,7 +30,7 @@ class FileResult(BaseModel):  # noqa: WPS214
     * :obj`missing`
     """
 
-    class Config:  # noqa: WPS431
+    class Config:
         arbitrary_types_allowed = True
 
     successful: FileSet[GenericPath] = Field(default_factory=FileSet)

@@ -8,16 +8,13 @@ Hive connection
 .. autosummary::
 
     Hive
-    Hive.check
-    Hive.sql
-    Hive.execute
-    Hive.Options
+    Hive.WriteOptions
 
 .. autoclass:: Hive
     :members: check, sql, execute
 
 .. currentmodule:: onetl.connection.db_connection.hive.Hive
 
-.. autoclass:: Options
-    :members:
+.. autoclass:: WriteOptions
+    :members: mode, format, partition_by, bucket_by, sort_by, compression
     :member-order: bysource

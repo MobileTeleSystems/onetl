@@ -5,9 +5,9 @@ from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from pydantic import validator
+from pydantic import root_validator
 
-from onetl._internal import clear_statement  # noqa: WPS436
+from onetl._internal import clear_statement, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin, StatementType
 from onetl.log import log_with_indent
@@ -17,6 +17,69 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
+
+# options from spark.read.jdbc which are populated by JDBCConnection methods
+GENERIC_PROHIBITED_OPTIONS = frozenset(
+    (
+        "table",
+        "dbtable",
+        "query",
+        "properties",
+    ),
+)
+
+# Write options cannot be used while reading the table
+READ_PROHIBITED_OPTIONS = GENERIC_PROHIBITED_OPTIONS | frozenset(
+    (
+        "column",  # in some part of Spark source code option 'partitionColumn' is called just 'column'
+        "mode",
+        "batchsize",
+        "isolationLevel",
+        "isolation_level",
+        "truncate",
+        "cascadeTruncate",
+        "createTableOptions",
+        "createTableColumnTypes",
+        "createTableColumnTypes",
+    ),
+)
+
+# Reading options cannot be used while writing to table
+WRITE_PROHIBITED_OPTIONS = GENERIC_PROHIBITED_OPTIONS | frozenset(
+    (
+        "column",  # in some part of Spark source code option 'partitionColumn' is called just 'column'
+        "partitionColumn",
+        "partition_column",
+        "lowerBound",
+        "lower_bound",
+        "upperBound",
+        "upper_bound",
+        "numPartitions",
+        "num_partitions",
+        "fetchsize",
+        "sessionInitStatement",
+        "session_init_statement",
+        "customSchema",
+        "pushDownPredicate",
+        "pushDownAggregate",
+        "pushDownLimit",
+        "pushDownTableSample",
+        "predicates",
+    ),
+)
+
+
+# parameters accepted by spark.read.jdbc method:
+#  spark.read.jdbc(
+#    url, table, column, lowerBound, upperBound, numPartitions, predicates
+#    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
+READ_TOP_LEVEL_OPTIONS = frozenset(("url", "column", "lower_bound", "upper_bound", "num_partitions", "predicates"))
+
+# parameters accepted by spark.write.jdbc method:
+#   spark.write.jdbc(
+#     url, table, mode,
+#     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
+WRITE_TOP_LEVEL_OPTIONS = frozenset(("url", "mode"))
 
 
 class JDBCWriteMode(str, Enum):  # noqa: WPS600
@@ -41,8 +104,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
     driver: ClassVar[str] = ""
     package: ClassVar[str] = ""
 
-    class Options(DBConnection.Options, JDBCMixin.Options):  # noqa: WPS431
-        """Class for reading/writing options, related to JDBC sources.
+    class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+        """Class for Spark reading options, related to a specific JDBC source.
 
         .. note ::
 
@@ -55,89 +118,22 @@ class JDBCConnection(DBConnection, JDBCMixin):
         Examples
         --------
 
-        Reading options initialization
+        Read options initialization
 
         .. code:: python
 
-            options = JDBC.Options(
+            options = JDBC.ReadOptions(
                 partitionColumn="reg_id",
                 numPartitions=10,
                 lowerBound=0,
                 upperBound=1000,
                 someNewOption="value",
             )
-
-        Writing options initialization
-
-        .. code:: python
-
-            options = JDBC.Options(mode="append", batchsize=20_000, someNewOption="value")
         """
 
-        # write options
-        mode: JDBCWriteMode = JDBCWriteMode.APPEND
-        """Mode of writing data into target table.
-
-        Possible values:
-            * ``append`` (default)
-                Appends data into existing table.
-
-                Behavior in details:
-
-                * Table does not exist
-                    Table is created using other options from current class
-                    (``createTableOptions``, ``createTableColumnTypes``, etc).
-
-                * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data
-
-            * ``overwrite``
-                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
-
-                Behavior in details:
-
-                * Table does not exist
-                    Table is created using other options from current class
-                    (``createTableOptions``, ``createTableColumnTypes``, etc).
-
-                * Table exists
-                    Data is appended to a table.
-
-                    Table could either have the same DDL as before writing data (``truncate=True``),
-                    or can be recreated (``truncate=False`` or source does not support truncation).
-
-        .. note::
-
-            ``error`` and ``ignore`` modes are not supported.
-
-        .. warning::
-
-            Used **only** while **writing** data to a table.
-        """
-
-        batchsize: int = 20_000
-        """How many rows can be inserted per round trip.
-
-        Tuning this option can influence performance of writing.
-
-        .. warning::
-
-            Default value is different from Spark.
-
-            Spark uses quite small value ``1000``, which is absolutely not usable
-            in BigData world.
-
-            Thus we've overridden default value with ``20_000``,
-            which should increase writing performance.
-
-            You can increase it even more, up to ``50_000``,
-            but it depends on your database load and number of columns in the row.
-            Higher values does not increase performance.
-
-        .. warning::
-
-            Used **only** while **writing** data to a table.
-        """
+        class Config:
+            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | READ_PROHIBITED_OPTIONS
+            alias_generator = to_camel
 
         # Options in DataFrameWriter.jdbc() method
         partition_column: Optional[str] = None
@@ -184,17 +180,17 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
             You can pass ``numPartitions``, ``lowerBound`` and ``upperBound`` only with
             ``partitionColumn``.
-
-        .. warning::
-
-            Used **only** while **reading** data from a table
         """
 
         num_partitions: Optional[int] = None
-        lower_bound: Optional[int] = None
-        upper_bound: Optional[int] = None
+        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
 
-        # read options
+        lower_bound: Optional[int] = None
+        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
+
+        upper_bound: Optional[int] = None
+        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
+
         session_init_statement: Optional[str] = None
         '''After each database session is opened to the remote DB and before starting to read data,
         this option executes a custom SQL statement (or a PL/SQL block).
@@ -211,20 +207,154 @@ class JDBCConnection(DBConnection, JDBCMixin):
                     'alter session set "_serial_direct_read"=true';
                 END;
             """
+        '''
+
+        @root_validator
+        def num_partitions_only_set_with_partition_column(cls, values):  # noqa: N805
+            num_partitions = values.get("num_partitions")
+            partition_column = values.get("partition_column")
+            lower_bound = values.get("lower_bound")
+            upper_bound = values.get("upper_bound")
+
+            if num_partitions and partition_column:
+                return values
+
+            if num_partitions is None and not partition_column:
+                if lower_bound is None and upper_bound is None:
+                    return values
+
+                raise ValueError(
+                    "Options `lowerBound` and `upperBound` can be used only "
+                    "with `numPartitions` and `partitionColumn` options set",
+                )
+
+            raise ValueError(
+                "Options `numPartitions` and `partitionColumn` should be either both set, or both unset",
+            )
+
+        fetchsize: int = 100_000
+        """How many rows to fetch per round trip.
+
+        Tuning this option can influence performance of writing.
 
         .. warning::
 
-            Used **only** while **reading** data from a table.
-        '''
+            Default value is different from Spark.
 
-        @validator("num_partitions", pre=True)
-        def num_partitions_only_set_with_partition_column(cls, value, values):  # noqa: N805
-            partition_column = values.get("partition_column")
+            Spark uses driver's own value, and it may be different in different drivers,
+            and even versions of the same driver. For example, Oracle has
+            default ``fetchsize=10``, which is absolutely not usable.
 
-            if value and not partition_column:
-                raise ValueError("Option `num_partitions` could be set only with `partitionColumn`")
+            Thus we've overridden default value with ``100_000``, which should increase reading performance.
+        """
 
-            return value
+    class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+        """Class for Spark writing options, related to a specific JDBC source.
+
+        .. note ::
+
+            You can pass any value
+            `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
+            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+
+            The set of supported options depends on Spark version.
+
+        Examples
+        --------
+
+        Write options initialization
+
+        .. code:: python
+
+            options = JDBC.WriteOptions(mode="append", batchsize=20_000, someNewOption="value")
+        """
+
+        class Config:
+            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | WRITE_PROHIBITED_OPTIONS
+            alias_generator = to_camel
+
+        mode: JDBCWriteMode = JDBCWriteMode.APPEND
+        """Mode of writing data into target table.
+
+        Possible values:
+            * ``append`` (default)
+                Appends data into existing table.
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    Data is appended to a table. Table has the same DDL as before writing data
+
+            * ``overwrite``
+                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+
+                Behavior in details:
+
+                * Table does not exist
+                    Table is created using other options from current class
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    Table content is replaced with dataframe content.
+
+                    After writing completed, target table could either have the same DDL as
+                    before writing data (``truncate=True``), or can be recreated (``truncate=False``
+                    or source does not support truncation).
+
+        .. note::
+
+            ``error`` and ``ignore`` modes are not supported.
+        """
+
+        batchsize: int = 20_000
+        """How many rows can be inserted per round trip.
+
+        Tuning this option can influence performance of writing.
+
+        .. warning::
+
+            Default value is different from Spark.
+
+            Spark uses quite small value ``1000``, which is absolutely not usable
+            in BigData world.
+
+            Thus we've overridden default value with ``20_000``,
+            which should increase writing performance.
+
+            You can increase it even more, up to ``50_000``,
+            but it depends on your database load and number of columns in the row.
+            Higher values does not increase performance.
+        """
+
+        isolation_level: str = "READ_UNCOMMITTED"
+        """The transaction isolation level, which applies to current connection.
+
+        Possible values:
+            * ``NONE`` (as string, not Python's ``None``)
+            * ``READ_COMMITTED``
+            * ``READ_UNCOMMITTED``
+            * ``REPEATABLE_READ``
+            * ``SERIALIZABLE``
+
+        Values correspond to transaction isolation levels defined by JDBC standard.
+        Please refer the documentation for
+        `java.sql.Connection <https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html>`_.
+        """
+
+    class Options(ReadOptions, WriteOptions):
+        def __init__(self, *args, **kwargs):
+            log.warning(
+                "`SomeDB.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
+                "Please use `SomeDB.ReadOptions` or `SomeDB.WriteOptions` classes instead",
+            )
+            super().__init__(*args, **kwargs)
+
+        class Config:
+            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options
 
     @property
     def instance_url(self) -> str:
@@ -233,9 +363,9 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def _query_on_executor(
         self,
         query: str,
-        options: Options | dict | None = None,
+        options: ReadOptions,
     ) -> DataFrame:
-        jdbc_params = self.jdbc_params_creator(options)
+        jdbc_params = self.options_to_jdbc_params(options)
         jdbc_params.pop("mode", None)
 
         return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
@@ -243,7 +373,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def sql(
         self,
         query: str,
-        options: Options | dict | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         """
         **Lazily** execute SELECT statement **on Spark executor** and return DataFrame.
@@ -270,7 +400,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
             Queries like ``SHOW ...`` are not supported.
 
-        options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
+        options : dict, :obj:`~ReadOptions`, default: ``None``
 
             JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
 
@@ -304,7 +434,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
         log_with_indent(query)
 
-        df = self._query_on_executor(query, options)
+        df = self._query_on_executor(query, self.ReadOptions.parse(options))
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
@@ -312,43 +442,40 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def _query_on_driver(
         self,
         query: str,
-        options: Options | dict | None = None,
-        read_only: bool = True,
+        options: JDBCMixin.JDBCOptions,
     ) -> DataFrame:
         return self._execute_on_driver(
             statement=query,
             statement_type=StatementType.PREPARED,
             callback=self._statement_to_dataframe,
-            options=self.to_options(options),
-            read_only=read_only,
+            options=options,
+            read_only=True,
         )
 
     def _query_or_none_on_driver(
         self,
         query: str,
-        options: Options | dict | None = None,
-        read_only: bool = True,
+        options: JDBCMixin.JDBCOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
             statement_type=StatementType.PREPARED,
             callback=self._statement_to_optional_dataframe,
-            options=self.to_options(options),
-            read_only=read_only,
+            options=options,
+            read_only=True,
         )
 
     def _call_on_driver(
         self,
         query: str,
-        options: Options | dict | None = None,
-        read_only: bool = False,
+        options: JDBCMixin.JDBCOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
             statement_type=StatementType.CALL,
             callback=self._statement_to_optional_dataframe,
-            options=self.to_options(options),
-            read_only=read_only,
+            options=options,
+            read_only=False,
         )
 
     def close(self):
@@ -385,7 +512,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def fetch(
         self,
         query: str,
-        options: Options | dict | None = None,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> DataFrame:
         """
         **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame.
@@ -404,7 +531,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         .. warning::
 
-            Resulting DataFrame is stored in a driver memory, do not use this method to return large datasets.
+            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
 
         Parameters
         ----------
@@ -418,7 +545,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
             * ``WITH ... AS (...) SELECT ... FROM ...``
             * *Some* databases also support ``SHOW ...`` queries, like ``SHOW TABLES``
 
-        options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
+        options : dict, :obj:`~JDBCOptions`, default: ``None``
 
             JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
 
@@ -452,7 +579,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
         log_with_indent(query)
 
-        df = self._query_on_driver(query, options)
+        df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
         log.info(f"|{self.__class__.__name__}| Query succeeded, resulting dataframe contains {df.count()} rows")
         return df
@@ -460,7 +587,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def execute(
         self,
         statement: str,
-        options: Options | dict | None = None,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> DataFrame | None:
         """
         **Immediately** execute DDL, DML or procedure/function **on Spark driver**.
@@ -478,7 +605,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         .. warning::
 
-            Resulting DataFrame is stored in a driver memory, do not use this method to return large datasets.
+            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
 
         Parameters
         ----------
@@ -515,10 +642,10 @@ class JDBCConnection(DBConnection, JDBCMixin):
                 This method is not designed to call statements like ``INSERT INTO ... VALUES ...``,
                 which accepts some input data.
 
-                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter``,
+                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter`,
                 or ``connection.save_df(dataframe, table, options)`` instead.
 
-        options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
+        options : dict, :obj:`~JDBCOptions`, default: ``None``
 
             JDBC options to be used while executing the statement,
             like ``queryTimeout`` or ``isolationLevel``
@@ -555,7 +682,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
         log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
         log_with_indent(statement)
 
-        df = self._call_on_driver(statement, options)
+        call_options = self.JDBCOptions.parse(options)
+        df = self._call_on_driver(statement, call_options)
 
         message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
@@ -573,7 +701,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         log_with_indent(self._check_query)
 
         try:
-            self._query_or_none_on_driver(self._check_query)
+            self._query_or_none_on_driver(self._check_query, self.ReadOptions(fetchsize=1))
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
@@ -587,7 +715,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         query = self.get_sql_query(
             table=table,
@@ -600,7 +728,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
             table=table,
             where=where,
             hint=hint,
-            options=self.to_options(options).copy(exclude={"mode"}),
+            options=self.ReadOptions.parse(options).copy(exclude={"mode"}),
         )
 
         return self.sql(query, read_options)
@@ -609,14 +737,9 @@ class JDBCConnection(DBConnection, JDBCMixin):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        # for convenience. parameters accepted by spark.write.jdbc method
-        #   spark.write.jdbc(
-        #     url, table, mode,
-        #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
-
-        write_options = self.jdbc_params_creator(options)
+        write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
         df.write.jdbc(table=table, **write_options)
         log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 
@@ -624,7 +747,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         self,
         table: str,
         columns: list[str] | None = None,
-        options: Options | dict | None = None,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
@@ -640,38 +763,31 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         return df.schema
 
-    def jdbc_params_creator(
+    def options_to_jdbc_params(
         self,
-        options: Options | dict | None = None,
+        options: ReadOptions | WriteOptions,
     ) -> dict:
-        result_options = self.to_options(options)
-
         # Have to replace the <partitionColumn> parameter with <column>
         # since the method takes the named <column> parameter
         # link to source below
-        # https://git.io/JKOku
-        if result_options.partition_column:  # noqa: WPS609
-            result_options = result_options.copy(
-                update={"column": result_options.partition_column},
+        # https://github.com/apache/spark/blob/2ef8ced27a6b0170a691722a855d3886e079f037/python/pyspark/sql/readwriter.py#L465
+
+        partition_column = getattr(options, "partition_column", None)
+        if partition_column:
+            options = options.copy(
+                update={"column": partition_column},
                 exclude={"partition_column"},
             )
 
-        # for convenience. parameters accepted by spark.read.jdbc method
-        #  spark.read.jdbc(
-        #    url, table, column, lowerBound, upperBound, numPartitions, predicates
-        #    properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
-
-        top_level_options = {"url", "column", "lower_bound", "upper_bound", "num_partitions", "mode"}
-
         result = self._get_jdbc_properties(
-            result_options,
-            include=top_level_options,
+            options,
+            include=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
             exclude_none=True,
         )
 
         result["properties"] = self._get_jdbc_properties(
-            result_options,
-            exclude=top_level_options,
+            options,
+            exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
             exclude_none=True,
         )
 
@@ -684,7 +800,7 @@ class JDBCConnection(DBConnection, JDBCMixin):
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
 
         log.info(f"|Spark| Getting min and max values for column {column!r}")
@@ -713,8 +829,12 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         return min_value, max_value
 
-    def _exclude_partition_options(self, options: Options | dict | None, fetchsize: int) -> Options:
-        return self.to_options(options).copy(
+    def _exclude_partition_options(
+        self,
+        options: JDBCMixin.JDBCOptions | dict | None,
+        fetchsize: int,
+    ) -> JDBCMixin.JDBCOptions:
+        return self.JDBCOptions.parse(options).copy(
             update={"fetchsize": fetchsize},
             exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions"},
         )
@@ -724,13 +844,13 @@ class JDBCConnection(DBConnection, JDBCMixin):
         table: str,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
-    ) -> Options:
+        options: ReadOptions | dict | None = None,
+    ) -> ReadOptions:
         """
         Determine values of upperBound and lowerBound options
         """
 
-        result_options = self.to_options(options)
+        result_options = self.ReadOptions.parse(options)
 
         if not result_options.partition_column:
             return result_options

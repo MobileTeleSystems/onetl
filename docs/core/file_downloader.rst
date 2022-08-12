@@ -8,8 +8,6 @@ File Downloader
 .. autosummary::
 
     FileDownloader
-    FileDownloader.run
-    FileDownloader.view_files
     FileDownloader.Options
 
 .. autoclass:: FileDownloader
@@ -18,5 +16,5 @@ File Downloader
 .. currentmodule:: onetl.core.file_downloader.file_downloader.FileDownloader
 
 .. autoclass:: Options
-    :members:
+    :members: mode, delete_source
     :member-order: bysource

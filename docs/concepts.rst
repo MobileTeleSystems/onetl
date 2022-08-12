@@ -146,7 +146,7 @@ Options
     reader = DBReader(
         connection=mssql,
         table="dbo.demo_table",
-        options=MSSQL.Options(fetchsize=1000),  # or options={"fetchsize": "1000"}
+        options=MSSQL.ReadOptions(fetchsize=1000),  # or options={"fetchsize": "1000"}
     )
 
 The difference between the rest of the class parameters and the "options" parameter is that they can be logically divided according to what they describe:
@@ -162,7 +162,7 @@ The difference between the rest of the class parameters and the "options" parame
         table="dbo.demo_table",
         columns=["column_1", "column_2"],
         # How do we extract?
-        options=MSSQL.Options(fetchsize=1000, sessionInitStatement="select 1"),
+        options=MSSQL.ReadOptions(fetchsize=1000, sessionInitStatement="select 1"),
     )
 
     writer = DBWriter(
@@ -170,7 +170,7 @@ The difference between the rest of the class parameters and the "options" parame
         connection=hive,
         table="dl_sb.demo_table",
         # How do we load?
-        options=Hive.Options(mode="overwrite", insertInto=True),
+        options=Hive.WriteOptions(mode="overwrite"),
     )
 
 More information about Options could be found `here <core/db_reader.html>`_ (DBReader options) and `here <core/db_writer.html>`_ (DBWriter options)
