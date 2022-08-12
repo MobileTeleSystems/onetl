@@ -32,7 +32,7 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
     def _missing_(cls, value: object):
         if str(value) == "overwrite":
             log.warning(
-                "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 0.5.0, "
+                "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 1.0.0, "
                 "use `overwrite_partitions` instead",
             )
             return cls.OVERWRITE_PARTITIONS
@@ -413,9 +413,8 @@ class Hive(DBConnection):
             self.sql(self._check_query)
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
-            msg = f"Connection is unavailable:\n{e}"
-            log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg) from e
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
 
         return self
 

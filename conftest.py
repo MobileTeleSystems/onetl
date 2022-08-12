@@ -48,7 +48,6 @@ log = logging.getLogger(__name__)
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
-@pytest.mark.FTP
 @pytest.fixture(scope="session")
 def ftp_server(tmp_path_factory):
     server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
@@ -63,7 +62,6 @@ def ftp_connection(ftp_server):
     return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
 
 
-@pytest.mark.FTPS
 @pytest.fixture(scope="session")
 def ftps_server(tmp_path_factory):
     server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
@@ -78,7 +76,6 @@ def ftps_connection(ftps_server):
     return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
 
 
-@pytest.mark.SFTP
 @pytest.fixture(scope="session")
 def sftp_server(tmp_path_factory):
     server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
@@ -93,7 +90,6 @@ def sftp_connection(sftp_server):
     return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
 
 
-@pytest.mark.HDFS
 @pytest.fixture(scope="session")
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
@@ -239,10 +235,10 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        lazy_fixture("ftp_connection"),
-        lazy_fixture("ftps_connection"),
-        lazy_fixture("sftp_connection"),
-        lazy_fixture("hdfs_connection"),
+        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.FTP),
+        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
+        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
+        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
     ],
 )
 def file_connection(request):

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any, Iterator
 
+from humanize import naturalsize
 from pydantic import BaseModel
 
 from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
@@ -83,16 +84,15 @@ class FileConnection(BaseFileConnection):
         self.close()
 
     def check(self):
-        log.info(f"|{self.__class__.__name__}| Check connection availability...")
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         self._log_parameters()
 
         try:
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
         except Exception as e:
-            msg = f"Connection is unavailable:\n{e}"
-            log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg) from e
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
 
         return self
 
@@ -127,6 +127,10 @@ class FileConnection(BaseFileConnection):
         return RemoteFile(path=remote_path, stats=stat)
 
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
+        log.debug(
+            f"|{self.__class__.__name__}| Reading string with encoding '{encoding}' "
+            f"and options {kwargs!r} from '{path}'",
+        )
         remote_path = RemotePath(path)
 
         if not self.is_file(remote_path):
@@ -135,6 +139,7 @@ class FileConnection(BaseFileConnection):
         return self._read_text(remote_path, encoding=encoding, **kwargs)
 
     def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+        log.debug(f"|{self.__class__.__name__}| Reading bytes with options {kwargs!r} from '{path}'")
         remote_path = RemotePath(path)
 
         if not self.is_file(remote_path):
@@ -143,6 +148,10 @@ class FileConnection(BaseFileConnection):
         return self._read_bytes(remote_path, **kwargs)
 
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
+        log.debug(
+            f"|{self.__class__.__name__}| Writing string size {len(content)} "
+            f"with encoding '{encoding}' and options {kwargs!r} to '{path}'",
+        )
         remote_path = RemotePath(path)
         self.mkdir(remote_path.parent)
         self._write_text(remote_path, content=content, encoding=encoding, **kwargs)
@@ -150,6 +159,9 @@ class FileConnection(BaseFileConnection):
         return self.get_file(remote_path)
 
     def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> RemoteFile:
+        log.debug(
+            f"|{self.__class__.__name__}| Writing {naturalsize(len(content))} with options {kwargs!r} to '{path}'",
+        )
         remote_path = RemotePath(path)
         self.mkdir(remote_path.parent)
         self._write_bytes(remote_path, content=content, **kwargs)
@@ -162,6 +174,8 @@ class FileConnection(BaseFileConnection):
         local_file_path: os.PathLike | str,
         replace: bool = True,
     ) -> LocalPath:
+        log.debug(f"|{self.__class__.__name__}| Downloading file '{remote_file_path}' to local '{local_file_path}'")
+
         remote_file = RemotePath(remote_file_path)
         if not self.is_file(remote_file):
             raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
@@ -178,12 +192,14 @@ class FileConnection(BaseFileConnection):
             log.warning(f"{error_msg}, replacing")
             local_file.unlink()
 
+        log.debug(f"|Local FS| Creating target directory '{local_file.parent}'")
         local_file.parent.mkdir(parents=True, exist_ok=True)
-        self._download_file(remote_file_path, local_file)
-        log.info(f"|Local FS| Successfully downloaded file: '{local_file}'")
+        self._download_file(remote_file, local_file)
+        log.info(f"|Local FS| Successfully downloaded file '{local_file}'")
         return local_file
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
+        log.debug(f"|{self.__class__.__name__}| Removing file '{remote_file_path}'")
         remote_file = RemotePath(remote_file_path)
 
         if not self.path_exists(remote_file):
@@ -194,9 +210,10 @@ class FileConnection(BaseFileConnection):
             raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
 
         self._remove_file(remote_file)
-        log.info(f"|{self.__class__.__name__}| Successfully removed file: '{remote_file}'")
+        log.info(f"|{self.__class__.__name__}| Successfully removed file '{remote_file}'")
 
     def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
+        log.debug(f"|{self.__class__.__name__}| Creating directory '{path}'")
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
@@ -205,9 +222,8 @@ class FileConnection(BaseFileConnection):
 
             return RemoteDirectory(path=remote_directory)
 
-        log.info(f"|{self.__class__.__name__}| Creating directory: '{remote_directory}'")
         self._mkdir(remote_directory)
-        log.info(f"|{self.__class__.__name__}| Successfully created directory: '{remote_directory}'")
+        log.info(f"|{self.__class__.__name__}| Successfully created directory '{remote_directory}'")
         return RemoteDirectory(path=remote_directory)
 
     def upload_file(  # noqa: WPS238
@@ -216,6 +232,8 @@ class FileConnection(BaseFileConnection):
         remote_file_path: os.PathLike | str,
         replace: bool = False,
     ) -> RemoteFile:
+        log.debug(f"|{self.__class__.__name__}| Uploading local file '{local_file_path}' to '{remote_file_path}'")
+
         local_file = LocalPath(local_file_path)
         if not local_file.exists():
             raise FileNotFoundError(f"|LocalFS| File '{local_file}' does not exist")
@@ -235,10 +253,10 @@ class FileConnection(BaseFileConnection):
             log.warning(f"{error_msg}, removing")
             self._remove_file(remote_file)
 
-        self._mkdir(remote_file.parent)
+        self.mkdir(remote_file.parent)
         self._upload_file(local_file, remote_file)
         result = self.get_file(remote_file)
-        log.info(f"|{self.__class__.__name__}| Successfully uploaded file: '{remote_file}'")
+        log.info(f"|{self.__class__.__name__}| Successfully uploaded file '{remote_file}'")
         return result
 
     def rename_file(
@@ -247,6 +265,8 @@ class FileConnection(BaseFileConnection):
         target_file_path: os.PathLike | str,
         replace: bool = False,
     ) -> RemoteFile:
+        log.debug(f"|{self.__class__.__name__}| Renaming file '{source_file_path}' to '{target_file_path}'")
+
         source_file = RemotePath(source_file_path)
         if not self.is_file(source_file):
             raise NotAFileError(f"|{self.__class__.__name__}| '{source_file}' is not a file")
@@ -263,13 +283,14 @@ class FileConnection(BaseFileConnection):
             log.warning(f"{error_msg}, removing")
             self._remove_file(target_file)
 
-        self._mkdir(target_file.parent)
+        self.mkdir(target_file.parent)
         self._rename(source_file, target_file)
         log.info(f"|{self.__class__.__name__}| Successfully renamed file '{source_file}' to '{target_file}'")
 
         return self.get_file(target_file)
 
     def listdir(self, path: os.PathLike | str) -> list[RemoteDirectory | RemoteFile]:
+        log.debug(f"|{self.__class__.__name__}| Listing directory '{path}'")
         remote_directory = RemotePath(path)
 
         if not self.is_dir(path):
@@ -292,11 +313,7 @@ class FileConnection(BaseFileConnection):
         top: os.PathLike | str,
         filter: BaseFileFilter | None = None,  # noqa: WPS125
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
-        """
-        Iterate over directory tree and return a tuple (dirpath,
-        dirnames, filenames) on each iteration, like the `os.walk`
-        function (see https://docs.python.org/library/os.html#os.walk ).
-        """
+        log.debug(f"|{self.__class__.__name__}| Walking through directory '{top}'")
 
         remote_directory = RemotePath(top)
         if not self.is_dir(remote_directory):
@@ -342,6 +359,8 @@ class FileConnection(BaseFileConnection):
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+        description = "RECURSIVELY" if recursive else "NON-recursively"
+        log.debug(f"|{self.__class__.__name__}| Removing directory ({description}) '{path}'")
         remote_directory = RemotePath(path)
 
         if not self.path_exists(remote_directory):
@@ -351,14 +370,14 @@ class FileConnection(BaseFileConnection):
             raise NotADirectoryError(f"|{self.__class__.__name__}| '{remote_directory}' is not a directory")
 
         if not recursive and self._listdir(remote_directory):
-            raise DirectoryNotEmptyError(f"Cannot delete non-empty directory: '{remote_directory}'")
+            raise DirectoryNotEmptyError(f"Cannot delete non-empty directory '{remote_directory}'")
 
         if recursive:
             self._rmdir_recursive(remote_directory)
         else:
             self._rmdir(remote_directory)
 
-        log.info(f"|{self.__class__.__name__}| Successfully removed directory: '{remote_directory}'")
+        log.info(f"|{self.__class__.__name__}| Successfully removed directory '{remote_directory}'")
 
     def _rmdir_recursive(self, root: RemotePath) -> None:
         for item in self._listdir(root):
@@ -399,7 +418,7 @@ class FileConnection(BaseFileConnection):
         return {"password"}
 
     def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
+        log.info("|onETL| Using connection parameters:")
         log_with_indent(f"type = {self.__class__.__name__}")
         for attr in sorted(self._log_fields() - self._log_exclude_fields()):
             value_attr = getattr(self, attr)

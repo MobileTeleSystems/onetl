@@ -576,9 +576,8 @@ class JDBCConnection(DBConnection, JDBCMixin):
             self._query_or_none_on_driver(self._check_query)
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
-            msg = f"Connection is unavailable:\n{e}"
-            log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg) from e
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
 
         return self
 

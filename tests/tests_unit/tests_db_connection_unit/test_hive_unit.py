@@ -58,7 +58,7 @@ def test_hive_options_unsupported_insert_into(insert_into):
 
 def test_hive_options_deprecated_mode_overwrite(caplog):
     warning_msg = (
-        "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 0.5.0, use `overwrite_partitions` instead"
+        "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 1.0.0, use `overwrite_partitions` instead"
     )
 
     with caplog.at_level(logging.INFO):

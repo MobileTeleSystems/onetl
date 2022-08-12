@@ -5,12 +5,13 @@ import shutil
 from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from logging import getLogger
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Tuple
 
 from etl_entities import FileListHWM, RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import BaseModel
 
+from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileFilter, BaseFileLimit
 from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
@@ -32,7 +33,8 @@ from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)
 
-DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath]]
+# source, target, temp
+DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath]]]
 
 
 @dataclass
@@ -45,14 +47,32 @@ class FileDownloader:
     connection : :obj:`onetl.connection.FileConnection`
         Class which contains File system connection properties. See in FileConnection section.
 
-    source_path : os.PathLike | str | None, default: ``None``
+    local_path : os.PathLike or str
+        Local path where you download files
+
+    source_path : os.PathLike or str, optional, default: ``None``
         Remote path to download files from.
 
-        Could be ``None``, but only if you pass file paths directly to
+        Could be ``None``, but only if you pass absolute file paths directly to
         :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.run` method
 
-    local_path : os.PathLike | str
-        Local path where you download files
+    temp_path : os.PathLike or str, optional, default: ``None``
+        If set, this path will be used for downloading a file, and then renaming it to the target file path.
+        If ``None`` is passed, files are downloaded directly to ``target_path``.
+
+        .. warning::
+
+            In case of production ETL pipelines, please set a value for ``temp_path`` (NOT ``None``).
+            This allows to properly handle download interruption,
+            without creating half-downloaded files in the target,
+            because unlike file download, ``rename`` call is atomic.
+
+        .. warning::
+
+            In case of connections like SFTP or FTP, which can have multiple underlying filesystems,
+            please pass to ``temp_path`` path on the SAME filesystem as ``target_path``.
+            Otherwise instead of ``rename``, remote OS will move file between filesystems,
+            which is NOT atomic operation.
 
     filter : BaseFileFilter
         Options of the file filtering. See :obj:`onetl.core.file_filter.file_filter.FileFilter`
@@ -100,9 +120,10 @@ class FileDownloader:
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
+            temp_path="/tmp",
             filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
-            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
             limit=FileLimit(count_limit=10),
+            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
         )
 
     Incremental loading:
@@ -110,7 +131,7 @@ class FileDownloader:
     .. code::
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader, FileFilter, FileLimit
+        from onetl.core import FileDownloader
         from onetl.strategy import IncrementalStrategy
 
         sftp = SFTP(...)
@@ -119,9 +140,6 @@ class FileDownloader:
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
-            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
-            limit=FileLimit(count_limit=10),
             hwm_type="file_list",
         )
 
@@ -159,25 +177,29 @@ class FileDownloader:
     local_path: InitVar[os.PathLike | str]
     _local_path: LocalPath = field(init=False)
 
-    filter: BaseFileFilter | None = None
+    source_path: InitVar[os.PathLike | str | None] = field(default=None)
+    _source_path: RemotePath | None = field(init=False)
 
+    temp_path: InitVar[str | os.PathLike] = field(default=None)
+    _temp_path: RemotePath | None = field(init=False)
+
+    filter: BaseFileFilter | None = None
     limit: BaseFileLimit = FileLimit()
 
     options: InitVar[Options | dict | None] = field(default=None)
     _options: Options = field(init=False)
-
-    source_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _source_path: RemotePath | None = field(init=False)
 
     hwm_type: str | None = None
 
     def __post_init__(
         self,
         local_path: os.PathLike | str,
-        options: FileConnection.Options | dict | None,
         source_path: os.PathLike | str | None,
+        temp_path: str | os.PathLike,
+        options: FileConnection.Options | dict | None,
     ):
         self._local_path = LocalPath(local_path).resolve()
+        self._temp_path = LocalPath(temp_path).resolve() if temp_path else None
         self._source_path = RemotePath(source_path) if source_path else None
 
         if isinstance(options, dict):
@@ -237,7 +259,7 @@ class FileDownloader:
             assert downloaded_files.skipped == {RemoteFile("/existing/file")}
             assert downloaded_files.missing == {RemotePath("/missing/file")}
 
-        Download only certaing files from ``source_path``
+        Download only certain files from ``source_path``
 
         .. code:: python
 
@@ -310,17 +332,25 @@ class FileDownloader:
             log.info(f"|{self.__class__.__name__}| No files to download!")
             return DownloadResult()
 
-        to_download = self._validate_files(files)
+        current_temp_dir: LocalPath | None = None
+        if self._temp_path:
+            current_temp_dir = generate_temp_path(self._temp_path)
+
+        to_download = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
         if self._options.mode == FileWriteMode.DELETE_ALL:
-            shutil.rmtree(self._local_path)
+            if self._local_path.exists():
+                shutil.rmtree(self._local_path)
             self._local_path.mkdir()
 
         if self.hwm_type is not None:
             result = self._hwm_processing(to_download)
         else:
             result = self._download_files(to_download)
+
+        if current_temp_dir:
+            self._remove_temp_dir(current_temp_dir)
 
         self._log_result(result)
         return result
@@ -369,7 +399,7 @@ class FileDownloader:
             }
         """
 
-        log.info(f"|{self.connection.__class__.__name__}| Getting files list from path: '{self._source_path}'")
+        log.info(f"|{self.connection.__class__.__name__}| Getting files list from path '{self._source_path}'")
 
         self._check_source_path()
         result = FileSet()
@@ -379,7 +409,7 @@ class FileDownloader:
             for root, dirs, files in self.connection.walk(self._source_path, filter=self.filter):
                 # when iterating over files, it should be checked for a limit on the number of files.
                 # when the limit on the number of files is reached,
-                # it is necessary to stop and download files that have not yet been uploaded.
+                # it is necessary to stop and download files that have not yet been downloaded.
 
                 log.debug(
                     f"|{self.connection.__class__.__name__}| "
@@ -446,13 +476,17 @@ class FileDownloader:
             remote_file_folder=remote_file_folder,
         )
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
         entity_boundary_log(msg="FileDownloader starts")
 
         log.info(f"|{self.connection.__class__.__name__}| -> |Local FS| Downloading files using parameters:")
         source_path_str = f"'{self._source_path}'" if self._source_path else "None"
         log_with_indent(f"source_path = {source_path_str}")
         log_with_indent(f"local_path = '{self._local_path}'")
+        if self._temp_path:
+            log_with_indent(f"temp_path = '{self._temp_path}'")
+        else:
+            log_with_indent("temp_path = None")
 
         if self.filter is not None:
             log.info("")
@@ -483,11 +517,14 @@ class FileDownloader:
     def _validate_files(  # noqa: WPS231
         self,
         remote_files: Iterable[os.PathLike | str],
+        current_temp_dir: LocalPath | None,
     ) -> DOWNLOAD_ITEMS_TYPE:
         result = OrderedSet()
 
-        for remote_file in remote_files:
-            remote_file_path = RemotePath(remote_file)
+        for file in remote_files:
+            remote_file_path = RemotePath(file)
+            remote_file = remote_file_path
+            tmp_file: LocalPath | None = None
 
             if not self._source_path:
                 # Download into a flat structure
@@ -495,25 +532,31 @@ class FileDownloader:
                     raise ValueError("Cannot pass relative file path with empty ``source_path``")
 
                 filename = remote_file_path.name
-                local_file_path = self._local_path / filename
+                local_file = self._local_path / filename
+                if current_temp_dir:
+                    tmp_file = current_temp_dir / filename  # noqa: WPS220
             else:
                 # Download according to source folder structure
                 if self._source_path in remote_file_path.parents:
                     # Make relative local path
-                    local_file_path = self._local_path / remote_file_path.relative_to(self._source_path)
+                    local_file = self._local_path / remote_file_path.relative_to(self._source_path)
+                    if current_temp_dir:
+                        tmp_file = current_temp_dir / remote_file_path.relative_to(self._source_path)  # noqa: WPS220
 
                 elif not remote_file_path.is_absolute():
-                    # Passed already relative path
-                    local_file_path = self._local_path / remote_file_path
-                    remote_file_path = self._source_path / remote_file_path
+                    # Passed path is already relative
+                    local_file = self._local_path / remote_file_path
+                    remote_file = self._source_path / remote_file_path
+                    if current_temp_dir:
+                        tmp_file = current_temp_dir / remote_file_path  # noqa: WPS220
                 else:
                     # Wrong path (not relative path and source path not in the path to the file)
-                    raise ValueError(f"File path '{remote_file_path}' does not match source_path '{self._source_path}'")
+                    raise ValueError(f"File path '{remote_file}' does not match source_path '{self._source_path}'")
 
-            if self.connection.path_exists(remote_file_path) and not self.connection.is_file(remote_file_path):
-                raise NotAFileError(f"|{self.connection.__class__.__name__}| '{remote_file_path}' is not a file")
+            if self.connection.path_exists(remote_file) and not self.connection.is_file(remote_file):
+                raise NotAFileError(f"|{self.connection.__class__.__name__}| '{remote_file}' is not a file")
 
-            result.add((remote_file_path, local_file_path))
+            result.add((remote_file, local_file, tmp_file))
 
         return result
 
@@ -542,14 +585,17 @@ class FileDownloader:
         log.info(f"|{self.__class__.__name__}| Starting the download process")
 
         result = DownloadResult()
-        for i, (source_file, local_file) in enumerate(to_download):
-            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
+        for i, (source_file, local_file, tmp_file) in enumerate(to_download):
+            log.info(f"|{self.__class__.__name__}| Downloading file {i+1} of {total_files}")
             log_with_indent(f"from = '{source_file}'")
+            if tmp_file:
+                log_with_indent(f"temp = '{tmp_file}'")
             log_with_indent(f"to = '{local_file}'")
 
             self._download_file(
                 source_file,
                 local_file,
+                tmp_file,
                 result,
                 file_hwm_name=file_hwm_name,
                 current_hwm_store=current_hwm_store,
@@ -562,6 +608,7 @@ class FileDownloader:
         self,
         source_file: RemotePath,
         local_file: LocalPath,
+        tmp_file: LocalPath | None,
         result: DownloadResult,
         current_hwm_store: HWMStoreManager | None = None,
         file_hwm_name: str | None = None,
@@ -589,8 +636,22 @@ class FileDownloader:
                 replace = True
                 log.warning(f"|LocalFS| {error_message}, overwriting")
 
-            # Download
-            self.connection.download_file(remote_file, local_file, replace=replace)
+            if tmp_file:
+                # Files are loaded to temporary directory before moving them to target dir.
+                # This prevents operations with partly downloaded files
+
+                self.connection.download_file(remote_file, tmp_file, replace=replace)
+
+                # remove existing file only after new file is downloaded
+                # to avoid issues then there is no free space to download new file, but existing one is already gone
+                if replace and local_file.exists():
+                    local_file.unlink()
+
+                local_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp_file.rename(local_file)
+            else:
+                # Direct download
+                self.connection.download_file(remote_file, local_file, replace=replace)
 
             # Delete Remote
             if self._options.delete_source:
@@ -605,10 +666,18 @@ class FileDownloader:
 
         except Exception as e:
             log.exception(
-                f"|{self.__class__.__name__}| Couldn't download file from target dir: {e}",
+                f"|{self.__class__.__name__}| Couldn't download file from source dir: {e}",
                 exc_info=False,
             )
             result.failed.add(FailedRemoteFile(path=remote_file.path, stats=remote_file.stats, exception=e))
+
+    def _remove_temp_dir(self, temp_dir: LocalPath) -> None:
+        log.info(f"|Local FS| Removing temp directory '{temp_dir}'")
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            log.exception("|Local FS| Error while removing temp directory")
 
     def _log_result(self, result: DownloadResult) -> None:
         log.info(f"|{self.__class__.__name__}| Download result:")
