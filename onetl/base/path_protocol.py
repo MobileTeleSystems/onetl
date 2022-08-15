@@ -1,6 +1,6 @@
 from typing_extensions import Protocol, runtime_checkable
 
-from onetl.base.file_stat_protocol import FileStatProtocol
+from onetl.base.path_stat_protocol import PathStatProtocol
 
 
 @runtime_checkable
@@ -28,7 +28,7 @@ class PathProtocol(Protocol):
 
 
 @runtime_checkable
-class SizedPathProtocol(Protocol):
+class PathWithStatsProtocol(Protocol):
     """
     Protocol for ``pathlib.Path``-like file objects.
 
@@ -50,7 +50,7 @@ class SizedPathProtocol(Protocol):
         Checks if this path exists
         """
 
-    def stat(self) -> FileStatProtocol:
+    def stat(self) -> PathStatProtocol:
         """
         Returns stats object with file information
         """

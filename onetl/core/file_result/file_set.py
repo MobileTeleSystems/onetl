@@ -5,9 +5,9 @@ from typing import Generic, TypeVar
 from humanize import naturalsize
 from ordered_set import OrderedSet
 
-from onetl.base import PathProtocol, SizedPathProtocol
+from onetl.base import PathProtocol, PathWithStatsProtocol
 from onetl.exception import EmptyFilesError, ZeroFileSizeError
-from onetl.impl import humanize_path
+from onetl.impl import path_repr
 
 T = TypeVar("T", bound=PathProtocol)
 INDENT = " " * 4
@@ -41,7 +41,9 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
             assert path_set.total_size == 1_000_000  # in bytes
         """
 
-        return sum(file.stat().st_size for file in self if isinstance(file, SizedPathProtocol) and file.exists())
+        return sum(
+            file.stat().st_size or 0 for file in self if isinstance(file, PathWithStatsProtocol) and file.exists()
+        )
 
     def raise_if_empty(self) -> None:
         """
@@ -147,7 +149,7 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
 
         file_number_str = f"{len(self)} files" if len(self) > 1 else "1 file"
 
-        return f"{file_number_str} ({naturalsize(self.total_size)})"
+        return f"{file_number_str} (size='{naturalsize(self.total_size)}')"
 
     @property
     def details(self) -> str:
@@ -183,7 +185,7 @@ class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
         if not self:
             return self.summary
 
-        lines = [humanize_path(file) for file in self]  # type: ignore[arg-type]
+        lines = [path_repr(file, with_mode=False, with_kind=False, with_owner=False, with_mtime=False) for file in self]
 
         summary = f"{self.summary}:{os.linesep}{INDENT}"
 

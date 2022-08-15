@@ -19,6 +19,7 @@ from onetl.impl import (
     GenericOptions,
     LocalPath,
     RemotePath,
+    path_repr,
 )
 from onetl.log import entity_boundary_log, log_with_indent
 
@@ -253,7 +254,7 @@ class FileUploader:
             self.connection.mkdir(self._target_path)
 
         if current_temp_dir:
-            self.connection.mkdir(current_temp_dir)
+            current_temp_dir = self.connection.mkdir(current_temp_dir)
 
         result = self._upload_files(to_upload)
 
@@ -389,7 +390,7 @@ class FileUploader:
                     raise ValueError(f"File path '{local_file}' does not match source_path '{self._local_path}'")
 
             if local_file.exists() and not local_file.is_file():
-                raise NotAFileError(f"|Local FS| '{local_file}' is not a file")
+                raise NotAFileError(f"|Local FS| {path_repr(local_file)} is not a file")
 
             result.add((local_file, target_file, tmp_file))
 
@@ -400,7 +401,7 @@ class FileUploader:
             raise DirectoryNotFoundError(f"|Local FS| '{self._local_path}' does not exist")
 
         if not self._local_path.is_dir():
-            raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
+            raise NotADirectoryError(f"|Local FS| {path_repr(self._local_path)} is not a directory")
 
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         total_files = len(to_upload)
@@ -437,17 +438,17 @@ class FileUploader:
         try:
             replace = False
             if self.connection.path_exists(target_file):
-                error_message = f"Target directory already contains file '{target_file}'"
+                file = self.connection.get_file(target_file)
+                error_message = f"|{self.__class__.__name__}| File {path_repr(file)} already exists"
                 if self._options.mode == FileWriteMode.ERROR:
                     raise FileExistsError(error_message)
 
                 if self._options.mode == FileWriteMode.IGNORE:
-                    log.warning(f"|{self.__class__.__name__}| {error_message}, skipping")
+                    log.warning(f"{error_message}, skipping")
                     result.skipped.add(local_file)
                     return
 
                 replace = True
-                log.warning(f"|{self.__class__.__name__}| {error_message}, overwriting")
 
             if tmp_file:
                 # Files are loaded to temporary directory before moving them to target dir.
@@ -461,7 +462,7 @@ class FileUploader:
 
             if self._options.delete_local:
                 local_file.unlink()
-                log.warning(f"|LocalFS| Successfully removed file '{local_file}'")
+                log.warning(f"|LocalFS| Successfully removed file {path_repr(local_file)}")
 
             result.successful.add(uploaded_file)
 
@@ -470,8 +471,6 @@ class FileUploader:
             result.failed.add(FailedLocalFile(path=local_file, exception=e))
 
     def _remove_temp_dir(self, temp_dir: RemotePath) -> None:
-        log.debug(f"|{self.connection.__class__.__name__}| Removing temp directory '{temp_dir}'")
-
         try:
             self.connection.rmdir(temp_dir, recursive=True)
         except Exception:

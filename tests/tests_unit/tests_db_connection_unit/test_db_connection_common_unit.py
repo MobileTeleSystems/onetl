@@ -393,7 +393,7 @@ def test_db_options_parse_mismatch_connection_and_options_types(connection, opti
 )
 @pytest.mark.parametrize(
     "options",
-    [  # noqa: WPS317
+    [
         {"some", "option"},
         "Some_options",
         123,

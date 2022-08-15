@@ -162,6 +162,7 @@ class SFTP(FileConnection):
         return S_ISREG(stat.st_mode)
 
     def _get_stat(self, path: RemotePath) -> SFTPAttributes:
+        # underlying SFTP client already return `os.stat_result`-like class
         return self.client.stat(os.fspath(path))
 
     def _get_item_name(self, item: SFTPAttributes) -> str:

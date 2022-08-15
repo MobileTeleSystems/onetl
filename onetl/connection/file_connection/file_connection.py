@@ -8,13 +8,13 @@ from typing import Any, Iterator
 
 from humanize import naturalsize
 
-from onetl.base import BaseFileConnection, BaseFileFilter, FileStatProtocol
+from onetl.base import BaseFileConnection, BaseFileFilter, PathStatProtocol
 from onetl.exception import (
     DirectoryNotEmptyError,
     DirectoryNotFoundError,
     NotAFileError,
 )
-from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemotePath
+from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemotePath, path_repr
 from onetl.log import log_with_indent
 
 log = getLogger(__name__)
@@ -101,39 +101,44 @@ class FileConnection(BaseFileConnection):
 
         return self._is_dir(remote_path)
 
-    def get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
+    def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         remote_path = RemotePath(path)
-
-        if not self.is_file(remote_path):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_path}' is not a file")
 
         return self._get_stat(remote_path)
 
-    def get_file(self, path: os.PathLike | str) -> RemoteFile:
-        remote_path = RemotePath(path)
-        stat = self.get_stat(remote_path)
+    def get_directory(self, path: os.PathLike | str) -> RemoteDirectory:
+        is_dir = self.is_dir(path)
+        stat = self.get_stat(path)
+        remote_path = RemoteDirectory(path=path, stats=stat)
 
-        return RemoteFile(path=remote_path, stats=stat)
+        if not is_dir:
+            raise NotADirectoryError(f"|{self.__class__.__name__}| {path_repr(remote_path)} is not a directory")
+
+        return remote_path
+
+    def get_file(self, path: os.PathLike | str) -> RemoteFile:
+        is_file = self.is_file(path)
+        stat = self.get_stat(path)
+        remote_path = RemoteFile(path=path, stats=stat)
+
+        if not is_file:
+            raise NotAFileError(f"|{self.__class__.__name__}| {path_repr(remote_path)} is not a file")
+
+        return remote_path
 
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
         log.debug(
             f"|{self.__class__.__name__}| Reading string with encoding '{encoding}' "
             f"and options {kwargs!r} from '{path}'",
         )
-        remote_path = RemotePath(path)
 
-        if not self.is_file(remote_path):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_path}' is not a file")
-
+        remote_path = self.get_file(path)
         return self._read_text(remote_path, encoding=encoding, **kwargs)
 
     def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
         log.debug(f"|{self.__class__.__name__}| Reading bytes with options {kwargs!r} from '{path}'")
-        remote_path = RemotePath(path)
 
-        if not self.is_file(remote_path):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_path}' is not a file")
-
+        remote_path = self.get_file(path)
         return self._read_bytes(remote_path, **kwargs)
 
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
@@ -141,8 +146,16 @@ class FileConnection(BaseFileConnection):
             f"|{self.__class__.__name__}| Writing string size {len(content)} "
             f"with encoding '{encoding}' and options {kwargs!r} to '{path}'",
         )
+
         remote_path = RemotePath(path)
         self.mkdir(remote_path.parent)
+
+        if self.path_exists(remote_path):
+            file = self.get_file(remote_path)
+            log.warning(
+                f"|{self.__class__.__name__}| File {path_repr(file)} already exists and will be overwritten",
+            )
+
         self._write_text(remote_path, content=content, encoding=encoding, **kwargs)
 
         return self.get_file(remote_path)
@@ -151,8 +164,16 @@ class FileConnection(BaseFileConnection):
         log.debug(
             f"|{self.__class__.__name__}| Writing {naturalsize(len(content))} with options {kwargs!r} to '{path}'",
         )
+
         remote_path = RemotePath(path)
         self.mkdir(remote_path.parent)
+
+        if self.path_exists(remote_path):
+            file = self.get_file(remote_path)
+            log.warning(
+                f"|{self.__class__.__name__}| File {path_repr(file)} already exists and will be overwritten",
+            )
+
         self._write_bytes(remote_path, content=content, **kwargs)
 
         return self.get_file(remote_path)
@@ -165,20 +186,18 @@ class FileConnection(BaseFileConnection):
     ) -> LocalPath:
         log.debug(f"|{self.__class__.__name__}| Downloading file '{remote_file_path}' to local '{local_file_path}'")
 
-        remote_file = RemotePath(remote_file_path)
-        if not self.is_file(remote_file):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
-
+        remote_file = self.get_file(remote_file_path)
         local_file = LocalPath(local_file_path)
+
         if local_file.exists():
             if not local_file.is_file():
-                raise NotAFileError(f"|LocalFS| '{remote_file}' is not a file")
+                raise NotAFileError(f"|LocalFS| {path_repr(local_file)} is not a file")
 
-            error_msg = f"|LocalFS| '{local_file}' already exist"
+            error_msg = f"|LocalFS| File {path_repr(local_file)} already exists"
             if not replace:
                 raise FileExistsError(error_msg)
 
-            log.warning(f"{error_msg}, replacing")
+            log.warning(f"{error_msg}, overwriting")
             local_file.unlink()
 
         log.debug(f"|Local FS| Creating target directory '{local_file.parent}'")
@@ -189,31 +208,27 @@ class FileConnection(BaseFileConnection):
 
     def remove_file(self, remote_file_path: os.PathLike | str) -> None:
         log.debug(f"|{self.__class__.__name__}| Removing file '{remote_file_path}'")
-        remote_file = RemotePath(remote_file_path)
 
-        if not self.path_exists(remote_file):
-            log.warning(f"|{self.__class__.__name__}| File '{remote_file}' does not exist, nothing to remove")
+        if not self.path_exists(remote_file_path):
+            log.debug(f"|{self.__class__.__name__}| File '{remote_file_path}' does not exist, nothing to remove")
             return
 
-        if not self.is_file(remote_file):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
+        file = self.get_file(remote_file_path)
+        log.debug(f"|{self.__class__.__name__}| File to remove: {path_repr(file)}")
 
-        self._remove_file(remote_file)
-        log.info(f"|{self.__class__.__name__}| Successfully removed file '{remote_file}'")
+        self._remove_file(file)
+        log.info(f"|{self.__class__.__name__}| Successfully removed file '{file}'")
 
     def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
         log.debug(f"|{self.__class__.__name__}| Creating directory '{path}'")
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
-            if not self.is_dir(remote_directory):
-                raise NotADirectoryError(f"|{self.__class__.__name__}| '{remote_directory}' is not a directory")
-
-            return RemoteDirectory(path=remote_directory)
+            return self.get_directory(remote_directory)
 
         self._mkdir(remote_directory)
         log.info(f"|{self.__class__.__name__}| Successfully created directory '{remote_directory}'")
-        return RemoteDirectory(path=remote_directory)
+        return self.get_directory(remote_directory)
 
     def upload_file(  # noqa: WPS238
         self,
@@ -228,18 +243,16 @@ class FileConnection(BaseFileConnection):
             raise FileNotFoundError(f"|LocalFS| File '{local_file}' does not exist")
 
         if not local_file.is_file():
-            raise NotAFileError(f"|LocalFS| '{local_file}' is not a file")
+            raise NotAFileError(f"|LocalFS| {path_repr(local_file)} is not a file")
 
         remote_file = RemotePath(remote_file_path)
         if self.path_exists(remote_file):
-            if not self.is_file(remote_file):
-                raise NotAFileError(f"|{self.__class__.__name__}| '{remote_file}' is not a file")
-
-            error_msg = f"|{self.__class__.__name__}| File '{remote_file}' already exists"
+            file = self.get_file(remote_file_path)
+            error_msg = f"|{self.__class__.__name__}| File {path_repr(file)} already exists"
             if not replace:
                 raise FileExistsError(error_msg)
 
-            log.warning(f"{error_msg}, removing")
+            log.warning(f"{error_msg}, overwriting")
             self._remove_file(remote_file)
 
         self.mkdir(remote_file.parent)
@@ -256,20 +269,16 @@ class FileConnection(BaseFileConnection):
     ) -> RemoteFile:
         log.debug(f"|{self.__class__.__name__}| Renaming file '{source_file_path}' to '{target_file_path}'")
 
-        source_file = RemotePath(source_file_path)
-        if not self.is_file(source_file):
-            raise NotAFileError(f"|{self.__class__.__name__}| '{source_file}' is not a file")
-
+        source_file = self.get_file(source_file_path)
         target_file = RemotePath(target_file_path)
-        if self.path_exists(target_file):
-            if not self.is_file(target_file):
-                raise NotAFileError(f"|{self.__class__.__name__}| '{target_file}' is not a file")
 
-            error_msg = f"|{self.__class__.__name__}| File '{target_file}' already exists"
+        if self.path_exists(target_file):
+            file = self.get_file(target_file)
+            error_msg = f"|{self.__class__.__name__}| File {path_repr(file)} already exists"
             if not replace:
                 raise FileExistsError(error_msg)
 
-            log.warning(f"{error_msg}, removing")
+            log.warning(f"{error_msg}, overwriting")
             self._remove_file(target_file)
 
         self.mkdir(target_file.parent)
@@ -280,19 +289,17 @@ class FileConnection(BaseFileConnection):
 
     def listdir(self, path: os.PathLike | str) -> list[RemoteDirectory | RemoteFile]:
         log.debug(f"|{self.__class__.__name__}| Listing directory '{path}'")
-        remote_directory = RemotePath(path)
 
-        if not self.is_dir(path):
-            raise NotADirectoryError(f"|{self.__class__.__name__}| '{remote_directory}' is not a directory")
-
+        remote_directory = self.get_directory(path)
         result = []
+
         for item in self._listdir(remote_directory):
             name = self._get_item_name(item)
+            stat = self._get_item_stat(remote_directory, item)
 
             if self._is_item_dir(remote_directory, item):
-                result.append(RemoteDirectory(path=name))
+                result.append(RemoteDirectory(path=name, stats=stat))
             else:
-                stat = self._get_item_stat(remote_directory, item)
                 result.append(RemoteFile(path=name, stats=stat))
 
         return result
@@ -304,17 +311,15 @@ class FileConnection(BaseFileConnection):
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
         log.debug(f"|{self.__class__.__name__}| Walking through directory '{top}'")
 
-        remote_directory = RemotePath(top)
-        if not self.is_dir(remote_directory):
-            raise NotADirectoryError(f"|{self.__class__.__name__}| '{remote_directory}' is not a directory")
-
-        root = RemoteDirectory(path=remote_directory)
+        root = self.get_directory(top)
         dirs, files = [], []
 
         for item in self._listdir(root):
             name = self._get_item_name(item)
+            stat = self._get_item_stat(root, item)
+
             if self._is_item_dir(root, item):
-                folder = RemoteDirectory(path=root / name)
+                folder = RemoteDirectory(path=root / name, stats=stat)
 
                 if filter and not filter.match(folder):
                     log.debug(
@@ -322,10 +327,9 @@ class FileConnection(BaseFileConnection):
                     )
                 else:
                     log.debug(f"|{self.__class__.__name__}| Directory '{folder}' is matching the filter")
-                    dirs.append(RemoteDirectory(path=name))
+                    dirs.append(RemoteDirectory(path=name, stats=stat))
 
             else:
-                stat = self._get_item_stat(remote_directory, item)
                 file = RemoteFile(path=root / name, stats=stat)
 
                 if filter and not filter.match(file):
@@ -349,18 +353,20 @@ class FileConnection(BaseFileConnection):
 
     def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         description = "RECURSIVELY" if recursive else "NON-recursively"
-        log.debug(f"|{self.__class__.__name__}| Removing directory ({description}) '{path}'")
+        log.debug(f"|{self.__class__.__name__}| {description} removing directory '{path}'")
         remote_directory = RemotePath(path)
 
         if not self.path_exists(remote_directory):
+            log.debug(f"|{self.__class__.__name__}| Directory '{remote_directory}' does not exist, nothing to remove")
             return
 
-        if not self.is_dir(remote_directory):
-            raise NotADirectoryError(f"|{self.__class__.__name__}| '{remote_directory}' is not a directory")
+        directory_info = path_repr(self.get_directory(remote_directory))
+        if self.listdir(remote_directory) and not recursive:
+            raise DirectoryNotEmptyError(
+                f"|{self.__class__.__name__}| Cannot delete non-empty directory {directory_info}",
+            )
 
-        if not recursive and self._listdir(remote_directory):
-            raise DirectoryNotEmptyError(f"Cannot delete non-empty directory '{remote_directory}'")
-
+        log.debug(f"|{self.__class__.__name__}| Directory to remove: {directory_info}")
         if recursive:
             self._rmdir_recursive(remote_directory)
         else:
@@ -371,12 +377,18 @@ class FileConnection(BaseFileConnection):
     def _rmdir_recursive(self, root: RemotePath) -> None:
         for item in self._listdir(root):
             name = self._get_item_name(item)
-            path = root / name
+            stat = self._get_item_stat(root, item)
 
-            if self._is_item_dir(path, item):
+            if self._is_item_dir(root, item):
+                path = RemoteDirectory(path=root / name, stats=stat)
+                log.debug(f"|{self.__class__.__name__}| Directory to remove: {path_repr(path)}")
                 self._rmdir_recursive(path)
+                log.debug(f"|{self.__class__.__name__}| Successfully removed directory '{path}'")
             else:
+                path = RemoteFile(path=root / name, stats=stat)
+                log.debug(f"|{self.__class__.__name__}| File to remove: {path_repr(path)}")
                 self._remove_file(path)
+                log.debug(f"|{self.__class__.__name__}| Successfully removed file '{path}'")
 
         self._rmdir(root)
 
@@ -389,7 +401,7 @@ class FileConnection(BaseFileConnection):
     def _is_item_file(self, top: RemotePath, item) -> bool:
         return self._is_file(top / self._get_item_name(item))
 
-    def _get_item_stat(self, top: RemotePath, item) -> FileStatProtocol:
+    def _get_item_stat(self, top: RemotePath, item) -> PathStatProtocol:
         return self._get_stat(top / self._get_item_name(item))
 
     @classmethod
@@ -432,7 +444,7 @@ class FileConnection(BaseFileConnection):
         """"""
 
     @abstractmethod
-    def _get_stat(self, path: RemotePath) -> FileStatProtocol:
+    def _get_stat(self, path: RemotePath) -> PathStatProtocol:
         """"""
 
     @abstractmethod

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from onetl.base import PathStatProtocol
 from onetl.impl.path_container import PathContainer
 from onetl.impl.remote_path import RemotePath
+from onetl.impl.remote_path_stat import RemotePathStat
 
 
 @dataclass(eq=False, frozen=True)
@@ -12,6 +14,8 @@ class RemoteDirectory(PathContainer[RemotePath]):
     """
     Representation of existing remote directory
     """
+
+    stats: PathStatProtocol = field(default_factory=RemotePathStat)
 
     def __post_init__(self):
         # frozen=True does not allow to change any field in __post_init__, small hack here
@@ -25,6 +29,9 @@ class RemoteDirectory(PathContainer[RemotePath]):
 
     def exists(self) -> bool:
         return True
+
+    def stat(self) -> PathStatProtocol:
+        return self.stats
 
     @property
     def parent(self) -> RemoteDirectory:

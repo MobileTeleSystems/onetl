@@ -7,6 +7,7 @@ class ContainsException(Protocol):
     Protocol for objects containing ``.exception`` attribute
     """
 
+    @property
     def exception(self) -> Exception:
         """
         Exception object with traceback

@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import secrets
 import tempfile
 from datetime import timedelta
@@ -435,7 +436,7 @@ def test_downloader_mode_error(file_connection, source_path, upload_test_files, 
         assert isinstance(remote_file.exception, FileExistsError)
 
         local_file = local_path / remote_file.relative_to(source_path)
-        assert f"Local directory already contains file '{local_file}'" in str(remote_file.exception)
+        assert re.search(rf"File '{local_file}' \(kind='file', .*\) already exists", str(remote_file.exception))
 
         # file size wasn't changed
         assert local_file.stat().st_size != remote_file.stat().st_size
@@ -470,7 +471,7 @@ def test_downloader_mode_ignore(file_connection, source_path, upload_test_files,
         download_result = downloader.run()
 
         for file in local_files:
-            assert f"Local directory already contains file '{file}', skipping" in caplog.text
+            assert re.search(rf"File '{file}' \(kind='file', .*\) already exists, skipping", caplog.text)
 
     assert not download_result.successful
     assert not download_result.failed
@@ -521,7 +522,7 @@ def test_downloader_mode_overwrite(file_connection, source_path, upload_test_fil
         download_result = downloader.run()
 
         for changed_file in local_files:
-            assert f"Local directory already contains file '{changed_file}', overwriting" in caplog.text
+            assert re.search(rf"File '{changed_file}' \(kind='file', .*\) already exists, overwriting", caplog.text)
 
     assert not download_result.failed
     assert not download_result.missing
@@ -657,7 +658,7 @@ def test_downloader_source_path_not_a_directory(request, file_connection, tmp_pa
         local_path=local_path,
     )
 
-    with pytest.raises(NotADirectoryError, match=f"'{source_path}' is not a directory"):
+    with pytest.raises(NotADirectoryError, match=rf"'{source_path}' \(kind='file', .*\) is not a directory"):
         downloader.run()
 
     file_connection.remove_file(source_path)
@@ -679,7 +680,7 @@ def test_downloader_local_path_not_a_directory(request, file_connection):
             local_path=file.name,
         )
 
-        with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
+        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
             downloader.run()
 
 
@@ -701,7 +702,7 @@ def test_downloader_run_input_is_not_file(request, file_connection, tmp_path_fac
         local_path=local_path,
     )
 
-    with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
+    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
         downloader.run([not_a_file])
 
 
@@ -848,7 +849,7 @@ def test_downloader_file_hwm_strategy(
         downloader.run()
 
 
-@pytest.mark.parametrize(  # noqa: WPS317
+@pytest.mark.parametrize(
     "temp_path",
     [
         None,

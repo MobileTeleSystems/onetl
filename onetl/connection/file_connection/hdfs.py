@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import stat
 from dataclasses import dataclass
 from logging import getLogger
 
@@ -9,7 +10,7 @@ from hdfs.ext.kerberos import KerberosClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
-from onetl.impl import LocalPath, RemoteFileStat, RemotePath
+from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
 
@@ -106,9 +107,6 @@ class HDFS(FileConnection):
         # Underlying client does not support closing
         pass  # noqa: WPS420
 
-    def _rmdir_recursive(self, root: RemotePath) -> None:
-        self.client.delete(os.fspath(root), recursive=True)
-
     def _rmdir(self, path: RemotePath) -> None:
         self.client.delete(os.fspath(path), recursive=False)
 
@@ -136,9 +134,45 @@ class HDFS(FileConnection):
     def _is_dir(self, path: RemotePath) -> bool:
         return self.client.status(os.fspath(path))["type"] == "DIRECTORY"
 
-    def _get_stat(self, path: RemotePath) -> RemoteFileStat:
-        stat = self.client.status(os.fspath(path))
-        return RemoteFileStat(st_size=stat["length"], st_mtime=stat["modificationTime"])
+    def _get_stat(self, path: RemotePath) -> RemotePathStat:
+        status = self.client.status(os.fspath(path))
+
+        # Result example
+        # {
+        #   "accessTime"      : 1320171722771,
+        #   "blockSize"       : 33554432,
+        #   "group"           : "supergroup",
+        #   "length"          : 24930,
+        #   "modificationTime": 1320171722771,
+        #   "owner"           : "webuser",
+        #   "pathSuffix"      : "a.patch",
+        #   "permission"      : "644",
+        #   "replication"     : 1,
+        #   "type"            : "FILE"
+        # }
+        # or
+        # {
+        #   "accessTime"      : 0,
+        #   "blockSize"       : 0,
+        #   "group"           : "supergroup",
+        #   "length"          : 0,
+        #   "modificationTime": 1320895981256,
+        #   "owner"           : "szetszwo",
+        #   "pathSuffix"      : "bar",
+        #   "permission"      : "711",
+        #   "replication"     : 0,
+        #   "type"            : "DIRECTORY"
+        # }
+
+        path_type = stat.S_IFDIR if status["type"] == "DIRECTORY" else stat.S_IFREG
+
+        return RemotePathStat(
+            st_size=status["length"],
+            st_mtime=status["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
+            st_uid=status["owner"],
+            st_gid=status["group"],
+            st_mode=int(status["permission"], 8) | path_type,
+        )
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.read(os.fspath(path), encoding=encoding, **kwargs) as file:

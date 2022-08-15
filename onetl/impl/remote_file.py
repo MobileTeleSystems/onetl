@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from onetl.base import FileStatProtocol
+from onetl.base import PathStatProtocol
 from onetl.impl.path_container import PathContainer
 from onetl.impl.remote_directory import RemoteDirectory
 from onetl.impl.remote_path import RemotePath
@@ -15,7 +15,7 @@ class RemoteFile(PathContainer[RemotePath]):
     Representation of existing remote file with stat
     """
 
-    stats: FileStatProtocol
+    stats: PathStatProtocol
 
     def __post_init__(self):
         # frozen=True does not allow to change any field in __post_init__, small hack here
@@ -33,7 +33,7 @@ class RemoteFile(PathContainer[RemotePath]):
     def exists(self) -> bool:
         return True
 
-    def stat(self) -> FileStatProtocol:
+    def stat(self) -> PathStatProtocol:
         return self.stats
 
     @property

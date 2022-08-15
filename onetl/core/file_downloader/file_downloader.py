@@ -16,7 +16,6 @@ from onetl.connection import FileConnection
 from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
-from onetl.exception import NotAFileError
 from onetl.impl import (
     FailedRemoteFile,
     FileWriteMode,
@@ -24,6 +23,7 @@ from onetl.impl import (
     LocalPath,
     RemoteFile,
     RemotePath,
+    path_repr,
 )
 from onetl.log import entity_boundary_log, log_with_indent
 from onetl.strategy import BaseStrategy, StrategyManager
@@ -548,20 +548,19 @@ class FileDownloader:
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{remote_file}' does not match source_path '{self._source_path}'")
 
-            if self.connection.path_exists(remote_file) and not self.connection.is_file(remote_file):
-                raise NotAFileError(f"|{self.connection.__class__.__name__}| '{remote_file}' is not a file")
+            if self.connection.path_exists(remote_file):
+                self.connection.get_file(remote_file)
 
             result.add((remote_file, local_file, tmp_file))
 
         return result
 
     def _check_source_path(self):
-        if not self.connection.is_dir(self._source_path):
-            raise NotADirectoryError(f"|{self.connection.__class__.__name__}| '{self._source_path}' is not a directory")
+        self.connection.get_directory(self._source_path)
 
     def _check_local_path(self):
         if self._local_path.exists() and not self._local_path.is_dir():
-            raise NotADirectoryError(f"|Local FS| '{self._local_path}' is not a directory")
+            raise NotADirectoryError(f"|Local FS| {path_repr(self._local_path)} is not a directory")
 
         self._local_path.mkdir(exist_ok=True, parents=True)
 
@@ -619,17 +618,16 @@ class FileDownloader:
 
             replace = False
             if local_file.exists():
-                error_message = f"Local directory already contains file '{local_file}'"
+                error_message = f"|LocalFS| File {path_repr(local_file)} already exists"
                 if self._options.mode == FileWriteMode.ERROR:
                     raise FileExistsError(error_message)
 
                 if self._options.mode == FileWriteMode.IGNORE:
-                    log.warning(f"|LocalFS| {error_message}, skipping")
+                    log.warning(f"{error_message}, skipping")
                     result.skipped.add(remote_file)
                     return
 
                 replace = True
-                log.warning(f"|LocalFS| {error_message}, overwriting")
 
             if tmp_file:
                 # Files are loaded to temporary directory before moving them to target dir.
@@ -640,6 +638,7 @@ class FileDownloader:
                 # remove existing file only after new file is downloaded
                 # to avoid issues then there is no free space to download new file, but existing one is already gone
                 if replace and local_file.exists():
+                    log.warning(f"{error_message}, overwriting")
                     local_file.unlink()
 
                 local_file.parent.mkdir(parents=True, exist_ok=True)
