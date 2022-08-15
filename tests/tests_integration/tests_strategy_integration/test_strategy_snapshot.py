@@ -226,7 +226,7 @@ def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
 @pytest.mark.parametrize(
     "span_gap, span_length",
     [
-        (50, 100),  # step < gap < span_length
+        (50, 60),  # step < gap < span_length
         (50, 40),  # step < gap > span_length
         (5, 20),  # gap < step < span_length
         (20, 5),  # span_length < step < gap

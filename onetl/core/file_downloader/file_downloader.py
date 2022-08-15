@@ -7,7 +7,7 @@ from enum import Enum
 from logging import getLogger
 from typing import Iterable, Optional, Tuple
 
-from etl_entities import FileListHWM, RemoteFolder
+from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
@@ -28,7 +28,7 @@ from onetl.impl import (
 from onetl.log import entity_boundary_log, log_with_indent
 from onetl.strategy import BaseStrategy, StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
-from onetl.strategy.hwm_store import HWMStoreManager
+from onetl.strategy.hwm_store import BaseHWMStore, HWMClassRegistry, HWMStoreManager
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)
@@ -186,7 +186,8 @@ class FileDownloader:
     options: InitVar[Options | dict | None] = field(default=None)
     _options: Options = field(init=False)
 
-    hwm_type: str | None = None
+    hwm_type: InitVar[type[FileHWM] | str | None] = field(default=None)
+    _hwm_type: type[FileHWM] | None = field(init=False)
 
     def __post_init__(
         self,
@@ -194,11 +195,22 @@ class FileDownloader:
         source_path: os.PathLike | str | None,
         temp_path: str | os.PathLike,
         options: FileConnection.Options | dict | None,
+        hwm_type: type[FileHWM] | str | None,
     ):
         self._local_path = LocalPath(local_path).resolve()
         self._temp_path = LocalPath(temp_path).resolve() if temp_path else None
         self._source_path = RemotePath(source_path) if source_path else None
         self._options = self.Options.parse(options)
+        self._hwm_type = None
+
+        if hwm_type:
+            if not self._source_path:
+                raise ValueError(
+                    f"|{self.__class__.__name__}| If `hwm_type` is passed, `source_path` must be specified",
+                )
+
+            self._hwm_type = HWMClassRegistry.get(hwm_type) if isinstance(hwm_type, str) else hwm_type
+            self._check_hwm_type(self._hwm_type)
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
@@ -337,7 +349,7 @@ class FileDownloader:
                 shutil.rmtree(self._local_path)
             self._local_path.mkdir()
 
-        if self.hwm_type is not None:
+        if self._hwm_type is not None:
             result = self._hwm_processing(to_download)
         else:
             result = self._download_files(to_download)
@@ -433,7 +445,7 @@ class FileDownloader:
     def _check_strategy(self):
         strategy: BaseStrategy = StrategyManager.get_current()
 
-        if self.hwm_type:
+        if self._hwm_type:
             if not isinstance(strategy, HWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in snapshot strategy.")
             elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
@@ -443,30 +455,26 @@ class FileDownloader:
             if isinstance(strategy, BatchHWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")
 
-            if not self._source_path:
-                raise ValueError(
-                    f"|{self.__class__.__name__}| If `hwm_type` is passed, `source_path` must be specified",
-                )
-
     def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
         remote_file_folder = RemoteFolder(name=self._source_path, instance=self.connection.instance_url)
-        file_hwm = FileListHWM(source=remote_file_folder)
-        file_hwm_name = file_hwm.qualified_name
-        current_hwm_store = HWMStoreManager.get_current()
-        file_hwm_stored = current_hwm_store.get(file_hwm_name)
+        file_hwm_empty = self._hwm_type(source=remote_file_folder)
+        file_hwm_name = file_hwm_empty.qualified_name
 
-        if file_hwm_stored:
-            # Exclude files already downloaded before
-            already_downloaded = abs(file_hwm_stored)
-            to_download = OrderedSet(
-                filter(lambda path: path[0] not in already_downloaded, to_download),
-            )
+        current_hwm_store = HWMStoreManager.get_current()
+        file_hwm = current_hwm_store.get(file_hwm_name) or file_hwm_empty
+
+        # to avoid issues when HWM store returned HWM with unexpected type
+        self._check_hwm_type(file_hwm.__class__)
+
+        # Exclude files filtered by HWM
+        to_download = OrderedSet(
+            filter(lambda path: not file_hwm.covers(path[0]), to_download),
+        )
 
         return self._download_files(
             to_download,
-            current_hwm_store=current_hwm_store,
-            file_hwm_name=file_hwm_name,
-            remote_file_folder=remote_file_folder,
+            file_hwm=file_hwm,
+            hwm_store=current_hwm_store,
         )
 
     def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
@@ -568,9 +576,8 @@ class FileDownloader:
     def _download_files(
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
-        current_hwm_store: HWMStoreManager | None = None,
-        file_hwm_name: str | None = None,
-        remote_file_folder: RemoteFolder | None = None,
+        file_hwm: FileHWM | None = None,
+        hwm_store: BaseHWMStore | None = None,
     ) -> DownloadResult:
         total_files = len(to_download)
         files = FileSet(item[0] for item in to_download)
@@ -592,22 +599,20 @@ class FileDownloader:
                 local_file,
                 tmp_file,
                 result,
-                file_hwm_name=file_hwm_name,
-                current_hwm_store=current_hwm_store,
-                remote_file_folder=remote_file_folder,
+                file_hwm=file_hwm,
+                hwm_store=hwm_store,
             )
 
         return result
 
-    def _download_file(  # noqa: WPS231
+    def _download_file(  # noqa: WPS231, WPS213
         self,
         source_file: RemotePath,
         local_file: LocalPath,
         tmp_file: LocalPath | None,
         result: DownloadResult,
-        current_hwm_store: HWMStoreManager | None = None,
-        file_hwm_name: str | None = None,
-        remote_file_folder: RemoteFolder | None = None,
+        file_hwm: FileHWM | None = None,
+        hwm_store: BaseHWMStore | None = None,
     ) -> None:
         if not self.connection.path_exists(source_file):
             log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
@@ -648,14 +653,13 @@ class FileDownloader:
                 # Direct download
                 self.connection.download_file(remote_file, local_file, replace=replace)
 
+            if file_hwm is not None:
+                file_hwm.update(remote_file)
+                hwm_store.save(file_hwm)
+
             # Delete Remote
             if self._options.delete_source:
                 self.connection.remove_file(remote_file)
-
-            if current_hwm_store:
-                file_hwm_stored = current_hwm_store.get(file_hwm_name) or FileListHWM(source=remote_file_folder)
-                file_hwm_stored += local_file.relative_to(self._local_path)
-                current_hwm_store.save(file_hwm_stored)
 
             result.successful.add(local_file)
 
@@ -678,3 +682,9 @@ class FileDownloader:
         log.info(f"|{self.__class__.__name__}| Download result:")
         log_with_indent(str(result))
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+
+    def _check_hwm_type(self, hwm_type: type[HWM]) -> None:
+        if not issubclass(hwm_type, FileHWM):
+            raise ValueError(
+                f"`hwm_type` class should be a inherited from FileHWM, got {hwm_type.__name__}",
+            )

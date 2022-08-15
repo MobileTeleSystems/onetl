@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar, Iterator, Optional
 
-from etl_entities import HWM, DateHWM, DateTimeHWM, IntHWM
+from etl_entities import HWM, DateHWM, DateTimeHWM, FileListHWM, IntHWM
 from pydantic import StrictInt
 
 
@@ -33,6 +33,7 @@ class HWMClassRegistry:
         "long": IntHWM,
         "date": DateHWM,
         "timestamp": DateTimeHWM,
+        "file_list": FileListHWM,
     }
 
     @classmethod
