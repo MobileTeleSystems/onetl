@@ -179,7 +179,7 @@ class DBWriter:
             log_with_indent("options:")
             for option, value in self.options.dict(exclude_none=True).items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent(f"    {option} = {value_wrapped}")
+                log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:
             log_with_indent("options = None")
         log.info("")
@@ -194,7 +194,7 @@ class DBWriter:
             df.printSchema()
 
         for line in schema_tree.getvalue().splitlines():
-            log_with_indent(f"    {line}")
+            log_with_indent(line, indent=4)
 
     def _handle_table(self, table: str) -> Table:
         return Table(name=table, instance=self.connection.instance_url)
