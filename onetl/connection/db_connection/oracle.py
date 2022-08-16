@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.log import LOG_INDENT, log_with_indent
+from onetl.log import BASE_LOG_INDENT, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -260,7 +260,7 @@ class Oracle(JDBCConnection):
             level_name = logging.getLevelName(error.level)
             prefix = f"[{level_name}] Line {error.line}, position {error.position}:"
             text = "\n" + messages.strip()
-            error_lines.append(prefix + indent(text, LOG_INDENT))
+            error_lines.append(prefix + indent(text, " " * BASE_LOG_INDENT))
 
         return "\n".join(error_lines)
 

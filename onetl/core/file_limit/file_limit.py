@@ -52,10 +52,9 @@ class FileLimit(BaseFileLimit, BaseModel):
     def is_reached(self) -> bool:
         return self._counter >= self.count_limit
 
-    def log_options(self):
-        log_with_indent("limit:")
+    def log_options(self, indent: int = 0):
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log_with_indent(f"    {key} = {value!r}")
+            log_with_indent(f"{key} = {value!r}", indent=indent)
 
     def _increase_counter(self):
         self._counter += 1  # noqa: WPS601

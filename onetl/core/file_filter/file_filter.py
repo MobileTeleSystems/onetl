@@ -134,7 +134,6 @@ class FileFilter(BaseFileFilter, BaseModel):
 
         return True
 
-    def log_options(self):
-        log_with_indent("filter:")
+    def log_options(self, indent: int = 0):
         for key, value in self.__dict__.items():  # noqa: WPS528
-            log_with_indent(f"    {key} = {value!r}")
+            log_with_indent(f"{key} = {value!r}", indent=indent)

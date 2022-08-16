@@ -335,7 +335,7 @@ class FileUploader:
         log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent(f"    {option} = {value_wrapped}")
+            log_with_indent(f"{option} = {value_wrapped}", indent=4)
         log.info("")
 
         if self._options.delete_local:

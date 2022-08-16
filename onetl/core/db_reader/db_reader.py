@@ -279,7 +279,7 @@ class DBReader:
             log_with_indent("options:")
             for option, value in self.options.dict(exclude_none=True).items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent(f"    {option} = {value_wrapped}")
+                log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:
             log_with_indent("options = None")
         log.info("")

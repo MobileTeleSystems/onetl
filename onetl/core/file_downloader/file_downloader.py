@@ -483,16 +483,18 @@ class FileDownloader:
 
         if self.filter is not None:
             log.info("")
-            self.filter.log_options()
+            log_with_indent("filter:")
+            self.filter.log_options(indent=4)
         else:
             log_with_indent("filter = None")
 
-        self.limit.log_options()
+        log_with_indent("limit:")
+        self.limit.log_options(indent=4)
 
         log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent(f"    {option} = {value_wrapped}")
+            log_with_indent(f"{option} = {value_wrapped}", indent=4)
         log.info("")
 
         if self._options.delete_source:
