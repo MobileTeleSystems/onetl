@@ -1,5 +1,8 @@
 import os
+import stat
 import textwrap
+from datetime import datetime
+from time import time
 
 import pytest
 
@@ -9,9 +12,9 @@ from onetl.impl import (
     LocalPath,
     RemoteDirectory,
     RemoteFile,
-    RemoteFileStat,
     RemotePath,
-    humanize_path,
+    RemotePathStat,
+    path_repr,
 )
 
 
@@ -46,7 +49,7 @@ def test_remote_directory(path):
     ],
 )
 def test_remote_file(path):
-    file_stat = RemoteFileStat(st_size=10, st_mtime=50)
+    file_stat = RemotePathStat(st_size=10, st_mtime=50)
     remote_file = RemoteFile(path, stats=file_stat)
 
     assert remote_file.path == RemotePath(path)
@@ -96,7 +99,7 @@ def test_failed_local_file(path):
 )
 def test_failed_remote_file(path):
     exception = FileNotFoundError("abc")
-    file_stat = RemoteFileStat(st_size=10, st_mtime=50)
+    file_stat = RemotePathStat(st_size=10, st_mtime=50)
     remote_file = FailedRemoteFile(path=path, stats=file_stat, exception=exception)
 
     assert remote_file.path == RemotePath(path)
@@ -117,21 +120,21 @@ def test_failed_remote_file(path):
 
 
 def test_file_stat():
-    file_stat = RemoteFileStat(st_size=10, st_mtime=50)
+    file_stat = RemotePathStat(st_size=10, st_mtime=50)
     assert file_stat.st_size == 10
     assert file_stat.st_mtime == 50
 
     assert file_stat == file_stat  # noqa: WPS312 NOSONAR
-    assert RemoteFileStat(st_size=10, st_mtime=50) == RemoteFileStat(st_size=10, st_mtime=50)
+    assert RemotePathStat(st_size=10, st_mtime=50) == RemotePathStat(st_size=10, st_mtime=50)
 
-    assert RemoteFileStat(st_size=10, st_mtime=50) != RemoteFileStat(st_size=20, st_mtime=50)
-    assert RemoteFileStat(st_size=20, st_mtime=50) != RemoteFileStat(st_size=10, st_mtime=50)
+    assert RemotePathStat(st_size=10, st_mtime=50) != RemotePathStat(st_size=20, st_mtime=50)
+    assert RemotePathStat(st_size=20, st_mtime=50) != RemotePathStat(st_size=10, st_mtime=50)
 
-    assert RemoteFileStat(st_size=10, st_mtime=50) != RemoteFileStat(st_size=10, st_mtime=60)
-    assert RemoteFileStat(st_size=10, st_mtime=60) != RemoteFileStat(st_size=10, st_mtime=50)
+    assert RemotePathStat(st_size=10, st_mtime=50) != RemotePathStat(st_size=10, st_mtime=60)
+    assert RemotePathStat(st_size=10, st_mtime=60) != RemotePathStat(st_size=10, st_mtime=50)
 
-    assert RemoteFileStat(st_size=10, st_mtime=50) != RemoteFileStat(st_size=20, st_mtime=60)
-    assert RemoteFileStat(st_size=20, st_mtime=60) != RemoteFileStat(st_size=15, st_mtime=50)
+    assert RemotePathStat(st_size=10, st_mtime=50) != RemotePathStat(st_size=20, st_mtime=60)
+    assert RemotePathStat(st_size=20, st_mtime=60) != RemotePathStat(st_size=15, st_mtime=50)
 
 
 @pytest.mark.parametrize(
@@ -139,12 +142,12 @@ def test_file_stat():
     [
         (RemotePath("a/b/c"), RemoteDirectory(path="a/b/c")),
         (LocalPath("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
-        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
+        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemotePathStat(st_size=0, st_mtime=0))),
         (
             RemotePath("a/b/c"),
             FailedRemoteFile(
                 path="a/b/c",
-                stats=RemoteFileStat(st_size=0, st_mtime=0),
+                stats=RemotePathStat(st_size=0, st_mtime=0),
                 exception=FileNotFoundError("abc"),
             ),
         ),
@@ -186,12 +189,12 @@ def test_path_compat(item1, item2):
     [
         (RemotePath("a/b/c"), RemoteDirectory(path="a/b/c")),
         (LocalPath("a/b/c"), FailedLocalFile(path="a/b/c", exception=FileNotFoundError("abc"))),
-        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=0, st_mtime=0))),
+        (RemotePath("a/b/c"), RemoteFile(path="a/b/c", stats=RemotePathStat(st_size=0, st_mtime=0))),
         (
             RemotePath("a/b/c"),
             FailedRemoteFile(
                 path="a/b/c",
-                stats=RemoteFileStat(st_size=0, st_mtime=0),
+                stats=RemotePathStat(st_size=0, st_mtime=0),
                 exception=FileNotFoundError("abc"),
             ),
         ),
@@ -237,8 +240,8 @@ def test_remote_file_eq():
     path1 = "a/b/c"
     path2 = "a/b/c/d"
 
-    stats1 = RemoteFileStat(st_size=0, st_mtime=0)
-    stats2 = RemoteFileStat(st_size=1, st_mtime=0)
+    stats1 = RemotePathStat(st_size=0, st_mtime=0)
+    stats2 = RemotePathStat(st_size=1, st_mtime=0)
 
     assert RemoteFile(path1, stats1) == RemoteFile(path1, stats1)
     assert RemoteFile(path1, stats1) == RemoteFile(path1 + "/", stats1)
@@ -257,8 +260,8 @@ def test_failed_remote_file_eq():
     exception1 = FileNotFoundError("abc")
     exception2 = FileNotFoundError("cde")
 
-    stats1 = RemoteFileStat(st_size=0, st_mtime=0)
-    stats2 = RemoteFileStat(st_size=1, st_mtime=0)
+    stats1 = RemotePathStat(st_size=0, st_mtime=0)
+    stats2 = RemotePathStat(st_size=1, st_mtime=0)
 
     assert FailedRemoteFile(path1, stats1, exception1) == FailedRemoteFile(path1, stats1, exception1)
     assert FailedRemoteFile(path1, stats1, exception1) == FailedRemoteFile(path1 + "/", stats1, exception1)
@@ -273,33 +276,191 @@ def test_failed_remote_file_eq():
     assert FailedRemoteFile(path1, stats1, exception2) != FailedRemoteFile(path1, stats1, exception1)
 
 
-def test_humanize_path():
-    assert humanize_path("a/b/c") == "'a/b/c'"
-    assert humanize_path("/a/b/c/") == "'/a/b/c'"
-    assert humanize_path(RemotePath("a/b/c")) == "'a/b/c'"
-    assert humanize_path(RemoteDirectory("a/b/c")) == "'a/b/c' (directory)"
-    assert humanize_path(LocalPath("a/b/c")) == "'a/b/c' (missing)"
-    assert humanize_path(RemoteFile("a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))) == "'a/b/c' (10 Bytes)"
+@pytest.mark.parametrize(
+    "kwargs, kind",
+    [
+        ({}, None),
+        ({"st_mode": stat.S_IFSOCK}, "socket"),
+        ({"st_mode": stat.S_IFLNK}, "link"),
+        ({"st_mode": stat.S_IFREG}, "file"),
+        ({"st_mode": stat.S_IFBLK}, "block"),
+        ({"st_mode": stat.S_IFDIR}, "directory"),
+        ({"st_mode": stat.S_IFCHR}, "char"),
+        ({"st_mode": stat.S_IFIFO}, "fifo"),
+    ],
+)
+def test_path_repr_stats_with_kind(kwargs, kind):
+    options = {"with_size": False, "with_mode": False, "with_mtime": False, "with_owner": False}
 
-    failed_file1 = FailedRemoteFile(
-        path="a/b/c",
-        stats=RemoteFileStat(st_size=55 * 1024, st_mtime=0),
-        exception=FileNotFoundError("abc"),
-    )
-    failed_file1_str = """
-        'a/b/c' (56.3 kB)
-            FileNotFoundError('abc')
-    """
-    assert humanize_path(failed_file1).strip() == textwrap.dedent(failed_file1_str).strip()
+    remote_file = RemoteFile("a/b/c", stats=RemotePathStat(**kwargs))
+    remote_directory = RemoteDirectory("a/b/c", stats=RemotePathStat(**kwargs))
+    local_file = LocalPath("a/b/c")
 
-    failed_file2 = FailedRemoteFile(
-        path="a/b/c",
-        stats=RemoteFileStat(st_size=55 * 1024, st_mtime=0),
-        exception=FileExistsError("cde\ndef"),
-    )
-    failed_file2_str = """
-        'a/b/c' (56.3 kB)
-            FileExistsError('cde
-            def')
-    """
-    assert humanize_path(failed_file2).strip() == textwrap.dedent(failed_file2_str).strip()
+    assert path_repr(remote_file, with_kind=True, **options) == f"'a/b/c' (kind='{kind or 'file'}')"
+    assert path_repr(remote_directory, with_kind=True, **options) == f"'a/b/c' (kind='{kind or 'directory'}')"
+    assert path_repr(local_file, with_kind=True, **options) == "'a/b/c' (kind='missing')"
+
+    assert path_repr(remote_file, with_kind=False, **options) == "'a/b/c'"
+    assert path_repr(remote_directory, with_kind=False, **options) == "'a/b/c'"
+    assert path_repr(local_file, with_kind=False, **options) == "'a/b/c'"
+
+    # cannot detect kind if input is just str or PurePath
+    assert path_repr("a/b/c", with_kind=True, **options) == "'a/b/c'"
+    assert path_repr("/a/b/c/", with_kind=True, **options) == "'/a/b/c'"
+    assert path_repr(RemotePath("a/b/c"), with_kind=True, **options) == "'a/b/c'"
+
+    assert path_repr("a/b/c", with_kind=False, **options) == "'a/b/c'"
+    assert path_repr("/a/b/c/", with_kind=False, **options) == "'/a/b/c'"
+    assert path_repr(RemotePath("a/b/c"), with_kind=False, **options) == "'a/b/c'"
+
+
+@pytest.mark.parametrize(
+    "st_size, details",
+    [
+        (None, ""),
+        (0, ", size='0 Bytes'"),
+        (10, ", size='10 Bytes'"),
+    ],
+)
+def test_path_repr_stats_with_size(st_size, details):
+    options = {"with_mode": False, "with_mtime": False, "with_owner": False}
+
+    file = RemoteFile("a/b/c", stats=RemotePathStat(st_size=st_size))
+    assert path_repr(file, with_size=False, **options) == "'a/b/c' (kind='file')"
+    assert path_repr(file, with_size=True, **options) == f"'a/b/c' (kind='file'{details})"
+
+    # even if directory stats contains size info, it will not be printed
+    directory = RemoteDirectory("a/b/c", stats=RemotePathStat(st_size=st_size))
+    assert path_repr(directory, with_size=False, **options) == "'a/b/c' (kind='directory')"
+    assert path_repr(directory, with_size=True, **options) == "'a/b/c' (kind='directory')"
+
+
+@pytest.mark.parametrize(
+    "path_class, kind",
+    [
+        (RemoteFile, "file"),
+        (RemoteDirectory, "directory"),
+    ],
+)
+def test_path_repr_stats_with_mtime(path_class, kind):
+    current_timestamp = time()
+    current_datetime = datetime.fromtimestamp(current_timestamp).isoformat()
+    options = {"with_size": False, "with_mode": False, "with_owner": False}
+
+    file1 = path_class("a/b/c", stats=RemotePathStat(st_mtime=current_timestamp))
+    file2 = path_class("a/b/c", stats=RemotePathStat())
+
+    assert path_repr(file1, with_mtime=True, **options) == f"'a/b/c' (kind='{kind}', mtime='{current_datetime}')"
+    assert path_repr(file1, with_mtime=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+    # no mtime - nothing to show
+    assert path_repr(file2, with_mtime=True, **options) == f"'a/b/c' (kind='{kind}')"
+    assert path_repr(file2, with_mtime=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+
+@pytest.mark.parametrize(
+    "mode, mode_str",
+    [
+        (0o777, "rwxrwxrwx"),
+        (0o666, "rw-rw-rw-"),
+        (0o644, "rw-r--r--"),
+        (0o400, "r--------"),
+        (0o200, "-w-------"),
+        (0o100, "--x------"),
+        (0o40, "---r-----"),
+        (0o20, "----w----"),
+        (0o10, "-----x---"),
+        (0o4, "------r--"),
+        (0o2, "-------w-"),
+        (0o1, "--------x"),
+        (0, "---------"),
+    ],
+)
+@pytest.mark.parametrize(
+    "path_class, kind",
+    [
+        (RemoteFile, "file"),
+        (RemoteDirectory, "directory"),
+    ],
+)
+def test_path_repr_stats_with_mode(path_class, kind, mode, mode_str):
+    file1 = path_class("a/b/c", stats=RemotePathStat(st_mode=mode))
+    file2 = path_class("a/b/c", stats=RemotePathStat())
+    options = {"with_size": False, "with_mtime": False, "with_owner": False}
+
+    assert path_repr(file1, with_mode=True, **options) == f"'a/b/c' (kind='{kind}', mode='{mode_str}')"
+    assert path_repr(file1, with_mode=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+    # no mode - nothing to show
+    assert path_repr(file2, with_mode=True, **options) == f"'a/b/c' (kind='{kind}')"
+    assert path_repr(file2, with_mode=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+
+@pytest.mark.parametrize(
+    "user, user_str",
+    [
+        (123, ", uid=123"),
+        ("me", ", uid='me'"),
+    ],
+)
+@pytest.mark.parametrize(
+    "group, group_str",
+    [
+        (123, ", gid=123"),
+        ("me", ", gid='me'"),
+    ],
+)
+@pytest.mark.parametrize(
+    "path_class, kind",
+    [
+        (RemoteFile, "file"),
+        (RemoteDirectory, "directory"),
+    ],
+)
+def test_path_repr_stats_with_owner(path_class, kind, user, user_str, group, group_str):
+    file1 = path_class("a/b/c", stats=RemotePathStat(st_uid=user, st_gid=group))
+    file2 = path_class("a/b/c", stats=RemotePathStat())
+    options = {"with_size": False, "with_mode": False, "with_mtime": False}
+
+    assert path_repr(file1, with_owner=True, **options) == f"'a/b/c' (kind='{kind}'{user_str}{group_str})"
+    assert path_repr(file1, with_owner=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+    # not owner - nothing to show
+    assert path_repr(file2, with_owner=True, **options) == f"'a/b/c' (kind='{kind}')"
+    assert path_repr(file2, with_owner=False, **options) == f"'a/b/c' (kind='{kind}')"
+
+
+@pytest.mark.parametrize(
+    "exception, exception_str",
+    [
+        (
+            FileNotFoundError("abc"),
+            textwrap.dedent(
+                """
+                'a/b/c' (kind='file', size='56.3 kB')
+                    FileNotFoundError('abc')
+                """,
+            ).strip(),
+        ),
+        (
+            FileExistsError("cde\ndef"),
+            textwrap.dedent(
+                """
+                'a/b/c' (kind='file', size='56.3 kB')
+                    FileExistsError('cde
+                    def')
+                """,
+            ).strip(),
+        ),
+    ],
+)
+def test_path_repr_with_exception(exception, exception_str):
+    file1 = FailedRemoteFile("a/b/c", stats=RemotePathStat(st_size=55 * 1024, st_mtime=0), exception=exception)
+    file2 = RemoteFile("a/b/c", stats=RemotePathStat(st_size=55 * 1024, st_mtime=0))
+
+    assert path_repr(file1, with_exception=True).strip() == exception_str
+    assert path_repr(file1, with_exception=False).strip() == "'a/b/c' (kind='file', size='56.3 kB')"
+
+    # no exception - nothing to show
+    assert path_repr(file2, with_exception=True).strip() == "'a/b/c' (kind='file', size='56.3 kB')"
+    assert path_repr(file2, with_exception=False).strip() == "'a/b/c' (kind='file', size='56.3 kB')"

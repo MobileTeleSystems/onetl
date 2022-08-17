@@ -12,14 +12,14 @@ from onetl.exception import (
     SkippedFilesError,
     ZeroFileSizeError,
 )
-from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemoteFileStat
+from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePathStat
 
 
 def test_file_result_successful():
     successful = [
-        RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
-        RemoteFile(path="/successful2", stats=RemoteFileStat(st_size=20 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful1", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful1", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/successful2", stats=RemotePathStat(st_size=20 * 1024, st_mtime=50)),
         LocalPath("cannot/detect/size1"),
     ]
 
@@ -36,21 +36,21 @@ def test_file_result_successful():
     assert file_result.successful_size == (10 + 20) * 1024
 
     details = """
-        Successful 3 files (30.7 kB):
-            '/successful1' (10.2 kB)
-            '/successful2' (20.5 kB)
+        Successful 3 files (size='30.7 kB'):
+            '/successful1' (size='10.2 kB')
+            '/successful2' (size='20.5 kB')
             'cannot/detect/size1'
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
     assert textwrap.dedent(details).strip() in str(file_result)
-    assert "Successful: 3 files (30.7 kB)" in file_result.summary
+    assert "Successful: 3 files (size='30.7 kB')" in file_result.summary
 
 
 def test_file_result_raise_if_contains_zero_size():
     successful = [
-        RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
-        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/empty", stats=RemotePathStat(st_size=0, st_mtime=50)),
+        RemoteFile(path="/successful", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50)),
         LocalPath("cannot/detect/size1"),  # missing file does not mean zero size
     ]
 
@@ -72,12 +72,12 @@ def test_file_result_failed():
     failed = [
         FailedRemoteFile(
             path="/failed1",
-            stats=RemoteFileStat(st_size=11 * 1024 * 1024, st_mtime=50),
+            stats=RemotePathStat(st_size=11 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("abc"),
         ),
         FailedRemoteFile(
             path="/failed2",
-            stats=RemoteFileStat(st_size=22 * 1024 * 1024, st_mtime=50),
+            stats=RemotePathStat(st_size=22 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("cde\ndef"),
         ),
         LocalPath("cannot/detect/size2"),
@@ -96,11 +96,11 @@ def test_file_result_failed():
     assert file_result.failed_size == (11 + 22) * 1024 * 1024
 
     details = """
-        Failed 3 files (34.6 MB):
-            '/failed1' (11.5 MB)
+        Failed 3 files (size='34.6 MB'):
+            '/failed1' (size='11.5 MB')
                 FileExistsError('abc')
 
-            '/failed2' (23.1 MB)
+            '/failed2' (size='23.1 MB')
                 FileExistsError('cde
                 def')
 
@@ -109,30 +109,30 @@ def test_file_result_failed():
 
     assert textwrap.dedent(details).strip() in file_result.details
     assert textwrap.dedent(details).strip() in str(file_result)
-    assert "Failed: 3 files (34.6 MB)" in file_result.summary
+    assert "Failed: 3 files (size='34.6 MB')" in file_result.summary
 
 
 def test_file_result_raise_if_failed():
     failed = [
         FailedRemoteFile(
             path="/failed1",
-            stats=RemoteFileStat(st_size=11 * 1024 * 1024, st_mtime=50),
+            stats=RemotePathStat(st_size=11 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("abc"),
         ),
         FailedRemoteFile(
             path="/failed2",
-            stats=RemoteFileStat(st_size=22 * 1024 * 1024, st_mtime=50),
+            stats=RemotePathStat(st_size=22 * 1024 * 1024, st_mtime=50),
             exception=FileExistsError("cde\ndef"),
         ),
         LocalPath("cannot/detect/size2"),
     ]
 
     details = """
-        Failed 3 files (34.6 MB):
-            '/failed1' (11.5 MB)
+        Failed 3 files (size='34.6 MB'):
+            '/failed1' (size='11.5 MB')
                 FileExistsError('abc')
 
-            '/failed2' (23.1 MB)
+            '/failed2' (size='23.1 MB')
                 FileExistsError('cde
                 def')
 
@@ -149,8 +149,8 @@ def test_file_result_raise_if_failed():
 
 def test_file_result_skipped():
     skipped = [
-        RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
-        RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
+        RemoteFile(path="/skipped1", stats=RemotePathStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
+        RemoteFile(path="/skipped1", stats=RemotePathStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
         LocalPath("cannot/detect/size3"),
     ]
 
@@ -167,25 +167,25 @@ def test_file_result_skipped():
     assert file_result.skipped_size == 12 * 1024 * 1024 * 1024
 
     details = """
-        Skipped 2 files (12.9 GB):
-            '/skipped1' (12.9 GB)
+        Skipped 2 files (size='12.9 GB'):
+            '/skipped1' (size='12.9 GB')
             'cannot/detect/size3'
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
     assert textwrap.dedent(details).strip() in str(file_result)
-    assert "Skipped: 2 files (12.9 GB)" in file_result.summary
+    assert "Skipped: 2 files (size='12.9 GB')" in file_result.summary
 
 
 def test_file_result_raise_if_skipped():
     skipped = [
-        RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
+        RemoteFile(path="/skipped1", stats=RemotePathStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50)),
         LocalPath("cannot/detect/size3"),
     ]
 
     details = """
-        Skipped 2 files (12.9 GB):
-            '/skipped1' (12.9 GB)
+        Skipped 2 files (size='12.9 GB'):
+            '/skipped1' (size='12.9 GB')
             'cannot/detect/size3'
     """
 
@@ -219,7 +219,7 @@ def test_file_result_missing():
         Missing 3 files:
             '/missing1'
             '/missing2'
-            'cannot/detect/size4' (missing)
+            'cannot/detect/size4'
     """
 
     assert textwrap.dedent(details).strip() in file_result.details
@@ -238,7 +238,7 @@ def test_file_result_raise_if_missing():
         Missing 3 files:
             '/missing1'
             '/missing2'
-            'cannot/detect/size4' (missing)
+            'cannot/detect/size4'
     """
 
     error_message = re.escape(textwrap.dedent(details).strip())
@@ -284,21 +284,21 @@ def test_file_result_empty():
 
 def test_file_result_raise_if_empty():
     assert not FileResult(
-        successful=[RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50))],
+        successful=[RemoteFile(path="/successful", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50))],
     ).raise_if_empty()
 
     assert not FileResult(
         failed=[
             FailedRemoteFile(
                 path="/failed1",
-                stats=RemoteFileStat(st_size=11 * 1024 * 1024, st_mtime=50),
+                stats=RemotePathStat(st_size=11 * 1024 * 1024, st_mtime=50),
                 exception=FileExistsError("abc"),
             ),
         ],
     ).raise_if_empty()
 
     assert not FileResult(
-        skipped=[RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50))],
+        skipped=[RemoteFile(path="/skipped1", stats=RemotePathStat(st_size=12 * 1024 * 1024 * 1024, st_mtime=50))],
     ).raise_if_empty()
 
     with pytest.raises(EmptyFilesError, match="There are no files in the result"):
@@ -311,17 +311,17 @@ def test_file_result_raise_if_empty():
 def test_file_result_total():
     file_result = FileResult(
         successful={
-            RemoteFile(path="/successful1", stats=RemoteFileStat(st_size=1024 * 1024 * 1024, st_mtime=50)),
+            RemoteFile(path="/successful1", stats=RemotePathStat(st_size=1024 * 1024 * 1024, st_mtime=50)),
         },
         failed={
             FailedRemoteFile(
                 path="/failed1",
-                stats=RemoteFileStat(st_size=2 * 1024 * 1024 * 1024, st_mtime=50),
+                stats=RemotePathStat(st_size=2 * 1024 * 1024 * 1024, st_mtime=50),
                 exception=FileExistsError("abc"),
             ),
         },
         skipped={
-            RemoteFile(path="/skipped1", stats=RemoteFileStat(st_size=3 * 1024 * 1024 * 1024, st_mtime=50)),
+            RemoteFile(path="/skipped1", stats=RemotePathStat(st_size=3 * 1024 * 1024 * 1024, st_mtime=50)),
         },
         missing={PurePath("/missing1")},
     )
@@ -330,27 +330,27 @@ def test_file_result_total():
     assert file_result.total_size == 6 * 1024 * 1024 * 1024
 
     summary = """
-        Total: 4 files (6.4 GB)
-        Successful: 1 file (1.1 GB)
-        Failed: 1 file (2.1 GB)
-        Skipped: 1 file (3.2 GB)
+        Total: 4 files (size='6.4 GB')
+        Successful: 1 file (size='1.1 GB')
+        Failed: 1 file (size='2.1 GB')
+        Skipped: 1 file (size='3.2 GB')
         Missing: 1 file
     """
 
     assert textwrap.dedent(summary).strip() == file_result.summary
 
     details = """
-        Total: 4 files (6.4 GB)
+        Total: 4 files (size='6.4 GB')
 
-        Successful 1 file (1.1 GB):
-            '/successful1' (1.1 GB)
+        Successful 1 file (size='1.1 GB'):
+            '/successful1' (size='1.1 GB')
 
-        Failed 1 file (2.1 GB):
-            '/failed1' (2.1 GB)
+        Failed 1 file (size='2.1 GB'):
+            '/failed1' (size='2.1 GB')
                 FileExistsError('abc')
 
-        Skipped 1 file (3.2 GB):
-            '/skipped1' (3.2 GB)
+        Skipped 1 file (size='3.2 GB'):
+            '/skipped1' (size='3.2 GB')
 
         Missing 1 file:
             '/missing1'

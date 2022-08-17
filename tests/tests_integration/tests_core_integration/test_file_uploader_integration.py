@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import secrets
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -256,7 +257,7 @@ def test_uploader_run_mode_error(request, file_connection, test_files, options):
         assert isinstance(local_file.exception, FileExistsError)
 
         remote_file = remote_files[remote_files.index(target_path / local_file.name)]
-        assert f"Target directory already contains file '{remote_file}'" in str(local_file.exception)
+        assert re.search(rf"File '{remote_file}' \(kind='file', .*\) already exists", str(local_file.exception))
 
         # file size wasn't changed
         assert file_connection.get_stat(remote_file).st_size != local_file.stat().st_size
@@ -291,7 +292,7 @@ def test_uploader_run_mode_ignore(request, file_connection, test_files, caplog):
         upload_result = uploader.run(test_files)
 
         for file in remote_files:
-            assert f"Target directory already contains file '{file}', skipping" in caplog.text
+            assert re.search(rf"File '{file}' \(kind='file', .*\) already exists, skipping", caplog.text)
 
     assert not upload_result.successful
     assert not upload_result.missing
@@ -342,7 +343,7 @@ def test_uploader_run_mode_overwrite(request, file_connection, test_files, caplo
         upload_result = uploader.run(test_files)
 
         for target_file in remote_files:
-            assert f"Target directory already contains file '{target_file}', overwriting" in caplog.text
+            assert re.search(rf"File '{target_file}' \(kind='file', .*\) already exists, overwriting", caplog.text)
 
     assert not upload_result.failed
     assert not upload_result.skipped
@@ -428,7 +429,7 @@ def test_uploader_run_local_path_not_a_directory(file_connection):
     with tempfile.NamedTemporaryFile() as file:
         uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
 
-        with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
+        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
             uploader.run()
 
 
@@ -443,7 +444,7 @@ def test_uploader_run_target_path_not_a_directory(request, file_connection, reso
 
     uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=resource_path)
 
-    with pytest.raises(NotADirectoryError, match=f"'{target_path}' is not a directory"):
+    with pytest.raises(NotADirectoryError, match=rf"'{target_path}' \(kind='file', .*\) is not a directory"):
         uploader.run()
 
 
@@ -457,7 +458,7 @@ def test_uploader_run_input_is_not_file(file_connection, test_files):
     )
 
     with tempfile.TemporaryDirectory() as not_a_file:
-        with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
+        with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
             uploader.run([not_a_file])
 
 
@@ -616,7 +617,7 @@ def test_uploader_run_relative_paths_without_local_path(file_connection):
         uploader.run(["some/path/1", "some/path/2"])
 
 
-@pytest.mark.parametrize(  # noqa: WPS317
+@pytest.mark.parametrize(
     "temp_path",
     [
         None,

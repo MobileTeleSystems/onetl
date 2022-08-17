@@ -35,7 +35,7 @@ def test_reader_hive_with_read_options():
 
 @pytest.mark.parametrize(
     "columns",
-    [  # noqa: WPS317
+    [
         [],
         (),
         {},
@@ -91,7 +91,7 @@ def test_reader_valid_columns(columns, real_columns):
 
 @pytest.mark.parametrize(
     "hwm_column",
-    [  # noqa: WPS317
+    [
         "wrong/name",
         "wrong@name",
         "wrong=name",
@@ -145,8 +145,8 @@ def test_reader_invalid_hwm_column(hwm_column):
 @pytest.mark.parametrize(
     "hwm_column, real_hwm_column, real_hwm_expression",
     [
-        ("hwm_column", "hwm_column", None),  # noqa: WPS317
-        (("hwm_column", "expression"), "hwm_column", "expression"),  # noqa: WPS317
+        ("hwm_column", "hwm_column", None),
+        (("hwm_column", "expression"), "hwm_column", "expression"),
         (("hwm_column", "hwm_column"), "hwm_column", "hwm_column"),
     ],
 )
@@ -163,7 +163,7 @@ def test_reader_valid_hwm_column(hwm_column, real_hwm_column, real_hwm_expressio
 
 @pytest.mark.parametrize(
     "columns, hwm_column",
-    [  # noqa: WPS317
+    [
         (["a", "b", "c", "d"], "d"),
         (["a", "b", "c", "d"], "D"),
         (["a", "b", "c", "D"], "d"),
@@ -193,7 +193,7 @@ def test_reader_hwm_column_and_columns_are_not_in_conflict(columns, hwm_column):
 
 @pytest.mark.parametrize(
     "columns, hwm_column",
-    [  # noqa: WPS317
+    [
         (["a", "b", "c", "d"], ("d", "cast")),
         (["a", "b", "c", "d"], ("D", "cast")),
         (["a", "b", "c", "D"], ("d", "cast")),

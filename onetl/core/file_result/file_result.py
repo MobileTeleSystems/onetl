@@ -582,7 +582,7 @@ class FileResult(BaseModel):  # noqa: WPS214
     def _total_summary(self) -> str:
         if self.successful or self.failed or self.missing or self.skipped:
             file_number_str = f"{self.total_count} files" if self.total_count > 1 else "1 file"
-            return f"Total: {file_number_str} ({naturalsize(self.total_size)})"
+            return f"Total: {file_number_str} (size='{naturalsize(self.total_size)}')"
 
         return "No files"
 
@@ -633,14 +633,14 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.missing:
             return "No missing files"
 
-        return "Missing: " + self.missing.summary.replace(" (0 Bytes)", "")
+        return "Missing: " + self.missing.summary.replace(" (size='0 Bytes')", "")
 
     @property
     def _missing_message(self) -> str:
         if not self.missing:
             return self._missing_summary
 
-        return "Missing " + self.missing.details.replace(" (0 Bytes)", "")
+        return "Missing " + self.missing.details.replace(" (size='0 Bytes')", "")
 
     @property
     def _total_message(self) -> str:
