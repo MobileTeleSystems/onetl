@@ -3,7 +3,6 @@ from __future__ import annotations
 import glob
 import os
 import re
-from logging import getLogger
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator, validator
@@ -11,8 +10,6 @@ from pydantic import BaseModel, Field, root_validator, validator
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import RemotePath
 from onetl.log import log_with_indent
-
-log = getLogger(__name__)
 
 
 class FileFilter(BaseFileFilter, BaseModel):

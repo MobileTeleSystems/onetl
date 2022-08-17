@@ -144,18 +144,27 @@ def test_downloader_run_with_filter_exclude_dir(
     upload_test_files,
     path_type,
     tmp_path_factory,
+    caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
-    exclude_dir = path_type("/export/news_parse/exclude_dir")
 
     downloader = FileDownloader(
         connection=file_connection,
         source_path=source_path,
         local_path=local_path,
-        filter=FileFilter(exclude_dirs=[exclude_dir]),
+        filter=FileFilter(exclude_dirs=[path_type("/export/news_parse/exclude_dir")]),
     )
 
-    download_result = downloader.run()
+    excluded = [
+        "/export/news_parse/exclude_dir/file_4.txt",
+        "/export/news_parse/exclude_dir/file_5.txt",
+    ]
+
+    with caplog.at_level(logging.DEBUG):
+        download_result = downloader.run()
+
+        skip_msg = r"Path '/export/news_parse/exclude_dir' \(kind='directory', .*\) does NOT MATCH filter FileFilter"
+        assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -163,24 +172,34 @@ def test_downloader_run_with_filter_exclude_dir(
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path)
-        for file in upload_test_files
-        if PurePosixPath(exclude_dir) not in file.parents
+        local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
     )
 
 
-def test_downloader_with_filter_glob(file_connection, source_path, upload_test_files, tmp_path_factory):
+def test_downloader_with_filter_glob(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
-    file_pattern = "*.csv"
 
     downloader = FileDownloader(
         connection=file_connection,
         source_path=source_path,
         local_path=local_path,
-        filter=FileFilter(glob=file_pattern),
+        filter=FileFilter(glob="*.csv"),
     )
 
-    download_result = downloader.run()
+    excluded = [
+        "/export/news_parse/exclude_dir/file_4.txt",
+        "/export/news_parse/exclude_dir/file_5.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_1.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_2.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_3.txt",
+    ]
+
+    with caplog.at_level(logging.DEBUG):
+        download_result = downloader.run()
+
+        for exclude in excluded:
+            skip_msg = rf"Path '{exclude}' \(kind='file', .*\) does NOT MATCH filter FileFilter"
+            assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -188,7 +207,7 @@ def test_downloader_with_filter_glob(file_connection, source_path, upload_test_f
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in upload_test_files if file.match(file_pattern)
+        local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
     )
 
 
@@ -707,7 +726,7 @@ def test_downloader_run_input_is_not_file(request, file_connection, tmp_path_fac
         downloader.run([not_a_file])
 
 
-def test_downloader_file_limit(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_file_limit_custom(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
     limit = 2
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -718,11 +737,46 @@ def test_downloader_file_limit(file_connection, source_path, upload_test_files, 
         limit=FileLimit(count_limit=limit),
     )
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
+        files = downloader.view_files()
+
+        assert f"Limit FileLimit(count_limit={limit}) is reached" in caplog.text
+
+    assert len(files) == limit
+
+    with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
-        assert "count_limit = 2" in caplog.text
+        assert "    count_limit = 2" in caplog.text
+        assert f"Limit FileLimit(count_limit={limit}) is reached" in caplog.text
 
     assert len(download_result.successful) == limit
+
+
+def test_downloader_no_file_limit(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        limit=None,
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        files = downloader.view_files()
+
+        assert "is reached" not in caplog.text
+
+    assert len(files) == len(upload_test_files)
+
+    with caplog.at_level(logging.DEBUG):
+        download_result = downloader.run()
+
+        assert "limit = None" in caplog.text
+        assert "count_limit = 2" not in caplog.text
+        assert "is reached" not in caplog.text
+
+    assert len(download_result.successful) == len(upload_test_files)
 
 
 def test_downloader_detect_hwm_type_snap_batch_strategy(

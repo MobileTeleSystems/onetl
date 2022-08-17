@@ -4,11 +4,18 @@ import os
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 
 from humanize import naturalsize
 
-from onetl.base import BaseFileConnection, BaseFileFilter, PathStatProtocol
+from onetl.base import (
+    BaseFileConnection,
+    BaseFileFilter,
+    BaseFileLimit,
+    PathStatProtocol,
+)
+from onetl.core.file_filter import match_all_filters
+from onetl.core.file_limit import limits_reached
 from onetl.exception import (
     DirectoryNotEmptyError,
     DirectoryNotFoundError,
@@ -287,10 +294,21 @@ class FileConnection(BaseFileConnection):
 
         return self.get_file(target_file)
 
-    def listdir(self, path: os.PathLike | str) -> list[RemoteDirectory | RemoteFile]:
-        log.debug(f"|{self.__class__.__name__}| Listing directory '{path}'")
+    def listdir(
+        self,
+        directory: os.PathLike | str,
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
+    ) -> list[RemoteDirectory | RemoteFile]:
+        log.debug(f"|{self.__class__.__name__}| Listing directory '{directory}'")
 
-        remote_directory = self.get_directory(path)
+        filters = filters or []
+        limits = limits or []
+
+        for limit in limits:
+            limit.reset()
+
+        remote_directory = self.get_directory(directory)
         result = []
 
         for item in self._listdir(remote_directory):
@@ -298,54 +316,33 @@ class FileConnection(BaseFileConnection):
             stat = self._get_item_stat(remote_directory, item)
 
             if self._is_item_dir(remote_directory, item):
-                result.append(RemoteDirectory(path=name, stats=stat))
+                path = RemoteDirectory(path=name, stats=stat)
             else:
-                result.append(RemoteFile(path=name, stats=stat))
+                path = RemoteFile(path=name, stats=stat)
+
+            if match_all_filters(filters, path):
+                result.append(path)
+
+            if limits_reached(limits, path):
+                break
 
         return result
 
-    def walk(  # noqa: WPS231
+    def walk(
         self,
         top: os.PathLike | str,
-        filter: BaseFileFilter | None = None,  # noqa: WPS125
+        topdown: bool = True,
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
-        log.debug(f"|{self.__class__.__name__}| Walking through directory '{top}'")
 
-        root = self.get_directory(top)
-        dirs, files = [], []
+        filters = filters or []
+        limits = limits or []
 
-        for item in self._listdir(root):
-            name = self._get_item_name(item)
-            stat = self._get_item_stat(root, item)
+        for limit in limits:
+            limit.reset()
 
-            if self._is_item_dir(root, item):
-                folder = RemoteDirectory(path=root / name, stats=stat)
-
-                if filter and not filter.match(folder):
-                    log.debug(
-                        f"|{self.__class__.__name__}| Directory '{folder}' does NOT MATCH the filter, skipping",
-                    )
-                else:
-                    log.debug(f"|{self.__class__.__name__}| Directory '{folder}' is matching the filter")
-                    dirs.append(RemoteDirectory(path=name, stats=stat))
-
-            else:
-                file = RemoteFile(path=root / name, stats=stat)
-
-                if filter and not filter.match(file):
-                    log.debug(
-                        f"|{self.__class__.__name__}| File '{file}' does NOT MATCH the filter, skipping",
-                    )
-                else:
-                    log.debug(f"|{self.__class__.__name__}| File '{file}' is matching the filter")
-                    files.append(RemoteFile(path=name, stats=stat))
-
-        # if a nested directory was encountered, then the same method is called recursively
-        for name in dirs:
-            path = root / name
-            yield from self.walk(top=path, filter=filter)
-
-        yield top, dirs, files
+        yield from self._walk(top, topdown=topdown, filters=filters, limits=limits)
 
     @property
     def instance_url(self) -> str:
@@ -373,6 +370,55 @@ class FileConnection(BaseFileConnection):
             self._rmdir(remote_directory)
 
         log.info(f"|{self.__class__.__name__}| Successfully removed directory '{remote_directory}'")
+
+    def _walk(  # noqa: WPS231
+        self,
+        top: os.PathLike | str,
+        topdown: bool,
+        filters: Iterable[BaseFileFilter],
+        limits: Iterable[BaseFileLimit],
+    ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
+        # no need to check nested directories if limit is already reached
+        for limit in limits:
+            if limit.is_reached:
+                return
+
+        log.debug(f"|{self.__class__.__name__}| Walking through directory '{top}'")
+        root = self.get_directory(top)
+        dirs, files = [], []
+
+        for item in self._listdir(root):
+            name = self._get_item_name(item)
+            stat = self._get_item_stat(root, item)
+
+            if self._is_item_dir(root, item):
+                if not topdown:
+                    yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
+
+                path = RemoteDirectory(path=root / name, stats=stat)
+                if match_all_filters(filters, path):
+                    dirs.append(RemoteDirectory(path=name, stats=stat))
+
+                if limits_reached(limits, path):
+                    break
+            else:
+                path = RemoteFile(path=root / name, stats=stat)
+
+                if match_all_filters(filters, path):
+                    files.append(RemoteFile(path=name, stats=stat))
+
+                if limits_reached(limits, path):
+                    break
+
+        if topdown:
+            for name in dirs:
+                yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
+
+        log.debug(
+            f"|{self.__class__.__name__}| "
+            f"Directory '{root}' contains {len(dirs)} nested directories and {len(files)} files",
+        )
+        yield root, dirs, files
 
     def _rmdir_recursive(self, root: RemotePath) -> None:
         for item in self._listdir(root):

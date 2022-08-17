@@ -7,6 +7,7 @@ from typing import Iterable
 
 from onetl.base.base_connection import BaseConnection
 from onetl.base.base_file_filter import BaseFileFilter
+from onetl.base.base_file_limit import BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.path_stat_protocol import PathStatProtocol
 
@@ -67,7 +68,12 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def listdir(self, path: os.PathLike | str) -> list[PathProtocol]:
+    def listdir(
+        self,
+        directory: os.PathLike | str,
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
+    ) -> list[PathWithStatsProtocol]:
         """
         Return list of files in specific directory on remote filesystem
         """
@@ -76,8 +82,9 @@ class BaseFileConnection(BaseConnection):
     def walk(
         self,
         top: os.PathLike | str,
-        filter: BaseFileFilter | None = None,  # noqa: WPS125
-    ) -> Iterable[tuple[PathProtocol, list[PathProtocol], list[PathWithStatsProtocol]]]:
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
+    ) -> Iterable[tuple[PathWithStatsProtocol, list[PathWithStatsProtocol], list[PathWithStatsProtocol]]]:
         """
         Walk into directory tree on remote filesystem, just like ``os.walk``
         """
@@ -104,6 +111,12 @@ class BaseFileConnection(BaseConnection):
     def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         """
         Returns stats for a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def get_directory(self, path: os.PathLike | str) -> PathWithStatsProtocol:
+        """
+        Returns file with stats for a specific path on remote filesystem
         """
 
     @abstractmethod

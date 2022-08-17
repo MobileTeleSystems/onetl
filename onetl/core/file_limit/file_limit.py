@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from logging import getLogger
+import logging
 
 from pydantic import BaseModel, PrivateAttr
 
-from onetl.base.base_file_limit import BaseFileLimit
+from onetl.base import BaseFileLimit, PathProtocol
 from onetl.log import log_with_indent
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class FileLimit(BaseFileLimit, BaseModel):
@@ -38,14 +38,18 @@ class FileLimit(BaseFileLimit, BaseModel):
     _counter: int = PrivateAttr(default_factory=int)
     _is_reached: bool = PrivateAttr(default_factory=bool)
 
-    def reset_state(self):
+    def reset(self):
         self._counter = 0  # noqa: WPS601
 
-    def verify(self) -> bool:
+    def stops_at(self, path: PathProtocol) -> bool:
         if self.is_reached:
             return True
 
-        self._increase_counter()
+        if path.is_dir():
+            return False
+
+        # directories count does not matter
+        self._counter += 1  # noqa: WPS601
         return self.is_reached
 
     @property
@@ -55,6 +59,3 @@ class FileLimit(BaseFileLimit, BaseModel):
     def log_options(self, indent: int = 0):
         for key, value in self.__dict__.items():  # noqa: WPS528
             log_with_indent(f"{key} = {value!r}", indent=indent)
-
-    def _increase_counter(self):
-        self._counter += 1  # noqa: WPS601

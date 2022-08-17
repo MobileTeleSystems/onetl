@@ -143,7 +143,7 @@ class FileUploader:
         target_path: str | os.PathLike,
         local_path: str | os.PathLike | None,
         temp_path: str | os.PathLike,
-        options: str | os.FileConnection.Options | dict | None,
+        options: str | Options | dict | None,
     ):
         self._target_path = RemotePath(target_path)
         self._local_path = LocalPath(local_path).resolve() if local_path else None
@@ -230,7 +230,7 @@ class FileUploader:
             self._check_local_path()
 
         self.connection.check()
-        log.info("")
+        log_with_indent("")
 
         self.connection.mkdir(self._target_path)
 
@@ -332,12 +332,11 @@ class FileUploader:
         else:
             log_with_indent("temp_path = None")
 
-        log.info("")
         log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
             log_with_indent(f"{option} = {value_wrapped}", indent=4)
-        log.info("")
+        log_with_indent("")
 
         if self._options.delete_local:
             log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
@@ -409,6 +408,7 @@ class FileUploader:
 
         log.info(f"|{self.__class__.__name__}| Files to be uploaded:")
         log_with_indent(str(files))
+        log_with_indent("")
         log.info(f"|{self.__class__.__name__}| Starting the upload process")
 
         result = UploadResult()
@@ -477,6 +477,7 @@ class FileUploader:
             log.exception(f"|{self.__class__.__name__}| Error while removing temp directory")
 
     def _log_result(self, result: UploadResult) -> None:
+        log.info("")
         log.info(f"|{self.__class__.__name__}| Upload result:")
         log_with_indent(str(result))
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
