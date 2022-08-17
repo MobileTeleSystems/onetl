@@ -1,9 +1,8 @@
-import pytest
 import secrets
-import pandas as pd
-
 from datetime import date, datetime, timedelta
 
+import pandas as pd
+import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres

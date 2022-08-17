@@ -120,7 +120,7 @@ class BatchHWMStrategy(HWMStrategy):
     def update_hwm(self, value: Any) -> None:
         # no rows has been read, going to next iteration
         if self.hwm is not None:
-            self.hwm = self.hwm.with_value(self.next_value)
+            self.hwm.update(self.next_value)
 
         super().update_hwm(value)
 

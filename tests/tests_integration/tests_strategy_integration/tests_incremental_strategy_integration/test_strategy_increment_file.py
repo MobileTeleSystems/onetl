@@ -1,13 +1,11 @@
 import secrets
 import tempfile
-from etl_entities import RemoteFolder, FileListHWM
+
+from etl_entities import FileListHWM, RemoteFolder
 from etl_entities.instance import RelativePath
 
 from onetl.core import FileDownloader
-from onetl.strategy import (
-    IncrementalStrategy,
-    YAMLHWMStore,
-)
+from onetl.strategy import IncrementalStrategy, YAMLHWMStore
 
 
 def test_file_downloader_increment(
@@ -25,7 +23,7 @@ def test_file_downloader_increment(
         connection=file_connection,
         source_path=source_path,
         local_path=local_path,
-        hwm_type="files_list",
+        hwm_type="file_list",
     )
 
     # load first batch of the files
@@ -41,7 +39,6 @@ def test_file_downloader_increment(
     file_hwm_name = file_hwm.qualified_name
 
     source_files = {RelativePath(file.relative_to(source_path)) for file in upload_test_files}
-
     assert source_files == hwm_store.get(file_hwm_name).value
 
     for _ in "first_inc", "second_inc":
@@ -64,7 +61,6 @@ def test_file_downloader_increment(
         assert downloaded.failed_count == 0
 
         source_files.add(RelativePath(new_file_name))
-
         assert source_files == hwm_store.get(file_hwm_name).value
 
 
@@ -83,7 +79,7 @@ def test_file_downloader_increment_fail(
         connection=file_connection,
         source_path=source_path,
         local_path=local_path,
-        hwm_type="files_list",
+        hwm_type="file_list",
     )
 
     # load first batch of the files
@@ -99,7 +95,6 @@ def test_file_downloader_increment_fail(
     file_hwm_name = file_hwm.qualified_name
 
     source_files = {RelativePath(file.relative_to(source_path)) for file in upload_test_files}
-
     assert source_files == hwm_store.get(file_hwm_name).value
 
     for _ in "first_inc", "second_inc":
@@ -115,9 +110,9 @@ def test_file_downloader_increment_fail(
                 with IncrementalStrategy():
                     downloaded = downloader.run()
                     # simulated falling work
-                    raise  # noqa: WPS467
-        except:  # noqa: B001, E722
-            ...  # noqa: WPS428
+                    raise RuntimeError("some exception")
+        except RuntimeError:
+            pass
 
         # HWM is saved after downloading each file
         assert len(downloaded.successful) == 1
@@ -128,5 +123,4 @@ def test_file_downloader_increment_fail(
         assert downloaded.failed_count == 0
 
         source_files.add(RelativePath(new_file_name))
-
         assert source_files == hwm_store.get(file_hwm_name).value

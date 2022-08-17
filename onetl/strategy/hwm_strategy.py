@@ -34,8 +34,8 @@ class HWMStrategy(BaseStrategy):
         return operator.le
 
     def update_hwm(self, value: Any) -> None:
-        if self.hwm is not None:
-            self.hwm = self.hwm.with_value(value)  # noqa: WPS601
+        if self.hwm is not None and value is not None:
+            self.hwm.update(value)  # noqa: WPS601
 
     def enter_hook(self) -> None:
         # TODO:(@mivasil6) Зачем здесь делать пустой fetch_hwm()

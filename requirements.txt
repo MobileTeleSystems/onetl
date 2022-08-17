@@ -1,9 +1,9 @@
-etl-entities>=1.0,<1.1
+etl-entities>=1.1.2,<1.2
 evacuator>=1.0,<1.1
 ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize
-mts_apache_atlas>=0.3.3,<0.4
+mts_apache_atlas>=0.3.5,<0.4
 ordered-set
 paramiko
 platformdirs

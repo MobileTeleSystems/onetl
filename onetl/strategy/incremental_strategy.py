@@ -17,7 +17,7 @@ class OffsetMixin:
     def fetch_hwm(self) -> None:
         super().fetch_hwm()
 
-        if self.hwm:
+        if self.hwm and self.offset is not None:
             self.hwm -= self.offset  # noqa: WPS601
 
 
