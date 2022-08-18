@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from onetl.base.path_protocol import PathProtocol
+
 
 class BaseFileLimit(ABC):
     """
@@ -9,25 +11,20 @@ class BaseFileLimit(ABC):
     """
 
     @abstractmethod
-    def reset_state(self):
+    def reset(self):
         """
-        resets the value
+        Resets the internal state
         """
 
     @abstractmethod
-    def verify(self) -> bool:
+    def stops_at(self, path: PathProtocol) -> bool:
         """
-        checks the status and increment counter
+        Update internal state and check if it is reached. Returns ``True`` if limit is reached
         """
 
+    @property
     @abstractmethod
     def is_reached(self) -> bool:
         """
-        Show the status
-        """
-
-    @abstractmethod
-    def _increase_counter(self):
-        """
-        increases the value
+        Returns ``True`` if limit is reached
         """

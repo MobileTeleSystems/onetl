@@ -11,9 +11,10 @@ from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
-from onetl.base import BaseFileFilter, BaseFileLimit
-from onetl.connection import FileConnection
+from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
+from onetl.base.path_protocol import PathProtocol
 from onetl.core.file_downloader.download_result import DownloadResult
+from onetl.core.file_filter import FileHWMFilter
 from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
 from onetl.impl import (
@@ -169,7 +170,7 @@ class FileDownloader:
         If download failed, file will left intact.
         """
 
-    connection: FileConnection
+    connection: BaseFileConnection
 
     local_path: InitVar[os.PathLike | str]
     _local_path: LocalPath = field(init=False)
@@ -181,7 +182,7 @@ class FileDownloader:
     _temp_path: RemotePath | None = field(init=False)
 
     filter: BaseFileFilter | None = None
-    limit: BaseFileLimit = FileLimit()
+    limit: BaseFileLimit | None = field(default_factory=FileLimit)
 
     options: InitVar[Options | dict | None] = field(default=None)
     _options: Options = field(init=False)
@@ -194,7 +195,7 @@ class FileDownloader:
         local_path: os.PathLike | str,
         source_path: os.PathLike | str | None,
         temp_path: str | os.PathLike,
-        options: FileConnection.Options | dict | None,
+        options: Options | dict | None,
         hwm_type: type[FileHWM] | str | None,
     ):
         self._local_path = LocalPath(local_path).resolve()
@@ -324,7 +325,7 @@ class FileDownloader:
         # Check everything
         self._check_local_path()
         self.connection.check()
-        log.info("")
+        log_with_indent("")
 
         if self._source_path:
             self._check_source_path()
@@ -408,32 +409,21 @@ class FileDownloader:
 
         self._check_source_path()
         result = FileSet()
-        self.limit.reset_state()
+
+        filters = []
+        if self.filter:
+            filters.append(self.filter)
+        if self._hwm_type:
+            filters.append(FileHWMFilter(hwm=self._get_hwm()))
+
+        limits = []
+        if self.limit:
+            limits.append(self.limit)
 
         try:
-            for root, dirs, files in self.connection.walk(self._source_path, filter=self.filter):
-                # when iterating over files, it should be checked for a limit on the number of files.
-                # when the limit on the number of files is reached,
-                # it is necessary to stop and download files that have not yet been downloaded.
-
-                log.debug(
-                    f"|{self.connection.__class__.__name__}| "
-                    f"Listing dir '{root}', dirs: {len(dirs)} files: {len(files)}",
-                )
-
-                file_list = []
-
+            for root, _dirs, files in self.connection.walk(self._source_path, filters=filters, limits=limits):
                 for file in files:
-                    file_list.append(RemoteFile(path=root / file, stats=file.stats))
-                    if self.limit.verify():
-                        break  # noqa: WPS220
-
-                if file_list:
-                    result.update(file_list)
-
-                if self.limit.is_reached:
-                    log.warning("File limit reached !")
-                    break
+                    result.append(RemoteFile(path=root / file, stats=file.stats))
 
         except Exception as e:
             raise RuntimeError(
@@ -455,7 +445,7 @@ class FileDownloader:
             if isinstance(strategy, BatchHWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")
 
-    def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
+    def _get_hwm(self) -> FileHWM:
         remote_file_folder = RemoteFolder(name=self._source_path, instance=self.connection.instance_url)
         file_hwm_empty = self._hwm_type(source=remote_file_folder)
         file_hwm_name = file_hwm_empty.qualified_name
@@ -465,6 +455,10 @@ class FileDownloader:
 
         # to avoid issues when HWM store returned HWM with unexpected type
         self._check_hwm_type(file_hwm.__class__)
+        return file_hwm
+
+    def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
+        file_hwm = self._get_hwm()
 
         # Exclude files filtered by HWM
         to_download = OrderedSet(
@@ -474,7 +468,6 @@ class FileDownloader:
         return self._download_files(
             to_download,
             file_hwm=file_hwm,
-            hwm_store=current_hwm_store,
         )
 
     def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
@@ -490,20 +483,22 @@ class FileDownloader:
             log_with_indent("temp_path = None")
 
         if self.filter is not None:
-            log.info("")
             log_with_indent("filter:")
             self.filter.log_options(indent=4)
         else:
             log_with_indent("filter = None")
 
-        log_with_indent("limit:")
-        self.limit.log_options(indent=4)
+        if self.limit is not None:
+            log_with_indent("limit:")
+            self.limit.log_options(indent=4)
+        else:
+            log_with_indent("limit = None")
 
         log_with_indent("options:")
         for option, value in self._options.dict().items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
             log_with_indent(f"{option} = {value_wrapped}", indent=4)
-        log.info("")
+        log_with_indent("")
 
         if self._options.delete_source:
             log.warning(f"|{self.__class__.__name__}| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!")
@@ -525,7 +520,7 @@ class FileDownloader:
         result = OrderedSet()
 
         for file in remote_files:
-            remote_file_path = RemotePath(file)
+            remote_file_path = file if isinstance(file, PathProtocol) else RemotePath(file)
             remote_file = remote_file_path
             tmp_file: LocalPath | None = None
 
@@ -576,13 +571,14 @@ class FileDownloader:
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
         file_hwm: FileHWM | None = None,
-        hwm_store: BaseHWMStore | None = None,
     ) -> DownloadResult:
         total_files = len(to_download)
         files = FileSet(item[0] for item in to_download)
+        hwm_store = HWMStoreManager.get_current()
 
         log.info(f"|{self.__class__.__name__}| Files to be downloaded:")
         log_with_indent(str(files))
+        log_with_indent("")
         log.info(f"|{self.__class__.__name__}| Starting the download process")
 
         result = DownloadResult()
@@ -678,6 +674,7 @@ class FileDownloader:
             log.exception("|Local FS| Error while removing temp directory")
 
     def _log_result(self, result: DownloadResult) -> None:
+        log_with_indent("")
         log.info(f"|{self.__class__.__name__}| Download result:")
         log_with_indent(str(result))
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")

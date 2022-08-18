@@ -1,5 +1,4 @@
 import secrets
-import tempfile
 
 from etl_entities import FileListHWM, RemoteFolder
 from etl_entities.instance import RelativePath
@@ -16,7 +15,7 @@ def test_file_downloader_increment(
     caplog,
     tmp_path,
 ):
-    hwm_store = YAMLHWMStore(path=tempfile.mktemp("hwmstore"))  # noqa: S306
+    hwm_store = YAMLHWMStore(path=tmp_path_factory.mktemp("hwmstore"))  # noqa: S306
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -29,10 +28,12 @@ def test_file_downloader_increment(
     # load first batch of the files
     with hwm_store:
         with IncrementalStrategy():
-            download_result = downloader.run()
+            available = downloader.view_files()
+            downloaded = downloader.run()
 
-        # without HWM value all the files are uploaded
-        assert len(download_result.successful) == len(upload_test_files)
+        # without HWM value all the files are shown and uploaded
+        assert len(available) == len(downloaded.successful) == len(upload_test_files)
+        assert sorted(available) == sorted(upload_test_files)
 
     remote_file_folder = RemoteFolder(name=source_path, instance=file_connection.instance_url)
     file_hwm = FileListHWM(source=remote_file_folder)
@@ -50,10 +51,11 @@ def test_file_downloader_increment(
 
         with hwm_store:
             with IncrementalStrategy():
+                available = downloader.view_files()
                 downloaded = downloader.run()
 
-        # with HWM value only new files are uploaded
-        assert len(downloaded.successful) == 1
+        # without HWM value all the files are shown and uploaded
+        assert len(available) == len(downloaded.successful) == 1
         assert downloaded.successful[0].name == tmp_file.name
         assert downloaded.successful[0].read_text() == tmp_file.read_text()
         assert downloaded.skipped_count == 0
@@ -72,7 +74,7 @@ def test_file_downloader_increment_fail(
     caplog,
     tmp_path,
 ):
-    hwm_store = YAMLHWMStore(path=tempfile.mktemp("hwmstore"))  # noqa: S306
+    hwm_store = YAMLHWMStore(path=tmp_path_factory.mktemp("hwmstore"))  # noqa: S306
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -85,10 +87,12 @@ def test_file_downloader_increment_fail(
     # load first batch of the files
     with hwm_store:
         with IncrementalStrategy():
-            download_result = downloader.run()
+            available = downloader.view_files()
+            downloaded = downloader.run()
 
-        # without HWM value all the files are uploaded
-        assert len(download_result.successful) == len(upload_test_files)
+        # without HWM value all the files are shown and uploaded
+        assert len(available) == len(downloaded.successful) == len(upload_test_files)
+        assert sorted(available) == sorted(upload_test_files)
 
     remote_file_folder = RemoteFolder(name=source_path, instance=file_connection.instance_url)
     file_hwm = FileListHWM(source=remote_file_folder)
@@ -108,14 +112,15 @@ def test_file_downloader_increment_fail(
         try:
             with hwm_store:
                 with IncrementalStrategy():
+                    available = downloader.view_files()
                     downloaded = downloader.run()
                     # simulated falling work
                     raise RuntimeError("some exception")
         except RuntimeError:
             pass
 
-        # HWM is saved after downloading each file
-        assert len(downloaded.successful) == 1
+        # without HWM value all the files are shown and uploaded
+        assert len(available) == len(downloaded.successful) == 1
         assert downloaded.successful[0].name == tmp_file.name
         assert downloaded.successful[0].read_text() == tmp_file.read_text()
         assert downloaded.skipped_count == 0
