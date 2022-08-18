@@ -12,7 +12,10 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class Clickhouse(JDBCConnection):
-    """Class for Clickhouse jdbc connection.
+    """Class for Clickhouse JDBC connection.
+
+    Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
+    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_)
 
     .. note::
 
@@ -21,19 +24,21 @@ class Clickhouse(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of clickhouse database. For example: ``clickhouse-sbl-dev.msk.bd-cloud.mts.ru``
+        Host of Clickhouse database. For example: ``test.clickhouse.domain.com`` or ``193.168.1.11``
 
     port : int, default: ``8123``
-        Port of clickhouse database
+        Port of Clickhouse database
 
     user : str
-        User, which have access to the database and table. For example: ``TECH_ETL``
+        User, which have access to the database and table. For example: ``some_user``
 
     password : str
         Password for database connection
 
-    database : str
-        Database in rdbms. To provide schema, use DBReader class
+    database : str, optional
+        Database in RDBMS, NOT schema.
+
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
@@ -43,19 +48,23 @@ class Clickhouse(JDBCConnection):
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"ssl": True, "sslmode": "none"}``.
+        For example: ``{"continueBatchOnError": "false"}``.
+
+        See `Clickhouse JDBC driver properties documentation
+        <https://github.com/ClickHouse/clickhouse-jdbc/tree/master/clickhouse-jdbc#configuration>`_
+        for more details
 
     Examples
     --------
 
-    Clickhouse jdbc connection initialization
+    Clickhouse connection initialization
 
     .. code::
 
         from onetl.connection import Clickhouse
         from mtspark import get_spark
 
-        extra = {"ssl": True, "sslmode": "none"}
+        extra = {"continueBatchOnError": "false"}
 
         spark = get_spark({
             "appName": "spark-app-name",
@@ -63,8 +72,8 @@ class Clickhouse(JDBCConnection):
         })
 
         clickhouse = Clickhouse(
-            host="clickhouse-sbl-dev.msk.bd-cloud.mts.ru",
-            user="TECH_ETL",
+            host="database.host.or.ip,
+            user="user",
             password="*****",
             extra=extra,
             spark=spark,

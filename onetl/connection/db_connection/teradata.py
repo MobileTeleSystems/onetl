@@ -9,24 +9,29 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 @dataclass(frozen=True)
 class Teradata(JDBCConnection):
-    """Class for Teradata jdbc connection.
+    """Class for Teradata JDBC connection.
+
+    Based on package ``com.teradata.jdbc:terajdbc4:17.20.00.08``
+    (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_)
 
     Parameters
     ----------
     host : str
-        Host of teradata database. For example: ``0411td-rnd.pv.mts.ru``
+        Host of Teradata database. For example: ``test.teradata.domain.com`` or ``193.168.1.12``
 
     port : int, default: ``1025``
-        Port of teradata database
+        Port of Teradata database
 
     user : str
-        User, which have access to the database and table. For example: ``TECH_ETL``
+        User, which have access to the database and table. For example: ``some_user``
 
     password : str
         Password for database connection
 
     database : str
-        Database in rdbms. To provide schema, use DBReader class
+        Database in RDBMS, NOT schema.
+
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
@@ -36,7 +41,11 @@ class Teradata(JDBCConnection):
     extra : dict, default: ``None``
         Specifies one or more extra parameters which should be appended to a connection string.
 
-        For example: ``{"MODE": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``
+        For example: ``{"TMODE": "TERA", "MAYBENULL": "ON", "CHARSET": "UTF8", "LOGMECH":"LDAP"}``
+
+        See `Teradata JDBC driver documentation
+        <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABJIHBJ>`_
+        for more details
 
         .. note::
 
@@ -48,7 +57,7 @@ class Teradata(JDBCConnection):
     Examples
     --------
 
-    Teradata jdbc connection initialization
+    Teradata connection with LDAP auth:
 
     .. code::
 
@@ -56,10 +65,11 @@ class Teradata(JDBCConnection):
         from mtspark import get_spark
 
         extra = {
-            "LOGMECH": "TERA",
+            "TMODE": "TERA",  # "TERA" or "ANSI"
             "MAYBENULL": "ON",
             "CHARSET": "UTF8",
             "LOGMECH":"LDAP",
+            "LOG": "TIMING",  # increase log level
         }
 
         spark = get_spark({
@@ -68,8 +78,8 @@ class Teradata(JDBCConnection):
         })
 
         teradata = Teradata(
-            host="0411td-rnd.pv.mts.ru",
-            user="BD_TECH_ETL",
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             extra=extra,
             spark=spark,
