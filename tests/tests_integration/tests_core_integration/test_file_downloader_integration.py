@@ -138,7 +138,7 @@ def test_downloader_run_delete_source(
 
 
 @pytest.mark.parametrize("path_type", [str, Path])
-def test_downloader_run_with_filter_exclude_dir(
+def test_downloader_file_filter_exclude_dir(
     file_connection,
     source_path,
     upload_test_files,
@@ -176,7 +176,7 @@ def test_downloader_run_with_filter_exclude_dir(
     )
 
 
-def test_downloader_with_filter_glob(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_file_filter_glob(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -208,6 +208,29 @@ def test_downloader_with_filter_glob(file_connection, source_path, upload_test_f
 
     assert sorted(download_result.successful) == sorted(
         local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
+    )
+
+
+def test_downloader_file_filter_is_ignored_by_user_input(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        filter=FileFilter(glob="*.csv"),
+    )
+
+    download_result = downloader.run(upload_test_files)
+
+    # filter is not being applied to explicit files list
+    assert sorted(download_result.successful) == sorted(
+        local_path / file.relative_to(source_path) for file in upload_test_files
     )
 
 
@@ -776,6 +799,29 @@ def test_downloader_no_file_limit(file_connection, source_path, upload_test_file
         assert "count_limit = 2" not in caplog.text
         assert "is reached" not in caplog.text
 
+    assert sorted(download_result.successful) == sorted(
+        local_path / file.relative_to(source_path) for file in upload_test_files
+    )
+
+
+def test_downloader_file_limit_is_ignored_by_user_input(
+    file_connection,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        limit=FileLimit(count_limit=2),
+    )
+
+    download_result = downloader.run(upload_test_files)
+
+    # limit is not being applied to explicit files list
     assert len(download_result.successful) == len(upload_test_files)
 
 

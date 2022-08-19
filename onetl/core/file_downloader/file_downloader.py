@@ -223,9 +223,11 @@ class FileDownloader:
         files : Iterable[str | os.PathLike] | None, default ``None``
             File collection to download.
 
-            If empty, download files from ``source_path``, applying ``filter`` to each one (if set).
+            If empty, download files from ``source_path``,
+            applying ``filter``, ``limit`` and ``hwm_type`` to each one (if set).
 
-            If not, download input files without any filtering
+            If not, download **all** input files, **without**
+            any filtering, limiting and excluding files covered by FileHWM
 
         Returns
         -------
@@ -363,7 +365,8 @@ class FileDownloader:
 
     def view_files(self) -> FileSet[RemoteFile]:
         """
-        Get file collection in the ``source_path``, after ``filter`` applied (if any)
+        Get file collection in the ``source_path``,
+        after ``filter``, ``limit`` and ``hwm`` applied (if any)
 
         Raises
         -------
@@ -375,14 +378,10 @@ class FileDownloader:
 
             ``source_path`` is not a directory
 
-        ValueError
-
-            File in ``files`` argument does not match ``source_path``
-
         Returns
         -------
         FileSet[RemoteFile]
-            Set of files in ``source_path``
+            Set of files in ``source_path``, which will be downloaded by :obj:`~run` method
 
         Examples
         --------
@@ -459,11 +458,6 @@ class FileDownloader:
 
     def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
         file_hwm = self._get_hwm()
-
-        # Exclude files filtered by HWM
-        to_download = OrderedSet(
-            filter(lambda path: not file_hwm.covers(path[0]), to_download),
-        )
 
         return self._download_files(
             to_download,
