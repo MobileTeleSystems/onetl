@@ -28,8 +28,16 @@ GENERIC_PROHIBITED_OPTIONS = frozenset(
     ),
 )
 
-# Write options cannot be used while reading the table
-READ_PROHIBITED_OPTIONS = GENERIC_PROHIBITED_OPTIONS | frozenset(
+READ_WRITE_OPTIONS = frozenset(
+    (
+        "keytab",
+        "principal",
+        "refreshKrb5Config",
+        "connectionProvider",
+    ),
+)
+
+WRITE_OPTIONS = frozenset(
     (
         "column",  # in some part of Spark source code option 'partitionColumn' is called just 'column'
         "mode",
@@ -44,8 +52,7 @@ READ_PROHIBITED_OPTIONS = GENERIC_PROHIBITED_OPTIONS | frozenset(
     ),
 )
 
-# Reading options cannot be used while writing to table
-WRITE_PROHIBITED_OPTIONS = GENERIC_PROHIBITED_OPTIONS | frozenset(
+READ_OPTIONS = frozenset(
     (
         "column",  # in some part of Spark source code option 'partitionColumn' is called just 'column'
         "partitionColumn",
@@ -123,7 +130,10 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         """
 
         class Config:
-            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | READ_PROHIBITED_OPTIONS
+            known_options = READ_OPTIONS | READ_WRITE_OPTIONS
+            prohibited_options = (
+                JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
+            )
             alias_generator = to_camel
 
         # Options in DataFrameWriter.jdbc() method
@@ -261,7 +271,10 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         """
 
         class Config:
-            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | WRITE_PROHIBITED_OPTIONS
+            known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
+            prohibited_options = (
+                JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
+            )
             alias_generator = to_camel
 
         mode: JDBCWriteMode = JDBCWriteMode.APPEND
