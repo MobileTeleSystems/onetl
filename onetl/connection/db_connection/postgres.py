@@ -9,7 +9,10 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 @dataclass(frozen=True)
 class Postgres(JDBCConnection):
-    """Class for PostgreSQL jdbc connection.
+    """Class for PostgreSQL JDBC connection.
+
+    Based on Maven package ``org.postgresql:postgresql:42.4.0``
+    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_)
 
     .. note::
 
@@ -18,36 +21,46 @@ class Postgres(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of postgres database. For example: ``test-db-vip.msk.mts.ru``
+        Host of Postgres database. For example: ``test.postgres.domain.com`` or ``193.168.1.11``
 
     port : int, default: ``5432``
-        Port of postgres database
+        Port of Postgres database
 
     user : str
-        User, which have access to the database and table. For example: ``appmetrica_test``
+        User, which have access to the database and table. For example: ``some_user``
 
     password : str
         Password for database connection
 
     database : str
-        Database in rdbms. To provide schema, use DBReader class
+        Database in RDBMS, NOT schema.
 
-        See https://www.educba.com/postgresql-database-vs-schema/ for more details
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for jdbc connection to database.
 
         You can use ``mtspark`` for spark session initialization.
 
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"ssl": "false"}``
+
+        See `Postgres JDBC driver properties documentation <https://github.com/pgjdbc/pgjdbc#connection-properties>`_
+        for more details
+
     Examples
     --------
 
-    Postgres jdbc connection initialization
+    Postgres connection initialization
 
     .. code::
 
         from onetl.connection import Postgres
         from mtspark import get_spark
+
+        extra = {"ssl": "false"}
 
         spark = get_spark({
             "appName": "spark-app-name",
@@ -55,10 +68,11 @@ class Postgres(JDBCConnection):
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             database='target_database',
+            extra=extra,
             spark=spark,
         )
 

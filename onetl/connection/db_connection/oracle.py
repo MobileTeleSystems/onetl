@@ -43,7 +43,10 @@ class ErrorPosition:
 
 @dataclass(frozen=True)
 class Oracle(JDBCConnection):
-    """Class for Oracle jdbc connection.
+    """Class for Oracle JDBC connection.
+
+    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
+    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_)
 
     .. note::
 
@@ -52,13 +55,13 @@ class Oracle(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of oracle database. For example: ``bill.ug.mts.ru``
+        Host of Oracle database. For example: ``test.oracle.domain.com`` or ``193.168.1.10``
 
     port : int, default: ``1521``
-        Port of oracle database
+        Port of Oracle database
 
     user : str
-        User, which have access to the database and table. For example: ``BD_TECH_ETL``
+        User, which have access to the database and table. For example: ``SOME_USER``
 
     password : str
         Password for database connection
@@ -73,7 +76,7 @@ class Oracle(JDBCConnection):
     service_name : str, default: ``None``
         Specifies one or more names by which clients can connect to the instance.
 
-        For example: ``DWHLDTS``.
+        For example: ``MYDATA``.
 
         .. warning ::
 
@@ -84,15 +87,26 @@ class Oracle(JDBCConnection):
 
         You can use ``mtspark`` for spark session initialization
 
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"defaultBatchValue": 100}``
+
+        See `Oracle JDBC driver properties documentation
+        <https://docs.oracle.com/cd/E11882_01/appdev.112/e13995/oracle/jdbc/OracleDriver.html>`_
+        for more details
+
     Examples
     --------
 
-    Oracle jdbc connection initialization
+    Oracle connection initialization
 
     .. code::
 
         from onetl.connection import Oracle
         from mtspark import get_spark
+
+        extra = {"defaultBatchValue": 100}
 
         spark = get_spark({
             "appName": "spark-app-name",
@@ -100,10 +114,11 @@ class Oracle(JDBCConnection):
         })
 
         oracle = Oracle(
-            host="bill.ug.mts.ru",
-            user="BD_TECH_ETL",
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             sid='XE',
+            extra=extra,
             spark=spark,
         )
 

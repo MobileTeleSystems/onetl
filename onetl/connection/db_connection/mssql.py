@@ -9,7 +9,11 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 @dataclass(frozen=True)
 class MSSQL(JDBCConnection):
-    """Class for MSSQL jdbc connection.
+    """Class for MSSQL JDBC connection.
+
+    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8``
+    (`official MSSQL JDBC driver
+    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_)
 
     .. note::
 
@@ -18,7 +22,7 @@ class MSSQL(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of MSSQL database. For example: ``0001MSSQLDB02.dmz.msk.mts.ru``
+        Host of MSSQL database. For example: ``test.mssql.domain.com`` or ``192.168.1.14``
 
     port : int, default: ``1433``
         Port of MSSQL database
@@ -30,9 +34,9 @@ class MSSQL(JDBCConnection):
         Password for database connection
 
     database : str
-        Database in rdbms. To provide schema, use DBReader class
+        Database in RDBMS, NOT schema.
 
-        See https://www.educba.com/postgresql-database-vs-schema/ for more details
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`, default: ``None``
         Spark session that required for jdbc connection to database.
@@ -44,10 +48,14 @@ class MSSQL(JDBCConnection):
 
         For example: ``{"connectRetryCount": 3, "connectRetryInterval": 10}``
 
+        See `MSSQL JDBC driver properties documentation
+        <https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties>`_
+        for more details
+
     Examples
     --------
 
-    MSSQL jdbc connection initialization
+    MSSQL connection with plain auth:
 
     .. code::
 
@@ -55,8 +63,6 @@ class MSSQL(JDBCConnection):
         from mtspark import get_spark
 
         extra = {
-            "connectRetryCount": 3,
-            "connectRetryInterval": 10,
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
@@ -66,8 +72,60 @@ class MSSQL(JDBCConnection):
         })
 
         mssql = MSSQL(
-            host="0001MSSQLDB02.dmz.msk.mts.ru",
-            user="big_data_tech_user",
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            extra=extra,
+            spark=spark,
+        )
+
+    MSSQL connection with domain auth:
+
+    .. code::
+
+        from onetl.connection import MSSQL
+        from mtspark import get_spark
+
+        extra = {
+            "Domain": "some.domain.com",  # add here your domain
+            "IntegratedSecurity": "true",
+            "authenticationScheme": "NTLM",
+            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+        }
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": [MSSQL.package],
+        })
+
+        mssql = MSSQL(
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            extra=extra,
+            spark=spark,
+        )
+
+    MSSQL read-only connection:
+
+    .. code::
+
+        from onetl.connection import MSSQL
+        from mtspark import get_spark
+
+        extra = {
+            "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
+            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+        }
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": [MSSQL.package],
+        })
+
+        mssql = MSSQL(
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             extra=extra,
             spark=spark,
