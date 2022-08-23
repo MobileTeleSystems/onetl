@@ -22,10 +22,13 @@ ATLAS_PASSWORD = os.environ.get("ONETL_ATLAS_CONN_PASSWORD")
 hwm_store = [
     MemoryHWMStore(),
     YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
-    AtlasHWMStore(
-        url=ATLAS_URL,
-        user=ATLAS_USER,
-        password=ATLAS_PASSWORD,
+    pytest.param(
+        AtlasHWMStore(
+            url=ATLAS_URL,
+            user=ATLAS_USER,
+            password=ATLAS_PASSWORD,
+        ),
+        marks=pytest.mark.ATLAS,
     ),
 ]
 

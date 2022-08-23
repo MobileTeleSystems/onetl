@@ -7,7 +7,7 @@ from onetl.connection.db_connection.hive import HiveWriteMode
 
 
 def test_hive_missing_spark_arg():
-    with pytest.raises(TypeError, match="missing 1 required positional argument: 'spark'"):
+    with pytest.raises(ValueError, match="field required"):
         Hive()  # noqa: F841
 
 

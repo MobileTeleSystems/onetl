@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
+from typing import Optional
 
 from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
 from paramiko.sftp_attr import SFTPAttributes
 from paramiko.sftp_client import SFTPClient
+from pydantic import FilePath, SecretStr
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemotePath
@@ -17,7 +18,6 @@ SSH_CONFIG_PATH = LocalPath("~/.ssh/config").expanduser().resolve()
 log = getLogger(__name__)
 
 
-@dataclass(frozen=True)
 class SFTP(FileConnection):
     """Class for SFTP file connection.
 
@@ -56,8 +56,11 @@ class SFTP(FileConnection):
         )
     """
 
+    host: str
     port: int = 22
-    key_file: str | None = None
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
+    key_file: Optional[FilePath] = None
     timeout: int = 10
     host_key_check: bool = False
     compress: bool = True
@@ -78,26 +81,16 @@ class SFTP(FileConnection):
             # Default is RejectPolicy
             client.set_missing_host_key_policy(AutoAddPolicy())
 
-        if self.password:
-            client.connect(
-                hostname=self.host,
-                port=self.port,
-                username=self.user,
-                password=self.password,
-                timeout=self.timeout,
-                compress=self.compress,
-                sock=host_proxy,
-            )
-        else:
-            client.connect(
-                hostname=self.host,
-                port=self.port,
-                username=self.user,
-                key_filename=key_file,
-                timeout=self.timeout,
-                compress=self.compress,
-                sock=host_proxy,
-            )
+        client.connect(
+            hostname=self.host,
+            port=self.port,
+            username=self.user,
+            password=self.password.get_secret_value() if self.password else None,
+            key_filename=key_file,
+            timeout=self.timeout,
+            compress=self.compress,
+            sock=host_proxy,
+        )
 
         return client.open_sftp()
 

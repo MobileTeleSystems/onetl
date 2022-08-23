@@ -13,7 +13,6 @@ def test_oracle_connection_check_with_sid(spark, processing, caplog):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -27,9 +26,11 @@ def test_oracle_connection_check_with_sid(spark, processing, caplog):
     assert f"user = '{processing.user}'" in caplog.text
     assert f"sid = '{processing.sid}'" in caplog.text
     assert "service_name" not in caplog.text
-
     assert "database" not in caplog.text
-    assert "password = " not in caplog.text
+
+    if processing.password:
+        assert processing.password not in caplog.text
+
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 
@@ -45,7 +46,6 @@ def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spar
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         service_name="abc",
     )
@@ -59,9 +59,11 @@ def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spar
     assert f"user = '{processing.user}'" in caplog.text
     assert "service_name = 'abc'" in caplog.text
     assert "sid" not in caplog.text
-
     assert "database" not in caplog.text
-    assert "password = " not in caplog.text
+
+    if processing.password:
+        assert processing.password not in caplog.text
+
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 
@@ -69,7 +71,7 @@ def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spar
 
 
 def test_oracle_wrong_connection_check(spark):
-    oracle = Oracle(host="host", user="some_user", password="pwd", database="abc", sid="cde", spark=spark)
+    oracle = Oracle(host="host", user="some_user", password="pwd", sid="cde", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         oracle.check()
@@ -82,7 +84,6 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -116,7 +117,6 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -151,7 +151,6 @@ def test_oracle_connection_execute_ddl(spark, processing, get_schema_table, suff
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -202,7 +201,6 @@ def test_oracle_connection_execute_dml(request, spark, processing, load_table_da
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -262,7 +260,6 @@ def test_oracle_connection_execute_procedure(request, spark, processing, load_ta
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -397,7 +394,6 @@ def test_oracle_connection_execute_procedure_arguments(
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -520,7 +516,6 @@ def test_oracle_connection_execute_procedure_inout(
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -583,7 +578,6 @@ def test_oracle_connection_execute_procedure_ddl(request, spark, processing, get
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -615,7 +609,6 @@ def test_oracle_connection_execute_procedure_dml(request, spark, processing, get
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -658,7 +651,6 @@ def test_oracle_connection_execute_function(request, spark, processing, load_tab
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -809,7 +801,6 @@ def test_oracle_connection_execute_function_arguments(
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -883,7 +874,6 @@ def test_oracle_connection_execute_function_table(
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -953,7 +943,6 @@ def test_oracle_connection_execute_function_ddl(request, spark, processing, get_
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -1008,7 +997,6 @@ def test_oracle_connection_execute_function_dml(request, spark, processing, get_
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )

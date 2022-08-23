@@ -317,7 +317,6 @@ def test_path_repr_stats_with_kind(kwargs, kind):
 @pytest.mark.parametrize(
     "st_size, details",
     [
-        (None, ""),
         (0, ", size='0 Bytes'"),
         (10, ", size='10 Bytes'"),
     ],

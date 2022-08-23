@@ -21,10 +21,11 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=secrets.token_hex())
+    column = secrets.token_hex()
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=column)
 
     with SnapshotStrategy():
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=f"Column '{column}' is missing from dataframe schema"):
             reader.run()
 
 

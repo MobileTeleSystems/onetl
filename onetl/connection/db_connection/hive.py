@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 from textwrap import dedent
@@ -39,7 +38,6 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
             return cls.OVERWRITE_PARTITIONS
 
 
-@dataclass(frozen=True)
 class Hive(DBConnection):
     """Class for Hive spark connection.
 

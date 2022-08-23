@@ -1,5 +1,5 @@
-from onetl.core import DBWriter
 from onetl.connection import Oracle
+from onetl.core import DBWriter
 
 
 def test_oracle_writer_snapshot(spark, processing, prepare_schema_table):
@@ -10,7 +10,6 @@ def test_oracle_writer_snapshot(spark, processing, prepare_schema_table):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )

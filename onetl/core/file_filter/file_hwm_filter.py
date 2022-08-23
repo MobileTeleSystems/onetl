@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from etl_entities import FileHWM
-from pydantic import BaseModel
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.impl import FrozenModel
 from onetl.log import log_with_indent
 
 
-class FileHWMFilter(BaseFileFilter, BaseModel):
+class FileHWMFilter(BaseFileFilter, FrozenModel):
     """Filter files which are not covered by FileHWM
 
     Parameters

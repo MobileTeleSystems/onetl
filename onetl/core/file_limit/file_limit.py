@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import logging
 
-from pydantic import BaseModel, PrivateAttr
-
 from onetl.base import BaseFileLimit, PathProtocol
+from onetl.impl import FrozenModel
 from onetl.log import log_with_indent
 
 log = logging.getLogger(__name__)
 
 
-class FileLimit(BaseFileLimit, BaseModel):
+class FileLimit(BaseFileLimit, FrozenModel):
     """Limits the number of uploaded files
 
     Parameters
@@ -23,7 +22,7 @@ class FileLimit(BaseFileLimit, BaseModel):
     Examples
     --------
 
-    Сreate a FileLimit object and set the amount in it:
+    Create a FileLimit object and set the amount in it:
 
     .. code:: python
 
@@ -35,8 +34,7 @@ class FileLimit(BaseFileLimit, BaseModel):
 
     count_limit: int = 100
 
-    _counter: int = PrivateAttr(default_factory=int)
-    _is_reached: bool = PrivateAttr(default_factory=bool)
+    _counter: int = 0
 
     def reset(self):
         self._counter = 0  # noqa: WPS601
@@ -57,5 +55,5 @@ class FileLimit(BaseFileLimit, BaseModel):
         return self._counter >= self.count_limit
 
     def log_options(self, indent: int = 0):
-        for key, value in self.__dict__.items():  # noqa: WPS528
+        for key, value in self.dict(by_alias=True).items():  # noqa: WPS528
             log_with_indent(f"{key} = {value!r}", indent=indent)

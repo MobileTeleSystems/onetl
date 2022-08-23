@@ -13,7 +13,9 @@ def test_ftps_check(ftps_connection, caplog):
     assert f"host = '{ftps_connection.host}'" in caplog.text
     assert f"port = {ftps_connection.port}" in caplog.text
     assert f"user = '{ftps_connection.user}'" in caplog.text
-    assert "password = " not in caplog.text
+
+    if ftps_connection.password:
+        assert ftps_connection.password.get_secret_value() not in caplog.text
 
     assert "Connection is available" in caplog.text
 

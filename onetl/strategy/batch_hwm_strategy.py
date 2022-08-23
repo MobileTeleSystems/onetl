@@ -2,27 +2,30 @@ from __future__ import annotations
 
 import logging
 import operator
-from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import Any, Callable
+
+from pydantic import validator
 
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = logging.getLogger(__name__)
 
 
-@dataclass
 class BatchHWMStrategy(HWMStrategy):
-    step: Any = None
+    step: Any
 
     start: Any = None
     stop: Any = None
 
-    _iteration: int = field(init=False, repr=False, default=-1)
+    _iteration: int = -1
 
-    def __post_init__(self):
-        if not self.step:
-            raise ValueError(f"`step` argument of {self.__class__.__name__} cannot be empty!")
+    @validator("step", always=True)
+    def step_is_not_none(cls, step):  # noqa: N805
+        if not step:
+            raise ValueError(f"`step` argument of {cls.__name__} cannot be empty!")
+
+        return step
 
     def __iter__(self):
         self._iteration = -1  # noqa: WPS601

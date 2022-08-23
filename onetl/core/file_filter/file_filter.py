@@ -5,14 +5,14 @@ import os
 import re
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
-from onetl.impl import RemotePath
+from onetl.impl import FrozenModel, RemotePath
 from onetl.log import log_with_indent
 
 
-class FileFilter(BaseFileFilter, BaseModel):
+class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 
     Parameters
@@ -132,5 +132,5 @@ class FileFilter(BaseFileFilter, BaseModel):
         return True
 
     def log_options(self, indent: int = 0):
-        for key, value in self.__dict__.items():  # noqa: WPS528
+        for key, value in self.dict(exclude_none=True, by_alias=True).items():  # noqa: WPS528
             log_with_indent(f"{key} = {value!r}", indent=indent)

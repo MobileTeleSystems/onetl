@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
-from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from logging import getLogger
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
+from pydantic import validator
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection
@@ -16,6 +16,7 @@ from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import (
     FailedLocalFile,
     FileWriteMode,
+    FrozenModel,
     GenericOptions,
     LocalPath,
     RemotePath,
@@ -29,8 +30,7 @@ log = getLogger(__name__)
 UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]]]
 
 
-@dataclass
-class FileUploader:
+class FileUploader(FrozenModel):
     """Class specifies remote file source where you can upload files.
 
     Parameters
@@ -126,29 +126,24 @@ class FileUploader:
 
     connection: BaseFileConnection
 
-    target_path: InitVar[str | os.PathLike]
-    _target_path: RemotePath = field(init=False)
+    target_path: RemotePath
 
-    local_path: InitVar[os.PathLike | str | None] = field(default=None)
-    _local_path: LocalPath | None = field(init=False)
+    local_path: Optional[LocalPath] = None
+    temp_path: Optional[RemotePath] = None
 
-    temp_path: InitVar[str | os.PathLike] = field(default=None)
-    _temp_path: RemotePath | None = field(init=False)
+    options: Options = Options()
 
-    options: InitVar[Options | dict | None] = field(default=None)
-    _options: Options = field(init=False)
+    @validator("local_path", pre=True, always=True)
+    def resolve_local_path(cls, local_path):  # noqa: N805
+        return LocalPath(local_path).resolve() if local_path else None
 
-    def __post_init__(
-        self,
-        target_path: str | os.PathLike,
-        local_path: str | os.PathLike | None,
-        temp_path: str | os.PathLike,
-        options: str | Options | dict | None,
-    ):
-        self._target_path = RemotePath(target_path)
-        self._local_path = LocalPath(local_path).resolve() if local_path else None
-        self._temp_path = RemotePath(temp_path) if temp_path else None
-        self._options = self.Options.parse(options)
+    @validator("target_path", pre=True, always=True)
+    def check_target_path(cls, target_path):  # noqa: N805
+        return RemotePath(target_path)
+
+    @validator("temp_path", pre=True, always=True)
+    def check_temp_path(cls, temp_path):  # noqa: N805
+        return RemotePath(temp_path) if temp_path else None
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
@@ -220,19 +215,19 @@ class FileUploader:
             assert uploaded_files.missing == {LocalPath("/missing/file")}
         """
 
-        if files is None and not self._local_path:
+        if files is None and not self.local_path:
             raise ValueError("Neither file collection nor ``local_path`` are passed")
 
         self._log_options(files)
 
         # Check everything
-        if self._local_path:
+        if self.local_path:
             self._check_local_path()
 
         self.connection.check()
         log_with_indent("")
 
-        self.connection.mkdir(self._target_path)
+        self.connection.mkdir(self.target_path)
 
         if files is None:
             log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
@@ -243,15 +238,15 @@ class FileUploader:
             return UploadResult()
 
         current_temp_dir: RemotePath | None = None
-        if self._temp_path:
-            current_temp_dir = generate_temp_path(self._temp_path)
+        if self.temp_path:
+            current_temp_dir = generate_temp_path(self.temp_path)
 
         to_upload = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self._options.mode == FileWriteMode.DELETE_ALL:
-            self.connection.rmdir(self._target_path, recursive=True)
-            self.connection.mkdir(self._target_path)
+        if self.options.mode == FileWriteMode.DELETE_ALL:
+            self.connection.rmdir(self.target_path, recursive=True)
+            self.connection.mkdir(self.target_path)
 
         if current_temp_dir:
             current_temp_dir = self.connection.mkdir(current_temp_dir)
@@ -304,18 +299,18 @@ class FileUploader:
             }
         """
 
-        log.info(f"|Local FS| Getting files list from path '{self._local_path}'")
+        log.info(f"|Local FS| Getting files list from path '{self.local_path}'")
 
         self._check_local_path()
         result = FileSet()
 
         try:
-            for root, dirs, files in os.walk(self._local_path):
+            for root, dirs, files in os.walk(self.local_path):
                 log.debug(f"|Local FS| Listing dir '{root}': {len(dirs)} dirs, {len(files)} files")
                 result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
-                f"Couldn't read directory tree from local dir '{self._local_path}'",
+                f"Couldn't read directory tree from local dir '{self.local_path}'",
             ) from e
 
         return result
@@ -324,27 +319,27 @@ class FileUploader:
         entity_boundary_log(msg="FileUploader starts")
 
         log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
-        local_path_str = f"'{self._local_path}'" if self._local_path else "None"
+        local_path_str = f"'{self.local_path}'" if self.local_path else "None"
         log_with_indent(f"local_path = {local_path_str}")
-        log_with_indent(f"target_path = '{self._target_path}'")
-        if self._temp_path:
-            log_with_indent(f"temp_path = '{self._temp_path}'")
+        log_with_indent(f"target_path = '{self.target_path}'")
+        if self.temp_path:
+            log_with_indent(f"temp_path = '{self.temp_path}'")
         else:
             log_with_indent("temp_path = None")
 
         log_with_indent("options:")
-        for option, value in self._options.dict().items():
+        for option, value in self.options.dict(by_alias=True).items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
             log_with_indent(f"{option} = {value_wrapped}", indent=4)
         log_with_indent("")
 
-        if self._options.delete_local:
+        if self.options.delete_local:
             log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
 
-        if self._options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.mode == FileWriteMode.DELETE_ALL:
             log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
 
-        if files and self._local_path:
+        if files and self.local_path:
             log.warning(
                 f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
                 "File collection will be used",
@@ -362,31 +357,31 @@ class FileUploader:
             local_file = local_file_path
             tmp_file: RemotePath | None = None
 
-            if not self._local_path:
+            if not self.local_path:
                 # Upload into a flat structure
                 if not local_file_path.is_absolute():
                     raise ValueError("Cannot pass relative file path with empty ``local_path``")
 
                 filename = local_file_path.name
-                target_file = self._target_path / filename
+                target_file = self.target_path / filename
                 if current_temp_dir:
                     tmp_file = current_temp_dir / filename  # noqa: WPS220
             else:
                 # Upload according to source folder structure
-                if self._local_path in local_file_path.parents:
+                if self.local_path in local_file_path.parents:
                     # Make relative remote path
-                    target_file = self._target_path / local_file_path.relative_to(self._local_path)
+                    target_file = self.target_path / local_file_path.relative_to(self.local_path)
                     if current_temp_dir:
-                        tmp_file = current_temp_dir / local_file_path.relative_to(self._local_path)  # noqa: WPS220
+                        tmp_file = current_temp_dir / local_file_path.relative_to(self.local_path)  # noqa: WPS220
                 elif not local_file_path.is_absolute():
                     # Passed path is already relative
-                    local_file = self._local_path / local_file_path
-                    target_file = self._target_path / local_file_path
+                    local_file = self.local_path / local_file_path
+                    target_file = self.target_path / local_file_path
                     if current_temp_dir:
                         tmp_file = current_temp_dir / local_file_path  # noqa: WPS220
                 else:
                     # Wrong path (not relative path and source path not in the path to the file)
-                    raise ValueError(f"File path '{local_file}' does not match source_path '{self._local_path}'")
+                    raise ValueError(f"File path '{local_file}' does not match source_path '{self.local_path}'")
 
             if local_file.exists() and not local_file.is_file():
                 raise NotAFileError(f"|Local FS| {path_repr(local_file)} is not a file")
@@ -396,11 +391,11 @@ class FileUploader:
         return result
 
     def _check_local_path(self):
-        if not self._local_path.exists():
-            raise DirectoryNotFoundError(f"|Local FS| '{self._local_path}' does not exist")
+        if not self.local_path.exists():
+            raise DirectoryNotFoundError(f"|Local FS| '{self.local_path}' does not exist")
 
-        if not self._local_path.is_dir():
-            raise NotADirectoryError(f"|Local FS| {path_repr(self._local_path)} is not a directory")
+        if not self.local_path.is_dir():
+            raise NotADirectoryError(f"|Local FS| {path_repr(self.local_path)} is not a directory")
 
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         total_files = len(to_upload)
@@ -440,10 +435,10 @@ class FileUploader:
             if self.connection.path_exists(target_file):
                 file = self.connection.get_file(target_file)
                 error_message = f"|{self.__class__.__name__}| File {path_repr(file)} already exists"
-                if self._options.mode == FileWriteMode.ERROR:
+                if self.options.mode == FileWriteMode.ERROR:
                     raise FileExistsError(error_message)
 
-                if self._options.mode == FileWriteMode.IGNORE:
+                if self.options.mode == FileWriteMode.IGNORE:
                     log.warning(f"{error_message}, skipping")
                     result.skipped.add(local_file)
                     return
@@ -460,7 +455,7 @@ class FileUploader:
                 # Direct upload
                 uploaded_file = self.connection.upload_file(local_file, target_file, replace=replace)
 
-            if self._options.delete_local:
+            if self.options.delete_local:
                 local_file.unlink()
                 log.warning(f"|LocalFS| Successfully removed file {path_repr(local_file)}")
 

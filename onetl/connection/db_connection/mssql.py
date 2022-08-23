@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class MSSQL(JDBCConnection):
     """Class for MSSQL JDBC connection.
 
@@ -133,24 +131,25 @@ class MSSQL(JDBCConnection):
 
     """
 
+    class Extra(JDBCConnection.Extra):
+        class Config:
+            prohibited_options = frozenset(("databaseName",))
+
+    database: str
+    port: int = 1433
+    extra: Extra = Extra()
+
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
-    port: int = 1433
-
     _check_query: ClassVar[str] = "SELECT 1 AS field"
-
-    def __post_init__(self):
-        if not self.database:
-            raise ValueError(
-                f"You should provide database name for {self.__class__.__name__} connection. "
-                "Use database parameter: database = 'database_name'",
-            )
 
     @property
     def jdbc_url(self) -> str:
-        parameters = "".join(f";{k}={v}" for k, v in self.extra.items())
+        prop = self.extra.dict(by_alias=True)
+        prop["databaseName"] = self.database
+        parameters = ";".join(f"{k}={v}" for k, v in sorted(prop.items()))
 
-        return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{parameters}"
+        return f"jdbc:sqlserver://{self.host}:{self.port};{parameters}"
 
     @property
     def instance_url(self) -> str:

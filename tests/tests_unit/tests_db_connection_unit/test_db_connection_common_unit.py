@@ -3,23 +3,24 @@ import re
 from unittest.mock import Mock
 
 import pytest
+from pyspark.sql import SparkSession
 
 from onetl._internal import to_camel  # noqa: WPS436
 from onetl.connection import Hive, Oracle, Postgres
 from onetl.connection.db_connection.jdbc_connection import JDBCWriteMode
 
-spark = Mock()
+spark = Mock(spec=SparkSession)
 
 
 def test_secure_str_and_repr():
     conn = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark)
 
-    assert "password=" not in str(conn)
-    assert "password=" not in repr(conn)
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
 
 def test_jdbc_connection_without_host_and_credentials():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         Postgres(spark=spark)  # noqa: F841
 
 

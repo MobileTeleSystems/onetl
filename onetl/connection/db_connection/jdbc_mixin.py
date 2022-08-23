@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from contextlib import closing, suppress
-from dataclasses import dataclass, field
 from enum import Enum, auto
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
+
+from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
 
 from onetl._internal import stringify  # noqa: WPS436
-from onetl.impl import GenericOptions
+from onetl.impl import FrozenModel, GenericOptions
 
 log = getLogger(__name__)
 
@@ -34,8 +35,7 @@ class StatementType(Enum):
     CALL = auto()
 
 
-@dataclass(frozen=True)
-class JDBCMixin:
+class JDBCMixin(FrozenModel):
     """
     Compatibility layer between Python and Java SQL Module.
 
@@ -45,8 +45,8 @@ class JDBCMixin:
 
     spark: SparkSession
     user: str
-    password: str
-    driver: str
+    password: SecretStr
+    driver: ClassVar[str]
 
     class JDBCOptions(GenericOptions):
         """Class for generic options, specific for a specific JDBC driver.
@@ -71,7 +71,7 @@ class JDBCMixin:
         """
 
     # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
-    _last_connection_and_options: Optional[tuple[Any, JDBCOptions]] = field(default=None, init=False)
+    _last_connection_and_options: Optional[Tuple[Any, JDBCOptions]] = None
 
     @property
     @abstractmethod
@@ -94,7 +94,7 @@ class JDBCMixin:
         result = options.copy(
             update={
                 "user": self.user,
-                "password": self.password,
+                "password": self.password.get_secret_value() if self.password is not None else "",
                 "driver": self.driver,
                 "url": self.jdbc_url,
             },
@@ -137,8 +137,7 @@ class JDBCMixin:
         driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
-        # hack to bypass dataclass(frozen=True)
-        object.__setattr__(self, "_last_connection_and_options", (new_connection, options))  # noqa: WPS609
+        self._last_connection_and_options = (new_connection, options)  # noqa: WPS601
         return new_connection
 
     def _close_connections(self):
@@ -146,7 +145,7 @@ class JDBCMixin:
             last_connection, _ = self._last_connection_and_options
             last_connection.close()
 
-        object.__setattr__(self, "_last_connection_and_options", None)  # noqa: WPS609
+        self._last_connection_and_options = None  # noqa: WPS601
 
     def _get_statement_args(self) -> tuple[int, ...]:
         ResultSet = self.spark._jvm.java.sql.ResultSet

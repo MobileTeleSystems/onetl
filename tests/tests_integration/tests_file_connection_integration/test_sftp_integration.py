@@ -16,8 +16,10 @@ def test_sftp_check(sftp_connection, caplog):
     assert "timeout = 10" in caplog.text
     assert "host_key_check = False" in caplog.text
     assert "compress = True" in caplog.text
-    assert "key_file = " not in caplog.text
-    assert "password = " not in caplog.text
+    assert "key_file" not in caplog.text
+
+    if sftp_connection.password:
+        assert sftp_connection.password.get_secret_value() not in caplog.text
 
     assert "Connection is available" in caplog.text
 

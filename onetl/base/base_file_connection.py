@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Iterable
 
 from onetl.base.base_connection import BaseConnection
@@ -12,7 +11,6 @@ from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.path_stat_protocol import PathStatProtocol
 
 
-@dataclass(frozen=True)
 class BaseFileConnection(BaseConnection):
     """
     Implements generic methods for files and directories manipulation on some filesystem (usually remote)

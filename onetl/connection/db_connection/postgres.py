@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class Postgres(JDBCConnection):
     """Class for PostgreSQL JDBC connection.
 
@@ -78,20 +76,15 @@ class Postgres(JDBCConnection):
 
     """
 
-    driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+    database: str
     port: int = 5432
 
-    def __post_init__(self):
-        if not self.database:
-            raise ValueError(
-                f"You should provide database name for {self.__class__.__name__} connection. "
-                "Use database parameter: database = 'database_name'",
-            )
+    driver: ClassVar[str] = "org.postgresql.Driver"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
 
         if params_str:
             params_str = f"?{params_str}"

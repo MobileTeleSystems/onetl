@@ -9,26 +9,6 @@ from onetl.strategy.hwm_store import HWMStoreManager
 
 
 @pytest.mark.parametrize(
-    "hwm_store",
-    [
-        MemoryHWMStore(),
-        YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
-        AtlasHWMStore(
-            url="http://some.atlas.url",
-            user=secrets.token_hex(),
-            password=secrets.token_hex(),
-        ),
-    ],
-)
-def test_hwm_store_unit_context_manager(hwm_store):
-    with hwm_store as store:
-        assert HWMStoreManager.get_current() == store
-
-    assert HWMStoreManager.get_current() != hwm_store
-    assert isinstance(HWMStoreManager.get_current(), YAMLHWMStore)
-
-
-@pytest.mark.parametrize(
     "hwm_store_class, input_config, key",
     [
         (
@@ -88,42 +68,12 @@ def test_hwm_store_unit_context_manager(hwm_store):
         ),
         (
             YAMLHWMStore,
-            {"hwm_store": {"yml": tempfile.mktemp("hwmstore")}},  # noqa: S306 NOSONAR
-            "hwm_store",
-        ),
-        (
-            YAMLHWMStore,
-            {"hwm_store": {"yml": [tempfile.mktemp("hwmstore")]}},  # noqa: S306 NOSONAR
-            "hwm_store",
-        ),
-        (
-            YAMLHWMStore,
             {"hwm_store": {"yml": {"path": tempfile.mktemp("hwmstore"), "encoding": "utf8"}}},  # noqa: S306 NOSONAR
             "hwm_store",
         ),
         (
-            YAMLHWMStore,
-            {"hwm_store": {"yml": [tempfile.mktemp("hwmstore"), "utf8"]}},  # noqa: S306 NOSONAR
-            "hwm_store",
-        ),
-        (
-            AtlasHWMStore,
-            {"hwm_store": {"atlas": "http://some.atlas.url"}},
-            "hwm_store",
-        ),
-        (
-            AtlasHWMStore,
-            {"some_store": {"atlas": "http://some.atlas.url"}},
-            "some_store",
-        ),
-        (
             AtlasHWMStore,
             {"hwm_store": {"atlas": {"url": "http://some.atlas.url"}}},
-            "hwm_store",
-        ),
-        (
-            AtlasHWMStore,
-            {"hwm_store": {"atlas": ["http://some.atlas.url"]}},
             "hwm_store",
         ),
         (
@@ -135,19 +85,6 @@ def test_hwm_store_unit_context_manager(hwm_store):
                         "user": secrets.token_hex(),
                         "password": secrets.token_hex(),
                     },
-                },
-            },
-            "hwm_store",
-        ),
-        (
-            AtlasHWMStore,
-            {
-                "hwm_store": {
-                    "atlas": [
-                        "http://some.atlas.url",
-                        secrets.token_hex(),
-                        secrets.token_hex(),
-                    ],
                 },
             },
             "hwm_store",
@@ -198,14 +135,25 @@ def test_hwm_store_unit_detect_failure(input_config, config_constructor):
         {"hwm_store": {"memory": {"unknown": "arg"}}},
         {"hwm_store": {"memory": ["too_many_arg"]}},
         {"hwm_store": {"yml": 1}},
+        {"hwm_store": {"yml": tempfile.mktemp("hwmstore")}},  # noqa: S306 NOSONAR
+        {"hwm_store": {"yml": [tempfile.mktemp("hwmstore")]}},  # noqa: S306 NOSONAR
+        {"hwm_store": {"yml": [tempfile.mktemp("hwmstore"), "utf8"]}},  # noqa: S306 NOSONAR
         {"hwm_store": {"yml": {"unknown": "arg"}}},
-        {"hwm_store": {"yml": ["too", "many", "args"]}},
         {"hwm_store": {"atlas": 1}},
         {"hwm_store": {"atlas": None}},
-        {"hwm_store": {"atlas": []}},
+        {"hwm_store": {"atlas": "http://some.atlas.url"}},
+        {"hwm_store": {"atlas": ["http://some.atlas.url"]}},
+        {
+            "hwm_store": {
+                "atlas": [
+                    "positional",
+                    "args",
+                    "prohibited",
+                ],
+            },
+        },
         {"hwm_store": {"atlas": {}}},
         {"hwm_store": {"atlas": {"unknown": "arg"}}},
-        {"hwm_store": {"atlas": ["too", "many", "args", "abc"]}},
         {"not_hwm_store": "yml"},
     ],
 )

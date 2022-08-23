@@ -1,4 +1,5 @@
 from onetl.base.base_connection import BaseConnection
+from onetl.base.base_db_connection import BaseDBConnection
 from onetl.base.base_file_connection import BaseFileConnection
 from onetl.base.base_file_filter import BaseFileFilter
 from onetl.base.base_file_limit import BaseFileLimit

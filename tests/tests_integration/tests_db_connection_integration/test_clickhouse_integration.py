@@ -25,7 +25,9 @@ def test_clickhouse_connection_check(spark, processing, caplog):
     assert f"user = '{processing.user}'" in caplog.text
     assert f"database = '{processing.database}'" in caplog.text
 
-    assert "password = " not in caplog.text
+    if processing.password:
+        assert processing.password not in caplog.text
+
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 

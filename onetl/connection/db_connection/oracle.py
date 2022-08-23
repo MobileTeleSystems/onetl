@@ -6,7 +6,9 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date, datetime
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional
+
+from pydantic import root_validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -29,7 +31,7 @@ CREATE_DDL_PATTERN = re.compile(
 )
 
 
-@dataclass(frozen=True)
+@dataclass
 class ErrorPosition:
     line: int
     position: int
@@ -41,7 +43,6 @@ class ErrorPosition:
         return 100 - self.level, self.line, self.position
 
 
-@dataclass(frozen=True)
 class Oracle(JDBCConnection):
     """Class for Oracle JDBC connection.
 
@@ -124,26 +125,31 @@ class Oracle(JDBCConnection):
 
     """
 
+    port: int = 1521
+    sid: Optional[str] = None
+    service_name: Optional[str] = None
+
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
-    port: int = 1521
-    sid: str = ""
-    service_name: str = ""
 
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
 
-    def __post_init__(self):
-        if self.sid and self.service_name:
-            raise ValueError(
-                "Parameters sid and service_name are specified at the same time, only one must be specified",
-            )
+    @root_validator
+    def only_one_of_sid_or_service_name(cls, values):  # noqa: N805
+        sid = values.get("sid")
+        service_name = values.get("service_name")
 
-        if not self.sid and not self.service_name:
-            raise ValueError("Connection to Oracle does not have sid or service_name")
+        if sid and service_name:
+            raise ValueError("Only one of parameters ``sid``, ``service_name`` can be set, got both")
+
+        if not sid and not service_name:
+            raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
+
+        return values
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
 
         if params_str:
             params_str = f"?{params_str}"
@@ -322,8 +328,3 @@ class Oracle(JDBCConnection):
     def _get_date_value_sql(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
         return f"TO_DATE('{result}', 'YYYY-MM-DD')"
-
-    @classmethod
-    def _log_exclude_fields(cls) -> set[str]:
-        fields = super()._log_exclude_fields()
-        return fields.union({"database"})

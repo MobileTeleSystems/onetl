@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import operator
 import re
-from dataclasses import dataclass
 from typing import ClassVar
 
 import yaml
 from etl_entities import HWM, HWMTypeRegistry
 from platformdirs import user_data_dir
+from pydantic import validator
 
-from onetl.impl import LocalPath
+from onetl.impl import FrozenModel, LocalPath
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import (
     default_hwm_store_class,
@@ -21,8 +21,7 @@ DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
 @default_hwm_store_class
 @register_hwm_store_class("yaml", "yml")
-@dataclass
-class YAMLHWMStore(BaseHWMStore):
+class YAMLHWMStore(BaseHWMStore, FrozenModel):
     r"""YAML local store for HWM values
 
     Parameters
@@ -133,15 +132,20 @@ class YAMLHWMStore(BaseHWMStore):
           value: '1000'
     """
 
+    class Config:
+        frozen = True
+
     path: LocalPath = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
 
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
-    def __post_init__(self):
-        self.path = LocalPath(self.path).expanduser().absolute()  # noqa: WPS601
-        self.path.mkdir(parents=True, exist_ok=True)
+    @validator("path", pre=True, always=True)
+    def validate_path(cls, path):  # noqa: N805
+        path = LocalPath(path).expanduser().resolve()  # noqa: WPS601
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     def get(self, name: str) -> HWM | None:
         data = self._load(name)

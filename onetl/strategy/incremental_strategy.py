@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from etl_entities import HWM
 
+from onetl.impl import BaseModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 
-@dataclass
-class OffsetMixin:
-    hwm: HWM | None = None
+class OffsetMixin(BaseModel):
+    hwm: Optional[HWM] = None
     offset: Any = None
 
     def fetch_hwm(self) -> None:
@@ -21,7 +20,6 @@ class OffsetMixin:
             self.hwm -= self.offset  # noqa: WPS601
 
 
-@dataclass
 class IncrementalStrategy(OffsetMixin, HWMStrategy):
     """Incremental strategy for DBReader.
 
@@ -165,7 +163,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     """
 
 
-@dataclass
 class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     """Incremental batch strategy for DBReader.
 
@@ -404,5 +401,5 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         return result
 
     @classmethod
-    def _log_exclude_field(cls, name: str) -> bool:
-        return super()._log_exclude_field(name) or name == "start"
+    def _log_exclude_fields(cls) -> set[str]:
+        return super()._log_exclude_fields() | {"start"}
