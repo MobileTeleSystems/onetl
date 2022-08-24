@@ -1,4 +1,5 @@
 import secrets
+from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,6 +21,7 @@ spark = Mock(spec=SparkSession)
     [
         0,
         None,
+        timedelta(),
     ],
 )
 @pytest.mark.parametrize("strategy", [IncrementalBatchStrategy, SnapshotBatchStrategy])
@@ -27,7 +29,7 @@ def test_strategy_batch_step_is_empty(step, strategy):
     with pytest.raises(ValueError):
         strategy()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=f"'step' argument of {strategy.__name__} cannot be empty!"):
         strategy(step=step)
 
 

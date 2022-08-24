@@ -1,3 +1,4 @@
+import re
 import secrets
 from datetime import date, datetime, timedelta
 
@@ -7,7 +8,7 @@ from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
-from onetl.strategy import IncrementalBatchStrategy
+from onetl.strategy import IncrementalBatchStrategy, IncrementalStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
 
 
@@ -64,6 +65,7 @@ def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
     spark,
     processing,
     prepare_schema_table,
+    load_table_data,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -272,28 +274,21 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
 @pytest.mark.parametrize(
     "hwm_column, step",
     [
-        ("hwm_int", -10),
-        ("hwm_int", 0),
-        ("hwm_int", 0.5),
+        ("hwm_int", 1.5),
         ("hwm_int", "abc"),
         ("hwm_int", timedelta(hours=10)),
-        ("hwm_date", timedelta(hours=-10)),
-        ("hwm_date", timedelta(hours=0)),
-        ("hwm_date", timedelta(hours=10)),
         ("hwm_date", 10),
-        ("hwm_date", 0.5),
+        ("hwm_date", 1.5),
         ("hwm_date", "abc"),
-        ("hwm_datetime", timedelta(minutes=-60)),
-        ("hwm_datetime", timedelta(minutes=0)),
         ("hwm_datetime", 10),
-        ("hwm_datetime", 0.5),
+        ("hwm_datetime", 1.5),
         ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_strategy_incremental_batch_wrong_step(
+def test_postgres_strategy_incremental_batch_step_wrong_type(
     spark,
     processing,
-    load_table_data,
+    prepare_schema_table,
     hwm_column,
     step,
 ):
@@ -305,11 +300,182 @@ def test_postgres_strategy_incremental_batch_wrong_step(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    # there are 2 spans with a gap between
+
+    span_length = 100
+    span_gap = 50
+
+    # 0..40
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 50..90
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # set hwm value to first span max value, e.g. 100
+    with IncrementalStrategy():
+        reader.run()
+
+    # data is added
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
 
     with pytest.raises((TypeError, ValueError)):
         with IncrementalBatchStrategy(step=step) as part:
             for _ in part:
+                reader.run()
+
+
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", -10),
+        ("hwm_date", timedelta(days=-10)),
+        ("hwm_datetime", timedelta(minutes=-60)),
+    ],
+)
+def test_postgres_strategy_incremental_batch_step_negative(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    # there are 2 spans with a gap between
+
+    span_length = 100
+    span_gap = 50
+
+    # 0..40
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 50..90
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # set hwm value to first span max value, e.g. 100
+    with IncrementalStrategy():
+        reader.run()
+
+    # data is added
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    error_msg = "HWM value is not increasing, please check options passed to IncrementalBatchStrategy"
+    with pytest.raises(ValueError, match=error_msg):
+        with IncrementalBatchStrategy(step=step) as part:
+            for _ in part:
+                reader.run()
+
+
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", 0.01),
+        ("hwm_date", timedelta(days=1)),
+        ("hwm_datetime", timedelta(hours=1)),
+    ],
+)
+def test_postgres_strategy_incremental_batch_step_too_small(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        columns=[hwm_column, "*"],
+        hwm_column=hwm_column,
+    )
+
+    # there are 2 spans with a gap between
+
+    span_length = 100
+    span_gap = 50
+
+    # 0..40
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 50..90
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # set hwm value to first span max value, e.g. 100
+    with IncrementalStrategy():
+        reader.run()
+
+    # data is added
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    error_msg = f"step={step!r} parameter of IncrementalBatchStrategy leads to generating too many iterations"
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        with IncrementalBatchStrategy(step=step) as batches:
+            for _ in batches:
                 reader.run()
 
 
@@ -332,7 +498,7 @@ def test_postgres_strategy_incremental_batch_wrong_step(
         (20, 5),  # span_length < step < gap
         (5, 2),  # gap < span_length < step
         (2, 5),  # span_length < gap < step
-        (1, 1),  # minimal span possible
+        (1, 1),  # minimal gap possible
     ],
 )
 def test_postgres_strategy_incremental_batch(
@@ -580,7 +746,7 @@ def test_postgres_strategy_incremental_batch_offset(
         values=second_span,
     )
 
-    # set hwm value to second offset max value, e.g. 90
+    # set hwm value to second span max value minus offset, e.g. 90
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
             reader.run()

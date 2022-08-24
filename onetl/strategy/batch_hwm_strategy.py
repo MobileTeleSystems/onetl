@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import operator
 from textwrap import dedent
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from pydantic import validator
 
@@ -20,10 +20,12 @@ class BatchHWMStrategy(HWMStrategy):
 
     _iteration: int = -1
 
+    MAX_ITERATIONS: ClassVar[int] = 100
+
     @validator("step", always=True)
     def step_is_not_none(cls, step):  # noqa: N805
         if not step:
-            raise ValueError(f"`step` argument of {cls.__name__} cannot be empty!")
+            raise ValueError(f"'step' argument of {cls.__name__} cannot be empty!")
 
         return step
 
@@ -99,10 +101,18 @@ class BatchHWMStrategy(HWMStrategy):
 
         if next_value is not None and self.current_value >= next_value:
             # negative or zero step - exception
-            # date HWM with step value less than one day - exception
+            # DateHWM with step value less than one day - exception
             raise ValueError(
                 f"HWM value is not increasing, please check options passed to {self.__class__.__name__}!",
             )
+
+        if self.stop is not None:
+            expected_iterations = int((self.stop - self.current_value) / self.step)
+            if expected_iterations >= self.MAX_ITERATIONS:
+                raise ValueError(
+                    f"step={self.step!r} parameter of {self.__class__.__name__} leads to "
+                    f"generating too many iterations ({expected_iterations}+)",
+                )
 
     @property
     def next_value(self) -> Any:
