@@ -86,6 +86,73 @@ def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
                 reader.run()
 
 
+def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_schema_table):
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        where="float_value < 51 OR float_value BETWEEN 101 AND 120",
+        hwm_column="hwm_int",
+    )
+
+    # there are 2 spans
+    # 0..100
+    first_span_begin = 0
+    first_span_end = 100
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+
+    # 101..250
+    second_span_begin = 101
+    second_span_end = 200
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    first_df = None
+    with IncrementalBatchStrategy(step=10) as batches:
+        for _ in batches:
+            next_df = reader.run()
+
+            if first_df is None:
+                first_df = next_df
+            else:
+                first_df = first_df.union(next_df)
+
+    processing.assert_equal_df(df=first_df, other_frame=first_span[:51])
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    second_df = None
+    with IncrementalBatchStrategy(step=10) as batches:
+        for _ in batches:
+            next_df = reader.run()
+
+            if second_df is None:
+                second_df = next_df
+            else:
+                second_df = second_df.union(next_df)
+
+    processing.assert_equal_df(df=second_df, other_frame=second_span[:19])
+
+
 def test_postgres_strategy_incremental_batch_hwm_set_twice(
     spark,
     processing,

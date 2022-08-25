@@ -215,6 +215,48 @@ def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
                 reader.run()
 
 
+def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        where="float_value < 50 OR float_value = 50.50",
+        hwm_column="hwm_int",
+    )
+
+    # there is a span 0..100
+    span_begin = 0
+    span_end = 100
+    span = processing.create_pandas_df(min_id=span_begin, max_id=span_end)
+
+    # insert span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=span,
+    )
+
+    # snapshot run with only 10 rows per run
+    df = None
+    with SnapshotBatchStrategy(step=10) as batches:
+        for _ in batches:
+            next_df = reader.run()
+            if df is None:
+                df = next_df
+            else:
+                df = df.union(next_df)
+
+    processing.assert_equal_df(df=df, other_frame=span[:51])
+
+
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
