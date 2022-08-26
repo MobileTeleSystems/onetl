@@ -1,5 +1,5 @@
-from onetl.core import DBReader
 from onetl.connection import Oracle
+from onetl.core import DBReader
 
 
 def test_oracle_reader_snapshot(spark, processing, load_table_data):
@@ -8,7 +8,6 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -32,7 +31,6 @@ def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data)
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -59,7 +57,6 @@ def test_oracle_reader_snapshot_with_where(spark, processing, load_table_data):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -117,7 +114,6 @@ def test_oracle_reader_snapshot_with_columns_and_where(spark, processing, load_t
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )

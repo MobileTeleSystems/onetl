@@ -2,6 +2,7 @@ import secrets
 from unittest.mock import Mock, patch
 
 import pytest
+from pyspark.sql import SparkSession
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -10,6 +11,8 @@ from onetl.strategy import (
     IncrementalStrategy,
     SnapshotBatchStrategy,
 )
+
+spark = Mock(spec=SparkSession)
 
 
 @pytest.mark.parametrize(
@@ -42,7 +45,7 @@ def test_strategy_hwm_column_not_set(check, strategy, kwargs):
 
     with strategy(**kwargs):
         reader = DBReader(
-            connection=Postgres(spark=Mock(), host="some_host", user="valid_user", database="default", password="pwd"),
+            connection=Postgres(spark=spark, host="some_host", user="valid_user", database="default", password="pwd"),
             table=f"{secrets.token_hex()}.{secrets.token_hex()}",
         )
 

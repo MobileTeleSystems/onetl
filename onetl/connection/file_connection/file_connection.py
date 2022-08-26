@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any, Iterable, Iterator
 
@@ -21,20 +20,21 @@ from onetl.exception import (
     DirectoryNotFoundError,
     NotAFileError,
 )
-from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemotePath, path_repr
+from onetl.impl import (
+    FrozenModel,
+    LocalPath,
+    RemoteDirectory,
+    RemoteFile,
+    RemotePath,
+    path_repr,
+)
 from onetl.log import log_with_indent
 
 log = getLogger(__name__)
 
 
-@dataclass(frozen=True)  # noqa: WPS214
-class FileConnection(BaseFileConnection):
-    host: str
-    user: str
-    port: int
-    password: str = field(repr=False, default="")
-
-    _client: Any = field(init=False, repr=False, default=None)
+class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
+    _client: Any = None
 
     @property
     def client(self):
@@ -42,7 +42,7 @@ class FileConnection(BaseFileConnection):
             return self._client
 
         client = self._get_client()
-        object.__setattr__(self, "_client", client)  # noqa: WPS609
+        self._client = client  # noqa: WPS601
         return client
 
     def close(self):
@@ -71,7 +71,7 @@ class FileConnection(BaseFileConnection):
         if self._client:
             self._close_client()
 
-        object.__setattr__(self, "_client", None)  # noqa: WPS609
+        self._client = None  # noqa: WPS601
 
     def __enter__(self):
         return self
@@ -450,28 +450,15 @@ class FileConnection(BaseFileConnection):
     def _get_item_stat(self, top: RemotePath, item) -> PathStatProtocol:
         return self._get_stat(top / self._get_item_name(item))
 
-    @classmethod
-    def _log_fields(cls) -> set[str]:
-        # TODO(dypedchenk): until using pydantic dataclass
-        return {
-            field
-            for field in cls.__dataclass_fields__.keys()  # type: ignore[attr-defined]
-            if not field.startswith("_")
-        }
-
-    @classmethod
-    def _log_exclude_fields(cls) -> set[str]:
-        # TODO(dypedchenk): until using pydantic dataclass
-        return {"password"}
-
     def _log_parameters(self):
         log.info("|onETL| Using connection parameters:")
         log_with_indent(f"type = {self.__class__.__name__}")
-        for attr in sorted(self._log_fields() - self._log_exclude_fields()):
-            value_attr = getattr(self, attr)
-
-            if value_attr != "" and value_attr is not None:
-                log_with_indent(f"{attr} = {value_attr!r}")
+        parameters = self.dict(by_alias=True, exclude_none=True)
+        for attr, value in sorted(parameters.items()):
+            if isinstance(value, os.PathLike):
+                log_with_indent(f"{attr} = {path_repr(value)}")
+            else:
+                log_with_indent(f"{attr} = {value!r}")
 
     @abstractmethod
     def _get_client(self) -> Any:

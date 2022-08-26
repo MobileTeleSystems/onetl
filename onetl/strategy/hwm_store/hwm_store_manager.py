@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import ClassVar
 
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import HWMStoreClassRegistry
 
 
-@dataclass
 class HWMStoreManager:
     _stack: ClassVar[list[BaseHWMStore]] = []
 

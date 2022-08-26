@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import io
 from contextlib import redirect_stdout
-from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from etl_entities import Table
+from pydantic import validator
 
-from onetl.connection.db_connection import DBConnection
-from onetl.impl.generic_options import GenericOptions
+from onetl.base import BaseDBConnection
+from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import entity_boundary_log, log_with_indent
 
 if TYPE_CHECKING:
@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
-@dataclass
-class DBWriter:
+class DBWriter(FrozenModel):
     """Class specifies database and table where you can write your dataframe.
 
     Parameters
@@ -123,19 +122,29 @@ class DBWriter:
         )
     """
 
-    connection: DBConnection
+    connection: BaseDBConnection
     table: Table
-    options: GenericOptions | None
+    options: Optional[GenericOptions] = None
 
-    def __init__(
-        self,
-        connection: DBConnection,
-        table: str,
-        options: GenericOptions | dict | None = None,
-    ):
-        self.connection = connection
-        self.table = self._handle_table(table)
-        self.options = self._handle_options(options)
+    @validator("table", pre=True, always=True)
+    def validate_table(cls, value, values):  # noqa: N805
+        if isinstance(value, str):
+            return Table(name=value, instance=values["connection"].instance_url)
+        return value
+
+    @validator("options", pre=True, always=True)
+    def validate_options(cls, options, values):  # noqa: N805
+        connection = values.get("connection")
+        write_options_class = getattr(connection, "WriteOptions", None)
+        if write_options_class:
+            return write_options_class.parse(options)
+
+        if options:
+            raise ValueError(
+                f"{connection.__class__.__name__} does not implement WriteOptions, but {options!r} is passed",
+            )
+
+        return None
 
     def run(self, df: DataFrame):
         """
@@ -174,7 +183,7 @@ class DBWriter:
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
         log_with_indent(f"table = '{self.table}'")
 
-        log.info("")
+        log_with_indent("")
         if self.options:
             log_with_indent("options:")
             for option, value in self.options.dict(exclude_none=True).items():
@@ -182,7 +191,7 @@ class DBWriter:
                 log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:
             log_with_indent("options = None")
-        log.info("")
+        log_with_indent("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
         log_with_indent("DataFrame schema")
@@ -195,21 +204,6 @@ class DBWriter:
 
         for line in schema_tree.getvalue().splitlines():
             log_with_indent(line, indent=4)
-
-    def _handle_table(self, table: str) -> Table:
-        return Table(name=table, instance=self.connection.instance_url)
-
-    def _handle_options(self, options: GenericOptions | dict | None) -> GenericOptions | None:
-        write_options_class = getattr(self.connection, "WriteOptions", None)
-        if write_options_class:
-            return write_options_class.parse(options)
-
-        if options:
-            raise TypeError(
-                f"{self.connection.__class__.__name__} does not implement WriteOptions, but {options!r} is passed",
-            )
-
-        return None
 
     def _get_write_kwargs(self) -> dict:
         if self.options:

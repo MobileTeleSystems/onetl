@@ -1,6 +1,78 @@
+import logging
+import secrets
+import shutil
+from pathlib import Path
+
 import pytest
 
-from onetl.strategy import YAMLHWMStore
+from onetl.strategy.hwm_store import HWMStoreManager, YAMLHWMStore
+
+
+def test_hwm_store_yaml_context_manager(caplog):
+    hwm_store = YAMLHWMStore()
+
+    assert hwm_store.path
+    assert hwm_store.encoding == "utf-8"
+
+    with caplog.at_level(logging.INFO):
+        with hwm_store as store:
+            assert HWMStoreManager.get_current() == store
+
+    assert "|onETL| Using YAMLHWMStore as HWM Store" in caplog.text
+    assert "path = '" in caplog.text
+    assert "encoding = 'utf-8'" in caplog.text
+
+    assert HWMStoreManager.get_current() == hwm_store
+
+
+def test_hwm_store_yaml_context_manager_with_path(caplog, request, tmp_path_factory):
+    folder: Path = tmp_path_factory.mktemp("someconf")
+    path = folder / secrets.token_hex(5)
+
+    def finalizer():
+        shutil.rmtree(folder)
+
+    request.addfinalizer(finalizer)
+    hwm_store = YAMLHWMStore(path=path)
+
+    assert hwm_store.path == path
+    assert hwm_store.encoding == "utf-8"
+
+    with caplog.at_level(logging.INFO):
+        with hwm_store as store:
+            assert HWMStoreManager.get_current() == store
+
+    assert "|onETL| Using YAMLHWMStore as HWM Store" in caplog.text
+    assert f"path = '{path}' (kind='directory'" in caplog.text
+    assert "encoding = 'utf-8'" in caplog.text
+
+    assert HWMStoreManager.get_current() != hwm_store
+    assert isinstance(HWMStoreManager.get_current(), YAMLHWMStore)
+
+
+def test_hwm_store_yaml_context_manager_with_encoding(caplog, request, tmp_path_factory):
+    folder: Path = tmp_path_factory.mktemp("someconf")
+    path = folder / secrets.token_hex(5)
+
+    def finalizer():
+        shutil.rmtree(folder)
+
+    request.addfinalizer(finalizer)
+    hwm_store = YAMLHWMStore(path=path, encoding="cp-1251")
+
+    assert hwm_store.path == path
+    assert hwm_store.encoding == "cp-1251"
+
+    with caplog.at_level(logging.INFO):
+        with hwm_store as store:
+            assert HWMStoreManager.get_current() == store
+
+    assert "|onETL| Using YAMLHWMStore as HWM Store" in caplog.text
+    assert f"path = '{path}' (kind='directory'" in caplog.text
+    assert "encoding = 'cp-1251'" in caplog.text
+
+    assert HWMStoreManager.get_current() != hwm_store
+    assert isinstance(HWMStoreManager.get_current(), YAMLHWMStore)
 
 
 @pytest.mark.parametrize(
@@ -38,5 +110,5 @@ from onetl.strategy import YAMLHWMStore
         ),
     ],
 )
-def test_yaml_hwm_store_cleanup_file_name(qualified_name, file_name):
+def test_hwm_store_yaml_cleanup_file_name(qualified_name, file_name):
     assert YAMLHWMStore.cleanup_file_name(qualified_name) == file_name

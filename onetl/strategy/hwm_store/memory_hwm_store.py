@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from typing import Dict
 
 from etl_entities import HWM
+from pydantic import PrivateAttr
 
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import register_hwm_store_class
 
 
 @register_hwm_store_class("memory", "in-memory")
-@dataclass
 class MemoryHWMStore(BaseHWMStore):
     """In-memory local store for HWM values
 
@@ -59,7 +59,7 @@ class MemoryHWMStore(BaseHWMStore):
 
     """
 
-    _data: dict[str, HWM] = field(init=False, repr=False, default_factory=dict)
+    _data: Dict[str, HWM] = PrivateAttr(default_factory=dict)
 
     def get(self, name: str) -> HWM | None:
         return self._data.get(name, None)

@@ -4,7 +4,7 @@ import os
 from typing import Iterable, TypeVar
 
 from humanize import naturalsize
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from onetl.core.file_result.file_set import FileSet
 from onetl.exception import (
@@ -13,6 +13,7 @@ from onetl.exception import (
     MissingFilesError,
     SkippedFilesError,
 )
+from onetl.impl import BaseModel
 
 GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
@@ -29,9 +30,6 @@ class FileResult(BaseModel):  # noqa: WPS214
     * :obj`skipped`
     * :obj`missing`
     """
-
-    class Config:
-        arbitrary_types_allowed = True
 
     successful: FileSet[GenericPath] = Field(default_factory=FileSet)
     "Successfully handled files"

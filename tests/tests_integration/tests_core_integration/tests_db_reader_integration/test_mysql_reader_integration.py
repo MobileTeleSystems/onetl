@@ -1,5 +1,5 @@
-from onetl.core import DBReader
 from onetl.connection import MySQL
+from onetl.core import DBReader
 
 
 def test_mysql_reader_snapshot(spark, processing, load_table_data):

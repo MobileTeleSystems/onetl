@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import InitVar, dataclass, field
+from typing import Optional
 
 from etl_entities import HWM
 from mts_apache_atlas import MTSAtlasClient
+from pydantic import PrivateAttr, SecretStr
 
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_store_class_registry import register_hwm_store_class
 
 
 @register_hwm_store_class("atlas")
-@dataclass
 class AtlasHWMStore(BaseHWMStore):
     """Atlas remote store for HWM values
 
@@ -70,19 +70,24 @@ class AtlasHWMStore(BaseHWMStore):
 
     """
 
-    url: str
-    user: InitVar[str | None] = field(default=None)
-    password: InitVar[str | None] = field(default=None)
-    _client: MTSAtlasClient = field(init=False)
+    class Config:
+        frozen = True
 
-    def __post_init__(self, user, password):
+    url: str
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
+    _client: MTSAtlasClient = PrivateAttr()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
         auth = None
-        if user or password:
-            if user and password:
-                auth = (user, password)
+        if self.user or self.password:
+            if self.user and self.password:
+                auth = (self.user, self.password.get_secret_value())
             else:
                 raise ValueError(
-                    f"You can pass to {self.__class__.__name__} only both user and password or none of them",
+                    f"You can pass to {self.__class__.__name__} only both `user` and `password`, or none of them",
                 )
 
         self._client = MTSAtlasClient(self.url, auth)  # noqa: WPS601

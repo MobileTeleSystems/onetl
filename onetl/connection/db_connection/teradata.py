@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, ClassVar
+from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class Teradata(JDBCConnection):
     """Class for Teradata JDBC connection.
 
@@ -87,28 +85,32 @@ class Teradata(JDBCConnection):
 
     """
 
-    driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
-    # TODO:(@mivasil6) think about workaround for case with several jar packages
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.20.00.08"
+    class Extra(JDBCConnection.Extra):
+        STRICT_NAMES: str = "OFF"
+        FLATTEN: str = "ON"
+
+        class Config:
+            prohibited_options = frozenset(("DATABASE", "DBS_PORT"))
+
     port: int = 1025
+    database: Optional[str] = None
+    extra: Extra = Extra()
+
+    driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
+    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.20.00.08"
 
     _check_query: ClassVar[str] = "SELECT 1 AS check_result"
-    _default_extra: ClassVar[dict[str, Any]] = {
-        "STRICT_NAMES": "OFF",
-        "FLATTEN": "ON",
-    }
 
     @property
     def jdbc_url(self) -> str:
-        prop = self._default_extra.copy()
-        prop.update(self.extra)
+        prop = self.extra.dict(by_alias=True)
 
         if self.database:
             prop["DATABASE"] = self.database
 
         prop["DBS_PORT"] = self.port
 
-        conn = ",".join(f"{k}={v}" for k, v in prop.items())
+        conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
         return f"jdbc:teradata://{self.host}/{conn}"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:

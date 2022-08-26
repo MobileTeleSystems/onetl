@@ -1,5 +1,5 @@
-from onetl.core import DBWriter
 from onetl.connection import MySQL
+from onetl.core import DBWriter
 
 
 def test_mysql_writer_snapshot(spark, processing, prepare_schema_table):

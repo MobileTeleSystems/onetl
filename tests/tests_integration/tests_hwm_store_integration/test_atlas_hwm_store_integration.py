@@ -12,6 +12,7 @@ ATLAS_USER = os.environ.get("ONETL_ATLAS_CONN_USER")
 ATLAS_PASSWORD = os.environ.get("ONETL_ATLAS_CONN_PASSWORD")
 
 
+@pytest.mark.ATLAS
 @pytest.mark.parametrize(
     "url, user, password",
     [

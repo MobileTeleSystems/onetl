@@ -1,11 +1,12 @@
 from unittest.mock import Mock
 
 import pytest
+from pyspark.sql import SparkSession
 
 from onetl.connection import Hive
 from onetl.core import DBReader
 
-spark = Mock()
+spark = Mock(spec=SparkSession)
 
 
 def test_reader_without_schema():
@@ -25,7 +26,7 @@ def test_reader_with_too_many_dots():
 
 
 def test_reader_hive_with_read_options():
-    with pytest.raises(TypeError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
+    with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(
             connection=Hive(spark=spark),
             table="schema.table",

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import logging
 import operator
-from dataclasses import dataclass, field
-from typing import Any, Callable
+import os
+from typing import Any, Callable, Optional
 
 from etl_entities import HWM
 
+from onetl.impl import path_repr
 from onetl.log import log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
@@ -14,9 +15,8 @@ from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 log = logging.getLogger(__name__)
 
 
-@dataclass
 class HWMStrategy(BaseStrategy):
-    hwm: HWM | None = field(repr=False, default=None)
+    hwm: Optional[HWM] = None
 
     @property
     def current_value(self) -> Any:
@@ -85,10 +85,13 @@ class HWMStrategy(BaseStrategy):
             log.info(f"{log_prefix} HWM has been saved")
 
             if location:
-                log_with_indent(f"location = {location}")
+                if isinstance(location, os.PathLike):
+                    log_with_indent(f"location = {path_repr(location)}")
+                else:
+                    log_with_indent(f"location = {location}")
         else:
-            log.debug(f"{log_prefix} HWM will not been saved, skipping")
+            log.debug(f"{log_prefix} HWM value is not set, do not save")
 
     @classmethod
-    def _log_exclude_field(cls, name: str) -> bool:
-        return super()._log_exclude_field(name) or name == "hwm"
+    def _log_exclude_fields(cls) -> set[str]:
+        return super()._log_exclude_fields() | {"hwm"}

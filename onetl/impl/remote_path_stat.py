@@ -1,33 +1,33 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import Optional, Union
 
 from onetl.base.path_stat_protocol import PathStatProtocol
+from onetl.impl.frozen_model import FrozenModel
 
 
-@dataclass(frozen=True)
-class RemotePathStat:
+class RemotePathStat(FrozenModel):
     st_size: int = 0
     """
     Size of file, in bytes
     """
 
-    st_mtime: float | None = None
+    st_mtime: Optional[float] = None
     """
     Unix timestamp of most recent content modification
     """
 
-    st_mode: int | None = None
+    st_mode: Optional[int] = None
     """
     File mode bits
     """
 
-    st_uid: str | int | None = None
+    st_uid: Union[int, str, None] = None
     """
     User identifier of the file owner
     """
 
-    st_gid: str | int | None = None
+    st_gid: Union[int, str, None] = None
     """
     Group identifier of the file owner
     """

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from logging import getLogger
 from random import randint
@@ -10,7 +10,7 @@ from pandas.util.testing import assert_frame_equal
 logger = getLogger(__name__)
 
 
-class BaseProcessing:
+class BaseProcessing(ABC):
     _df_max_length: int = 100
     _column_types_and_names_matching: Dict[str, str] = {}
 

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import os
 import stat
-from dataclasses import dataclass
 from datetime import datetime
 from logging import getLogger
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
+from pydantic import Field, SecretStr
 from smbclient import SambaClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -19,7 +19,6 @@ log = getLogger(__name__)
 ItemType = List[Tuple[str, int, int, datetime]]
 
 
-@dataclass(frozen=True)
 class Samba(FileConnection):
     """Class for Samba file connection.
 
@@ -57,9 +56,13 @@ class Samba(FileConnection):
         )
     """
 
+    host: str
     port: int = 445
-    domain: str | None = None
-    schema: str | None = None
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
+    domain: Optional[str] = None
+    # `schema` attribute overrides Pydandic own attribute, so using alias here
+    share: Optional[str] = Field(alias="schema", default=None)
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.exists(os.fspath(path))
@@ -67,12 +70,12 @@ class Samba(FileConnection):
     def _get_client(self) -> SambaClient:
         return SambaClient(
             server=self.host,
-            share=self.schema,
+            share=self.share or "",
             username=self.user,
             domain=self.domain,
             port=self.port,
             # does not work without \n on smbclient --version Version 4.7.1
-            password=self.password + "\n",
+            password=self.password.get_secret_value() + "\n" if self.password else None,
         )
 
     def _is_client_closed(self) -> bool:

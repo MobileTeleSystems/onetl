@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 from etl_entities import Column, Table
+from pydantic import root_validator, validator
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
-from onetl.connection.db_connection import DBConnection
-from onetl.impl.generic_options import GenericOptions
+from onetl.base import BaseDBConnection
+from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
@@ -19,14 +19,13 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
-@dataclass
-class DBReader:
+class DBReader(FrozenModel):
     """The DBReader class allows you to read data from a table with specified connection
     and parameters and save it as Spark dataframe
 
     Parameters
     ----------
-    connection : :obj:`onetl.connection.DBConnection`
+    connection : :obj:`onetl.connection.BaseDBConnection`
         Class which contains DB connection properties. See :ref:`db-connections` section
 
     table : str
@@ -54,7 +53,7 @@ class DBReader:
     hint : str, default: ``None``
         Add hint to SQL query
 
-    options : dict, :obj:`onetl.connection.DBConnection.ReadOptions`, default: ``None``
+    options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
         Spark read options.
 
         For example:
@@ -153,32 +152,87 @@ class DBReader:
         )
     """
 
-    connection: DBConnection
+    connection: BaseDBConnection
     table: Table
-    where: str | None
-    hint: str | None
-    columns: list[str]
-    hwm_column: Column | None
-    hwm_expression: str | None
-    options: GenericOptions | None
+    hwm_column: Optional[Column] = None
+    hwm_expression: Optional[str] = None
+    columns: List[str] = ["*"]
+    where: Optional[str] = None
+    hint: Optional[str] = None
+    options: Optional[GenericOptions] = None
 
-    def __init__(
-        self,
-        connection: DBConnection,
-        table: str,
-        columns: str | list[str] = "*",
-        where: str | None = None,
-        hint: str | None = None,
-        hwm_column: str | tuple[str, str] | None = None,
-        options: GenericOptions | dict | None = None,
-    ):
-        self.connection = connection
-        self.table = self._handle_table(table)
-        self.where = where
-        self.hint = hint
-        self.hwm_column, self.hwm_expression = self._handle_hwm_column(hwm_column)  # noqa: WPS414
-        self.columns = self._handle_columns(columns)
-        self.options = self._handle_options(options)
+    @validator("table", pre=True, always=True)
+    def validate_table(cls, value, values):  # noqa: N805
+        if isinstance(value, str):
+            return Table(name=value, instance=values["connection"].instance_url)
+        return value
+
+    @root_validator(pre=True)
+    def validate_hwm_column(cls, values):  # noqa: N805
+        hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
+        if hwm_column is None or isinstance(hwm_column, Column):
+            return values
+
+        hwm_expression: str | None = values.get("hwm_expression")
+        if not hwm_expression and not isinstance(hwm_column, str):
+            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
+            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
+
+            if not hwm_expression:
+                raise ValueError("hwm_column should be a tuple('column_name', 'expression'), but expression is not set")
+
+        values["hwm_column"] = Column(name=hwm_column)
+        values["hwm_expression"] = hwm_expression
+
+        return values
+
+    @validator("columns", pre=True, always=True)  # noqa: WPS238
+    def validate_columns(cls, columns, values):  # noqa: N805
+        items: list[str]
+        if isinstance(columns, str):
+            items = columns.split(",")
+        else:
+            items = list(columns)
+
+        if not items:
+            raise ValueError("Columns list cannot be empty")
+
+        result: list[str] = []
+        result_lower: list[str] = []
+
+        for item in items:
+            column = item.strip()
+
+            if not column:
+                raise ValueError(f"Column name cannot be empty string, got {item!r}")
+
+            if column.lower() in result_lower:
+                raise ValueError(f"Duplicated column name: {item!r}")
+
+            hwm_column = values.get("hwm_column")
+            hwm_expression = values.get("hwm_expression")
+
+            if hwm_expression and hwm_column and hwm_column.name.lower() == column.lower():
+                raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as column name")
+
+            result.append(column)
+            result_lower.append(column.lower())
+
+        return result
+
+    @validator("options", pre=True, always=True)
+    def validate_options(cls, options, values):  # noqa: N805
+        connection = values.get("connection")
+        read_options_class = getattr(connection, "ReadOptions", None)
+        if read_options_class:
+            return read_options_class.parse(options)
+
+        if options:
+            raise ValueError(
+                f"{connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed",
+            )
+
+        return None
 
     def get_schema(self) -> StructType:
         return self.connection.get_schema(  # type: ignore[call-arg]
@@ -234,9 +288,9 @@ class DBReader:
 
         helper: StrategyHelper
         if self.hwm_column:
-            helper = HWMStrategyHelper(self, self.hwm_column, self.hwm_expression)
+            helper = HWMStrategyHelper(reader=self, hwm_column=self.hwm_column, hwm_expression=self.hwm_expression)
         else:
-            helper = NonHWMStrategyHelper(self)
+            helper = NonHWMStrategyHelper(reader=self)
 
         df = self.connection.read_table(  # type: ignore[call-arg]
             table=str(self.table),
@@ -255,24 +309,19 @@ class DBReader:
     def _log_parameters(self) -> None:
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
         log_with_indent(f"table = '{self.table}'")
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
-            if attr in {
-                "connection",
-                "options",
-                "table",
-                "hwm_column",
-            }:
-                continue
+        parameters = self.dict(
+            by_alias=True,
+            exclude_none=True,
+            exclude={"connection", "options", "table", "hwm_column"},
+        )
 
-            value_attr = getattr(self, attr)
-
-            if value_attr:
-                log_with_indent(f"{attr} = {value_attr!r}")
+        for attr, value in parameters.items():  # type: ignore[attr-defined]  # noqa: WPS609
+            log_with_indent(f"{attr} = {value!r}")
 
         if self.hwm_column:
             log_with_indent(f"hwm_column = '{self.hwm_column}'")
 
-        log.info("")
+        log_with_indent("")
 
     def _log_options(self) -> None:
         if self.options:
@@ -282,7 +331,7 @@ class DBReader:
                 log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:
             log_with_indent("options = None")
-        log.info("")
+        log_with_indent("")
 
     def _resolve_columns(self) -> list[str]:
         """
@@ -329,24 +378,6 @@ class DBReader:
 
         return columns
 
-    def _handle_table(self, table: str) -> Table:
-        return Table(name=table, instance=self.connection.instance_url)
-
-    @staticmethod
-    def _handle_hwm_column(hwm_column: str | tuple[str, str] | None) -> tuple[None, None] | tuple[Column, str | None]:
-        if hwm_column is None:
-            return None, None
-
-        hwm_expression: str | None = None
-        if not isinstance(hwm_column, str):
-            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
-            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
-
-            if not hwm_expression:
-                raise ValueError("hwm_column should be a tuple('column_name', 'expression'), but expression is not set")
-
-        return Column(name=hwm_column), hwm_expression
-
     def _handle_columns(self, columns: str | list[str]) -> list[str]:  # noqa: WPS238
         items: list[str]
         if isinstance(columns, str):
@@ -376,18 +407,6 @@ class DBReader:
             result_lower.append(column.lower())
 
         return result
-
-    def _handle_options(self, options: GenericOptions | dict | None) -> GenericOptions | None:
-        read_options_class = getattr(self.connection, "ReadOptions", None)
-        if read_options_class:
-            return read_options_class.parse(options)
-
-        if options:
-            raise TypeError(
-                f"{self.connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed",
-            )
-
-        return None
 
     def _get_read_kwargs(self) -> dict:
         if self.options:

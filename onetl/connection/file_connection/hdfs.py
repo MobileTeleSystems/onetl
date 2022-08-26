@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import os
 import stat
-from dataclasses import dataclass
 from logging import getLogger
+from typing import Optional
 
 from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
+from pydantic import FilePath, SecretStr, root_validator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
@@ -15,7 +16,6 @@ from onetl.impl import LocalPath, RemotePath, RemotePathStat
 log = getLogger(__name__)
 
 
-@dataclass(frozen=True)
 class HDFS(FileConnection):
     """Class for HDFS file connection.
 
@@ -73,25 +73,36 @@ class HDFS(FileConnection):
         )
     """
 
+    host: str
     port: int = 50070
-    user: str = ""
-    keytab: str | None = None  # TODO: change to LocalPath
-    timeout: int | None = None
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
+    keytab: Optional[FilePath] = None
+    timeout: int = 10
 
-    def __post_init__(self):
-        if self.keytab and self.password:
-            raise ValueError("Please provide only `keytab` or only `password` for kinit")
+    @root_validator
+    def check_credentials(cls, values):  # noqa: N805
+        user = values.get("user")
+        password = values.get("password")
+        keytab = values.get("keytab")
+        if password and keytab:
+            raise ValueError("Please provide either `keytab` or `password` for kinit, not both")
+
+        if (password or keytab) and not user:
+            raise ValueError("`keytab` or `password` should be used only with `user`")
+
+        return values
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
 
     def _get_client(self) -> KerberosClient | InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
-        if self.keytab or self.password:
+        if self.user and (self.keytab or self.password):
             kinit(
                 self.user,
                 keytab=self.keytab,
-                password=self.password,
+                password=self.password.get_secret_value() if self.password else None,
             )
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
@@ -137,7 +148,7 @@ class HDFS(FileConnection):
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
         status = self.client.status(os.fspath(path))
 
-        # Result example
+        # Status examples:
         # {
         #   "accessTime"      : 1320171722771,
         #   "blockSize"       : 33554432,
@@ -150,7 +161,7 @@ class HDFS(FileConnection):
         #   "replication"     : 1,
         #   "type"            : "FILE"
         # }
-        # or
+        #
         # {
         #   "accessTime"      : 0,
         #   "blockSize"       : 0,

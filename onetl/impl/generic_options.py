@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from pydantic import root_validator
-from pydantic.generics import BaseModel
+
+from onetl.impl.frozen_model import FrozenModel
 
 
-class GenericOptions(BaseModel):
+class GenericOptions(FrozenModel):
     class Config:
         prohibited_options: frozenset[str] = frozenset()
-        allow_population_by_field_name = True
-        frozen = True
 
     @classmethod
     def parse(

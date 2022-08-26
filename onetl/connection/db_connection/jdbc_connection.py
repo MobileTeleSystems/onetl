@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import root_validator
 
 from onetl._internal import clear_statement, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin, StatementType
+from onetl.impl.generic_options import GenericOptions
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -90,19 +90,10 @@ class JDBCWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-@dataclass(frozen=True)  # noqa: WPS338
-class JDBCConnection(DBConnection, JDBCMixin):
-    host: str
-    user: str
-    password: str = field(repr=False)
-    # Database in rdbms, schema in DBReader.
-    # See https://www.educba.com/postgresql-database-vs-schema/ for more details
-    database: str | None = None
-    port: int | None = None
-    extra: dict = field(default_factory=dict)
-
-    driver: ClassVar[str] = ""
-    package: ClassVar[str] = ""
+class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
+    class Extra(GenericOptions):
+        class Config:
+            extra = "allow"
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
         """Class for Spark reading options, related to a specific JDBC source.
@@ -355,6 +346,10 @@ class JDBCConnection(DBConnection, JDBCMixin):
 
         class Config:
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options
+
+    host: str
+    port: int
+    extra: Extra = Extra()
 
     @property
     def instance_url(self) -> str:
@@ -893,8 +888,3 @@ class JDBCConnection(DBConnection, JDBCMixin):
     def _log_parameters(self):
         super()._log_parameters()
         log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
-
-    @classmethod
-    def _log_exclude_fields(cls) -> set[str]:
-        fields = super()._log_exclude_fields()
-        return fields.union({"password", "package"})

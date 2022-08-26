@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class MySQL(JDBCConnection):
     """Class for MySQL JDBC connection.
 
@@ -78,16 +76,21 @@ class MySQL(JDBCConnection):
 
     """
 
+    class Extra(JDBCConnection.Extra):
+        useUnicode: str = "yes"  # noqa: N815
+        characterEncoding: str = "UTF-8"  # noqa: N815
+
+    port: int = 3306
+    database: Optional[str] = None
+    extra: Extra = Extra()
+
     driver: ClassVar[str] = "com.mysql.jdbc.Driver"
     package: ClassVar[str] = "mysql:mysql-connector-java:8.0.30"
-    port: int = 3306
 
     @property
     def jdbc_url(self):
-        prop = self.extra.copy()
-        prop["useUnicode"] = "yes"
-        prop["characterEncoding"] = "UTF-8"
-        parameters = "&".join(f"{k}={v}" for k, v in prop.items())
+        prop = self.extra.dict(by_alias=True)
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(prop.items()))
 
         if self.database:
             return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{parameters}"

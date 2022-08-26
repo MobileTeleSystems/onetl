@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection, StatementType
 
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
 class Clickhouse(JDBCConnection):
     """Class for Clickhouse JDBC connection.
 
@@ -81,13 +79,15 @@ class Clickhouse(JDBCConnection):
 
     """
 
+    port: int = 8123
+    database: Optional[str] = None
+
     driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
     package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
-    port: int = 8123
 
     @property
     def jdbc_url(self) -> str:
-        parameters = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
 
         if self.database:
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
