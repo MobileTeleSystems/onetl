@@ -59,7 +59,10 @@ class HWMStrategyHelper(StrategyHelper):
     hwm_expression: Optional[str] = None
     strategy: HWMStrategy = Field(default_factory=StrategyManager.get_current)
 
-    @validator("strategy", always=True)
+    class Config:
+        validate_all = True
+
+    @validator("strategy", always=True, pre=True)
     def validate_strategy_is_hwm(cls, strategy, values):  # noqa: N805
         reader = values.get("reader")
 
@@ -121,7 +124,7 @@ class HWMStrategyHelper(StrategyHelper):
             )
 
         if hwm_type == ColumnHWM or not issubclass(hwm_type, ColumnHWM):
-            self.raise_wrong_hwm_type(reader, hwm_type)
+            cls.raise_wrong_hwm_type(reader, hwm_type)
 
         strategy.hwm = hwm_type(source=reader.table, column=hwm_column, value=strategy.hwm.value)
         return strategy
@@ -154,7 +157,8 @@ class HWMStrategyHelper(StrategyHelper):
 
         return strategy
 
-    def raise_wrong_hwm_type(self, reader: DBReader, hwm_type: type[HWM]) -> NoReturn:
+    @staticmethod
+    def raise_wrong_hwm_type(reader: DBReader, hwm_type: type[HWM]) -> NoReturn:
         raise ValueError(
             f"{hwm_type.__name__} cannot be used with {reader.__class__.__name__}",
         )
@@ -163,9 +167,6 @@ class HWMStrategyHelper(StrategyHelper):
     def detect_hwm_column_type(reader: DBReader, hwm_column: Column) -> type[HWM]:
         schema = {field.name.lower(): field for field in reader.get_schema()}
         column = hwm_column.name.lower()
-        if column not in schema:
-            raise ValueError(f"Column {column!r} is missing from dataframe schema")
-
         hwm_column_type = schema[column].dataType.typeName()
         return HWMClassRegistry.get(hwm_column_type)
 
