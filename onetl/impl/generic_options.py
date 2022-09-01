@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import logging
+
 from pydantic import root_validator
 
 from onetl.impl.frozen_model import FrozenModel
 
+log = logging.getLogger(__name__)
+
 
 class GenericOptions(FrozenModel):
     class Config:
+        known_options: frozenset[str] | None = None
         prohibited_options: frozenset[str] = frozenset()
 
     @classmethod
@@ -43,11 +48,11 @@ class GenericOptions(FrozenModel):
         if not prohibited:
             return values
 
-        unknown_options = {key: value for key, value in values.items() if key not in cls.__fields__}  # noqa: WPS609
+        unknown_options = sorted(set(values) - set(cls.__fields__))
         if not unknown_options:
             return values
 
-        matching_options = sorted(prohibited & set(unknown_options.keys()))  # noqa: WPS609
+        matching_options = sorted(prohibited & set(unknown_options))
         if matching_options:
             class_name = cls.__name__  # type: ignore[attr-defined]
 
@@ -58,5 +63,29 @@ class GenericOptions(FrozenModel):
                 message = f"Option {matching_options[0]!r} is not allowed to use in a {class_name}"
 
             raise ValueError(message)
+        return values
 
+    @root_validator
+    def warn_unknown_options(
+        cls,  # noqa: N805
+        values,
+    ) -> None:
+        class_name = cls.__name__  # type: ignore[attr-defined]
+        known_options = cls.__config__.known_options  # type: ignore[attr-defined]
+        # None set means do nothing
+        # empty set means that check is performed only on class attributes
+        if known_options is None:
+            return values
+
+        unknown_options = sorted(set(values) - set(cls.__fields__) - set(known_options))
+        if not unknown_options:
+            return values
+
+        if len(unknown_options) > 1:
+            options_str = ", ".join(repr(option) for option in unknown_options)
+            message = f"Options {options_str} are not known by {class_name}, are you sure they are valid?"
+        else:
+            message = f"Option {unknown_options[0]!r} is not known by {class_name}, are you sure it is valid?"
+
+        log.warning(f"|{class_name}| {message}")
         return values

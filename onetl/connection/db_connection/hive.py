@@ -91,6 +91,7 @@ class Hive(DBConnection):
         """
 
         class Config:
+            known_options: frozenset = frozenset()
             alias_generator = to_camel
             extra = "allow"
 
