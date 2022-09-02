@@ -30,6 +30,7 @@
     :hidden:
 
     db_connection/clickhouse
+    db_connection/greenplum
     db_connection/hive
     db_connection/mssql
     db_connection/mysql

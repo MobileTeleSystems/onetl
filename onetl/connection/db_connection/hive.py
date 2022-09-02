@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from pydantic import root_validator, validator
 
-from onetl._internal import clear_statement, to_camel  # noqa: WPS436
+from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
@@ -311,7 +311,7 @@ class Hive(DBConnection):
     def instance_url(self) -> str:
         return "rnd-dwh"
 
-    def sql(  # type: ignore[override]
+    def sql(
         self,
         query: str,
     ) -> DataFrame:
@@ -357,7 +357,7 @@ class Hive(DBConnection):
         log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
-    def execute(  # type: ignore[override]
+    def execute(
         self,
         statement: str,
     ) -> None:
@@ -428,7 +428,7 @@ class Hive(DBConnection):
 
         return self
 
-    def save_df(  # type: ignore[override]
+    def save_df(
         self,
         df: DataFrame,
         table: str,
@@ -453,14 +453,14 @@ class Hive(DBConnection):
             # mode="overwrite_table" should be used
             self._save_as_table(df, table, options)
 
-    def read_table(  # type: ignore[override]
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
     ) -> DataFrame:
-        sql_text = self.get_sql_query(
+        sql_text = get_sql_query(
             table=table,
             columns=columns,
             where=where,
@@ -469,12 +469,12 @@ class Hive(DBConnection):
 
         return self.sql(sql_text)
 
-    def get_schema(  # type: ignore[override]
+    def get_schema(
         self,
         table: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        query_schema = self.get_sql_query(table, columns=columns, where="1=0")
+        query_schema = get_sql_query(table, columns=columns, where="1=0")
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
         log.info(f"|{self.__class__.__name__}| SQL statement:")
@@ -483,7 +483,7 @@ class Hive(DBConnection):
         df = self._execute_sql(query_schema)
         return df.schema
 
-    def get_min_max_bounds(  # type: ignore[override]
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,
@@ -493,7 +493,7 @@ class Hive(DBConnection):
     ) -> Tuple[Any, Any]:
         log.info(f"|Spark| Getting min and max values for column {column!r}")
 
-        sql_text = self.get_sql_query(
+        sql_text = get_sql_query(
             table=table,
             columns=[
                 self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),

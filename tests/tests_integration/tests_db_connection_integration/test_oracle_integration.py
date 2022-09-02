@@ -37,7 +37,7 @@ def test_oracle_connection_check_with_sid(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-@patch.object(Oracle, "_query_or_none_on_driver")
+@patch.object(Oracle, "_query_optional_on_driver")
 def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spark, processing, caplog):
     query_or_none_on_driver.result = None
 

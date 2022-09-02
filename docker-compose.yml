@@ -13,6 +13,14 @@ services:
     ports:
     - 5432:5432
 
+  greenplum:
+    image: datagrip/greenplum:6.8
+    env_file: onetl_local.default.env
+    restart: always
+    networks: [default, onetl]
+    ports:
+    - 5433:5432
+
   hive2:
     # TODO: fix later
     build:

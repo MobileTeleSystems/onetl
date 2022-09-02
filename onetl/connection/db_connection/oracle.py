@@ -175,7 +175,7 @@ class Oracle(JDBCConnection):
 
         return f"{super().instance_url}/{self.service_name}"
 
-    def execute(  # type: ignore[override]
+    def execute(
         self,
         statement: str,
         options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437

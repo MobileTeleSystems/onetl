@@ -4,7 +4,8 @@ import logging
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
-from onetl.connection.db_connection.jdbc_connection import JDBCConnection, StatementType
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin import StatementType
 
 log = logging.getLogger(__name__)
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from fnmatch import fnmatch
+from typing import Iterable
 
 from pydantic import root_validator
 
@@ -48,11 +50,11 @@ class GenericOptions(FrozenModel):
         if not prohibited:
             return values
 
-        unknown_options = sorted(set(values) - set(cls.__fields__))
+        unknown_options = set(values) - set(cls.__fields__)
         if not unknown_options:
             return values
 
-        matching_options = sorted(prohibited & set(unknown_options))
+        matching_options = sorted(cls._get_matching_options(unknown_options, prohibited))
         if matching_options:
             class_name = cls.__name__  # type: ignore[attr-defined]
 
@@ -63,6 +65,7 @@ class GenericOptions(FrozenModel):
                 message = f"Option {matching_options[0]!r} is not allowed to use in a {class_name}"
 
             raise ValueError(message)
+
         return values
 
     @root_validator
@@ -72,12 +75,14 @@ class GenericOptions(FrozenModel):
     ) -> None:
         class_name = cls.__name__  # type: ignore[attr-defined]
         known_options = cls.__config__.known_options  # type: ignore[attr-defined]
-        # None set means do nothing
+        # None means do nothing
         # empty set means that check is performed only on class attributes
         if known_options is None:
             return values
 
-        unknown_options = sorted(set(values) - set(cls.__fields__) - set(known_options))
+        current_options = set(values) - set(cls.__fields__)
+        already_known = set(cls._get_matching_options(current_options, known_options))
+        unknown_options = sorted(current_options - already_known)
         if not unknown_options:
             return values
 
@@ -89,3 +94,15 @@ class GenericOptions(FrozenModel):
 
         log.warning(f"|{class_name}| {message}")
         return values
+
+    @classmethod
+    def _get_matching_options(cls, values: Iterable[str], matches: Iterable[str]) -> list[str]:
+        result = []
+        for item in values:
+            for match in matches:
+                if item == match or fnmatch(item, match):
+                    # item=prefix.realOption, match = prefix.*
+                    result.append(item)
+                    break
+
+        return result

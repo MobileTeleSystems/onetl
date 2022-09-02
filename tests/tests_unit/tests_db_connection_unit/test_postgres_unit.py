@@ -6,6 +6,8 @@ from pyspark.sql import SparkSession
 from onetl.connection import Postgres
 
 spark = Mock(spec=SparkSession)
+spark.sparkContext = Mock()
+spark.sparkContext.appName = "abc"
 
 
 def test_postgres_class_attributes():
@@ -23,7 +25,7 @@ def test_postgres():
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc"
 
 
 def test_postgres_with_port():
@@ -36,7 +38,7 @@ def test_postgres_with_port():
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc"
 
 
 def test_postgres_without_database_error():
@@ -54,7 +56,7 @@ def test_postgres_with_extra():
         spark=spark,
     )
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?autosave=always&ssl=true"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&autosave=always&ssl=true"
 
 
 def test_postgres_without_mandatory_args():

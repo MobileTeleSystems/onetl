@@ -30,35 +30,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
         operator.ne: "{} != {}",
     }
 
-    def get_sql_query(
-        self,
-        table: str,
-        columns: list[str] | None = None,
-        where: str | None = None,
-        hint: str | None = None,
-    ) -> str:
-        """
-        Generates a SQL query using input arguments
-        """
-
-        columns_str = ", ".join(columns) if columns else "*"
-        hint = f"/*+ {hint} */" if hint else None
-        where = f"WHERE {where}" if where else None
-
-        return " ".join(
-            filter(
-                None,
-                [
-                    "SELECT",
-                    hint,
-                    columns_str,
-                    "FROM",
-                    table,
-                    where,
-                ],
-            ),
-        )
-
     def expression_with_alias(self, expression: str, alias: str) -> str:
         return f"{expression} AS {alias}"
 

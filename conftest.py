@@ -28,6 +28,7 @@ from onetl.connection import (
     MSSQL,
     SFTP,
     Clickhouse,
+    Greenplum,
     MySQL,
     Oracle,
     Postgres,
@@ -36,12 +37,13 @@ from onetl.connection import (
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
+from tests.lib.greenplum_processing import GreenplumProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
 from tests.lib.mssql_processing import MSSQLProcessing
 from tests.lib.mysql_processing import MySQLProcessing
 from tests.lib.oracle_processing import OracleProcessing
-from tests.lib.postgres_processing import PostgressProcessing
+from tests.lib.postgres_processing import PostgresProcessing
 
 log = logging.getLogger(__name__)
 
@@ -129,9 +131,11 @@ def get_spark_session(request):
     config = {
         "appName": "onetl",
         "spark.jars.packages": [
+            "default:skip",
             Oracle.package,
             Clickhouse.package,
             Postgres.package,
+            Greenplum.package_spark_2_4,
             MySQL.package,
             MSSQL.package,
             Teradata.package,
@@ -143,7 +147,7 @@ def get_spark_session(request):
 
     spark = get_spark(
         config=config,
-        fix_pyspark=False,
+        spark_version="local",
     )
     yield spark
     spark.sparkContext.stop()
@@ -153,7 +157,8 @@ def get_spark_session(request):
 @pytest.fixture()
 def processing(request, spark):
     storage_matching: Dict = {
-        "postgres": PostgressProcessing,
+        "greenplum": GreenplumProcessing,
+        "postgres": PostgresProcessing,
         "hive": HiveProcessing,
         "oracle": OracleProcessing,
         "clickhouse": ClickhouseProcessing,
@@ -163,7 +168,7 @@ def processing(request, spark):
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql, mssql
+    db_storage_name = test_function.__name__.split("_")[1]
 
     if db_storage_name not in storage_matching:
         raise ValueError(f"Wrong name. Please use {list(storage_matching.keys())}")
@@ -179,7 +184,7 @@ def processing(request, spark):
 
 @pytest.fixture
 def get_schema_table(processing):
-    schema = "onetl"
+    schema = processing.schema
     processing.create_schema(schema=schema)
 
     table = f"test_{secrets.token_hex(5)}"

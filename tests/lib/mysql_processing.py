@@ -51,6 +51,10 @@ class MySQLProcessing(BaseProcessing):
         return int(os.getenv("ONETL_MYSQL_CONN_PORT"))
 
     @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_MYSQL_CONN_SCHEMA", "onetl")
+
+    @property
     def url(self) -> str:
         return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 

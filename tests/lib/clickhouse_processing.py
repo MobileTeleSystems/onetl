@@ -48,6 +48,10 @@ class ClickhouseProcessing(BaseProcessing):
         return os.getenv("ONETL_CH_CONN_DATABASE")
 
     @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_CH_CONN_SCHEMA", "onetl")
+
+    @property
     def port(self) -> int:
         return int(os.getenv("ONETL_CH_CONN_PORT"))
 

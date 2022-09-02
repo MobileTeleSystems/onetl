@@ -12,8 +12,7 @@ from tests.lib.base_processing import BaseProcessing
 logger = getLogger(__name__)
 
 
-class PostgressProcessing(BaseProcessing):
-
+class PostgresProcessing(BaseProcessing):
     _column_types_and_names_matching = {
         "id_int": "serial primary key",
         "text_string": "text",
@@ -52,8 +51,12 @@ class PostgressProcessing(BaseProcessing):
         return os.getenv("ONETL_PG_CONN_DATABASE")
 
     @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_PG_CONN_SCHEMA", "onetl")
+
+    @property
     def url(self) -> str:
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/"
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
     def get_conn(self) -> connection:
         return pg_connect(self.url)

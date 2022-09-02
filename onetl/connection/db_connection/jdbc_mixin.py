@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, Type
 
 from pydantic import SecretStr
 
+from onetl._internal import clear_statement, stringify  # noqa: WPS436
+from onetl.impl import FrozenModel, GenericOptions
+from onetl.log import log_with_indent
+
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
-
-from onetl._internal import stringify  # noqa: WPS436
-from onetl.impl import FrozenModel, GenericOptions
 
 log = getLogger(__name__)
 
@@ -78,9 +79,279 @@ class JDBCMixin(FrozenModel):
     def jdbc_url(self) -> str:
         """JDBC Connection URL"""
 
+    def close(self):
+        """
+        Close all connections, opened by ``.fetch()`` or ``.execute()`` methods.
+
+        Examples
+        --------
+
+        Read data and close connection:
+
+        .. code:: python
+
+            df = connection.fetch("SELECT * FROM mytable")
+            assert df.count()
+            connection.close()
+
+            # or
+
+            with connection:
+                connection.execute("CREATE TABLE target_table(id NUMBER, data VARCHAR)")
+                connection.execute("CREATE INDEX target_table_idx ON target_table (id)")
+
+        """
+
+        self._close_connections()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        self.close()
+
     def __del__(self):  # noqa: WPS603
         # If current object is collected by GC, close all opened connections
-        self._close_connections()
+        self.close()
+
+    def check(self):
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
+        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(self._check_query)
+
+        try:
+            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
+        except Exception as e:
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
+
+    def fetch(
+        self,
+        query: str,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
+    ) -> DataFrame:
+        """
+        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame.
+
+        Works almost the same like ``connection.sql(query)``, but directly calls JDBC driver.
+
+        .. note::
+
+            Unlike ``connection.sql(query)``  method, statement is executed in read-only connection,
+            so it cannot change any data in the database.
+
+        .. note::
+
+            First call of the method opens the connection to a database.
+            Call ``.close()`` method to close it, or use context manager to do it automatically.
+
+        .. warning::
+
+            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
+
+        Parameters
+        ----------
+        query : str
+
+            SQL query to be executed.
+
+            Can be in any form of SELECT supported by a database, like:
+
+            * ``SELECT ... FROM ...``
+            * ``WITH ... AS (...) SELECT ... FROM ...``
+            * *Some* databases also support ``SHOW ...`` queries, like ``SHOW TABLES``
+
+        options : dict, :obj:`~JDBCOptions`, default: ``None``
+
+            JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
+
+        Returns
+        -------
+        df : pyspark.sql.dataframe.DataFrame
+
+            Spark dataframe
+
+        Examples
+        --------
+
+        Read data from a table:
+
+        .. code:: python
+
+            df = connection.fetch("SELECT * FROM mytable")
+            assert df.count()
+
+        Read data from a table with options:
+
+        .. code:: python
+
+            # reads data from table in batches, 10000 rows per batch
+            df = connection.fetch("SELECT * FROM mytable", {"fetchsize": 10000})
+            assert df.count()
+        """
+
+        query = clear_statement(query)
+
+        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(query)
+
+        df = self._query_on_driver(query, self.JDBCOptions.parse(options))
+
+        log.info(f"|{self.__class__.__name__}| Query succeeded, resulting dataframe contains {df.count()} rows")
+        return df
+
+    def execute(
+        self,
+        statement: str,
+        options: JDBCMixin.JDBCOptions | dict | None = None,
+    ) -> DataFrame | None:
+        """
+        **Immediately** execute DDL, DML or procedure/function **on Spark driver**.
+
+        Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
+        In other cases returns ``None``.
+
+        There is no method like this in :obj:`pyspark.sql.SparkSession` object,
+        but Spark internal methods works almost the same (but on executor side).
+
+        .. note::
+
+            First call of the method opens the connection to a database.
+            Call ``.close()`` method to close it, or use context manager to do it automatically.
+
+        .. warning::
+
+            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
+
+        Parameters
+        ----------
+        statement : str
+
+            Statement to be executed, like:
+
+            DML statements:
+
+            * ``INSERT INTO target_table SELECT * FROM source_table``
+            * ``UPDATE mytable SET value = 1 WHERE id BETWEEN 100 AND 999``
+            * ``DELETE FROM mytable WHERE id BETWEEN 100 AND 999``
+            * ``TRUNCATE TABLE mytable``
+
+            DDL statements:
+
+            * ``CREATE TABLE mytable (...)``
+            * ``ALTER SCHEMA myschema ...``
+            * ``DROP PROCEDURE myprocedure``
+
+            Call statements:
+
+            * ``BEGIN ... END```
+            * ``EXEC myprocedure``
+            * ``EXECUTE myprocedure(arg1)``
+            * ``CALL myfunction(arg1, arg2)``
+            * ``{call myprocedure(arg1, ?)}`` (``?`` is output parameter)
+            * ``{?= call myfunction(arg1, arg2)}``
+
+            The exact syntax depends on the database is being used.
+
+            .. warning::
+
+                This method is not designed to call statements like ``INSERT INTO ... VALUES ...``,
+                which accepts some input data.
+
+                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter`,
+                or ``connection.save_df(dataframe, table, options)`` instead.
+
+        options : dict, :obj:`~JDBCOptions`, default: ``None``
+
+            JDBC options to be used while executing the statement,
+            like ``queryTimeout`` or ``isolationLevel``
+
+        Returns
+        -------
+        df : pyspark.sql.dataframe.DataFrame, optional
+
+            Spark dataframe
+
+        Examples
+        --------
+
+        Create table:
+
+        .. code:: python
+
+            assert connection.execute("CREATE TABLE target_table(id NUMBER, data VARCHAR)") is None
+
+        Insert data to one table from another, with a specific transaction isolation level,
+        and return DataFrame with new rows:
+
+        .. code:: python
+
+            df = connection.execute(
+                "INSERT INTO target_table SELECT * FROM source_table RETURNING id, data",
+                {"isolationLevel": "READ_COMMITTED"},
+            )
+            assert df.count()
+        """
+
+        statement = clear_statement(statement)
+
+        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
+        log_with_indent(statement)
+
+        call_options = self.JDBCOptions.parse(options)
+        df = self._call_on_driver(statement, call_options)
+
+        message = f"|{self.__class__.__name__}| Execution succeeded"
+        if df is not None:
+            rows_count = df.count()
+            message += f", resulting dataframe contains {rows_count} rows"
+
+        log.info(message)
+        return df
+
+    def _query_on_driver(
+        self,
+        query: str,
+        options: JDBCMixin.JDBCOptions,
+    ) -> DataFrame:
+        return self._execute_on_driver(
+            statement=query,
+            statement_type=StatementType.PREPARED,
+            callback=self._statement_to_dataframe,
+            options=options,
+            read_only=True,
+        )
+
+    def _query_optional_on_driver(
+        self,
+        query: str,
+        options: JDBCMixin.JDBCOptions,
+    ) -> DataFrame | None:
+        return self._execute_on_driver(
+            statement=query,
+            statement_type=StatementType.PREPARED,
+            callback=self._statement_to_optional_dataframe,
+            options=options,
+            read_only=True,
+        )
+
+    def _call_on_driver(
+        self,
+        query: str,
+        options: JDBCMixin.JDBCOptions,
+    ) -> DataFrame | None:
+        return self._execute_on_driver(
+            statement=query,
+            statement_type=StatementType.CALL,
+            callback=self._statement_to_optional_dataframe,
+            options=options,
+            read_only=False,
+        )
 
     def _get_jdbc_properties(
         self,
@@ -201,10 +472,11 @@ class JDBCMixin(FrozenModel):
         CallableStatement = self.spark._jvm.java.sql.CallableStatement
 
         with closing(jdbc_statement):
-            if getattr(options, "fetchsize", None):
-                jdbc_statement.setFetchSize(options.fetchsize)  # type: ignore
+            fetchsize = getattr(options, "fetchsize", None)
+            if fetchsize is not None:
+                jdbc_statement.setFetchSize(fetchsize)
 
-            if getattr(options, "query_timeout", None):
+            if options.query_timeout is not None:
                 jdbc_statement.setQueryTimeout(options.query_timeout)
 
             # Java SQL classes are not consistent..
