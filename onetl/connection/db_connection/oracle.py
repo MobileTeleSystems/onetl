@@ -147,6 +147,15 @@ class Oracle(JDBCConnection):
 
         return values
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"ora_hash({partition_column}, {num_partitions})"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"MOD({partition_column}, {num_partitions})"
+
     @property
     def jdbc_url(self) -> str:
         params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))

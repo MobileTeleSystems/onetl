@@ -202,7 +202,7 @@ class JDBCMixin(FrozenModel):
 
         with closing(jdbc_statement):
             if getattr(options, "fetchsize", None):
-                jdbc_statement.setFetchSize(options.fetchsize)
+                jdbc_statement.setFetchSize(options.fetchsize)  # type: ignore
 
             if getattr(options, "query_timeout", None):
                 jdbc_statement.setQueryTimeout(options.query_timeout)

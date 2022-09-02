@@ -1,5 +1,6 @@
-from onetl.connection import Oracle
+from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
+from onetl.connection import Oracle
 
 
 def test_oracle_reader_snapshot(spark, processing, load_table_data):
@@ -22,6 +23,66 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=df,
+    )
+
+
+def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_table_data):
+    oracle = Oracle(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+        sid=processing.sid,
+    )
+
+    reader = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        options=oracle.ReadOptions(
+            partitioning_mode=PartitioningMode.mod,
+            partition_column="id_int",
+            num_partitions=5,
+        ),
+    )
+
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+
+def test_oracle_reader_snapshot_partitioning_mode_hash(spark, processing, load_table_data):
+    oracle = Oracle(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+        sid=processing.sid,
+    )
+
+    reader = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        options=oracle.ReadOptions(
+            partitioning_mode=PartitioningMode.hash,
+            partition_column="text_string",
+            num_partitions=5,
+        ),
+    )
+
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
     )
 
 

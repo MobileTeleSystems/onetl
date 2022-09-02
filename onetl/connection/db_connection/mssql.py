@@ -143,6 +143,16 @@ class MSSQL(JDBCConnection):
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
     _check_query: ClassVar[str] = "SELECT 1 AS field"
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
     @property
     def jdbc_url(self) -> str:
         prop = self.extra.dict(by_alias=True)

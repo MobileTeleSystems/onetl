@@ -179,25 +179,12 @@ def test_jdbc_old_options_allowed_but_deprecated(arg, value, caplog):
     assert options.dict(by_alias=True)[to_camel(arg)] == value
 
 
-@pytest.mark.parametrize(
-    "kwargs",
-    [
-        {},
-        {"lowerBound": 10},
-        {"upperBound": 100},
-        {"lowerBound": 10, "upperBound": 100},
-    ],
-)
-def test_jdbc_read_options_partitioning_is_not_valid(kwargs):
+def test_jdbc_read_options_partitioning_is_not_valid():
     with pytest.raises(ValueError):
-        Postgres.ReadOptions(numPartitions=200, **kwargs)
+        Postgres.ReadOptions(numPartitions=200)
 
     with pytest.raises(ValueError):
-        Postgres.ReadOptions(partitionColumn="test", **kwargs)
-
-    if kwargs:
-        with pytest.raises(ValueError):
-            Postgres.ReadOptions(**kwargs)
+        Postgres.ReadOptions(partitionColumn="test")
 
 
 @pytest.mark.parametrize(

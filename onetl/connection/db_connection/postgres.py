@@ -82,6 +82,16 @@ class Postgres(JDBCConnection):
     driver: ClassVar[str] = "org.postgresql.Driver"
     package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        # https://stackoverflow.com/a/9812029
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"('x'||right(md5('{partition_column}'), 16))::bit(32)::bigint % {num_partitions}"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
     @property
     def jdbc_url(self) -> str:
         params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
