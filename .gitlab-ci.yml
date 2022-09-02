@@ -185,7 +185,6 @@ tests:
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
-    COVERAGE_FILE: coverage.xml
     JUNIT_FILE: junitxml.xml
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -213,7 +212,9 @@ tests:
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
   script:
-  - pytest tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
+    - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
+  after_script:
+    - coverage xml -i -o coverage.xml
   artifacts:
     when: always
     paths:

@@ -2,7 +2,7 @@
 clickhouse-driver
 
 # coverage
-coverage==4.5.4
+coverage
 
 # Oracle client
 cx_Oracle
@@ -18,7 +18,6 @@ pyodbc
 pyopenssl
 pyspark < 3
 pytest
-pytest-cov
 pytest-lazy-fixture
 pytest-rerunfailures
 
