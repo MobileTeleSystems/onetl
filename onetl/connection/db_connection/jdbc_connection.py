@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import secrets
 from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import root_validator
+from pydantic import root_validator, PositiveInt
 
 from onetl._internal import clear_statement, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -97,6 +98,15 @@ class JDBCWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
+class PartitioningMode(str, Enum):  # noqa: WPS600
+    range = "range"
+    hash = "hash"
+    mod = "mod"
+
+    def __str__(self):
+        return str(self.value)
+
+
 class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
     class Extra(GenericOptions):
         class Config:
@@ -138,59 +148,31 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
         # Options in DataFrameWriter.jdbc() method
         partition_column: Optional[str] = None
-        """Options ``partitionColumn``, ``numPartitions``, ``lowerBound``, ``upperBound``
-        describe how to partition the table when reading in parallel from multiple workers.
-
-        ``partitionColumn`` must be a numeric, date, or timestamp column in the table.
-
-        Spark generates for each executor an SQL query like:
-
-        Executor 1:
-
-        .. code:: sql
-
-            SELECT ... FROM table
-            WHERE (partitionColumn >= lowerBound
-                    OR partitionColumn IS NULL)
-            AND partitionColumn < lowerBound + stride
-
-        Executor 2:
-
-        .. code:: sql
-
-            SELECT ... FROM table
-            WHERE partitionColumn >= lowerBound + stride
-            AND partitionColumn < lowerBound + 2*stride
-
-        Executor N:
-
-        .. code:: sql
-
-            SELECT ... FROM table
-            WHERE partitionColumn >= lowerBound + (N-1) * stride
-            AND partitionColumn <= upperBound
-
-        Where ``stride=MAX(partitionColumn) - MIN(partitionColumn)) / numPartitions``.
-
-        .. note::
-
-            ``lowerBound`` and ``upperBound`` are used just to calculate the partition stride,
-            NOT for filtering the rows in table. So all rows in the table will be returned.
+        """Column used to parallelize reading from a table.
 
         .. warning::
+            It is highly recommended to use primary key, or at least a column with an index
+            to avoid performance issues.
 
-            You can pass ``numPartitions``, ``lowerBound`` and ``upperBound`` only with
-            ``partitionColumn``.
-        """
+        .. note::
+            Column type depends on :obj:`~partitioning_mode`.
 
-        num_partitions: Optional[int] = None
-        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
+           * ``partitioning_mode="range"`` requires column to be an integer or date (can be NULL, but not recommended).
+           * ``partitioning_mode="hash"`` requires column to be an string (NOT NULL).
+           * ``partitioning_mode="mod"`` requires column to be an integer (NOT NULL).
+
+
+        See documentation for :obj:`~partitioning_mode` for more details"""
+
+        num_partitions: PositiveInt = 1
+        """Number of jobs created by Spark to read the table content in parallel.
+        See documentation for :obj:`~partitioning_mode` for more details"""
 
         lower_bound: Optional[int] = None
-        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
+        """See documentation for :obj:`~partitioning_mode` for more details"""  # noqa: WPS322
 
         upper_bound: Optional[int] = None
-        """See documentation for :obj:`~partition_column`"""  # noqa: WPS322
+        """See documentation for :obj:`~partitioning_mode` for more details"""  # noqa: WPS322
 
         session_init_statement: Optional[str] = None
         '''After each database session is opened to the remote DB and before starting to read data,
@@ -210,29 +192,6 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
             """
         '''
 
-        @root_validator
-        def num_partitions_only_set_with_partition_column(cls, values):  # noqa: N805
-            num_partitions = values.get("num_partitions")
-            partition_column = values.get("partition_column")
-            lower_bound = values.get("lower_bound")
-            upper_bound = values.get("upper_bound")
-
-            if num_partitions and partition_column:
-                return values
-
-            if num_partitions is None and not partition_column:
-                if lower_bound is None and upper_bound is None:
-                    return values
-
-                raise ValueError(
-                    "Options `lowerBound` and `upperBound` can be used only "
-                    "with `numPartitions` and `partitionColumn` options set",
-                )
-
-            raise ValueError(
-                "Options `numPartitions` and `partitionColumn` should be either both set, or both unset",
-            )
-
         fetchsize: int = 100_000
         """How many rows to fetch per round trip.
 
@@ -248,6 +207,188 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
             Thus we've overridden default value with ``100_000``, which should increase reading performance.
         """
+
+        partitioning_mode: PartitioningMode = PartitioningMode.range
+        """Defines how Spark will parallelize reading from table.
+
+        Possible values:
+        * ``range`` (defaut)
+        Allocate each executor a range of values from column passed into :obj:`~partition_column`.
+
+        Spark generates for each executor an SQL query like:
+
+        Executor 1:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (partition_column >= lowerBound
+                    OR partition_column IS NULL)
+            AND partition_column < (lower_bound + stride)
+
+        Executor 2:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE partition_column >= (lower_bound + stride)
+            AND partition_column < (lower_bound + 2 * stride)
+
+        ...
+
+        Executor N:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE partition_column >= (lower_bound + (N-1) * stride)
+            AND partition_column <= upper_bound
+
+        Where ``stride=(`` :obj:`~upper_bound` ``-`` :obj:`~lower_bound` ``) /`` :obj:`~num_partitions`.
+
+        .. note::
+
+            ``lower_bound`` and ``upper_bound`` are used just to calculate the partition stride,
+              **NOT** for filtering the rows in table. So all rows in the table will be returned.
+
+        * ``hash``
+
+        Allocate each executor a set of values based on hash of the :obj:`~partition_column` column.
+
+        Spark generates for each executor an SQL query like:
+
+        Executor 1:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (some_hash(partition_column) mod num_partitions) = 0 -- lower_bound
+
+        Executor 2:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (some_hash(partition_column) mod num_partitions) = 1 -- lower_bound + 1
+
+        ...
+
+        Executor N:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (some_hash(partition_column) mod num_partitions) = num_partitions-1 -- upper_bound
+
+        .. note::
+
+            The hash function implementation depends on RDBMS. It can be MD5 or any other fast hash function,
+            or expression based on this function call.
+
+        * ``mod``
+
+        Allocate each executor a set of values based on modulus of the :obj:`~partition_column` column.
+
+        Spark generates for each executor an SQL query like:
+
+        Executor 1:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (partition_column mod num_partitions) = 0 -- lower_bound
+
+        Executor 2:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (partition_column mod num_partitions) = 1 -- lower_bound + 1
+
+        Executor N:
+
+        .. code:: sql
+
+            SELECT ... FROM table
+            WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
+
+        Examples
+        --------
+
+        Read data in 10 parallel jobs by range of values in ``id_column`` column:
+
+        .. code:: python
+
+            Postgres.ReadOptions(
+                partitioning_mode="range",  # default mode, can be omitted
+                partition_column="id_column",
+                num_partitions=10,
+                # if you're using DBReader, options below can be omitted
+                # because they are calculated by automatically as
+                # MIN and MAX values of `partition_column`
+                lower_bound=0,
+                upper_bound=100_000,
+            )
+
+        Read data in 10 parallel jobs by hash of values in ``some_column`` column:
+
+        .. code:: python
+
+            Postgres.ReadOptions(
+                partitioning_mode="hash",
+                partition_column="some_column",
+                num_partitions=10,
+                # lower_bound and upper_bound are automatically set to `0` and `9`
+            )
+
+        Read data in 10 parallel jobs by modulus of values in ``id_column`` column:
+
+        .. code:: python
+
+            Postgres.ReadOptions(
+                partitioning_mode="mod",
+                partition_column="id_column",
+                num_partitions=10,
+                # lower_bound and upper_bound are automatically set to `0` and `9`
+            )
+        """
+
+        @root_validator
+        def partitioning_mode_actions(cls, values):  # noqa: N805
+            mode = values["partitioning_mode"]
+            num_partitions = values.get("num_partitions")
+            partition_column = values.get("partition_column")
+            lower_bound = values.get("lower_bound")
+            upper_bound = values.get("upper_bound")
+
+            if not partition_column:
+                if num_partitions == 1:
+                    return values
+
+                raise ValueError("You should set partition_column to enable partitioning")
+
+            elif num_partitions == 1:
+                raise ValueError("You should set num_partitions > 1 to enable partitioning")
+
+            if mode == PartitioningMode.range:
+                return values
+
+            if mode == PartitioningMode.hash:
+                values["partition_column"] = cls.partition_column_hash(
+                    partition_column=partition_column,
+                    num_partitions=num_partitions,
+                )
+
+            if mode == PartitioningMode.mod:
+                values["partition_column"] = cls.partition_column_mod(
+                    partition_column=partition_column,
+                    num_partitions=num_partitions,
+                )
+
+            values["lower_bound"] = lower_bound if lower_bound is not None else 0
+            values["upper_bound"] = upper_bound if upper_bound is not None else num_partitions
+
+            return values
 
     class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
         """Class for Spark writing options, related to a specific JDBC source.
@@ -725,12 +866,6 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         where: str | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
-        query = self.get_sql_query(
-            table=table,
-            columns=columns,
-            where=where,
-            hint=hint,
-        )
 
         read_options = self._set_lower_upper_bound(
             table=table,
@@ -739,7 +874,32 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
             options=self.ReadOptions.parse(options).copy(exclude={"mode"}),
         )
 
-        return self.sql(query, read_options)
+        # hack to avoid column name verification
+        # in the spark, the expression in the partitioning of the column must
+        # have the same name as the field in the table ( 2.4 version )
+        # https://github.com/apache/spark/pull/21379
+
+        new_columns = columns or ["*"]
+        alias = "x" + secrets.token_hex(5)
+
+        if read_options.partition_column:
+            aliased = self.expression_with_alias(read_options.partition_column, alias)
+            read_options = read_options.copy(update={"partition_column": alias})
+            new_columns.append(aliased)
+
+        query = self.get_sql_query(
+            table=table,
+            columns=new_columns,
+            where=where,
+            hint=hint,
+        )
+
+        result = self.sql(query, read_options)
+
+        if read_options.partition_column:
+            result = result.drop(alias)
+
+        return result
 
     def save_df(  # type: ignore[override]
         self,
@@ -798,6 +958,8 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
             exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
             exclude_none=True,
         )
+
+        result["properties"].pop("partitioningMode", None)
 
         return result
 
@@ -865,10 +1027,13 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
         missing_values: list[str] = []
 
-        if not result_options.lower_bound:
+        is_missed_lower_bound = result_options.lower_bound is None
+        is_missed_upper_bound = result_options.upper_bound is None
+
+        if is_missed_lower_bound:
             missing_values.append("lowerBound")
 
-        if not result_options.upper_bound:
+        if is_missed_upper_bound:
             missing_values.append("upperBound")
 
         if not missing_values:
@@ -893,8 +1058,8 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         return result_options.copy(
             exclude={"session_init_statement"},
             update={
-                "lower_bound": result_options.lower_bound or min_partition_value,
-                "upper_bound": result_options.upper_bound or max_partition_value,
+                "lower_bound": result_options.lower_bound if not is_missed_lower_bound else min_partition_value,
+                "upper_bound": result_options.upper_bound if not is_missed_upper_bound else max_partition_value,
             },
         )
 

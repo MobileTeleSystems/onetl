@@ -97,6 +97,15 @@ class MySQL(JDBCConnection):
 
         return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"MOD(CONV(CONV(RIGHT(MD5({partition_column}), 16),16, 2), 2, 10), {num_partitions})"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"MOD({partition_column}, {num_partitions})"
+
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
         return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323

@@ -54,13 +54,18 @@ class DBReader(FrozenModel):
         Add hint to SQL query
 
     options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
-        Spark read options.
+        Spark read options and partitioning read mode.
 
         For example:
 
         .. code:: python
 
             Postgres.ReadOptions(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
+
+        .. code:: python
+
+            Postgres.ReadOptions(partitioning_mode="hash" , partitionColumn="some_column", numPartitions=20,
+            fetchsize=1000)
 
     Examples
     --------

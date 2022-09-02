@@ -113,6 +113,16 @@ class Teradata(JDBCConnection):
         conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
         return f"jdbc:teradata://{self.host}/{conn}"
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"HASHAMP(HASHBUCKET(HASHROW({partition_column}))) mod {num_partitions}"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} mod {num_partitions}"
+
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS TIMESTAMP)"

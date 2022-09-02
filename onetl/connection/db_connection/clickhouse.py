@@ -94,6 +94,15 @@ class Clickhouse(JDBCConnection):
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
 
+    class ReadOptions(JDBCConnection.ReadOptions):
+        @classmethod
+        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"modulo(halfMD5({partition_column}), {num_partitions})"
+
+        @classmethod
+        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
     @staticmethod
     def _build_statement(
         statement: str,
