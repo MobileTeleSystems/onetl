@@ -47,10 +47,15 @@ class Teradata(JDBCConnection):
 
         .. note::
 
-            By default, ``STRICT_NAMES=OFF`` and ``FLATTEN=ON`` options are added to extra.
+            By default, these options are added to extra:
 
-            It is possible to pass different values for these options,
-            e.g. ``extra={"FLATTEN": "OFF"}``
+                * ``CHARSET = "UTF8"``
+                * ``COLUMN_NAME = "ON"``
+                * ``FLATTEN = "ON"``
+                * ``MAYBENULL = "ON"``
+                * ``STRICT_NAMES = "OFF"``
+
+            It is possible to override default values, for example set ``extra={"FLATTEN": "OFF"}``
 
     Examples
     --------
@@ -64,8 +69,6 @@ class Teradata(JDBCConnection):
 
         extra = {
             "TMODE": "TERA",  # "TERA" or "ANSI"
-            "MAYBENULL": "ON",
-            "CHARSET": "UTF8",
             "LOGMECH":"LDAP",
             "LOG": "TIMING",  # increase log level
         }
@@ -86,8 +89,11 @@ class Teradata(JDBCConnection):
     """
 
     class Extra(JDBCConnection.Extra):
-        STRICT_NAMES: str = "OFF"
+        CHARSET: str = "UTF8"
+        COLUMN_NAME: str = "ON"
         FLATTEN: str = "ON"
+        MAYBENULL: str = "ON"
+        STRICT_NAMES: str = "OFF"
 
         class Config:
             prohibited_options = frozenset(("DATABASE", "DBS_PORT"))
