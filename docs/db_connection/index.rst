@@ -9,6 +9,7 @@ DB Connections
     :hidden:
 
     Clickhouse <clickhouse>
+    Greenplum <greenplum>
     Hive <hive>
     MSSQL <mssql>
     MySQL <mysql>

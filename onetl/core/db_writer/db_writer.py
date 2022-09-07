@@ -186,7 +186,7 @@ class DBWriter(FrozenModel):
         log_with_indent("")
         if self.options:
             log_with_indent("options:")
-            for option, value in self.options.dict(exclude_none=True).items():
+            for option, value in self.options.dict(by_alias=True, exclude_none=True).items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
                 log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:

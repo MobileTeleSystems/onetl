@@ -64,8 +64,12 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            Postgres.ReadOptions(partitioning_mode="hash" , partitionColumn="some_column", numPartitions=20,
-            fetchsize=1000)
+            Postgres.ReadOptions(
+                partitioning_mode="hash",
+                partitionColumn="some_column",
+                numPartitions=20,
+                fetchsize=1000,
+            )
 
     Examples
     --------
@@ -331,7 +335,7 @@ class DBReader(FrozenModel):
     def _log_options(self) -> None:
         if self.options:
             log_with_indent("options:")
-            for option, value in self.options.dict(exclude_none=True).items():
+            for option, value in self.options.dict(by_alias=True, exclude_none=True).items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
                 log_with_indent(f"{option} = {value_wrapped}", indent=4)
         else:

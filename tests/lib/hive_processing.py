@@ -1,3 +1,4 @@
+import os
 from logging import getLogger
 from typing import Dict, Optional
 
@@ -9,7 +10,6 @@ logger = getLogger(__name__)
 
 
 class HiveProcessing(BaseProcessing):
-
     _column_types_and_names_matching = {
         "id_int": "int",
         "text_string": "string",
@@ -21,6 +21,10 @@ class HiveProcessing(BaseProcessing):
 
     def __init__(self, spark: "pyspark.sql.SparkSession"):
         self.connection = spark
+
+    @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_HIVE_CONN_SCHEMA", "onetl")
 
     def create_schema(
         self,

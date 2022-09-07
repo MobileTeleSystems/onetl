@@ -209,12 +209,14 @@ tests:
     alias: mysql
   - name: mcmoe/mssqldocker
     alias: mssql
+  - name: ${CI_REGISTRY}/datagrip/greenplum:6.8
+    alias: greenplum
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
   script:
-    - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
+  - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
   after_script:
-    - coverage xml -i -o coverage.xml
+  - coverage xml -i -o coverage.xml
   artifacts:
     when: always
     paths:

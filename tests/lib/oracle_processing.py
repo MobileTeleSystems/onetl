@@ -51,6 +51,10 @@ class OracleProcessing(BaseProcessing):
         return int(os.getenv("ONETL_ORA_CONN_PORT"))
 
     @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_ORA_CONN_SCHEMA", "onetl")
+
+    @property
     def url(self) -> str:
         sid = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
         return f"oracle://{self.user}:{self.password}@{sid}"

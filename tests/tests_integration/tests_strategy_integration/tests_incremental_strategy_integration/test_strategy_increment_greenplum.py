@@ -1,7 +1,7 @@
 import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
-from onetl.connection import MSSQL
+from onetl.connection import Greenplum
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 from onetl.strategy.hwm_store import HWMStoreManager
@@ -22,7 +22,7 @@ from onetl.strategy.hwm_store import HWMStoreManager
         (10, 50),
     ],
 )
-def test_mssql_strategy_incremental(
+def test_greenplum_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
@@ -33,16 +33,16 @@ def test_mssql_strategy_incremental(
 ):
     store = HWMStoreManager.get_current()
 
-    mssql = MSSQL(
+    greenplum = Greenplum(
         host=processing.host,
         port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
         spark=spark,
-        extra={"trustServerCertificate": "true"},
+        extra=processing.extra,
     )
-    reader = DBReader(connection=mssql, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=greenplum, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     hwm = hwm_type(source=reader.table, column=reader.hwm_column)
 
@@ -79,7 +79,7 @@ def test_mssql_strategy_incremental(
     assert hwm.value == first_span_max
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -95,7 +95,7 @@ def test_mssql_strategy_incremental(
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -110,17 +110,17 @@ def test_mssql_strategy_incremental(
         "text_string",
     ],
 )
-def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
-    mssql = MSSQL(
+def test_greenplum_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
+    greenplum = Greenplum(
         host=processing.host,
         port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
         spark=spark,
-        extra={"trustServerCertificate": "true"},
+        extra=processing.extra,
     )
-    reader = DBReader(connection=mssql, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=greenplum, table=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -143,27 +143,27 @@ def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema
         (
             "hwm_int",
             "hwm1_int",
-            "CAST(text_string AS int)",
+            "cast(text_string as int)",
             IntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
-            "CAST(text_string AS Date)",
+            "cast(text_string as date)",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
             "HWM1_DATETIME",
-            "CAST(text_string AS datetime2)",
+            "cast(text_string as timestamp)",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
     ],
 )
-def test_mssql_strategy_incremental_with_hwm_expr(
+def test_greenplum_strategy_incremental_with_hwm_expr(
     spark,
     processing,
     prepare_schema_table,
@@ -173,18 +173,18 @@ def test_mssql_strategy_incremental_with_hwm_expr(
     hwm_type,
     func,
 ):
-    mssql = MSSQL(
+    greenplum = Greenplum(
         host=processing.host,
         port=processing.port,
         user=processing.user,
         password=processing.password,
         database=processing.database,
         spark=spark,
-        extra={"trustServerCertificate": "true"},
+        extra=processing.extra,
     )
 
     reader = DBReader(
-        connection=mssql,
+        connection=greenplum,
         table=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
@@ -224,7 +224,7 @@ def test_mssql_strategy_incremental_with_hwm_expr(
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span_with_hwm)
+    processing.assert_equal_df(df=first_df, other_frame=first_span_with_hwm, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -238,7 +238,7 @@ def test_mssql_strategy_incremental_with_hwm_expr(
 
     if issubclass(hwm_type, IntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed

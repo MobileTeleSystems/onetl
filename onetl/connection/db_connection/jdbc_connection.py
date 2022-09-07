@@ -5,11 +5,11 @@ from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import root_validator, PositiveInt
+from pydantic import PositiveInt, root_validator
 
-from onetl._internal import clear_statement, to_camel  # noqa: WPS436
+from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
-from onetl.connection.db_connection.jdbc_mixin import JDBCMixin, StatementType
+from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.impl.generic_options import GenericOptions
 from onetl.log import log_with_indent
 
@@ -107,7 +107,7 @@ class PartitioningMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
+class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
     class Extra(GenericOptions):
         class Config:
             extra = "allow"
@@ -212,7 +212,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         """Defines how Spark will parallelize reading from table.
 
         Possible values:
-        * ``range`` (defaut)
+        * ``range`` (default)
         Allocate each executor a range of values from column passed into :obj:`~partition_column`.
 
         Spark generates for each executor an SQL query like:
@@ -588,277 +588,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def _query_on_driver(
-        self,
-        query: str,
-        options: JDBCMixin.JDBCOptions,
-    ) -> DataFrame:
-        return self._execute_on_driver(
-            statement=query,
-            statement_type=StatementType.PREPARED,
-            callback=self._statement_to_dataframe,
-            options=options,
-            read_only=True,
-        )
-
-    def _query_or_none_on_driver(
-        self,
-        query: str,
-        options: JDBCMixin.JDBCOptions,
-    ) -> DataFrame | None:
-        return self._execute_on_driver(
-            statement=query,
-            statement_type=StatementType.PREPARED,
-            callback=self._statement_to_optional_dataframe,
-            options=options,
-            read_only=True,
-        )
-
-    def _call_on_driver(
-        self,
-        query: str,
-        options: JDBCMixin.JDBCOptions,
-    ) -> DataFrame | None:
-        return self._execute_on_driver(
-            statement=query,
-            statement_type=StatementType.CALL,
-            callback=self._statement_to_optional_dataframe,
-            options=options,
-            read_only=False,
-        )
-
-    def close(self):
-        """
-        Close all connections, opened by ``.fetch()`` or ``.execute()`` methods.
-
-        Examples
-        --------
-
-        Read data and close connection:
-
-        .. code:: python
-
-            df = connection.fetch("SELECT * FROM mytable")
-            assert df.count()
-            connection.close()
-
-            # or
-
-            with connection:
-                connection.execute("CREATE TABLE target_table(id NUMBER, data VARCHAR)")
-                connection.execute("CREATE INDEX target_table_idx ON target_table (id)")
-
-        """
-
-        self._close_connections()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, _exc_type, _exc_value, _traceback):
-        self.close()
-
-    def fetch(
-        self,
-        query: str,
-        options: JDBCMixin.JDBCOptions | dict | None = None,
-    ) -> DataFrame:
-        """
-        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame.
-
-        Works almost the same like ``connection.sql(query)``, but directly calls JDBC driver.
-
-        .. note::
-
-            Unlike ``connection.sql(query)``  method, statement is executed in read-only connection,
-            so it cannot change any data in the database.
-
-        .. note::
-
-            First call of the method opens the connection to a database.
-            Call ``.close()`` method to close it, or use context manager to do it automatically.
-
-        .. warning::
-
-            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
-
-        Parameters
-        ----------
-        query : str
-
-            SQL query to be executed.
-
-            Can be in any form of SELECT supported by a database, like:
-
-            * ``SELECT ... FROM ...``
-            * ``WITH ... AS (...) SELECT ... FROM ...``
-            * *Some* databases also support ``SHOW ...`` queries, like ``SHOW TABLES``
-
-        options : dict, :obj:`~JDBCOptions`, default: ``None``
-
-            JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
-
-        Returns
-        -------
-        df : pyspark.sql.dataframe.DataFrame
-
-            Spark dataframe
-
-        Examples
-        --------
-
-        Read data from a table:
-
-        .. code:: python
-
-            df = connection.fetch("SELECT * FROM mytable")
-            assert df.count()
-
-        Read data from a table with options:
-
-        .. code:: python
-
-            # reads data from table in batches, 10000 rows per batch
-            df = connection.fetch("SELECT * FROM mytable", {"fetchsize": 10000})
-            assert df.count()
-        """
-
-        query = clear_statement(query)
-
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
-
-        df = self._query_on_driver(query, self.JDBCOptions.parse(options))
-
-        log.info(f"|{self.__class__.__name__}| Query succeeded, resulting dataframe contains {df.count()} rows")
-        return df
-
-    def execute(
-        self,
-        statement: str,
-        options: JDBCMixin.JDBCOptions | dict | None = None,
-    ) -> DataFrame | None:
-        """
-        **Immediately** execute DDL, DML or procedure/function **on Spark driver**.
-
-        Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
-        In other cases returns ``None``.
-
-        There is no method like this in :obj:`pyspark.sql.SparkSession` object,
-        but Spark internal methods works almost the same (but on executor side).
-
-        .. note::
-
-            First call of the method opens the connection to a database.
-            Call ``.close()`` method to close it, or use context manager to do it automatically.
-
-        .. warning::
-
-            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
-
-        Parameters
-        ----------
-        statement : str
-
-            Statement to be executed, like:
-
-            DML statements:
-
-            * ``INSERT INTO target_table SELECT * FROM source_table``
-            * ``UPDATE mytable SET value = 1 WHERE id BETWEEN 100 AND 999``
-            * ``DELETE FROM mytable WHERE id BETWEEN 100 AND 999``
-            * ``TRUNCATE TABLE mytable``
-
-            DDL statements:
-
-            * ``CREATE TABLE mytable (...)``
-            * ``ALTER SCHEMA myschema ...``
-            * ``DROP PROCEDURE myprocedure``
-
-            Call statements:
-
-            * ``BEGIN ... END```
-            * ``EXEC myprocedure``
-            * ``EXECUTE myprocedure(arg1)``
-            * ``CALL myfunction(arg1, arg2)``
-            * ``{call myprocedure(arg1, ?)}`` (``?`` is output parameter)
-            * ``{?= call myfunction(arg1, arg2)}``
-
-            The exact syntax depends on the database is being used.
-
-            .. warning::
-
-                This method is not designed to call statements like ``INSERT INTO ... VALUES ...``,
-                which accepts some input data.
-
-                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter`,
-                or ``connection.save_df(dataframe, table, options)`` instead.
-
-        options : dict, :obj:`~JDBCOptions`, default: ``None``
-
-            JDBC options to be used while executing the statement,
-            like ``queryTimeout`` or ``isolationLevel``
-
-        Returns
-        -------
-        df : pyspark.sql.dataframe.DataFrame, optional
-
-            Spark dataframe
-
-        Examples
-        --------
-
-        Create table:
-
-        .. code:: python
-
-            assert connection.execute("CREATE TABLE target_table(id NUMBER, data VARCHAR)") is None
-
-        Insert data to one table from another, with a specific transaction isolation level,
-        and return DataFrame with new rows:
-
-        .. code:: python
-
-            df = connection.execute(
-                "INSERT INTO target_table SELECT * FROM source_table RETURNING id, data",
-                {"isolationLevel": "READ_COMMITTED"},
-            )
-            assert df.count()
-        """
-
-        statement = clear_statement(statement)
-
-        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
-        log_with_indent(statement)
-
-        call_options = self.JDBCOptions.parse(options)
-        df = self._call_on_driver(statement, call_options)
-
-        message = f"|{self.__class__.__name__}| Execution succeeded"
-        if df is not None:
-            rows_count = df.count()
-            message += f", resulting dataframe contains {rows_count} rows"
-
-        log.info(message)
-        return df
-
-    def check(self):
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        self._log_parameters()
-
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(self._check_query)
-
-        try:
-            self._query_or_none_on_driver(self._check_query, self.ReadOptions(fetchsize=1))
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
-        except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
-            raise RuntimeError("Connection is unavailable") from e
-
-        return self
-
-    def read_table(  # type: ignore[override]
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
@@ -866,7 +596,6 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         where: str | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
-
         read_options = self._set_lower_upper_bound(
             table=table,
             where=where,
@@ -887,7 +616,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
             read_options = read_options.copy(update={"partition_column": alias})
             new_columns.append(aliased)
 
-        query = self.get_sql_query(
+        query = get_sql_query(
             table=table,
             columns=new_columns,
             where=where,
@@ -901,7 +630,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
         return result
 
-    def save_df(  # type: ignore[override]
+    def save_df(
         self,
         df: DataFrame,
         table: str,
@@ -911,7 +640,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         df.write.jdbc(table=table, **write_options)
         log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 
-    def get_schema(  # type: ignore[override]
+    def get_schema(
         self,
         table: str,
         columns: list[str] | None = None,
@@ -920,7 +649,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
 
-        query = self.get_sql_query(table, columns=columns, where="1=0")
+        query = get_sql_query(table, columns=columns, where="1=0")
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
@@ -963,7 +692,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
 
         return result
 
-    def get_min_max_bounds(  # type: ignore[override]
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,
@@ -972,12 +701,11 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
         where: str | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-
         log.info(f"|Spark| Getting min and max values for column {column!r}")
 
         read_options = self._exclude_partition_options(options, fetchsize=1)
 
-        query = self.get_sql_query(
+        query = get_sql_query(
             table=table,
             columns=[
                 self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
@@ -1009,7 +737,7 @@ class JDBCConnection(DBConnection, JDBCMixin):  # noqa: WPS338
             exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions"},
         )
 
-    def _set_lower_upper_bound(  # type: ignore[override]
+    def _set_lower_upper_bound(
         self,
         table: str,
         hint: str | None = None,

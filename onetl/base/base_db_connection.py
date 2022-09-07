@@ -91,18 +91,6 @@ class BaseDBConnection(BaseConnection):
         """
 
     @abstractmethod
-    def get_sql_query(
-        self,
-        table: str,
-        columns: list[str] | None = None,
-        where: str | None = None,
-        hint: str | None = None,
-    ) -> str:
-        """
-        Generates a SQL query using input arguments
-        """
-
-    @abstractmethod
     def expression_with_alias(self, expression: str, alias: str) -> str:
         """
         Return "expression AS alias" statement

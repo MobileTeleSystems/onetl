@@ -52,6 +52,10 @@ class MSSQLProcessing(BaseProcessing):
         return int(os.getenv("ONETL_MSSQL_CONN_PORT"))
 
     @property
+    def schema(self) -> str:
+        return os.getenv("ONETL_MSSQL_CONN_SCHEMA", "onetl")
+
+    @property
     def url(self) -> str:
         return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 

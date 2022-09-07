@@ -52,7 +52,7 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     .. code:: python
 
         assert uniq_ignore_case(["a", "c"]) == ["a", "c"]
-        assert uniq_ignore_case(["a", "a", "c"]) == ["a", "c"]
+        assert uniq_ignore_case(["A", "a", "c"]) == ["A", "c"]
         assert uniq_ignore_case(["a", "A", "c"]) == ["a", "c"]
     """
 
@@ -151,3 +151,32 @@ def generate_temp_path(root: PurePath) -> PurePath:
     current_process = ProcessStackManager.get_current()
     current_dt = datetime.now().strftime(DATETIME_FORMAT)
     return root / "onetl" / current_process.host / current_process.full_name / current_dt
+
+
+def get_sql_query(
+    table: str,
+    columns: list[str] | None = None,
+    where: str | None = None,
+    hint: str | None = None,
+) -> str:
+    """
+    Generates a SQL query using input arguments
+    """
+
+    columns_str = ", ".join(columns) if columns else "*"
+    hint = f"/*+ {hint} */" if hint else None
+    where = f"WHERE {where}" if where else None
+
+    return " ".join(
+        filter(
+            None,
+            [
+                "SELECT",
+                hint,
+                columns_str,
+                "FROM",
+                table,
+                where,
+            ],
+        ),
+    )
