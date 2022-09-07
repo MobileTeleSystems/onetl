@@ -7,7 +7,8 @@ mts_apache_atlas>=0.3.3,<0.4
 ordered-set
 paramiko
 platformdirs
-pydantic
+# https://github.com/pydantic/pydantic/issues/4498
+pydantic<1.10.2
 PySmbClient
 pyyaml
 typing_extensions
