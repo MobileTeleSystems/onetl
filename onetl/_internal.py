@@ -34,7 +34,7 @@ def clear_statement(statement: str) -> str:
         assert clear_statement("BEGIN ... END") == "BEGIN ... END;"
     """
 
-    statement = statement.rstrip().rstrip(";")
+    statement = statement.rstrip().lstrip("\n\r").rstrip(";")
 
     if statement.lower().strip().endswith("end"):
         statement += ";"

@@ -1,3 +1,4 @@
+deprecated
 etl-entities>=1.1.2,<1.2
 evacuator>=1.0,<1.1
 ftputil>=5.0.4

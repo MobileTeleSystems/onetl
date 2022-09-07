@@ -6,4 +6,4 @@ Incremental strategy
 .. currentmodule:: onetl.strategy.incremental_strategy
 
 .. autoclass:: IncrementalStrategy
-    :members:
+    :members: __init__

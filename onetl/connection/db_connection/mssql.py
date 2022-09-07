@@ -26,7 +26,7 @@ class MSSQL(JDBCConnection):
         Port of MSSQL database
 
     user : str
-        User, which have access to the database and table. For example: ``big_data_tech_user``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
@@ -36,8 +36,8 @@ class MSSQL(JDBCConnection):
 
         See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
-    spark : :obj:`pyspark.sql.SparkSession`, default: ``None``
-        Spark session that required for jdbc connection to database.
+    spark : :obj:`pyspark.sql.SparkSession`
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
 
@@ -66,7 +66,10 @@ class MSSQL(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [MSSQL.package],
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
         })
 
         mssql = MSSQL(
@@ -93,7 +96,10 @@ class MSSQL(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [MSSQL.package],
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
         })
 
         mssql = MSSQL(
@@ -118,7 +124,10 @@ class MSSQL(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [MSSQL.package],
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
         })
 
         mssql = MSSQL(

@@ -110,7 +110,7 @@ def test_greenplum_write_options_default():
     options = Greenplum.WriteOptions()
 
     assert options.mode == GreenplumWriteMode.APPEND
-    assert options.query_timeout == 0
+    assert options.query_timeout is None
 
 
 def test_greenplum_read_write_options_populated_by_connection_class():

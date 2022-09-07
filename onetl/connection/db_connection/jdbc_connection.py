@@ -5,6 +5,7 @@ from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Optional
 
+from deprecated import deprecated
 from pydantic import PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
@@ -195,7 +196,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         fetchsize: int = 100_000
         """How many rows to fetch per round trip.
 
-        Tuning this option can influence performance of writing.
+        Tuning this option can influence performance of reading.
 
         .. warning::
 
@@ -212,105 +213,109 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         """Defines how Spark will parallelize reading from table.
 
         Possible values:
+
         * ``range`` (default)
-        Allocate each executor a range of values from column passed into :obj:`~partition_column`.
+            Allocate each executor a range of values from column passed into :obj:`~partition_column`.
 
-        Spark generates for each executor an SQL query like:
+            Spark generates for each executor an SQL query like:
 
-        Executor 1:
+            Executor 1:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (partition_column >= lowerBound
-                    OR partition_column IS NULL)
-            AND partition_column < (lower_bound + stride)
+                SELECT ... FROM table
+                WHERE (partition_column >= lowerBound
+                        OR partition_column IS NULL)
+                AND partition_column < (lower_bound + stride)
 
-        Executor 2:
+            Executor 2:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE partition_column >= (lower_bound + stride)
-            AND partition_column < (lower_bound + 2 * stride)
+                SELECT ... FROM table
+                WHERE partition_column >= (lower_bound + stride)
+                AND partition_column < (lower_bound + 2 * stride)
 
-        ...
+            ...
 
-        Executor N:
+            Executor N:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE partition_column >= (lower_bound + (N-1) * stride)
-            AND partition_column <= upper_bound
+                SELECT ... FROM table
+                WHERE partition_column >= (lower_bound + (N-1) * stride)
+                AND partition_column <= upper_bound
 
-        Where ``stride=(`` :obj:`~upper_bound` ``-`` :obj:`~lower_bound` ``) /`` :obj:`~num_partitions`.
+            Where ``stride=(upper_bound - lower_bound) / num_partitions``.
 
-        .. note::
+            .. note::
 
-            ``lower_bound`` and ``upper_bound`` are used just to calculate the partition stride,
-              **NOT** for filtering the rows in table. So all rows in the table will be returned.
+                :obj:`~lower_bound`, :obj:`~upper_bound` and :obj:`~num_partitions` are used just to
+                calculate the partition stride, **NOT** for filtering the rows in table.
+                So all rows in the table will be returned (unlike *Incremental* :ref:`strategy`).
+
+            .. note::
+
+                All queries are executed in parallel. To execute them sequentially, use *Batch* :ref:`strategy`.
 
         * ``hash``
+            Allocate each executor a set of values based on hash of the :obj:`~partition_column` column.
 
-        Allocate each executor a set of values based on hash of the :obj:`~partition_column` column.
+            Spark generates for each executor an SQL query like:
 
-        Spark generates for each executor an SQL query like:
+            Executor 1:
 
-        Executor 1:
+            .. code:: sql
 
-        .. code:: sql
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = 0 -- lower_bound
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = 0 -- lower_bound
+            Executor 2:
 
-        Executor 2:
+            .. code:: sql
 
-        .. code:: sql
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = 1 -- lower_bound + 1
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = 1 -- lower_bound + 1
+            ...
 
-        ...
+            Executor N:
 
-        Executor N:
+            .. code:: sql
 
-        .. code:: sql
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = num_partitions-1 -- upper_bound
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = num_partitions-1 -- upper_bound
+            .. note::
 
-        .. note::
-
-            The hash function implementation depends on RDBMS. It can be MD5 or any other fast hash function,
-            or expression based on this function call.
+                The hash function implementation depends on RDBMS. It can be ``MD5`` or any other fast hash function,
+                or expression based on this function call.
 
         * ``mod``
+            Allocate each executor a set of values based on modulus of the :obj:`~partition_column` column.
 
-        Allocate each executor a set of values based on modulus of the :obj:`~partition_column` column.
+            Spark generates for each executor an SQL query like:
 
-        Spark generates for each executor an SQL query like:
+            Executor 1:
 
-        Executor 1:
+            .. code:: sql
 
-        .. code:: sql
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = 0 -- lower_bound
 
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = 0 -- lower_bound
+            Executor 2:
 
-        Executor 2:
+            .. code:: sql
 
-        .. code:: sql
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = 1 -- lower_bound + 1
 
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = 1 -- lower_bound + 1
+            Executor N:
 
-        Executor N:
+            .. code:: sql
 
-        .. code:: sql
-
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
 
         Examples
         --------
@@ -490,14 +495,12 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         `java.sql.Connection <https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html>`_.
         """
 
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+    )
     class Options(ReadOptions, WriteOptions):
-        def __init__(self, *args, **kwargs):
-            log.warning(
-                "`SomeDB.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
-                "Please use `SomeDB.ReadOptions` or `SomeDB.WriteOptions` classes instead",
-            )
-            super().__init__(*args, **kwargs)
-
         class Config:
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options
 
@@ -531,6 +534,10 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         .. note::
 
+            This method does not support :ref:`strategy`, use :obj:`onetl.core.db_reader.db_reader.DBReader` instead
+
+        .. note::
+
             Statement is executed in read-write connection,
             so if you're calling some functions/procedures with DDL/DML statements inside,
             they can change data in your database.
@@ -545,13 +552,17 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
             Only ``SELECT ... FROM ...`` form is supported.
 
-            Some databases also supports ``WITH ... AS (...) SELECT ... FROM ...`` form,
+            Some databases also supports ``WITH ... AS (...) SELECT ... FROM ...`` form.
 
             Queries like ``SHOW ...`` are not supported.
 
+            .. warning::
+
+                The exact syntax **depends on RDBMS** is being used.
+
         options : dict, :obj:`~ReadOptions`, default: ``None``
 
-            JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
+            Spark options to be used while fetching data, like ``fetchsize`` or ``partitionColumn``
 
         Returns
         -------
@@ -637,6 +648,8 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
+
+        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
         df.write.jdbc(table=table, **write_options)
         log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 

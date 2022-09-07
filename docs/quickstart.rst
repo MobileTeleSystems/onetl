@@ -12,7 +12,7 @@ Read data from MSSQL, transform & write to Hive.
     from mtspark import get_spark
 
     # import function to setup onETL logging
-    from onetl.log import setup_notebook_logging
+    from onetl.log import setup_logging
 
     # Import required connections
     from onetl.connection import MSSQL, Hive
@@ -21,13 +21,14 @@ Read data from MSSQL, transform & write to Hive.
     from onetl.core import DBReader, DBWriter
 
     # change logging level to INFO, and set up default logging format and handler
-    setup_notebook_logging()
+    setup_logging()
 
     # Initiate new SparkSession
     spark = get_spark(
         {
             "appName": "spark_app_onetl_demo",
             "spark.jars.packages": [
+                "default:skip",
                 MSSQL.package,
             ],
         }
@@ -87,7 +88,7 @@ Download files from FTP & upload them to HDFS.
 .. code:: python
 
     # import function to setup onETL logging
-    from onetl.log import setup_notebook_logging
+    from onetl.log import setup_logging
 
     # Import required connections
     from onetl.connection import SFTP, HDFS
@@ -96,7 +97,7 @@ Download files from FTP & upload them to HDFS.
     from onetl.core import FileDownloader, FileUploader, FileFilter, FileLimit
 
     # change logging level to INFO, and set up default logging format and handler
-    setup_notebook_logging()
+    setup_logging()
 
     # Initiate SFTP connection and check it
     sftp = SFTP(

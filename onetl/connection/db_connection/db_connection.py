@@ -5,6 +5,8 @@ from datetime import date, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict
 
+from pydantic import Field
+
 from onetl.base import BaseDBConnection
 from onetl.impl import FrozenModel
 from onetl.log import log_with_indent
@@ -18,7 +20,7 @@ log = getLogger(__name__)
 class DBConnection(BaseDBConnection, FrozenModel):
 
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
-    spark: SparkSession
+    spark: SparkSession = Field(repr=False)
 
     _check_query: ClassVar[str] = "SELECT 1"
     _compare_statements: ClassVar[Dict[Callable, str]] = {

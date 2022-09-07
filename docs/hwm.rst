@@ -3,7 +3,7 @@
 HWM
 =====
 
-What is it ?
+What is that?
 -------------
 
 Sometimes it's necessary to read only changed rows from a table.
@@ -18,16 +18,14 @@ For example, there is a table with the following schema:
     );
 
 ``id`` column is an autoincremental field, that's why its values are increasing all the time,
-e.g. ``1000``, ``1001``, ``1002`` and etc.
-
-New rows are constantly added into the table.
+e.g. ``1000``, ``1001``, ``1002`` and etc when new rows are added into the table.
 
 For example,
 in the table yesterday's ``id`` maximum value was ``1010``.
 Each today's ``id`` values is more than ``1010``, but less than ``1020``.
 
 So we can use value of this column to mark rows we already read.
-Value, that's bigger than specified one, is considered to be the new one.
+Row with a column value, that's bigger than the previous one, is considered to be a new row.
 
 This column is called ``High WaterMark`` or ``HWM`` for short.
 
@@ -35,13 +33,13 @@ This column is called ``High WaterMark`` or ``HWM`` for short.
 How it is used
 ---------------
 
-Firstly, we need to get the maximum value of ``id`` column:
+Firstly, :obj:`onetl.core.db_reader.db_reader.DBReader` gets the maximum value of ``id`` column:
 
 .. code:: sql
 
     SELECT max(id) FROM public.mydata; -- returned 1000
 
-Then it is possible to use this HWM value to get only new data:
+Then it uses this HWM value to get only new data:
 
 .. code:: sql
 

@@ -1,4 +1,3 @@
-import logging
 from unittest.mock import Mock
 
 import pytest
@@ -17,7 +16,7 @@ def test_jdbc_read_options_default():
     options = Oracle.ReadOptions()
 
     assert options.fetchsize == 100_000
-    assert options.query_timeout == 0
+    assert options.query_timeout is None
 
 
 def test_jdbc_write_options_default():
@@ -26,7 +25,7 @@ def test_jdbc_write_options_default():
     assert options.mode == JDBCWriteMode.APPEND
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
-    assert options.query_timeout == 0
+    assert options.query_timeout is None
 
 
 def test_jdbc_options_default():
@@ -36,7 +35,7 @@ def test_jdbc_options_default():
     assert options.fetchsize == 100_000
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
-    assert options.query_timeout == 0
+    assert options.query_timeout is None
 
 
 @pytest.mark.parametrize(
@@ -94,7 +93,6 @@ def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
         ("upper_bound", 10),
         ("numPartitions", 10),
         ("num_partitions", 10),
-        ("fetchsize", 10),
         ("sessionInitStatement", "begin end;"),
         ("session_init_statement", "begin end;"),
         ("customSchema", "a varchar"),
@@ -133,14 +131,10 @@ def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
         ("predicates", "s"),
     ],
 )
-def test_jdbc_old_options_allowed_but_deprecated(arg, value, caplog):
-    with caplog.at_level(logging.WARNING):
+def test_jdbc_old_options_allowed_but_deprecated(arg, value):
+    warning_msg = "Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0"
+    with pytest.deprecated_call(match=warning_msg):
         options = Postgres.Options(**{arg: value})
-
-        assert (
-            "`SomeDB.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
-            "Please use `SomeDB.ReadOptions` or `SomeDB.WriteOptions` classes instead"
-        ) in caplog.text
 
     assert options.dict(by_alias=True)[to_camel(arg)] == value
 
@@ -234,7 +228,6 @@ def test_jdbc_read_options_to_jdbc():
             "password": "1234",
             "sessionInitStatement": "BEGIN execute immediate 'alter session set '_serial_direct_read'=true",
             "user": "admin",
-            "queryTimeout": "0",
             "snake_case_option": "left unchanged",
             "camelCaseOption": "left unchanged",
             "CamelCaseOption": "left unchanged",
@@ -267,7 +260,6 @@ def test_jdbc_write_options_to_jdbc():
             "isolationLevel": "NONE",
             "truncate": "true",
             "user": "admin",
-            "queryTimeout": "0",
             "snake_case_option": "left unchanged",
             "camelCaseOption": "left unchanged",
             "CamelCaseOption": "left unchanged",

@@ -42,6 +42,10 @@ DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath
 class FileDownloader(FrozenModel):
     """Class specifies file source where you can download files. Download files **only** to local directory.
 
+    .. note::
+
+        FileDownloader can return different results depending on :ref:`strategy`
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -82,13 +86,13 @@ class FileDownloader(FrozenModel):
         Default file count limit is 100
 
     options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
-        File downloading options
+        File downloading options. See :obj:`~FileDownloader.Options`
 
-    hwm_type : str | None, default: ``None``
-        hwm type to be used.
+    hwm_type : str | type[HWM] | None, default: ``None``
+        HWM type to detect changes in incremental run.
 
         .. warning ::
-            Used only in incremental strategy.
+            Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
 
     Examples
     --------
@@ -101,11 +105,15 @@ class FileDownloader(FrozenModel):
 
         sftp = SFTP(...)
 
+        # create downloader
         downloader = FileDownloader(
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
         )
+
+        # download files to "/path/to/local"
+        downloader.run()
 
     Downloader with all parameters
 
@@ -116,6 +124,7 @@ class FileDownloader(FrozenModel):
 
         sftp = SFTP(...)
 
+        # create downloader with a bunch of options
         downloader = FileDownloader(
             connection=sftp,
             source_path="/path/to/remote/source",
@@ -126,7 +135,10 @@ class FileDownloader(FrozenModel):
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),
         )
 
-    Incremental loading:
+        # download files to "/path/to/local"
+        downloader.run()
+
+    Incremental download:
 
     .. code::
 
@@ -136,13 +148,15 @@ class FileDownloader(FrozenModel):
 
         sftp = SFTP(...)
 
+        # create downloader
         downloader = FileDownloader(
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            hwm_type="file_list",
+            hwm_type="file_list",  # mandatory for IncrementalStrategy
         )
 
+        # download files to "/path/to/local", but only new ones
         with IncrementalStrategy():
             downloader.run()
 
@@ -212,6 +226,10 @@ class FileDownloader(FrozenModel):
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
         Method for downloading files from source to local directory.
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
 
         Parameters
         ----------
@@ -363,6 +381,10 @@ class FileDownloader(FrozenModel):
         """
         Get file collection in the ``source_path``,
         after ``filter``, ``limit`` and ``hwm`` applied (if any)
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
 
         Raises
         -------

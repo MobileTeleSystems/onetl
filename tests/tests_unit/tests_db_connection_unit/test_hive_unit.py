@@ -11,14 +11,10 @@ def test_hive_missing_spark_arg():
         Hive()  # noqa: F841
 
 
-def test_hive_old_options_deprecated(caplog):
-    with caplog.at_level(logging.WARNING):
+def test_hive_old_options_deprecated():
+    warning_msg = "Please use 'WriteOptions' class instead. Will be removed in v1.0.0"
+    with pytest.deprecated_call(match=warning_msg):
         options = Hive.Options(some="value")
-
-    assert (
-        "`Hive.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
-        "Please use `Hive.WriteOptions` class instead"
-    ) in caplog.text
 
     assert options.some == "value"
 
@@ -75,7 +71,7 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
 
 def test_hive_write_options_deprecated_mode_overwrite(caplog):
     warning_msg = (
-        "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 1.0.0, use `overwrite_partitions` instead"
+        "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, use `overwrite_partitions` instead"
     )
 
     with caplog.at_level(logging.INFO):

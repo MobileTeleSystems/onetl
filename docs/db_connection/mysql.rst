@@ -18,7 +18,7 @@ MySQL connection
 .. currentmodule:: onetl.connection.db_connection.mysql.MySQL
 
 .. autoclass:: ReadOptions
-    :members: fetchsize, partition_column, num_partitions, lower_bound, upper_bound, session_init_statement
+    :members: fetchsize, partitioning_mode, partition_column, num_partitions, lower_bound, upper_bound, session_init_statement
     :member-order: bysource
 
 .. autoclass:: WriteOptions
@@ -26,5 +26,5 @@ MySQL connection
     :member-order: bysource
 
 .. autoclass:: JDBCOptions
-    :members: query_timeout
+    :members: query_timeout, fetchsize
     :member-order: bysource
