@@ -23,7 +23,10 @@ def test_teradata():
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:teradata://some_host/DATABASE=database,DBS_PORT=1025,FLATTEN=ON,STRICT_NAMES=OFF"
+    assert conn.jdbc_url == (
+        "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
+        "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
+    )
 
 
 def test_teradata_with_port():
@@ -36,7 +39,10 @@ def test_teradata_with_port():
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:teradata://some_host/DATABASE=database,DBS_PORT=5000,FLATTEN=ON,STRICT_NAMES=OFF"
+    assert conn.jdbc_url == (
+        "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
+        "DBS_PORT=5000,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
+    )
 
 
 def test_teradata_without_database():
@@ -49,7 +55,10 @@ def test_teradata_without_database():
     assert conn.password.get_secret_value() == "passwd"
     assert not conn.database
 
-    assert conn.jdbc_url == "jdbc:teradata://some_host/DBS_PORT=1025,FLATTEN=ON,STRICT_NAMES=OFF"
+    assert conn.jdbc_url == (
+        "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,"
+        "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
+    )
 
 
 def test_teradata_with_extra():
@@ -63,7 +72,8 @@ def test_teradata_with_extra():
     )
 
     assert conn.jdbc_url == (
-        "jdbc:teradata://some_host/DATABASE=database,DBS_PORT=1025,FLATTEN=ON,LOGMECH=LDAP,STRICT_NAMES=OFF,TMODE=TERA"
+        "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
+        "DBS_PORT=1025,FLATTEN=ON,LOGMECH=LDAP,MAYBENULL=ON,STRICT_NAMES=OFF,TMODE=TERA"
     )
 
     conn = Teradata(
@@ -71,11 +81,14 @@ def test_teradata_with_extra():
         user="user",
         password="passwd",
         database="database",
-        extra={"FLATTEN": "OFF", "STRICT_NAMES": "ON"},
+        extra={"FLATTEN": "OFF", "STRICT_NAMES": "ON", "COLUMN_NAME": "OFF", "MAYBENULL": "OFF", "CHARSET": "CP-1251"},
         spark=spark,
     )
 
-    assert conn.jdbc_url == "jdbc:teradata://some_host/DATABASE=database,DBS_PORT=1025,FLATTEN=OFF,STRICT_NAMES=ON"
+    assert conn.jdbc_url == (
+        "jdbc:teradata://some_host/CHARSET=CP-1251,COLUMN_NAME=OFF,DATABASE=database,"
+        "DBS_PORT=1025,FLATTEN=OFF,MAYBENULL=OFF,STRICT_NAMES=ON"
+    )
 
 
 def test_teradata_with_extra_prohibited():
