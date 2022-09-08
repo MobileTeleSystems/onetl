@@ -124,6 +124,21 @@ def test_files(resource_path):
     ]
 
 
+@pytest.fixture(scope="function")
+def upload_files_with_encoding(file_connection, source_path):
+    local_root_filename = Path(__file__).parent / "tests" / "resources"
+    remote_root_filename = source_path
+    files = ["file_connection_utf.txt", "file_connection_ascii.txt"]
+
+    for file in files:
+        file_connection.upload_file(local_root_filename / file, remote_root_filename / file)
+
+    return {
+        "utf": remote_root_filename / "file_connection_utf.txt",
+        "ascii": remote_root_filename / "file_connection_ascii.txt",
+    }
+
+
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(request):
     config = {

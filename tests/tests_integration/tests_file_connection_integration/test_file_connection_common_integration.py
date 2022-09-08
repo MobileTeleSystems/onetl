@@ -2,7 +2,10 @@ from pathlib import PurePosixPath
 
 import pytest
 
+from pytest_lazyfixture import lazy_fixture
+
 from onetl.impl import RemotePath
+from onetl.exception import NotAFileError
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -47,3 +50,90 @@ def test_file_connection_rename_file(file_connection, upload_test_files, path_ty
 
     assert RemotePath("file_55.txt") in list_dir
     assert RemotePath("file_5.txt") not in list_dir
+
+
+def test_file_connection_read_text(file_connection, source_path, upload_files_with_encoding):
+    read_text = file_connection.read_text(path=upload_files_with_encoding["utf"])
+
+    assert isinstance(read_text, str)
+    assert read_text == "тестовый текст в  тестовом файле"
+
+
+def test_file_connection_read_bytes(file_connection, source_path, upload_files_with_encoding):
+    read_bytes = file_connection.read_bytes(path=upload_files_with_encoding["ascii"])
+
+    assert isinstance(read_bytes, bytes)
+    assert read_bytes == b"test text in test file"
+
+
+@pytest.mark.parametrize(
+    "path,exception",
+    [(lazy_fixture("source_path"), NotAFileError), ("/export/news_parse/no_such_file.txt", FileNotFoundError)],
+)
+def test_file_connection_read_text_negative(
+    file_connection,
+    source_path,
+    upload_files_with_encoding,
+    path,
+    exception,
+):
+    with pytest.raises(exception):
+        file_connection.read_text(path=path)
+
+
+@pytest.mark.parametrize(
+    "path,exception",
+    [(lazy_fixture("source_path"), NotAFileError), ("/export/news_parse/no_such_file.txt", FileNotFoundError)],
+)
+def test_file_connection_read_bytes_negative(
+    file_connection,
+    source_path,
+    upload_files_with_encoding,
+    path,
+    exception,
+):
+    with pytest.raises(exception):
+        file_connection.read_bytes(path=path)
+
+
+@pytest.mark.parametrize(
+    "file_name",
+    ["file_connection_write_text.txt", "file_connection_utf.txt"],
+    ids=["new file", "file existed"],
+)
+def test_file_connection_write_text(file_connection, source_path, file_name, upload_files_with_encoding):
+    file_connection.write_text(path=source_path / file_name, content="тестовый текст в  utf-8")
+
+    assert file_connection.read_text(source_path / file_name) == "тестовый текст в  utf-8"
+
+
+@pytest.mark.parametrize(
+    "file_name",
+    ["file_connection_write_bytes.txt", "file_connection_utf.txt"],
+    ids=["new file", "file existed"],
+)
+def test_file_connection_write_bytes(file_connection, source_path, file_name, upload_files_with_encoding):
+    file_connection.write_bytes(path=source_path / file_name, content=b"ascii test text")
+    assert file_connection.read_bytes(source_path / file_name) == b"ascii test text"
+
+
+def test_file_connection_write_text_fail_on_bytes_input(file_connection, source_path):
+    with pytest.raises(TypeError):
+        file_connection.write_text(path=source_path / "some_file_name.txt", content=b"bytes to text")
+
+
+def test_file_connection_write_bytes_fail_on_text_input(file_connection, source_path):
+    with pytest.raises(TypeError):
+        file_connection.write_bytes(path=source_path / "some_file_name.txt", content="text to bytes")
+
+
+def test_file_connection_write_encoding(file_connection, source_path):
+    file_connection.write_text(path=source_path / "cp_1251_file", content="тестовый текст в  utf-8", encoding="cp1251")
+
+    assert file_connection.read_bytes(path=source_path / "cp_1251_file") == "тестовый текст в  utf-8".encode("cp1251")
+
+
+def test_file_connection_read_encoding(file_connection, source_path):
+    file_connection.write_bytes(path=source_path / "cp_1251_file", content="тестовый текст в  utf-8".encode("cp1251"))
+
+    assert file_connection.read_text(path=source_path / "cp_1251_file", encoding="cp1251") == "тестовый текст в  utf-8"

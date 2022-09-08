@@ -194,7 +194,11 @@ class HDFS(FileConnection):
             return file.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
+        if not isinstance(content, str):
+            raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, encoding=encoding, overwrite=True, **kwargs)
 
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+        if not isinstance(content, bytes):
+            raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)
