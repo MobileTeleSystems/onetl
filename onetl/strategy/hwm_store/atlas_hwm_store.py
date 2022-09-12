@@ -36,15 +36,16 @@ class AtlasHWMStore(BaseHWMStore):
 
         from onetl.connection import Hive, Postgres
         from onetl.core import DBReader
-        from onetl.strategy import AtlasHWMStore, IncrementalStrategy
+        from onetl.strategy import IncrementalStrategy
+        from onetl.strategy.hwm_store import AtlasHWMStore
 
         from mtspark import get_spark
 
         spark = get_spark({"appName": "spark-app-name"})
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="postgres.domain.com",
+            user="myuser",
             password="*****",
             database="target_database",
             spark=spark,
@@ -53,13 +54,13 @@ class AtlasHWMStore(BaseHWMStore):
         hive = Hive(spark=spark)
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(hive, "newtable")
+        writer = DBWriter(connection=hive, table="newtable")
 
         with AtlasHWMStore(url="http://atlas.domain", user="atlas_user", password="*****"):
             with IncrementalStrategy():

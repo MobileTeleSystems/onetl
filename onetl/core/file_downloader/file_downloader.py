@@ -89,7 +89,7 @@ class FileDownloader(FrozenModel):
         File downloading options. See :obj:`~FileDownloader.Options`
 
     hwm_type : str | type[HWM] | None, default: ``None``
-        HWM type to detect changes in incremental run.
+        HWM type to detect changes in incremental run. See :ref:`file-hwm`
 
         .. warning ::
             Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
@@ -241,7 +241,7 @@ class FileDownloader(FrozenModel):
             applying ``filter``, ``limit`` and ``hwm_type`` to each one (if set).
 
             If not, download **all** input files, **without**
-            any filtering, limiting and excluding files covered by FileHWM
+            any filtering, limiting and excluding files covered by :ref:`file-hwm`
 
         Returns
         -------

@@ -47,7 +47,7 @@ class DBReader(FrozenModel):
         Custom ``where`` for SQL query
 
     hwm_column : str or tuple[str, str], default: ``None``
-        Column to be used as :ref:`hwm` value.
+        Column to be used as :ref:`column-hwm` value.
 
         If you want to use some SQL expression as HWM value, you can pass it as tuple
         ``("column_name", "expression")``, like:
@@ -93,7 +93,7 @@ class DBReader(FrozenModel):
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -122,7 +122,7 @@ class DBReader(FrozenModel):
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -154,7 +154,7 @@ class DBReader(FrozenModel):
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -192,7 +192,7 @@ class DBReader(FrozenModel):
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",

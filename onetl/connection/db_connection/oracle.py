@@ -152,11 +152,11 @@ class Oracle(JDBCConnection):
 
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
-        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"ora_hash({partition_column}, {num_partitions})"
 
         @classmethod
-        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD({partition_column}, {num_partitions})"
 
     @property

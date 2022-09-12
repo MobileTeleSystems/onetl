@@ -155,11 +155,11 @@ class MSSQL(JDBCConnection):
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
         @classmethod
-        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
 
         @classmethod
-        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
     @property

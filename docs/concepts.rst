@@ -257,3 +257,5 @@ or get only files which were not downloaded before:
     with IncrementalStrategy():
         # only files, that appeared in the source since previous run
         files = downloader.run()
+
+Most of strategies are based on :ref:`hwm`, Please check each strategy documentation for more details

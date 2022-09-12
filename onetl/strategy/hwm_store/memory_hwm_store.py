@@ -25,15 +25,16 @@ class MemoryHWMStore(BaseHWMStore):
 
         from onetl.connection import Hive, Postgres
         from onetl.core import DBReader
-        from onetl.strategy import MemoryHWMStore, IncrementalStrategy
+        from onetl.strategy import IncrementalStrategy
+        from onetl.strategy.hwm_store import MemoryHWMStore
 
         from mtspark import get_spark
 
         spark = get_spark({"appName": "spark-app-name"})
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="postgres.domain.com",
+            user="myuser",
             password="*****",
             database="target_database",
             spark=spark,
@@ -42,21 +43,22 @@ class MemoryHWMStore(BaseHWMStore):
         hive = Hive(spark=spark)
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(hive, "newtable")
+        writer = DBWriter(connection=hive, table="newtable")
 
         with MemoryHWMStore():
             with IncrementalStrategy():
                 df = reader.run()
                 writer.run(df)
 
-        # will store HWM value in RAM
+            # will store HWM value in RAM
 
+        # values are lost after exiting the context
     """
 
     _data: Dict[str, HWM] = PrivateAttr(default_factory=dict)
@@ -66,3 +68,6 @@ class MemoryHWMStore(BaseHWMStore):
 
     def save(self, hwm: HWM) -> None:
         self._data[hwm.qualified_name] = hwm
+
+    def clear(self) -> None:
+        self._data.clear()

@@ -21,23 +21,89 @@ class OffsetMixin(BaseModel):
 
 
 class IncrementalStrategy(OffsetMixin, HWMStrategy):
-    """Incremental strategy for DBReader.
+    """Incremental strategy for :ref:`db-reader`/:ref:`file-downloader`.
 
-    First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`:
+    Used for fetching only new rows/files from a source
+    by filtering items not covered by the previous HWM value.
 
-    .. code:: sql
+    For :ref:`db-reader`:
+        First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`:
 
-        SELECT id, data FROM mydata;
+        .. code:: sql
 
-    After first max value of ``id`` column (e.g. ``1000``) will be saved as HWM to HWM Store.
+            SELECT id, data FROM mydata;
 
-    Next incremental run will read only new data from the source:
+        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to HWM Store.
 
-    .. code:: sql
+        Next incremental run will read only new data from the source:
 
-        SELECT id, data FROM mydata WHERE id > 1000; -- hwm value
+        .. code:: sql
 
-    Pay attention to resulting dataframe **does not include** row with ``id=1000`` because it has been read before.
+            SELECT id, data FROM mydata WHERE id > 1000; -- hwm value
+
+        Pay attention to resulting dataframe **does not include** row with ``id=1000`` because it has been read before.
+
+    For :ref:`file-downloader`:
+        Behavior depends on ``hwm_type`` parameter.
+
+        ``hwm_type="file_list"``:
+            First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy` - all
+            files are downloaded:
+
+            .. code:: bash
+
+                $ hdfs dfs -ls /path
+
+                /path/my/file1
+                /path/my/file2
+
+            .. code:: python
+
+                download_result = DownloadResult(
+                    successful=[
+                        "/path/my/file1",
+                        "/path/my/file2",
+                    ]
+                )
+
+            Then the downloaded files list is saved as ``FileListHWM`` object into HWM Store:
+
+            .. code:: python
+
+                [
+                    "/path/my/file1",
+                    "/path/my/file2",
+                ]
+
+            Next incremental run will download only new files from the source:
+
+            .. code:: bash
+
+                $ hdfs dfs -ls /path
+
+                /path/my/file1
+                /path/my/file2
+                /path/my/file3
+
+            .. code:: python
+
+                # only files which are not in FileListHWM
+
+                download_result = DownloadResult(
+                    successful=[
+                        "/path/my/file3",
+                    ]
+                )
+
+            New files will be added to the ``FileListHWM`` and saved to HWM Store:
+
+            .. code:: python
+
+                [
+                    "/path/my/file1",
+                    "/path/my/file2",
+                    "/path/my/file3",
+                ]
 
     Parameters
     ----------
@@ -45,18 +111,40 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         If passed, the offset value will be used to read rows which appeared in the source after the previous read.
 
-        For example, previous incremental run returned rows with ``id`` 897, 898, 899 and 1000.
+        For example, previous incremental run returned rows:
+
+        .. code::
+
+            898
+            899
+            900
+            1000
+
         Current HWM value is 1000.
 
-        But since then few more rows appeared in the source with ``id`` between 900 and 999,
+        But since then few more rows appeared in the source:
+
+        .. code::
+
+            898
+            899
+            900
+            901 # new
+            902 # new
+            ...
+            999 # new
+            1000
+
         and you need to read them too.
 
-        So you can set ``offset`` to ``100``, so next incremental run will start with a query:
+        So you can set ``offset=100``, so a next incremental run will generate SQL query like:
 
         .. code:: sql
 
             SELECT id, data FROM public.mydata WHERE id > 900;
             -- 900 = 1000 - 100 = hwm - offset
+
+        and return rows since 901 (**not** 900), **including** 1000 which was already captured by HWM.
 
         .. warning::
 
@@ -65,13 +153,18 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. warning::
 
-            You cannot set offset while using :obj:`onetl.core.file_downloader.file_downloader.FileDownloader`
-            with ``hwm_type`` parameter
+            Cannot be used with :ref:`file-downloader` and ``hwm_type="file_list"``
+
+        .. note::
+
+            ``offset`` value will be subtracted from the HWM, so it should have a proper type.
+
+            For example, for ``TIMESTAMP`` column ``offset`` type should be :obj:`datetime.timedelta`, not :obj:`int`
 
     Examples
     --------
 
-    Incremental run
+    Incremental run with :ref:`db-reader`:
 
     .. code:: python
 
@@ -84,24 +177,25 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         spark = get_spark({"appName": "spark-app-name"})
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="postgres.domain.com",
+            user="myuser",
             password="*****",
             database="target_database",
             spark=spark,
         )
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(hive, "newtable")
+        writer = DBWriter(connection=hive, table="newtable")
 
         with IncrementalStrategy():
             df = reader.run()
+            writer.run(df)
 
     .. code:: sql
 
@@ -112,7 +206,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         FROM public.mydata
         WHERE id > 1000; --- from HWM (EXCLUDING first row)
 
-    Incremental run with offset
+    Incremental run with :ref:`db-reader` and ``offset``:
 
     .. code:: python
 
@@ -131,14 +225,14 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         FROM public.mydata
         WHERE id > 900; --- from HWM-offset (EXCLUDING first row)
 
-    ``offset`` could be any HWM type, not only integer
+    ``hwm_column`` can be a date or datetime, not only integer:
 
     .. code:: python
 
         from datetime import timedelta
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
@@ -155,30 +249,68 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         SELECT business_dt, data
         FROM public.mydata
-        WHERE business_dt > cast('2021-01-09' as timestamp);
+        WHERE business_dt > CAST('2021-01-09' AS DATE);
+
+    Incremental run with :ref:`file-downloader` and ``hwm_type="file_list"``:
+
+    .. code:: python
+
+        from onetl.connection import SFTP
+        from onetl.core import FileDownloader
+        from onetl.strategy import SnapshotStrategy
+
+        sftp = SFTP(
+            host="sftp.domain.com",
+            user="user",
+            password="*****",
+        )
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/remote",
+            local_path="/local",
+            hwm_type="file_list",
+        )
+
+        with IncrementalStrategy():
+            df = downloader.run()
+
+        # current run will download only files which were not downloaded in previous runs
     """
 
 
 class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
-    """Incremental batch strategy for DBReader.
+    """Incremental batch strategy for :ref:`db-reader:`.
+
+    .. note::
+
+        Cannot be used with :ref:`file-downloader`
 
     Same as :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`,
-    but reads data from the source in batches (1..N) like:
+    but reads data from the source in sequential batches (1..N) like:
 
     .. code:: sql
 
-        1: SELECT id, data FROM public.mydata WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
-        2: SELECT id, data FROM public.mydata WHERE id > 1100 AND id <= 1200;
-        3: SELECT id, data FROM public.mydata WHERE id > 1200 AND id <= 1200;
-        N: SELECT id, data FROM public.mydata WHERE id > 1300 AND id <= 1400; -- until stop
+        1: SELECT id, data
+           FROM public.mydata
+           WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
 
-    This allows to use less resources than reading all the data in the one batch.
+        2: WHERE id > 1100 AND id <= 1200; -- + step
+        3: WHERE id > 1200 AND id <= 1200; -- + step
+        N: WHERE id > 1300 AND id <= 1400; -- until stop
+
+    This allows to use less CPU and RAM than reading all the data in the one batch,
+    but takes proportionally more time.
+
+    Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
+    it saves current HWM value after each batch into HWM Store. This allows to resume
+    reading process from the last HWM value, if previous run was interrupted.
 
     Parameters
     ----------
     step : Any
 
-        The value of step which will be used to generate batch SQL queries like:
+        Step size used for generating batch SQL queries like:
 
         .. code:: sql
 
@@ -186,29 +318,66 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             FROM public.mydata
             WHERE id > 1000 AND id <= 1100; -- 1000 is previous HWM value, step is 100
 
+        .. note::
+
+            Step defines a range of values will be fetched by each batch. This is **not**
+            a number of rows, it depends on a table content and value distribution across the rows.
+
+        .. note::
+
+            ``step`` value will be added to the HWM, so it should have a proper type.
+
+            For example, for ``TIMESTAMP`` column ``step`` type should be :obj:`datetime.timedelta`, not :obj:`int`
+
     stop : Any, default: ``None``
 
-        If passed, the value will be used as a maximum value of ``hwm_column`` which will be read from the source.
+        If passed, the value will be used for generating WHERE clauses with ``hwm_column`` filter,
+        as a stop value for the last batch.
 
         If not set, the value is determined by a separated query:
 
         .. code:: sql
 
-            SELECT max(id) as stop
+            SELECT MAX(id) as stop
             FROM public.mydata
             WHERE id > 1000; -- 1000 is previous HWM value (if any)
+
+        .. note::
+
+            ``stop`` should be the same type as ``hwm_column`` value,
+            e.g. :obj:`datetime.datetime` for ``TIMESTAMP`` column, :obj:`datetime.date` for ``DATE``, and so on
 
     offset : Any, default: ``None``
 
         If passed, the offset value will be used to read rows which appeared in the source after the previous read.
 
-        For example, previous incremental run returned rows with ``id`` 897, 898, 899 and 1000.
-        So HWM value is 1000.
+        For example, previous incremental run returned rows:
 
-        But since then few more rows appeared in the source with ``id`` between 900 and 999,
+        .. code::
+
+            898
+            899
+            900
+            1000
+
+        Current HWM value is 1000.
+
+        But since then few more rows appeared in the source:
+
+        .. code::
+
+            898
+            899
+            900
+            901 # new
+            902 # new
+            ...
+            999 # new
+            1000
+
         and you need to read them too.
 
-        So you can set ``offset`` to ``100``, so next incremental start with a query like:
+        So you can set ``offset=100``, so the first batch of a next incremental run will look like:
 
         .. code:: sql
 
@@ -216,15 +385,23 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             FROM public.mydata
             WHERE id > 900 AND id <= 1000; -- 900 = 1000 - 100 = HWM - offset
 
+        and return rows from 901 (**not** 900) to **1000** (duplicate).
+
         .. warning::
 
             This can lead to reading duplicated values from the table.
             You probably need additional deduplication step to handle them
 
+        .. note::
+
+            ``offset`` value will be subtracted from the HWM, so it should have a proper type.
+
+            For example, for ``TIMESTAMP`` column ``offset`` type should be :obj:`datetime.timedelta`, not :obj:`int`
+
     Examples
     --------
 
-    IncrementalBatch run
+    IncrementalBatch run:
 
     .. code:: python
 
@@ -237,8 +414,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         spark = get_spark({"appName": "spark-app-name"})
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="postgres.domain.com",
+            user="myuser",
             password="*****",
             database="target_database",
             spark=spark,
@@ -247,13 +424,13 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         hive = Hive(spark=spark)
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(hive, "newtable")
+        writer = DBWriter(connection=hive, table="newtable")
 
         with IncrementalBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -272,7 +449,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         2:  WHERE id > 1200 AND id <= 1300; -- + step
         N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
-    IncrementalBatch run with stop value
+    IncrementalBatch run with ``stop`` value:
 
     .. code:: python
 
@@ -294,7 +471,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         ...
         N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    IncrementalBatch run with offset value
+    IncrementalBatch run with ``offset`` value:
 
     .. code:: python
 
@@ -317,7 +494,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         ...
         N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
-    IncrementalBatch run with all possible options
+    IncrementalBatch run with all possible options:
 
     .. code:: python
 
@@ -344,14 +521,14 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         ...
         N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    ``step``, ``stop`` and ``offset`` could be any HWM type, not only integer
+    ``hwm_column`` can be a date or datetime, not only integer:
 
     .. code:: python
 
         from datetime import date, timedelta
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",

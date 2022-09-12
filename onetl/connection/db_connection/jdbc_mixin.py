@@ -289,7 +289,7 @@ class JDBCMixin(FrozenModel):
 
             Call statements:
 
-            * ``BEGIN ... END```
+            * ``BEGIN ... END``
             * ``EXEC myprocedure``
             * ``EXECUTE myprocedure(arg1)``
             * ``CALL myfunction(arg1, arg2)``

@@ -60,7 +60,7 @@ class DBWriter(FrozenModel):
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -89,7 +89,7 @@ class DBWriter(FrozenModel):
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
