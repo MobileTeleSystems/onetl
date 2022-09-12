@@ -66,17 +66,17 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     """Snapshot batch strategy for DBReader.
 
     Same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`,
-    but reads data from the source in batches like:
+    but reads data from the source in batches (1..N) like:
 
     .. code:: sql
 
-        SELECT id, data
-        FROM public.mydata
-        WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
+        1:  SELECT id, data
+            FROM public.mydata
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-        ... WHERE id > 1100 AND id <= 1200; -- + step
-        ... WHERE id > 1200 AND id <= 1200; -- + step
-        ... WHERE id > 1300 AND id <= 1400; -- until stop
+        2:  WHERE id > 1100 AND id <= 1200; -- + step
+        3:  WHERE id > 1200 AND id <= 1200; -- + step
+        N:  WHERE id > 1300 AND id <= 1400; -- until stop
 
     This allows to use less resources than reading all the data in the one batch.
 
@@ -104,7 +104,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             SELECT min(id) as start
             FROM public.mydata
-            WHERE id <= 1400; -- 1400 here is stop value
+            WHERE id <= 1400; -- 1400 here is stop value (if set)
 
     stop : Any, default: ``None``
 
@@ -116,7 +116,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             SELECT max(id) as stop
             FROM public.mydata
-            WHERE id >= 1000; -- 1000 here is start value
+            WHERE id >= 1000; -- 1000 here is start value (if set)
 
     Examples
     --------
@@ -160,19 +160,21 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. code:: sql
 
         -- get start and stop values
+
             SELECT min(id) as start, max(id) as stop
             FROM public.mydata;
+
         -- for example, start=1000 and stop=2345
 
-        -- when each batch will perform a query which return some part of input data
+        -- when each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-        ... WHERE id > 1100 AND id <= 1200; -- next step
-        ... WHERE id > 1200 AND id <= 1300; -- another step
-        ... WHERE id > 2300 AND id <= 2345; -- until stop
+        2:  WHERE id > 1100 AND id <= 1200; -- + step
+        3:  WHERE id > 1200 AND id <= 1300; -- + step
+        N:  WHERE id > 2300 AND id <= 2345; -- until stop
 
     SnapshotBatch run with stop value
 
@@ -194,15 +196,15 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         -- for example, start=1000
         -- stop value is set, so no need to fetch it from DB
 
-        -- when each batch will perform a query which return some part of input data
+        -- when each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-        ... WHERE id >  1100 AND id <= 1200; -- next step
-        ... WHERE id >  1200 AND id <= 1300; -- another step
-        ... WHERE id >  1300 AND id <= 1234; -- until stop
+        2:  WHERE id >  1100 AND id <= 1200; -- + step
+        3:  WHERE id >  1200 AND id <= 1300; -- + step
+        N:  WHERE id >  1300 AND id <= 1234; -- until stop
 
     SnapshotBatch run with start value
 
@@ -224,16 +226,16 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         -- for example, stop=2345
 
-        -- when each batch will perform a query which return some part of input data
+        -- when each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id >= 500 AND id <=  600; -- from start to start+step (INCLUDING FIRST ROW)
+            WHERE id >= 500 AND id <=  600; -- from start to start+step (INCLUDING first row)
 
-        ... WHERE id >  600 AND id <=  700; -- next step
-        ... WHERE id >  700 AND id <=  800; -- another step
+        2:  WHERE id >  600 AND id <=  700; -- + step
+        3:  WHERE id >  700 AND id <=  800; -- + step
         ...
-        ... WHERE id > 2300 AND id <= 2345; -- until stop
+        N:  WHERE id > 2300 AND id <= 2345; -- until stop
 
     SnapshotBatch run with all options
 
@@ -251,16 +253,16 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. code:: sql
 
         -- start and stop values are set, so no need to fetch boundaries from DB
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:    SELECT id, data
             FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING FIRST ROW)
+            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-        ... WHERE id >  1100 AND id <= 1200; -- next step
-        ... WHERE id >  1200 AND id <= 1300; -- another step
+        2:  WHERE id >  1100 AND id <= 1200; -- + step
+        3:  WHERE id >  1200 AND id <= 1300; -- + step
         ...
-        ... WHERE id >  1900 AND id <= 2000; -- until stop
+        N:  WHERE id >  1900 AND id <= 2000; -- until stop
 
     ``step``, ``stop`` and ``start`` could be any HWM type, not only integer
 
@@ -291,20 +293,20 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         -- HWM value will casted to match column type
 
 
-            SELECT business_dt, data
+        1:  SELECT business_dt, data
             FROM public.mydata
-            WHERE business_dt >= CAST('2020-01-01' AS DATE) -- from start to start+step (INCLUDING FIRST ROW)
+            WHERE business_dt >= CAST('2020-01-01' AS DATE) -- from start to start+step (INCLUDING first row)
             AND   business_dt <= CAST('2021-01-05' AS DATE);
 
-        ... WHERE business_dt >  CAST('2021-01-05' AS DATE) -- next step
+        2:  WHERE business_dt >  CAST('2021-01-05' AS DATE) -- + step
             AND   business_dt <= CAST('2021-01-10' AS DATE);
 
-        ... WHERE business_dt >  CAST('2021-01-10' AS DATE) -- another step
+        3:  WHERE business_dt >  CAST('2021-01-10' AS DATE) -- + step
             AND   business_dt <= CAST('2021-01-15' AS DATE);
 
         ...
 
-        ... WHERE business_dt >  CAST('2021-01-30' AS DATE)
+        N:  WHERE business_dt >  CAST('2021-01-30' AS DATE)
             AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """

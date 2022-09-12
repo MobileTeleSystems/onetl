@@ -62,7 +62,7 @@ class Oracle(JDBCConnection):
         Port of Oracle database
 
     user : str
-        User, which have access to the database and table. For example: ``SOME_USER``
+        User, which have proper access to the database. For example: ``SOME_USER``
 
     password : str
         Password for database connection
@@ -84,7 +84,7 @@ class Oracle(JDBCConnection):
             Be careful, for correct work you must provide ``sid`` or ``service_name``
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
 
@@ -111,7 +111,10 @@ class Oracle(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Oracle.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Oracle.package,
+            ],
         })
 
         oracle = Oracle(

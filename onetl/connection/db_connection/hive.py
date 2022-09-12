@@ -5,6 +5,7 @@ from logging import getLogger
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
+from deprecated import deprecated
 from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
@@ -32,7 +33,7 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
     def _missing_(cls, value: object):
         if str(value) == "overwrite":
             log.warning(
-                "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 1.0.0, "
+                "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, "
                 "use `overwrite_partitions` instead",
             )
             return cls.OVERWRITE_PARTITIONS
@@ -164,10 +165,6 @@ class Hive(DBConnection):
 
             Unlike Spark, config option ``spark.sql.sources.partitionOverwriteMode``
             does not affect behavior of any ``mode``
-
-        .. warning::
-
-            Used **only** while **writing** data to a table
         """
 
         format: str = "orc"
@@ -298,13 +295,13 @@ class Hive(DBConnection):
 
             return values
 
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+    )
     class Options(WriteOptions):
-        def __init__(self, *args, **kwargs):
-            log.warning(
-                "`Hive.Options` class is deprecated since v0.5.0 and will be removed in v1.0.0. "
-                "Please use `Hive.WriteOptions` class instead",
-            )
-            super().__init__(*args, **kwargs)
+        pass  # noqa: WPS420, WPS604
 
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property

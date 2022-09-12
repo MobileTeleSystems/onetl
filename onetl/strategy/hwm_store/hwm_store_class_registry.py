@@ -85,7 +85,7 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 
 
 def register_hwm_store_class(*type_names: str):
-    """Decorator for registering some Store class with a name or names
+    """Decorator for registering some Store class with a name
 
     Examples
     --------
@@ -99,13 +99,12 @@ def register_hwm_store_class(*type_names: str):
         )
 
 
-        @register_hwm_store_class("somename", "anothername")
+        @register_hwm_store_class("somename")
         class MyClass(BaseStore):
             ...
 
 
         HWMStoreClassRegistry.get("somename") == MyClass
-        HWMStoreClassRegistry.get("anothername") == MyClass
 
     """
 
@@ -191,7 +190,7 @@ def detect_hwm_store(key: str) -> Callable:
 
         .. warning ::
 
-            DON'T USE A DOT IN THE PARAMETER NAME IN THE CONFIG
+            **DO NOT** use dot ``.`` in config keys
 
     Examples
     --------

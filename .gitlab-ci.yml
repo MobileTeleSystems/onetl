@@ -83,7 +83,7 @@ mypy:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install mypy types-PyYAML
+  - pip install mypy types-PyYAML types-Deprecated
   - python3 -m mypy --config-file setup.cfg onetl
   interruptible: true
 

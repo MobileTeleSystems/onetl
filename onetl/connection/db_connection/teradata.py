@@ -21,18 +21,18 @@ class Teradata(JDBCConnection):
         Port of Teradata database
 
     user : str
-        User, which have access to the database and table. For example: ``some_user``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
 
-    database : str
+    database : str, optional
         Database in RDBMS, NOT schema.
 
         See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
 
@@ -75,7 +75,10 @@ class Teradata(JDBCConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Teradata.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Teradata.package,
+            ],
         })
 
         teradata = Teradata(

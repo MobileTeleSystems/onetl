@@ -51,22 +51,22 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         But since then few more rows appeared in the source with ``id`` between 900 and 999,
         and you need to read them too.
 
-        So you can set ``offset`` to ``100``, so next incremental run will be performed with a different query:
+        So you can set ``offset`` to ``100``, so next incremental run will start with a query:
 
         .. code:: sql
 
-            SELECT id, data FROM public.mydata WHERE id > 900; -- 900 = 1000 - 100 = hwm - offset
+            SELECT id, data FROM public.mydata WHERE id > 900;
+            -- 900 = 1000 - 100 = hwm - offset
 
         .. warning::
 
-            This could cause reading duplicated values from the table.
+            This can lead to reading duplicated values from the table.
             You probably need additional deduplication step to handle them
 
         .. warning::
 
-            If `hwm_type` in the :obj:`onetl.core.file_downloader.file_downloader.FileDownloader`
-            is passed you can't specify an offset
-
+            You cannot set offset while using :obj:`onetl.core.file_downloader.file_downloader.FileDownloader`
+            with ``hwm_type`` parameter
 
     Examples
     --------
@@ -106,13 +106,11 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- DBReader will generate query like:
 
         SELECT id, data
         FROM public.mydata
-        WHERE id > 1000;
-
-        --- from HWM (EXCLUDING FIRST ROW)
+        WHERE id > 1000; --- from HWM (EXCLUDING first row)
 
     Incremental run with offset
 
@@ -127,11 +125,11 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- DBReader will generate query like:
 
         SELECT id, data
         FROM public.mydata
-        WHERE id > 900; --- from HWM-offset (EXCLUDING FIRST ROW)
+        WHERE id > 900; --- from HWM-offset (EXCLUDING first row)
 
     ``offset`` could be any HWM type, not only integer
 
@@ -153,13 +151,11 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: sql
 
         -- previous HWM value was '2021-01-10'
-        -- each batch will perform a query which return some part of input data
+        -- DBReader will generate query like:
 
         SELECT business_dt, data
         FROM public.mydata
-        WHERE business_dt > '2021-01-09'; --- from HWM-offset (EXCLUDING FIRST ROW)
-
-        --- from HWM-offset (EXCLUDING FIRST ROW)
+        WHERE business_dt > cast('2021-01-09' as timestamp);
     """
 
 
@@ -167,14 +163,14 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     """Incremental batch strategy for DBReader.
 
     Same as :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`,
-    but reads data from the source in batches like:
+    but reads data from the source in batches (1..N) like:
 
     .. code:: sql
 
-        SELECT id, data FROM public.mydata WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
-        SELECT id, data FROM public.mydata WHERE id > 1100 AND id <= 1200;
-        SELECT id, data FROM public.mydata WHERE id > 1200 AND id <= 1200;
-        SELECT id, data FROM public.mydata WHERE id > 1300 AND id <= 1400; -- until stop
+        1: SELECT id, data FROM public.mydata WHERE id > 1000 AND id <= 1100; -- previous HWM value is 1000, step is 100
+        2: SELECT id, data FROM public.mydata WHERE id > 1100 AND id <= 1200;
+        3: SELECT id, data FROM public.mydata WHERE id > 1200 AND id <= 1200;
+        N: SELECT id, data FROM public.mydata WHERE id > 1300 AND id <= 1400; -- until stop
 
     This allows to use less resources than reading all the data in the one batch.
 
@@ -182,7 +178,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     ----------
     step : Any
 
-        The value of step which will be used to generate batch SQL queries.
+        The value of step which will be used to generate batch SQL queries like:
 
         .. code:: sql
 
@@ -200,7 +196,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
             SELECT max(id) as stop
             FROM public.mydata
-            WHERE id > 1000 AND id <= 1100; -- 1000 is previous HWM value, step is 100
+            WHERE id > 1000; -- 1000 is previous HWM value (if any)
 
     offset : Any, default: ``None``
 
@@ -212,7 +208,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         But since then few more rows appeared in the source with ``id`` between 900 and 999,
         and you need to read them too.
 
-        So you can set ``offset`` to ``100``, so next incremental run will be performed with a query like:
+        So you can set ``offset`` to ``100``, so next incremental start with a query like:
 
         .. code:: sql
 
@@ -222,7 +218,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         .. warning::
 
-            This could cause reading duplicated values from the table.
+            This can lead to reading duplicated values from the table.
             You probably need additional deduplication step to handle them
 
     Examples
@@ -267,14 +263,14 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id > 1100 AND id <= 1200; --- from HWM to HWM+step (EXCLUDING FIRST ROW)
+            WHERE id > 1100 AND id <= 1200; --- from HWM to HWM+step (EXCLUDING first row)
 
-        ... WHERE id > 1200 AND id <= 1300; -- next step
-        ... WHERE id > 1300 AND id <= 1400; -- until max current HWM value
+        2:  WHERE id > 1200 AND id <= 1300; -- + step
+        N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
     IncrementalBatch run with stop value
 
@@ -288,15 +284,15 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id > 1000 AND id <= 1100; --- from HWM to HWM+step (EXCLUDING FIRST ROW)
+            WHERE id > 1000 AND id <= 1100; --- from HWM to HWM+step (EXCLUDING first row)
 
-        ... WHERE id > 1100 AND id <= 1200; -- next step
+        2:  WHERE id > 1100 AND id <= 1200; -- + step
         ...
-        ... WHERE id > 1900 AND id <= 2000; -- until stop
+        N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
     IncrementalBatch run with offset value
 
@@ -310,16 +306,16 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id >  900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING FIRST ROW)
+            WHERE id >  900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
 
-        ... WHERE id > 1000 AND id <= 1100; -- next step
-        ... WHERE id > 1100 AND id <= 1200; -- another step
+        2:  WHERE id > 1000 AND id <= 1100; -- + step
+        3:  WHERE id > 1100 AND id <= 1200; -- + step
         ...
-        ... WHERE id > 1300 AND id <= 1400; -- until max current HWM value
+        N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
     IncrementalBatch run with all possible options
 
@@ -337,16 +333,16 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: sql
 
         -- previous HWM value was 1000
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT id, data
+        1:  SELECT id, data
             FROM public.mydata
-            WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING FIRST ROW)
+            WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
 
-        ... WHERE id > 1000 AND id <= 1100; -- next step
-        ... WHERE id > 1100 AND id <= 1200; -- another step
+        2:  WHERE id > 1000 AND id <= 1100; -- + step
+        3:  WHERE id > 1100 AND id <= 1200; -- + step
         ...
-        ... WHERE id > 1900 AND id <= 2000; -- until stop
+        N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
     ``step``, ``stop`` and ``offset`` could be any HWM type, not only integer
 
@@ -373,22 +369,22 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: sql
 
         -- previous HWM value was '2021-01-10'
-        -- each batch will perform a query which return some part of input data
+        -- each batch (1..N) will perform a query which return some part of input data
 
-            SELECT business_dt, data
+        1:  SELECT business_dt, data
             FROM public.mydata
-            WHERE business_dt  > CAST('2021-01-09' AS DATE)  -- from HWM-offset (EXCLUDING FIRST ROW)
+            WHERE business_dt  > CAST('2021-01-09' AS DATE)  -- from HWM-offset (EXCLUDING first row)
             AND   business_dt <= CAST('2021-01-14' AS DATE); -- to HWM-offset+step
 
-        ... WHERE business_dt  > CAST('2021-01-14' AS DATE) -- next step
+        2:  WHERE business_dt  > CAST('2021-01-14' AS DATE) -- + step
             AND   business_dt <= CAST('2021-01-19' AS DATE);
 
-        ... WHERE business_dt  > CAST('2021-01-19' AS DATE) -- another step
+        3:  WHERE business_dt  > CAST('2021-01-19' AS DATE) -- + step
             AND   business_dt <= CAST('2021-01-24' AS DATE);
 
         ...
 
-        ... WHERE business_dt  > CAST('2021-01-29' AS DATE)
+        N:  WHERE business_dt  > CAST('2021-01-29' AS DATE)
             AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """

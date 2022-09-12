@@ -6,4 +6,4 @@ Snapshot strategy
 .. currentmodule:: onetl.strategy.snapshot_strategy
 
 .. autoclass:: SnapshotStrategy
-    :members:
+    :members: __init__

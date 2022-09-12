@@ -84,7 +84,7 @@ class Greenplum(JDBCMixin, DBConnection):
         Port of Greenplum master
 
     user : str
-        User, which have access to the database and table. For example: ``some_user``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
@@ -95,9 +95,9 @@ class Greenplum(JDBCMixin, DBConnection):
         See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
-        You can use ``mtspark`` for spark session initialization.
+        You can use ``mtspark`` for spark session initialization
 
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
@@ -127,7 +127,10 @@ class Greenplum(JDBCMixin, DBConnection):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Greenplum.package_spark_3_2],  # package should match your Spark version
+            "spark.jars.packages": [
+                "default:skip",
+                Greenplum.package_spark_3_2,  # package should match your Spark version
+            ],
         })
 
         greenplum = Greenplum(
@@ -334,6 +337,7 @@ class Greenplum(JDBCMixin, DBConnection):
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
 
+        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
         df.write.format("greenplum").options(
             **self._connector_params(table),
             **options_dict,

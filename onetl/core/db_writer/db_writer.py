@@ -20,7 +20,7 @@ log = getLogger(__name__)
 
 
 class DBWriter(FrozenModel):
-    """Class specifies database and table where you can write your dataframe.
+    """Class specifies schema and table where you can write your dataframe.
 
     Parameters
     ----------
@@ -28,8 +28,9 @@ class DBWriter(FrozenModel):
         Class which contains DB connection properties. See :ref:`db-connections` section.
 
     table : str
-        Table which is read data from. You need to specify the full path to the table, including the schema.
-        Like ``schema.name``
+        Schema and table which is read data from.
+
+        You need to specify the full path to the table, like ``schema.table``
 
     options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
         Spark write options.
@@ -52,7 +53,10 @@ class DBWriter(FrozenModel):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Postgres.package
+            ],
         })
 
         postgres = Postgres(
@@ -78,7 +82,10 @@ class DBWriter(FrozenModel):
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Postgres.package
+            ],
         })
 
         postgres = Postgres(

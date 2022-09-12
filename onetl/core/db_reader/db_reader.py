@@ -21,7 +21,11 @@ if TYPE_CHECKING:
 
 class DBReader(FrozenModel):
     """The DBReader class allows you to read data from a table with specified connection
-    and parameters and save it as Spark dataframe
+    and parameters, and return its content as Spark dataframe
+
+    .. note::
+
+        DBReader can return different results depending on :ref:`strategy`
 
     Parameters
     ----------
@@ -33,7 +37,11 @@ class DBReader(FrozenModel):
         Name like ``schema.name``
 
     columns : list of str, default: ``["*"]``
-        The list of columns to be read
+        The list of columns to be read.
+
+        If RDBMS supports any kind of expressions, you can pass them too.
+
+        For example, ``["mycolumn", "another_column as alias", "count(*) over ()", "some(function) as alias2"]``
 
     where : str, default: ``None``
         Custom ``where`` for SQL query
@@ -51,7 +59,7 @@ class DBReader(FrozenModel):
         HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
 
     hint : str, default: ``None``
-        Add hint to SQL query
+        Add hint to SQL query (if underlying RDBMS supports that)
 
     options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
         Spark read options and partitioning read mode.
@@ -60,12 +68,8 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            Postgres.ReadOptions(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
-
-        .. code:: python
-
             Postgres.ReadOptions(
-                partitioning_mode="hash",
+                partitioningMode="hash",
                 partitionColumn="some_column",
                 numPartitions=20,
                 fetchsize=1000,
@@ -84,7 +88,7 @@ class DBReader(FrozenModel):
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             }
         )
 
@@ -96,7 +100,11 @@ class DBReader(FrozenModel):
             spark=spark,
         )
 
-        reader = DBReader(postgres, table="fiddle.dummy")
+        # create reader
+        reader = DBReader(connection=postgres, table="fiddle.dummy")
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
 
     Reader creation with JDBC options:
 
@@ -109,7 +117,7 @@ class DBReader(FrozenModel):
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             }
         )
 
@@ -124,7 +132,11 @@ class DBReader(FrozenModel):
         # or (it is the same):
         options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
-        reader = DBReader(postgres, table="fiddle.dummy", options=options)
+        # create reader and pass some options to the underlying connection object
+        reader = DBReader(connection=postgres, table="fiddle.dummy", options=options)
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
 
     Reader creation with all parameters:
 
@@ -137,7 +149,7 @@ class DBReader(FrozenModel):
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             },
         )
 
@@ -150,15 +162,53 @@ class DBReader(FrozenModel):
         )
         options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
+        # create reader with specific columns, rows filter
         reader = DBReader(
             connection=postgres,
             table="default.test",
             where="d_id > 100",
             hint="NOWAIT",
             columns=["d_id", "d_name", "d_age"],
-            hwm_column="d_age",
             options=options,
         )
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
+
+    Incremental Reader:
+
+    .. code:: python
+
+        from onetl.core import DBReader
+        from onetl.connection import Postgres
+        from onetl.strategy import IncrementalStrategy
+        from mtspark import get_spark
+
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
+
+        postgres = Postgres(
+            host="test-db-vip.msk.mts.ru",
+            user="your_user",
+            password="***",
+            database="target_db",
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=postgres,
+            table="fiddle.dummy",
+            hwm_column="d_age",  # mandatory for IncrementalStrategy
+        )
+
+        # read data from table "fiddle.dummy"
+        # but only with new rows (`WHERE d_age > previous_hwm_value`)
+        with IncrementalStrategy():
+            df = reader.run()
     """
 
     connection: BaseDBConnection
@@ -265,7 +315,11 @@ class DBReader(FrozenModel):
 
     def run(self) -> DataFrame:
         """
-        Reads data from source table and saves as Spark dataframe
+        Reads data from source table and saves as Spark dataframe.
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
 
         Returns
         -------

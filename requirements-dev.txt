@@ -1,5 +1,6 @@
 black
 mypy
 pre-commit
+types-Deprecated
 types-PyYAML
 wemake-python-styleguide

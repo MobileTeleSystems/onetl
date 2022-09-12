@@ -66,7 +66,7 @@ class FileUploader(FrozenModel):
             which is NOT atomic operation.
 
     options : :obj:`onetl.core.file_uploader.file_uploader.FileUploader.Options` | dict | None, default: ``None``
-        File upload options
+        File upload options. See :obj:`~Options`
 
     Examples
     --------

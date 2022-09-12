@@ -6,7 +6,7 @@ from enum import Enum, auto
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 
 from onetl._internal import clear_statement, stringify  # noqa: WPS436
 from onetl.impl import FrozenModel, GenericOptions
@@ -44,7 +44,7 @@ class JDBCMixin(FrozenModel):
     However, some of Spark's magic is used here, for example to convert raw ResultSet to move convenient DataFrame
     """
 
-    spark: SparkSession
+    spark: SparkSession = Field(repr=False)
     user: str
     password: SecretStr
     driver: ClassVar[str]
@@ -63,12 +63,23 @@ class JDBCMixin(FrozenModel):
             prohibited_options = PROHIBITED_OPTIONS
             extra = "allow"
 
-        query_timeout: int = 0
+        query_timeout: Optional[int] = None
         """The number of seconds the driver will wait for a statement to execute.
         Zero means there is no limit.
 
         This option depends on driver implementation,
         some drivers can check the timeout of each query instead of an entire JDBC batch.
+        """
+
+        fetchsize: Optional[int] = None
+        """How many rows to fetch per round trip.
+
+        Tuning this option can influence performance of reading.
+
+        .. warning::
+
+            Default value depends on driver. For example, Oracle has
+            default ``fetchsize=10``.
         """
 
     # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
@@ -81,7 +92,7 @@ class JDBCMixin(FrozenModel):
 
     def close(self):
         """
-        Close all connections, opened by ``.fetch()`` or ``.execute()`` methods.
+        Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods.
 
         Examples
         --------
@@ -138,21 +149,31 @@ class JDBCMixin(FrozenModel):
         """
         **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame.
 
-        Works almost the same like ``connection.sql(query)``, but directly calls JDBC driver.
+        Works almost the same like :obj:`~sql`, but calls JDBC driver directly.
+
+        .. warning::
+
+            This function should **NOT** be used to return dataframe with large number of rows/columns,
+            like ``SELECT * FROM table`` (without any filtering).
+
+            Use it **ONLY** to execute queries with **only one or just a few returning rows/columns**,
+            like ``SELECT COUNT(*) FROM table`` or ``SELECT * FROM table WHERE id = ...``.
+
+            This is because all the data is fetched through master host, not in a distributed way
+            (even on clustered instances).
+            Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
+
+            Use :obj:`onetl.core.db_reader.db_reader.DBReader` for reading
+            data from table via Spark executors, or for handling different :ref:`strategy`.
 
         .. note::
 
-            Unlike ``connection.sql(query)``  method, statement is executed in read-only connection,
-            so it cannot change any data in the database.
+            Statement is executed in read-only connection, so it cannot change any data in the database.
 
         .. note::
 
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
-
-        .. warning::
-
-            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
 
         Parameters
         ----------
@@ -160,15 +181,23 @@ class JDBCMixin(FrozenModel):
 
             SQL query to be executed.
 
-            Can be in any form of SELECT supported by a database, like:
+            Can be in any form of SELECT supported by RDBMS, like:
 
             * ``SELECT ... FROM ...``
             * ``WITH ... AS (...) SELECT ... FROM ...``
-            * *Some* databases also support ``SHOW ...`` queries, like ``SHOW TABLES``
+            * *Some* RDBMS instances also support ``SHOW ...`` queries, like ``SHOW TABLES``
+
+            .. warning::
+
+                The exact syntax **depends on a RDBMS** is being used.
 
         options : dict, :obj:`~JDBCOptions`, default: ``None``
 
-            JDBC options to be used while fetching data, like ``fetchsize`` or ``queryTimeout``
+            Options to be passed directly to JDBC driver, like ``fetchsize`` or ``queryTimeout``
+
+            .. note::
+
+                You cannot use :obj:`~ReadOptions`, they are handled by Spark, not by JDBC driver itself
 
         Returns
         -------
@@ -202,7 +231,9 @@ class JDBCMixin(FrozenModel):
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
-        log.info(f"|{self.__class__.__name__}| Query succeeded, resulting dataframe contains {df.count()} rows")
+        log.info(
+            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {df.count()} rows",
+        )
         return df
 
     def execute(
@@ -219,14 +250,23 @@ class JDBCMixin(FrozenModel):
         There is no method like this in :obj:`pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
 
+        .. warning::
+
+            Use this method **ONLY** to execute queries which return **small number of rows/column,
+            or return nothing**.
+
+            This is because all the data is fetched through master host, not in a distributed way
+            (even on clustered instances).
+            Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
+
+            Please **DO NOT** use this method to execute queries
+            like ``INSERT INTO ... VALUES(a, lot, of, values)``,
+            use :obj:`onetl.core.db_writer.db_writer.DBWriter` instead
+
         .. note::
 
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
-
-        .. warning::
-
-            Resulting DataFrame is stored in a driver memory, **DO NOT** use this method to return large datasets.
 
         Parameters
         ----------
@@ -256,20 +296,17 @@ class JDBCMixin(FrozenModel):
             * ``{call myprocedure(arg1, ?)}`` (``?`` is output parameter)
             * ``{?= call myfunction(arg1, arg2)}``
 
-            The exact syntax depends on the database is being used.
-
             .. warning::
 
-                This method is not designed to call statements like ``INSERT INTO ... VALUES ...``,
-                which accepts some input data.
-
-                Use ``run(dataframe)`` method of :obj:`onetl.core.db_writer.db_writer.DBWriter`,
-                or ``connection.save_df(dataframe, table, options)`` instead.
+                The exact syntax **depends on a RDBMS** is being used.
 
         options : dict, :obj:`~JDBCOptions`, default: ``None``
 
-            JDBC options to be used while executing the statement,
-            like ``queryTimeout`` or ``isolationLevel``
+            Options to be passed directly to JDBC driver, like ``queryTimeout``
+
+            .. note::
+
+                You cannot use :obj:`~WriteOptions`, they are handled by Spark, not by JDBC driver itself
 
         Returns
         -------
@@ -309,7 +346,9 @@ class JDBCMixin(FrozenModel):
         message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
             rows_count = df.count()
-            message += f", resulting dataframe contains {rows_count} rows"
+            message += f", resulting in-memory dataframe contains {rows_count} rows"
+        else:
+            message += ", nothing returned"
 
         log.info(message)
         return df
@@ -472,9 +511,8 @@ class JDBCMixin(FrozenModel):
         CallableStatement = self.spark._jvm.java.sql.CallableStatement
 
         with closing(jdbc_statement):
-            fetchsize = getattr(options, "fetchsize", None)
-            if fetchsize is not None:
-                jdbc_statement.setFetchSize(fetchsize)
+            if options.fetchsize is not None:
+                jdbc_statement.setFetchSize(options.fetchsize)
 
             if options.query_timeout is not None:
                 jdbc_statement.setQueryTimeout(options.query_timeout)
