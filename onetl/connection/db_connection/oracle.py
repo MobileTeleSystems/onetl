@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -292,10 +293,10 @@ class Oracle(JDBCConnection):
         for error, messages in aggregated_errors.items():
             level_name = logging.getLevelName(error.level)
             prefix = f"[{level_name}] Line {error.line}, position {error.position}:"
-            text = "\n" + messages.strip()
+            text = os.linesep + messages.strip()
             error_lines.append(prefix + indent(text, " " * BASE_LOG_INDENT))
 
-        return "\n".join(error_lines)
+        return os.linesep.join(error_lines)
 
     def _handle_compile_errors(
         self,
