@@ -38,5 +38,5 @@ Greenplum connection
     :member-order: bysource
 
 .. autoclass:: JDBCOptions
-    :members: query_timeout
+    :members: query_timeout, fetchsize
     :member-order: bysource

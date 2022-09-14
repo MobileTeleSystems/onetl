@@ -64,3 +64,15 @@ class EmptyFilesError(FilesError, NoDataError):
     """
     Raised when file collection is empty
     """
+
+
+class SparkError(RuntimeError):
+    """
+    Raised when something went wrong while working with Spark
+    """
+
+
+class TooManyParallelJobsError(SparkError):
+    """
+    Raised when number parallel jobs is too high
+    """
