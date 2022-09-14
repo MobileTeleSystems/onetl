@@ -655,7 +655,7 @@ class FileDownloader(FrozenModel):
                     local_file.unlink()
 
                 local_file.parent.mkdir(parents=True, exist_ok=True)
-                tmp_file.rename(local_file)
+                shutil.move(tmp_file, local_file)
             else:
                 # Direct download
                 self.connection.download_file(remote_file, local_file, replace=replace)

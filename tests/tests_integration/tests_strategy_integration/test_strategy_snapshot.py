@@ -160,7 +160,6 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
     reader = DBReader(
         connection=postgres,
         table=prepare_schema_table.full_name,
-        columns=[hwm_column, "*"],
         hwm_column=hwm_column,
     )
 
