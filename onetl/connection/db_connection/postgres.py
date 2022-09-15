@@ -88,11 +88,11 @@ class Postgres(JDBCConnection):
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://stackoverflow.com/a/9812029
         @classmethod
-        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"('x'||right(md5('{partition_column}'), 16))::bit(32)::bigint % {num_partitions}"
 
         @classmethod
-        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
     @property

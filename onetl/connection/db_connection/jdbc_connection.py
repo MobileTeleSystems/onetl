@@ -379,13 +379,13 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
                 return values
 
             if mode == PartitioningMode.hash:
-                values["partition_column"] = cls.partition_column_hash(
+                values["partition_column"] = cls._get_partition_column_hash(
                     partition_column=partition_column,
                     num_partitions=num_partitions,
                 )
 
             if mode == PartitioningMode.mod:
-                values["partition_column"] = cls.partition_column_mod(
+                values["partition_column"] = cls._get_partition_column_mod(
                     partition_column=partition_column,
                     num_partitions=num_partitions,
                 )

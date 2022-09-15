@@ -102,11 +102,11 @@ class MySQL(JDBCConnection):
 
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
-        def partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD(CONV(CONV(RIGHT(MD5({partition_column}), 16),16, 2), 2, 10), {num_partitions})"
 
         @classmethod
-        def partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD({partition_column}, {num_partitions})"
 
     def _get_datetime_value_sql(self, value: datetime) -> str:

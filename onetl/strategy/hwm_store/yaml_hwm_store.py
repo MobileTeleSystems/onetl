@@ -49,15 +49,16 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
 
         from onetl.connection import Hive, Postgres
         from onetl.core import DBReader
-        from onetl.strategy import YAMLHWMStore, IncrementalStrategy
+        from onetl.strategy import IncrementalStrategy
+        from onetl.strategy.hwm_store import YAMLHWMStore
 
         from mtspark import get_spark
 
         spark = get_spark({"appName": "spark-app-name"})
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="postgres.domain.com",
+            user="myuser",
             password="*****",
             database="target_database",
             spark=spark,
@@ -66,13 +67,13 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         hive = Hive(spark=spark)
 
         reader = DBReader(
-            postgres,
+            connection=postgres,
             table="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(hive, "newtable")
+        writer = DBWriter(connection=hive, table="newtable")
 
         with YAMLHWMStore():
             with IncrementalStrategy():
@@ -80,7 +81,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
                 writer.run(df)
 
         # will create file
-        # "~/.local/share/onETL/id__public.mydata__postgres_test-db-vip.msk.mts.ru_5432__myprocess__myhostname.yml"
+        # "~/.local/share/onETL/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
         # with encoding="utf-8" and save a serialized HWM values to this file
 
     With all options
@@ -93,7 +94,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
                 writer.run(df)
 
         # will create file
-        # "/my/store/id__public.mydata__postgres_test-db-vip.msk.mts.ru_5432__myprocess__myhostname.yml"
+        # "/my/store/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
         # with encoding="utf-8" and save a serialized HWM values to this file
 
     File content example:
@@ -111,7 +112,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
               task: ''
           source:
               db: public
-              instance: postgres://test-db-vip.msk.mts.ru:5432/target_database
+              instance: postgres://postgres.domain.com:5432/target_database
               name: mydata
           type: int
           value: '1500'
@@ -126,7 +127,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
               task: ''
           source:
               db: public
-              instance: postgres://test-db-vip.msk.mts.ru:5432/target_database
+              instance: postgres://postgres.domain.com:5432/target_database
               name: mydata
           type: int
           value: '1000'
