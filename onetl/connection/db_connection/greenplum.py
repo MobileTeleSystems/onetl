@@ -13,14 +13,13 @@ from pydantic import Field
 from onetl._internal import (  # noqa: WPS436
     get_sql_query,
     spark_max_cores_with_config,
-    suppress_logging,
     to_camel,
 )
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import TooManyParallelJobsError
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent, onetl_log
+from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -495,11 +494,11 @@ class Greenplum(JDBCMixin, DBConnection):
     ) -> StructType:
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
 
-        query = get_sql_query(table, columns=columns, where="1=0")
+        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, jdbc_options)
         log.info(f"|{self.__class__.__name__}| Schema fetched")
@@ -569,16 +568,20 @@ class Greenplum(JDBCMixin, DBConnection):
         return super()._options_to_connection_properties(options)
 
     def _get_server_setting(self, name: str) -> Any:
-        with suppress_logging(onetl_log):
-            df = self.fetch(
-                f"""
+        query = f"""
                 SELECT setting
                 FROM   pg_settings
                 WHERE  name = '{name}'
-                """,
-            )
+                """
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(query, level=logging.DEBUG)
 
+        df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
+
+        log.debug(
+            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+        )
         if result:
             return result[0][0]
 
@@ -586,15 +589,19 @@ class Greenplum(JDBCMixin, DBConnection):
 
     def _get_occupied_connections_count(self) -> int:
         # https://stackoverflow.com/a/5270806
-        with suppress_logging(onetl_log):
-            df = self.fetch(
-                """
+        query = """
                 SELECT SUM(numbackends)
                 FROM pg_stat_database
-                """,
-            )
+                """
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(query, level=logging.DEBUG)
 
+        df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
+
+        log.debug(
+            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+        )
         return int(result[0][0])
 
     def _get_connections_limits(self) -> ConnectionLimits:

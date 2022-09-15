@@ -1,6 +1,6 @@
+from onetl.connection import Oracle
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
-from onetl.connection import Oracle
 
 
 def test_oracle_reader_snapshot(spark, processing, load_table_data):
@@ -102,13 +102,37 @@ def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data)
     )
     table_df = reader1.run()
 
+    columns = [
+        "TEXT_STRING",
+        "HWM_INT",
+        "FLOAT_VALUE",
+        "ID_INT",
+        "HWM_DATE",
+        "HWM_DATETIME",
+    ]
+
     reader2 = DBReader(
         connection=oracle,
         table=load_table_data.full_name,
-        columns=["count(*)"],
+        columns=columns,
     )
-    count_df = reader2.run()
+    table_df_with_columns = reader2.run()
 
+    # columns order is same as expected
+    assert table_df.columns != table_df_with_columns.columns
+    assert table_df_with_columns.columns == columns
+    # dataframe content is unchanged
+    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+
+    reader3 = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        columns=["COUNT(*) ABC"],
+    )
+    count_df = reader3.run()
+
+    # expressions are allowed
+    assert count_df.columns == ["ABC"]
     assert count_df.collect()[0][0] == table_df.count()
 
 

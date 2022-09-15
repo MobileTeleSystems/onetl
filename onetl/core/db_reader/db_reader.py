@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
@@ -372,14 +373,19 @@ class DBReader(FrozenModel):
     def _log_parameters(self) -> None:
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
         log_with_indent(f"table = '{self.table}'")
-        parameters = self.dict(
-            by_alias=True,
-            exclude_none=True,
-            exclude={"connection", "options", "table", "hwm_column"},
-        )
 
-        for attr, value in parameters.items():  # type: ignore[attr-defined]  # noqa: WPS609
-            log_with_indent(f"{attr} = {value!r}")
+        if self.hint:
+            log_with_indent(f"hint = {self.hint!r}")
+
+        if self.columns == ["*"]:
+            log_with_indent("columns = '*'")
+        else:
+            log_with_indent("columns = [")
+            log_with_indent(os.linesep.join(f"{column!r}," for column in self.columns), indent=4)
+            log_with_indent("]")
+
+        if self.where:
+            log_with_indent(f"where = {self.where!r}")
 
         if self.hwm_column:
             log_with_indent(f"hwm_column = '{self.hwm_column}'")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 from enum import Enum
-from logging import getLogger
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class HiveWriteMode(str, Enum):  # noqa: WPS600
@@ -416,8 +416,11 @@ class Hive(DBConnection):
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         self._log_parameters()
 
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
+        log_with_indent(self._check_query, level=logging.DEBUG)
+
         try:
-            self.sql(self._check_query)
+            self._execute_sql(self._check_query)
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
             log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
@@ -471,11 +474,11 @@ class Hive(DBConnection):
         table: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        query_schema = get_sql_query(table, columns=columns, where="1=0")
+        query_schema = get_sql_query(table, columns=columns, where="1=0", compact=True)
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(query_schema)
+        log.debug(f"|{self.__class__.__name__}| SQL statement:")
+        log_with_indent(query_schema, level=logging.DEBUG)
 
         df = self._execute_sql(query_schema)
         return df.schema

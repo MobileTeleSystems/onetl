@@ -1,31 +1,134 @@
+import textwrap
+
 import pytest
 
 from onetl._internal import get_sql_query  # noqa: WPS436
 
 
-@pytest.mark.parametrize("hint, real_hint", [(None, ""), ("NOWAIT", " /*+ NOWAIT */")])
 @pytest.mark.parametrize(
-    "columns, real_columns",
+    "columns",
     [
-        (None, "*"),
-        (["*"], "*"),
-        (["d_id", "d_name", "d_age"], "d_id, d_name, d_age"),
+        None,
+        "*",
+        ["*"],
+        [],
     ],
 )
-@pytest.mark.parametrize("where, real_where", [(None, ""), ("d_id > 100", " WHERE d_id > 100")])
-def test_jdbc_get_sql_query(
-    hint,
-    real_hint,
-    columns,
-    real_columns,
-    where,
-    real_where,
-):
-    table_sql = get_sql_query(
+def test_get_sql_query_no_columns(columns):
+    result = get_sql_query(
         table="default.test",
-        hint=hint,
         columns=columns,
-        where=where,
     )
 
-    assert table_sql == f"SELECT{real_hint} {real_columns} FROM default.test{real_where}"
+    expected = textwrap.dedent(
+        """
+        SELECT
+               *
+        FROM
+               default.test
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_get_sql_query_columns():
+    result = get_sql_query(
+        table="default.test",
+        columns=["d_id", "d_name", "d_age"],
+    )
+    expected = textwrap.dedent(
+        """
+        SELECT
+               d_id,
+               d_name,
+               d_age
+        FROM
+               default.test
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_get_sql_query_where():
+    result = get_sql_query(
+        table="default.test",
+        where="d_id > 100",
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT
+               *
+        FROM
+               default.test
+        WHERE
+               d_id > 100
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_get_sql_query_hint():
+    result = get_sql_query(
+        table="default.test",
+        hint="NOWAIT",
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT /*+ NOWAIT */
+               *
+        FROM
+               default.test
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_get_sql_query_compact_false():
+    result = get_sql_query(
+        table="default.test",
+        hint="NOWAIT",
+        columns=["d_id", "d_name", "d_age"],
+        where="d_id > 100",
+        compact=False,
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT /*+ NOWAIT */
+               d_id,
+               d_name,
+               d_age
+        FROM
+               default.test
+        WHERE
+               d_id > 100
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_get_sql_query_compact_true():
+    result = get_sql_query(
+        table="default.test",
+        hint="NOWAIT",
+        columns=["d_id", "d_name", "d_age"],
+        where="d_id > 100",
+        compact=True,
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT /*+ NOWAIT */ d_id, d_name, d_age
+        FROM default.test
+        WHERE d_id > 100
+        """,
+    ).strip()
+
+    assert result == expected

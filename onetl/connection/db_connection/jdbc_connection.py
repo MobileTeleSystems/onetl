@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 import secrets
 from enum import Enum
-from logging import getLogger
 from typing import TYPE_CHECKING, Any, Optional
 
 from deprecated import deprecated
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(
@@ -662,11 +662,11 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
 
-        query = get_sql_query(table, columns=columns, where="1=0")
+        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
         log.info(f"|{self.__class__.__name__}| Schema fetched")

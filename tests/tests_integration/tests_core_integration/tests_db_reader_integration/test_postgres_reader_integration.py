@@ -1,7 +1,7 @@
 import pytest
 
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.connection import Postgres
+from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
 
 
@@ -104,13 +104,38 @@ def test_postgres_reader_snapshot_with_columns(spark, processing, load_table_dat
     )
     table_df = reader1.run()
 
+    columns = [
+        "text_string",
+        "hwm_int",
+        "float_value",
+        "id_int",
+        "hwm_date",
+        "hwm_datetime",
+    ]
+
     reader2 = DBReader(
         connection=postgres,
         table=load_table_data.full_name,
-        columns=["count(*)"],
+        columns=columns,
     )
-    count_df = reader2.run()
+    table_df_with_columns = reader2.run()
 
+    # columns order is same as expected
+    assert table_df.columns != table_df_with_columns.columns
+    assert table_df_with_columns.columns == columns
+
+    # dataframe content is unchanged
+    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+
+    reader3 = DBReader(
+        connection=postgres,
+        table=load_table_data.full_name,
+        columns=["count(*) as abc"],
+    )
+    count_df = reader3.run()
+
+    # expressions are allowed
+    assert count_df.columns == ["abc"]
     assert count_df.collect()[0][0] == table_df.count()
 
 

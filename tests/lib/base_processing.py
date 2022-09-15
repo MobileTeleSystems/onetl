@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from logging import getLogger
 from random import randint
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
@@ -158,13 +158,16 @@ class BaseProcessing(ABC):
         schema: Optional[str] = None,
         table: Optional[str] = None,
         order_by: Optional[str] = None,
-        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,
         **kwargs,
     ) -> None:
         """Checks that df and other_frame are equal"""
 
         if other_frame is None:
             other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
+
+        if not isinstance(other_frame, pd.core.frame.DataFrame):
+            other_frame = other_frame.toPandas()
 
         left_df = self.fix_pandas_df(df.toPandas())
         right_df = self.fix_pandas_df(other_frame)
@@ -192,12 +195,15 @@ class BaseProcessing(ABC):
         df: "pyspark.sql.DataFrame",
         schema: Optional[str] = None,
         table: Optional[str] = None,
-        other_frame: Optional["pandas.core.frame.DataFrame"] = None,
+        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,
     ) -> None:
         """Checks that other_frame contains df"""
 
         if other_frame is None:
             other_frame = self.get_expected_dataframe(schema=schema, table=table)
+
+        if not isinstance(other_frame, pd.core.frame.DataFrame):
+            other_frame = other_frame.toPandas()
 
         df = self.fix_pandas_df(df.toPandas())
         other_frame = self.fix_pandas_df(other_frame)
