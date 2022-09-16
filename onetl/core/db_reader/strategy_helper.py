@@ -20,6 +20,13 @@ if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
 
 
+# ColumnHWM has abstract method serialize_value, so it's not possible to create a class instance
+# small hack to bypass this exception
+class MockColumnHWM(ColumnHWM):
+    def serialize_value(self):
+        pass  # noqa: WPS420
+
+
 class StrategyHelper(FrozenModel):
     @property
     def where(self) -> str | None:  # noqa: WPS463
@@ -102,13 +109,13 @@ class HWMStrategyHelper(StrategyHelper):
 
         if strategy.hwm is None:
             # Small hack used only to generate qualified_name
-            strategy.hwm = ColumnHWM(source=reader.table, column=hwm_column)
+            strategy.hwm = MockColumnHWM(source=reader.table, column=hwm_column)
 
         if not strategy.hwm:
             strategy.fetch_hwm()
 
         hwm_type: type[HWM] | None = type(strategy.hwm)
-        if hwm_type == ColumnHWM:
+        if hwm_type == MockColumnHWM:
             # Remove HWM type set by hack above
             hwm_type = None
 
@@ -123,7 +130,7 @@ class HWMStrategyHelper(StrategyHelper):
                 f'"{detected_hwm_type.__name__}" which is different from "{hwm_type.__name__}"',
             )
 
-        if hwm_type == ColumnHWM or not issubclass(hwm_type, ColumnHWM):
+        if hwm_type == MockColumnHWM or not issubclass(hwm_type, ColumnHWM):
             cls.raise_wrong_hwm_type(reader, hwm_type)
 
         strategy.hwm = hwm_type(source=reader.table, column=hwm_column, value=strategy.hwm.value)
