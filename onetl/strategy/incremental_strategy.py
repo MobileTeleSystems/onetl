@@ -280,7 +280,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
 
 class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
-    """Incremental batch strategy for :ref:`db-reader:`.
+    """Incremental batch strategy for :ref:`db-reader`.
 
     .. note::
 

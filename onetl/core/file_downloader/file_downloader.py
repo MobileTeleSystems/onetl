@@ -40,11 +40,19 @@ DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath
 
 
 class FileDownloader(FrozenModel):
-    """Class specifies file source where you can download files. Download files **only** to local directory.
+    """Allows you to download files from a remote source with specified file connection
+    and parameters, and return an object with download result summary.
 
     .. note::
 
         FileDownloader can return different results depending on :ref:`strategy`
+
+    .. note::
+
+        This class is used to download files **only** from remote directory to the local one.
+
+        It does NOT support direct file transfer between filesystems, like ``FTP -> SFTP``.
+        You should use FileDownloader + :ref:`file-uploader` to implement ``FTP -> local dir -> SFTP``.
 
     Parameters
     ----------

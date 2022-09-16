@@ -20,12 +20,29 @@ if TYPE_CHECKING:
 
 
 class DBReader(FrozenModel):
-    """The DBReader class allows you to read data from a table with specified connection
+    """Allows you to read data from a table with specified database connection
     and parameters, and return its content as Spark dataframe
 
     .. note::
 
         DBReader can return different results depending on :ref:`strategy`
+
+    .. note::
+
+        This class operates with only one table at a time. It does NOT support executing JOINs.
+
+        To get the JOIN result you can instead:
+
+            1. Use 2 instandes of DBReader with different tables,
+               call :obj:`~run` of each one to get a table dataframe,
+               and then use ``df1.join(df2)`` syntax (Hive)
+
+            2. Use ``connection.execute("INSERT INTO ... SELECT ... JOIN ...")``
+               to execute JOIN on RDBMS side, write the result into a temporary table,
+               and then use DBReader to get the data from this temporary table (MPP systems, like Greenplum)
+
+            3. Use ``connection.sql(query)`` method to pass SQL query with a JOIN,
+               and fetch the result (other RDBMS)
 
     Parameters
     ----------
