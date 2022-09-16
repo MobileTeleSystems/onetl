@@ -29,14 +29,14 @@ Greenplum connection
 
 .. currentmodule:: onetl.connection.db_connection.greenplum.Greenplum
 
-.. autoclass:: ReadOptions
+.. autopydantic_model:: ReadOptions
     :members: partition_column, num_partitions
     :member-order: bysource
 
-.. autoclass:: WriteOptions
+.. autopydantic_model:: WriteOptions
     :members: mode
     :member-order: bysource
 
-.. autoclass:: JDBCOptions
+.. autopydantic_model:: JDBCOptions
     :members: query_timeout, fetchsize
     :member-order: bysource

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, Type
 
 from pydantic import Field, SecretStr
 
-from onetl._internal import clear_statement, stringify  # noqa: WPS436
+from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import log_with_indent
 
@@ -62,6 +62,7 @@ class JDBCMixin(FrozenModel):
         class Config:
             prohibited_options = PROHIBITED_OPTIONS
             extra = "allow"
+            alias_generator = to_camel
 
         query_timeout: Optional[int] = None
         """The number of seconds the driver will wait for a statement to execute.

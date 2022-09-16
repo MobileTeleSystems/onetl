@@ -18,5 +18,5 @@ File Uploader
 
 .. currentmodule:: onetl.core.file_uploader.file_uploader.FileUploader
 
-.. autoclass:: Options
+.. autopydantic_model:: Options
     :members: mode, delete_local

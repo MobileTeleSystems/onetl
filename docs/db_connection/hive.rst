@@ -15,6 +15,6 @@ Hive connection
 
 .. currentmodule:: onetl.connection.db_connection.hive.Hive
 
-.. autoclass:: WriteOptions
+.. autopydantic_model:: WriteOptions
     :members: mode, format, partition_by, bucket_by, sort_by, compression
     :member-order: bysource
