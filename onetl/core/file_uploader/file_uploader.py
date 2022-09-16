@@ -31,7 +31,15 @@ UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]
 
 
 class FileUploader(FrozenModel):
-    """Class specifies remote file source where you can upload files.
+    """Allows you to upload files to a remote source with specified file connection
+    and parameters, and return an object with upload result summary.
+
+    .. note::
+
+        This class is used to upload files **only** from local directory to the remote one.
+
+        It does NOT support direct file transfer between filesystems, like ``FTP -> SFTP``.
+        You should use :ref:`file-downloader` + FileUploader to implement ``FTP -> local dir -> SFTP``.
 
     Parameters
     ----------

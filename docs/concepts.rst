@@ -7,6 +7,9 @@ Here you can find detailed documentation about each one of the onETL concepts an
 Connection
 ==========
 
+Basics
+------
+
 onETL is used to pull and push data into other systems, and so it has a first-class ``Connection`` concept for storing credentials that are used to communicate with external systems.
 
 A ``Connection`` is essentially a set of parameters - such as username, password, hostname.
@@ -24,16 +27,17 @@ To create a connection to a specific storage type, you must use a **unique class
         password="onetl",
     )
 
-All connection types are inherited from the parent class ``ConnectionABC``.
+All connection types are inherited from the parent class ``BaseConnection``.
 
-Class diagram:
+Class diagram
+-------------
 
-.. image:: static/classdiag.png
+.. image:: static/connections.svg
 
 DBConnection
 ------------
 
-``DBConnection`` could be used for accessing databases.
+Classes inherited from ``DBConnection`` could be used for accessing databases.
 
 A ``DBConnection`` could be instantiated as follows:
 
@@ -57,7 +61,7 @@ For a description of other parameters, see the documentation for the `available 
 FileConnection
 --------------
 
-``FileConnection`` could be used to access files stored on the different file systems/file servers
+Classes inherited from ``FileConnection`` could be used to access files stored on the different file systems/file servers
 
 A ``FileConnection`` could be instantiated as follows:
 
@@ -73,21 +77,34 @@ A ``FileConnection`` could be instantiated as follows:
 
 For a description of other parameters, see the documentation for the `available FileConnections <file_connection/ftp.html>`_.
 
-Check connection
-----------------
+Checking connection availability
+--------------------------------
 
-Once you have created the required connection, you can check the storage availability using the method ``check()``:
+Once you have created the required connection, you can check the database/filesystem availability using the method ``check()``:
 
 .. code:: python
 
+    mssql.check()
     sftp.check()
+
+It will raise an exception if database/filesystem cannot be accessed.
 
 Extract/Load data
 =================
 
-As we said above, onETL is used to pull and push data into other systems. onETL provides several classes for this: ``DBReader``/``DBWriter``, ``FileDownloader``/``FileUploader``.
+Basics
+------
 
-All of these classes have the only method ``run()``, that starts to extract/load data:
+As we said above, onETL is used to extract data from and load data into remote systems.
+
+onETL provides several classes for this:
+
+    * ``DBReader``
+    * ``DBWriter``
+    * ``FileDownloader``
+    * ``FileUploader``
+
+All of these classes have a method ``run()`` that starts extracting/loading the data:
 
 .. code:: python
 
@@ -139,8 +156,7 @@ To load data you can use classes:
 Options
 -------
 
-``DBReader`` / ``DBWriter`` / ``FileDownloader`` / ``FileUploader`` classes have a ``options``
-parameter, which has a special meaning:
+Extract and load classes have a ``options`` parameter, which has a special meaning:
 
     * all other parameters - *WHAT* we extract from / *WHERE* we load to
     * ``options`` parameter - *HOW* we extract/load data
@@ -198,8 +214,8 @@ parameter, which has a special meaning:
         ),
     )
 
-More information about ``options`` could be found on DB connection and
-``FileDownloader``/ ``FileUploader`` documentation
+More information about ``options`` could be found on `DB connection <db_connection/clickhouse.html>`_. and
+:ref:`file-downloader` / :ref:`file-uploader` documentation
 
 Read Strategies
 ---------------
@@ -259,3 +275,17 @@ or get only files which were not downloaded before:
         files = downloader.run()
 
 Most of strategies are based on :ref:`hwm`, Please check each strategy documentation for more details
+
+
+Why just not use Connection class for extract/load?
+----------------------------------------------------
+
+Connections are very simple, they have only a set of some basic operations,
+like ``mkdir``, ``remove_file``, ``get_table_schema``, and so on.
+
+High-level operations, like
+    * :ref:`strategy` support
+    * Handling metadata push/pull
+    * Handling different options (``overwrite``, ``error``, ``ignore``) in case of file download/upload
+
+is moved to a separate class which calls the connection object methods to perform some complex logic.
