@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import io
 from contextlib import redirect_stdout
-from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from etl_entities import Table
+from pydantic import validator
 
-from onetl.connection.db_connection import DBConnection
-from onetl.log import LOG_INDENT, entity_boundary_log
+from onetl.base import BaseDBConnection
+from onetl.impl import FrozenModel, GenericOptions
+from onetl.log import entity_boundary_log, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -18,9 +19,8 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
-@dataclass
-class DBWriter:
-    """Class specifies database and table where you can write your dataframe.
+class DBWriter(FrozenModel):
+    """Class specifies schema and table where you can write your dataframe.
 
     Parameters
     ----------
@@ -28,16 +28,17 @@ class DBWriter:
         Class which contains DB connection properties. See :ref:`db-connections` section.
 
     table : str
-        Table which is read data from. You need to specify the full path to the table, including the schema.
-        Like ``schema.name``
+        Schema and table which is read data from.
 
-    options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
-        Spark JDBC or Hive write options.
+        You need to specify the full path to the table, like ``schema.table``
+
+    options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
+        Spark write options.
 
         For example:
         ``{"mode": "overwrite", "compression": "snappy"}``
         or
-        ``Hive.Options(mode="overwrite", compression="snappy")``
+        ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
 
 
     Examples
@@ -52,11 +53,14 @@ class DBWriter:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Postgres.package
+            ],
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -78,11 +82,14 @@ class DBWriter:
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Postgres.package
+            ],
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -91,7 +98,7 @@ class DBWriter:
 
         options = {"truncate": "true", "batchsize": 1000}
         # or (it is the same):
-        options = Postgres.Options(truncate=True, batchsize=1000}
+        options = Postgres.WriteOptions(truncate=True, batchsize=1000}
 
         writer = DBWriter(
             connection=postgres,
@@ -113,7 +120,7 @@ class DBWriter:
 
         options = {"compression": "snappy", "partitionBy": "id"}
         # or (it is the same):
-        options = Hive.Options(compression="snappy", partitionBy="id")
+        options = Hive.WriteOptions(compression="snappy", partitionBy="id")
 
         writer = DBWriter(
             connection=hive,
@@ -122,19 +129,29 @@ class DBWriter:
         )
     """
 
-    connection: DBConnection
+    connection: BaseDBConnection
     table: Table
-    options: DBConnection.Options
+    options: Optional[GenericOptions] = None
 
-    def __init__(
-        self,
-        connection: DBConnection,
-        table: str,
-        options: DBConnection.Options | dict | None = None,
-    ):
-        self.connection = connection
-        self.table = self._handle_table(table)
-        self.options = self._handle_options(options)
+    @validator("table", pre=True, always=True)
+    def validate_table(cls, value, values):  # noqa: N805
+        if isinstance(value, str):
+            return Table(name=value, instance=values["connection"].instance_url)
+        return value
+
+    @validator("options", pre=True, always=True)
+    def validate_options(cls, options, values):  # noqa: N805
+        connection = values.get("connection")
+        write_options_class = getattr(connection, "WriteOptions", None)
+        if write_options_class:
+            return write_options_class.parse(options)
+
+        if options:
+            raise ValueError(
+                f"{connection.__class__.__name__} does not implement WriteOptions, but {options!r} is passed",
+            )
+
+        return None
 
     def run(self, df: DataFrame):
         """
@@ -160,28 +177,32 @@ class DBWriter:
         self._log_parameters()
         self._log_dataframe_schema(df)
 
-        self.connection.log_parameters()
-        self.connection.save_df(
+        self.connection.check()
+        self.connection.save_df(  # type: ignore[call-arg]
             df=df,
             table=str(self.table),
-            options=self.options,
+            **self._get_write_kwargs(),
         )
 
         entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _log_parameters(self) -> None:
         log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
-        log.info(LOG_INDENT + f"table = '{self.table}'")
+        log_with_indent(f"table = '{self.table}'")
 
-        log.info("")
-        log.info(LOG_INDENT + "options:")
-        for option, value in self.options.dict(exclude_none=True).items():
-            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
-        log.info("")
+        log_with_indent("")
+        options = self.options and self.options.dict(by_alias=True, exclude_none=True)
+        if options:
+            log_with_indent("options:")
+            for option, value in options.items():
+                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+                log_with_indent(f"{option} = {value_wrapped}", indent=4)
+        else:
+            log_with_indent("options = None")
+        log_with_indent("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
-        log.info(LOG_INDENT + "DataFrame schema")
+        log_with_indent("DataFrame schema")
 
         schema_tree = io.StringIO()
         with redirect_stdout(schema_tree):
@@ -190,10 +211,10 @@ class DBWriter:
             df.printSchema()
 
         for line in schema_tree.getvalue().splitlines():
-            log.info(LOG_INDENT + f"    {line}")
+            log_with_indent(line, indent=4)
 
-    def _handle_table(self, table: str) -> Table:
-        return Table(name=table, instance=self.connection.instance_url)
+    def _get_write_kwargs(self) -> dict:
+        if self.options:
+            return {"options": self.options}
 
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        return self.connection.to_options(options)
+        return {}

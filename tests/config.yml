@@ -1,5 +1,5 @@
 spark:
-  master: local
+  master: local[*]
   spark.driver.memory: 1g
   spark.driver.maxResultSize: 1g
   spark.executor.cores: 1

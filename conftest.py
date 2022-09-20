@@ -19,6 +19,7 @@ from etl_entities import (
     Table,
 )
 from mtspark import get_spark
+from pytest_lazyfixture import lazy_fixture
 
 from onetl.connection import (
     FTP,
@@ -27,6 +28,7 @@ from onetl.connection import (
     MSSQL,
     SFTP,
     Clickhouse,
+    Greenplum,
     MySQL,
     Oracle,
     Postgres,
@@ -35,12 +37,13 @@ from onetl.connection import (
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
+from tests.lib.greenplum_processing import GreenplumProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
 from tests.lib.mssql_processing import MSSQLProcessing
 from tests.lib.mysql_processing import MySQLProcessing
 from tests.lib.oracle_processing import OracleProcessing
-from tests.lib.postgres_processing import PostgressProcessing
+from tests.lib.postgres_processing import PostgresProcessing
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +59,11 @@ def ftp_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.fixture(scope="function")
+def ftp_connection(ftp_server):
+    return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
+
+
 @pytest.fixture(scope="session")
 def ftps_server(tmp_path_factory):
     server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
@@ -63,6 +71,11 @@ def ftps_server(tmp_path_factory):
     sleep(5)
     yield server
     server.stop()
+
+
+@pytest.fixture(scope="function")
+def ftps_connection(ftps_server):
+    return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
 
 
 @pytest.fixture(scope="session")
@@ -74,14 +87,24 @@ def sftp_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.fixture(scope="function")
+def sftp_connection(sftp_server):
+    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
+
+
 @pytest.fixture(scope="session")
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
     return HDFSServer(
         os.getenv("ONETL_HDFS_CONN_HOST", "hive2"),
-        os.getenv("ONETL_HDFS_CONN_PORT", 50070),
+        int(os.getenv("ONETL_HDFS_CONN_PORT", "50070")),
     )
+
+
+@pytest.fixture(scope="function")
+def hdfs_connection(hdfs_server):
+    return HDFS(host=hdfs_server.host, port=hdfs_server.port)
 
 
 @pytest.fixture(scope="function")
@@ -103,14 +126,31 @@ def test_files(resource_path):
     ]
 
 
+@pytest.fixture(scope="function")
+def upload_files_with_encoding(file_connection, source_path):
+    local_root_filename = Path(__file__).parent / "tests" / "resources"
+    remote_root_filename = source_path
+    files = ["file_connection_utf.txt", "file_connection_ascii.txt"]
+
+    for file in files:
+        file_connection.upload_file(local_root_filename / file, remote_root_filename / file)
+
+    return {
+        "utf": remote_root_filename / "file_connection_utf.txt",
+        "ascii": remote_root_filename / "file_connection_ascii.txt",
+    }
+
+
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(request):
     config = {
         "appName": "onetl",
         "spark.jars.packages": [
+            "default:skip",
             Oracle.package,
             Clickhouse.package,
             Postgres.package,
+            Greenplum.package_spark_2_4,
             MySQL.package,
             MSSQL.package,
             Teradata.package,
@@ -122,7 +162,7 @@ def get_spark_session(request):
 
     spark = get_spark(
         config=config,
-        fix_pyspark=False,
+        spark_version="local",
     )
     yield spark
     spark.sparkContext.stop()
@@ -132,7 +172,8 @@ def get_spark_session(request):
 @pytest.fixture()
 def processing(request, spark):
     storage_matching: Dict = {
-        "postgres": PostgressProcessing,
+        "greenplum": GreenplumProcessing,
+        "postgres": PostgresProcessing,
         "hive": HiveProcessing,
         "oracle": OracleProcessing,
         "clickhouse": ClickhouseProcessing,
@@ -142,7 +183,7 @@ def processing(request, spark):
 
     test_function = request.function
 
-    db_storage_name = test_function.__name__.split("_")[1]  # postgres, hive, oracle, clickhouse, mysql, mssql
+    db_storage_name = test_function.__name__.split("_")[1]
 
     if db_storage_name not in storage_matching:
         raise ValueError(f"Wrong name. Please use {list(storage_matching.keys())}")
@@ -158,7 +199,7 @@ def processing(request, spark):
 
 @pytest.fixture
 def get_schema_table(processing):
-    schema = "onetl"
+    schema = processing.schema
     processing.create_schema(schema=schema)
 
     table = f"test_{secrets.token_hex(5)}"
@@ -214,36 +255,14 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(FTP, marks=pytest.mark.FTP),
-        pytest.param(FTPS, marks=pytest.mark.FTPS),
-        pytest.param(HDFS, marks=pytest.mark.HDFS),
-        pytest.param(SFTP, marks=pytest.mark.SFTP),
+        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.FTP),
+        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
+        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
+        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
     ],
 )
-def file_connection_class(request):
+def file_connection(request):
     return request.param
-
-
-@pytest.fixture(scope="function")
-def file_server(request, file_connection_class):
-    return request.getfixturevalue(f"{file_connection_class.__name__.lower()}_server")
-
-
-@pytest.fixture(scope="function")
-def file_connection(file_connection_class, file_server):
-    mandatory_options = {"host", "port"}
-    options = {"user", "password", "key_file"}
-
-    kwargs = {}
-
-    for option in mandatory_options:
-        kwargs[option] = getattr(file_server, option)
-
-    for option in options:
-        if hasattr(file_server, option):
-            kwargs[option] = getattr(file_server, option)
-
-    return file_connection_class(**kwargs)
 
 
 @pytest.fixture(scope="function")

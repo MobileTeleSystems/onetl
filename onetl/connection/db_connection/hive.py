@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
 from enum import Enum
-from logging import getLogger
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
+from deprecated import deprecated
 from pydantic import root_validator, validator
 
-from onetl._internal import clear_statement  # noqa: WPS436
+from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class HiveWriteMode(str, Enum):  # noqa: WPS600
@@ -32,13 +33,12 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
     def _missing_(cls, value: object):
         if str(value) == "overwrite":
             log.warning(
-                "Mode `overwrite` is deprecated since 0.4.0 and will be removed in 0.5.0, "
+                "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, "
                 "use `overwrite_partitions` instead",
             )
             return cls.OVERWRITE_PARTITIONS
 
 
-@dataclass(frozen=True)
 class Hive(DBConnection):
     """Class for Hive spark connection.
 
@@ -64,13 +64,13 @@ class Hive(DBConnection):
         hive = Hive(spark=spark)
     """
 
-    class Options(DBConnection.Options):  # noqa: WPS431
+    class WriteOptions(GenericOptions):
         """Class for writing options, related to Hive source.
 
         You can pass here key-value items which then will be converted to calls
         of :obj:`pyspark.sql.readwriter.DataFrameWriter` methods.
 
-        For example, ``Hive.Options(mode="append", partitionBy="reg_id")`` will
+        For example, ``Hive.WriteOptions(mode="append", partitionBy="reg_id")`` will
         be converted to ``df.write.mode("append").partitionBy("reg_id")`` call, and so on.
 
         .. note::
@@ -88,8 +88,13 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            options = Hive.Options(mode="append", partitionBy="reg_id", someNewOption="value")
+            options = Hive.WriteOptions(mode="append", partitionBy="reg_id", someNewOption="value")
         """
+
+        class Config:
+            known_options: frozenset = frozenset()
+            alias_generator = to_camel
+            extra = "allow"
 
         mode: HiveWriteMode = HiveWriteMode.APPEND
         """Mode of writing data into target table.
@@ -160,10 +165,6 @@ class Hive(DBConnection):
 
             Unlike Spark, config option ``spark.sql.sources.partitionOverwriteMode``
             does not affect behavior of any ``mode``
-
-        .. warning::
-
-            Used **only** while **writing** data to a table
         """
 
         format: str = "orc"
@@ -294,15 +295,22 @@ class Hive(DBConnection):
 
             return values
 
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+    )
+    class Options(WriteOptions):
+        pass  # noqa: WPS420, WPS604
+
     # TODO (@msmarty5): Replace with active_namenode function from mtspark
     @property
     def instance_url(self) -> str:
         return "rnd-dwh"
 
-    def sql(  # type: ignore[override]
+    def sql(
         self,
         query: str,
-        options: Options | dict | None = None,
     ) -> DataFrame:
         """
         Lazily execute SELECT statement and return DataFrame.
@@ -338,18 +346,17 @@ class Hive(DBConnection):
         """
 
         query = clear_statement(query)
-        self._handle_read_options(options)
 
         log.info(f"|{self.__class__.__name__}| Executing SQL query:")
         log_with_indent(query)
+
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
-    def execute(  # type: ignore[override]
+    def execute(
         self,
         statement: str,
-        options: Options | dict | None = None,
     ) -> None:
         """
         Execute DDL or DML statement.
@@ -398,35 +405,36 @@ class Hive(DBConnection):
         """
 
         statement = clear_statement(statement)
-        self._handle_read_options(options)
 
         log.info(f"|{self.__class__.__name__}| Executing statement:")
         log_with_indent(statement)
+
         self._execute_sql(statement).collect()
         log.info(f"|{self.__class__.__name__}| Call succeeded")
 
     def check(self):
-        self.log_parameters()
-
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
+        log_with_indent(self._check_query, level=logging.DEBUG)
 
         try:
-            self.sql(self._check_query)
+            self._execute_sql(self._check_query)
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
-            msg = f"Connection is unavailable:\n{e}"
-            log.exception(f"|{self.__class__.__name__}| {msg}")
-            raise RuntimeError(msg) from e
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
 
         return self
 
-    def save_df(  # type: ignore[override]
+    def save_df(
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         try:
             self.get_schema(table)
@@ -445,54 +453,47 @@ class Hive(DBConnection):
             # mode="overwrite_table" should be used
             self._save_as_table(df, table, options)
 
-    def read_table(  # type: ignore[override]
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
     ) -> DataFrame:
-        sql_text = self.get_sql_query(
+        sql_text = get_sql_query(
             table=table,
             columns=columns,
             where=where,
             hint=hint,
         )
 
-        return self.sql(sql_text, options)
+        return self.sql(sql_text)
 
-    def get_schema(  # type: ignore[override]
+    def get_schema(
         self,
         table: str,
         columns: list[str] | None = None,
-        options: Options | dict | None = None,
     ) -> StructType:
-        self._handle_read_options(options)
-
-        query_schema = self.get_sql_query(table, columns=columns, where="1=0")
+        query_schema = get_sql_query(table, columns=columns, where="1=0", compact=True)
 
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(query_schema)
+        log.debug(f"|{self.__class__.__name__}| SQL statement:")
+        log_with_indent(query_schema, level=logging.DEBUG)
 
         df = self._execute_sql(query_schema)
         return df.schema
 
-    def get_min_max_bounds(  # type: ignore[override]
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: Options | dict | None = None,
     ) -> Tuple[Any, Any]:
-
-        self._handle_read_options(options)
         log.info(f"|Spark| Getting min and max values for column {column!r}")
 
-        sql_text = self.get_sql_query(
+        sql_text = get_sql_query(
             table=table,
             columns=[
                 self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
@@ -517,13 +518,6 @@ class Hive(DBConnection):
 
     def _execute_sql(self, query: str) -> DataFrame:
         return self.spark.sql(query)
-
-    def _handle_read_options(self, options: Options | dict | None):
-        if self.to_options(options).dict(exclude_unset=True):
-            raise ValueError(
-                f"{options.__class__.__name__} cannot be passed to {self.__class__.__name__}. "
-                "Hive reader does not support options.",
-            )
 
     def _sort_df_columns_like_table(self, table: str, df_columns: list[str]) -> list[str]:
         # Hive is inserting columns by the order, not by their name
@@ -575,9 +569,9 @@ class Hive(DBConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         log.info(f"|{self.__class__.__name__}| Inserting data into existing table {table!r}")
 
@@ -621,9 +615,9 @@ class Hive(DBConnection):
         self,
         df: DataFrame,
         table: str,
-        options: Options | dict | None = None,
+        options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.to_options(options)
+        write_options = self.WriteOptions.parse(options)
 
         log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
 

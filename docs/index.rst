@@ -30,6 +30,7 @@
     :hidden:
 
     db_connection/clickhouse
+    db_connection/greenplum
     db_connection/hive
     db_connection/mssql
     db_connection/mysql
@@ -117,7 +118,7 @@
     :caption: HWM and incremental reads
     :hidden:
 
-    hwm
+    hwm/index
     strategy/index
     hwm_store/index
 

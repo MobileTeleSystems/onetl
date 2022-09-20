@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class MSSQL(JDBCConnection):
-    """Class for MSSQL jdbc connection.
+    """Class for MSSQL JDBC connection.
+
+    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8``
+    (`official MSSQL JDBC driver
+    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_)
 
     .. note::
 
@@ -18,24 +20,24 @@ class MSSQL(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of MSSQL database. For example: ``0001MSSQLDB02.dmz.msk.mts.ru``
+        Host of MSSQL database. For example: ``test.mssql.domain.com`` or ``192.168.1.14``
 
     port : int, default: ``1433``
         Port of MSSQL database
 
     user : str
-        User, which have access to the database and table. For example: ``big_data_tech_user``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
 
     database : str
-        Database in rdbms. To provide schema, use DBReader class
+        Database in RDBMS, NOT schema.
 
-        See https://www.educba.com/postgresql-database-vs-schema/ for more details
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
-    spark : :obj:`pyspark.sql.SparkSession`, default: ``None``
-        Spark session that required for jdbc connection to database.
+    spark : :obj:`pyspark.sql.SparkSession`
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
 
@@ -44,10 +46,14 @@ class MSSQL(JDBCConnection):
 
         For example: ``{"connectRetryCount": 3, "connectRetryInterval": 10}``
 
+        See `MSSQL JDBC driver properties documentation
+        <https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties>`_
+        for more details
+
     Examples
     --------
 
-    MSSQL jdbc connection initialization
+    MSSQL connection with plain auth:
 
     .. code::
 
@@ -55,19 +61,78 @@ class MSSQL(JDBCConnection):
         from mtspark import get_spark
 
         extra = {
-            "connectRetryCount": 3,
-            "connectRetryInterval": 10,
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [MSSQL.package],
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
         })
 
         mssql = MSSQL(
-            host="0001MSSQLDB02.dmz.msk.mts.ru",
-            user="big_data_tech_user",
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            extra=extra,
+            spark=spark,
+        )
+
+    MSSQL connection with domain auth:
+
+    .. code::
+
+        from onetl.connection import MSSQL
+        from mtspark import get_spark
+
+        extra = {
+            "Domain": "some.domain.com",  # add here your domain
+            "IntegratedSecurity": "true",
+            "authenticationScheme": "NTLM",
+            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+        }
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
+        })
+
+        mssql = MSSQL(
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            extra=extra,
+            spark=spark,
+        )
+
+    MSSQL read-only connection:
+
+    .. code::
+
+        from onetl.connection import MSSQL
+        from mtspark import get_spark
+
+        extra = {
+            "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
+            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+        }
+
+        spark = get_spark({
+            "appName": "spark-app-name",
+            "spark.jars.packages": [
+                "default:skip",
+                MSSQL.package,
+            ],
+        })
+
+        mssql = MSSQL(
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             extra=extra,
             spark=spark,
@@ -75,24 +140,37 @@ class MSSQL(JDBCConnection):
 
     """
 
+    class Extra(JDBCConnection.Extra):
+        class Config:
+            prohibited_options = frozenset(("databaseName",))
+
+    database: str
+    port: int = 1433
+    extra: Extra = Extra()
+
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
-    port: int = 1433
-
     _check_query: ClassVar[str] = "SELECT 1 AS field"
 
-    def __post_init__(self):
-        if not self.database:
-            raise ValueError(
-                f"You should provide database name for {self.__class__.__name__} connection. "
-                "Use database parameter: database = 'database_name'",
-            )
+    class ReadOptions(JDBCConnection.ReadOptions):
+        # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
+        @classmethod
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
+
+        @classmethod
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
 
     @property
     def jdbc_url(self) -> str:
-        parameters = "".join(f";{k}={v}" for k, v in self.extra.items())
+        prop = self.extra.dict(by_alias=True)
+        prop["databaseName"] = self.database
+        parameters = ";".join(f"{k}={v}" for k, v in sorted(prop.items()))
 
-        return f"jdbc:sqlserver://{self.host}:{self.port};databaseName={self.database}{parameters}"
+        return f"jdbc:sqlserver://{self.host}:{self.port};{parameters}"
 
     @property
     def instance_url(self) -> str:

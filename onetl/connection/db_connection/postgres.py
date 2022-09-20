@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
-@dataclass(frozen=True)
 class Postgres(JDBCConnection):
-    """Class for PostgreSQL jdbc connection.
+    """Class for PostgreSQL JDBC connection.
+
+    Based on Maven package ``org.postgresql:postgresql:42.4.0``
+    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_)
 
     .. note::
 
@@ -18,66 +19,90 @@ class Postgres(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of postgres database. For example: ``test-db-vip.msk.mts.ru``
+        Host of Postgres database. For example: ``test.postgres.domain.com`` or ``193.168.1.11``
 
     port : int, default: ``5432``
-        Port of postgres database
+        Port of Postgres database
 
     user : str
-        User, which have access to the database and table. For example: ``appmetrica_test``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
 
     database : str
-        Database in rdbms. To provide schema, use DBReader class
+        Database in RDBMS, NOT schema.
 
-        See https://www.educba.com/postgresql-database-vs-schema/ for more details
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
-        You can use ``mtspark`` for spark session initialization.
+        You can use ``mtspark`` for spark session initialization
+
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"ssl": "false"}``
+
+        See `Postgres JDBC driver properties documentation <https://github.com/pgjdbc/pgjdbc#connection-properties>`_
+        for more details
 
     Examples
     --------
 
-    Postgres jdbc connection initialization
+    Postgres connection initialization
 
     .. code::
 
         from onetl.connection import Postgres
         from mtspark import get_spark
 
+        extra = {"ssl": "false"}
+
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Postgres.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Postgres.package,
+            ],
         })
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
-            user="appmetrica_test",
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             database='target_database',
+            extra=extra,
             spark=spark,
         )
 
     """
 
-    driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+    database: str
     port: int = 5432
 
-    def __post_init__(self):
-        if not self.database:
-            raise ValueError(
-                f"You should provide database name for {self.__class__.__name__} connection. "
-                "Use database parameter: database = 'database_name'",
-            )
+    driver: ClassVar[str] = "org.postgresql.Driver"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+
+    class ReadOptions(JDBCConnection.ReadOptions):
+        # https://stackoverflow.com/a/9812029
+        @classmethod
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"('x'||right(md5('{partition_column}'), 16))::bit(32)::bigint % {num_partitions}"
+
+        @classmethod
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        extra = self.extra.dict(by_alias=True)
+        extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
+
+        params_str = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
 
         if params_str:
             params_str = f"?{params_str}"
@@ -88,7 +113,7 @@ class Postgres(JDBCConnection):
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
 
-    def _options_to_connection_properties(self, options: JDBCConnection.Options):  # type: ignore[override]
+    def _options_to_connection_properties(self, options: JDBCConnection.JDBCOptions):  # noqa: WPS437
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

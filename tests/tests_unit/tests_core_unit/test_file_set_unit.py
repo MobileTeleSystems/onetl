@@ -5,13 +5,13 @@ import pytest
 
 from onetl.core import FileSet
 from onetl.exception import EmptyFilesError, ZeroFileSizeError
-from onetl.impl import LocalPath, RemoteDirectory, RemoteFile, RemoteFileStat
+from onetl.impl import LocalPath, RemoteFile, RemotePathStat
 
 
 def test_file_set():
-    file1 = RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))
-    file2 = RemoteFile(path="a/b/c/d", stats=RemoteFileStat(st_size=20, st_mtime=50))
-    file3 = RemoteFile(path="a/b/c/e", stats=RemoteFileStat(st_size=30, st_mtime=50))
+    file1 = RemoteFile(path="a/b/c", stats=RemotePathStat(st_size=10, st_mtime=50))
+    file2 = RemoteFile(path="a/b/c/d", stats=RemotePathStat(st_size=20, st_mtime=50))
+    file3 = RemoteFile(path="a/b/c/e", stats=RemotePathStat(st_size=30, st_mtime=50))
 
     files = [file1, file1, file2]
 
@@ -55,21 +55,17 @@ def test_file_set():
 
 
 def test_file_set_details():
-    path1 = RemoteFile(path="a/b/c", stats=RemoteFileStat(st_size=10, st_mtime=50))
-    path2 = RemoteDirectory("a/b/c/d")
-    path3 = LocalPath("a/b/c/e")
-    path4 = "a/b/c/f"
+    path1 = RemoteFile(path="a/b/c", stats=RemotePathStat(st_size=10, st_mtime=50))
+    path2 = "a/b/c/f"
 
-    items = [path1, path2, path3, path4]
+    items = [path1, path2]
 
     file_set = FileSet(items)
 
-    summary = "4 files (10 Bytes)"
+    summary = "2 files (size='10 Bytes')"
     details = """
-        4 files (10 Bytes):
-            'a/b/c' (10 Bytes)
-            'a/b/c/d' (directory)
-            'a/b/c/e' (missing)
+        2 files (size='10 Bytes'):
+            'a/b/c' (size='10 Bytes')
             'a/b/c/f'
     """
 
@@ -91,8 +87,8 @@ def test_file_set_raise_if_empty():
 
 def test_file_set_raise_if_contains_zero_size():
     files = [
-        RemoteFile(path="/empty", stats=RemoteFileStat(st_size=0, st_mtime=50)),
-        RemoteFile(path="/successful", stats=RemoteFileStat(st_size=10 * 1024, st_mtime=50)),
+        RemoteFile(path="/empty", stats=RemotePathStat(st_size=0, st_mtime=50)),
+        RemoteFile(path="/successful", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50)),
         LocalPath("cannot/detect/size1"),  # missing file does not mean zero size
     ]
 

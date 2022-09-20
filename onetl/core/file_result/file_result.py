@@ -4,7 +4,7 @@ import os
 from typing import Iterable, TypeVar
 
 from humanize import naturalsize
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from onetl.core.file_result.file_set import FileSet
 from onetl.exception import (
@@ -13,6 +13,7 @@ from onetl.exception import (
     MissingFilesError,
     SkippedFilesError,
 )
+from onetl.impl import BaseModel
 
 GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
@@ -29,9 +30,6 @@ class FileResult(BaseModel):  # noqa: WPS214
     * :obj`skipped`
     * :obj`missing`
     """
-
-    class Config:  # noqa: WPS431
-        arbitrary_types_allowed = True
 
     successful: FileSet[GenericPath] = Field(default_factory=FileSet)
     "Successfully handled files"
@@ -582,7 +580,7 @@ class FileResult(BaseModel):  # noqa: WPS214
     def _total_summary(self) -> str:
         if self.successful or self.failed or self.missing or self.skipped:
             file_number_str = f"{self.total_count} files" if self.total_count > 1 else "1 file"
-            return f"Total: {file_number_str} ({naturalsize(self.total_size)})"
+            return f"Total: {file_number_str} (size='{naturalsize(self.total_size)}')"
 
         return "No files"
 
@@ -633,14 +631,14 @@ class FileResult(BaseModel):  # noqa: WPS214
         if not self.missing:
             return "No missing files"
 
-        return "Missing: " + self.missing.summary.replace(" (0 Bytes)", "")
+        return "Missing: " + self.missing.summary.replace(" (size='0 Bytes')", "")
 
     @property
     def _missing_message(self) -> str:
         if not self.missing:
             return self._missing_summary
 
-        return "Missing " + self.missing.details.replace(" (0 Bytes)", "")
+        return "Missing " + self.missing.details.replace(" (size='0 Bytes')", "")
 
     @property
     def _total_message(self) -> str:

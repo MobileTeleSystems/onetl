@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import logging
 import operator
-from dataclasses import dataclass, field
-from typing import Any, Callable
+import os
+from typing import Any, Callable, Optional
 
 from etl_entities import HWM
 
-from onetl.log import LOG_INDENT
+from onetl.impl import path_repr
+from onetl.log import log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 
 log = logging.getLogger(__name__)
 
 
-@dataclass
 class HWMStrategy(BaseStrategy):
-    hwm: HWM | None = field(repr=False, default=None)
+    hwm: Optional[HWM] = None
 
     @property
     def current_value(self) -> Any:
@@ -34,8 +34,8 @@ class HWMStrategy(BaseStrategy):
         return operator.le
 
     def update_hwm(self, value: Any) -> None:
-        if self.hwm is not None:
-            self.hwm = self.hwm.with_value(value)  # noqa: WPS601
+        if self.hwm is not None and value is not None:
+            self.hwm.update(value)  # noqa: WPS601
 
     def enter_hook(self) -> None:
         # TODO:(@mivasil6) Зачем здесь делать пустой fetch_hwm()
@@ -48,14 +48,14 @@ class HWMStrategy(BaseStrategy):
             hwm_store = HWMStoreManager.get_current()
 
             log.info(f"{log_prefix} Loading HWM from {hwm_store.__class__.__name__}:")
-            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name!r}")
+            log_with_indent(f"qualified_name = {self.hwm.qualified_name!r}")
 
             value = hwm_store.get(self.hwm.qualified_name)
 
             if value is not None:
                 log.info(f"{log_prefix} Got HWM:")
-                log.info(LOG_INDENT + f"type = {value.__class__.__name__}")
-                log.info(LOG_INDENT + f"value = {value.value!r}")
+                log_with_indent(f"type = {value.__class__.__name__}")
+                log_with_indent(f"value = {value.value!r}")
                 self.hwm = value  # noqa: WPS601
             else:
                 log.warning(
@@ -77,18 +77,21 @@ class HWMStrategy(BaseStrategy):
 
             # TODO:(@mivasil6) подумать над __repr__ hwm
             log.info(f"{log_prefix} Saving HWM to {hwm_store.__class__.__name__}:")
-            log.info(LOG_INDENT + f"type = {self.hwm.__class__.__name__}")
-            log.info(LOG_INDENT + f"value = {self.hwm.value!r}")
-            log.info(LOG_INDENT + f"qualified_name = {self.hwm.qualified_name!r}")
+            log_with_indent(f"type = {self.hwm.__class__.__name__}")
+            log_with_indent(f"value = {self.hwm.value!r}")
+            log_with_indent(f"qualified_name = {self.hwm.qualified_name!r}")
 
             location = hwm_store.save(self.hwm)
             log.info(f"{log_prefix} HWM has been saved")
 
             if location:
-                log.info(LOG_INDENT + f"location = {location}")
+                if isinstance(location, os.PathLike):
+                    log_with_indent(f"location = {path_repr(location)}")
+                else:
+                    log_with_indent(f"location = {location}")
         else:
-            log.debug(f"{log_prefix} HWM will not been saved, skipping")
+            log.debug(f"{log_prefix} HWM value is not set, do not save")
 
     @classmethod
-    def _log_exclude_field(cls, name: str) -> bool:
-        return super()._log_exclude_field(name) or name == "hwm"
+    def _log_exclude_fields(cls) -> set[str]:
+        return super()._log_exclude_fields() | {"hwm"}

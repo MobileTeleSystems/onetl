@@ -1,73 +1,151 @@
+import logging
+import re
 from unittest.mock import Mock
 
 import pytest
+from pyspark.sql import SparkSession
 
-from onetl.connection import Oracle, Postgres
+from onetl.connection import Greenplum, Hive, Oracle, Postgres
 
-spark = Mock()
+spark = Mock(spec=SparkSession)
 
 
 def test_secure_str_and_repr():
     conn = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark)
 
-    assert "password=" not in str(conn)
-    assert "password=" not in repr(conn)
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
 
-def test_jdbc_connection_without_host_and_credentials():
+@pytest.mark.parametrize(
+    "options_class",
+    [
+        Postgres.ReadOptions,
+        Postgres.WriteOptions,
+        Postgres.JDBCOptions,
+        Postgres.Options,
+        Greenplum.ReadOptions,
+        Greenplum.WriteOptions,
+    ],
+)
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("url", "jdbc:ora:thin/abc"),
+        ("driver", "com.oracle.jdbc.Driver"),
+        ("user", "me"),
+        ("password", "abc"),
+    ],
+)
+def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, value):
+    with pytest.raises(ValueError, match=f"Option '{arg}' is not allowed to use in a {options_class.__name__}"):
+        options_class(**{arg: value})
+
+
+@pytest.mark.parametrize(
+    "options_class, options_class_name, known_options",
+    [
+        (Hive.WriteOptions, "WriteOptions", {"mode": "overwrite_partitions"}),
+        (Hive.Options, "Options", {"mode": "overwrite_partitions"}),
+        (Postgres.ReadOptions, "ReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Postgres.WriteOptions, "WriteOptions", {"mode": "overwrite", "keytab": "a/b/c"}),
+        (Postgres.Options, "Options", {"mode": "overwrite", "keytab": "a/b/c"}),
+        (Greenplum.ReadOptions, "ReadOptions", {"partitions": 10}),
+        (Greenplum.WriteOptions, "WriteOptions", {"mode": "overwrite"}),
+    ],
+)
+def test_db_options_warn_for_unknown(options_class, options_class_name, known_options, caplog):
+    with caplog.at_level(logging.WARNING):
+        options_class(some_unknown_option="value", **known_options)
+
+        assert (
+            f"Option 'some_unknown_option' is not known by {options_class_name}, are you sure it is valid?"
+        ) in caplog.text
+
+        options_class(option1="value1", option2=None, **known_options)
+
+        assert (
+            f"Options 'option1', 'option2' are not known by {options_class_name}, are you sure they are valid?"
+        ) in caplog.text
+
+        for known_option in known_options:
+            assert known_option not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "options_class,options",
+    [
+        (
+            Oracle.ReadOptions,
+            Oracle.WriteOptions(mode="append"),
+        ),
+        (
+            Oracle.WriteOptions,
+            Oracle.ReadOptions(fetchsize=1000),
+        ),
+    ],
+    ids=[
+        "Write options object passed to ReadOptions",
+        "Read options object passed to WriteOptions",
+    ],
+)
+def test_db_options_parse_mismatch_class(options_class, options):
     with pytest.raises(TypeError):
-        Postgres(spark=spark)  # noqa: F841
+        options_class.parse(options)
 
 
-def test_jdbc_default_fetchsize():
-    conn = Oracle(host="some_host", user="user", password="passwd", sid="PE", spark=spark)
-    options = conn.Options()
+@pytest.mark.parametrize(
+    "connection,options",
+    [
+        (
+            Oracle,
+            Hive.WriteOptions(format="orc"),
+        ),
+        (
+            Hive,
+            Oracle.WriteOptions(truncate=True),
+        ),
+    ],
+    ids=["JDBC connection with Hive options.", "Hive connection with JDBC options."],
+)
+def test_db_options_parse_mismatch_connection_and_options_types(connection, options):
+    with pytest.raises(TypeError):
+        connection.WriteOptions.parse(options)
 
-    assert options.fetchsize == 100000
 
-
+@pytest.mark.parametrize(
+    "options_class",
+    [
+        Postgres.ReadOptions,
+        Postgres.WriteOptions,
+        Postgres.JDBCOptions,
+        Greenplum.ReadOptions,
+        Greenplum.WriteOptions,
+        Hive.WriteOptions,
+        Postgres.Options,
+        Hive.Options,
+    ],
+)
 @pytest.mark.parametrize(
     "options",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-        # wrong mode
-        {"mode": "wrong_mode"},
+        {"some", "option"},
+        "Some_options",
+        123,
+        ["Option_1", "Option_2"],
+        ("Option_1", "Option_2"),
+    ],
+    ids=[
+        "set",
+        "str",
+        "int",
+        "list",
+        "tuple",
     ],
 )
-def test_jdbc_wrong_mode_option(options):
-    oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark)
-
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        oracle.Options(**options)
-
-
-@pytest.mark.parametrize("hint, real_hint", [(None, ""), ("NOWAIT", " /*+ NOWAIT */")])
-@pytest.mark.parametrize(
-    "columns, real_columns",
-    [
-        (None, "*"),
-        (["*"], "*"),
-        (["d_id", "d_name", "d_age"], "d_id, d_name, d_age"),
-    ],
-)
-@pytest.mark.parametrize("where, real_where", [(None, ""), ("d_id > 100", " WHERE d_id > 100")])
-def test_jdbc_get_sql_query(
-    hint,
-    real_hint,
-    columns,
-    real_columns,
-    where,
-    real_where,
-):
-    conn = Postgres(host="some_host", user="user", password="passwd", database="abc", spark=spark)
-
-    table_sql = conn.get_sql_query(
-        table="default.test",
-        hint=hint,
-        columns=columns,
-        where=where,
-    )
-
-    assert table_sql == f"SELECT{real_hint} {real_columns} FROM default.test{real_where}"
+def test_db_options_cannot_be_parsed(options_class, options):
+    with pytest.raises(
+        TypeError,
+        match=re.escape(f"{type(options).__name__} is not a {options_class.__name__} instance"),
+    ):
+        options_class.parse(options)

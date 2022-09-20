@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+import stat
 from datetime import datetime
 from logging import getLogger
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
+from pydantic import Field, SecretStr
 from smbclient import SambaClient
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import RemoteFileStat, RemotePath
+from onetl.impl import RemotePath, RemotePathStat
 from onetl.impl.local_path import LocalPath
 
 log = getLogger(__name__)
@@ -18,7 +19,6 @@ log = getLogger(__name__)
 ItemType = List[Tuple[str, int, int, datetime]]
 
 
-@dataclass(frozen=True)
 class Samba(FileConnection):
     """Class for Samba file connection.
 
@@ -56,9 +56,13 @@ class Samba(FileConnection):
         )
     """
 
+    host: str
     port: int = 445
-    domain: str | None = None
-    schema: str | None = None
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
+    domain: Optional[str] = None
+    # `schema` attribute overrides Pydandic own attribute, so using alias here
+    share: Optional[str] = Field(alias="schema", default=None)
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.exists(os.fspath(path))
@@ -66,12 +70,12 @@ class Samba(FileConnection):
     def _get_client(self) -> SambaClient:
         return SambaClient(
             server=self.host,
-            share=self.schema,
+            share=self.share or "",
             username=self.user,
             domain=self.domain,
             port=self.port,
             # does not work without \n on smbclient --version Version 4.7.1
-            password=self.password + "\n",
+            password=self.password.get_secret_value() + "\n" if self.password else None,
         )
 
     def _is_client_closed(self) -> bool:
@@ -108,9 +112,9 @@ class Samba(FileConnection):
     def _is_file(self, path: RemotePath) -> bool:
         return self.client.self.client.isfile(os.fspath(path))
 
-    def _get_stat(self, path: RemotePath) -> RemoteFileStat:
-        item: ItemType = next(self.client.self.client.glob(os.fspath(path)))
-        return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
+    def _get_stat(self, path: RemotePath) -> RemotePathStat:
+        item: ItemType = next(self.client.glob(os.fspath(path)))
+        return RemotePathStat(st_size=item[2], st_mtime=item[3].timestamp())
 
     def _get_item_name(self, item: ItemType) -> str:
         return item[0]
@@ -121,8 +125,9 @@ class Samba(FileConnection):
     def _is_item_file(self, top: RemotePath, item: ItemType) -> bool:
         return not self._is_item_dir(top, item)
 
-    def _get_item_stat(self, top: RemotePath, item: ItemType) -> RemoteFileStat:
-        return RemoteFileStat(st_size=item[2], st_mtime=item[3].timestamp())
+    def _get_item_stat(self, top: RemotePath, item: ItemType) -> RemotePathStat:
+        st_mode = stat.S_IFDIR if "D" in item[1] else stat.S_IFREG
+        return RemotePathStat(st_size=item[2], st_mtime=item[3].timestamp(), st_mode=st_mode)
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.open(os.fspath(path), mode="rb", **kwargs) as file:

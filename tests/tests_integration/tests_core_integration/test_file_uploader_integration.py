@@ -1,16 +1,37 @@
 import logging
 import os
+import re
 import secrets
 import tempfile
-from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 import pytest
-from etl_entities import Process
 
 from onetl.core import FileUploader
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
+
+
+def test_uploader_view_files(file_connection, resource_path):
+    target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
+
+    # upload files
+    uploader = FileUploader(
+        connection=file_connection,
+        target_path=target_path,
+        local_path=resource_path,
+    )
+
+    local_files = uploader.view_files()
+
+    local_files_list = []
+
+    for root, _dirs, files in os.walk(resource_path):
+        for file in files:
+            local_files_list.append(LocalPath(root) / file)
+
+    assert local_files
+    assert sorted(local_files) == sorted(local_files_list)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type PurePosixPath"])
@@ -53,28 +74,6 @@ def test_uploader_run_with_files(file_connection, test_files, run_path_type, pat
 
         # file content is same as expected
         assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
-
-
-def test_uploader_view_files(file_connection, resource_path):
-    target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
-
-    # upload files
-    uploader = FileUploader(
-        connection=file_connection,
-        target_path=target_path,
-        local_path=resource_path,
-    )
-
-    local_files = uploader.view_files()
-
-    local_files_list = []
-
-    for root, _dirs, files in os.walk(resource_path):
-        for file in files:
-            local_files_list.append(LocalPath(root) / file)
-
-    assert local_files
-    assert sorted(local_files) == sorted(local_files_list)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
@@ -258,7 +257,7 @@ def test_uploader_run_mode_error(request, file_connection, test_files, options):
         assert isinstance(local_file.exception, FileExistsError)
 
         remote_file = remote_files[remote_files.index(target_path / local_file.name)]
-        assert f"Target directory already contains file '{remote_file}'" in str(local_file.exception)
+        assert re.search(rf"File '{remote_file}' \(kind='file', .*\) already exists", str(local_file.exception))
 
         # file size wasn't changed
         assert file_connection.get_stat(remote_file).st_size != local_file.stat().st_size
@@ -293,7 +292,7 @@ def test_uploader_run_mode_ignore(request, file_connection, test_files, caplog):
         upload_result = uploader.run(test_files)
 
         for file in remote_files:
-            assert f"Target directory already contains file '{file}', skipping" in caplog.text
+            assert re.search(rf"File '{file}' \(kind='file', .*\) already exists, skipping", caplog.text)
 
     assert not upload_result.successful
     assert not upload_result.missing
@@ -344,7 +343,7 @@ def test_uploader_run_mode_overwrite(request, file_connection, test_files, caplo
         upload_result = uploader.run(test_files)
 
         for target_file in remote_files:
-            assert f"Target directory already contains file '{target_file}', overwriting" in caplog.text
+            assert re.search(rf"File '{target_file}' \(kind='file', .*\) already exists, overwriting", caplog.text)
 
     assert not upload_result.failed
     assert not upload_result.skipped
@@ -373,12 +372,15 @@ def test_uploader_run_mode_overwrite(request, file_connection, test_files, caplo
         assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_uploader_run_mode_delete_all(request, resource_path, file_connection, test_files, caplog):
+@pytest.mark.parametrize("remote_dir_exist", [True, False])
+def test_uploader_run_mode_delete_all(request, resource_path, file_connection, test_files, remote_dir_exist, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # make copy of files to upload in the target_path
     new_remote_file = target_path / secrets.token_hex(5)
-    file_connection.write_text(new_remote_file, "abc")
+
+    if remote_dir_exist:
+        file_connection.write_text(new_remote_file, "abc")
 
     def finalizer():
         file_connection.rmdir(target_path, recursive=True)
@@ -400,8 +402,12 @@ def test_uploader_run_mode_delete_all(request, resource_path, file_connection, t
     assert not upload_result.missing
     assert upload_result.successful
 
-    assert sorted(upload_result.successful) == sorted(target_path / test_file.name for test_file in test_files)
+    target_path_content = []
+    for root, _dirs, files in file_connection.walk(target_path):
+        target_path_content.extend(root / file for file in files)
 
+    # target path contains only downloaded files
+    assert sorted(target_path_content) == sorted(upload_result.successful)
     assert not file_connection.path_exists(new_remote_file)
 
 
@@ -423,7 +429,7 @@ def test_uploader_run_local_path_not_a_directory(file_connection):
     with tempfile.NamedTemporaryFile() as file:
         uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
 
-        with pytest.raises(NotADirectoryError, match=f"'{file.name}' is not a directory"):
+        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
             uploader.run()
 
 
@@ -438,7 +444,7 @@ def test_uploader_run_target_path_not_a_directory(request, file_connection, reso
 
     uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=resource_path)
 
-    with pytest.raises(NotADirectoryError, match=f"'{target_path}' is not a directory"):
+    with pytest.raises(NotADirectoryError, match=rf"'{target_path}' \(kind='file', .*\) is not a directory"):
         uploader.run()
 
 
@@ -452,7 +458,7 @@ def test_uploader_run_input_is_not_file(file_connection, test_files):
     )
 
     with tempfile.TemporaryDirectory() as not_a_file:
-        with pytest.raises(NotAFileError, match=f"'{not_a_file}' is not a file"):
+        with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
             uploader.run([not_a_file])
 
 
@@ -611,32 +617,35 @@ def test_uploader_run_relative_paths_without_local_path(file_connection):
         uploader.run(["some/path/1", "some/path/2"])
 
 
-@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
-    "temp_path, real_temp_path",
+    "temp_path",
     [
-        (None, PurePosixPath("/tmp")),
-        ("/abc", PurePosixPath("/abc")),
+        None,
+        "/tmp" + secrets.token_hex(5),
+        PurePosixPath("/tmp") / secrets.token_hex(5),
     ],
+    ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
 )
-def test_uploader_generate_temp_path(file_connection, tmp_path_factory, temp_path, real_temp_path):
-    kwargs = {
-        "connection": file_connection,
-        "local_path": tmp_path_factory.mktemp("local_path"),
-        "target_path": f"/tmp/tmp_{secrets.token_hex()}",
-    }
+def test_uploader_run_with_temp_path(file_connection, test_files, temp_path):
+    target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+
+    # upload files
+    uploader = FileUploader(
+        connection=file_connection,
+        target_path=target_path,
+        temp_path=temp_path,
+    )
+
+    upload_result = uploader.run(test_files)
+
+    assert not upload_result.failed
+    assert not upload_result.missing
+    assert not upload_result.skipped
+    assert upload_result.successful
+
+    assert sorted(upload_result.successful) == sorted(target_path / file.name for file in test_files)
+
     if temp_path:
-        kwargs["temp_path"] = temp_path
-
-    uploader = FileUploader(**kwargs)
-    dt_prefix = datetime.now().strftime("%Y%m%d%H%M")  # up to minutes, not seconds
-
-    with Process(name="me", host="currenthost"):
-        temp_path = os.fspath(uploader.generate_temp_path())
-        expected = os.fspath(real_temp_path / "onetl" / "currenthost" / "me" / dt_prefix)
-        assert temp_path.startswith(expected)
-
-    with Process(name="me", host="currenthost", dag="abc", task="cde"):
-        temp_path = os.fspath(uploader.generate_temp_path())
-        expected = os.fspath(real_temp_path / "onetl" / "currenthost" / "abc.cde.me" / dt_prefix)
-        assert temp_path.startswith(expected)
+        # temp_path is not removed after upload is finished,
+        # because this may conflict with processes running in parallel
+        assert file_connection.is_dir(temp_path)

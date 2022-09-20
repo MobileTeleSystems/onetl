@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 from etl_entities import Column, Table
+from pydantic import root_validator, validator
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
-from onetl.connection.db_connection import DBConnection
-from onetl.log import LOG_INDENT, entity_boundary_log
+from onetl.base import BaseDBConnection
+from onetl.impl import FrozenModel, GenericOptions
+from onetl.log import entity_boundary_log, log_with_indent
 
 log = getLogger(__name__)
 
@@ -18,14 +20,34 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
-@dataclass
-class DBReader:
-    """The DBReader class allows you to read data from a table with specified connection
-    and parameters and save it as Spark dataframe
+class DBReader(FrozenModel):
+    """Allows you to read data from a table with specified database connection
+    and parameters, and return its content as Spark dataframe
+
+    .. note::
+
+        DBReader can return different results depending on :ref:`strategy`
+
+    .. note::
+
+        This class operates with only one table at a time. It does NOT support executing JOINs.
+
+        To get the JOIN result you can instead:
+
+            1. Use 2 instandes of DBReader with different tables,
+               call :obj:`~run` of each one to get a table dataframe,
+               and then use ``df1.join(df2)`` syntax (Hive)
+
+            2. Use ``connection.execute("INSERT INTO ... SELECT ... JOIN ...")``
+               to execute JOIN on RDBMS side, write the result into a temporary table,
+               and then use DBReader to get the data from this temporary table (MPP systems, like Greenplum)
+
+            3. Use ``connection.sql(query)`` method to pass SQL query with a JOIN,
+               and fetch the result (other RDBMS)
 
     Parameters
     ----------
-    connection : :obj:`onetl.connection.DBConnection`
+    connection : :obj:`onetl.connection.BaseDBConnection`
         Class which contains DB connection properties. See :ref:`db-connections` section
 
     table : str
@@ -33,13 +55,17 @@ class DBReader:
         Name like ``schema.name``
 
     columns : list of str, default: ``["*"]``
-        The list of columns to be read
+        The list of columns to be read.
+
+        If RDBMS supports any kind of expressions, you can pass them too.
+
+        For example, ``["mycolumn", "another_column as alias", "count(*) over ()", "some(function) as alias2"]``
 
     where : str, default: ``None``
         Custom ``where`` for SQL query
 
     hwm_column : str or tuple[str, str], default: ``None``
-        Column to be used as :ref:`hwm` value.
+        Column to be used as :ref:`column-hwm` value.
 
         If you want to use some SQL expression as HWM value, you can pass it as tuple
         ``("column_name", "expression")``, like:
@@ -51,19 +77,21 @@ class DBReader:
         HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
 
     hint : str, default: ``None``
-        Add hint to SQL query
+        Add hint to SQL query (if underlying RDBMS supports that)
 
-    options : dict, :obj:`onetl.connection.DBConnection.Options`, default: ``None``
-        Spark read options.
+    options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
+        Spark read options and partitioning read mode.
+
         For example:
 
         .. code:: python
 
-            Postgres.Options(partitionColumn="some_column", numPartitions=20, fetchsize=1000)
-
-        .. warning ::
-
-            :ref:`hive` does not accept read options
+            Postgres.ReadOptions(
+                partitioningMode="hash",
+                partitionColumn="some_column",
+                numPartitions=20,
+                fetchsize=1000,
+            )
 
     Examples
     --------
@@ -78,19 +106,23 @@ class DBReader:
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             }
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
             spark=spark,
         )
 
-        reader = DBReader(postgres, table="fiddle.dummy")
+        # create reader
+        reader = DBReader(connection=postgres, table="fiddle.dummy")
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
 
     Reader creation with JDBC options:
 
@@ -103,12 +135,12 @@ class DBReader:
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             }
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
@@ -116,9 +148,13 @@ class DBReader:
         )
         options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
         # or (it is the same):
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
+        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
-        reader = DBReader(postgres, table="fiddle.dummy", options=options)
+        # create reader and pass some options to the underlying connection object
+        reader = DBReader(connection=postgres, table="fiddle.dummy", options=options)
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
 
     Reader creation with all parameters:
 
@@ -131,72 +167,165 @@ class DBReader:
         spark = get_spark(
             {
                 "appName": "spark-app-name",
-                "spark.jars.packages": [Postgres.package],
+                "spark.jars.packages": ["default:skip", Postgres.package],
             },
         )
 
         postgres = Postgres(
-            host="test-db-vip.msk.mts.ru",
+            host="postgres.domain.com",
             user="your_user",
             password="***",
             database="target_db",
             spark=spark,
         )
-        options = Postgres.Options(sessionInitStatement="select 300", fetchsize="100")
+        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
+        # create reader with specific columns, rows filter
         reader = DBReader(
             connection=postgres,
             table="default.test",
             where="d_id > 100",
             hint="NOWAIT",
             columns=["d_id", "d_name", "d_age"],
-            hwm_column="d_age",
             options=options,
         )
+
+        # read data from table "fiddle.dummy"
+        df = reader.run()
+
+    Incremental Reader:
+
+    .. code:: python
+
+        from onetl.core import DBReader
+        from onetl.connection import Postgres
+        from onetl.strategy import IncrementalStrategy
+        from mtspark import get_spark
+
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
+
+        postgres = Postgres(
+            host="postgres.domain.com",
+            user="your_user",
+            password="***",
+            database="target_db",
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=postgres,
+            table="fiddle.dummy",
+            hwm_column="d_age",  # mandatory for IncrementalStrategy
+        )
+
+        # read data from table "fiddle.dummy"
+        # but only with new rows (`WHERE d_age > previous_hwm_value`)
+        with IncrementalStrategy():
+            df = reader.run()
     """
 
-    connection: DBConnection
+    connection: BaseDBConnection
     table: Table
-    where: str | None
-    hint: str | None
-    columns: list[str]
-    hwm_column: Column | None
-    hwm_expression: str | None
-    options: DBConnection.Options
+    hwm_column: Optional[Column] = None
+    hwm_expression: Optional[str] = None
+    columns: List[str] = ["*"]
+    where: Optional[str] = None
+    hint: Optional[str] = None
+    options: Optional[GenericOptions] = None
 
-    def __init__(
-        self,
-        connection: DBConnection,
-        table: str,
-        columns: str | list[str] = "*",
-        where: str | None = None,
-        hint: str | None = None,
-        hwm_column: str | tuple[str, str] | None = None,
-        options: DBConnection.Options | dict | None = None,
-    ):
-        self.connection = connection
-        self.table = self._handle_table(table)
-        self.where = where
-        self.hint = hint
-        self.hwm_column, self.hwm_expression = self._handle_hwm_column(hwm_column)  # noqa: WPS414
-        self.columns = self._handle_columns(columns)
-        self.options = self._handle_options(options)
+    @validator("table", pre=True, always=True)
+    def validate_table(cls, value, values):  # noqa: N805
+        if isinstance(value, str):
+            return Table(name=value, instance=values["connection"].instance_url)
+        return value
+
+    @root_validator(pre=True)
+    def validate_hwm_column(cls, values):  # noqa: N805
+        hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
+        if hwm_column is None or isinstance(hwm_column, Column):
+            return values
+
+        hwm_expression: str | None = values.get("hwm_expression")
+        if not hwm_expression and not isinstance(hwm_column, str):
+            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
+            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
+
+            if not hwm_expression:
+                raise ValueError("hwm_column should be a tuple('column_name', 'expression'), but expression is not set")
+
+        values["hwm_column"] = Column(name=hwm_column)
+        values["hwm_expression"] = hwm_expression
+
+        return values
+
+    @validator("columns", pre=True, always=True)  # noqa: WPS238
+    def validate_columns(cls, columns, values):  # noqa: N805
+        items: list[str]
+        if isinstance(columns, str):
+            items = columns.split(",")
+        else:
+            items = list(columns)
+
+        if not items:
+            raise ValueError("Columns list cannot be empty")
+
+        result: list[str] = []
+        result_lower: list[str] = []
+
+        for item in items:
+            column = item.strip()
+
+            if not column:
+                raise ValueError(f"Column name cannot be empty string, got {item!r}")
+
+            if column.lower() in result_lower:
+                raise ValueError(f"Duplicated column name: {item!r}")
+
+            hwm_column = values.get("hwm_column")
+            hwm_expression = values.get("hwm_expression")
+
+            if hwm_expression and hwm_column and hwm_column.name.lower() == column.lower():
+                raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as column name")
+
+            result.append(column)
+            result_lower.append(column.lower())
+
+        return result
+
+    @validator("options", pre=True, always=True)
+    def validate_options(cls, options, values):  # noqa: N805
+        connection = values.get("connection")
+        read_options_class = getattr(connection, "ReadOptions", None)
+        if read_options_class:
+            return read_options_class.parse(options)
+
+        if options:
+            raise ValueError(
+                f"{connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed",
+            )
+
+        return None
 
     def get_schema(self) -> StructType:
-        return self.connection.get_schema(
+        return self.connection.get_schema(  # type: ignore[call-arg]
             table=str(self.table),
             columns=self._resolve_all_columns(),
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        return self.connection.get_min_max_bounds(
+        return self.connection.get_min_max_bounds(  # type: ignore[call-arg]
             table=str(self.table),
             column=column,
             expression=expression,
             hint=self.hint,
             where=self.where,
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
     def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
@@ -204,7 +333,11 @@ class DBReader:
 
     def run(self) -> DataFrame:
         """
-        Reads data from source table and saves as Spark dataframe
+        Reads data from source table and saves as Spark dataframe.
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
 
         Returns
         -------
@@ -232,20 +365,20 @@ class DBReader:
 
         self._log_parameters()
         self._log_options()
-        self.connection.log_parameters()
+        self.connection.check()
 
         helper: StrategyHelper
         if self.hwm_column:
-            helper = HWMStrategyHelper(self, self.hwm_column, self.hwm_expression)
+            helper = HWMStrategyHelper(reader=self, hwm_column=self.hwm_column, hwm_expression=self.hwm_expression)
         else:
-            helper = NonHWMStrategyHelper(self)
+            helper = NonHWMStrategyHelper(reader=self)
 
-        df = self.connection.read_table(
+        df = self.connection.read_table(  # type: ignore[call-arg]
             table=str(self.table),
             columns=self._resolve_all_columns(),
             hint=self.hint,
             where=helper.where,
-            options=self.options,
+            **self._get_read_kwargs(),
         )
 
         df = helper.save(df)
@@ -256,32 +389,36 @@ class DBReader:
 
     def _log_parameters(self) -> None:
         log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
-        log.info(LOG_INDENT + f"table = '{self.table}'")
-        for attr in self.__class__.__dataclass_fields__:  # type: ignore[attr-defined]  # noqa: WPS609
-            if attr in {
-                "connection",
-                "options",
-                "table",
-                "hwm_column",
-            }:
-                continue
+        log_with_indent(f"table = '{self.table}'")
 
-            value_attr = getattr(self, attr)
+        if self.hint:
+            log_with_indent(f"hint = {self.hint!r}")
 
-            if value_attr:
-                log.info(LOG_INDENT + f"{attr} = {value_attr!r}")
+        if self.columns == ["*"]:
+            log_with_indent("columns = '*'")
+        else:
+            log_with_indent("columns = [")
+            log_with_indent(os.linesep.join(f"{column!r}," for column in self.columns), indent=4)
+            log_with_indent("]")
+
+        if self.where:
+            log_with_indent(f"where = {self.where!r}")
 
         if self.hwm_column:
-            log.info(LOG_INDENT + f"hwm_column = '{self.hwm_column}'")
+            log_with_indent(f"hwm_column = '{self.hwm_column}'")
 
-        log.info("")
+        log_with_indent("")
 
     def _log_options(self) -> None:
-        log.info(LOG_INDENT + "options:")
-        for option, value in self.options.dict(exclude_none=True).items():
-            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log.info(LOG_INDENT + f"    {option} = {value_wrapped}")
-        log.info("")
+        options = self.options and self.options.dict(by_alias=True, exclude_none=True)
+        if options:
+            log_with_indent("options:")
+            for option, value in options.items():
+                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
+                log_with_indent(f"{option} = {value_wrapped}", indent=4)
+        else:
+            log_with_indent("options = None")
+        log_with_indent("")
 
     def _resolve_columns(self) -> list[str]:
         """
@@ -292,10 +429,10 @@ class DBReader:
 
         for column in self.columns:
             if column == "*":
-                schema = self.connection.get_schema(
+                schema = self.connection.get_schema(  # type: ignore[call-arg]
                     table=str(self.table),
                     columns=["*"],
-                    options=self.options,
+                    **self._get_read_kwargs(),
                 )
                 field_names = schema.fieldNames()
                 columns.extend(field_names)
@@ -328,24 +465,6 @@ class DBReader:
 
         return columns
 
-    def _handle_table(self, table: str) -> Table:
-        return Table(name=table, instance=self.connection.instance_url)
-
-    @staticmethod
-    def _handle_hwm_column(hwm_column: str | tuple[str, str] | None) -> tuple[None, None] | tuple[Column, str | None]:
-        if hwm_column is None:
-            return None, None
-
-        hwm_expression: str | None = None
-        if not isinstance(hwm_column, str):
-            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
-            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
-
-            if not hwm_expression:
-                raise ValueError("hwm_column should be a tuple('column_name', 'expression'), but expression is not set")
-
-        return Column(name=hwm_column), hwm_expression
-
     def _handle_columns(self, columns: str | list[str]) -> list[str]:  # noqa: WPS238
         items: list[str]
         if isinstance(columns, str):
@@ -376,5 +495,8 @@ class DBReader:
 
         return result
 
-    def _handle_options(self, options: DBConnection.Options | dict | None) -> DBConnection.Options:
-        return self.connection.to_options(options)
+    def _get_read_kwargs(self) -> dict:
+        if self.options:
+            return {"options": self.options}
+
+        return {}

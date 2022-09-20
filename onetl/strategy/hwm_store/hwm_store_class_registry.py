@@ -85,7 +85,7 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 
 
 def register_hwm_store_class(*type_names: str):
-    """Decorator for registering some Store class with a name or names
+    """Decorator for registering some Store class with a name
 
     Examples
     --------
@@ -99,13 +99,12 @@ def register_hwm_store_class(*type_names: str):
         )
 
 
-        @register_hwm_store_class("somename", "anothername")
+        @register_hwm_store_class("somename")
         class MyClass(BaseStore):
             ...
 
 
         HWMStoreClassRegistry.get("somename") == MyClass
-        HWMStoreClassRegistry.get("anothername") == MyClass
 
     """
 
@@ -191,7 +190,7 @@ def detect_hwm_store(key: str) -> Callable:
 
         .. warning ::
 
-            DON'T USE A DOT IN THE PARAMETER NAME IN THE CONFIG
+            **DO NOT** use dot ``.`` in config keys
 
     Examples
     --------
@@ -200,27 +199,8 @@ def detect_hwm_store(key: str) -> Callable:
 
     .. code:: yaml
 
-        # no constructor args
+        # if HWM store can be created with no args
         hwm_store: yaml
-
-    or
-
-    .. code:: yaml
-
-        # one constructor args
-        hwm_store:
-            yaml: /some/path.yml
-
-    or
-
-    .. code:: yaml
-
-        # positional constructor args
-        hwm_store:
-            atlas:
-            - http://some.atlas.url
-            - username
-            - password
 
     or
 
@@ -246,7 +226,7 @@ def detect_hwm_store(key: str) -> Callable:
     .. code::
 
         @hydra.main(config="../conf")
-        @detect_hwm_store(key="myetl.env.hwm_store")
+        @detect_hwm_store(key="myetl.env.hwm_store")  # path to config item, delimited by dot ``.``
         def main(config: OmniConf):
             pass
 

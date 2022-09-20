@@ -83,7 +83,7 @@ mypy:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install mypy types-PyYAML
+  - pip install mypy types-PyYAML types-Deprecated
   - python3 -m mypy --config-file setup.cfg onetl
   interruptible: true
 
@@ -161,17 +161,17 @@ tests:
     POSTGRES_USER: onetl
     POSTGRES_DB: onetl
     POSTGRES_HOST: postgres
-    POSTGRES_PASSWORD: onetl
+    POSTGRES_PASSWORD: ohtae0luxeshi1uraeluMoh9IShah7ai
     # Oracle
     ORACLE_BASE: /opt/oracle
     ORACLE_HOME: /opt/oracle/product/18c/dbhomeXE
     ORACLE_SID: XE
     ORACLE_ALLOW_REMOTE: 'true'
     # MySQL
-    MYSQL_ROOT_PASSWORD: onetl
+    MYSQL_ROOT_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
     MYSQL_DATABASE: onetl
     MYSQL_USER: onetl
-    MYSQL_PASSWORD: onetl
+    MYSQL_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
     MYSQL_HOST: mysql
     MYSQL_TCP_PORT: '3306'
     # MSSQL
@@ -185,7 +185,6 @@ tests:
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
-    COVERAGE_FILE: coverage.xml
     JUNIT_FILE: junitxml.xml
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -210,12 +209,14 @@ tests:
     alias: mysql
   - name: mcmoe/mssqldocker
     alias: mssql
+  - name: ${CI_REGISTRY}/datagrip/greenplum:6.8
+    alias: greenplum
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
   script:
-  - pytest tests --cov-append --cov=onetl --cov-config=tests/.coveragerc --cov-report=xml:${COVERAGE_FILE} --junitxml=${JUNIT_FILE}
+  - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
   after_script:
-  - sed -i s/'\/opt\/project\/onetl'/'onetl'/ coverage.xml
+  - coverage xml -i -o coverage.xml
   artifacts:
     when: always
     paths:
@@ -281,6 +282,8 @@ publish_docs:
 pages:
   extends: .base_pages_deploy_sphinx
   stage: deploy
+  dependencies:
+  - publish_docs
   variables:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   interruptible: true

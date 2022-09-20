@@ -1,5 +1,6 @@
-from onetl.core import DBReader
 from onetl.connection import Oracle
+from onetl.connection.db_connection.jdbc_connection import PartitioningMode
+from onetl.core import DBReader
 
 
 def test_oracle_reader_snapshot(spark, processing, load_table_data):
@@ -8,7 +9,6 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -26,13 +26,72 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
     )
 
 
+def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_table_data):
+    oracle = Oracle(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+        sid=processing.sid,
+    )
+
+    reader = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        options=oracle.ReadOptions(
+            partitioning_mode=PartitioningMode.mod,
+            partition_column="id_int",
+            num_partitions=5,
+        ),
+    )
+
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+
+def test_oracle_reader_snapshot_partitioning_mode_hash(spark, processing, load_table_data):
+    oracle = Oracle(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+        sid=processing.sid,
+    )
+
+    reader = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        options=oracle.ReadOptions(
+            partitioning_mode=PartitioningMode.hash,
+            partition_column="text_string",
+            num_partitions=5,
+        ),
+    )
+
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+
 def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -43,13 +102,37 @@ def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data)
     )
     table_df = reader1.run()
 
+    columns = [
+        "TEXT_STRING",
+        "HWM_INT",
+        "FLOAT_VALUE",
+        "ID_INT",
+        "HWM_DATE",
+        "HWM_DATETIME",
+    ]
+
     reader2 = DBReader(
         connection=oracle,
         table=load_table_data.full_name,
-        columns=["count(*)"],
+        columns=columns,
     )
-    count_df = reader2.run()
+    table_df_with_columns = reader2.run()
 
+    # columns order is same as expected
+    assert table_df.columns != table_df_with_columns.columns
+    assert table_df_with_columns.columns == columns
+    # dataframe content is unchanged
+    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+
+    reader3 = DBReader(
+        connection=oracle,
+        table=load_table_data.full_name,
+        columns=["COUNT(*) ABC"],
+    )
+    count_df = reader3.run()
+
+    # expressions are allowed
+    assert count_df.columns == ["ABC"]
     assert count_df.collect()[0][0] == table_df.count()
 
 
@@ -59,7 +142,6 @@ def test_oracle_reader_snapshot_with_where(spark, processing, load_table_data):
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )
@@ -117,7 +199,6 @@ def test_oracle_reader_snapshot_with_columns_and_where(spark, processing, load_t
         port=processing.port,
         user=processing.user,
         password=processing.password,
-        database=processing.database,
         spark=spark,
         sid=processing.sid,
     )

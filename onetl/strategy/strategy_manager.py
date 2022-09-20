@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import ClassVar
 
 from onetl.strategy.base_strategy import BaseStrategy
@@ -10,7 +9,6 @@ from onetl.strategy.snapshot_strategy import SnapshotStrategy
 log = logging.getLogger(__name__)
 
 
-@dataclass
 class StrategyManager:
     default_strategy: ClassVar[type] = SnapshotStrategy
 

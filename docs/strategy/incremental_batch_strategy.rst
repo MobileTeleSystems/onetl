@@ -6,4 +6,4 @@ Incremental batch strategy
 .. currentmodule:: onetl.strategy.incremental_strategy
 
 .. autoclass:: IncrementalBatchStrategy
-    :members:
+    :members: __init__

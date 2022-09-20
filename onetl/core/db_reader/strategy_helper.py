@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from logging import getLogger
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn, Optional
 
 from etl_entities import HWM, Column, ColumnHWM
+from pydantic import Field, root_validator, validator
 
 from onetl.core.db_reader.db_reader import DBReader
+from onetl.impl import FrozenModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_store import HWMClassRegistry
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -19,7 +20,14 @@ if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
 
 
-class StrategyHelper:
+# ColumnHWM has abstract method serialize_value, so it's not possible to create a class instance
+# small hack to bypass this exception
+class MockColumnHWM(ColumnHWM):
+    def serialize_value(self):
+        pass  # noqa: WPS420
+
+
+class StrategyHelper(FrozenModel):
     @property
     def where(self) -> str | None:  # noqa: WPS463
         pass  # noqa: WPS420
@@ -28,18 +36,21 @@ class StrategyHelper:
         pass  # noqa: WPS420
 
 
-@dataclass
 class NonHWMStrategyHelper(StrategyHelper):
     reader: DBReader
 
-    def __post_init__(self):
+    @root_validator(pre=True)
+    def validate_current_strategy(cls, values):  # noqa: N805
+        reader = values.get("reader")
         strategy = StrategyManager.get_current()
 
         if isinstance(strategy, HWMStrategy):
             raise ValueError(
                 f"{strategy.__class__.__name__} cannot be used "
-                f"without `hwm_column` passed into {self.reader.__class__.__name__}",
+                f"without `hwm_column` passed into {reader.__class__.__name__}",
             )
+
+        return values
 
     @property
     def where(self) -> str | None:
@@ -49,109 +60,128 @@ class NonHWMStrategyHelper(StrategyHelper):
         return df
 
 
-@dataclass
 class HWMStrategyHelper(StrategyHelper):
     reader: DBReader
     hwm_column: Column
-    hwm_expression: str | None = None
-    strategy: HWMStrategy = field(init=False)
+    hwm_expression: Optional[str] = None
+    strategy: HWMStrategy = Field(default_factory=StrategyManager.get_current)
 
-    def __post_init__(self):
-        self.strategy = StrategyManager.get_current()  # noqa: WPS601
+    class Config:
+        validate_all = True
 
-        self.check_hwm_strategy()
-        self.check_hwm_match_reader()
+    @validator("strategy", always=True, pre=True)
+    def validate_strategy_is_hwm(cls, strategy, values):  # noqa: N805
+        reader = values.get("reader")
 
-        self.init_hwm()
-        self.detect_hwm_column_boundaries()
-
-    def check_hwm_strategy(self) -> None:
-        if not isinstance(self.strategy, HWMStrategy):
+        if not isinstance(strategy, HWMStrategy):
             raise ValueError(
-                f"{self.strategy.__class__.__name__} cannot be used "
-                f"with `hwm_column` passed into {self.reader.__class__.__name__}",
+                f"{strategy.__class__.__name__} cannot be used "
+                f"with `hwm_column` passed into {reader.__class__.__name__}",
             )
 
-    def raise_wrong_hwm_type(self, hwm_type: type[HWM]) -> NoReturn:
-        raise ValueError(
-            f"{hwm_type.__name__} cannot be used with {self.reader.__class__.__name__}",
-        )
+        return strategy
 
-    def check_hwm_match_reader(self) -> None:
-        if self.strategy.hwm is None:
-            return
+    @validator("strategy", always=True)
+    def validate_strategy_matching_reader(cls, strategy, values):  # noqa: N805
+        if strategy.hwm is None:
+            return strategy
 
-        if not isinstance(self.strategy.hwm, ColumnHWM):
-            self.raise_wrong_hwm_type(type(self.strategy.hwm))
+        reader = values.get("reader")
+        hwm_column = values.get("hwm_column")
 
-        if self.strategy.hwm.source != self.reader.table or self.strategy.hwm.column != self.hwm_column:
+        if not isinstance(strategy.hwm, ColumnHWM):
+            cls.raise_wrong_hwm_type(reader, type(strategy.hwm))
+
+        if strategy.hwm.source != reader.table or strategy.hwm.column != hwm_column:
             raise ValueError(
-                f"{self.reader.__class__.__name__} was created "
-                f"with `hwm_column={self.reader.hwm_column}` and `table={self.reader.table}` "
+                f"{reader.__class__.__name__} was created "
+                f"with `hwm_column={reader.hwm_column}` and `table={reader.table}` "
                 f"but current HWM is created for ",
-                f"`column={self.strategy.hwm.column}` and `source={self.strategy.hwm.source}` ",
+                f"`column={strategy.hwm.column}` and `source={strategy.hwm.source}` ",
             )
 
-    def detect_hwm_column_type(self) -> type[HWM]:
-        schema = {field.name.lower(): field for field in self.reader.get_schema()}
-        hwm_column_type = schema[self.hwm_column.name.lower()].dataType.typeName()
-        return HWMClassRegistry.get(hwm_column_type)
+        return strategy
 
-    def init_hwm(self) -> None:
-        if self.strategy.hwm is None:
+    @validator("strategy", always=True)
+    def init_hwm(cls, strategy, values):  # noqa: N805
+        reader = values.get("reader")
+        hwm_column = values.get("hwm_column")
+
+        if strategy.hwm is None:
             # Small hack used only to generate qualified_name
-            self.strategy.hwm = ColumnHWM(source=self.reader.table, column=self.hwm_column)
+            strategy.hwm = MockColumnHWM(source=reader.table, column=hwm_column)
 
-        if not self.strategy.hwm:
-            self.strategy.fetch_hwm()
+        if not strategy.hwm:
+            strategy.fetch_hwm()
 
-        hwm_type: type[HWM] | None = type(self.strategy.hwm)
-        if hwm_type == ColumnHWM:
+        hwm_type: type[HWM] | None = type(strategy.hwm)
+        if hwm_type == MockColumnHWM:
             # Remove HWM type set by hack above
             hwm_type = None
 
-        detected_hwm_type = self.detect_hwm_column_type()
+        detected_hwm_type = cls.detect_hwm_column_type(reader, hwm_column)
 
         if not hwm_type:
             hwm_type = detected_hwm_type
 
         if hwm_type != detected_hwm_type:
             raise TypeError(
-                f'Type of "{self.hwm_column}" column is matching '
+                f'Type of "{hwm_column}" column is matching '
                 f'"{detected_hwm_type.__name__}" which is different from "{hwm_type.__name__}"',
             )
 
-        if hwm_type == ColumnHWM or not issubclass(hwm_type, ColumnHWM):
-            self.raise_wrong_hwm_type(hwm_type)
+        if hwm_type == MockColumnHWM or not issubclass(hwm_type, ColumnHWM):
+            cls.raise_wrong_hwm_type(reader, hwm_type)
 
-        self.strategy.hwm = hwm_type(source=self.reader.table, column=self.hwm_column, value=self.strategy.hwm.value)
+        strategy.hwm = hwm_type(source=reader.table, column=hwm_column, value=strategy.hwm.value)
+        return strategy
 
-    def detect_hwm_column_boundaries(self) -> None:
-        if not isinstance(self.strategy, BatchHWMStrategy):
-            return
+    @validator("strategy", always=True)
+    def detect_hwm_column_boundaries(cls, strategy, values):  # noqa: N805
+        if not isinstance(strategy, BatchHWMStrategy):
+            return strategy
 
-        if self.strategy.has_upper_limit and (self.strategy.has_lower_limit or self.strategy.hwm):
+        if strategy.has_upper_limit and (strategy.has_lower_limit or strategy.hwm):
             # values already set by previous reader runs within the strategy
-            return
+            return strategy
 
-        min_hwm_value, max_hwm_value = self.reader.get_min_max_bounds(self.hwm_column.name, self.hwm_expression)
+        reader = values.get("reader")
+        hwm_column = values.get("hwm_column")
+        hwm_expression = values.get("hwm_expression")
+
+        min_hwm_value, max_hwm_value = reader.get_min_max_bounds(hwm_column.name, hwm_expression)
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
-                f"Table '{self.reader.table}' column '{self.hwm_column}' cannot be used as `hwm_column`",
+                f"Table '{reader.table}' column '{hwm_column}' cannot be used as `hwm_column`",
             )
 
-        if not self.strategy.has_lower_limit and not self.strategy.hwm:
-            self.strategy.start = min_hwm_value
+        if not strategy.has_lower_limit and not strategy.hwm:
+            strategy.start = min_hwm_value
 
-        if not self.strategy.has_upper_limit:
-            self.strategy.stop = max_hwm_value
+        if not strategy.has_upper_limit:
+            strategy.stop = max_hwm_value
+
+        return strategy
+
+    @staticmethod
+    def raise_wrong_hwm_type(reader: DBReader, hwm_type: type[HWM]) -> NoReturn:
+        raise ValueError(
+            f"{hwm_type.__name__} cannot be used with {reader.__class__.__name__}",
+        )
+
+    @staticmethod
+    def detect_hwm_column_type(reader: DBReader, hwm_column: Column) -> type[HWM]:
+        schema = {field.name.lower(): field for field in reader.get_schema()}
+        column = hwm_column.name.lower()
+        hwm_column_type = schema[column].dataType.typeName()
+        return HWMClassRegistry.get(hwm_column_type)
 
     def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812
 
+        log.info(f"|DBReader| Calculating max value for column {self.hwm_column.name!r} in the dataframe")
         max_df = df.select(F.max(self.hwm_column.name).alias("max_value"))
-
         row = max_df.collect()[0]
         max_hwm_value = row["max_value"]
 

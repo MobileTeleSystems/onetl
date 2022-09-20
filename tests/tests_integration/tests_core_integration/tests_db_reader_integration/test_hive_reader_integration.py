@@ -29,13 +29,37 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
     )
     table_df = reader1.run()
 
+    columns = [
+        "text_string",
+        "hwm_int",
+        "float_value",
+        "id_int",
+        "hwm_date",
+        "hwm_datetime",
+    ]
+
     reader2 = DBReader(
         connection=hive,
         table=load_table_data.full_name,
-        columns=["count(*)"],
+        columns=columns,
     )
-    count_df = reader2.run()
+    table_df_with_columns = reader2.run()
 
+    # columns order is same as expected
+    assert table_df.columns != table_df_with_columns.columns
+    assert table_df_with_columns.columns == columns
+    # dataframe content is unchanged
+    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+
+    reader3 = DBReader(
+        connection=hive,
+        table=load_table_data.full_name,
+        columns=["count(*) as abc"],
+    )
+    count_df = reader3.run()
+
+    # expressions are allowed
+    assert count_df.columns == ["abc"]
     assert count_df.collect()[0][0] == table_df.count()
 
 
@@ -93,18 +117,6 @@ def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_tab
     count_df = reader2.run()
 
     assert count_df.collect()[0][0] == table_df.count()
-
-
-def test_hive_reader_raise_exception(spark, load_table_data):
-    hive = Hive(spark=spark)
-    reader = DBReader(
-        connection=hive,
-        table=load_table_data.full_name,
-        options=Hive.Options(abc="cde"),  # Hive does not accept any read options
-    )
-
-    with pytest.raises(ValueError):
-        reader.run()
 
 
 def test_hive_reader_non_existing_table(spark, get_schema_table):

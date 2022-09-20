@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from onetl.log import LOG_INDENT
+from onetl.impl import BaseModel
+from onetl.log import log_with_indent
 
 log = logging.getLogger(__name__)
 
 
-class BaseStrategy:
+class BaseStrategy(BaseModel):
     def __enter__(self):
 
         # hack to avoid circular imports
@@ -17,14 +18,7 @@ class BaseStrategy:
         log.debug(f"|{self.__class__.__name__}| Entered stack at level {StrategyManager.get_current_level()}")
         StrategyManager.push(self)
 
-        log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
-        options = {key: value for key, value in vars(self).items() if not self._log_exclude_field(key)}
-
-        if options:
-            log.info(f"|{self.__class__.__name__}| Using options:")
-            for option, value in options.items():
-                log.info(LOG_INDENT + f"{option} = {value!r}")
-
+        self._log_parameters()
         self.enter_hook()
         return self
 
@@ -35,8 +29,10 @@ class BaseStrategy:
         strategy = StrategyManager.pop()
 
         failed = bool(exc_type)
-        reason = f" because of {exc_type.__name__}" if failed else ""
-        log.info(f"|onETL| Exiting {self.__class__.__name__}{reason}")
+        if failed:
+            log.warning(f"|onETL| Exiting {self.__class__.__name__} because of {exc_type.__name__}")
+        else:
+            log.info(f"|onETL| Exiting {self.__class__.__name__}")
 
         strategy.exit_hook(failed=failed)
         return False
@@ -55,6 +51,12 @@ class BaseStrategy:
     def exit_hook(self, failed: bool = False) -> None:
         pass  # noqa: WPS420
 
+    def _log_parameters(self) -> None:
+        log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
+        parameters = self.dict(by_alias=True, exclude_none=True, exclude=self._log_exclude_fields())
+        for attr, value in sorted(parameters.items()):
+            log_with_indent(f"{attr} = {value!r}")
+
     @classmethod
-    def _log_exclude_field(cls, name: str) -> bool:
-        return name.startswith("_")
+    def _log_exclude_fields(cls) -> set[str]:
+        return set()

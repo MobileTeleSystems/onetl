@@ -11,4 +11,4 @@ DB Writer
     DBWriter.run
 
 .. autoclass:: DBWriter
-    :members:
+    :members: run

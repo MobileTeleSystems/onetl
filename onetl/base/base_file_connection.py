@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Iterable
 
 from onetl.base.base_connection import BaseConnection
 from onetl.base.base_file_filter import BaseFileFilter
-from onetl.base.file_stat_protocol import FileStatProtocol
-from onetl.base.path_protocol import PathProtocol, SizedPathProtocol
+from onetl.base.base_file_limit import BaseFileLimit
+from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
+from onetl.base.path_stat_protocol import PathStatProtocol
 
 
-@dataclass(frozen=True)
 class BaseFileConnection(BaseConnection):
     """
     Implements generic methods for files and directories manipulation on some filesystem (usually remote)
@@ -22,7 +21,7 @@ class BaseFileConnection(BaseConnection):
         self,
         remote_file_path: os.PathLike | str,
         local_file_path: os.PathLike | str,
-    ) -> SizedPathProtocol:
+    ) -> PathWithStatsProtocol:
         """
         Downloads file from the remote filesystem to a local path
         """
@@ -44,7 +43,7 @@ class BaseFileConnection(BaseConnection):
         self,
         local_file_path: os.PathLike | str,
         remote_file_path: os.PathLike | str,
-    ) -> SizedPathProtocol:
+    ) -> PathWithStatsProtocol:
         """
         Uploads local file to path on remote filesystem
         """
@@ -55,7 +54,7 @@ class BaseFileConnection(BaseConnection):
         source_file_path: os.PathLike | str,
         target_file_path: os.PathLike | str,
         replace: bool = False,
-    ) -> SizedPathProtocol:
+    ) -> PathWithStatsProtocol:
         """
         Rename or move file on remote filesystem
         """
@@ -67,7 +66,12 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def listdir(self, path: os.PathLike | str) -> list[PathProtocol]:
+    def listdir(
+        self,
+        directory: os.PathLike | str,
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
+    ) -> list[PathWithStatsProtocol]:
         """
         Return list of files in specific directory on remote filesystem
         """
@@ -76,8 +80,9 @@ class BaseFileConnection(BaseConnection):
     def walk(
         self,
         top: os.PathLike | str,
-        filter: BaseFileFilter | None = None,  # noqa: WPS125
-    ) -> Iterable[tuple[PathProtocol, list[PathProtocol], list[SizedPathProtocol]]]:
+        filters: Iterable[BaseFileFilter] | None = None,
+        limits: Iterable[BaseFileLimit] | None = None,
+    ) -> Iterable[tuple[PathWithStatsProtocol, list[PathWithStatsProtocol], list[PathWithStatsProtocol]]]:
         """
         Walk into directory tree on remote filesystem, just like ``os.walk``
         """
@@ -101,13 +106,19 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def get_stat(self, path: os.PathLike | str) -> FileStatProtocol:
+    def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         """
         Returns stats for a specific path on remote filesystem
         """
 
     @abstractmethod
-    def get_file(self, path: os.PathLike | str) -> SizedPathProtocol:
+    def get_directory(self, path: os.PathLike | str) -> PathWithStatsProtocol:
+        """
+        Returns file with stats for a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def get_file(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
         Returns file with stats for a specific path on remote filesystem
         """
@@ -125,13 +136,19 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> SizedPathProtocol:
+    def write_text(
+        self,
+        path: os.PathLike | str,
+        content: str,
+        encoding: str = "utf-8",
+        **kwargs,
+    ) -> PathWithStatsProtocol:
         """
         Writes string to a specific path on remote filesystem
         """
 
     @abstractmethod
-    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> SizedPathProtocol:
+    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> PathWithStatsProtocol:
         """
         Writes bytes to a specific path on remote filesystem
         """

@@ -3,19 +3,16 @@ from __future__ import annotations
 import glob
 import os
 import re
-from logging import getLogger
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
-from onetl.impl import RemotePath
-from onetl.log import LOG_INDENT
-
-log = getLogger(__name__)
+from onetl.impl import FrozenModel, RemotePath
+from onetl.log import log_with_indent
 
 
-class FileFilter(BaseFileFilter, BaseModel):
+class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 
     Parameters
@@ -78,7 +75,7 @@ class FileFilter(BaseFileFilter, BaseModel):
         FileFilter()  # will raise ValueError, at least one argument should be passed
     """
 
-    class Config:  # noqa: WPS431
+    class Config:
         arbitrary_types_allowed = True
 
     glob: Optional[str] = None
@@ -134,7 +131,6 @@ class FileFilter(BaseFileFilter, BaseModel):
 
         return True
 
-    def log_options(self):
-        log.info(LOG_INDENT + "filter:")
-        for key, value in self.__dict__.items():  # noqa: WPS528
-            log.info(LOG_INDENT + f"    {key} = {value!r}")
+    def log_options(self, indent: int = 0):
+        for key, value in self.dict(exclude_none=True, by_alias=True).items():  # noqa: WPS528
+            log_with_indent(f"{key} = {value!r}", indent=indent)

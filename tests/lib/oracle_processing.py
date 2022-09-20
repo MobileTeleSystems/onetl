@@ -51,8 +51,8 @@ class OracleProcessing(BaseProcessing):
         return int(os.getenv("ONETL_ORA_CONN_PORT"))
 
     @property
-    def database(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_DATABASE")
+    def schema(self) -> str:
+        return os.getenv("ONETL_ORA_CONN_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:

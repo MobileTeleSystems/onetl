@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar
+from typing import ClassVar, Optional
 
-from onetl.connection.db_connection.jdbc_connection import JDBCConnection, StatementType
+from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin import StatementType
 
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
 class Clickhouse(JDBCConnection):
-    """Class for Clickhouse jdbc connection.
+    """Class for Clickhouse JDBC connection.
+
+    Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
+    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_)
 
     .. note::
 
@@ -21,50 +23,59 @@ class Clickhouse(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of clickhouse database. For example: ``clickhouse-sbl-dev.msk.bd-cloud.mts.ru``
+        Host of Clickhouse database. For example: ``test.clickhouse.domain.com`` or ``193.168.1.11``
 
     port : int, default: ``8123``
-        Port of clickhouse database
+        Port of Clickhouse database
 
     user : str
-        User, which have access to the database and table. For example: ``TECH_ETL``
+        User, which have proper access to the database. For example: ``some_user``
 
     password : str
         Password for database connection
 
-    database : str
-        Database in rdbms. To provide schema, use DBReader class
+    database : str, optional
+        Database in RDBMS, NOT schema.
+
+        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
 
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"ssl": True, "sslmode": "none"}``.
+        For example: ``{"continueBatchOnError": "false"}``.
+
+        See `Clickhouse JDBC driver properties documentation
+        <https://github.com/ClickHouse/clickhouse-jdbc/tree/master/clickhouse-jdbc#configuration>`_
+        for more details
 
     Examples
     --------
 
-    Clickhouse jdbc connection initialization
+    Clickhouse connection initialization
 
     .. code::
 
         from onetl.connection import Clickhouse
         from mtspark import get_spark
 
-        extra = {"ssl": True, "sslmode": "none"}
+        extra = {"continueBatchOnError": "false"}
 
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Clickhouse.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Clickhouse.package,
+            ],
         })
 
         clickhouse = Clickhouse(
-            host="clickhouse-sbl-dev.msk.bd-cloud.mts.ru",
-            user="TECH_ETL",
+            host="database.host.or.ip,
+            user="user",
             password="*****",
             extra=extra,
             spark=spark,
@@ -72,18 +83,31 @@ class Clickhouse(JDBCConnection):
 
     """
 
+    port: int = 8123
+    database: Optional[str] = None
+
     driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
     package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
-    port: int = 8123
 
     @property
     def jdbc_url(self) -> str:
-        parameters = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
 
         if self.database:
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
+
+    class ReadOptions(JDBCConnection.ReadOptions):
+        @classmethod
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"modulo(halfMD5({partition_column}), {num_partitions})"
+
+        @classmethod
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"{partition_column} % {num_partitions}"
+
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
 
     @staticmethod
     def _build_statement(

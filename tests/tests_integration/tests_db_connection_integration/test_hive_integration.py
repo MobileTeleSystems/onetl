@@ -1,13 +1,20 @@
-"""The test name affects how the test works: the second and third words define the behavior of the test.
-For example: test_<storage_name>_<reader/writer>_...
-<storage_name> - the name of the database in which the table will be pre-created.
-<reader/writer> - if reader is specified then the table will be pre-created and filled with test data,
-if writer is specified then only preliminary table creation will be performed.
-The name of the test will be given to the test table."""
+import logging
+
 import pandas
 import pytest
 
 from onetl.connection import Hive
+
+
+def test_hive_check(spark, caplog):
+    hive = Hive(spark=spark)
+    with caplog.at_level(logging.INFO):
+        assert hive.check() == hive
+
+    assert "type = Hive" in caplog.text
+    assert "spark = " not in caplog.text
+
+    assert "Connection is available" in caplog.text
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
@@ -15,15 +22,18 @@ def test_hive_connection_sql(spark, processing, load_table_data, suffix):
     hive = Hive(spark=spark)
     schema = load_table_data.schema
     table = load_table_data.full_name
+
     df = hive.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
         order_by="id_int",
     )
+
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
     df = hive.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
+
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
     df = hive.sql("SHOW DATABASES")
 
@@ -35,6 +45,7 @@ def test_hive_connection_sql(spark, processing, load_table_data, suffix):
         [[schema, load_table_data.table, False]],
         columns=["database", "tableName", "isTemporary"],
     )
+
     processing.assert_equal_df(df=df, other_frame=result_df)
     # wrong syntax
     with pytest.raises(Exception):

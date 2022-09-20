@@ -67,7 +67,7 @@ class FTPS(FTP):
 
         return FTPHost(
             self.host,
-            self.user,
-            self.password,
+            self.user or "",
+            self.password.get_secret_value() if self.password else "None",
             session_factory=session_factory,
         )

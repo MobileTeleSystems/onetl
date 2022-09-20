@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import ftplib  # noqa: S402
 import os
-from dataclasses import dataclass
 from logging import getLogger
+from typing import Optional
 
 from ftputil import FTPHost
 from ftputil import session as ftp_session
+from pydantic import SecretStr
 
-from onetl.base import FileStatProtocol
+from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemotePath
+from onetl.impl.remote_path_stat import RemotePathStat
 
 log = getLogger(__name__)
 
 
-# TODO: (@mivasil6) подумать на что можно поменять слова source/target
-@dataclass(frozen=True)
 class FTP(FileConnection):
     """Class for FTP file connection.
 
@@ -47,7 +47,10 @@ class FTP(FileConnection):
         )
     """
 
+    host: str
     port: int = 21
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.path.exists(os.fspath(path))
@@ -66,8 +69,8 @@ class FTP(FileConnection):
 
         return FTPHost(
             self.host,
-            self.user,
-            self.password,
+            self.user or "",
+            self.password.get_secret_value() if self.password else "None",
             session_factory=session_factory,
         )
 
@@ -76,9 +79,6 @@ class FTP(FileConnection):
 
     def _close_client(self) -> None:
         self._client.close()
-
-    def _rmdir_recursive(self, root: RemotePath) -> None:
-        self.client.rmtree(os.fspath(root))
 
     def _rmdir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
@@ -107,7 +107,12 @@ class FTP(FileConnection):
     def _is_file(self, path: RemotePath) -> bool:
         return self.client.path.isfile(os.fspath(path))
 
-    def _get_stat(self, path: RemotePath) -> FileStatProtocol:
+    def _get_stat(self, path: RemotePath) -> PathStatProtocol:
+        if path == RemotePath("/"):
+            # FTP does not allow to call stat on root directory, do nothing
+            return RemotePathStat()
+
+        # underlying FTP client already return `os.stat_result`-like class`
         return self.client.stat(os.fspath(path))
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:

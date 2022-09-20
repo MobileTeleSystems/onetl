@@ -1,19 +1,24 @@
 import secrets
+import shutil
+from pathlib import Path
 
 import pytest
-
 
 from onetl.strategy import YAMLHWMStore
 
 
-def test_hwm_store_integration_yaml_path(tmp_path_factory, hwm_delta):
-    hwm, delta = hwm_delta
-    folder = tmp_path_factory.mktemp("someconf")
+def test_hwm_store_integration_yaml_path(request, tmp_path_factory, hwm_delta):
+    hwm, _delta = hwm_delta
+    folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
 
-    store = YAMLHWMStore(path)
+    def finalizer():
+        shutil.rmtree(folder)
 
-    assert store.path == path
+    request.addfinalizer(finalizer)
+
+    store = YAMLHWMStore(path=path)
+
     assert path.exists()
 
     assert not list(path.glob("**/*"))
@@ -29,23 +34,37 @@ def test_hwm_store_integration_yaml_path(tmp_path_factory, hwm_delta):
     assert not empty
 
 
-def test_hwm_store_integration_yaml_path_not_folder(tmp_path_factory):
-    folder = tmp_path_factory.mktemp("someconf")
+def test_hwm_store_integration_yaml_path_not_folder(request, tmp_path_factory):
+    folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
     path.touch()
 
+    def finalizer():
+        shutil.rmtree(folder)
+
+    request.addfinalizer(finalizer)
+
     with pytest.raises(OSError):
-        YAMLHWMStore(path)
+        YAMLHWMStore(path=path)
 
 
-def test_hwm_store_integration_yaml_path_no_access(tmp_path_factory, hwm_delta):
-    hwm, delta = hwm_delta
-    folder = tmp_path_factory.mktemp("someconf")
+def test_hwm_store_integration_yaml_path_no_access(request, tmp_path_factory, hwm_delta):
+    hwm, _delta = hwm_delta
+    folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
     path.mkdir()
     path.chmod(000)
 
-    store = YAMLHWMStore(path)
+    def finalizer():
+        path.chmod(0o777)
+        shutil.rmtree(folder)
+
+    request.addfinalizer(finalizer)
+
+    store = YAMLHWMStore(path=path)
+
+    with pytest.raises(OSError):
+        store.get(hwm.qualified_name)
 
     with pytest.raises(OSError):
         store.save(hwm)

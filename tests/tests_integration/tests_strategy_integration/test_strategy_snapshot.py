@@ -1,3 +1,4 @@
+import re
 import secrets
 from contextlib import suppress
 from datetime import date, datetime, timedelta
@@ -21,10 +22,11 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=secrets.token_hex())
+    column = secrets.token_hex()
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=column)
 
     with SnapshotStrategy():
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="SnapshotStrategy cannot be used with `hwm_column` passed into DBReader"):
             reader.run()
 
 
@@ -61,28 +63,22 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
 @pytest.mark.parametrize(
     "hwm_column, step",
     [
-        ("hwm_int", -10),
-        ("hwm_int", 0),
-        ("hwm_int", 0.5),
+        ("hwm_int", 1.5),
         ("hwm_int", "abc"),
         ("hwm_int", timedelta(hours=10)),
-        ("hwm_date", timedelta(hours=-10)),
-        ("hwm_date", timedelta(hours=0)),
-        ("hwm_date", timedelta(hours=10)),
         ("hwm_date", 10),
-        ("hwm_date", 0.5),
+        ("hwm_date", 1.5),
         ("hwm_date", "abc"),
-        ("hwm_datetime", timedelta(minutes=-60)),
-        ("hwm_datetime", timedelta(minutes=0)),
         ("hwm_datetime", 10),
-        ("hwm_datetime", 0.5),
+        ("hwm_datetime", 1.5),
         ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_strategy_snapshot_batch_wrong_step(
+def test_postgres_strategy_snapshot_batch_step_wrong_type(
     spark,
     processing,
     prepare_schema_table,
+    load_table_data,
     hwm_column,
     step,
 ):
@@ -99,6 +95,78 @@ def test_postgres_strategy_snapshot_batch_wrong_step(
     with pytest.raises((TypeError, ValueError)):
         with SnapshotBatchStrategy(step=step) as part:
             for _ in part:
+                reader.run()
+
+
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", -10),
+        ("hwm_date", timedelta(days=-10)),
+        ("hwm_datetime", timedelta(minutes=-60)),
+    ],
+)
+def test_postgres_strategy_snapshot_batch_step_negative(
+    spark,
+    processing,
+    prepare_schema_table,
+    load_table_data,
+    hwm_column,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+
+    error_msg = "HWM value is not increasing, please check options passed to SnapshotBatchStrategy"
+    with pytest.raises(ValueError, match=error_msg):
+        with SnapshotBatchStrategy(step=step) as part:
+            for _ in part:
+                reader.run()
+
+
+@pytest.mark.flaky(reruns=5)
+@pytest.mark.parametrize(
+    "hwm_column, step",
+    [
+        ("hwm_int", 0.5),
+        ("hwm_date", timedelta(days=1)),
+        ("hwm_datetime", timedelta(hours=1)),
+    ],
+)
+def test_postgres_strategy_snapshot_batch_step_too_small(
+    spark,
+    processing,
+    prepare_schema_table,
+    load_table_data,
+    hwm_column,
+    step,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        hwm_column=hwm_column,
+    )
+
+    error_msg = f"step={step!r} parameter of SnapshotBatchStrategy leads to generating too many iterations"
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        with SnapshotBatchStrategy(step=step) as batches:
+            for _ in batches:
                 reader.run()
 
 
@@ -137,7 +205,7 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
         spark=spark,
     )
 
-    step = 1
+    step = 20
 
     table1 = load_table_data.full_name
     table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
@@ -215,24 +283,66 @@ def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
                 reader.run()
 
 
+def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        table=prepare_schema_table.full_name,
+        where="float_value < 50 OR float_value = 50.50",
+        hwm_column="hwm_int",
+    )
+
+    # there is a span 0..100
+    span_begin = 0
+    span_end = 100
+    span = processing.create_pandas_df(min_id=span_begin, max_id=span_end)
+
+    # insert span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=span,
+    )
+
+    # snapshot run with only 10 rows per run
+    df = None
+    with SnapshotBatchStrategy(step=10) as batches:
+        for _ in batches:
+            next_df = reader.run()
+            if df is None:
+                df = next_df
+            else:
+                df = df.union(next_df)
+
+    processing.assert_equal_df(df=df, other_frame=span[:51])
+
+
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
         (IntHWM, "hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
-        (DateHWM, "hwm_date", timedelta(days=1), 20),  # this offset is covering span_length + gap
+        (DateHWM, "hwm_date", timedelta(days=4), 30),  # per_iter value is calculated to cover the step value
         (DateTimeHWM, "hwm_datetime", timedelta(hours=100), 30),  # same
     ],
 )
 @pytest.mark.parametrize(
     "span_gap, span_length",
     [
-        (50, 100),  # step < gap < span_length
+        (50, 60),  # step < gap < span_length
         (50, 40),  # step < gap > span_length
         (5, 20),  # gap < step < span_length
         (20, 5),  # span_length < step < gap
         (5, 2),  # gap < span_length < step
         (2, 5),  # span_length < gap < step
-        (1, 1),  # minimal span possible
+        (1, 1),  # minimal gap possible
     ],
 )
 def test_postgres_strategy_snapshot_batch(
@@ -319,8 +429,8 @@ def test_postgres_strategy_snapshot_batch(
     "hwm_column, step",
     [
         ("hwm_int", 10),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
-        ("hwm_date", timedelta(days=1)),  # this offset is covering span_length + gap
-        ("hwm_datetime", timedelta(hours=100)),  # same
+        ("hwm_date", timedelta(days=4)),
+        ("hwm_datetime", timedelta(hours=100)),
     ],
 )
 def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
@@ -330,8 +440,8 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
     hwm_column,
     step,
 ):
-    span_length = 100
-    span_gap = 50
+    span_length = 10
+    span_gap = 1
 
     postgres = Postgres(
         host=processing.host,
@@ -402,7 +512,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
         ("hwm_int", 10, 50),  # step <  stop
         ("hwm_int", 50, 10),  # step >  stop
         ("hwm_int", 50, 50),  # step == stop
-        ("hwm_date", timedelta(days=1), date.today() + timedelta(days=10)),  # this stop is covering span_length + gap
+        ("hwm_date", timedelta(days=1), date.today() + timedelta(days=10)),  # this step is covering span_length + gap
         ("hwm_datetime", timedelta(hours=100), datetime.now() + timedelta(days=10)),  # same
     ],
 )

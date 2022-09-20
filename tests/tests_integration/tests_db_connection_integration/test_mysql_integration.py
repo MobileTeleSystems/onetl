@@ -1,13 +1,44 @@
-"""The test name affects how the test works: the second and third words define the behavior of the test.
-For example: test_<storage_name>_<reader/writer>_...
-<storage_name> - the name of the database in which the table will be pre-created.
-<reader/writer> - if reader is specified then the table will be pre-created and filled with test data,
-if writer is specified then only preliminary table creation will be performed.
-The name of the test will be given to the test table."""
+import logging
+
 import pandas
 import pytest
 
 from onetl.connection import MySQL
+
+
+def test_mysql_connection_check(spark, processing, caplog):
+    mysql = MySQL(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    with caplog.at_level(logging.INFO):
+        assert mysql.check() == mysql
+
+    assert "type = MySQL" in caplog.text
+    assert f"host = '{processing.host}'" in caplog.text
+    assert f"port = {processing.port}" in caplog.text
+    assert f"user = '{processing.user}'" in caplog.text
+    assert f"database = '{processing.database}'" in caplog.text
+
+    if processing.password:
+        assert processing.password not in caplog.text
+
+    assert "package = " not in caplog.text
+    assert "spark = " not in caplog.text
+
+    assert "Connection is available" in caplog.text
+
+
+def test_mysql_wrong_connection_check(spark):
+    mysql = MySQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        mysql.check()
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])

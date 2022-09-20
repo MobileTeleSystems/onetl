@@ -12,7 +12,7 @@ Read data from MSSQL, transform & write to Hive.
     from mtspark import get_spark
 
     # import function to setup onETL logging
-    from onetl.log import setup_notebook_logging
+    from onetl.log import setup_logging
 
     # Import required connections
     from onetl.connection import MSSQL, Hive
@@ -21,13 +21,14 @@ Read data from MSSQL, transform & write to Hive.
     from onetl.core import DBReader, DBWriter
 
     # change logging level to INFO, and set up default logging format and handler
-    setup_notebook_logging()
+    setup_logging()
 
     # Initiate new SparkSession
     spark = get_spark(
         {
             "appName": "spark_app_onetl_demo",
             "spark.jars.packages": [
+                "default:skip",
                 MSSQL.package,
             ],
         }
@@ -51,7 +52,7 @@ Read data from MSSQL, transform & write to Hive.
         table="dbo.demo_table",
         columns=["on", "etl"],
         # Set some MSSQL read options:
-        options=MSSQL.Options(fetchsize=10000),
+        options=MSSQL.ReadOptions(fetchsize=10000),
     )
 
     # Read data to DataFrame
@@ -71,7 +72,7 @@ Read data from MSSQL, transform & write to Hive.
         connection=hive,
         table="dl_sb.demo_table",
         # Set some Hive write options:
-        options=Hive.Options(mode="overwrite"),
+        options=Hive.WriteOptions(mode="overwrite"),
     )
 
     # Write data from DataFrame to Hive
@@ -87,7 +88,7 @@ Download files from FTP & upload them to HDFS.
 .. code:: python
 
     # import function to setup onETL logging
-    from onetl.log import setup_notebook_logging
+    from onetl.log import setup_logging
 
     # Import required connections
     from onetl.connection import SFTP, HDFS
@@ -96,7 +97,7 @@ Download files from FTP & upload them to HDFS.
     from onetl.core import FileDownloader, FileUploader, FileFilter, FileLimit
 
     # change logging level to INFO, and set up default logging format and handler
-    setup_notebook_logging()
+    setup_logging()
 
     # Initiate SFTP connection and check it
     sftp = SFTP(

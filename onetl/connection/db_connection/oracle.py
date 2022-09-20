@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date, datetime
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional
+
+from pydantic import root_validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.log import LOG_INDENT, log_with_indent
+from onetl.log import BASE_LOG_INDENT, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -29,7 +32,7 @@ CREATE_DDL_PATTERN = re.compile(
 )
 
 
-@dataclass(frozen=True)
+@dataclass
 class ErrorPosition:
     line: int
     position: int
@@ -41,9 +44,11 @@ class ErrorPosition:
         return 100 - self.level, self.line, self.position
 
 
-@dataclass(frozen=True)
 class Oracle(JDBCConnection):
-    """Class for Oracle jdbc connection.
+    """Class for Oracle JDBC connection.
+
+    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
+    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_)
 
     .. note::
 
@@ -52,13 +57,13 @@ class Oracle(JDBCConnection):
     Parameters
     ----------
     host : str
-        Host of oracle database. For example: ``bill.ug.mts.ru``
+        Host of Oracle database. For example: ``test.oracle.domain.com`` or ``193.168.1.10``
 
     port : int, default: ``1521``
-        Port of oracle database
+        Port of Oracle database
 
     user : str
-        User, which have access to the database and table. For example: ``BD_TECH_ETL``
+        User, which have proper access to the database. For example: ``SOME_USER``
 
     password : str
         Password for database connection
@@ -73,62 +78,93 @@ class Oracle(JDBCConnection):
     service_name : str, default: ``None``
         Specifies one or more names by which clients can connect to the instance.
 
-        For example: ``DWHLDTS``.
+        For example: ``MYDATA``.
 
         .. warning ::
 
             Be careful, for correct work you must provide ``sid`` or ``service_name``
 
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for jdbc connection to database.
+        Spark session.
 
         You can use ``mtspark`` for spark session initialization
+
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"defaultBatchValue": 100}``
+
+        See `Oracle JDBC driver properties documentation
+        <https://docs.oracle.com/cd/E11882_01/appdev.112/e13995/oracle/jdbc/OracleDriver.html>`_
+        for more details
 
     Examples
     --------
 
-    Oracle jdbc connection initialization
+    Oracle connection initialization
 
     .. code::
 
         from onetl.connection import Oracle
         from mtspark import get_spark
 
+        extra = {"defaultBatchValue": 100}
+
         spark = get_spark({
             "appName": "spark-app-name",
-            "spark.jars.packages": [Oracle.package],
+            "spark.jars.packages": [
+                "default:skip",
+                Oracle.package,
+            ],
         })
 
         oracle = Oracle(
-            host="bill.ug.mts.ru",
-            user="BD_TECH_ETL",
+            host="database.host.or.ip",
+            user="user",
             password="*****",
             sid='XE',
+            extra=extra,
             spark=spark,
         )
 
     """
 
+    port: int = 1521
+    sid: Optional[str] = None
+    service_name: Optional[str] = None
+
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
-    port: int = 1521
-    sid: str = ""
-    service_name: str = ""
 
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
 
-    def __post_init__(self):
-        if self.sid and self.service_name:
-            raise ValueError(
-                "Parameters sid and service_name are specified at the same time, only one must be specified",
-            )
+    @root_validator
+    def only_one_of_sid_or_service_name(cls, values):  # noqa: N805
+        sid = values.get("sid")
+        service_name = values.get("service_name")
 
-        if not self.sid and not self.service_name:
-            raise ValueError("Connection to Oracle does not have sid or service_name")
+        if sid and service_name:
+            raise ValueError("Only one of parameters ``sid``, ``service_name`` can be set, got both")
+
+        if not sid and not service_name:
+            raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
+
+        return values
+
+    class ReadOptions(JDBCConnection.ReadOptions):
+        @classmethod
+        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+            return f"ora_hash({partition_column}, {num_partitions})"
+
+        @classmethod
+        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+            return f"MOD({partition_column}, {num_partitions})"
+
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in self.extra.items())
+        params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
 
         if params_str:
             params_str = f"?{params_str}"
@@ -145,10 +181,10 @@ class Oracle(JDBCConnection):
 
         return f"{super().instance_url}/{self.service_name}"
 
-    def execute(  # type: ignore[override]
+    def execute(
         self,
         statement: str,
-        options: Oracle.Options | None = None,
+        options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
 
         statement = clear_statement(statement)
@@ -156,8 +192,9 @@ class Oracle(JDBCConnection):
         log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
         log_with_indent(statement)
 
-        df = self._call_on_driver(statement, options)
-        self._handle_compile_errors(statement.lower().strip(), options)
+        call_options = self.JDBCOptions.parse(options)
+        df = self._call_on_driver(statement, call_options)
+        self._handle_compile_errors(statement.lower().strip(), call_options)
 
         message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
@@ -196,7 +233,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.JDBCOptions,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -258,15 +295,15 @@ class Oracle(JDBCConnection):
         for error, messages in aggregated_errors.items():
             level_name = logging.getLevelName(error.level)
             prefix = f"[{level_name}] Line {error.line}, position {error.position}:"
-            text = "\n" + messages.strip()
-            error_lines.append(prefix + indent(text, LOG_INDENT))
+            text = os.linesep + messages.strip()
+            error_lines.append(prefix + indent(text, " " * BASE_LOG_INDENT))
 
-        return "\n".join(error_lines)
+        return os.linesep.join(error_lines)
 
     def _handle_compile_errors(
         self,
         statement: str,
-        options: JDBCConnection.Options | None = None,
+        options: Oracle.JDBCOptions,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.
