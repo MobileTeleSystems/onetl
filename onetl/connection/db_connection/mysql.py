@@ -109,6 +109,8 @@ class MySQL(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD({partition_column}, {num_partitions})"
 
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
         return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323

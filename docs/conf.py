@@ -43,8 +43,21 @@ release = ver.public
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autosummary", "numpydoc", "sphinx_rtd_theme", "sphinx.ext.autodoc"]
+extensions = [
+    "sphinx.ext.autosummary",
+    "numpydoc",
+    "sphinx_rtd_theme",
+    "sphinx.ext.autodoc",
+    "sphinxcontrib.autodoc_pydantic",
+]
 numpydoc_show_class_members = True
+autodoc_pydantic_model_show_config = False
+autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_show_config_member = False
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_field_list_validators = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

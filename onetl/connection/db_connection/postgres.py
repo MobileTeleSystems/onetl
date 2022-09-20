@@ -95,6 +95,8 @@ class Postgres(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
+    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+
     @property
     def jdbc_url(self) -> str:
         extra = self.extra.dict(by_alias=True)
