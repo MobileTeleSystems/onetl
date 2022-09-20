@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
@@ -11,7 +10,7 @@ from pydantic import root_validator, validator
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.base import BaseDBConnection
 from onetl.impl import FrozenModel, GenericOptions
-from onetl.log import entity_boundary_log, log_with_indent
+from onetl.log import entity_boundary_log, log_collection, log_with_indent
 
 log = getLogger(__name__)
 
@@ -397,9 +396,7 @@ class DBReader(FrozenModel):
         if self.columns == ["*"]:
             log_with_indent("columns = '*'")
         else:
-            log_with_indent("columns = [")
-            log_with_indent(os.linesep.join(f"{column!r}," for column in self.columns), indent=4)
-            log_with_indent("]")
+            log_collection("columns", self.columns)
 
         if self.where:
             log_with_indent(f"where = {self.where!r}")

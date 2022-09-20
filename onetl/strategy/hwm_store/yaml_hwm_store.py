@@ -144,7 +144,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
 
     @validator("path", pre=True, always=True)
     def validate_path(cls, path):  # noqa: N805
-        path = LocalPath(path).expanduser().resolve()  # noqa: WPS601
+        path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
         return path
 
