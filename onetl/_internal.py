@@ -4,8 +4,7 @@
 
 from __future__ import annotations
 
-import contextlib
-import logging
+import os
 from datetime import datetime
 from math import inf
 from typing import TYPE_CHECKING, Any
@@ -165,57 +164,37 @@ def get_sql_query(
     columns: list[str] | None = None,
     where: str | None = None,
     hint: str | None = None,
+    compact: bool = False,
 ) -> str:
     """
     Generates a SQL query using input arguments
     """
 
-    columns_str = ", ".join(columns) if columns else "*"
-    hint = f"/*+ {hint} */" if hint else None
-    where = f"WHERE {where}" if where else None
+    if compact:
+        indent = " "
+    else:
+        indent = os.linesep + " " * 7
 
-    return " ".join(
-        filter(
-            None,
-            [
-                "SELECT",
-                hint,
-                columns_str,
-                "FROM",
-                table,
-                where,
-            ],
-        ),
-    )
+    hint = f" /*+ {hint} */" if hint else ""
 
+    columns_str = "*"
+    if columns:
+        columns_str = indent + f",{indent}".join(column for column in columns)
 
-@contextlib.contextmanager
-def suppress_logging(logger: logging.Logger | None = None):
-    """
-    Temporary disable logging (of some specific logger or the root one)
-    for everything executed inside a context
+    if columns_str.strip() == "*":
+        columns_str = indent + "*"
 
-    Examples
-    --------
+    where_str = ""
+    if where:
+        where_str = "WHERE" + indent + where
 
-    .. code:: python
-
-        import logging
-
-        logger = logging.getLogger(__name__)
-
-        with suppress_logging():
-            logger.warning("This line is gone")
-
-        with suppress_logging(logger):
-            logger.warning("Same")
-    """
-
-    logger = logger or logging.getLogger()
-    previous_level = logger.getEffectiveLevel()
-    logger.setLevel(logging.CRITICAL)
-    yield
-    logger.setLevel(previous_level)
+    return os.linesep.join(
+        [
+            f"SELECT{hint}{columns_str}",
+            f"FROM{indent}{table}",
+            where_str,
+        ],
+    ).strip()
 
 
 def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int, dict]:

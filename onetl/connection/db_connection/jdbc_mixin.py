@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from contextlib import closing, suppress
 from enum import Enum, auto
-from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
 
 from pydantic import Field, SecretStr
@@ -15,7 +15,7 @@ from onetl.log import log_with_indent
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -130,8 +130,8 @@ class JDBCMixin(FrozenModel):
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         self._log_parameters()
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(self._check_query)
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log_with_indent(self._check_query, level=logging.DEBUG)
 
         try:
             self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))

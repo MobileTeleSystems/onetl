@@ -1,11 +1,10 @@
 from pathlib import PurePosixPath
 
 import pytest
-
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.impl import RemotePath
 from onetl.exception import NotAFileError
+from onetl.impl import RemotePath
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -56,14 +55,14 @@ def test_file_connection_read_text(file_connection, source_path, upload_files_wi
     read_text = file_connection.read_text(path=upload_files_with_encoding["utf"])
 
     assert isinstance(read_text, str)
-    assert read_text == "тестовый текст в  тестовом файле"
+    assert read_text == "тестовый текст в  тестовом файле\n"
 
 
 def test_file_connection_read_bytes(file_connection, source_path, upload_files_with_encoding):
     read_bytes = file_connection.read_bytes(path=upload_files_with_encoding["ascii"])
 
     assert isinstance(read_bytes, bytes)
-    assert read_bytes == b"test text in test file"
+    assert read_bytes == b"test text in test file\n"
 
 
 @pytest.mark.parametrize(
