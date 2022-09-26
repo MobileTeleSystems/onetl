@@ -28,9 +28,9 @@ from onetl.impl import (
     path_repr,
 )
 from onetl.log import entity_boundary_log, log_with_indent
-from onetl.strategy import BaseStrategy, StrategyManager
+from onetl.strategy import StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
-from onetl.strategy.hwm_store import BaseHWMStore, HWMClassRegistry, HWMStoreManager
+from onetl.strategy.hwm_store import HWMClassRegistry
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)
@@ -375,7 +375,7 @@ class FileDownloader(FrozenModel):
             self.local_path.mkdir()
 
         if self.hwm_type is not None:
-            result = self._hwm_processing(to_download)
+            result = self._download_files_incremental(to_download)
         else:
             result = self._download_files(to_download)
 
@@ -439,7 +439,7 @@ class FileDownloader(FrozenModel):
         if self.filter:
             filters.append(self.filter)
         if self.hwm_type:
-            filters.append(FileHWMFilter(hwm=self._get_hwm()))
+            filters.append(FileHWMFilter(hwm=self._init_hwm()))
 
         limits = []
         if self.limit:
@@ -458,7 +458,7 @@ class FileDownloader(FrozenModel):
         return result
 
     def _check_strategy(self):
-        strategy: BaseStrategy = StrategyManager.get_current()
+        strategy = StrategyManager.get_current()
 
         if self.hwm_type:
             if not isinstance(strategy, HWMStrategy):
@@ -470,25 +470,23 @@ class FileDownloader(FrozenModel):
             if isinstance(strategy, BatchHWMStrategy):
                 raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")
 
-    def _get_hwm(self) -> FileHWM:
-        remote_file_folder = RemoteFolder(name=self.source_path, instance=self.connection.instance_url)
-        file_hwm_empty = self.hwm_type(source=remote_file_folder)
-        file_hwm_name = file_hwm_empty.qualified_name
+    def _init_hwm(self) -> FileHWM:
+        strategy: HWMStrategy = StrategyManager.get_current()
 
-        current_hwm_store = HWMStoreManager.get_current()
-        file_hwm = current_hwm_store.get(file_hwm_name) or file_hwm_empty
+        if strategy.hwm is None:
+            remote_file_folder = RemoteFolder(name=self.source_path, instance=self.connection.instance_url)
+            strategy.hwm = self.hwm_type(source=remote_file_folder)
+
+        strategy.fetch_hwm()
+        file_hwm = strategy.hwm
 
         # to avoid issues when HWM store returned HWM with unexpected type
         self._check_hwm_type(file_hwm.__class__)
         return file_hwm
 
-    def _hwm_processing(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
-        file_hwm = self._get_hwm()
-
-        return self._download_files(
-            to_download,
-            file_hwm=file_hwm,
-        )
+    def _download_files_incremental(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
+        self._init_hwm()
+        return self._download_files(to_download)
 
     def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
         entity_boundary_log(msg="FileDownloader starts")
@@ -590,11 +588,9 @@ class FileDownloader(FrozenModel):
     def _download_files(
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
-        file_hwm: FileHWM | None = None,
     ) -> DownloadResult:
         total_files = len(to_download)
         files = FileSet(item[0] for item in to_download)
-        hwm_store = HWMStoreManager.get_current()
 
         log.info(f"|{self.__class__.__name__}| Files to be downloaded:")
         log_with_indent(str(files))
@@ -614,8 +610,6 @@ class FileDownloader(FrozenModel):
                 local_file,
                 tmp_file,
                 result,
-                file_hwm=file_hwm,
-                hwm_store=hwm_store,
             )
 
         return result
@@ -626,8 +620,6 @@ class FileDownloader(FrozenModel):
         local_file: LocalPath,
         tmp_file: LocalPath | None,
         result: DownloadResult,
-        file_hwm: FileHWM | None = None,
-        hwm_store: BaseHWMStore | None = None,
     ) -> None:
         if not self.connection.path_exists(source_file):
             log.warning(f"|{self.__class__.__name__}| Missing file '{source_file}', skipping")
@@ -668,9 +660,10 @@ class FileDownloader(FrozenModel):
                 # Direct download
                 self.connection.download_file(remote_file, local_file, replace=replace)
 
-            if file_hwm is not None:
-                file_hwm.update(remote_file)
-                hwm_store.save(file_hwm)
+            if self.hwm_type:
+                strategy = StrategyManager.get_current()
+                strategy.hwm.update(remote_file)
+                strategy.save_hwm()
 
             # Delete Remote
             if self.options.delete_source:

@@ -3,12 +3,11 @@ from __future__ import annotations
 import logging
 import operator
 import os
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Collection, Optional
 
 from etl_entities import HWM
 
-from onetl.impl import path_repr
-from onetl.log import log_with_indent
+from onetl.log import log_collection, log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
 
@@ -35,10 +34,11 @@ class HWMStrategy(BaseStrategy):
 
     def update_hwm(self, value: Any) -> None:
         if self.hwm is not None and value is not None:
-            self.hwm.update(value)  # noqa: WPS601
+            self.hwm.update(value)
 
     def enter_hook(self) -> None:
-        # TODO:(@mivasil6) Зачем здесь делать пустой fetch_hwm()
+        # if HWM is already set (during previous run),
+        # try to fetch its value using qualified_name
         self.fetch_hwm()
 
     def fetch_hwm(self) -> None:
@@ -50,19 +50,18 @@ class HWMStrategy(BaseStrategy):
             log.info(f"{log_prefix} Loading HWM from {hwm_store.__class__.__name__}:")
             log_with_indent(f"qualified_name = {self.hwm.qualified_name!r}")
 
-            value = hwm_store.get(self.hwm.qualified_name)
+            result = hwm_store.get(self.hwm.qualified_name)
 
-            if value is not None:
+            if result is not None:
+                self.hwm = result  # noqa: WPS601
                 log.info(f"{log_prefix} Got HWM:")
-                log_with_indent(f"type = {value.__class__.__name__}")
-                log_with_indent(f"value = {value.value!r}")
-                self.hwm = value  # noqa: WPS601
+                self._log_hwm(self.hwm)
             else:
                 log.warning(
-                    f"{log_prefix} HWM does not exist in {hwm_store.__class__.__name__}. ALL ROWS WILL BE READ!",
+                    f"{log_prefix} HWM does not exist in {hwm_store.__class__.__name__}. ALL ROWS/FILES WILL BE READ!",
                 )
         else:
-            # TODO:(@mivasil6) спросить у Макса попадаем ли мы в это условие, и почему это не эксепшен
+            # entering strategy context, HWM will be set later by DBReader.run or FileDownloader.run
             log.debug(f"{log_prefix}: HWM will not be loaded, skipping")
 
     def exit_hook(self, failed: bool = False) -> None:
@@ -75,10 +74,8 @@ class HWMStrategy(BaseStrategy):
         if self.hwm is not None:
             hwm_store = HWMStoreManager.get_current()
 
-            # TODO:(@mivasil6) подумать над __repr__ hwm
             log.info(f"{log_prefix} Saving HWM to {hwm_store.__class__.__name__}:")
-            log_with_indent(f"type = {self.hwm.__class__.__name__}")
-            log_with_indent(f"value = {self.hwm.value!r}")
+            self._log_hwm(self.hwm)
             log_with_indent(f"qualified_name = {self.hwm.qualified_name!r}")
 
             location = hwm_store.save(self.hwm)
@@ -86,11 +83,23 @@ class HWMStrategy(BaseStrategy):
 
             if location:
                 if isinstance(location, os.PathLike):
-                    log_with_indent(f"location = {path_repr(location)}")
+                    log_with_indent(f"location = '{os.fspath(location)}'")
                 else:
                     log_with_indent(f"location = {location}")
         else:
             log.debug(f"{log_prefix} HWM value is not set, do not save")
+
+    def _log_hwm(self, hwm: HWM) -> None:
+        log_with_indent(f"type = {hwm.__class__.__name__}")
+
+        if isinstance(hwm.value, Collection):
+            if log.isEnabledFor(logging.DEBUG):
+                # file list can be very large, dont' show it unless user asked for
+                log_collection("value", hwm.value, level=logging.DEBUG)
+            else:
+                log_with_indent(f"value = [{len(hwm.value)} items]")
+        else:
+            log_with_indent(f"value = {hwm.value!r}")
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

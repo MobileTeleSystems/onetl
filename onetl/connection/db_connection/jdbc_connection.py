@@ -611,7 +611,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             table=table,
             where=where,
             hint=hint,
-            options=self.ReadOptions.parse(options).copy(exclude={"mode"}),
+            options=self.ReadOptions.parse(options).copy(exclude={"mode", "partitioning_mode"}),
         )
 
         # hack to avoid column name verification
@@ -747,7 +747,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
     ) -> JDBCMixin.JDBCOptions:
         return self.JDBCOptions.parse(options).copy(
             update={"fetchsize": fetchsize},
-            exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions"},
+            exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
         )
 
     def _set_lower_upper_bound(
