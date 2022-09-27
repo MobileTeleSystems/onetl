@@ -89,7 +89,7 @@ class Samba(FileConnection):
         self.client.rename(os.fspath(source), os.fspath(target))
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
-        self.client.run(os.fspath(remote_file_path), os.fspath(local_file_path))
+        self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.unlink(os.fspath(remote_file_path))
@@ -101,7 +101,7 @@ class Samba(FileConnection):
         self.client.rmdir(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
-        self.client.run(os.fspath(local_file_path), os.fspath(remote_file_path))
+        self.client.upload(os.fspath(local_file_path), os.fspath(remote_file_path))
 
     def _listdir(self, path: RemotePath) -> list:
         return self.client.lsdir(os.fspath(path))
