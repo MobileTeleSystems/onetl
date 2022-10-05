@@ -578,7 +578,7 @@ class Hive(DBConnection):
         for key, value in write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"}).items():
             log.warning(
                 f"|{self.__class__.__name__}| Option {key}={value!r} is not supported "
-                "while inserting into existing table, ignoring...",
+                "while inserting into existing table, ignoring",
             )
 
         # Hive is inserting data to table by column position, not by name

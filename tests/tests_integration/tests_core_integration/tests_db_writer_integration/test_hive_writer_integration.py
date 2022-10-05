@@ -292,7 +292,7 @@ def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_
         options=options,
     )
 
-    error_msg = f"|Hive| Option {option_kv} is not supported while inserting into existing table, ignoring..."
+    error_msg = f"|Hive| Option {option_kv} is not supported while inserting into existing table, ignoring"
     with caplog.at_level(logging.WARNING):
         writer.run(df)
 
