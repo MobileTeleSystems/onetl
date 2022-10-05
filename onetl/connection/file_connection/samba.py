@@ -44,7 +44,7 @@ class Samba(FileConnection):
 
     Samba file connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Samba
 

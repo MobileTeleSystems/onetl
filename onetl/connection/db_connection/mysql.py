@@ -54,20 +54,22 @@ class MySQL(JDBCConnection):
 
     MySQL connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import MySQL
         from mtspark import get_spark
 
         extra = {"useSSL": "false"}
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                MySQL.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    MySQL.package,
+                ],
+            }
+        )
 
         mysql = MySQL(
             host="database.host.or.ip",

@@ -348,7 +348,7 @@ class DBReader(FrozenModel):
 
         Read data to Spark dataframe:
 
-        .. code::
+        .. code:: python
 
             df = reader.run()
         """

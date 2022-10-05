@@ -62,24 +62,26 @@ class Teradata(JDBCConnection):
 
     Teradata connection with LDAP auth:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Teradata
         from mtspark import get_spark
 
         extra = {
             "TMODE": "TERA",  # "TERA" or "ANSI"
-            "LOGMECH":"LDAP",
+            "LOGMECH": "LDAP",
             "LOG": "TIMING",  # increase log level
         }
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Teradata.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    Teradata.package,
+                ],
+            }
+        )
 
         teradata = Teradata(
             host="database.host.or.ip",

@@ -45,19 +45,18 @@ class DBWriter(FrozenModel):
     --------
     Simple Writer creation:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Postgres.package
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -74,19 +73,18 @@ class DBWriter(FrozenModel):
 
     Writer creation with options:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Postgres.package
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -98,7 +96,7 @@ class DBWriter(FrozenModel):
 
         options = {"truncate": "true", "batchsize": 1000}
         # or (it is the same):
-        options = Postgres.WriteOptions(truncate=True, batchsize=1000}
+        options = Postgres.WriteOptions(truncate=True, batchsize=1000)
 
         writer = DBWriter(
             connection=postgres,
@@ -108,7 +106,7 @@ class DBWriter(FrozenModel):
 
     Writer to Hive with options:
 
-    .. code::
+    .. code:: python
 
         from onetl.core import DBWriter
         from onetl.connection import Hive
@@ -167,7 +165,7 @@ class DBWriter(FrozenModel):
 
         Write df to table:
 
-        .. code::
+        .. code:: python
 
             writer.run(df)
         """

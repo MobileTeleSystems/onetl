@@ -50,7 +50,7 @@ class HDFS(FileConnection):
 
     HDFS file connection initialization with password
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import HDFS
 
@@ -62,7 +62,7 @@ class HDFS(FileConnection):
 
     HDFS file connection initialization with keytab
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import HDFS
 

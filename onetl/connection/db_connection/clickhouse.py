@@ -58,23 +58,25 @@ class Clickhouse(JDBCConnection):
 
     Clickhouse connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Clickhouse
         from mtspark import get_spark
 
         extra = {"continueBatchOnError": "false"}
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Clickhouse.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    Clickhouse.package,
+                ],
+            }
+        )
 
         clickhouse = Clickhouse(
-            host="database.host.or.ip,
+            host="database.host.or.ip",
             user="user",
             password="*****",
             extra=extra,

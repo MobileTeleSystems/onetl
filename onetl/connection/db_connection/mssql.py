@@ -55,7 +55,7 @@ class MSSQL(JDBCConnection):
 
     MSSQL connection with plain auth:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import MSSQL
         from mtspark import get_spark
@@ -64,13 +64,15 @@ class MSSQL(JDBCConnection):
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                MSSQL.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    MSSQL.package,
+                ],
+            }
+        )
 
         mssql = MSSQL(
             host="database.host.or.ip",
@@ -82,7 +84,7 @@ class MSSQL(JDBCConnection):
 
     MSSQL connection with domain auth:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import MSSQL
         from mtspark import get_spark
@@ -94,13 +96,15 @@ class MSSQL(JDBCConnection):
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                MSSQL.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    MSSQL.package,
+                ],
+            }
+        )
 
         mssql = MSSQL(
             host="database.host.or.ip",
@@ -112,7 +116,7 @@ class MSSQL(JDBCConnection):
 
     MSSQL read-only connection:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import MSSQL
         from mtspark import get_spark
@@ -122,13 +126,15 @@ class MSSQL(JDBCConnection):
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                MSSQL.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    MSSQL.package,
+                ],
+            }
+        )
 
         mssql = MSSQL(
             host="database.host.or.ip",

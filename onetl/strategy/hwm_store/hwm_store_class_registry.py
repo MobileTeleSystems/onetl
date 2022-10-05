@@ -223,10 +223,12 @@ def detect_hwm_store(key: str) -> Callable:
 
     ``run.py``
 
-    .. code::
+    .. code:: python
 
         @hydra.main(config="../conf")
-        @detect_hwm_store(key="myetl.env.hwm_store")  # path to config item, delimited by dot ``.``
+        @detect_hwm_store(
+            key="myetl.env.hwm_store"
+        )  # path to config item, delimited by dot ``.``
         def main(config: OmniConf):
             pass
 

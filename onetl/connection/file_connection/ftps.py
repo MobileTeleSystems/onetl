@@ -42,7 +42,7 @@ class FTPS(FTP):
 
     FTP file connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import FTPS
 

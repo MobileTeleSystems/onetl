@@ -53,26 +53,28 @@ class Postgres(JDBCConnection):
 
     Postgres connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Postgres
         from mtspark import get_spark
 
         extra = {"ssl": "false"}
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Postgres.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    Postgres.package,
+                ],
+            }
+        )
 
         postgres = Postgres(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            database='target_database',
+            database="target_database",
             extra=extra,
             spark=spark,
         )

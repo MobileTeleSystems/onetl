@@ -103,26 +103,28 @@ class Oracle(JDBCConnection):
 
     Oracle connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Oracle
         from mtspark import get_spark
 
         extra = {"defaultBatchValue": 100}
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Oracle.package,
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": [
+                    "default:skip",
+                    Oracle.package,
+                ],
+            }
+        )
 
         oracle = Oracle(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            sid='XE',
+            sid="XE",
             extra=extra,
             spark=spark,
         )

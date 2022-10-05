@@ -106,7 +106,7 @@ class FileDownloader(FrozenModel):
     --------
     Simple Downloader creation
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import SFTP
         from onetl.core import FileDownloader
@@ -125,7 +125,7 @@ class FileDownloader(FrozenModel):
 
     Downloader with all parameters
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import SFTP
         from onetl.core import FileDownloader, FileFilter, FileLimit
@@ -138,7 +138,9 @@ class FileDownloader(FrozenModel):
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
             temp_path="/tmp",
-            filter=FileFilter(glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]),
+            filter=FileFilter(
+                glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]
+            ),
             limit=FileLimit(count_limit=10),
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),
         )
@@ -148,7 +150,7 @@ class FileDownloader(FrozenModel):
 
     Incremental download:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import SFTP
         from onetl.core import FileDownloader
