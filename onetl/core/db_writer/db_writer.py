@@ -200,7 +200,7 @@ class DBWriter(FrozenModel):
         log_with_indent("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
-        log_with_indent("DataFrame schema")
+        log_with_indent("DataFrame schema:")
 
         schema_tree = io.StringIO()
         with redirect_stdout(schema_tree):
