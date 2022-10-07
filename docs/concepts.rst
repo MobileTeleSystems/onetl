@@ -14,8 +14,7 @@ onETL is used to pull and push data into other systems, and so it has a first-cl
 
 A ``Connection`` is essentially a set of parameters - such as username, password, hostname.
 
-To create a connection to a specific storage type, you must use a **unique class** that matches the storage type. The class name is the same as the storage type name (``Oracle``, ``MSSQL``, ``SFTP``, etc):
-
+To create a connection to a specific storage type, you must use a class that matches the storage type. The class name is the same as the storage type name (``Oracle``, ``MSSQL``, ``SFTP``, etc):
 
 .. code:: python
 
