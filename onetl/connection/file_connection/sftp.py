@@ -143,7 +143,7 @@ class SFTP(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _listdir(self, path: RemotePath) -> list:
+    def _listdir(self, path: RemotePath) -> list[SFTPAttributes]:
         return self.client.listdir_attr(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:
