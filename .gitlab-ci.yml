@@ -182,6 +182,9 @@ tests:
     SA_PASSWORD: 2astazeY
     # Hive
     TZ: Europe/Moscow
+    # Minio
+    MINIO_ROOT_USER: minio_admin
+    MINIO_ROOT_PASSWORD: minio_password
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
@@ -213,6 +216,9 @@ tests:
     alias: greenplum
   - name: ${CI_REGISTRY}/dev/atlas:2.1
     alias: atlas
+  - name: minio/minio
+    alias: minio
+    command: ["server", "/data"]
   script:
   - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
   after_script:

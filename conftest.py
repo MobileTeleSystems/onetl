@@ -33,6 +33,7 @@ from onetl.connection import (
     Oracle,
     Postgres,
     Teradata,
+    S3,
 )
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
@@ -76,6 +77,23 @@ def ftps_server(tmp_path_factory):
 @pytest.fixture(scope="function")
 def ftps_connection(ftps_server):
     return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
+
+
+@pytest.fixture(scope="session")
+def s3():
+    s3 = S3(
+        host=os.getenv("ONETL_MINIO_HOST"),
+        port=os.getenv("ONETL_MINIO_PORT"),
+        access_key=os.getenv("MINIO_ROOT_USER"),
+        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
+        bucket=os.getenv("ONETL_MINIO_BUCKET"),
+        secure=False,
+    )
+
+    if not s3.client.bucket_exists("testbucket"):
+        s3.client.make_bucket("testbucket")
+
+    yield s3
 
 
 @pytest.fixture(scope="session")
@@ -127,13 +145,13 @@ def test_files(resource_path):
 
 
 @pytest.fixture(scope="function")
-def upload_files_with_encoding(file_connection, source_path):
+def upload_files_with_encoding(file_all_connections, source_path):
     local_root_filename = Path(__file__).parent / "tests" / "resources"
     remote_root_filename = source_path
     files = ["file_connection_utf.txt", "file_connection_ascii.txt"]
 
     for file in files:
-        file_connection.upload_file(local_root_filename / file, remote_root_filename / file)
+        file_all_connections.upload_file(local_root_filename / file, remote_root_filename / file)
 
     return {
         "utf": remote_root_filename / "file_connection_utf.txt",
@@ -261,23 +279,64 @@ def use_memory_hwm_store(request):
         pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
     ],
 )
-def file_connection(request):
+def file_connection_without_s3(request):
+    return request.param
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(lazy_fixture("s3"), marks=pytest.mark.S3),
+        lazy_fixture("file_connection_without_s3"),
+    ],
+)
+def file_all_connections(request):
     return request.param
 
 
 @pytest.fixture(scope="function")
-def source_path(file_connection):
+def source_path(file_all_connections):
     source_path = PurePosixPath("/export/news_parse")
 
-    file_connection.rmdir(source_path, recursive=True)
-    file_connection.mkdir(source_path)
+    file_all_connections.rmdir(source_path, recursive=True)
+    file_all_connections.mkdir(source_path)
     yield source_path
-    file_connection.rmdir(source_path, recursive=True)
+    file_all_connections.rmdir(source_path, recursive=True)
 
 
 @pytest.fixture(scope="function")
-def upload_test_files(file_connection, resource_path, source_path):
-    return upload_files(resource_path, source_path, file_connection)
+def source_path_s3(s3):
+    source_path = PurePosixPath("/export/news_parse")
+
+    s3.rmdir(source_path, recursive=True)
+    s3.mkdir(source_path)
+    yield source_path
+    s3.rmdir(source_path, recursive=True)
+
+
+@pytest.fixture(scope="function")
+def source_path_without_s3(file_connection_without_s3):
+    source_path = PurePosixPath("/export/news_parse")
+
+    file_connection_without_s3.rmdir(source_path, recursive=True)
+    file_connection_without_s3.mkdir(source_path)
+    yield source_path
+    file_connection_without_s3.rmdir(source_path, recursive=True)
+
+
+@pytest.fixture(scope="function")
+def upload_test_files_without_s3(file_connection_without_s3, resource_path, source_path_without_s3):
+    return upload_files(resource_path, source_path_without_s3, file_connection_without_s3)
+
+
+@pytest.fixture(scope="function")
+def upload_test_files(file_all_connections, resource_path, source_path):
+    return upload_files(resource_path, source_path, file_all_connections)
+
+
+@pytest.fixture(scope="function")
+def upload_test_files_s3(s3, resource_path, source_path_s3):
+    return upload_files(resource_path, source_path_s3, s3)
 
 
 @pytest.fixture(

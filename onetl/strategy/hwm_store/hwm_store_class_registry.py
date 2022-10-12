@@ -240,7 +240,6 @@ def detect_hwm_store(key: str) -> Callable:
     def pre_wrapper(func: Callable):  # noqa: WPS430
         @wraps(func)
         def wrapper(config: Mapping, *args, **kwargs):
-
             if not config:
                 raise ValueError("Config must be specified")
 

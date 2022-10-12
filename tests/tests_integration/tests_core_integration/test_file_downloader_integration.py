@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 import pytest
 from etl_entities import FileListHWM
 
+from onetl import connection
 from onetl.core import FileDownloader, FileFilter, FileLimit, FileSet
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import (
@@ -25,9 +26,9 @@ from onetl.strategy import (
 )
 
 
-def test_downloader_view_file(file_connection, source_path, upload_test_files):
+def test_downloader_view_file(file_all_connections, source_path, upload_test_files):
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path="/some/path",
     )
@@ -35,7 +36,7 @@ def test_downloader_view_file(file_connection, source_path, upload_test_files):
     remote_files = downloader.view_files()
     remote_files_list = []
 
-    for root, _dirs, files in file_connection.walk(source_path):
+    for root, _dirs, files in file_all_connections.walk(source_path):
         for file in files:
             remote_files_list.append(RemotePath(root) / file)
 
@@ -49,11 +50,18 @@ def test_downloader_view_file(file_connection, source_path, upload_test_files):
     [str, Path],
     ids=["run_path_type str", "run_path_type Path"],
 )
-def test_downloader_run(file_connection, source_path, upload_test_files, path_type, run_path_type, tmp_path_factory):
+def test_downloader_run(
+    file_all_connections,
+    source_path,
+    upload_test_files,
+    path_type,
+    run_path_type,
+    tmp_path_factory,
+):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=path_type(source_path),
         local_path=run_path_type(local_path),
     )
@@ -77,28 +85,28 @@ def test_downloader_run(file_connection, source_path, upload_test_files, path_ty
         assert not local_file.is_dir()
 
         remote_file_path = source_path / local_file.relative_to(local_path)
-        remote_file = file_connection.get_file(remote_file_path)
+        remote_file = file_all_connections.get_file(remote_file_path)
 
         # file size is same as expected
-        assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+        assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
 
         # file content is same as expected
-        assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+        assert local_file.read_bytes() == file_all_connections.read_bytes(remote_file)
 
 
-def test_downloader_run_delete_source(
-    file_connection,
-    source_path,
+def test_downloader_run_delete_source_without_s3(
+    file_connection_without_s3,
+    source_path_without_s3,
     resource_path,
-    upload_test_files,
+    upload_test_files_without_s3,
     tmp_path_factory,
     caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
-        source_path=source_path,
+        connection=file_connection_without_s3,
+        source_path=source_path_without_s3,
         local_path=local_path,
         options=FileDownloader.Options(delete_source=True),
     )
@@ -114,7 +122,7 @@ def test_downloader_run_delete_source(
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in upload_test_files
+        local_path / file.relative_to(source_path_without_s3) for file in upload_test_files_without_s3
     )
 
     for local_file in download_result.successful:
@@ -130,16 +138,63 @@ def test_downloader_run_delete_source(
         assert local_file.read_bytes() == original_file.read_bytes()
 
     remote_files = FileSet()
-    for root, _dirs, files in file_connection.walk(source_path):
+    for root, _dirs, files in file_connection_without_s3.walk(source_path_without_s3):
         for file in files:
             remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
 
     assert not remote_files
 
 
+def test_downloader_run_delete_source_s3(
+    s3,
+    source_path_s3,
+    resource_path,
+    upload_test_files_s3,
+    tmp_path_factory,
+    caplog,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=s3,
+        source_path=source_path_s3,
+        local_path=local_path,
+        options=FileDownloader.Options(delete_source=True),
+    )
+
+    with caplog.at_level(logging.WARNING):
+        download_result = downloader.run()
+
+        assert "SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!" in caplog.text
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    assert sorted(download_result.successful) == sorted(
+        local_path / file.relative_to(source_path_s3) for file in upload_test_files_s3
+    )
+
+    for local_file in download_result.successful:
+        assert local_file.exists()
+        assert local_file.is_file()
+        assert not local_file.is_dir()
+
+        # source_path contain a copy of files from resource_path
+        # so check downloaded files content using them as a reference
+        original_file = resource_path / local_file.relative_to(local_path)
+
+        assert local_file.stat().st_size == original_file.stat().st_size
+        assert local_file.read_bytes() == original_file.read_bytes()
+
+    with pytest.raises(DirectoryNotFoundError):
+        s3.is_dir(source_path_s3)
+
+
 @pytest.mark.parametrize("path_type", [str, Path])
 def test_downloader_file_filter_exclude_dir(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     path_type,
@@ -149,7 +204,7 @@ def test_downloader_file_filter_exclude_dir(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         filter=FileFilter(exclude_dirs=[path_type("/export/news_parse/exclude_dir")]),
@@ -163,7 +218,7 @@ def test_downloader_file_filter_exclude_dir(
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
 
-        skip_msg = r"Path '/export/news_parse/exclude_dir' \(kind='directory', .*\) does NOT MATCH filter FileFilter"
+        skip_msg = "Path '/export/news_parse/exclude_dir.* does NOT MATCH filter FileFilter"
         assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
@@ -176,11 +231,11 @@ def test_downloader_file_filter_exclude_dir(
     )
 
 
-def test_downloader_file_filter_glob(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_file_filter_glob(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         filter=FileFilter(glob="*.csv"),
@@ -212,7 +267,7 @@ def test_downloader_file_filter_glob(file_connection, source_path, upload_test_f
 
 
 def test_downloader_file_filter_is_ignored_by_user_input(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -220,7 +275,7 @@ def test_downloader_file_filter_is_ignored_by_user_input(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         filter=FileFilter(glob="*.csv"),
@@ -240,7 +295,7 @@ def test_downloader_file_filter_is_ignored_by_user_input(
     ids=["Without source_path", "With source path"],
 )
 def test_downloader_run_with_files_absolute(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     source_path_value,
@@ -250,7 +305,7 @@ def test_downloader_run_with_files_absolute(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path_value,
         local_path=local_path,
     )
@@ -286,18 +341,18 @@ def test_downloader_run_with_files_absolute(
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_connection.get_file(remote_file_path)
+        remote_file = file_all_connections.get_file(remote_file_path)
 
         # file size is same as expected
-        assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
-        assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+        assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
+        assert remote_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
 
         # file content is same as expected
-        assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+        assert local_file.read_bytes() == file_all_connections.read_bytes(remote_file)
 
 
 def test_downloader_run_with_files_relative_and_source_path(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -306,7 +361,7 @@ def test_downloader_run_with_files_relative_and_source_path(
     relative_files_path = [file.relative_to(source_path) for file in upload_test_files]
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
     )
@@ -327,21 +382,21 @@ def test_downloader_run_with_files_relative_and_source_path(
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_connection.get_file(remote_file_path)
+        remote_file = file_all_connections.get_file(remote_file_path)
 
         # file size is same as expected
-        assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
-        assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+        assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
+        assert remote_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
 
         # file content is same as expected
-        assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+        assert local_file.read_bytes() == file_all_connections.read_bytes(remote_file)
 
 
-def test_downloader_run_without_files_and_source_path(file_connection, tmp_path_factory):
+def test_downloader_run_without_files_and_source_path(file_all_connections, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
     )
     with pytest.raises(ValueError, match="Neither file collection nor ``source_path`` are passed"):
@@ -353,25 +408,22 @@ def test_downloader_run_without_files_and_source_path(file_connection, tmp_path_
     [False, True],
     ids=["Without source_path", "With source_path"],
 )
-def test_downloader_run_with_empty_files_input(request, file_connection, pass_source_path, tmp_path_factory):
-    source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-
-    file_connection.mkdir(source_path)
-
-    def finalizer():
-        file_connection.rmdir(source_path, recursive=True)
-
-    request.addfinalizer(finalizer)
-
+def test_downloader_run_with_empty_files_input(
+    file_all_connections,
+    pass_source_path,
+    tmp_path_factory,
+    upload_test_files,
+    source_path,
+):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         source_path=source_path if pass_source_path else None,
     )
 
-    download_result = downloader.run([])
+    download_result = downloader.run([])  # this argument takes precedence
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -379,20 +431,19 @@ def test_downloader_run_with_empty_files_input(request, file_connection, pass_so
     assert not download_result.successful
 
 
-def test_downloader_run_with_empty_source_path(request, file_connection, tmp_path_factory):
+def test_downloader_run_with_empty_source_path(request, file_connection_without_s3, tmp_path_factory):
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-
-    file_connection.mkdir(source_path)
+    file_connection_without_s3.mkdir(source_path)
 
     def finalizer():
-        file_connection.rmdir(source_path, recursive=True)
+        file_connection_without_s3.rmdir(source_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_connection_without_s3,
         local_path=local_path,
         source_path=source_path,
     )
@@ -405,11 +456,11 @@ def test_downloader_run_with_empty_source_path(request, file_connection, tmp_pat
     assert not download_result.successful
 
 
-def test_downloader_run_relative_path_without_source_path(file_connection, tmp_path_factory):
+def test_downloader_run_relative_path_without_source_path(file_all_connections, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
     )
 
@@ -418,14 +469,15 @@ def test_downloader_run_relative_path_without_source_path(file_connection, tmp_p
 
 
 def test_downloader_run_absolute_path_not_match_source_path(
-    file_connection,
+    file_all_connections,
     source_path,
     tmp_path_factory,
+    upload_test_files,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
     )
@@ -439,7 +491,7 @@ def test_downloader_run_absolute_path_not_match_source_path(
     "options",
     [{"mode": "error"}, FileDownloader.Options(mode="error"), FileDownloader.Options(mode=FileWriteMode.ERROR)],
 )
-def test_downloader_mode_error(file_connection, source_path, upload_test_files, options, tmp_path_factory):
+def test_downloader_mode_error(file_all_connections, source_path, upload_test_files, options, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
 
     # make copy of files to download in the local_path
@@ -454,7 +506,7 @@ def test_downloader_mode_error(file_connection, source_path, upload_test_files, 
         local_files_stat[local_file] = local_file.stat()
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         options=options,
@@ -489,7 +541,7 @@ def test_downloader_mode_error(file_connection, source_path, upload_test_files, 
         assert local_file.read_text() == "unchanged"
 
 
-def test_downloader_mode_ignore(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_mode_ignore(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
 
     # make copy of files to download in the local_path
@@ -504,7 +556,7 @@ def test_downloader_mode_ignore(file_connection, source_path, upload_test_files,
         local_files_stat[local_file] = local_file.stat()
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         options=FileDownloader.Options(mode=FileWriteMode.IGNORE),
@@ -540,7 +592,7 @@ def test_downloader_mode_ignore(file_connection, source_path, upload_test_files,
         assert local_file.read_text() == "unchanged"
 
 
-def test_downloader_mode_overwrite(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_mode_overwrite(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
 
     # make copy of files to download in the local_path
@@ -555,7 +607,7 @@ def test_downloader_mode_overwrite(file_connection, source_path, upload_test_fil
         local_files_stat[local_file] = local_file.stat()
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         options=FileDownloader.Options(mode=FileWriteMode.OVERWRITE),
@@ -583,21 +635,21 @@ def test_downloader_mode_overwrite(file_connection, source_path, upload_test_fil
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_connection.get_file(remote_file_path)
+        remote_file = file_all_connections.get_file(remote_file_path)
 
         # file size was changed
         assert local_file.stat().st_size != local_files_stat[local_file].st_size
-        assert local_file.stat().st_size == file_connection.get_stat(remote_file).st_size
-        assert remote_file.stat().st_size == file_connection.get_stat(remote_file).st_size
+        assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
+        assert remote_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
 
         # file content was changed
         assert local_file.read_text() != "unchanged"
-        assert local_file.read_bytes() == file_connection.read_bytes(remote_file)
+        assert local_file.read_bytes() == file_all_connections.read_bytes(remote_file)
 
 
 @pytest.mark.parametrize("local_dir_exist", [True, False])
 def test_downloader_mode_delete_all(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -614,7 +666,7 @@ def test_downloader_mode_delete_all(
         new_local_file.touch()
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         options=FileDownloader.Options(mode=FileWriteMode.DELETE_ALL),
@@ -634,20 +686,22 @@ def test_downloader_mode_delete_all(
     assert not new_local_file.exists()
 
 
-def test_downloader_run_missing_file(request, file_connection, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_run_missing_file(request, file_all_connections, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
+
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    file_connection.mkdir(target_path)
+    if not isinstance(file_all_connections, connection.S3):
+        file_all_connections.mkdir(target_path)
 
-    def finalizer():
-        file_connection.rmdir(target_path, recursive=True)
+        def finalizer():
+            file_all_connections.rmdir(target_path, recursive=True)
 
-    request.addfinalizer(finalizer)
+        request.addfinalizer(finalizer)
 
     # upload files
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
     )
 
@@ -670,55 +724,57 @@ def test_downloader_run_missing_file(request, file_connection, upload_test_files
     assert isinstance(download_result.missing[0], RemotePath)
 
 
-def test_downloader_source_path_does_not_exist(file_connection, tmp_path_factory):
+def test_downloader_source_path_does_not_exist(file_all_connections, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
     )
 
-    with pytest.raises(DirectoryNotFoundError, match=f"'{source_path}' does not exist"):
-        downloader.run()
+    if not isinstance(file_all_connections, connection.S3):
+        with pytest.raises(DirectoryNotFoundError, match=f"'{source_path}' does not exist"):
+            downloader.run()
 
 
-def test_downloader_source_path_not_a_directory(request, file_connection, tmp_path_factory):
+def test_downloader_source_path_not_a_directory(request, file_all_connections, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
 
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    file_connection.write_text(source_path, "abc")
+    file_all_connections.write_text(source_path, "abc")
 
     def finalizer():
-        file_connection.remove_file(source_path)
+        file_all_connections.remove_file(source_path)
 
     request.addfinalizer(finalizer)
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
     )
 
-    with pytest.raises(NotADirectoryError, match=rf"'{source_path}' \(kind='file', .*\) is not a directory"):
-        downloader.run()
+    if not isinstance(file_all_connections, connection.S3):
+        with pytest.raises(NotADirectoryError, match=rf"'{source_path}' \(kind='file', .*\) is not a directory"):
+            downloader.run()
 
-    file_connection.remove_file(source_path)
+    file_all_connections.remove_file(source_path)
 
 
-def test_downloader_local_path_not_a_directory(request, file_connection):
+def test_downloader_local_path_not_a_directory(request, file_all_connections):
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    file_connection.mkdir(source_path)
+    file_all_connections.mkdir(source_path)
 
     def finalizer():
-        file_connection.rmdir(source_path)
+        file_all_connections.rmdir(source_path)
 
     request.addfinalizer(finalizer)
 
     with tempfile.NamedTemporaryFile() as file:
         downloader = FileDownloader(
-            connection=file_connection,
+            connection=file_all_connections,
             source_path=source_path,
             local_path=file.name,
         )
@@ -727,34 +783,37 @@ def test_downloader_local_path_not_a_directory(request, file_connection):
             downloader.run()
 
 
-def test_downloader_run_input_is_not_file(request, file_connection, tmp_path_factory):
-    local_path = tmp_path_factory.mktemp("local_path")
-    target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    not_a_file = target_path / "not_a_file"
+def test_downloader_run_input_is_not_file(request, file_all_connections, tmp_path_factory):
 
-    file_connection.mkdir(not_a_file)
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    not_a_file = source_path / "not_a_file"
+
+    file_all_connections.mkdir(not_a_file)
 
     def finalizer():
-        file_connection.rmdir(target_path, recursive=True)
+        file_all_connections.rmdir(source_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
-    # upload files
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
     )
 
-    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
-        downloader.run([not_a_file])
+    # download file
+    if not isinstance(file_all_connections, connection.S3):  # S3 does not create dirs
+        with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
+            downloader.run([not_a_file])
 
 
-def test_downloader_file_limit_custom(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_file_limit_custom(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
     limit = 2
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         limit=FileLimit(count_limit=limit),
@@ -775,11 +834,11 @@ def test_downloader_file_limit_custom(file_connection, source_path, upload_test_
     assert len(download_result.successful) == limit
 
 
-def test_downloader_no_file_limit(file_connection, source_path, upload_test_files, tmp_path_factory, caplog):
+def test_downloader_no_file_limit(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         limit=None,
@@ -805,7 +864,7 @@ def test_downloader_no_file_limit(file_connection, source_path, upload_test_file
 
 
 def test_downloader_file_limit_is_ignored_by_user_input(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -813,7 +872,7 @@ def test_downloader_file_limit_is_ignored_by_user_input(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         limit=FileLimit(count_limit=2),
@@ -826,7 +885,7 @@ def test_downloader_file_limit_is_ignored_by_user_input(
 
 
 def test_downloader_detect_hwm_type_snap_batch_strategy(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -835,7 +894,7 @@ def test_downloader_detect_hwm_type_snap_batch_strategy(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         source_path=local_path,
         hwm_type="file_list",
@@ -847,7 +906,7 @@ def test_downloader_detect_hwm_type_snap_batch_strategy(
 
 
 def test_downloader_detect_hwm_type_inc_batch_strategy(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -856,7 +915,7 @@ def test_downloader_detect_hwm_type_inc_batch_strategy(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         source_path=source_path,
         hwm_type="file_list",
@@ -870,7 +929,7 @@ def test_downloader_detect_hwm_type_inc_batch_strategy(
 
 
 def test_downloader_detect_hwm_type_snapshot_strategy(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -879,7 +938,7 @@ def test_downloader_detect_hwm_type_snapshot_strategy(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         source_path=source_path,
         hwm_type="file_list",
@@ -890,7 +949,7 @@ def test_downloader_detect_hwm_type_snapshot_strategy(
 
 
 def test_downloader_file_hwm_strategy_with_wrong_parameters(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -899,7 +958,7 @@ def test_downloader_file_hwm_strategy_with_wrong_parameters(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         source_path=source_path,
         hwm_type="file_list",
@@ -921,7 +980,7 @@ def test_downloader_file_hwm_strategy_with_wrong_parameters(
     ],
 )
 def test_downloader_file_hwm_strategy(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -931,7 +990,7 @@ def test_downloader_file_hwm_strategy(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         local_path=local_path,
         hwm_type=hwm_type,
         source_path=source_path,
@@ -950,11 +1009,11 @@ def test_downloader_file_hwm_strategy(
     ],
     ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
 )
-def test_downloader_with_temp_path(file_connection, source_path, upload_test_files, temp_path, tmp_path_factory):
+def test_downloader_with_temp_path(file_all_connections, source_path, upload_test_files, temp_path, tmp_path_factory):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         temp_path=temp_path,
