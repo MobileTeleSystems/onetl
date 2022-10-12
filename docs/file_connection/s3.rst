@@ -1,0 +1,9 @@
+.. _s3:
+
+S3 connection
+==============
+
+.. currentmodule:: onetl.connection.file_connection.s3
+
+.. autoclass:: S3
+    :members: __init__

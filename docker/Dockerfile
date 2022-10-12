@@ -1,4 +1,4 @@
-FROM docker.rep.msk.mts.ru/platform/python:3.7.7
+FROM docker.rep.msk.mts.ru/platform/python:3.7.7 as base
 LABEL maintainer="oneTools team"
 # http://docker.rep.msk.mts.ru/artifactory/webapp/#/packages/docker/platform~2Fpython
 

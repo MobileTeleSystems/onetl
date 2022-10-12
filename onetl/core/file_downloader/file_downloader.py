@@ -358,6 +358,7 @@ class FileDownloader(FrozenModel):
 
         if files is None:
             log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
+
             files = self.view_files()
 
         if not files:

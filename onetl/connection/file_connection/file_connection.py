@@ -116,12 +116,13 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
     def get_directory(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
-        remote_path = RemoteDirectory(path=path, stats=stat)
 
         if not is_dir:
-            raise NotADirectoryError(f"|{self.__class__.__name__}| {path_repr(remote_path)} is not a directory")
+            raise NotADirectoryError(
+                f"|{self.__class__.__name__}| {path_repr(RemoteFile(path, stats=stat))} is not a directory",
+            )
 
-        return remote_path
+        return RemoteDirectory(path=path, stats=stat)
 
     def get_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
@@ -149,6 +150,9 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         return self._read_bytes(remote_path, **kwargs)
 
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
+        if not isinstance(content, str):
+            raise TypeError(f"content must be 'str', not '{content.__class__.__name__}'")
+
         log.debug(
             f"|{self.__class__.__name__}| Writing string size {len(content)} "
             f"with encoding '{encoding}' and options {kwargs!r} to '{path}'",
@@ -263,6 +267,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
             self._remove_file(remote_file)
 
         self.mkdir(remote_file.parent)
+
         self._upload_file(local_file, remote_file)
         result = self.get_file(remote_file)
         log.info(f"|{self.__class__.__name__}| Successfully uploaded file '{remote_file}'")
@@ -518,4 +523,12 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
     @abstractmethod
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+        """"""
+
+    @abstractmethod
+    def _is_dir(self, path: RemotePath) -> bool:
+        """"""
+
+    @abstractmethod
+    def _is_file(self, path: RemotePath) -> bool:
         """"""
