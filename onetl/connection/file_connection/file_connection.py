@@ -214,6 +214,13 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         log.debug(f"|Local FS| Creating target directory '{local_file.parent}'")
         local_file.parent.mkdir(parents=True, exist_ok=True)
         self._download_file(remote_file, local_file)
+
+        if local_file.stat().st_size != remote_file.stat().st_size:
+            raise RuntimeError(
+                f"|{self.__class__.__name__}|"
+                " The size of the downloaded file does not match the size of the file on the source",
+            )
+
         log.info(f"|Local FS| Successfully downloaded file '{local_file}'")
         return local_file
 
@@ -270,6 +277,13 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         self._upload_file(local_file, remote_file)
         result = self.get_file(remote_file)
+
+        if result.stat().st_size != local_file.stat().st_size:
+            raise RuntimeError(
+                f"|{self.__class__.__name__}|"
+                " The size of the uploaded file does not match the size of the file on the source",
+            )
+
         log.info(f"|{self.__class__.__name__}| Successfully uploaded file '{remote_file}'")
         return result
 
