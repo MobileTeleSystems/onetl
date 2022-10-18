@@ -6,7 +6,7 @@ from logging import getLogger
 from minio import Minio, commonconfig
 from minio.datatypes import Object
 
-from pydantic import SecretStr
+from pydantic import SecretStr, root_validator
 from typing import Any, Optional
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -57,13 +57,25 @@ class S3(FileConnection):
     """
 
     host: str
-    port: int = 9000
+    port: Optional[int] = None
     access_key: str
     secret_key: SecretStr
     bucket: str
     secure: bool = True
     session_token: Optional[str] = None
     region: Optional[str] = None
+
+    @root_validator
+    def check_port(cls, values):  # noqa: N805
+        if values["port"] is not None:
+            return values
+
+        if values["secure"]:
+            values["port"] = 443
+        else:
+            values["port"] = 80
+
+        return values
 
     def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
