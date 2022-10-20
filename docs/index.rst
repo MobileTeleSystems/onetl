@@ -7,6 +7,8 @@
     :hidden:
 
     self
+    security
+    contributing
     concepts
     quickstart
 
