@@ -55,7 +55,6 @@ class HWMStoreClassRegistry:
 
     @classmethod
     def add(cls, type_name: str, klass: type[BaseHWMStore]) -> None:
-
         assert isinstance(type_name, str)  # noqa: S101
         assert issubclass(klass, BaseHWMStore)  # noqa: S101
 

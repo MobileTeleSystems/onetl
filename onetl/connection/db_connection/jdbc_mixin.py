@@ -618,4 +618,10 @@ class JDBCMixin(FrozenModel):
         result_list = java_converters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
         jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)
 
-        return DataFrame(jdf, self.spark._wrapped)
+        # DataFrame constructor in Spark 2.3 and 2.4 required second argument to be a SQLContext class
+        # E.g. spark._wrapped = SQLContext(spark).
+        # But since 3.2 it is replaced with SparkSession itself, and in 3.3 "_wrapped"
+        # attribute was removed from SparkSession
+        spark_context = getattr(self.spark, "_wrapped", self.spark)
+
+        return DataFrame(jdf, spark_context)
