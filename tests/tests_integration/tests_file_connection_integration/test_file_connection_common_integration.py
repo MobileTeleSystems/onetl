@@ -160,3 +160,34 @@ def test_file_connection_read_encoding(file_all_connections, source_path):
         file_all_connections.read_text(path=source_path / "cp_1251_file", encoding="cp1251")
         == "тестовый текст в  utf-8"
     )
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_path_exists(file_all_connections, upload_test_files, path_type):
+    assert file_all_connections.path_exists(path_type("/export/news_parse/exclude_dir/file_5.txt"))
+    assert file_all_connections.path_exists(path_type("/export/news_parse/exclude_dir"))
+    assert not file_all_connections.path_exists(path_type("/export/news_parse/path_not_exist"))
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_is_dir(file_all_connections, upload_test_files, path_type):
+    assert file_all_connections.is_dir(path_type("/export/news_parse/exclude_dir"))
+    assert not file_all_connections.is_dir(path_type("/export/news_parse/exclude_dir/file_5.txt"))
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_is_dir_negative(file_all_connections, upload_test_files, path_type):
+    with pytest.raises(DirectoryNotFoundError):
+        file_all_connections.is_dir(path_type("/export/news_parse/path_not_exist"))
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_is_file(file_all_connections, upload_test_files, path_type):
+    assert file_all_connections.is_file(path_type("/export/news_parse/exclude_dir/file_5.txt"))
+    assert not file_all_connections.is_file(path_type("/export/news_parse/exclude_dir"))
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_is_file_negative(file_all_connections, upload_test_files, path_type):
+    with pytest.raises(FileNotFoundError):
+        file_all_connections.is_file(path_type("/export/news_parse/path_not_exist"))
