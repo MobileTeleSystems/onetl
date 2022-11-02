@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 from functools import wraps
@@ -41,7 +55,6 @@ class HWMStoreClassRegistry:
 
     @classmethod
     def add(cls, type_name: str, klass: type[BaseHWMStore]) -> None:
-
         assert isinstance(type_name, str)  # noqa: S101
         assert issubclass(klass, BaseHWMStore)  # noqa: S101
 
@@ -223,10 +236,12 @@ def detect_hwm_store(key: str) -> Callable:
 
     ``run.py``
 
-    .. code::
+    .. code:: python
 
         @hydra.main(config="../conf")
-        @detect_hwm_store(key="myetl.env.hwm_store")  # path to config item, delimited by dot ``.``
+        @detect_hwm_store(
+            key="myetl.env.hwm_store"
+        )  # path to config item, delimited by dot ``.``
         def main(config: OmniConf):
             pass
 
@@ -238,7 +253,6 @@ def detect_hwm_store(key: str) -> Callable:
     def pre_wrapper(func: Callable):  # noqa: WPS430
         @wraps(func)
         def wrapper(config: Mapping, *args, **kwargs):
-
             if not config:
                 raise ValueError("Config must be specified")
 

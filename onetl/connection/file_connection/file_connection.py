@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 import os
@@ -116,12 +130,13 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
     def get_directory(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
-        remote_path = RemoteDirectory(path=path, stats=stat)
 
         if not is_dir:
-            raise NotADirectoryError(f"|{self.__class__.__name__}| {path_repr(remote_path)} is not a directory")
+            raise NotADirectoryError(
+                f"|{self.__class__.__name__}| {path_repr(RemoteFile(path, stats=stat))} is not a directory",
+            )
 
-        return remote_path
+        return RemoteDirectory(path=path, stats=stat)
 
     def get_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
@@ -149,6 +164,9 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         return self._read_bytes(remote_path, **kwargs)
 
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
+        if not isinstance(content, str):
+            raise TypeError(f"content must be 'str', not '{content.__class__.__name__}'")
+
         log.debug(
             f"|{self.__class__.__name__}| Writing string size {len(content)} "
             f"with encoding '{encoding}' and options {kwargs!r} to '{path}'",
@@ -210,6 +228,13 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         log.debug(f"|Local FS| Creating target directory '{local_file.parent}'")
         local_file.parent.mkdir(parents=True, exist_ok=True)
         self._download_file(remote_file, local_file)
+
+        if local_file.stat().st_size != remote_file.stat().st_size:
+            raise RuntimeError(
+                f"|{self.__class__.__name__}|"
+                " The size of the downloaded file does not match the size of the file on the source",
+            )
+
         log.info(f"|Local FS| Successfully downloaded file '{local_file}'")
         return local_file
 
@@ -263,8 +288,16 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
             self._remove_file(remote_file)
 
         self.mkdir(remote_file.parent)
+
         self._upload_file(local_file, remote_file)
         result = self.get_file(remote_file)
+
+        if result.stat().st_size != local_file.stat().st_size:
+            raise RuntimeError(
+                f"|{self.__class__.__name__}|"
+                " The size of the uploaded file does not match the size of the file on the source",
+            )
+
         log.info(f"|{self.__class__.__name__}| Successfully uploaded file '{remote_file}'")
         return result
 
@@ -518,4 +551,12 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
     @abstractmethod
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+        """"""
+
+    @abstractmethod
+    def _is_dir(self, path: RemotePath) -> bool:
+        """"""
+
+    @abstractmethod
+    def _is_file(self, path: RemotePath) -> bool:
         """"""

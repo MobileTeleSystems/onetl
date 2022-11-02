@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -180,10 +194,11 @@ class HWMStrategyHelper(StrategyHelper):
     def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812
 
-        log.info(f"|DBReader| Calculating max value for column {self.hwm_column.name!r} in the dataframe")
+        log.info(f"|DBReader| Calculating max value for column {self.hwm_column.name!r} in the dataframe...")
         max_df = df.select(F.max(self.hwm_column.name).alias("max_value"))
         row = max_df.collect()[0]
         max_hwm_value = row["max_value"]
+        log.info(f"|DBReader| Max value is: {max_hwm_value!r}")
 
         self.strategy.update_hwm(max_hwm_value)
         return df

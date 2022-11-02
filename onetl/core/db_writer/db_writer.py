@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 import io
@@ -45,19 +59,18 @@ class DBWriter(FrozenModel):
     --------
     Simple Writer creation:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Postgres.package
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -74,19 +87,18 @@ class DBWriter(FrozenModel):
 
     Writer creation with options:
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
         from mtspark import get_spark
 
-        spark = get_spark({
-            "appName": "spark-app-name",
-            "spark.jars.packages": [
-                "default:skip",
-                Postgres.package
-            ],
-        })
+        spark = get_spark(
+            {
+                "appName": "spark-app-name",
+                "spark.jars.packages": ["default:skip", Postgres.package],
+            }
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -98,7 +110,7 @@ class DBWriter(FrozenModel):
 
         options = {"truncate": "true", "batchsize": 1000}
         # or (it is the same):
-        options = Postgres.WriteOptions(truncate=True, batchsize=1000}
+        options = Postgres.WriteOptions(truncate=True, batchsize=1000)
 
         writer = DBWriter(
             connection=postgres,
@@ -108,7 +120,7 @@ class DBWriter(FrozenModel):
 
     Writer to Hive with options:
 
-    .. code::
+    .. code:: python
 
         from onetl.core import DBWriter
         from onetl.connection import Hive
@@ -167,7 +179,7 @@ class DBWriter(FrozenModel):
 
         Write df to table:
 
-        .. code::
+        .. code:: python
 
             writer.run(df)
         """
@@ -202,7 +214,7 @@ class DBWriter(FrozenModel):
         log_with_indent("")
 
     def _log_dataframe_schema(self, df: DataFrame) -> None:
-        log_with_indent("DataFrame schema")
+        log_with_indent("DataFrame schema:")
 
         schema_tree = io.StringIO()
         with redirect_stdout(schema_tree):

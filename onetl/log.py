@@ -1,5 +1,21 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
+import os
 from textwrap import dedent
+from typing import Collection
 
 from deprecated import deprecated
 
@@ -127,6 +143,12 @@ def set_default_logging_format() -> None:
 def log_with_indent(inp: str, indent: int = 0, level: int = logging.INFO) -> None:
     for line in dedent(inp).splitlines():
         log.log(level, " " * (BASE_LOG_INDENT + indent) + line)
+
+
+def log_collection(name: str, value: Collection, indent: int = 4, level: int = logging.INFO):
+    log_with_indent(f"{name} = [", level=level)
+    log_with_indent(os.linesep.join(f"{item!r}," for item in value), indent=indent, level=level)
+    log_with_indent("]", level=level)
 
 
 def entity_boundary_log(msg: str, char: str = "=") -> None:

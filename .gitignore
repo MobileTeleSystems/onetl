@@ -157,6 +157,10 @@ onetl_local*
 !onetl_local.default.env
 !docker-compose.override.sample.yml
 
+/docker/hive2/Dockerfile.remote
+/docker/oracle/Dockerfile.remote
+/docker/postgres/Dockerfile.remote
+/docker-compose-remote.yml
 # Spark folders
 spark-warehouse
 metastore_db

@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 import os
@@ -44,7 +58,7 @@ class Samba(FileConnection):
 
     Samba file connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import Samba
 
@@ -89,7 +103,7 @@ class Samba(FileConnection):
         self.client.rename(os.fspath(source), os.fspath(target))
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
-        self.client.run(os.fspath(remote_file_path), os.fspath(local_file_path))
+        self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.unlink(os.fspath(remote_file_path))
@@ -101,7 +115,7 @@ class Samba(FileConnection):
         self.client.rmdir(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
-        self.client.run(os.fspath(local_file_path), os.fspath(remote_file_path))
+        self.client.upload(os.fspath(local_file_path), os.fspath(remote_file_path))
 
     def _listdir(self, path: RemotePath) -> list:
         return self.client.lsdir(os.fspath(path))

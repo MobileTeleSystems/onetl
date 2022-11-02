@@ -2,6 +2,16 @@ version: '3.5'
 
 # NOTE: Только для разработки и локального/CI тестирования
 services:
+
+  minio:
+    image: minio/minio
+    env_file: onetl_local.default.env
+    command: server /data --console-address ":9001"
+    networks: [onetl]
+    ports:
+      - 9010:9000
+      - 9011:9001
+
   postgres:
     # TODO: fix later
     build:

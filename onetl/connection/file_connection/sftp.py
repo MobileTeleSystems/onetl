@@ -1,3 +1,17 @@
+#  Copyright 2022 MTS (Mobile Telesystems)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 
 import os
@@ -45,7 +59,7 @@ class SFTP(FileConnection):
 
     SFTP file connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import SFTP
 
@@ -143,7 +157,7 @@ class SFTP(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _listdir(self, path: RemotePath) -> list:
+    def _listdir(self, path: RemotePath) -> list[SFTPAttributes]:
         return self.client.listdir_attr(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:

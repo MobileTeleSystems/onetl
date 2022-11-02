@@ -9,7 +9,7 @@ from onetl.strategy import IncrementalStrategy, YAMLHWMStore
 
 
 def test_file_downloader_increment(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -19,7 +19,7 @@ def test_file_downloader_increment(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         hwm_type="file_list",
@@ -35,7 +35,7 @@ def test_file_downloader_increment(
         assert len(available) == len(downloaded.successful) == len(upload_test_files)
         assert sorted(available) == sorted(upload_test_files)
 
-    remote_file_folder = RemoteFolder(name=source_path, instance=file_connection.instance_url)
+    remote_file_folder = RemoteFolder(name=source_path, instance=file_all_connections.instance_url)
     file_hwm = FileListHWM(source=remote_file_folder)
     file_hwm_name = file_hwm.qualified_name
 
@@ -47,7 +47,7 @@ def test_file_downloader_increment(
         tmp_file = tmp_path / new_file_name
         tmp_file.write_text(f"{secrets.token_hex(10)}")
 
-        file_connection.upload_file(tmp_file, source_path / new_file_name)
+        file_all_connections.upload_file(tmp_file, source_path / new_file_name)
 
         with hwm_store:
             with IncrementalStrategy():
@@ -67,7 +67,7 @@ def test_file_downloader_increment(
 
 
 def test_file_downloader_increment_fail(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -77,7 +77,7 @@ def test_file_downloader_increment_fail(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         hwm_type="file_list",
@@ -92,7 +92,7 @@ def test_file_downloader_increment_fail(
             assert len(available) == len(downloaded.successful) == len(upload_test_files)
             assert sorted(available) == sorted(upload_test_files)
 
-            remote_file_folder = RemoteFolder(name=source_path, instance=file_connection.instance_url)
+            remote_file_folder = RemoteFolder(name=source_path, instance=file_all_connections.instance_url)
             file_hwm = FileListHWM(source=remote_file_folder)
             file_hwm_name = file_hwm.qualified_name
 
@@ -105,7 +105,7 @@ def test_file_downloader_increment_fail(
                 tmp_file = tmp_path / new_file_name
                 tmp_file.write_text(f"{secrets.token_hex(10)}")
 
-                file_connection.upload_file(tmp_file, source_path / new_file_name)
+                file_all_connections.upload_file(tmp_file, source_path / new_file_name)
 
                 # while loading data, a crash occurs before exiting the context manager
                 with contextlib.suppress(RuntimeError):
@@ -127,7 +127,7 @@ def test_file_downloader_increment_fail(
 
 
 def test_file_downloader_increment_hwm_is_ignored_for_user_input(
-    file_connection,
+    file_all_connections,
     source_path,
     upload_test_files,
     tmp_path_factory,
@@ -137,7 +137,7 @@ def test_file_downloader_increment_hwm_is_ignored_for_user_input(
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection,
+        connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
         hwm_type="file_list",
