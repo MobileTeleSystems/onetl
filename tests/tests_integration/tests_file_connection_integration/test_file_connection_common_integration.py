@@ -1,5 +1,6 @@
 from pathlib import PurePosixPath
 
+import secrets
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
@@ -191,3 +192,179 @@ def test_file_connection_is_file(file_all_connections, upload_test_files, path_t
 def test_file_connection_is_file_negative(file_all_connections, upload_test_files, path_type):
     with pytest.raises(FileNotFoundError):
         file_all_connections.is_file(path_type("/export/news_parse/path_not_exist"))
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_download_file(file_all_connections, upload_test_files, tmp_path_factory, path_type):
+    local_path = tmp_path_factory.mktemp("local_path")
+    remote_file_path = "/export/news_parse/news_parse_zp/2018_03_05_10_00_00/newsage-zp-2018_03_05_10_00_00.csv"
+
+    download_result = file_all_connections.download_file(
+        remote_file_path=path_type(remote_file_path),
+        local_file_path=path_type(local_path / "file.csv"),
+    )
+
+    assert download_result.exists()
+    assert download_result.stat().st_size == file_all_connections.get_file(remote_file_path).stat().st_size
+    assert download_result.read_text() == file_all_connections.read_text(remote_file_path)
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_upload_file(file_all_connections, test_files, path_type):
+    upload_result = file_all_connections.upload_file(
+        local_file_path=path_type(test_files[0]),
+        remote_file_path=path_type(path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")),
+    )
+
+    assert upload_result.exists()
+    assert upload_result.stat().st_size == test_files[0].stat().st_size
+    assert file_all_connections.read_text(upload_result) == test_files[0].read_text()
+
+
+@pytest.mark.parametrize(
+    "source,exception",
+    [
+        ("/export/news_parse/exclude_dir/", NotAFileError),
+        ("/export/news_parse/exclude_dir/file_not_exists", FileNotFoundError),
+    ],
+    ids=["directory", "file"],
+)
+def test_file_connection_download_file_wrong_source_type(
+    file_all_connections,
+    upload_test_files,
+    tmp_path_factory,
+    source,
+    exception,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+    with pytest.raises(exception):
+        file_all_connections.download_file(
+            remote_file_path=source,
+            local_file_path=local_path / "file_5.txt",
+        )
+
+
+@pytest.mark.parametrize("replace", [True, False])
+def test_file_connection_download_file_wrong_target_type(
+    file_all_connections,
+    upload_test_files,
+    tmp_path_factory,
+    replace,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+    with pytest.raises(NotAFileError):
+        file_all_connections.download_file(
+            remote_file_path="/export/news_parse/exclude_dir/file_5.txt",
+            local_file_path=local_path,
+            replace=replace,
+        )
+
+
+@pytest.mark.parametrize(
+    "source,exception",
+    [("news_parse_zp", NotAFileError), ("file_not_exist", FileNotFoundError)],
+    ids=["directory", "file"],
+)
+def test_file_connection_upload_file_wrong_source_type(file_all_connections, resource_path, source, exception):
+    with pytest.raises(exception):
+        file_all_connections.upload_file(
+            local_file_path=resource_path / source,
+            remote_file_path=f"/tmp/test_upload_{secrets.token_hex(5)}",
+        )
+
+
+@pytest.mark.parametrize("replace", [True, False])
+def test_file_connection_upload_file_wrong_target_type(
+    file_all_connections,
+    upload_test_files,
+    test_files,
+    replace,
+):
+    with pytest.raises(NotAFileError):
+        file_all_connections.upload_file(
+            local_file_path=test_files[0],
+            remote_file_path="/export/news_parse/exclude_dir",
+            replace=replace,
+        )
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_download_replace_target(
+    file_all_connections,
+    upload_files_with_encoding,
+    tmp_path_factory,
+    path_type,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+    file_path = local_path / "file.txt"
+    file_path.write_text("text to replace")
+    remote_file_path = "/export/news_parse/file_connection_utf.txt"
+
+    download_result = file_all_connections.download_file(
+        remote_file_path=path_type(remote_file_path),
+        local_file_path=path_type(file_path),
+        replace=True,
+    )
+
+    assert download_result.exists()
+    assert download_result.stat().st_size == file_all_connections.get_file(remote_file_path).stat().st_size
+    assert download_result.read_text() == "тестовый текст в  тестовом файле\n"
+
+
+def test_file_connection_download_replace_target_negative(
+    file_all_connections,
+    upload_files_with_encoding,
+    tmp_path_factory,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+    file_path = local_path / "file.txt"
+    file_path.write_text("test file")
+    remote_file_path = "/export/news_parse/file_connection_utf.txt"
+
+    with pytest.raises(FileExistsError):
+        file_all_connections.download_file(
+            remote_file_path=remote_file_path,
+            local_file_path=file_path,
+            replace=False,
+        )
+    assert file_path.read_text() == "test file"
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_upload_replace_target(file_all_connections, upload_test_files, tmp_path_factory, path_type):
+    local_path = tmp_path_factory.mktemp("local_path")
+    file_path = local_path / "file.txt"
+    file_path.write_text("test local file")
+
+    upload_result = file_all_connections.upload_file(
+        local_file_path=path_type(file_path),
+        remote_file_path=path_type("/export/news_parse/exclude_dir/file_5.txt"),
+        replace=True,
+    )
+
+    assert upload_result.exists()
+    assert upload_result.stat().st_size == file_path.stat().st_size
+    assert file_all_connections.read_text(upload_result) == "test local file"
+
+
+def test_file_connection_upload_replace_target_negative(
+    file_all_connections,
+    tmp_path_factory,
+    upload_files_with_encoding,
+    test_files,
+):
+    local_path = tmp_path_factory.mktemp("local_path")
+    file_path = local_path / "file.txt"
+    file_path.write_text("test local file")
+
+    with pytest.raises(FileExistsError):
+        file_all_connections.upload_file(
+            local_file_path=file_path,
+            remote_file_path="/export/news_parse/file_connection_utf.txt",
+            replace=False,
+        )
+
+    assert (
+        file_all_connections.read_text("/export/news_parse/file_connection_utf.txt")
+        == "тестовый текст в  тестовом файле\n"
+    )
