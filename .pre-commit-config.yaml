@@ -22,12 +22,12 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.3.0
+  rev: v1.3.1
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.1.0
+  rev: v2.2.2
   hooks:
   - id: codespell
     args: [-w]
@@ -41,7 +41,7 @@ repos:
   hooks:
   - id: beautysh
 - repo: https://github.com/IamTheFij/docker-pre-commit
-  rev: v2.1.0
+  rev: v2.1.1
   hooks:
   - id: docker-compose-check
     files: ^docker-compose.*\.(yaml|yml)$
@@ -59,12 +59,12 @@ repos:
   - id: rst-inline-touching-normal
   - id: text-unicode-replacement-char
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.37.1
+  rev: v3.2.0
   hooks:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/ambv/black
-  rev: 22.6.0
+  rev: 22.10.0
   hooks:
   - id: black
     language_version: python3

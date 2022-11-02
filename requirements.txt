@@ -4,6 +4,7 @@ evacuator>=1.0,<1.1
 ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize
+minio
 mts_apache_atlas>=0.3.6,<0.4
 ordered-set
 paramiko
@@ -13,4 +14,3 @@ pydantic<1.10.2
 PySmbClient
 pyyaml
 typing_extensions
-minio

@@ -9,8 +9,8 @@ services:
     command: server /data --console-address ":9001"
     networks: [onetl]
     ports:
-      - 9010:9000
-      - 9011:9001
+    - 9010:9000
+    - 9011:9001
 
   postgres:
     # TODO: fix later

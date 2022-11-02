@@ -26,6 +26,7 @@ from onetl.connection import (
     FTPS,
     HDFS,
     MSSQL,
+    S3,
     SFTP,
     Clickhouse,
     Greenplum,
@@ -33,7 +34,6 @@ from onetl.connection import (
     Oracle,
     Postgres,
     Teradata,
-    S3,
 )
 from onetl.strategy import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing

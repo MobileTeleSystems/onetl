@@ -218,7 +218,7 @@ tests:
     alias: atlas
   - name: minio/minio
     alias: minio
-    command: ["server", "/data"]
+    command: [server, /data]
   script:
   - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
   after_script:
