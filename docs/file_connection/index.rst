@@ -13,3 +13,4 @@ File Connections
     HDFS <hdfs>
     Samba <samba>
     SFTP <sftp>
+    S3 <s3>
