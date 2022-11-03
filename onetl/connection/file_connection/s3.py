@@ -117,6 +117,8 @@ class S3(FileConnection):
             if RemotePath(item.object_name) == remote_path:
                 return True
 
+        return False
+
     def _get_client(self) -> Any:
         return Minio(
             endpoint=f"{self.host}:{self.port}",
