@@ -40,11 +40,6 @@
     </property>
 <!--
     <property>
-      <name>hive.exec.post.hooks</name>
-      <value>org.apache.atlas.hive.hook.HiveHook</value>
-    </property>
-
-    <property>
         <name>hive.metastore.uris</name>
         <value>thrift://localhost:9083</value>
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>

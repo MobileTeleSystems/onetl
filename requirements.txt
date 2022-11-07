@@ -5,7 +5,6 @@ ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize
 minio
-mts_apache_atlas>=0.3.6,<0.4
 ordered-set
 paramiko
 platformdirs

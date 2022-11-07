@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.strategy.hwm_store.atlas_hwm_store import AtlasHWMStore
 from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
 from onetl.strategy.hwm_store.hwm_class_registry import (
     HWMClassRegistry,
