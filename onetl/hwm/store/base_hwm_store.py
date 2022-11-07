@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 class BaseHWMStore(BaseModel, ABC):
     def __enter__(self):
         # hack to avoid circular imports
-        from onetl.strategy.hwm_store import HWMStoreManager
+        from onetl.hwm.store import HWMStoreManager
 
         log.debug(f"|{self.__class__.__name__}| Entered stack at level {HWMStoreManager.get_current_level()}")
         HWMStoreManager.push(self)
@@ -39,7 +39,7 @@ class BaseHWMStore(BaseModel, ABC):
         return self
 
     def __exit__(self, _exc_type, _exc_value, _traceback):
-        from onetl.strategy.hwm_store import HWMStoreManager
+        from onetl.hwm.store import HWMStoreManager
 
         log.debug(f"|{self}| Exiting stack at level {HWMStoreManager.get_current_level()-1}")
         HWMStoreManager.pop()

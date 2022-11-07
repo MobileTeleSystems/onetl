@@ -16,8 +16,8 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
-from onetl.strategy.hwm_store.hwm_store_class_registry import HWMStoreClassRegistry
+from onetl.hwm.store.base_hwm_store import BaseHWMStore
+from onetl.hwm.store.hwm_store_class_registry import HWMStoreClassRegistry
 
 
 class HWMStoreManager:

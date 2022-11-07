@@ -29,7 +29,7 @@ class HWMClassRegistry:
     .. code:: python
 
         from etl_entities import IntHWM, DateHWM
-        from onetl.strategy.hwm_store import HWMClassRegistry
+        from onetl.hwm.store import HWMClassRegistry
 
         HWMClassRegistry.get("int") == IntHWM
         HWMClassRegistry.get("integer") == IntHWM  # multiple type names are supported
@@ -72,8 +72,8 @@ def register_hwm_class(*type_names: str):
     .. code:: python
 
         from etl_entities import HWM
-        from onetl.strategy.hwm_store import HWMClassRegistry
-        from onetl.strategy.hwm_store import HWMClassRegistry, register_hwm_class
+        from onetl.hwm.store import HWMClassRegistry
+        from onetl.hwm.store import HWMClassRegistry, register_hwm_class
 
 
         @register_hwm_class("somename", "anothername")

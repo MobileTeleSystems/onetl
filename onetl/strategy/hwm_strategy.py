@@ -23,7 +23,7 @@ from etl_entities import HWM
 
 from onetl.log import log_collection, log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
-from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
+from onetl.hwm.store import HWMStoreManager
 
 log = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 YAML HWM Store (local)
 =================================================================
 
-.. currentmodule:: onetl.strategy.hwm_store.yaml_hwm_store
+.. currentmodule:: onetl.hwm.store.yaml_hwm_store
 
 .. autoclass:: YAMLHWMStore
     :members: __init__

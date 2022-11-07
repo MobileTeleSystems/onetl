@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from onetl.strategy import YAMLHWMStore
+from onetl.hwm.store import YAMLHWMStore
 
 
 def test_hwm_store_integration_yaml_path(request, tmp_path_factory, hwm_delta):
