@@ -35,7 +35,7 @@ from onetl.connection import (
     Postgres,
     Teradata,
 )
-from onetl.strategy import MemoryHWMStore
+from onetl.hwm.store import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
 from tests.lib.greenplum_processing import GreenplumProcessing

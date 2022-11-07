@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from onetl.strategy.hwm_store import HWMStoreManager, YAMLHWMStore
+from onetl.hwm.store import HWMStoreManager, YAMLHWMStore
 
 
 def test_hwm_store_yaml_context_manager(caplog):

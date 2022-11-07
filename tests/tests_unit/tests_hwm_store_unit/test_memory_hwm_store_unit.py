@@ -1,6 +1,6 @@
 import logging
 
-from onetl.strategy.hwm_store import HWMStoreManager, MemoryHWMStore, YAMLHWMStore
+from onetl.hwm.store import HWMStoreManager, MemoryHWMStore, YAMLHWMStore
 
 
 def test_hwm_store_memory_context_manager(caplog):

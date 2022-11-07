@@ -17,7 +17,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import Any, Callable, ClassVar, Collection, Mapping
 
-from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
+from onetl.hwm.store.base_hwm_store import BaseHWMStore
 
 
 class HWMStoreClassRegistry:
@@ -28,7 +28,7 @@ class HWMStoreClassRegistry:
 
     .. code:: python
 
-        from onetl.strategy.hwm_store import HWMStoreClassRegistry, YAMLHWMStore, MemoryHWMStore
+        from onetl.hwm.store import HWMStoreClassRegistry, YAMLHWMStore, MemoryHWMStore
 
         HWMStoreClassRegistry.get("yml") == YAMLHWMStore
         HWMStoreClassRegistry.get("memory") == MemoryHWMStore
@@ -77,7 +77,7 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 
     .. code:: python
 
-        from onetl.strategy.hwm_store import (
+        from onetl.hwm.store import (
             HWMStoreClassRegistry,
             default_hwm_store_class,
             BaseStore,
@@ -105,7 +105,7 @@ def register_hwm_store_class(*type_names: str):
 
     .. code:: python
 
-        from onetl.strategy.hwm_store import (
+        from onetl.hwm.store import (
             HWMStoreClassRegistry,
             register_hwm_store_class,
             BaseStore,
