@@ -27,7 +27,6 @@ What is onETL?
 * ``onETL`` relies on `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*
 * ``onETL`` provides direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines
 * ``onETL`` supports different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ for incremental and batch data fetching
-* (TBD) onETL can send data lineage to data catalog (`Apache Atlas <https://atlas.apache.org/#/>`_)
 
 Requirements
 ------------

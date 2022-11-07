@@ -214,8 +214,6 @@ tests:
     alias: mssql
   - name: ${CI_REGISTRY}/datagrip/greenplum:6.8
     alias: greenplum
-  - name: ${CI_REGISTRY}/dev/atlas:2.1
-    alias: atlas
   - name: minio/minio
     alias: minio
     command: [server, /data]
