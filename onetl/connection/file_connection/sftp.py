@@ -116,7 +116,8 @@ class SFTP(FileConnection):
 
     def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None
-        key_file = self.key_file
+
+        key_file = os.fspath(self.key_file) if self.key_file else None
 
         if SSH_CONFIG_PATH.exists() and SSH_CONFIG_PATH.is_file():
             ssh_conf = SSHConfig()
