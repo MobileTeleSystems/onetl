@@ -12,11 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-from onetl.version import __version__
-from onetl.plugins import plugins_auto_import
+from importlib import import_module
+import importlib_metadata as metadata
 
 
-if os.getenv("ONETL_ENABLE_PLUGINS", "true").lower() != "false":
-    plugins_auto_import("onetl.plugins")
+def plugins_auto_import(group: str):
+    for dist in metadata.distributions():
+        for ep in dist.entry_points:
+            if ep.group != group:
+                continue
+            import_module(ep.name)
