@@ -6,4 +6,4 @@ S3 connection
 .. currentmodule:: onetl.connection.file_connection.s3
 
 .. autoclass:: S3
-    :members: __init__
+    :members: __init__, check

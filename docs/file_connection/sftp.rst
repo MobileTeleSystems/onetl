@@ -6,4 +6,4 @@ SFTP connection
 .. currentmodule:: onetl.connection.file_connection.sftp
 
 .. autoclass:: SFTP
-    :members: __init__
+    :members: __init__, check
