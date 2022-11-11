@@ -12,13 +12,27 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from importlib import import_module
-import importlib_metadata as metadata
+import logging
+import inspect
+
+from importlib_metadata import entry_points
+
+from onetl.log import log_with_indent
+
+log = logging.getLogger(__name__)
 
 
 def plugins_auto_import(group: str):
-    for dist in metadata.distributions():
-        for ep in dist.entry_points:
-            if ep.group != group:
-                continue
-            import_module(ep.name)
+    log.debug("|onETL| Searching for plugins with group {group!r}")
+
+    ep = entry_points(group=group)
+
+    for to_load in ep:
+        log.info("|onETL| Loading plugin:")
+        log_with_indent(f"name: {to_load.name!r}")
+        log_with_indent(f"version: {to_load.dist.version!r}")
+        log_with_indent(f"module: {to_load.value!r}")
+
+        loaded = to_load.load()
+        log.info("|onETL| Successfully loaded plugin")
+        log_with_indent(f"source: {inspect.getfile(loaded)!r}", level=logging.DEBUG)
