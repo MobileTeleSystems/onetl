@@ -5,8 +5,8 @@ from etl_entities import FileListHWM, RemoteFolder
 from etl_entities.instance import RelativePath
 
 from onetl.core import FileDownloader
-from onetl.strategy import IncrementalStrategy
 from onetl.hwm.store import YAMLHWMStore
+from onetl.strategy import IncrementalStrategy
 
 
 def test_file_downloader_increment(

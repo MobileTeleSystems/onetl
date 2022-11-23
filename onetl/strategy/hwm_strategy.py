@@ -21,9 +21,9 @@ from typing import Any, Callable, Collection, Optional
 
 from etl_entities import HWM
 
+from onetl.hwm.store import HWMStoreManager
 from onetl.log import log_collection, log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
-from onetl.hwm.store import HWMStoreManager
 
 log = logging.getLogger(__name__)
 

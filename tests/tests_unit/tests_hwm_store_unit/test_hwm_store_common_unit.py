@@ -3,7 +3,12 @@ import tempfile
 import pytest
 from omegaconf import OmegaConf
 
-from onetl.hwm.store import MemoryHWMStore, YAMLHWMStore, detect_hwm_store, HWMStoreManager
+from onetl.hwm.store import (
+    HWMStoreManager,
+    MemoryHWMStore,
+    YAMLHWMStore,
+    detect_hwm_store,
+)
 
 
 @pytest.mark.parametrize(

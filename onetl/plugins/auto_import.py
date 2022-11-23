@@ -12,8 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import logging
 import inspect
+import logging
 
 from importlib_metadata import entry_points
 

@@ -68,9 +68,13 @@ class SnapshotStrategy(BaseStrategy):
         from onetl.core import DBReader
         from onetl.strategy import SnapshotStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -223,9 +227,13 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         from onetl.core import DBReader
         from onetl.strategy import SnapshotBatchStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",

@@ -13,10 +13,7 @@
 #  limitations under the License.
 
 from onetl.hwm.store.base_hwm_store import BaseHWMStore
-from onetl.hwm.store.hwm_class_registry import (
-    HWMClassRegistry,
-    register_hwm_class,
-)
+from onetl.hwm.store.hwm_class_registry import HWMClassRegistry, register_hwm_class
 from onetl.hwm.store.hwm_store_class_registry import (
     HWMStoreClassRegistry,
     default_hwm_store_class,

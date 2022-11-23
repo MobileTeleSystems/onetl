@@ -52,8 +52,6 @@ class MySQL(JDBCConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
 
-        You can use ``mtspark`` for spark session initialization
-
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
@@ -71,18 +69,14 @@ class MySQL(JDBCConnection):
     .. code:: python
 
         from onetl.connection import MySQL
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {"useSSL": "false"}
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    MySQL.package,
-                ],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", MySQL.package)
+            .getOrCreate()
         )
 
         mysql = MySQL(

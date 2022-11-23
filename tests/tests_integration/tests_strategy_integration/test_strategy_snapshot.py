@@ -9,8 +9,8 @@ from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
-from onetl.strategy import IncrementalStrategy, SnapshotBatchStrategy, SnapshotStrategy
 from onetl.hwm.store import HWMStoreManager
+from onetl.strategy import IncrementalStrategy, SnapshotBatchStrategy, SnapshotStrategy
 
 
 def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepare_schema_table):
