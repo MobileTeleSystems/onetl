@@ -7,8 +7,6 @@ coverage
 # Oracle client
 cx_Oracle
 
-mtspark[spark2.3]
-
 omegaconf
 psycopg2-binary
 pyftpdlib
@@ -27,3 +25,7 @@ sqlalchemy
 
 # mypy
 types-PyYAML
+numpy>=1.16,<1.20
+pandas>=0.24,<1.0
+pyarrow>=0.11,<0.12
+

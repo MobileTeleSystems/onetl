@@ -18,7 +18,7 @@ from etl_entities import (
     RemoteFolder,
     Table,
 )
-from mtspark import get_spark
+from pyspark.sql import SparkSession
 from pytest_lazyfixture import lazy_fixture
 
 from onetl.connection import (
@@ -161,27 +161,37 @@ def upload_files_with_encoding(file_all_connections, source_path):
 
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(request):
-    config = {
-        "appName": "onetl",
-        "spark.jars.packages": [
-            "default:skip",
-            Oracle.package,
-            Clickhouse.package,
-            Postgres.package,
-            Greenplum.package_spark_2_4,
-            MySQL.package,
-            MSSQL.package,
-            Teradata.package,
-        ],
-    }
 
-    if getattr(request, "param", None):
-        config.update(request.param)
-
-    spark = get_spark(
-        config=config,
-        spark_version="local",
+    spark = (
+        SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
+        .config("spark.master", "local[*]")
+        .config(
+            "spark.jars.packages",
+            ",".join(
+                [
+                    Oracle.package,
+                    Clickhouse.package,
+                    Postgres.package,
+                    Greenplum.package_spark_2_4,
+                    MySQL.package,
+                    MSSQL.package,
+                    Teradata.package,
+                ],
+            ),
+        )
+        .config("spark.driver.memory", "1g")
+        .config("spark.driver.maxResultSize", "1g")
+        .config("spark.executor.cores", "1")
+        .config("spark.executor.memory", "1g")
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .config("spark.kryoserializer.buffer.max", "256m")
+        .config("spark.default.parallelism", "1")
+        .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true")
+        .config("spark.jars.ivySettings", os.fspath(Path(__file__).parent / "tests" / "ivysettings.xml"))
+        .enableHiveSupport()
+        .getOrCreate()
     )
+
     yield spark
     spark.sparkContext.stop()
     spark.stop()
