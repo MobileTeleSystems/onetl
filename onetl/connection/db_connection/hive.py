@@ -61,8 +61,6 @@ class Hive(DBConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session that required for connection to hive.
 
-        You can use ``mtspark`` for spark session initialization.
-
     Examples
     --------
 
@@ -71,9 +69,9 @@ class Hive(DBConnection):
     .. code:: python
 
         from onetl.connection import Hive
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
         hive = Hive(spark=spark)
     """

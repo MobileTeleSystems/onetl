@@ -63,13 +63,12 @@ class DBWriter(FrozenModel):
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(
@@ -91,13 +90,12 @@ class DBWriter(FrozenModel):
 
         from onetl.connection import Postgres
         from onetl.core import DBWriter
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(
@@ -124,9 +122,9 @@ class DBWriter(FrozenModel):
 
         from onetl.core import DBWriter
         from onetl.connection import Hive
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
         hive = Hive(spark=spark)
 

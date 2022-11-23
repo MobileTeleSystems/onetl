@@ -186,9 +186,13 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -423,9 +427,13 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",

@@ -3,8 +3,8 @@ from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Greenplum
 from onetl.core import DBReader
-from onetl.strategy import IncrementalStrategy
 from onetl.hwm.store import HWMStoreManager
+from onetl.strategy import IncrementalStrategy
 
 
 @pytest.mark.parametrize(

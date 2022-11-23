@@ -14,9 +14,8 @@
 
 import os
 
-from onetl.version import __version__
 from onetl.plugins import plugins_auto_import
-
+from onetl.version import __version__
 
 if os.getenv("ONETL_ENABLE_PLUGINS", "true").lower() != "false":
     plugins_auto_import("onetl.plugins")

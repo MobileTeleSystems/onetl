@@ -114,13 +114,12 @@ class DBReader(FrozenModel):
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(
@@ -143,13 +142,12 @@ class DBReader(FrozenModel):
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(
@@ -175,13 +173,12 @@ class DBReader(FrozenModel):
 
         from onetl.core import DBReader
         from onetl.connection import Postgres
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            },
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(
@@ -213,13 +210,12 @@ class DBReader(FrozenModel):
         from onetl.core import DBReader
         from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": ["default:skip", Postgres.package],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
         )
 
         postgres = Postgres(

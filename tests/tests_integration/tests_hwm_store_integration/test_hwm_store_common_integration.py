@@ -4,12 +4,8 @@ import pytest
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
+from onetl.hwm.store import MemoryHWMStore, YAMLHWMStore
 from onetl.strategy import IncrementalStrategy
-from onetl.hwm.store import (
-    MemoryHWMStore,
-    YAMLHWMStore,
-)
-
 
 hwm_store = [
     MemoryHWMStore(),

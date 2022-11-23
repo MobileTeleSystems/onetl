@@ -31,6 +31,7 @@ from onetl.core.file_downloader.download_result import DownloadResult
 from onetl.core.file_filter import FileHWMFilter
 from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
+from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
     FileWriteMode,
@@ -44,7 +45,6 @@ from onetl.impl import (
 from onetl.log import entity_boundary_log, log_with_indent
 from onetl.strategy import StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
-from onetl.hwm.store import HWMClassRegistry
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = getLogger(__name__)

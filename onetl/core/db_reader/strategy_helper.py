@@ -21,9 +21,9 @@ from etl_entities import HWM, Column, ColumnHWM
 from pydantic import Field, root_validator, validator
 
 from onetl.core.db_reader.db_reader import DBReader
+from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import FrozenModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
-from onetl.hwm.store import HWMClassRegistry
 from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.strategy_manager import StrategyManager
 

@@ -48,8 +48,6 @@ class Teradata(JDBCConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
 
-        You can use ``mtspark`` for spark session initialization
-
     extra : dict, default: ``None``
         Specifies one or more extra parameters which should be appended to a connection string.
 
@@ -79,7 +77,7 @@ class Teradata(JDBCConnection):
     .. code:: python
 
         from onetl.connection import Teradata
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {
             "TMODE": "TERA",  # "TERA" or "ANSI"
@@ -87,14 +85,10 @@ class Teradata(JDBCConnection):
             "LOG": "TIMING",  # increase log level
         }
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    Teradata.package,
-                ],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Teradata.package)
+            .getOrCreate()
         )
 
         teradata = Teradata(
