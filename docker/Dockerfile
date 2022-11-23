@@ -10,9 +10,7 @@ ENV LANGUAGE=en_US.UTF-8 \
     PYSPARK_DRIVER_PYTHON=python3 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    HADOOP_CONF_DIR=/opt/project/docker/hive2/hadoop/conf/ \
-    MTSPARK_CUSTOM_CONFIG_PATH=/opt/project/tests/config.yml
-
+    HADOOP_CONF_DIR=/opt/project/docker/hive2/hadoop/conf/
 
 RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
     && yum -y install /tmp/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
