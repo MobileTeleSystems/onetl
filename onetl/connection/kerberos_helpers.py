@@ -15,27 +15,58 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from logging import getLogger
-from shlex import quote
-from subprocess import check_call
+from pathlib import Path
+
+from onetl.exception import NotAFileError
+from onetl.impl import path_repr
 
 log = getLogger(__name__)
 
 
+def check_keytab_file(path: str | os.PathLike) -> Path:
+    path = Path(os.path.expandvars(path)).expanduser().resolve()
+
+    if not path.exists():
+        raise FileNotFoundError(f"|Kerberos| File '{path}' does not exist")
+
+    if not path.is_file():
+        raise NotAFileError(f"|Kerberos| {path_repr(path)} is not a file")
+
+    if not os.access(path, os.R_OK):
+        raise OSError(f"|Kerberos| No access to keytab file {path_repr(path)}")
+
+    return path
+
+
+def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
+    path = check_keytab_file(keytab)
+
+    cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
+    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+    subprocess.check_call(cmd)
+
+
+def kinit_password(user: str, password: str) -> None:
+    cmd = ["kinit", user]
+    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+
+    _stdout, stderr = proc.communicate(password.encode("utf-8"))
+    exit_code = proc.poll()
+    if exit_code:
+        raise subprocess.CalledProcessError(exit_code, cmd, output=stderr)
+
+
 def kinit(user: str, keytab: os.PathLike | None = None, password: str | None = None) -> None:
-    if not user or (not keytab and not password):
-        raise KerberosAuthError("Not user or keytab and password")
-
     if keytab:
-        log_cmd = cmd = f"kinit {user} -k -t {os.fspath(keytab)}"  # noqa: WPS429
+        kinit_keytab(user, keytab)
     elif password:
-        quoted_password = quote(password)
-        cmd = f"echo {quoted_password} | kinit {user}"
-        log_cmd = cmd.replace(quoted_password, "***")
-
-    log.info(f"|onETL| Executing kerberos auth command: {log_cmd}")
-    check_call(cmd, shell=True)  # noqa: S602
-
-
-class KerberosAuthError(Exception):
-    pass  # noqa: WPS420, WPS604
+        kinit_password(user, password)
