@@ -111,7 +111,7 @@ class ConnectionLimits:
 class Greenplum(JDBCMixin, DBConnection):
     """Class for Greenplum connection.
 
-    Based on package ``io.pivotal:greenplum-spark:2.1.2``
+    Based on package ``io.pivotal:greenplum-spark:2.1.3``
     (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_)
 
     .. note::
@@ -420,10 +420,10 @@ class Greenplum(JDBCMixin, DBConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.2"
-    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.2"
-    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.2"
-    package_spark_3_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.2"
+    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
+    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
+    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
+    package_spark_3_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
 
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
