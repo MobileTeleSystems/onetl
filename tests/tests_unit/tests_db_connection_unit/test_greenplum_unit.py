@@ -13,10 +13,10 @@ spark.sparkContext.appName = "abc"
 
 def test_greenplum_class_attributes():
     assert Greenplum.driver == "org.postgresql.Driver"
-    assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.2"
-    assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.2"
-    assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.2"
-    assert Greenplum.package_spark_3_3 == "io.pivotal:greenplum-spark_2.12:2.1.2"
+    assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.3"
+    assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.3"
+    assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.3"
+    assert Greenplum.package_spark_3_3 == "io.pivotal:greenplum-spark_2.12:2.1.3"
 
 
 def test_greenplum():
