@@ -51,6 +51,7 @@
     file_connection/hdfs
     file_connection/samba
     file_connection/sftp
+    file_connection/s3
 
 .. toctree::
     :maxdepth: 2

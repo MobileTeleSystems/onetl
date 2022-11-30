@@ -14,17 +14,17 @@
 
 from __future__ import annotations
 
-import os
 import io
+import os
 from logging import getLogger
-from minio import Minio, commonconfig
-from minio.datatypes import Object
-
-from pydantic import SecretStr, root_validator
 from typing import Any, Optional
 
+from minio import Minio, commonconfig
+from minio.datatypes import Object
+from pydantic import SecretStr, root_validator
+
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemotePath, RemoteDirectory, RemotePathStat
+from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
 
@@ -35,8 +35,8 @@ class S3(FileConnection):
     Parameters
     ----------
     host : str
-        Host of s3 source. For example: ``0001testadviat04.msk.mts.ru``
-    port : int, default: ``43``
+        Host of s3 source. For example: ``192.168.2.1``
+    port : int
         Port of s3 source
     access_key : str
         Access key (aka user ID) of an account in the S3 service.
@@ -44,19 +44,19 @@ class S3(FileConnection):
         Secret key (aka password) of an account in the S3 service.
     bucket : str
         Bucket name in the S3 file source
-    secure: bool, default: True
-        Flag to indicate to use secure (TLS) connection to S3 service or not.
-    session_token:
+    secure : bool, default: ``True``
+        Flag to indicate to use secure (HTTPS) connection to S3 service or not.
+    session_token : str, optional
         Session token of your account in S3 service.
-    region:
-        Region name of buckets in S3 service.
+    region : str, optional
+        Region name of bucket in S3 service.
 
     Examples
     --------
 
     S3 file connection initialization
 
-    .. code::
+    .. code:: python
 
         from onetl.connection import S3
 
@@ -116,6 +116,8 @@ class S3(FileConnection):
         for item in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
             if RemotePath(item.object_name) == remote_path:
                 return True
+
+        return False
 
     def _get_client(self) -> Any:
         return Minio(
