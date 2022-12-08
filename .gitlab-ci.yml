@@ -136,6 +136,11 @@ build_docker_image:
   variables:
     DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_IID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
     DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}:dev
+build_docker_image_webdav:
+  extends: .build_docker_images
+  variables:
+    DOCKER_FILE_PATH: ./docker/webdav/Dockerfile
+    DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
@@ -185,6 +190,11 @@ tests:
     # Minio
     MINIO_ROOT_USER: minio_admin
     MINIO_ROOT_PASSWORD: minio_password
+    # WebDAV
+    APP_USER_NAME: admin
+    APP_USER_PASSWD: awd123fd1
+    APP_UID: 1777
+    APP_GID: 1777
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
@@ -200,6 +210,8 @@ tests:
       DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
   - when: on_success
   services:
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav:${DOCKER_IMAGE_TAG}
+    alias: webdav
   - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${DOCKER_IMAGE_TAG}
     alias: postgres
   - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${DOCKER_IMAGE_TAG}
@@ -348,6 +360,10 @@ stop_review:
   - when: always
   interruptible: false
 
+clean_docker_repo_webdav:
+  extends: .clean_docker_repo
+  variables:
+    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/webdav
 clean_docker_repo_hive2:
   extends: .clean_docker_repo
   variables:

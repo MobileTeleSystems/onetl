@@ -14,3 +14,4 @@ File Connections
     Samba <samba>
     SFTP <sftp>
     S3 <s3>
+    Webdav <webdav>
