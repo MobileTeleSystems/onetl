@@ -34,6 +34,7 @@ from onetl.connection import (
     Oracle,
     Postgres,
     Teradata,
+    WebDAV,
 )
 from onetl.hwm.store import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
@@ -103,6 +104,19 @@ def sftp_server(tmp_path_factory):
     sleep(5)
     yield server
     server.stop()
+
+
+@pytest.fixture(scope="session")
+def webdav_connection():
+    wd = WebDAV(
+        host=os.getenv("ONETL_WEBDAV_HOST"),
+        user=os.getenv("ONETL_WEBDAV_USER"),
+        password=os.getenv("ONETL_WEBDAV_PASSWORD"),
+        ssl_verify=False,
+        protocol="http",
+    )
+
+    yield wd
 
 
 @pytest.fixture(scope="function")
@@ -287,6 +301,7 @@ def use_memory_hwm_store(request):
         pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
         pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
         pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
+        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.WebDAV),
     ],
 )
 def file_connection_without_s3(request):

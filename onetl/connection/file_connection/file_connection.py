@@ -472,15 +472,43 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         self._rmdir(root)
 
     def _get_item_name(self, item) -> str:
+        #  The object (item) received from the list function comes to the function input.
+        #  This object (item) contains information about the contents of the source object.
+        #  This method is needed to get the object name from this data structure.
+        #  NOTE:
+        #  If it is possible to optimize the work of this method,
+        #  then it is necessary to override this method in the child class.
+        #  For example, get information from the item parameter and not by a new request to the data source.
         return item
 
     def _is_item_dir(self, top: RemotePath, item) -> bool:
+        #  The object (item) received from the list function comes to the function input.
+        #  This object (item) contains information about the contents of the source object.
+        #  This method is needed to get information from this data structure whether the given object is a directory.
+        #  NOTE:
+        #  If it is possible to optimize the work of this method,
+        #  then it is necessary to override this method in the child class.
+        #  For example, get information from the item parameter and not by a new request to the data source.
         return self._is_dir(top / self._get_item_name(item))
 
     def _is_item_file(self, top: RemotePath, item) -> bool:
+        #  The object (item) received from the list function comes to the function input.
+        #  This object (item) contains information about the contents of the source object.
+        #  This method is needed to get information from this data structure whether the given object is a file.
+        #  NOTE:
+        #  If it is possible to optimize the work of this method,
+        #  then it is necessary to override this method in the child class.
+        #  For example, get information from the item parameter and not by a new request to the data source.
         return self._is_file(top / self._get_item_name(item))
 
     def _get_item_stat(self, top: RemotePath, item) -> PathStatProtocol:
+        #  The object (item) received from the list function comes to the function input.
+        #  This object (item) contains information about the contents of the source object.
+        #  This method is required to get object statistics from this data structure.
+        #  NOTE:
+        #  If it is possible to optimize the work of this method,
+        #  then it is necessary to override this method in the child class.
+        #  For example, get information from the item parameter and not by a new request to the data source.
         return self._get_stat(top / self._get_item_name(item))
 
     def _log_parameters(self):

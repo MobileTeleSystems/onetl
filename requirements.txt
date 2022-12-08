@@ -14,3 +14,4 @@ pydantic<1.10.2
 PySmbClient
 pyyaml
 typing_extensions
+webdavclient3

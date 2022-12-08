@@ -68,6 +68,19 @@ services:
     - 5501:5500
     networks: [onetl]
 
+  webdav:
+    build:
+      dockerfile: ./docker/webdav/Dockerfile
+      context: .
+    container_name: webdav
+    ports:
+    - 80:80
+    - 443:443
+    env_file: onetl_local.default.env
+    restart: always
+    networks:
+    - onetl
+
   clickhouse:
     image: yandex/clickhouse-server
     env_file: onetl_local.default.env
