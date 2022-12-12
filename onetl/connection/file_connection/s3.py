@@ -35,21 +35,28 @@ class S3(FileConnection):
     Parameters
     ----------
     host : str
-        Host of s3 source. For example: ``192.168.2.1``
-    port : int, default: ``43``
-        Port of s3 source
+        Host of S3 source. For example: ``s3.domain.com``
+
+    port : int, optional
+        Port of S3 source
+
     access_key : str
-        Access key (aka user ID) of an account in the S3 service.
+        Access key (aka user ID) of an account in the S3 service
+
     secret_key : str
-        Secret key (aka password) of an account in the S3 service.
+        Secret key (aka password) of an account in the S3 service
+
     bucket : str
         Bucket name in the S3 file source
-    secure : bool, default: True
-        Flag to indicate to use secure (TLS) connection to S3 service or not.
+
+    secure : bool, default: ``True``
+        Flag to indicate to use secure (HTTPS) connection to S3 service or not
+
     session_token : str, optional
-        Session token of your account in S3 service.
+        Session token of your account in S3 service
+
     region : str, optional
-        Region name of bucket in S3 service.
+        Region name of bucket in S3 service
 
     Examples
     --------
@@ -61,8 +68,7 @@ class S3(FileConnection):
         from onetl.connection import S3
 
         s3 = S3(
-            host="SERVER",
-            port=PORT,
+            host="s3.domain.com",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
             secure=True,
