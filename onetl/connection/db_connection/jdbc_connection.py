@@ -208,7 +208,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         '''
 
         fetchsize: int = 100_000
-        """How many rows to fetch per round trip.
+        """Fetch N rows from an opened cursor per one read round.
 
         Tuning this option can influence performance of reading.
 

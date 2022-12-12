@@ -37,11 +37,14 @@ class FTP(FileConnection):
     Parameters
     ----------
     host : str
-        Host of ftp source. For example: ``0001testadviat04.msk.mts.ru``
+        Host of FTP source. For example: ``ftp.domain.com``
+
     port : int, default: ``21``
-        Port of ftp source
+        Port of FTP source
+
     user : str
-        User, which have access to the file source. For example: ``sa0000sphrsftptest``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
 
@@ -55,8 +58,8 @@ class FTP(FileConnection):
         from onetl.connection import FTP
 
         ftp = FTP(
-            host="0001testadviat04.msk.mts.ru",
-            user="sa0000sphrsftptest",
+            host="ftp.domain.com",
+            user="someuser",
             password="*****",
         )
     """

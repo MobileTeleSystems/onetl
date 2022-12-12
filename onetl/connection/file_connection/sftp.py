@@ -38,19 +38,26 @@ class SFTP(FileConnection):
     Parameters
     ----------
     host : str
-        Host of sftp source. For example: ``0001testadviat04.msk.mts.ru``
+        Host of sftp source. For example: ``192.168.1.19``
+
     port : int, default: ``22``
         Port of sftp source
+
     user : str
-        User, which have access to the file source. For example: ``sa0000sphrsftptest``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
+
     key_file : str, default: ``None``
         the filename of optional private key(s) and/or certs to try for authentication
+
     timeout : int, default: ``10``
-        How long to wait for the server to send data before giving up.
+        How long to wait for the server to send data before giving up
+
     host_key_check : bool, default: ``False``
         set to True to enable searching for discoverable private key files in ``~/.ssh/``
+
     compress : bool, default: ``True``
         Set to True to turn on compression
 
@@ -64,8 +71,8 @@ class SFTP(FileConnection):
         from onetl.connection import SFTP
 
         sftp = SFTP(
-            host="0001testadviat04.msk.mts.ru",
-            user="sa0000sphrsftptest",
+            host="192.168.1.19",
+            user="someuser",
             password="*****",
         )
     """

@@ -37,11 +37,14 @@ class HDFS(FileConnection):
     Parameters
     ----------
     host : str
-        Host of hdfs source. For example: ``rnd-dwh-nn-001.msk.mts.ru``
+        Host of hdfs source. For example: ``namenode.of.cluster``
+
     port : int, default: ``50070``
         Port of hdfs source
+
     user : str
-        User, which have access to the file source. For example: ``tech_etl``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
 
@@ -49,6 +52,7 @@ class HDFS(FileConnection):
 
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
+
     keytab : str, default: ``None``
         LocalPath to keytab file.
 
@@ -56,6 +60,7 @@ class HDFS(FileConnection):
 
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
+
     timeout : int, default: ``10``
         Connection timeouts, forwarded to the request handler.
         How long to wait for the server to send data before giving up.
@@ -70,8 +75,8 @@ class HDFS(FileConnection):
         from onetl.connection import HDFS
 
         hdfs = HDFS(
-            host="rnd-dwh-nn-001.msk.mts.ru",
-            user="tech_etl",
+            host="namenode.of.cluster",
+            user="someuser",
             password="*****",
         )
 
@@ -82,8 +87,8 @@ class HDFS(FileConnection):
         from onetl.connection import HDFS
 
         hdfs = HDFS(
-            host="rnd-dwh-nn-001.msk.mts.ru",
-            user="tech_etl",
+            host="namenode.of.cluster",
+            user="someuser",
             keytab="/path/to/keytab",
         )
     """

@@ -33,28 +33,31 @@ DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"  # noqa: WPS323
 
 
 class WebDAV(FileConnection):
-
     """Class for WebDAV file connection.
 
     Parameters
     ----------
     host : str
-        Host of WebDAV source. For example: ``192.168.2.1``
+        Host of WebDAV source. For example: ``webdav.domain.com``
+
     user : str
         User, which have access to the file source. For example: ``someuser``
+
     password : str
         Password for file source connection
+
     ssl_verify : Union[Path, bool], optional
         SSL certificates used to verify the identity of requested hosts. Can be any of
             - ``True`` (uses default CA bundle),
             - a path to an SSL certificate file,
             - ``False`` (disable verification), or
             - a :obj:`ssl.SSLContext`
+
     protocol : str, default : ``https``
-        Connection protocol. ``https`` or ``http``
+        Connection protocol. Allowed values: ``https`` or ``http``
+
     port : int, optional
         Connection port
-
 
     Examples
     --------
@@ -66,9 +69,9 @@ class WebDAV(FileConnection):
         from onetl.connection import WebDAV
 
         wd = WebDAV(
-            host="webdav",
-            user="admin",
-            password="admin",
+            host="webdav.domain.com",
+            user="someuser",
+            password="*****",
             protocol="https",
         )
 
