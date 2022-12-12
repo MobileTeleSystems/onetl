@@ -112,7 +112,7 @@ class FTP(FileConnection):
     def _mkdir(self, path: RemotePath) -> None:
         self.client.makedirs(os.fspath(path), exist_ok=True)
 
-    def _listdir(self, path: RemotePath) -> list:
+    def _scan_entries(self, path: RemotePath) -> list[str]:
         return self.client.listdir(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:
@@ -144,3 +144,15 @@ class FTP(FileConnection):
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
         with self.client.open(os.fspath(path), mode="wb", **kwargs) as file:
             file.write(content)
+
+    def _extract_name_from_entry(self, entry: str) -> str:
+        return entry
+
+    def _is_dir_entry(self, top: RemotePath, entry: str) -> bool:
+        return self._is_dir(top / entry)
+
+    def _is_file_entry(self, top: RemotePath, entry: str) -> bool:
+        return self._is_file(top / entry)
+
+    def _extract_stat_from_entry(self, top: RemotePath, entry: str) -> PathStatProtocol:
+        return self._get_stat(top / entry)

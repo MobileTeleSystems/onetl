@@ -158,7 +158,7 @@ class SFTP(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _listdir(self, path: RemotePath) -> list[SFTPAttributes]:
+    def _scan_entries(self, path: RemotePath) -> list[SFTPAttributes]:
         return self.client.listdir_attr(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:
@@ -173,17 +173,17 @@ class SFTP(FileConnection):
         # underlying SFTP client already return `os.stat_result`-like class
         return self.client.stat(os.fspath(path))
 
-    def _get_item_name(self, item: SFTPAttributes) -> str:
-        return item.filename
+    def _extract_name_from_entry(self, entry: SFTPAttributes) -> str:
+        return entry.filename
 
-    def _is_item_dir(self, top: RemotePath, item: SFTPAttributes) -> bool:
-        return S_ISDIR(item.st_mode)
+    def _is_dir_entry(self, top: RemotePath, entry: SFTPAttributes) -> bool:
+        return S_ISDIR(entry.st_mode)
 
-    def _is_item_file(self, top: RemotePath, item: SFTPAttributes) -> bool:
-        return S_ISREG(item.st_mode)
+    def _is_file_entry(self, top: RemotePath, entry: SFTPAttributes) -> bool:
+        return S_ISREG(entry.st_mode)
 
-    def _get_item_stat(self, top: RemotePath, item: SFTPAttributes) -> SFTPAttributes:
-        return item
+    def _extract_stat_from_entry(self, top: RemotePath, entry: SFTPAttributes) -> SFTPAttributes:
+        return entry
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.open(os.fspath(path), mode="r", **kwargs) as file:

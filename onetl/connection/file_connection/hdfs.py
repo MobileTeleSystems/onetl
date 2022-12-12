@@ -23,6 +23,7 @@ from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
 from pydantic import FilePath, SecretStr, root_validator
 
+from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
@@ -150,7 +151,7 @@ class HDFS(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.delete(os.fspath(remote_file_path), recursive=False)
 
-    def _listdir(self, path: RemotePath) -> list:
+    def _scan_entries(self, path: RemotePath) -> list[str]:
         return self.client.list(os.fspath(path))
 
     def _is_file(self, path: RemotePath) -> bool:
@@ -216,3 +217,15 @@ class HDFS(FileConnection):
         if not isinstance(content, bytes):
             raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)
+
+    def _extract_name_from_entry(self, entry: str) -> str:
+        return entry
+
+    def _is_dir_entry(self, top: RemotePath, entry: str) -> bool:
+        return self._is_dir(top / entry)
+
+    def _is_file_entry(self, top: RemotePath, entry: str) -> bool:
+        return self._is_file(top / entry)
+
+    def _extract_stat_from_entry(self, top: RemotePath, entry: str) -> PathStatProtocol:
+        return self._get_stat(top / entry)

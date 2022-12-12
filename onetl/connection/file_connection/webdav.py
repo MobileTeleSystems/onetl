@@ -18,7 +18,6 @@ import datetime
 import io
 import os
 import stat
-import time
 from logging import getLogger
 from typing import Any, Optional, Union
 
@@ -131,7 +130,7 @@ class WebDAV(FileConnection):
 
         return RemotePathStat(
             st_size=info["size"],
-            st_mtime=time.mktime(datetime.datetime.strptime(info["modified"], "%a, %d %b %Y %H:%M:%S GMT").timetuple()),
+            st_mtime=datetime.datetime.strptime(info["modified"], DATA_MODIFIED_FORMAT).timestamp(),
             st_uid=info["name"],
         )
 
@@ -154,7 +153,7 @@ class WebDAV(FileConnection):
         res = self.client.resource(os.fspath(source))
         res.move(os.fspath(target))
 
-    def _listdir(self, path: RemotePath) -> list[Object]:
+    def _scan_entries(self, path: RemotePath) -> list[dict]:
         return self.client.list(os.fspath(path), get_info=True)
 
     def _rmdir(self, path: RemotePath) -> None:
@@ -191,21 +190,21 @@ class WebDAV(FileConnection):
     def _is_file(self, path: RemotePath) -> bool:
         return not self.client.is_dir(os.fspath(path))
 
-    def _get_item_name(self, item) -> str:
-        return RemotePath(item["path"]).name
+    def _extract_name_from_entry(self, entry: dict) -> str:
+        return RemotePath(entry["path"]).name
 
-    def _is_item_dir(self, top: RemotePath, item: Object) -> bool:
-        return item["isdir"]
+    def _is_dir_entry(self, top: RemotePath, entry: dict) -> bool:
+        return entry["isdir"]
 
-    def _is_item_file(self, top: RemotePath, item: Object) -> bool:
-        return not item["isdir"]
+    def _is_file_entry(self, top: RemotePath, entry: dict) -> bool:
+        return not entry["isdir"]
 
-    def _get_item_stat(self, top: RemotePath, item: Object) -> RemotePathStat:
-        if item["isdir"]:
+    def _extract_stat_from_entry(self, top: RemotePath, entry: dict) -> RemotePathStat:
+        if entry["isdir"]:
             return RemotePathStat(st_mode=stat.S_IFDIR)
 
         return RemotePathStat(
-            st_size=item["size"],
-            st_mtime=time.mktime(datetime.datetime.strptime(item["modified"], DATA_MODIFIED_FORMAT).timetuple()),
-            st_uid=item["name"],
+            st_size=entry["size"],
+            st_mtime=datetime.datetime.strptime(entry["modified"], DATA_MODIFIED_FORMAT).timestamp(),
+            st_uid=entry["name"],
         )
