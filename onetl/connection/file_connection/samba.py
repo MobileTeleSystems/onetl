@@ -30,7 +30,7 @@ from onetl.impl.local_path import LocalPath
 log = getLogger(__name__)
 
 # Result type of listdir or glob methods is: [(filename, modes, size, date), ...]
-ItemType = List[Tuple[str, int, int, datetime]]
+ComponentType = List[Tuple[str, int, int, datetime]]
 
 
 class Samba(FileConnection):
@@ -117,7 +117,7 @@ class Samba(FileConnection):
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         self.client.upload(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _listdir(self, path: RemotePath) -> list:
+    def _scan_entries(self, path: RemotePath) -> list[str]:
         return self.client.lsdir(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:
@@ -127,21 +127,21 @@ class Samba(FileConnection):
         return self.client.self.client.isfile(os.fspath(path))
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
-        item: ItemType = next(self.client.glob(os.fspath(path)))
-        return RemotePathStat(st_size=item[2], st_mtime=item[3].timestamp())
+        component: ComponentType = next(self.client.glob(os.fspath(path)))
+        return RemotePathStat(st_size=component[2], st_mtime=component[3].timestamp())
 
-    def _get_item_name(self, item: ItemType) -> str:
-        return item[0]
+    def _extract_name_from_entry(self, entry: ComponentType) -> str:
+        return entry[0]
 
-    def _is_item_dir(self, top: RemotePath, item: ItemType) -> bool:
-        return "D" in item[1]
+    def _is_dir_entry(self, top: RemotePath, entry: ComponentType) -> bool:
+        return "D" in entry[1]
 
-    def _is_item_file(self, top: RemotePath, item: ItemType) -> bool:
-        return not self._is_item_dir(top, item)
+    def _is_file_entry(self, top: RemotePath, entry: ComponentType) -> bool:
+        return not self._is_dir_entry(top, entry)
 
-    def _get_item_stat(self, top: RemotePath, item: ItemType) -> RemotePathStat:
-        st_mode = stat.S_IFDIR if "D" in item[1] else stat.S_IFREG
-        return RemotePathStat(st_size=item[2], st_mtime=item[3].timestamp(), st_mode=st_mode)
+    def _extract_stat_from_entry(self, top: RemotePath, entry: ComponentType) -> RemotePathStat:
+        st_mode = stat.S_IFDIR if "D" in entry[1] else stat.S_IFREG
+        return RemotePathStat(st_size=entry[2], st_mtime=entry[3].timestamp(), st_mode=st_mode)
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.open(os.fspath(path), mode="rb", **kwargs) as file:

@@ -113,8 +113,8 @@ class S3(FileConnection):
         if remote_path == RemotePath("."):
             return True
 
-        for item in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
-            if RemotePath(item.object_name) == remote_path:
+        for component in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
+            if RemotePath(component.object_name) == remote_path:
                 return True
 
         return False
@@ -183,23 +183,23 @@ class S3(FileConnection):
 
         self._remove_file(source_str)
 
-    def _listdir(self, path: RemotePath) -> list[Object]:
+    def _scan_entries(self, path: RemotePath) -> list[Object]:
         return self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")
 
-    def _get_item_name(self, item: Object) -> str:
-        return RemotePath(item.object_name).name
+    def _extract_name_from_entry(self, entry: Object) -> str:
+        return RemotePath(entry.object_name).name
 
-    def _is_item_dir(self, top: RemotePath, item: Object) -> bool:
-        return item.is_dir
+    def _is_dir_entry(self, top: RemotePath, entry: Object) -> bool:
+        return entry.is_dir
 
-    def _is_item_file(self, top: RemotePath, item: Object) -> bool:
-        return not item.is_dir
+    def _is_file_entry(self, top: RemotePath, entry: Object) -> bool:
+        return not entry.is_dir
 
-    def _get_item_stat(self, top: RemotePath, item: Object) -> RemotePathStat:
+    def _extract_stat_from_entry(self, top: RemotePath, entry: Object) -> RemotePathStat:
         return RemotePathStat(
-            st_size=item.size if item.size else 0,
-            st_mtime=item.last_modified.timestamp() if item.last_modified else None,
-            st_uid=item.owner_name or item.owner_id,
+            st_size=entry.size if entry.size else 0,
+            st_mtime=entry.last_modified.timestamp() if entry.last_modified else None,
+            st_uid=entry.owner_name or entry.owner_id,
         )
 
     def _rmdir(self, path: RemotePath) -> None:
