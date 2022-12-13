@@ -37,10 +37,10 @@ class HDFS(FileConnection):
     Parameters
     ----------
     host : str
-        Host of hdfs source. For example: ``namenode.of.cluster``
+        Host of HDFS source. For example: ``namenode.of.cluster``
 
     port : int, default: ``50070``
-        Port of hdfs source
+        Port of HDFS source
 
     user : str
         User, which have access to the file source. For example: ``someuser``

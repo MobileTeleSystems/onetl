@@ -159,7 +159,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. note::
 
-        If you need just to reduce number of rows read by Spark from opened cursor,
+        If you only need to reduce number of rows read by Spark from opened cursor,
         use :obj:`onetl.connection.db_connection.postgres.Postgres.ReadOptions.fetchsize` instead
 
     Parameters
