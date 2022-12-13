@@ -34,7 +34,6 @@ Requirements
 * PySpark 2.3+
 * Java 8+ (required by Spark)
 * Kerberos system libs (for HDFS access)
-* ``smbclient`` system package (for Samba access)
 
 Storage Compatibility
 ---------------------
@@ -62,15 +61,13 @@ Storage Compatibility
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | S3         | `S3 connection <file_connection/s3.html>`_             | Powered by `Minio client <https://pypi.org/project/minio/>`_                                                        |
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Samba      | `Samba connection <file_connection/hdfs.html>`_        | Powered by `Samba client <https://pypi.org/project/PySmbClient/>`_                                                  |
-+------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | SFTP       | `SFTP connection <file_connection/hdfs.html>`_         | Powered by `Paramiko library <https://pypi.org/project/paramiko/>`_                                                 |
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | FTP        | `FTP connection <file_connection/hdfs.html>`_          | Powered by `FTP client <https://pypi.org/project/ftputil/>`_                                                        |
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | FTPS       | `FTPS connection <file_connection/hdfs.html>`_         |                                                                                                                     |
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| WebDAV     | `WebDAV connection <file_connection/webdav.html>`_     | Powered by `Webdav3 client <https://pypi.org/project/webdavclient3/>`_                                               |
+| WebDAV     | `WebDAV connection <file_connection/webdav.html>`_     | Powered by `Webdav3 client <https://pypi.org/project/webdavclient3/>`_                                              |
 +------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 
