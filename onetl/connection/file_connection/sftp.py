@@ -38,10 +38,10 @@ class SFTP(FileConnection):
     Parameters
     ----------
     host : str
-        Host of sftp source. For example: ``192.168.1.19``
+        Host of SFTP source. For example: ``192.168.1.19``
 
     port : int, default: ``22``
-        Port of sftp source
+        Port of SFTP source
 
     user : str
         User, which have access to the file source. For example: ``someuser``

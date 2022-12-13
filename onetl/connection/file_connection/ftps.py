@@ -57,7 +57,7 @@ class FTPS(FTP):
     Examples
     --------
 
-    FTP file connection initialization
+    FTPS file connection initialization
 
     .. code:: python
 
