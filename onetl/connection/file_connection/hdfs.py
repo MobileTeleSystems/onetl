@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 import stat
 from logging import getLogger
-from typing import Optional
+from typing import Optional, Tuple
 
 from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
@@ -29,6 +29,7 @@ from onetl.connection.kerberos_helpers import kinit
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
+ENTRY_TYPE = Tuple[str, dict]
 
 
 class HDFS(FileConnection):
@@ -156,8 +157,8 @@ class HDFS(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.delete(os.fspath(remote_file_path), recursive=False)
 
-    def _scan_entries(self, path: RemotePath) -> list[str]:
-        return self.client.list(os.fspath(path))
+    def _scan_entries(self, path: RemotePath) -> list[ENTRY_TYPE]:
+        return self.client.list(os.fspath(path), status=True)
 
     def _is_file(self, path: RemotePath) -> bool:
         return self.client.status(os.fspath(path))["type"] == "FILE"
@@ -223,14 +224,28 @@ class HDFS(FileConnection):
             raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)
 
-    def _extract_name_from_entry(self, entry: str) -> str:
-        return entry
+    def _extract_name_from_entry(self, entry: ENTRY_TYPE) -> str:
+        return entry[0]
 
-    def _is_dir_entry(self, top: RemotePath, entry: str) -> bool:
-        return self._is_dir(top / entry)
+    def _is_dir_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> bool:
+        entry_stat = entry[1]
 
-    def _is_file_entry(self, top: RemotePath, entry: str) -> bool:
-        return self._is_file(top / entry)
+        return entry_stat["type"] == "DIRECTORY"
 
-    def _extract_stat_from_entry(self, top: RemotePath, entry: str) -> PathStatProtocol:
-        return self._get_stat(top / entry)
+    def _is_file_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> bool:
+        entry_stat = entry[1]
+
+        return entry_stat["type"] == "FILE"
+
+    def _extract_stat_from_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> PathStatProtocol:
+        entry_stat = entry[1]
+
+        return RemotePathStat(
+            st_size=entry_stat["length"],
+            st_mtime=entry_stat["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
+            st_uid=entry_stat["owner"],
+            st_gid=entry_stat["group"],
+            st_mode=int(entry_stat["permission"], 8) | stat.S_IFDIR
+            if entry_stat["type"] == "DIRECTORY"
+            else stat.S_IFREG,
+        )
