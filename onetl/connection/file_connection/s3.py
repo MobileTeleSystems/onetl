@@ -17,11 +17,12 @@ from __future__ import annotations
 import io
 import os
 from logging import getLogger
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from minio import Minio, commonconfig
 from minio.datatypes import Object
 from pydantic import SecretStr, root_validator
+from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
@@ -49,8 +50,8 @@ class S3(FileConnection):
     bucket : str
         Bucket name in the S3 file source
 
-    secure : bool, default: ``True``
-        Flag to indicate to use secure (HTTPS) connection to S3 service or not
+    protocol : str, default : ``https``
+        Connection protocol. Allowed values: ``https`` or ``http``
 
     session_token : str, optional
         Session token of your account in S3 service
@@ -71,7 +72,7 @@ class S3(FileConnection):
             host="s3.domain.com",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
-            secure=True,
+            protocol="http",
         )
 
     """
@@ -81,7 +82,7 @@ class S3(FileConnection):
     access_key: str
     secret_key: SecretStr
     bucket: str
-    secure: bool = True
+    protocol: Union[Literal["http"], Literal["https"]] = "https"
     session_token: Optional[str] = None
     region: Optional[str] = None
 
@@ -89,11 +90,7 @@ class S3(FileConnection):
     def check_port(cls, values):  # noqa: N805
         if values["port"] is not None:
             return values
-
-        if values["secure"]:
-            values["port"] = 443
-        else:
-            values["port"] = 80
+        values["port"] = 443 if values["protocol"] == "https" else 80
 
         return values
 
@@ -130,7 +127,7 @@ class S3(FileConnection):
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,
             secret_key=self.secret_key.get_secret_value(),
-            secure=self.secure,
+            secure=self.protocol == "https",
             session_token=self.session_token,
             region=self.region,
         )
