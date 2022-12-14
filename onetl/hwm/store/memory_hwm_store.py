@@ -19,8 +19,8 @@ from typing import Dict
 from etl_entities import HWM
 from pydantic import PrivateAttr
 
-from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
-from onetl.strategy.hwm_store.hwm_store_class_registry import register_hwm_store_class
+from onetl.hwm.store.base_hwm_store import BaseHWMStore
+from onetl.hwm.store.hwm_store_class_registry import register_hwm_store_class
 
 
 @register_hwm_store_class("memory", "in-memory")
@@ -40,11 +40,15 @@ class MemoryHWMStore(BaseHWMStore):
         from onetl.connection import Hive, Postgres
         from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
-        from onetl.strategy.hwm_store import MemoryHWMStore
+        from onetl.hwm.store import MemoryHWMStore
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",

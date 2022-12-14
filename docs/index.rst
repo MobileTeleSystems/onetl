@@ -49,9 +49,9 @@
     file_connection/ftp
     file_connection/ftps
     file_connection/hdfs
-    file_connection/samba
     file_connection/sftp
     file_connection/s3
+    file_connection/webdav
 
 .. toctree::
     :maxdepth: 2

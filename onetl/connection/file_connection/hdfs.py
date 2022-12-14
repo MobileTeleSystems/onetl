@@ -17,17 +17,19 @@ from __future__ import annotations
 import os
 import stat
 from logging import getLogger
-from typing import Optional
+from typing import Optional, Tuple
 
 from hdfs import InsecureClient
 from hdfs.ext.kerberos import KerberosClient
 from pydantic import FilePath, SecretStr, root_validator
 
+from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.kerberos_helpers import kinit
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
+ENTRY_TYPE = Tuple[str, dict]
 
 
 class HDFS(FileConnection):
@@ -36,11 +38,14 @@ class HDFS(FileConnection):
     Parameters
     ----------
     host : str
-        Host of hdfs source. For example: ``rnd-dwh-nn-001.msk.mts.ru``
+        Host of HDFS source. For example: ``namenode.of.cluster``
+
     port : int, default: ``50070``
-        Port of hdfs source
+        Port of HDFS source
+
     user : str
-        User, which have access to the file source. For example: ``tech_etl``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
 
@@ -48,6 +53,7 @@ class HDFS(FileConnection):
 
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
+
     keytab : str, default: ``None``
         LocalPath to keytab file.
 
@@ -55,6 +61,7 @@ class HDFS(FileConnection):
 
             To correct work you can provide only one of the parameters: ``password`` or ``kinit``.
             If you provide both, connection will raise Exception.
+
     timeout : int, default: ``10``
         Connection timeouts, forwarded to the request handler.
         How long to wait for the server to send data before giving up.
@@ -69,8 +76,8 @@ class HDFS(FileConnection):
         from onetl.connection import HDFS
 
         hdfs = HDFS(
-            host="rnd-dwh-nn-001.msk.mts.ru",
-            user="tech_etl",
+            host="namenode.of.cluster",
+            user="someuser",
             password="*****",
         )
 
@@ -81,8 +88,8 @@ class HDFS(FileConnection):
         from onetl.connection import HDFS
 
         hdfs = HDFS(
-            host="rnd-dwh-nn-001.msk.mts.ru",
-            user="tech_etl",
+            host="namenode.of.cluster",
+            user="someuser",
             keytab="/path/to/keytab",
         )
     """
@@ -150,8 +157,8 @@ class HDFS(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.delete(os.fspath(remote_file_path), recursive=False)
 
-    def _listdir(self, path: RemotePath) -> list:
-        return self.client.list(os.fspath(path))
+    def _scan_entries(self, path: RemotePath) -> list[ENTRY_TYPE]:
+        return self.client.list(os.fspath(path), status=True)
 
     def _is_file(self, path: RemotePath) -> bool:
         return self.client.status(os.fspath(path))["type"] == "FILE"
@@ -216,3 +223,29 @@ class HDFS(FileConnection):
         if not isinstance(content, bytes):
             raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)
+
+    def _extract_name_from_entry(self, entry: ENTRY_TYPE) -> str:
+        return entry[0]
+
+    def _is_dir_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> bool:
+        entry_stat = entry[1]
+
+        return entry_stat["type"] == "DIRECTORY"
+
+    def _is_file_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> bool:
+        entry_stat = entry[1]
+
+        return entry_stat["type"] == "FILE"
+
+    def _extract_stat_from_entry(self, top: RemotePath, entry: ENTRY_TYPE) -> PathStatProtocol:
+        entry_stat = entry[1]
+
+        return RemotePathStat(
+            st_size=entry_stat["length"],
+            st_mtime=entry_stat["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
+            st_uid=entry_stat["owner"],
+            st_gid=entry_stat["group"],
+            st_mode=int(entry_stat["permission"], 8) | stat.S_IFDIR
+            if entry_stat["type"] == "DIRECTORY"
+            else stat.S_IFREG,
+        )

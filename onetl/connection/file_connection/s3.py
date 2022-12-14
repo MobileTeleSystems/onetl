@@ -17,11 +17,12 @@ from __future__ import annotations
 import io
 import os
 from logging import getLogger
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from minio import Minio, commonconfig
 from minio.datatypes import Object
 from pydantic import SecretStr, root_validator
+from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
@@ -35,21 +36,28 @@ class S3(FileConnection):
     Parameters
     ----------
     host : str
-        Host of s3 source. For example: ``192.168.2.1``
-    port : int
-        Port of s3 source
+        Host of S3 source. For example: ``s3.domain.com``
+
+    port : int, optional
+        Port of S3 source
+
     access_key : str
-        Access key (aka user ID) of an account in the S3 service.
+        Access key (aka user ID) of an account in the S3 service
+
     secret_key : str
-        Secret key (aka password) of an account in the S3 service.
+        Secret key (aka password) of an account in the S3 service
+
     bucket : str
         Bucket name in the S3 file source
-    secure : bool, default: ``True``
-        Flag to indicate to use secure (HTTPS) connection to S3 service or not.
+
+    protocol : str, default : ``https``
+        Connection protocol. Allowed values: ``https`` or ``http``
+
     session_token : str, optional
-        Session token of your account in S3 service.
+        Session token of your account in S3 service
+
     region : str, optional
-        Region name of bucket in S3 service.
+        Region name of bucket in S3 service
 
     Examples
     --------
@@ -61,11 +69,10 @@ class S3(FileConnection):
         from onetl.connection import S3
 
         s3 = S3(
-            host="SERVER",
-            port=PORT,
+            host="s3.domain.com",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
-            secure=True,
+            protocol="http",
         )
 
     """
@@ -75,7 +82,7 @@ class S3(FileConnection):
     access_key: str
     secret_key: SecretStr
     bucket: str
-    secure: bool = True
+    protocol: Union[Literal["http"], Literal["https"]] = "https"
     session_token: Optional[str] = None
     region: Optional[str] = None
 
@@ -83,11 +90,7 @@ class S3(FileConnection):
     def check_port(cls, values):  # noqa: N805
         if values["port"] is not None:
             return values
-
-        if values["secure"]:
-            values["port"] = 443
-        else:
-            values["port"] = 80
+        values["port"] = 443 if values["protocol"] == "https" else 80
 
         return values
 
@@ -113,8 +116,8 @@ class S3(FileConnection):
         if remote_path == RemotePath("."):
             return True
 
-        for item in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
-            if RemotePath(item.object_name) == remote_path:
+        for component in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
+            if RemotePath(component.object_name) == remote_path:
                 return True
 
         return False
@@ -124,7 +127,7 @@ class S3(FileConnection):
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,
             secret_key=self.secret_key.get_secret_value(),
-            secure=self.secure,
+            secure=self.protocol == "https",
             session_token=self.session_token,
             region=self.region,
         )
@@ -183,23 +186,23 @@ class S3(FileConnection):
 
         self._remove_file(source_str)
 
-    def _listdir(self, path: RemotePath) -> list[Object]:
+    def _scan_entries(self, path: RemotePath) -> list[Object]:
         return self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")
 
-    def _get_item_name(self, item: Object) -> str:
-        return RemotePath(item.object_name).name
+    def _extract_name_from_entry(self, entry: Object) -> str:
+        return RemotePath(entry.object_name).name
 
-    def _is_item_dir(self, top: RemotePath, item: Object) -> bool:
-        return item.is_dir
+    def _is_dir_entry(self, top: RemotePath, entry: Object) -> bool:
+        return entry.is_dir
 
-    def _is_item_file(self, top: RemotePath, item: Object) -> bool:
-        return not item.is_dir
+    def _is_file_entry(self, top: RemotePath, entry: Object) -> bool:
+        return not entry.is_dir
 
-    def _get_item_stat(self, top: RemotePath, item: Object) -> RemotePathStat:
+    def _extract_stat_from_entry(self, top: RemotePath, entry: Object) -> RemotePathStat:
         return RemotePathStat(
-            st_size=item.size if item.size else 0,
-            st_mtime=item.last_modified.timestamp() if item.last_modified else None,
-            st_uid=item.owner_name or item.owner_id,
+            st_size=entry.size if entry.size else 0,
+            st_mtime=entry.last_modified.timestamp() if entry.last_modified else None,
+            st_uid=entry.owner_name or entry.owner_id,
         )
 
     def _rmdir(self, path: RemotePath) -> None:

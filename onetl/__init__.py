@@ -12,4 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+from onetl.plugins import plugins_auto_import
 from onetl.version import __version__
+
+if os.getenv("ONETL_ENABLE_PLUGINS", "true").lower() != "false":
+    plugins_auto_import("onetl.plugins")

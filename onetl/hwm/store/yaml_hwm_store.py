@@ -23,12 +23,12 @@ from etl_entities import HWM, HWMTypeRegistry
 from platformdirs import user_data_dir
 from pydantic import validator
 
-from onetl.impl import FrozenModel, LocalPath
-from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
-from onetl.strategy.hwm_store.hwm_store_class_registry import (
+from onetl.hwm.store.base_hwm_store import BaseHWMStore
+from onetl.hwm.store.hwm_store_class_registry import (
     default_hwm_store_class,
     register_hwm_store_class,
 )
+from onetl.impl import FrozenModel, LocalPath
 
 DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
@@ -64,11 +64,15 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         from onetl.connection import Hive, Postgres
         from onetl.core import DBReader
         from onetl.strategy import IncrementalStrategy
-        from onetl.strategy.hwm_store import YAMLHWMStore
+        from onetl.hwm.store import YAMLHWMStore
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",

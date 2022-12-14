@@ -1,10 +1,10 @@
+import secrets
 from pathlib import PurePosixPath
 
-import secrets
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.exception import NotAFileError, DirectoryNotFoundError
+from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import RemotePath
 
 

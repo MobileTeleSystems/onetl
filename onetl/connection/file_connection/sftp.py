@@ -38,19 +38,26 @@ class SFTP(FileConnection):
     Parameters
     ----------
     host : str
-        Host of sftp source. For example: ``0001testadviat04.msk.mts.ru``
+        Host of SFTP source. For example: ``192.168.1.19``
+
     port : int, default: ``22``
-        Port of sftp source
+        Port of SFTP source
+
     user : str
-        User, which have access to the file source. For example: ``sa0000sphrsftptest``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
+
     key_file : str, default: ``None``
         the filename of optional private key(s) and/or certs to try for authentication
+
     timeout : int, default: ``10``
-        How long to wait for the server to send data before giving up.
+        How long to wait for the server to send data before giving up
+
     host_key_check : bool, default: ``False``
         set to True to enable searching for discoverable private key files in ``~/.ssh/``
+
     compress : bool, default: ``True``
         Set to True to turn on compression
 
@@ -64,8 +71,8 @@ class SFTP(FileConnection):
         from onetl.connection import SFTP
 
         sftp = SFTP(
-            host="0001testadviat04.msk.mts.ru",
-            user="sa0000sphrsftptest",
+            host="192.168.1.19",
+            user="someuser",
             password="*****",
         )
     """
@@ -158,7 +165,7 @@ class SFTP(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _listdir(self, path: RemotePath) -> list[SFTPAttributes]:
+    def _scan_entries(self, path: RemotePath) -> list[SFTPAttributes]:
         return self.client.listdir_attr(os.fspath(path))
 
     def _is_dir(self, path: RemotePath) -> bool:
@@ -173,17 +180,17 @@ class SFTP(FileConnection):
         # underlying SFTP client already return `os.stat_result`-like class
         return self.client.stat(os.fspath(path))
 
-    def _get_item_name(self, item: SFTPAttributes) -> str:
-        return item.filename
+    def _extract_name_from_entry(self, entry: SFTPAttributes) -> str:
+        return entry.filename
 
-    def _is_item_dir(self, top: RemotePath, item: SFTPAttributes) -> bool:
-        return S_ISDIR(item.st_mode)
+    def _is_dir_entry(self, top: RemotePath, entry: SFTPAttributes) -> bool:
+        return S_ISDIR(entry.st_mode)
 
-    def _is_item_file(self, top: RemotePath, item: SFTPAttributes) -> bool:
-        return S_ISREG(item.st_mode)
+    def _is_file_entry(self, top: RemotePath, entry: SFTPAttributes) -> bool:
+        return S_ISREG(entry.st_mode)
 
-    def _get_item_stat(self, top: RemotePath, item: SFTPAttributes) -> SFTPAttributes:
-        return item
+    def _extract_stat_from_entry(self, top: RemotePath, entry: SFTPAttributes) -> SFTPAttributes:
+        return entry
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         with self.client.open(os.fspath(path), mode="r", **kwargs) as file:

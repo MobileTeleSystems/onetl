@@ -344,11 +344,11 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         remote_directory = self.get_directory(directory)
         result = []
 
-        for item in self._listdir(remote_directory):
-            name = self._get_item_name(item)
-            stat = self._get_item_stat(remote_directory, item)
+        for entry in self._scan_entries(remote_directory):
+            name = self._extract_name_from_entry(entry)
+            stat = self._extract_stat_from_entry(remote_directory, entry)
 
-            if self._is_item_dir(remote_directory, item):
+            if self._is_dir_entry(remote_directory, entry):
                 path = RemoteDirectory(path=name, stats=stat)
             else:
                 path = RemoteFile(path=name, stats=stat)
@@ -420,11 +420,11 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         root = self.get_directory(top)
         dirs, files = [], []
 
-        for item in self._listdir(root):
-            name = self._get_item_name(item)
-            stat = self._get_item_stat(root, item)
+        for entry in self._scan_entries(root):
+            name = self._extract_name_from_entry(entry)
+            stat = self._extract_stat_from_entry(root, entry)
 
-            if self._is_item_dir(root, item):
+            if self._is_dir_entry(root, entry):
                 if not topdown:
                     yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
 
@@ -454,11 +454,11 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         yield root, dirs, files
 
     def _rmdir_recursive(self, root: RemotePath) -> None:
-        for item in self._listdir(root):
-            name = self._get_item_name(item)
-            stat = self._get_item_stat(root, item)
+        for entry in self._scan_entries(root):
+            name = self._extract_name_from_entry(entry)
+            stat = self._extract_stat_from_entry(root, entry)
 
-            if self._is_item_dir(root, item):
+            if self._is_dir_entry(root, entry):
                 path = RemoteDirectory(path=root / name, stats=stat)
                 log.debug(f"|{self.__class__.__name__}| Directory to remove: {path_repr(path)}")
                 self._rmdir_recursive(path)
@@ -471,17 +471,184 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         self._rmdir(root)
 
-    def _get_item_name(self, item) -> str:
-        return item
+    @abstractmethod
+    def _scan_entries(self, path: RemotePath) -> list:
+        """
+        The method returns a list that contains entries.
 
-    def _is_item_dir(self, top: RemotePath, item) -> bool:
-        return self._is_dir(top / self._get_item_name(item))
+        Entry is an object containing information about a path, like file or nested directory.
 
-    def _is_item_file(self, top: RemotePath, item) -> bool:
-        return self._is_file(top / self._get_item_name(item))
+        The entry contains information like file/directory name, file size, modification time, owner,
+        POSIX-compatible permissions and so on. The only required attribute is file name, others can be omitted.
 
-    def _get_item_stat(self, top: RemotePath, item) -> PathStatProtocol:
-        return self._get_stat(top / self._get_item_name(item))
+        Parameters
+        ----------
+        path : RemotePath
+            Path to the source directory
+
+        Returns
+        -------
+        list
+            List of the entries
+
+        Examples
+        --------
+
+        Get a list of entries:
+
+        .. code:: python
+
+            entry_list = connection._scan_entries(path="/a/path/to/the/directory")
+
+            print(entry_list)
+
+            [
+                {
+                    "created": "2022-12-08T18:33:39Z",
+                    "owner": None,
+                    "size": "23",
+                    "modified": "2022-12-08 18:33:20",
+                    "isdir": False,
+                    "path": "/path/to/the/file.txt",
+                },
+            ]
+
+        """
+
+    @abstractmethod
+    def _extract_name_from_entry(self, entry) -> str:
+        """
+        Return file or directory name from the entry object.
+
+        Parameters
+        ----------
+        entry
+            One of the elements retrieved from the list (returned by :obj:`~_scan_entries`).
+
+        Returns
+        -------
+        str
+
+        Examples
+        --------
+
+        Get an entry name:
+
+        .. code:: python
+
+            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+                assert entry == {
+                    "created": "2022-12-08T18:33:39Z",
+                    "owner": None,
+                    "size": "23",
+                    "modified": "2022-12-08 18:33:20",
+                    "isdir": False,
+                    "path": "/path/to/the/file.txt",
+                }
+
+                assert entry._extract_name_from_entry(entry) == "file.txt"
+        """
+
+    @abstractmethod
+    def _is_dir_entry(self, top: RemotePath, entry) -> bool:
+        """
+        Returns ``True`` if the object that describes the entry is a directory.
+
+        If entry object does not contain such information, you could construct a path
+        from ``top / entry.name`` and pass it into :obj:`~_is_dir` method.
+        But this should be avoided because such implementation sends multiple requests per file.
+
+        Parameters
+        ----------
+        top : RemotePath
+            Root directory
+        entry
+            One of the elements retrieved from the list (returned by :obj:`~_scan_entries`).
+
+        Returns
+        -------
+        bool
+
+        Examples
+        --------
+
+        Show if the entry is a directory:
+
+        .. code:: python
+
+            for component in connection._scan_entries(path="/a/path/to/the/directory"):
+                assert connection._is_dir_entry(root="/a/path/to/the/directory", entry) == True
+        """
+
+    @abstractmethod
+    def _is_file_entry(self, top: RemotePath, entry) -> bool:
+        """
+        Returns ``True`` if the object that describes the entry is a file.
+
+        If entry object does not contain such information, you could construct a path
+        from ``top / entry.name`` and pass it into :obj:`~_is_file` method.
+        But this should be avoided because such implementation sends multiple requests per file.
+
+        Parameters
+        ----------
+        top : RemotePath
+            Root directory
+        entry
+            One of the elements retrieved from the list (returned by :obj:`~_scan_entries`).
+
+        Returns
+        -------
+        bool
+
+        Examples
+        --------
+
+        Show if the entry is a file:
+
+        .. code:: python
+
+            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+                assert connection._is_file_entry(root="/a/path/to/the/directory", entry) == True
+        """
+
+    @abstractmethod
+    def _extract_stat_from_entry(self, top: RemotePath, entry) -> PathStatProtocol:
+        """
+        Returns an object containing information about file size, modification date,
+        owner, POSIX-compatible permissions and so on.
+
+        Object should be compatible with :obj:`onetl.base.path_stat_protocol.PathStatProtocol` interface.
+
+        If entry object does not contain such information, you could construct a path
+        from ``top / entry.name`` and pass it into :obj:`~_get_stat` method.
+        But this should be avoided because such implementation sends multiple requests per file.
+
+        Parameters
+        ----------
+        top : RemotePath
+            Root directory.
+        entry
+            One of the elements retrieved from the list (returned by :obj:`~_scan_entries`).
+
+        Returns
+        -------
+        PathStatProtocol
+
+        Examples
+        --------
+
+        Get statistics object from the entry:
+
+        .. code:: python
+
+            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+                stat = connection._extract_stat_from_entry(root="/a/path/to/the/directory", entry)
+
+                assert stat == RemotePathStat(
+                    st_size=23, st_mtime=1670517693.0, st_mode=None, st_uid=None, st_gid=None
+                )
+
+        """
 
     def _log_parameters(self):
         log.info("|onETL| Using connection parameters:")
@@ -527,10 +694,6 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
     @abstractmethod
     def _rename(self, source: RemotePath, target: RemotePath) -> None:
-        """"""
-
-    @abstractmethod
-    def _listdir(self, path: RemotePath) -> list:
         """"""
 
     @abstractmethod

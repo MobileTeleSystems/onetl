@@ -1,7 +1,7 @@
 .. title
 
 onETL
-=======
+=====
 
 |Build Status| |Quality Gate Status| |Maintainability Rating| |Coverage|
 |Documentation| |PyPI|
@@ -27,7 +27,6 @@ What is onETL?
 * ``onETL`` relies on `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*
 * ``onETL`` provides direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines
 * ``onETL`` supports different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ for incremental and batch data fetching
-* (TBD) onETL can send data lineage to data catalog (`Apache Atlas <https://atlas.apache.org/#/>`_)
 
 Requirements
 ------------
@@ -35,42 +34,41 @@ Requirements
 * PySpark 2.3+
 * Java 8+ (required by Spark)
 * Kerberos system libs (for HDFS access)
-* ``smbclient`` system package (for Samba access)
 
 Storage Compatibility
 ---------------------
 
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| Storage                               | Documentation                                            | Notes                                                                                                                 |
-+=======================================+==========================================================+=======================================================================================================================+
-| Clickhouse                            | `Clickhouse connection <db_connection/teradata.html>`_   | Powered by Apache Spark `JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_          |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| MSSQL                                 | `MSSQL connection <db_connection/mssql.html>`_           |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| MySQL                                 | `MySQL connection <db_connection/mysql.html>`_           |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| Postgres                              | `Postgres connection <db_connection/postgres.html>`_     |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| Oracle                                | `Oracle connection <db_connection/oracle.html>`_         |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| Teradata                              | `Teradata connection <db_connection/teradata.html>`_     |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| Hive                                  | `Hive connection <db_connection/hive.html>`_             | Powered by Apache Spark `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_   |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| Greenplum                             | `Greenplum connection <db_connection/greenplum.html>`_   | Powered by Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_    |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| HDFS                                  | `HDFS connection <file_connection/hdfs.html>`_           | Powered by `HDFS client <https://pypi.org/project/hdfs/>`_                                                            |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| S3                                    | `S3 connection <file_connection/s3.html>`_               | Powered by `Minio client <https://pypi.org/project/minio/>`_                                                          |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| Samba                                 | `Samba connection <file_connection/hdfs.html>`_          | Powered by `Samba client <https://pypi.org/project/PySmbClient/>`_                                                    |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| SFTP                                  | `SFTP connection <file_connection/hdfs.html>`_           | Powered by `Paramiko library <https://pypi.org/project/paramiko/>`_                                                   |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
-| FTP                                   | `FTP connection <file_connection/hdfs.html>`_            | Powered by `FTP client <https://pypi.org/project/ftputil/>`_                                                          |
-+---------------------------------------+----------------------------------------------------------+                                                                                                                       |
-| FTPS                                  | `FTPS connection <file_connection/hdfs.html>`_           |                                                                                                                       |
-+---------------------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Storage    | Documentation                                          | Notes                                                                                                               |
++============+========================================================+=====================================================================================================================+
+| Clickhouse | `Clickhouse connection <db_connection/teradata.html>`_ | Powered by Apache Spark `JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_        |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| MSSQL      | `MSSQL connection <db_connection/mssql.html>`_         |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| MySQL      | `MySQL connection <db_connection/mysql.html>`_         |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Postgres   | `Postgres connection <db_connection/postgres.html>`_   |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Oracle     | `Oracle connection <db_connection/oracle.html>`_       |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Teradata   | `Teradata connection <db_connection/teradata.html>`_   |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Hive       | `Hive connection <db_connection/hive.html>`_           | Powered by Apache Spark `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_ |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Greenplum  | `Greenplum connection <db_connection/greenplum.html>`_ | Powered by Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| HDFS       | `HDFS connection <file_connection/hdfs.html>`_         | Powered by `HDFS client <https://pypi.org/project/hdfs/>`_                                                          |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| S3         | `S3 connection <file_connection/s3.html>`_             | Powered by `Minio client <https://pypi.org/project/minio/>`_                                                        |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| SFTP       | `SFTP connection <file_connection/hdfs.html>`_         | Powered by `Paramiko library <https://pypi.org/project/paramiko/>`_                                                 |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| FTP        | `FTP connection <file_connection/hdfs.html>`_          | Powered by `FTP client <https://pypi.org/project/ftputil/>`_                                                        |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| FTPS       | `FTPS connection <file_connection/hdfs.html>`_         |                                                                                                                     |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| WebDAV     | `WebDAV connection <file_connection/webdav.html>`_     | Powered by `Webdav3 client <https://pypi.org/project/webdavclient3/>`_                                              |
++------------+--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 
 .. documentation

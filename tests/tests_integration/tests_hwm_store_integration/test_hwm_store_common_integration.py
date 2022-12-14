@@ -1,35 +1,15 @@
-import os
 import tempfile
 
 import pytest
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
-from onetl.strategy import (
-    AtlasHWMStore,
-    IncrementalStrategy,
-    MemoryHWMStore,
-    YAMLHWMStore,
-)
-
-ATLAS_HOST = os.environ.get("ONETL_ATLAS_CONN_HOST")
-ATLAS_PORT = os.environ.get("ONETL_ATLAS_CONN_PORT")
-ATLAS_URL = f"http://{ATLAS_HOST}:{ATLAS_PORT}"
-ATLAS_USER = os.environ.get("ONETL_ATLAS_CONN_USER")
-ATLAS_PASSWORD = os.environ.get("ONETL_ATLAS_CONN_PASSWORD")
-
+from onetl.hwm.store import MemoryHWMStore, YAMLHWMStore
+from onetl.strategy import IncrementalStrategy
 
 hwm_store = [
     MemoryHWMStore(),
     YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
-    pytest.param(
-        AtlasHWMStore(
-            url=ATLAS_URL,
-            user=ATLAS_USER,
-            password=ATLAS_PASSWORD,
-        ),
-        marks=pytest.mark.ATLAS,
-    ),
 ]
 
 

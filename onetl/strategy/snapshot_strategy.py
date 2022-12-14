@@ -68,9 +68,13 @@ class SnapshotStrategy(BaseStrategy):
         from onetl.core import DBReader
         from onetl.strategy import SnapshotStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",
@@ -144,12 +148,19 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         3:  WHERE id > 1200 AND id <= 1200; -- + step
         N:  WHERE id > 1300 AND id <= 1400; -- until stop
 
-    This allows to use less CPU and RAM than reading all the data in the one batch,
+    This allows to use less CPU and RAM on Spark cluster than reading all the data in parallel,
     but takes proportionally more time.
 
-    This strategy uses HWM column value to filter data for each batch,
-    but **does not** save it into HWM Store.
-    So every run starts from the beginning, not from the previous HWM value.
+    .. note::
+
+        This strategy uses HWM column value to filter data for each batch,
+        but **does not** save it into HWM Store.
+        So every run starts from the beginning, not from the previous HWM value.
+
+    .. note::
+
+        If you only need to reduce number of rows read by Spark from opened cursor,
+        use :obj:`onetl.connection.db_connection.postgres.Postgres.ReadOptions.fetchsize` instead
 
     Parameters
     ----------
@@ -173,8 +184,6 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             ``step`` value will be added to the HWM, so it should have a proper type.
 
             For example, for ``TIMESTAMP`` column ``step`` type should be :obj:`datetime.timedelta`, not :obj:`int`
-
-    ``start`` and ``stop`` should be the same type as ``hwm_column`` value
 
     start : Any, default: ``None``
 
@@ -223,9 +232,13 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         from onetl.core import DBReader
         from onetl.strategy import SnapshotBatchStrategy
 
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
-        spark = get_spark({"appName": "spark-app-name"})
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Postgres.package)
+            .getOrCreate()
+        )
 
         postgres = Postgres(
             host="postgres.domain.com",

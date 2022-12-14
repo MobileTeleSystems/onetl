@@ -4,13 +4,13 @@ evacuator>=1.0,<1.1
 ftputil>=5.0.4
 hdfs[kerberos]>2
 humanize
-mts_apache_atlas>=0.3.6,<0.4
+importlib_metadata
+minio
 ordered-set
 paramiko
 platformdirs
 # https://github.com/pydantic/pydantic/issues/4498
 pydantic<1.10.2
-PySmbClient
 pyyaml
 typing_extensions
-minio
+webdavclient3

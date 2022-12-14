@@ -20,7 +20,6 @@ stages:
 - build_docs
 - artifactory
 - deploy
-- clean_repo
 
 ### --------------- Include gitlab-ci-templates --------------- ###
 ## Добавляет в текущую конфигурацию CI\CD template's из DevOps репозитория для переиспользования. ##
@@ -33,7 +32,7 @@ include:
 
 # DOCKER
 - project: DevOps/cicd-store/gitlabci/docker
-  ref: v5
+  ref: v6
   file:
   - .base_docker_build.yml
   - .base_docker_cleaner.yml
@@ -60,6 +59,16 @@ include:
   - .base_rt_upload.yml
   - .base_rt_cli.yml
 
+### --------------- Workflow rules --------------- ###
+workflow:
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: never
+  # do not run anything on push commit to master branch, tests and linters have already executed on develop branch
+  - if: $CI_COMMIT_BRANCH =~ /^(master|main)$/
+    when: never
+  - when: always
+
 ### --------------- Get VAULT SECRET --------------- ###
 ## Переиспользование добавленного template'а по добавлению SSH-ключа пользователя ansible. ##
 devops_get_cicd_secrets:
@@ -85,6 +94,11 @@ mypy:
   script:
   - pip install mypy types-PyYAML types-Deprecated
   - python3 -m mypy --config-file setup.cfg onetl
+  rules:
+  # do not run linters after pushing git tag, code was already linted
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: on_success
   interruptible: true
 
 flake8:
@@ -98,6 +112,11 @@ flake8:
   artifacts:
     when: always
     paths: [flake8.txt]
+  rules:
+  # do not run linters after pushing git tag, code was already linted
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: on_success
   interruptible: true
 
 black:
@@ -108,6 +127,11 @@ black:
   script:
   - pip install black
   - python3 -m black . --check
+  rules:
+  # do not run linters after pushing git tag, code was already linted
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: on_success
   interruptible: true
 
 .build_docker_images:
@@ -119,15 +143,9 @@ black:
   dependencies:
   - devops_get_cicd_secrets
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    when: never
-  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
-    variables:
-      DOCKER_IMAGE_TAG: dev
+  # do not build docker images after pushing git tag, code was already tested
   - if: $CI_COMMIT_TAG
-    variables:
-      DOCKER_ADDITIONAL_TAGS: latest
-      DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
+    when: never
   - when: on_success
   interruptible: true
 
@@ -135,7 +153,12 @@ build_docker_image:
   extends: .build_docker_images
   variables:
     DOCKER_BUILD_EXTRA_ARGS: --build-arg BUILD_NUMBER=$CI_PIPELINE_IID --build-arg BRANCH_NAME=$CI_COMMIT_BRANCH
-    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}:dev
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}:develop
+build_docker_image_webdav:
+  extends: .build_docker_images
+  variables:
+    DOCKER_FILE_PATH: ./docker/webdav/Dockerfile
+    DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
@@ -185,21 +208,23 @@ tests:
     # Minio
     MINIO_ROOT_USER: minio_admin
     MINIO_ROOT_PASSWORD: minio_password
+    # WebDAV
+    APP_USER_NAME: admin
+    APP_USER_PASSWD: awd123fd1
+    APP_UID: 1777
+    APP_GID: 1777
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
     # Test results files
     JUNIT_FILE: junitxml.xml
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    when: never
-  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
-    variables:
-      DOCKER_IMAGE_TAG: dev
+  # do not run tests after pushing git tag, code was already tested
   - if: $CI_COMMIT_TAG
-    variables:
-      DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
+    when: never
   - when: on_success
   services:
+  - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav:${DOCKER_IMAGE_TAG}
+    alias: webdav
   - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:${DOCKER_IMAGE_TAG}
     alias: postgres
   - name: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:${DOCKER_IMAGE_TAG}
@@ -214,11 +239,9 @@ tests:
     alias: mssql
   - name: ${CI_REGISTRY}/datagrip/greenplum:6.8
     alias: greenplum
-  - name: ${CI_REGISTRY}/dev/atlas:2.1
-    alias: atlas
   - name: minio/minio
     alias: minio
-    command: ["server", "/data"]
+    command: [server, /data]
   script:
   - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
   after_script:
@@ -239,6 +262,11 @@ sonarqube_check:
   stage: sonarqube_check
   variables:
     SONAR_SOURCES: onetl
+  rules:
+  # do not run sonarcube check after pushing git tag, code was already linted
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: on_success
   interruptible: true
 
 build_and_deploy:
@@ -294,75 +322,89 @@ pages:
     CICD_PAGES_ARTIFACTORY_DOCS_PATH: files/onetools/${CI_PROJECT_NAME}/docs
   interruptible: true
 
-start_review:
-  stage: clean_repo
+start_review_pip:
+  stage: .post
   dependencies:
   - build_docs
   environment:
-    name: review/$CI_COMMIT_REF_SLUG
+    name: review/pip/$CI_COMMIT_REF_SLUG
     url: ${CI_PAGES_URL}/${VERSION}/
-    on_stop: stop_review
+    on_stop: stop_review_pip
   script:
   - echo "Start review"
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    when: never
-  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+  # environment is used to remove artifacts build in feature/ and bugfix/ branches only
+  # dev and release packages are left intact
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop)$/
     when: never
   - if: $CI_COMMIT_TAG
     when: never
-  - when: always
+  - when: on_success
 
-stop_review:
+stop_review_pip:
   extends: .base_rt_cli
-  stage: clean_repo
+  stage: .post
   script:
     # Remove artifacts for feature/bug branch
   - export CI_COMMIT_REF_SLUG=$(echo $CI_COMMIT_REF_SLUG | tr '-' '.')
   - jfrog rt delete files/onetools/onetl/docs/*+${CI_COMMIT_REF_SLUG}*
   - jfrog rt delete pypi-local/onetl/*+${CI_COMMIT_REF_SLUG}
   environment:
-    name: review/$CI_COMMIT_REF_SLUG
+    name: review/pip/$CI_COMMIT_REF_SLUG
     action: stop
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    when: never
-  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+  # environment is used to remove artifacts build in feature/ and bugfix/ branches only
+  # dev and release packages are left intact
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop)$/
     when: never
   - if: $CI_COMMIT_TAG
     when: never
   - when: manual
     allow_failure: true
 
-.clean_docker_repo:
+start_review_docker:
+  stage: .post
+  environment:
+    name: review/docker/$CI_COMMIT_REF_SLUG
+    on_stop: stop_review_docker
+  script:
+  - echo "Start review"
+  rules:
+  # environment is used to remove artifacts build in feature/ and bugfix/ branches only
+  # dev and release packages are left intact
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop)$/
+    when: never
+  - if: $CI_COMMIT_TAG
+    when: never
+  - when: on_success
+
+stop_review_docker:
   extends: .base_docker_cleaner
   stage: .post
   variables:
     DOCKER_IMAGE_TAGS: ${CI_COMMIT_REF_SLUG}
+  environment:
+    name: review/docker/$CI_COMMIT_REF_SLUG
+    action: stop
+  script:
+  # parallel:matrix is not supported in on_stop jobs: https://gitlab.com/gitlab-org/gitlab/-/issues/332247
+  # so calling .base_docker_cleaner script directly with multiple image names
+  - DOCKER_IMAGE_NAME=${CI_PROJECT_PATH}
+  - !reference [.base_docker_cleaner, script]
+  - DOCKER_IMAGE_NAME=${CI_PROJECT_PATH}/webdav
+  - !reference [.base_docker_cleaner, script]
+  - DOCKER_IMAGE_NAME=${CI_PROJECT_PATH}/hive2
+  - !reference [.base_docker_cleaner, script]
+  - DOCKER_IMAGE_NAME=${CI_PROJECT_PATH}/postgres
+  - !reference [.base_docker_cleaner, script]
+  - DOCKER_IMAGE_NAME=${CI_PROJECT_PATH}/oracle
+  - !reference [.base_docker_cleaner, script]
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    when: never
-  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop|master|main)$/
+  # environment is used to remove artifacts build in feature/ and bugfix/ branches only
+  # dev and release packages are left intact
+  - if: $CI_COMMIT_BRANCH =~ /^(dev|develop)$/
     when: never
   - if: $CI_COMMIT_TAG
-    variables:
-      DOCKER_IMAGE_TAG: ${CI_COMMIT_TAG}
-  - when: always
-  interruptible: false
-
-clean_docker_repo_hive2:
-  extends: .clean_docker_repo
-  variables:
-    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/hive2
-clean_docker_repo_postgres:
-  extends: .clean_docker_repo
-  variables:
-    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/postgres
-clean_docker_repo_oracle:
-  extends: .clean_docker_repo
-  variables:
-    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}/oracle
-clean_docker_repo:
-  extends: .clean_docker_repo
-  variables:
-    DOCKER_IMAGE_NAME: ${CI_PROJECT_PATH}
+    when: never
+  - when: manual
+    allow_failure: true

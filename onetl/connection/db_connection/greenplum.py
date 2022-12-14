@@ -141,8 +141,6 @@ class Greenplum(JDBCMixin, DBConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
 
-        You can use ``mtspark`` for spark session initialization
-
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
@@ -160,33 +158,30 @@ class Greenplum(JDBCMixin, DBConnection):
     .. code:: python
 
         from onetl.connection import Greenplum
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {
             "server.port": "49152-65535",
             "pool.maxSize": "10",
         }
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    Greenplum.package_spark_3_2,  # package should match your Spark version
-                ],
-                # IMPORTANT!!!
-                # Each job on the executor make its own connection to Spark,
-                # so we need to limit them to avoid opening too many connections.
-                # table size ~20Gb requires about 10 executors * cores,
-                # ~50Gb requires ~ 20 executors * cores,
-                # 100Gb+ requires 30 executors * cores.
-                # Cores number can be increased, but executors count should be reduced
-                # to keep the same number of executors * cores.
-                #
-                "spark.dynamicAllocation.maxExecutors": 10,  # or spark.executor.instances
-                "spark.executor.cores": 1,
-            },
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", Greenplum.package_spark_2_4)
+            .config("spark.dynamicAllocation.maxExecutors", 10)
+            .config("spark.executor.cores", 1)
+            .getOrCreate()
         )
+
+        # IMPORTANT!!!
+        # Each job on the executor make its own connection to Spark,
+        # so we need to limit them to avoid opening too many connections.
+        # table size ~20Gb requires about 10 executors * cores,
+        # ~50Gb requires ~ 20 executors * cores,
+        # 100Gb+ requires 30 executors * cores.
+        # Cores number can be increased, but executors count should be reduced
+        # to keep the same number of executors * cores.
+
 
         greenplum = Greenplum(
             host="master.host.or.ip",

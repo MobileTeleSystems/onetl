@@ -43,26 +43,29 @@ class FTPS(FTP):
     Parameters
     ----------
     host : str
-        Host of ftp source. For example: ``10.226.174.94``
+        Host of FTPS source. For example: ``ftps.domain.com``
+
     port : int, default: ``21``
-        Port of ftp source
+        Port of FTPS source
+
     user : str
-        User, which have access to the file source. For example: ``sa0000sphretltest``
+        User, which have access to the file source. For example: ``someuser``
+
     password : str, default: ``None``
         Password for file source connection
 
     Examples
     --------
 
-    FTP file connection initialization
+    FTPS file connection initialization
 
     .. code:: python
 
         from onetl.connection import FTPS
 
         ftps = FTPS(
-            host="10.226.174.94",
-            user="sa0000sphretltest",
+            host="ftps.domain.com",
+            user="someuser",
             password="*****",
         )
     """

@@ -1,11 +1,14 @@
-import secrets
 import tempfile
 
 import pytest
 from omegaconf import OmegaConf
 
-from onetl.strategy import AtlasHWMStore, MemoryHWMStore, YAMLHWMStore, detect_hwm_store
-from onetl.strategy.hwm_store import HWMStoreManager
+from onetl.hwm.store import (
+    HWMStoreManager,
+    MemoryHWMStore,
+    YAMLHWMStore,
+    detect_hwm_store,
+)
 
 
 @pytest.mark.parametrize(
@@ -71,24 +74,6 @@ from onetl.strategy.hwm_store import HWMStoreManager
             {"hwm_store": {"yml": {"path": tempfile.mktemp("hwmstore"), "encoding": "utf8"}}},  # noqa: S306 NOSONAR
             "hwm_store",
         ),
-        (
-            AtlasHWMStore,
-            {"hwm_store": {"atlas": {"url": "http://some.atlas.url"}}},
-            "hwm_store",
-        ),
-        (
-            AtlasHWMStore,
-            {
-                "hwm_store": {
-                    "atlas": {
-                        "url": "http://some.atlas.url",
-                        "user": secrets.token_hex(),
-                        "password": secrets.token_hex(),
-                    },
-                },
-            },
-            "hwm_store",
-        ),
     ],
 )
 @pytest.mark.parametrize("config_constructor", [dict, OmegaConf.create])
@@ -139,21 +124,6 @@ def test_hwm_store_unit_detect_failure(input_config, config_constructor):
         {"hwm_store": {"yml": [tempfile.mktemp("hwmstore")]}},  # noqa: S306 NOSONAR
         {"hwm_store": {"yml": [tempfile.mktemp("hwmstore"), "utf8"]}},  # noqa: S306 NOSONAR
         {"hwm_store": {"yml": {"unknown": "arg"}}},
-        {"hwm_store": {"atlas": 1}},
-        {"hwm_store": {"atlas": None}},
-        {"hwm_store": {"atlas": "http://some.atlas.url"}},
-        {"hwm_store": {"atlas": ["http://some.atlas.url"]}},
-        {
-            "hwm_store": {
-                "atlas": [
-                    "positional",
-                    "args",
-                    "prohibited",
-                ],
-            },
-        },
-        {"hwm_store": {"atlas": {}}},
-        {"hwm_store": {"atlas": {"unknown": "arg"}}},
         {"not_hwm_store": "yml"},
     ],
 )

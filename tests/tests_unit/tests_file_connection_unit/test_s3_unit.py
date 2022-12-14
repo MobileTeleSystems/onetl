@@ -24,7 +24,7 @@ def test_s3_connection_sec():
         access_key="access_key",
         secret_key="secret_key",
         bucket="bucket",
-        secure=True,
+        protocol="https",
     )
 
     assert s3.host == "some_host"
@@ -41,7 +41,7 @@ def test_s3_connection_no_sec():
         access_key="access_key",
         secret_key="secret_key",
         bucket="bucket",
-        secure=False,
+        protocol="http",
     )
 
     assert s3.host == "some_host"

@@ -9,8 +9,8 @@ services:
     command: server /data --console-address ":9001"
     networks: [onetl]
     ports:
-      - 9010:9000
-      - 9011:9001
+    - 9010:9000
+    - 9011:9001
 
   postgres:
     # TODO: fix later
@@ -68,6 +68,19 @@ services:
     - 5501:5500
     networks: [onetl]
 
+  webdav:
+    build:
+      dockerfile: ./docker/webdav/Dockerfile
+      context: .
+    container_name: webdav
+    ports:
+    - 80:80
+    - 443:443
+    env_file: onetl_local.default.env
+    restart: always
+    networks:
+    - onetl
+
   clickhouse:
     image: yandex/clickhouse-server
     env_file: onetl_local.default.env
@@ -88,13 +101,6 @@ services:
     env_file: onetl_local.default.env
     ports:
     - 1433:1433
-    networks: [onetl]
-
-  atlas:
-    image: docker.rep.msk.mts.ru/dev/atlas:2.1
-    env_file: onetl_local.default.env
-    ports:
-    - 21000:21000
     networks: [onetl]
 
 # Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,

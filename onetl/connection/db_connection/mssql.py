@@ -53,8 +53,6 @@ class MSSQL(JDBCConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
 
-        You can use ``mtspark`` for spark session initialization
-
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
@@ -72,20 +70,16 @@ class MSSQL(JDBCConnection):
     .. code:: python
 
         from onetl.connection import MSSQL
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    MSSQL.package,
-                ],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", MSSQL.package)
+            .getOrCreate()
         )
 
         mssql = MSSQL(
@@ -101,7 +95,7 @@ class MSSQL(JDBCConnection):
     .. code:: python
 
         from onetl.connection import MSSQL
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {
             "Domain": "some.domain.com",  # add here your domain
@@ -110,14 +104,10 @@ class MSSQL(JDBCConnection):
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    MSSQL.package,
-                ],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", MSSQL.package)
+            .getOrCreate()
         )
 
         mssql = MSSQL(
@@ -133,21 +123,17 @@ class MSSQL(JDBCConnection):
     .. code:: python
 
         from onetl.connection import MSSQL
-        from mtspark import get_spark
+        from pyspark.sql import SparkSession
 
         extra = {
             "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
             "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
         }
 
-        spark = get_spark(
-            {
-                "appName": "spark-app-name",
-                "spark.jars.packages": [
-                    "default:skip",
-                    MSSQL.package,
-                ],
-            }
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", MSSQL.package)
+            .getOrCreate()
         )
 
         mssql = MSSQL(

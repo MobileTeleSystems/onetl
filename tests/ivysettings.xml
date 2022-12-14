@@ -1,0 +1,39 @@
+<ivysettings>
+    <settings defaultResolver="main"/>
+    <resolvers>
+        <chain name="main" returnFirst="true">
+            <!-- Local Maven cache-->
+            <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
+            <!-- Artifactory local repos-->
+            <ibiblio name="libs-release-local" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/libs-release-local/" />
+            <ibiblio name="ext-release-local" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/ext-release-local/" />
+            <ibiblio name="libs-snapshot-local" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/libs-snapshot-local/" />
+            <ibiblio name="advert-maven" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/advert-maven/" />
+            <ibiblio name="geo" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/geo/" />
+            <ibiblio name="etl-loader" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/ETL-data_loader_test/" />
+            <ibiblio name="datahub-flink" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/datahub-flink/" />
+            <ibiblio name="datariver" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/datariver/" />
+            <ibiblio name="global-x" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/global-X/" />
+            <ibiblio name="netscout" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/netscout/" />
+            <ibiblio name="netscout-jar" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/netscout_jar/" />
+            <ibiblio name="voice" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/voice/" />
+            <!-- Artifactory remote repos-->
+            <ibiblio name="jcenter" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/jcenter/" />
+            <ibiblio name="spark-packages" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/spark-packages/" />
+            <ibiblio name="sbt-maven2" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/sbtMaven2/" />
+            <ibiblio name="mvnrepository" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/mvnrepository/" />
+            <ibiblio name="apache-releases" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/apache.org_releases/" />
+            <ibiblio name="apache-snapshots" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/ApacheSnapshots/" />
+            <ibiblio name="clojars" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/clojars/" />
+            <ibiblio name="cloudera-maven" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/cloudera-maven/" />
+            <ibiblio name="hortonworks-repo-releases" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/hortonworks-repo-releases/" />
+            <ibiblio name="hortonworks-repo-public" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/hortonworks-repo-public/" />
+            <ibiblio name="boundless" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/Boundless/" />
+            <ibiblio name="os-geo" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/OSGeo/" />
+            <ibiblio name="geotoolkit" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/geotoolkit/" />
+            <ibiblio name="sbt-maven" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/SBT-maven.org/" />
+            <ibiblio name="sbt-scala" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/SBT-scala-sbt.org/" />
+            <ibiblio name="sbt-scala-plugins" m2compatible="true" root="http://rep.msk.mts.ru/artifactory/SBT-scala-sbt.org-plugins/" />
+        </chain>
+    </resolvers>
+</ivysettings>

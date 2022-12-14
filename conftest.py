@@ -18,7 +18,7 @@ from etl_entities import (
     RemoteFolder,
     Table,
 )
-from mtspark import get_spark
+from pyspark.sql import SparkSession
 from pytest_lazyfixture import lazy_fixture
 
 from onetl.connection import (
@@ -26,6 +26,7 @@ from onetl.connection import (
     FTPS,
     HDFS,
     MSSQL,
+    S3,
     SFTP,
     Clickhouse,
     Greenplum,
@@ -33,9 +34,9 @@ from onetl.connection import (
     Oracle,
     Postgres,
     Teradata,
-    S3,
+    WebDAV,
 )
-from onetl.strategy import MemoryHWMStore
+from onetl.hwm.store import MemoryHWMStore
 from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
 from tests.lib.greenplum_processing import GreenplumProcessing
@@ -87,7 +88,7 @@ def s3():
         access_key=os.getenv("MINIO_ROOT_USER"),
         secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
         bucket=os.getenv("ONETL_MINIO_BUCKET"),
-        secure=False,
+        protocol="http",
     )
 
     if not s3.client.bucket_exists("testbucket"):
@@ -103,6 +104,19 @@ def sftp_server(tmp_path_factory):
     sleep(5)
     yield server
     server.stop()
+
+
+@pytest.fixture(scope="session")
+def webdav_connection():
+    wd = WebDAV(
+        host=os.getenv("ONETL_WEBDAV_HOST"),
+        user=os.getenv("ONETL_WEBDAV_USER"),
+        password=os.getenv("ONETL_WEBDAV_PASSWORD"),
+        ssl_verify=False,
+        protocol="http",
+    )
+
+    yield wd
 
 
 @pytest.fixture(scope="function")
@@ -161,27 +175,37 @@ def upload_files_with_encoding(file_all_connections, source_path):
 
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(request):
-    config = {
-        "appName": "onetl",
-        "spark.jars.packages": [
-            "default:skip",
-            Oracle.package,
-            Clickhouse.package,
-            Postgres.package,
-            Greenplum.package_spark_2_4,
-            MySQL.package,
-            MSSQL.package,
-            Teradata.package,
-        ],
-    }
 
-    if getattr(request, "param", None):
-        config.update(request.param)
-
-    spark = get_spark(
-        config=config,
-        spark_version="local",
+    spark = (
+        SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
+        .config("spark.master", "local[*]")
+        .config(
+            "spark.jars.packages",
+            ",".join(
+                [
+                    Oracle.package,
+                    Clickhouse.package,
+                    Postgres.package,
+                    Greenplum.package_spark_2_4,
+                    MySQL.package,
+                    MSSQL.package,
+                    Teradata.package,
+                ],
+            ),
+        )
+        .config("spark.driver.memory", "1g")
+        .config("spark.driver.maxResultSize", "1g")
+        .config("spark.executor.cores", "1")
+        .config("spark.executor.memory", "1g")
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .config("spark.kryoserializer.buffer.max", "256m")
+        .config("spark.default.parallelism", "1")
+        .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true")
+        .config("spark.jars.ivySettings", os.fspath(Path(__file__).parent / "tests" / "ivysettings.xml"))
+        .enableHiveSupport()
+        .getOrCreate()
     )
+
     yield spark
     spark.sparkContext.stop()
     spark.stop()
@@ -277,6 +301,7 @@ def use_memory_hwm_store(request):
         pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
         pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
         pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
+        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.WebDAV),
     ],
 )
 def file_connection_without_s3(request):

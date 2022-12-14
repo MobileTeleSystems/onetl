@@ -12,18 +12,39 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.strategy.hwm_store.atlas_hwm_store import AtlasHWMStore
-from onetl.strategy.hwm_store.base_hwm_store import BaseHWMStore
-from onetl.strategy.hwm_store.hwm_class_registry import (
-    HWMClassRegistry,
-    register_hwm_class,
-)
-from onetl.strategy.hwm_store.hwm_store_class_registry import (
-    HWMStoreClassRegistry,
-    default_hwm_store_class,
-    detect_hwm_store,
-    register_hwm_store_class,
-)
-from onetl.strategy.hwm_store.hwm_store_manager import HWMStoreManager
-from onetl.strategy.hwm_store.memory_hwm_store import MemoryHWMStore
-from onetl.strategy.hwm_store.yaml_hwm_store import YAMLHWMStore
+import textwrap
+import warnings
+from importlib import import_module
+
+new_module = "onetl.hwm.store"
+
+imports_source = {
+    "BaseHWMStore": "base_hwm_store",
+    "HWMClassRegistry": "hwm_class_registry",
+    "register_hwm_class": "hwm_class_registry",
+    "HWMStoreClassRegistry": "hwm_store_class_registry",
+    "default_hwm_store_class": "hwm_store_class_registry",
+    "detect_hwm_store": "hwm_store_class_registry",
+    "register_hwm_store_class": "hwm_store_class_registry",
+    "HWMStoreManager": "hwm_store_manager",
+    "MemoryHWMStore": "memory_hwm_store",
+    "YAMLHWMStore": "yaml_hwm_store",
+}
+
+
+def __getattr__(name: str):
+    if name not in imports_source:
+        raise ImportError(f"cannot import name {name!r} from {__name__!r}")
+
+    submodule = imports_source[name]
+
+    message = f"""
+        Imports from module {__name__!r} are deprecated since v0.6.0 and will be removed in v1.0.0.
+        Please use instead:
+
+        from {new_module} import {name}
+    """
+
+    warnings.warn(textwrap.dedent(message), category=DeprecationWarning, stacklevel=2)
+
+    return getattr(import_module(f"{new_module}.{submodule}"), name)
