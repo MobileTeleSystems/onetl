@@ -1,7 +1,7 @@
 .. title
 
 onETL
-=======
+=====
 
 |Build Status| |Quality Gate Status| |Maintainability Rating| |Coverage|
 |Documentation| |PyPI|
