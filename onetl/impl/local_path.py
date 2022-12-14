@@ -20,9 +20,8 @@ class LocalPath(Path):
     def __new__(cls, *args, **kwargs):
         if cls is LocalPath:
             cls = LocalWindowsPath if os.name == "nt" else LocalPosixPath
-        self = cls._from_parts(args, init=False)
-        self._init()
-        return self
+        self = cls._from_parts(args)
+        return self  # noqa: WPS331
 
 
 class LocalPosixPath(LocalPath, PurePosixPath):
