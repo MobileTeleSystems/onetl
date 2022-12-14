@@ -88,7 +88,7 @@ def s3():
         access_key=os.getenv("MINIO_ROOT_USER"),
         secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
         bucket=os.getenv("ONETL_MINIO_BUCKET"),
-        secure=False,
+        protocol="http",
     )
 
     if not s3.client.bucket_exists("testbucket"):
