@@ -432,16 +432,16 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
                 if match_all_filters(filters, path):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
 
-                if limits_reached(limits, path):
-                    break
+                    if limits_reached(limits, path):
+                        break
             else:
                 path = RemoteFile(path=root / name, stats=stat)
 
                 if match_all_filters(filters, path):
                     files.append(RemoteFile(path=name, stats=stat))
 
-                if limits_reached(limits, path):
-                    break
+                    if limits_reached(limits, path):
+                        break
 
         if topdown:
             for name in dirs:

@@ -884,6 +884,41 @@ def test_downloader_file_limit_is_ignored_by_user_input(
     assert len(download_result.successful) == len(upload_test_files)
 
 
+def test_downloader_limit_applied_after_filter(file_all_connections, source_path, upload_test_files, tmp_path_factory):
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_all_connections,
+        source_path=source_path,
+        local_path=local_path,
+        filter=FileFilter(glob="*.csv"),
+        limit=FileLimit(count_limit=1),
+    )
+
+    excluded = [
+        "/export/news_parse/exclude_dir/file_4.txt",
+        "/export/news_parse/exclude_dir/file_5.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_1.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_2.txt",
+        "/export/news_parse/news_parse_zp/exclude_dir/file_3.txt",
+    ]
+
+    download_result = downloader.run()
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    filtered = {
+        local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
+    }
+
+    # limit should be applied to files which satisfy the filter, not to all files in the source_path
+    assert download_result.successful.issubset(filtered)
+    assert len(download_result.successful) == 1
+
+
 def test_downloader_detect_hwm_type_snap_batch_strategy(
     file_all_connections,
     source_path,
