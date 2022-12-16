@@ -910,12 +910,13 @@ def test_downloader_limit_applied_after_filter(file_all_connections, source_path
     assert not download_result.missing
     assert download_result.successful
 
-    filtered = sorted(
+    filtered = {
         local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
-    )
+    }
 
     # limit should be applied to files which satisfy the filter, not to all files in the source_path
-    assert sorted(download_result.successful) == filtered[:1]
+    assert download_result.successful.issubset(filtered)
+    assert len(download_result.successful) == 1
 
 
 def test_downloader_detect_hwm_type_snap_batch_strategy(
