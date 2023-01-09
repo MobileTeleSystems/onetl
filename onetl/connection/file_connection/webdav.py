@@ -19,9 +19,10 @@ import io
 import os
 import stat
 from logging import getLogger
+from ssl import SSLContext
 from typing import Any, Optional, Union
 
-from pydantic import SecretStr, root_validator
+from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
 from typing_extensions import Literal
 from webdav3.client import Client
 
@@ -81,7 +82,7 @@ class WebDAV(FileConnection):
     user: str
     password: SecretStr
     port: Optional[int] = None
-    ssl_verify: bool = False
+    ssl_verify: Union[bool, FilePath, DirectoryPath, SSLContext] = True
     protocol: Union[Literal["http"], Literal["https"]] = "https"
 
     @root_validator
@@ -107,9 +108,7 @@ class WebDAV(FileConnection):
         }
 
         client = Client(options)
-
-        if self.ssl_verify:
-            client.verify = True
+        client.verify = self.ssl_verify
 
         return client
 
