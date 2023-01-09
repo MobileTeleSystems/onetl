@@ -13,8 +13,7 @@ pyftpdlib
 pymssql
 PyMySQL
 pyodbc
-# https://github.com/giampaolo/pyftpdlib/issues/578
-pyopenssl<22.1
+pyopenssl
 pyspark<3
 pytest
 pytest-lazy-fixture
