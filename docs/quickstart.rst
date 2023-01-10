@@ -8,8 +8,8 @@ Read data from MSSQL, transform & write to Hive.
 
 .. code:: python
 
-    # Import mtspark to initialize the SparkSession
-    from mtspark import get_spark
+    # Import pyspark to initialize the SparkSession
+    from pyspark.sql import SparkSession
 
     # import function to setup onETL logging
     from onetl.log import setup_logging
@@ -24,14 +24,11 @@ Read data from MSSQL, transform & write to Hive.
     setup_logging()
 
     # Initiate new SparkSession
-    spark = get_spark(
-        {
-            "appName": "spark_app_onetl_demo",
-            "spark.jars.packages": [
-                "default:skip",
-                MSSQL.package,
-            ],
-        }
+    spark = (
+        SparkSession.builder.appName("spark_app_onetl_demo")
+        .config("spark.jars.packages", MSSQL.package)
+        .enableHiveSupport()
+        .getOrCreate()
     )
 
     # Initiate MSSQL connection and check it

@@ -494,7 +494,9 @@ class FileDownloader(FrozenModel):
             remote_file_folder = RemoteFolder(name=self.source_path, instance=self.connection.instance_url)
             strategy.hwm = self.hwm_type(source=remote_file_folder)
 
-        strategy.fetch_hwm()
+        if not strategy.hwm:
+            strategy.fetch_hwm()
+
         file_hwm = strategy.hwm
 
         # to avoid issues when HWM store returned HWM with unexpected type
