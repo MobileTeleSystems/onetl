@@ -95,11 +95,11 @@ Recommendations
 
   Filtering by row index has complexity ``O(n * log n)`` (for B-tree), which is very effective.
 
-  .. note ::
+  .. note::
 
     Filtering performance depends on the index implementation and internal RDBMS optimization engine.
 
-  .. note ::
+  .. note::
 
     Use indexes which support ``<`` and ``>`` operations.
     Hash-based indexes, which support only ``=`` and ``IN`` operations, cannot be used
