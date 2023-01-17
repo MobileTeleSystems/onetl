@@ -6,10 +6,14 @@ coverage
 
 # Oracle client
 cx_Oracle
+numpy>=1.16,<1.20
 
 omegaconf
+pandas>=0.24,<1.0
 psycopg2-binary
+pyarrow>=0.11,<0.12
 pyftpdlib
+pymongo<=3.10.1  # newer versions crash when importing a library
 pymssql
 PyMySQL
 pyodbc
@@ -18,13 +22,8 @@ pyspark<3
 pytest
 pytest-lazy-fixture
 pytest-rerunfailures
-
 sftpserver
 sqlalchemy
 
 # mypy
 types-PyYAML
-numpy>=1.16,<1.20
-pandas>=0.24,<1.0
-pyarrow>=0.11,<0.12
-

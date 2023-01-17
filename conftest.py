@@ -30,6 +30,7 @@ from onetl.connection import (
     SFTP,
     Clickhouse,
     Greenplum,
+    MongoDB,
     MySQL,
     Oracle,
     Postgres,
@@ -42,6 +43,7 @@ from tests.lib.common import upload_files
 from tests.lib.greenplum_processing import GreenplumProcessing
 from tests.lib.hive_processing import HiveProcessing
 from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
+from tests.lib.mongo_processing import MongoDBProcessing
 from tests.lib.mssql_processing import MSSQLProcessing
 from tests.lib.mysql_processing import MySQLProcessing
 from tests.lib.oracle_processing import OracleProcessing
@@ -175,7 +177,6 @@ def upload_files_with_encoding(file_all_connections, source_path):
 
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(request):
-
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
@@ -190,6 +191,7 @@ def get_spark_session(request):
                     MySQL.package,
                     MSSQL.package,
                     Teradata.package,
+                    MongoDB.package_spark_2_4,
                 ],
             ),
         )
@@ -221,6 +223,7 @@ def processing(request, spark):
         "clickhouse": ClickhouseProcessing,
         "mysql": MySQLProcessing,
         "mssql": MSSQLProcessing,
+        "mongodb": MongoDBProcessing,
     }
 
     test_function = request.function

@@ -16,3 +16,4 @@ DB Connections
     Oracle <oracle>
     Postgres <postgres>
     Teradata <teradata>
+    MongoDB <mongo>

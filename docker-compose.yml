@@ -3,6 +3,15 @@ version: '3.5'
 # NOTE: Только для разработки и локального/CI тестирования
 services:
 
+  mongo:
+    image: mongo
+    restart: always
+    networks:
+    - onetl
+    ports:
+    - 27017:27017
+    env_file: onetl_local.default.env
+
   minio:
     image: minio/minio
     env_file: onetl_local.default.env

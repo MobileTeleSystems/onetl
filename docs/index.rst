@@ -39,6 +39,7 @@
     db_connection/oracle
     db_connection/postgres
     db_connection/teradata
+    db_connection/mongodb
 
 .. toctree::
     :maxdepth: 2
