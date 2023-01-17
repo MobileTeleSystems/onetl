@@ -11,8 +11,9 @@ minio
 ordered-set
 paramiko
 platformdirs
+# https://github.com/pydantic/pydantic/issues/4092
 # https://github.com/pydantic/pydantic/issues/4498
-pydantic!=1.10.2,<2
+pydantic>=1.9.2,!=1.10.2,<2
 pyyaml
 typing_extensions
 webdavclient3
