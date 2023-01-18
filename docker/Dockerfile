@@ -27,17 +27,24 @@ RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-i
     && chown -R onetl:onetl ${ONETL_USER_HOME} \
     && chown -R onetl:onetl /opt/project/
 
-COPY ./requirements.txt \
-     ./requirements-test.txt \
-     ./wait-for-it.sh \
-     ./docker/entrypoint.sh /
-
+COPY ./docker/entrypoint.sh ./docker/wait-for-it.sh /
 RUN chmod +x /entrypoint.sh /wait-for-it.sh
+
+COPY ./requirements/ /requirements/
 
 ARG BUILD_NUMBER
 ARG BRANCH_NAME
 
-RUN pip install -r /requirements-test.txt
+RUN pip install \
+    -r /requirements/requirements.txt \
+    -r /requirements/requirements-ftp.txt \
+    -r /requirements/requirements-hdfs.txt \
+    -r /requirements/requirements-s3.txt \
+    -r /requirements/requirements-sftp.txt \
+    -r /requirements/requirements-webdav.txt \
+    -r /requirements/requirements-spark.txt \
+    -r /requirements/requirements-kerberos.txt \
+    -r /requirements/requirements-test.txt
 
 USER onetl
 

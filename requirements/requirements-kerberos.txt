@@ -1,0 +1,2 @@
+# same as hdfs[kerberos], but without including hdfs itself
+requests-kerberos>=0.7.0

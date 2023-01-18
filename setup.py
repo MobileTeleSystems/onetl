@@ -1,21 +1,53 @@
-from os.path import abspath, dirname, join
+from __future__ import annotations
+
+import os
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
-from version import get_version
+here = Path(__file__).parent.resolve()
 
-__version__ = get_version()
-SELF_PATH = abspath(dirname(__file__))
 
-with open(join(SELF_PATH, "requirements.txt")) as f:
-    requirements = [line.rstrip() for line in f if line and not line.startswith("#")]
+def get_version():
+    if "CI_COMMIT_TAG" in os.environ:
+        return os.environ["CI_COMMIT_TAG"]
 
-with open(join(SELF_PATH, "README.rst")) as f:
-    long_description = f.read()
+    version_file = here / "onetl" / "VERSION"
+    version = version_file.read_text().strip()  # noqa: WPS410
+
+    build_num = os.environ.get("CI_PIPELINE_IID", "")
+    branch_name = os.environ.get("CI_COMMIT_REF_SLUG", "")
+    branches_protect = ["master", "develop"]
+
+    if not branch_name or branch_name in branches_protect:
+        return f"{version}.dev{build_num}"
+
+    return f"{version}.dev{build_num}+{branch_name}"
+
+
+def parse_requirements(file: Path) -> list[str]:
+    lines = file.read_text().splitlines()
+    return [line.rstrip() for line in lines if line and not line.startswith("#")]
+
+
+requirements = parse_requirements(here / "requirements" / "requirements.txt")
+
+requirements_ftp = parse_requirements(here / "requirements" / "requirements-ftp.txt")
+requirements_sftp = parse_requirements(here / "requirements" / "requirements-sftp.txt")
+requirements_hdfs = parse_requirements(here / "requirements" / "requirements-hdfs.txt")
+requirements_s3 = parse_requirements(here / "requirements" / "requirements-s3.txt")
+requirements_webdav = parse_requirements(here / "requirements" / "requirements-webdav.txt")
+requirements_files = [*requirements_ftp, *requirements_sftp, *requirements_hdfs, *requirements_s3, *requirements_webdav]
+
+requirements_kerberos = parse_requirements(here / "requirements" / "requirements-kerberos.txt")
+requirements_spark = parse_requirements(here / "requirements" / "requirements-spark.txt")
+requirements_all = [*requirements_files, *requirements_kerberos, *requirements_spark]
+
+long_description = (here / "README.rst").read_text()
 
 setup(
     name="onetl",
-    version=__version__,
+    version=get_version(),
     author="ONEtools Team",
     author_email="onetools@mts.ru",
     description="etl-tool for extract and load operations",
@@ -50,6 +82,18 @@ setup(
     packages=find_packages(exclude=["docs", "docs.*", "tests", "tests.*"]),
     python_requires=">=3.7",
     install_requires=requirements,
+    extras_require={
+        "spark": requirements_spark,
+        "ftp": requirements_ftp,
+        "ftps": requirements_ftp,
+        "sftp": requirements_sftp,
+        "hdfs": requirements_hdfs,
+        "s3": requirements_s3,
+        "webdav": requirements_webdav,
+        "files": requirements_files,
+        "kerberos": requirements_kerberos,
+        "all": requirements_all,
+    },
     include_package_data=True,
     zip_safe=False,
 )

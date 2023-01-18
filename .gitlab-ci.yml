@@ -296,7 +296,7 @@ build_docs:
   - export VERSION=$(python setup.py --version)
   - echo "VERSION=$VERSION" >> deploy.env
   script:
-  - pip install -r requirements.txt -r requirements-docs.txt
+  - pip install -r ./requirements/requirements.txt -r ./requirements/requirements-docs.txt
   - cd docs
   - make html
   - tar cvzf html-${VERSION}.tar.gz -C _build/html .

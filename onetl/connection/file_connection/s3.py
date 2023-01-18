@@ -16,11 +16,28 @@ from __future__ import annotations
 
 import io
 import os
+import textwrap
 from logging import getLogger
 from typing import Any, Optional, Union
 
-from minio import Minio, commonconfig
-from minio.datatypes import Object
+try:
+    from minio import Minio, commonconfig
+    from minio.datatypes import Object
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "minio".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[s3]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
 from pydantic import SecretStr, root_validator
 from typing_extensions import Literal
 
@@ -31,7 +48,22 @@ log = getLogger(__name__)
 
 
 class S3(FileConnection):
-    """Class for S3 file connection.
+    """S3 file connection.
+
+    Based on `minio-py client <https://pypi.org/project/minio/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use S3 connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[s3]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------

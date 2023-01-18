@@ -13,11 +13,27 @@
 #  limitations under the License.
 
 import ftplib  # NOQA: S402
+import textwrap
 
 from ftputil import FTPHost
 from ftputil import session as ftp_session
 
-from onetl.connection.file_connection.ftp import FTP
+try:
+    from onetl.connection.file_connection.ftp import FTP
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "ftputil".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[ftps]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
 
 
 class TLSfix(ftplib.FTP_TLS):  # noqa: N801
@@ -38,7 +54,22 @@ class TLSfix(ftplib.FTP_TLS):  # noqa: N801
 
 
 class FTPS(FTP):
-    """Class for FTPS file connection.
+    """FTPS file connection.
+
+    Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use FTPS connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[ftps]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------

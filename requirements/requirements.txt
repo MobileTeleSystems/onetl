@@ -1,19 +1,13 @@
 deprecated
 etl-entities>=1.3,<1.4
 evacuator>=1.0,<1.1
-# https://todo.sr.ht/~sschwarzer/ftputil/150
-ftputil>=5.0.4
-hdfs[kerberos]>2
 humanize
 # 3.5.0 fails with "entry_points() got an unexpected keyword argument 'group'"
 importlib_metadata>=3.6.0
-minio
 ordered-set
-paramiko
 platformdirs
 # https://github.com/pydantic/pydantic/issues/4092
 # https://github.com/pydantic/pydantic/issues/4498
 pydantic>=1.9.2,!=1.10.2,<2
 pyyaml
 typing_extensions
-webdavclient3

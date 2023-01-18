@@ -18,13 +18,30 @@ import datetime
 import io
 import os
 import stat
+import textwrap
 from logging import getLogger
 from ssl import SSLContext
 from typing import Any, Optional, Union
 
+try:
+    from webdav3.client import Client
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "webdav3".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[webdav]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
 from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
 from typing_extensions import Literal
-from webdav3.client import Client
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
@@ -34,7 +51,22 @@ DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
 class WebDAV(FileConnection):
-    """Class for WebDAV file connection.
+    """WebDAV file connection.
+
+    Based on `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use WebDAV connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[webdav]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------

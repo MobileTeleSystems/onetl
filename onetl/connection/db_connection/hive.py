@@ -55,12 +55,48 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
 
 
 class Hive(DBConnection):
-    """Class for Hive spark connection.
+    """Spark connection with Hive MetaStore support.
+
+    You don't need a Hive server to use this connector.
+
+    .. warning::
+
+        To use Hive connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
+
+    .. warning::
+
+        This connector requires some additional configuration files to be present (``hive-site.xml`` and so on),
+        as well as .jar files with Hive MetaStore client (compatible with current Spark version).
+
+        See `Spark Hive Tables documentation <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_
+        and `this guide <https://dataedo.com/docs/apache-spark-hive-metastore>`_ for more details.
+
+    .. note::
+
+        Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
+        before starting Spark session to generate Kerberos ticket. See :ref:`kerberos-install`.
+
+        In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
+        to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
+        See `Spark security documentation <https://spark.apache.org/docs/latest/security.html#kerberos>`_
+        for more details.
 
     Parameters
     ----------
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session
+        Spark session with Hive metastore support enabled
 
     Examples
     --------
@@ -75,10 +111,31 @@ class Hive(DBConnection):
         spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
         hive = Hive(cluster="rnd-dwh", spark=spark)
+
+    Hive connection initialization with Kerberos support
+
+    .. code:: python
+
+        from onetl.connection import Hive
+        from pyspark.sql import SparkSession
+
+        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+        # and "spark.yarn.keytab" for Spark 2
+
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
+            .option("spark.kerberos.principal", "user")
+            .option("spark.kerberos.keytab", "/path/to/keytab")
+            .enableHiveSupport()
+            .getOrCreate()
+        )
+
+        hive = Hive(cluster="rnd-dwh", spark=spark)
     """
 
     class WriteOptions(GenericOptions):
-        """Class for writing options, related to Hive source.
+        """Hive source writing options.
 
         You can pass here key-value items which then will be converted to calls
         of :obj:`pyspark.sql.readwriter.DataFrameWriter` methods.

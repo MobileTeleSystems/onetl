@@ -31,6 +31,8 @@ imports_source = {
     "YAMLHWMStore": "yaml_hwm_store",
 }
 
+__all__ = list(imports_source.keys())  # noqa: WPS410
+
 
 def __getattr__(name: str):
     if name not in imports_source:
@@ -45,6 +47,6 @@ def __getattr__(name: str):
         from {new_module} import {name}
     """
 
-    warnings.warn(textwrap.dedent(message), category=DeprecationWarning, stacklevel=2)
+    warnings.warn(textwrap.dedent(message).strip(), category=DeprecationWarning, stacklevel=2)
 
     return getattr(import_module(f"{new_module}.{submodule}"), name)

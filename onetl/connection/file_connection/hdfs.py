@@ -16,12 +16,31 @@ from __future__ import annotations
 
 import os
 import stat
+import textwrap
 from logging import getLogger
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
-from hdfs import InsecureClient
-from hdfs.ext.kerberos import KerberosClient
-from pydantic import FilePath, SecretStr, root_validator
+try:
+    from hdfs import InsecureClient
+
+    if TYPE_CHECKING:
+        from hdfs.ext.kerberos import KerberosClient
+except (ImportError, NameError) as err:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "hdfs".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[hdfs]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from err
+
+from pydantic import FilePath, SecretStr, root_validator, validator
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -33,7 +52,29 @@ ENTRY_TYPE = Tuple[str, dict]
 
 
 class HDFS(FileConnection):
-    """Class for HDFS file connection.
+    """HDFS file connection.
+
+    Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use HDFS connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[hdfs]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
+
+    .. note::
+
+        To access Hadoop cluster with Kerberos installed, you should have ``kinit`` executable
+        in some path in ``PATH`` environment variable.
+
+        See onETL :ref:`kerberos-install` instruction for more details.
 
     Parameters
     ----------
@@ -79,7 +120,7 @@ class HDFS(FileConnection):
             host="namenode.of.cluster",
             user="someuser",
             password="*****",
-        )
+        ).check()
 
     HDFS file connection initialization with keytab
 
@@ -91,7 +132,15 @@ class HDFS(FileConnection):
             host="namenode.of.cluster",
             user="someuser",
             keytab="/path/to/keytab",
-        )
+        ).check()
+
+    HDFS file connection initialization without auth (HDFS without Kerberos support)
+
+    .. code:: python
+
+        from onetl.connection import HDFS
+
+        hdfs = HDFS(host="namenode.of.cluster").check()
     """
 
     host: str
@@ -100,6 +149,33 @@ class HDFS(FileConnection):
     password: Optional[SecretStr] = None
     keytab: Optional[FilePath] = None
     timeout: int = 10
+
+    @validator("user", pre=True)
+    def check_packages(cls, user):  # noqa: N805
+        if user:
+            try:
+                from hdfs.ext.kerberos import (  # noqa: F401, WPS442
+                    KerberosClient as CheckForKerberosSupport,
+                )
+            except (ImportError, NameError) as e:
+                raise ImportError(
+                    textwrap.dedent(
+                        """
+                        Cannot import module "hdfs.ext.kerberos".
+
+                        Since onETL v0.7.0 you should install package as follows:
+                            pip install onetl[hdfs, kerberos]
+
+                        or
+                            pip install onetl[all]
+
+                        You should also have Kerberos libraries installed to OS,
+                        specifically ``kinit`` executable.
+                        """,
+                    ).strip(),
+                ) from e
+
+        return user
 
     @root_validator
     def check_credentials(cls, values):  # noqa: N805
@@ -119,7 +195,9 @@ class HDFS(FileConnection):
 
     def _get_client(self) -> KerberosClient | InsecureClient:
         conn_str = f"http://{self.host}:{self.port}"  # NOSONAR
-        if self.user and (self.keytab or self.password):
+        if self.user:
+            from hdfs.ext.kerberos import KerberosClient  # noqa: F401, WPS442
+
             kinit(
                 self.user,
                 keytab=self.keytab,
@@ -127,6 +205,8 @@ class HDFS(FileConnection):
             )
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
+            from hdfs import InsecureClient  # noqa: F401, WPS442
+
             client = InsecureClient(conn_str, user=self.user)
 
         return client

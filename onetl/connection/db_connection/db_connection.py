@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import operator
+import textwrap
 from datetime import date, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict
@@ -55,9 +56,25 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
-        # avoid importing pyspark unless user called the constructor
+        # avoid importing pyspark unless user called the constructor,
+        # as we allow user to use `Connection.package` for creating Spark session
+
         refs = super()._forward_refs()
-        from pyspark.sql import SparkSession  # noqa: WPS442
+        try:
+            from pyspark.sql import SparkSession  # noqa: WPS442
+        except (ImportError, NameError) as e:
+            raise ImportError(
+                textwrap.dedent(
+                    f"""
+                    Cannot import module "pyspark".
+
+                    Since onETL v0.7.0 you should install package as follows:
+                        pip install onetl[spark]
+
+                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
+                    """,
+                ).strip(),
+            ) from e
 
         refs["SparkSession"] = SparkSession
 

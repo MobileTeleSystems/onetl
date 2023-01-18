@@ -15,13 +15,30 @@
 from __future__ import annotations
 
 import os
+import textwrap
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
 from typing import Optional
 
-from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
-from paramiko.sftp_attr import SFTPAttributes
-from paramiko.sftp_client import SFTPClient
+try:
+    from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
+    from paramiko.sftp_attr import SFTPAttributes
+    from paramiko.sftp_client import SFTPClient
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "paramiko".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[sftp]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
 from pydantic import FilePath, SecretStr
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -33,7 +50,22 @@ log = getLogger(__name__)
 
 
 class SFTP(FileConnection):
-    """Class for SFTP file connection.
+    """SFTP file connection.
+
+    Based on `Paramiko library <https://pypi.org/project/paramiko/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use SFTP connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[s3]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
