@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
 # e.g. 20220524122150
-DATETIME_FORMAT = "%Y%m%d%H%M%S"  # noqa: WPS323
+DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
 
 def clear_statement(statement: str) -> str:

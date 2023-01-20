@@ -123,8 +123,8 @@ class MySQL(JDBCConnection):
 
     def _get_datetime_value_sql(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"
 
     def _get_date_value_sql(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"  # noqa: WPS323
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"
