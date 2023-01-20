@@ -82,7 +82,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,

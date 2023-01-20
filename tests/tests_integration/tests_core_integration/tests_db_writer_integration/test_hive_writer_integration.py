@@ -9,7 +9,7 @@ from onetl.core import DBWriter
 
 def test_hive_writer(spark, processing, get_schema_table, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -31,7 +31,7 @@ def test_hive_writer(spark, processing, get_schema_table, caplog):
 
 def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -48,7 +48,7 @@ def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
 
 def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -73,7 +73,7 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
 )
 def test_hive_writer_with_format(spark, processing, get_schema_table, options, fmt):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -104,7 +104,7 @@ def test_hive_writer_with_bucket_by(
     bucket_columns,
 ):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -136,7 +136,7 @@ def test_hive_writer_with_bucket_by_and_sort_by(
     sort_by,
 ):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
         table=get_schema_table.full_name,
@@ -158,7 +158,7 @@ def test_hive_writer_with_bucket_by_and_sort_by(
 
 def test_hive_writer_default_not_bucketed(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -184,7 +184,7 @@ def test_hive_writer_default_not_bucketed(spark, processing, get_schema_table):
 )
 def test_hive_writer_with_partition_by(spark, processing, get_schema_table, partition_by):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -204,7 +204,7 @@ def test_hive_writer_with_partition_by(spark, processing, get_schema_table, part
 
 def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -231,7 +231,7 @@ def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table
 def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table, options, caplog):
     df = processing.create_spark_df(spark=spark)
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
         table=get_schema_table.full_name,
@@ -252,7 +252,7 @@ def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table,
 
 def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -284,7 +284,7 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
 )
 def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_table, options, option_kv, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -321,7 +321,7 @@ def test_hive_writer_insert_into_with_mode_append(spark, processing, prepare_sch
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
         table=prepare_schema_table.full_name,
@@ -356,7 +356,7 @@ def test_hive_writer_insert_into_with_mode_overwrite_table(spark, processing, pr
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
         table=prepare_schema_table.full_name,
@@ -385,7 +385,7 @@ def test_hive_writer_insert_into_with_mode_overwrite_partitions(spark, processin
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
         table=prepare_schema_table.full_name,
@@ -422,7 +422,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_append(
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -468,7 +468,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -515,7 +515,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
@@ -554,7 +554,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
 @pytest.mark.parametrize("mode", ["append", "overwrite_partitions"])
 def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema_table, mode):
     df = processing.create_spark_df(spark=spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,

@@ -12,7 +12,7 @@ spark = Mock(spec=SparkSession)
 def test_reader_without_schema():
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="table",  # missing schema
         )
 
@@ -20,7 +20,7 @@ def test_reader_without_schema():
 def test_reader_with_too_many_dots():
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table.abc",  # wrong input
         )
 
@@ -28,7 +28,7 @@ def test_reader_with_too_many_dots():
 def test_reader_hive_with_read_options():
     with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table",
             options={"some": "option"},
         )
@@ -63,7 +63,7 @@ def test_reader_hive_with_read_options():
 def test_reader_invalid_columns(columns):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table",
             columns=columns,
         )
@@ -82,7 +82,7 @@ def test_reader_invalid_columns(columns):
 )
 def test_reader_valid_columns(columns, real_columns):
     reader = DBReader(
-        connection=Hive(spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark),
         table="schema.table",
         columns=columns,
     )
@@ -137,7 +137,7 @@ def test_reader_valid_columns(columns, real_columns):
 def test_reader_invalid_hwm_column(hwm_column):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table",
             hwm_column=hwm_column,
         )
@@ -153,7 +153,7 @@ def test_reader_invalid_hwm_column(hwm_column):
 )
 def test_reader_valid_hwm_column(hwm_column, real_hwm_column, real_hwm_expression):
     reader = DBReader(
-        connection=Hive(spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark),
         table="schema.table",
         hwm_column=hwm_column,
     )
@@ -185,7 +185,7 @@ def test_reader_valid_hwm_column(hwm_column, real_hwm_column, real_hwm_expressio
 )
 def test_reader_hwm_column_and_columns_are_not_in_conflict(columns, hwm_column):
     DBReader(
-        connection=Hive(spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark),
         table="schema.table",
         columns=columns,
         hwm_column=hwm_column,
@@ -212,7 +212,7 @@ def test_reader_hwm_column_and_columns_are_not_in_conflict(columns, hwm_column):
 def test_reader_hwm_column_and_columns_are_in_conflict(columns, hwm_column):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table",
             columns=columns,
             hwm_column=hwm_column,

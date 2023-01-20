@@ -7,7 +7,7 @@ from onetl.connection import Hive
 
 
 def test_hive_check(spark, caplog):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     with caplog.at_level(logging.INFO):
         assert hive.check() == hive
 
@@ -19,7 +19,7 @@ def test_hive_check(spark, caplog):
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_sql(spark, processing, load_table_data, suffix):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     schema = load_table_data.schema
     table = load_table_data.full_name
 
@@ -54,7 +54,7 @@ def test_hive_connection_sql(spark, processing, load_table_data, suffix):
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_execute_ddl(spark, processing, get_schema_table, suffix):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     table_name, schema, table = get_schema_table
     fields = {
         column_name: processing.get_column_type(column_name)
@@ -96,7 +96,7 @@ def test_hive_connection_execute_ddl(spark, processing, get_schema_table, suffix
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_execute_dml(request, spark, processing, load_table_data, suffix):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"

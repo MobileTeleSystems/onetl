@@ -62,7 +62,7 @@ Read data from MSSQL, transform & write to Hive.
 
 
     # Initiate Hive connection
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     # Initiate writer
     writer = DBWriter(
