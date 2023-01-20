@@ -148,14 +148,14 @@ def test_mysql_strategy_incremental_wrong_hwm_type(spark, processing, prepare_sc
         (
             "hwm_date",
             "hwm1_date",
-            "STR_TO_DATE(text_string, '%Y-%m-%d')",  # noqa: WPS323
+            "STR_TO_DATE(text_string, '%Y-%m-%d')",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
             "HWM1_DATETIME",
-            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f')",  # noqa: WPS323
+            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f')",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),

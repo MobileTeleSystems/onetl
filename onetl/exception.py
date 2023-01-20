@@ -90,3 +90,9 @@ class TooManyParallelJobsError(SparkError):
     """
     Raised when number parallel jobs is too high
     """
+
+
+class SignatureError(TypeError):
+    """
+    Raised when hook signature is not consistent with slot
+    """

@@ -30,7 +30,7 @@ from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
-DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"  # noqa: WPS323
+DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
 class WebDAV(FileConnection):

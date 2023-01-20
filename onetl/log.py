@@ -28,8 +28,11 @@ BASE_LOG_INDENT = 9
 LOG_FORMAT = "{asctime} [{levelname:8s}] {message}"
 CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
 
-DISABLED = 9999
+DISABLED = 9999  # CRITICAL is 50, we need even higher to disable all logs
 logging.addLevelName(DISABLED, "DISABLED")
+
+NOTICE = 5  # DEBUG is 10, we need lower value for less verbose logs even on debug level
+logging.addLevelName(NOTICE, "NOTICE")
 
 
 @deprecated(

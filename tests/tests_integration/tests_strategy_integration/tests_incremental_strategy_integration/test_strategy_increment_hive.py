@@ -102,14 +102,14 @@ def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_
     "hwm_source, hwm_expr, hwm_column, hwm_type, func",
     [
         ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", IntHWM, str),
-        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),  # noqa: WPS323
+        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),
         (
             "hwm_datetime",
             "CAST(text_string AS TIMESTAMP)",
             "HWM1_DATETIME",
             DateTimeHWM,
             lambda x: x.isoformat(),
-        ),  # noqa: WPS323
+        ),
     ],
 )
 def test_hive_strategy_incremental_with_hwm_expr(
