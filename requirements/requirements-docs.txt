@@ -1,5 +1,9 @@
 autodoc_pydantic
+graphviz
 numpydoc
 setuptools-git-versioning
 sphinx
+sphinx-tabs
+sphinx-toolbox
 sphinx_rtd_theme
+sphinx_substitution_extensions

@@ -60,7 +60,8 @@ class HookCollection:
         return self.__class__()
 
     def stop(self) -> None:
-        """Stop all hooks in a collection.
+        """
+        Stop all hooks in the collection.
 
         Examples
         --------
@@ -83,7 +84,8 @@ class HookCollection:
         self._enabled = False
 
     def resume(self) -> None:
-        """Resume all hooks in a collection.
+        """
+        Resume all hooks in the collection.
 
         .. note::
 
@@ -120,7 +122,7 @@ class HookCollection:
     @contextmanager
     def skip(self):
         """
-        Context manager which temporary stops all the hooks in collection.
+        Context manager which temporary stops all the hooks in the collection.
 
         .. note::
 

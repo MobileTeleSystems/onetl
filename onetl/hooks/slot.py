@@ -23,30 +23,15 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Slot(Protocol):
-    """Protocol which is implemented by a method after applying :obj:`~slot` decorator."""
-
-    def __call__(self, *args, **kwargs):
-        ...
-
-    @property
-    def __hooks__(self) -> HookCollection:
-        ...
-
-    def skip_hooks(self):
-        ...
-
-    def stop_hooks(self):
-        ...
-
-    def resume_hooks(self):
-        ...
+def _unwrap_method(method):
+    """Unwrap @classmethod and @staticmethod to get original function"""
+    return getattr(method, "__func__", method)
 
 
 def get_hooks(cls: type, method_name: str) -> HookCollection:
     """Return all hooks registered for a specific method"""
 
-    method = cls.__dict__[method_name]
+    method = _unwrap_method(cls.__dict__[method_name])
     return getattr(method, "__hooks__", HookCollection())
 
 
@@ -86,7 +71,7 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
 
 def connect_hook(method: Hook, inp=None):
     """
-    Connect hook to a given slot.
+    Connect a hook to the slot.
 
     See :ref:`hooks` for more details.
 
@@ -95,7 +80,7 @@ def connect_hook(method: Hook, inp=None):
 
     .. code:: python
 
-        from onetl.hooks import support_hooks, slot, HookPriority
+        from onetl.hooks import support_hooks, slot, hook, HookPriority
 
 
         @support_hooks
@@ -105,16 +90,22 @@ def connect_hook(method: Hook, inp=None):
                 pass
 
 
-        @MyClass.method.hook
+        @MyClass.method.connect
+        @hook
         def hook(self, arg):
             if arg == "some":
                 do_something()
 
 
-        @MyClass.method.hook(priority=HookPriority.FIRST, enabled=True)
+        @MyClass.method.connect
+        @hook(priority=HookPriority.FIRST, enabled=True)
         def another_hook(self, arg):
             if arg == "another":
                 raise NotAllowed()
+
+
+        obj = MyClass()
+        obj.method(1)  # will call both hook(obj, 1) and another_hook(obj, 1)
     """
 
     def inner_wrapper(hook):  # noqa: WPS430
@@ -145,7 +136,6 @@ def connect_hook(method: Hook, inp=None):
 def _prepare_hook_args(
     method: Callable,
     hook: Hook,
-    prefix_args: tuple,
     args: tuple,
     kwargs: dict,
 ) -> inspect.BoundArguments:
@@ -166,19 +156,22 @@ def _prepare_hook_args(
 
     .. code:: python
 
-        @MyClass.method.hook
+        @MyClass.method.connect
+        @hook
         def callback(self, some, named):
             ...
 
     .. code:: python
 
-        @MyClass.method.hook
+        @MyClass.method.connect
+        @hook
         def callback(self, some, **kwargs):
             ...
 
     .. code:: python
 
-        @MyClass.method.hook
+        @MyClass.method.connect
+        @hook
         def callback(my_class_instance, *args, **kwargs):
             ...
 
@@ -188,7 +181,8 @@ def _prepare_hook_args(
 
         .. code:: python
 
-            @MyClass.method.hook
+            @MyClass.method.connect
+            @hook
             def callback(self, method_name, *args, **kwargs):
                 assert method_name == "method"
 
@@ -198,13 +192,12 @@ def _prepare_hook_args(
         hook_signature = inspect.signature(hook.callback)
         if "method_name" in hook_signature.parameters:
             return hook_signature.bind(
-                *prefix_args,
-                method_name=method.__name__,
                 *args,
+                method_name=method.__name__,
                 **kwargs,
             )
 
-        return hook_signature.bind(*prefix_args, *args, **kwargs)
+        return hook_signature.bind(*args, **kwargs)
     except TypeError as e:
         method_source_line = 0
         with suppress(OSError):
@@ -265,7 +258,7 @@ def _handle_context_result(result: Any, context: CanHandleResult, hook: Hook):
         raise
 
 
-def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
+def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
     """
     Internal callback to register ``SomeClass.some_method`` as a slot.
 
@@ -299,14 +292,14 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
 
     method = getattr(cls, method_name)
     raw_method = cls.__dict__[method_name]
-    is_classmethod = isinstance(raw_method, classmethod)
+    original_method = _unwrap_method(method)
 
     @wraps(method)  # noqa: WPS231, WPS213
     def wrapper(*args, **kwargs):
         with MethodInheritanceStack(cls, method_name) as stack_manager, ExitStack() as context_stack:
             if not HooksState.enabled():
                 logger.log(NOTICE, "|Hooks| All hooks are disabled")
-                return method(*args, **kwargs)
+                return original_method(*args, **kwargs)
 
             if stack_manager.level > 0:
                 logger.log(
@@ -314,45 +307,43 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                     "|Hooks| Skipping hooks for '%s' because method is called via super()",
                     method.__qualname__,
                 )
-                return method(*args, **kwargs)
+                return original_method(*args, **kwargs)
 
             hooks = get_hooks_hierarchy(cls, method_name)
             if not hooks:
                 logger.log(NOTICE, "|Hooks| No active hooks for '%s'", method.__qualname__)
-                return method(*args, **kwargs)
+                return original_method(*args, **kwargs)
 
-            # Due to descriptor nature of @classmethod, when it is being called, `cls` argument
-            # is not being passed in `args`. Instead, descriptor already knows which class it is bounded to.
-            # So we need to pass it explicitly because hook is not a descriptor
-            prefix_args = (cls,) if is_classmethod else ()
-
-            indent = 4 * stack_manager.level
+            original_indent = 4 * stack_manager.level
+            indent = original_indent
             context_results: list[tuple[Hook, Any]] = []
             before_results: list[tuple[Hook, Any]] = []
 
-            if len(hooks) > 1:
+            hooks_count = len(hooks)
+            if hooks_count > 1:
                 logger.log(
                     NOTICE,
                     "|Hooks| %s%s hooks registered for '%s.%s'",
                     " " * indent,
-                    len(hooks),
+                    hooks_count,
                     cls.__qualname__,
                     method_name,
                 )
 
-            for hook in hooks:
+            for i, hook in enumerate(hooks):
                 logger.log(
                     NOTICE,
-                    "|Hooks| %sCalling hook '%s.%s'",
+                    "|Hooks| %sCalling hook '%s.%s' (%s/%s)",
                     " " * indent,
                     hook.__module__,
                     hook.__qualname__,
+                    i + 1,
+                    hooks_count,
                 )
 
                 hook_args = _prepare_hook_args(
                     method=method,
                     hook=hook,
-                    prefix_args=prefix_args,
                     args=args,
                     kwargs=kwargs,
                 )
@@ -372,13 +363,13 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                     before_results.append((hook, hook_call_result))
                     logger.log(
                         NOTICE,
-                        "|Hooks| %sHook is finished with returning some result",
+                        "|Hooks| %sHook is finished with returning non-None result",
                         " " * indent,
                     )
                 else:
                     logger.log(
                         NOTICE,
-                        "|Hooks| %sHook is finished with empty result",
+                        "|Hooks| %sHook is finished with None result",
                         " " * indent,
                     )
 
@@ -391,13 +382,17 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                 method_name,
             )
 
-            result = method(*args, **kwargs)
+            result = original_method(*args, **kwargs)
+            call_result = "None result" if result is None else "non-None result"
 
             logger.log(
                 NOTICE,
-                "|Hooks| %sMethod call is finished",
+                "|Hooks| %sMethod call is finished with %s",
                 " " * indent,
+                call_result,
             )
+
+            indent = original_indent
 
             if before_results:
                 before_hook, before_result = before_results[-1]
@@ -414,11 +409,10 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                 result = before_result
 
             for hook, context in context_results:
-                indent -= 2
                 if isinstance(context, CanHandleResult):
                     logger.log(
                         NOTICE,
-                        "|Hooks| %sPassing method call result to 'handle_result' method of context manager '%s.%s'",
+                        "|Hooks| %sPassing result to 'handle_result' method of context manager '%s.%s'",
                         " " * indent,
                         hook.__module__,
                         hook.__qualname__,
@@ -433,11 +427,12 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                         call_result = "(None)" if result is None else "(*NOT* None)"  # noqa: WPS220
                         logger.log(  # noqa: WPS220
                             NOTICE,
-                            "|Hooks| %sMethod call result %s is modified by hook",
+                            "|Hooks| %sMethod call result %s is modified by hook!",
                             " " * indent,
                             call_result,
                         )
                         result = context_result  # noqa: WPS220
+                indent += 2
 
             return result
 
@@ -448,6 +443,13 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
     wrapper.stop_hooks = wrapper.__hooks__.stop  # type: ignore[attr-defined]
     wrapper.resume_hooks = wrapper.__hooks__.resume  # type: ignore[attr-defined]
     wrapper.connect = partial(connect_hook, wrapper)  # type: ignore[attr-defined]
+
+    # wrap result back to @classmethod and @staticmethod
+    if isinstance(raw_method, classmethod):
+        return classmethod(wrapper)
+    elif isinstance(raw_method, staticmethod):
+        return staticmethod(wrapper)
+
     return wrapper
 
 
@@ -458,7 +460,7 @@ def _is_method(method: Callable) -> bool:
 
 def _is_private(method: Callable) -> bool:
     """Checks whether class method is private"""
-    method_name = getattr(method, "__func__", method).__name__
+    method_name = _unwrap_method(method).__name__
     return method_name.startswith("_") and not method_name.endswith("__")
 
 
@@ -467,29 +469,192 @@ def is_slot(method: Callable) -> bool:
     return hasattr(method, "__hooks__")
 
 
+class Slot(Protocol):
+    """Protocol which is implemented by a method after applying :obj:`~slot` decorator."""
+
+    def __call__(self, *args, **kwargs):
+        ...
+
+    @property
+    def __hooks__(self) -> HookCollection:
+        """Collection of hooks connected to the slot"""
+
+    def skip_hooks(self):
+        """
+        Context manager which temporary stops all the hooks connected to the method.
+
+        .. note::
+
+            If hooks were stopped by :obj:`~stop_hooks`, they will not be resumed
+            after exiting the context/decorated function.
+            You should call :obj:`~resume_hooks` explicitly.
+
+        Examples
+        --------
+
+        .. tabs::
+
+            .. code-tab:: py Context manager syntax
+
+                from onetl.hooks.hook import hook, support_hooks, slot
+
+
+                @support_hooks
+                class MyClass:
+                    @slot
+                    def my_method(self, arg):
+                        ...
+
+
+                @MyClass.my_method.connect
+                @hook
+                def callback1(self, arg):
+                    ...
+
+                obj = MyClass()
+                obj.my_method(1)  # will call callback1(obj, 1)
+
+                with MyClass.my_method.skip_hooks():
+                    obj.my_method(1)  # will NOT call callback1
+
+                obj.my_method(2)  # will call callback1(obj, 2)
+
+            .. code-tab:: py Decorator syntax
+
+                from onetl.hooks.hook import hook, support_hooks, slot
+
+
+                @support_hooks
+                class MyClass:
+                    @slot
+                    def my_method(self, arg):
+                        ...
+
+
+                @MyClass.my_method.connect
+                @hook
+                def callback1(self, arg):
+                    ...
+
+                @MyClass.my_method.skip_hooks()
+                def method_without_hooks(obj, arg):
+                    obj.my_method(arg)
+
+
+                obj = MyClass()
+                obj.my_method(1)  # will call callback1(obj, 1)
+
+                method_without_hooks(obj, 1)  # will NOT call callback1
+
+                obj.my_method(2)  # will call callback1(obj, 2)
+        """
+
+    def stop_hooks(self):
+        """
+        Stop all the hooks connected to the method
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.hooks.hook import hook, support_hooks, slot
+
+
+            @support_hooks
+            class MyClass:
+                @slot
+                def my_method(self, arg):
+                    ...
+
+
+            @MyClass.my_method.connect
+            @hook
+            def callback1(self, arg):
+                ...
+
+
+            obj = MyClass()
+            obj.my_method(1)  # will call callback1(obj, 1)
+
+            MyClass.my_method.stop_hooks()
+            obj.my_method(1)  # will NOT call callback1
+        """
+
+    def resume_hooks(self):
+        """
+        Resume all hooks connected to the slot.
+
+        .. note::
+
+            If hook is disabled by :obj:`onetl.hooks.hook.Hook.disable`, it will stay disabled.
+            You should call :obj:`onetl.hooks.hook.Hook.enable` explicitly.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.hooks.hook import hook, support_hooks, slot
+
+
+            @support_hooks
+            class MyClass:
+                @slot
+                def my_method(self, arg):
+                    ...
+
+
+            @MyClass.my_method.connect
+            @hook
+            def callback1(self, arg):
+                ...
+
+
+            obj = MyClass()
+            obj.my_method(1)  # will call callback1(obj, 1)
+
+            MyClass.my_method.stop_hooks()
+            obj.my_method(1)  # will NOT call callback1
+
+            MyClass.my_method.resume_hooks()
+            obj.my_method(2)  # will call callback1(obj, 2)
+        """
+
+    @wraps(connect_hook)
+    def connect(self):
+        ...
+
+
 def slot(method) -> Slot:
     """
     Decorator which enables hooks functionality on a specific class method.
 
     Decorated methods get additional nested methods:
 
-        * :obj:`~stop_hooks`
-        * :obj:`~resume_hooks`
-        * :obj:`~skip_hooks`
+        * :obj:`onetl.hooks.slot.Slot.connect`
+        * :obj:`onetl.hooks.slot.Slot.stop_hooks`
+        * :obj:`onetl.hooks.slot.Slot.resume_hooks`
+        * :obj:`onetl.hooks.slot.Slot.skip_hooks`
 
-    Supported method types are:
+    .. note::
 
-        * Regular methods
-        * ``@classmethod``
-        * ``@staticmethod``
+        Supported method types are:
 
-    It is not allowed to use this decorator over ``_private`` and ``__protected`` methods and ``@property``.
-    But is allowed to use on ``__dunder__`` methods, like ``__init__``.
+            * Regular methods
+            * ``@classmethod``
+            * ``@staticmethod``
+
+        It is not allowed to use this decorator over ``_private`` and ``__protected`` methods and ``@property``.
+        But is allowed to use on ``__dunder__`` methods, like ``__init__``.
 
     Examples
     ---------
 
     .. code:: python
+
+        from onetl.hooks import support_hooks, slot, hook
+
 
         @support_hooks
         class MyClass:
@@ -508,24 +673,28 @@ def slot(method) -> Slot:
                 ...
 
 
-        @MyClass.my_method.hook
+        @MyClass.my_method.connect
+        @hook
         def callback1(self, arg):
             ...
 
 
-        @MyClass.class_method.hook
+        @MyClass.class_method.connect
+        @hook
         def callback2(cls):
             ...
 
 
-        @MyClass.static_method.hook
+        @MyClass.static_method.connect
+        @hook
         def callback3(arg):
             ...
 
 
-        MyClass().my_method()  # will execute callback1 function
-        MyClass.class_method()  # will execute callback2 function
-        MyClass.static_method()  # will execute callback3 function
+        obj = MyClass()
+        obj.my_method(1)  # will execute callback1(obj, 1)
+        MyClass.class_method(2)  # will execute callback2(MyClass, 2)
+        MyClass.static_method(3)  # will execute callback3(3)
     """
 
     if hasattr(method, "__hooks__"):

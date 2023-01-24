@@ -46,8 +46,8 @@ class HooksState:
 
         .. note::
 
-            This function does not enable hooks which were disabled by ``hook.disable()``,
-            or stopped by ``SomeClass.Method.stop_hooks()``
+            This function does not enable hooks which were disabled by :obj:`onetl.hooks.hook.Hook.disable`,
+            or stopped by :obj:`onetl.hooks.support_hooks.stop_hooks`.
 
         Examples
         --------
@@ -78,43 +78,41 @@ class HooksState:
 
         .. note::
 
-            If hooks were stopped by :obj:`onetl.hooks.hooks_state.stop`, they will not be resumed
+            If hooks were stopped by :obj:`~stop_all_hooks`, they will not be resumed
             after exiting the context/decorated function.
-            You should call :obj:`onetl.hooks.hooks_state.resume` explicitly.
+            You should call :obj:`~resume_all_hooks` explicitly.
 
         Examples
         --------
 
-        Context manager
+        .. tabs::
 
-        .. code:: python
+            .. code-tab:: py Context manager syntax
 
-            from onetl.hooks import skip_all_hooks
+                from onetl.hooks import skip_all_hooks
 
-            # hooks are enabled
+                # hooks are enabled
 
-            with skip_all_hooks():
-                # hooks are stopped here
-                ...
+                with skip_all_hooks():
+                    # hooks are stopped here
+                    ...
 
-            # hook state is restored
+                # hook state is restored
 
-        Decorator
+            .. code-tab:: py Decorator syntax
 
-        .. code:: python
+                from onetl.hooks import skip_all_hooks
 
-            from onetl.hooks import skip_all_hooks
-
-            # hooks are enabled
+                # hooks are enabled
 
 
-            @skip_all_hooks()
-            def main():
-                # hooks are stopped here
-                ...
+                @skip_all_hooks()
+                def main():
+                    # hooks are stopped here
+                    ...
 
 
-            main()
+                main()
         """
 
         if not cls._enabled:

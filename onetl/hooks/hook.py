@@ -22,13 +22,17 @@ class HookPriority(int, Enum):  # noqa: WPS600
     """
     Hook priority enum.
 
-    Hooks are ordered as FIRST, MIDDLE and then LAST before they will be executed.
     All hooks within the same priority are executed in the same order they were registered.
     """
 
     FIRST = -1
+    "Hooks with this priority will run first."
+
     MIDDLE = 0
+    "Hooks with this priority will run after :obj:`~FIRST` but before :obj:`~LAST`."
+
     LAST = 1
+    "Hooks with this priority will run last."
 
 
 @dataclass  # noqa: WPS338
@@ -74,18 +78,19 @@ class Hook(Generic[P, T]):
         self.priority = HookPriority(self.priority)
 
     def enable(self):
-        """Enable the hook
+        """
+        Enable the hook.
 
         Examples
         --------
 
         .. code:: python
 
-            # hook is disabled
             hook = Hook(..., enabled=False)
+            assert not hook.enabled
 
             hook.enable()
-            # hook is enabled now
+            assert hook.enabled
         """
         if self.enabled:
             logger.log(
@@ -99,18 +104,19 @@ class Hook(Generic[P, T]):
             self.enabled = True
 
     def disable(self):
-        """Disable the hook
+        """
+        Disable the hook.
 
         Examples
         --------
 
         .. code:: python
 
-            # hook is enabled
             hook = Hook(..., enabled=True)
+            assert hook.enabled
 
             hook.disable()
-            # hook is disabled now
+            assert not hook.enabled
         """
         if self.enabled:
             logger.log(NOTICE, "|Hooks| Disable hook '%s.%s'", self.callback.__module__, self.callback.__qualname__)
@@ -126,22 +132,44 @@ class Hook(Generic[P, T]):
     @contextmanager
     def skip(self):
         """
-        Context manager which temporary disables the hook.
+        Temporary disable the hook.
+
+        .. note::
+
+            If hook was created with ``enabled=False``, or was disabled by :obj:`~disable`,
+            its state will left intact after exiting the context.
+
+            You should call :obj:`~enable` explicitly to change its state.
 
         Examples
         --------
 
-        .. code:: python
+        .. tabs::
 
-            hook = Hook(...)
+            .. code-tab:: py Context manager syntax
 
-            # hook state is same as created by constructor
+                hook = Hook(..., enabled=True)
+                assert hook.enabled
 
-            with hook.skip():
-                # hook is disabled here
-                ...
+                with hook.skip():
+                    assert not hook.enabled
 
-            # hook state is restored as it was before entering the context manager
+                # hook state is restored as it was before entering the context manager
+                assert hook.enabled
+
+            .. code-tab:: py Decorator syntax
+
+                hook = Hook(..., enabled=True)
+                assert hook.enabled
+
+                @hook.skip()
+                def hook_disabled():
+                    assert not hook.enabled
+
+                hook_disabled()
+
+                # hook state is restored as it was before entering the context manager
+                assert hook.enabled
         """
         if not self.enabled:
             logger.log(
@@ -340,61 +368,59 @@ def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: Hook
     Examples
     --------
 
-    Decorate function
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Decorate a function or generator
 
-        from onetl.hooks import hook, HookPriority
-
-
-        @hook
-        def some_func(*args, **kwargs):
-            ...
+            from onetl.hooks import hook, HookPriority
 
 
-        @hook(enabled=True, priority=HookPriority.FIRST)
-        def another_func(*args, **kwargs):
-            ...
-
-    Decorate context manager
-
-    .. code:: python
-
-        from onetl.hooks import hook, HookPriority
-
-
-        @hook
-        class SimpleContextManager:
-            def __init__(self, *args, **kwargs):
+            @hook
+            def some_func(*args, **kwargs):
                 ...
 
-            def __enter__(self):
-                ...
-                return self
 
-            def __exit__(self, exc_type, exc_value, traceback):
-                ...
-                return False
-
-
-        @hook(enabled=True, priority=HookPriority.FIRST)
-        class ContextManagerWithHandleResult:
-            def __init__(self, *args, **kwargs):
+            @hook(enabled=True, priority=HookPriority.FIRST)
+            def another_func(*args, **kwargs):
                 ...
 
-            def __enter__(self):
+        .. code-tab:: py Decorate a context manager
+
+            from onetl.hooks import hook, HookPriority
+
+
+            @hook
+            class SimpleContextManager:
+                def __init__(self, *args, **kwargs):
+                    ...
+
+                def __enter__(self):
+                    ...
+                    return self
+
+                def __exit__(self, exc_type, exc_value, traceback):
+                    ...
+                    return False
+
+
+            @hook(enabled=True, priority=HookPriority.FIRST)
+            class ContextManagerWithHandleResult:
+                def __init__(self, *args, **kwargs):
+                    ...
+
+                def __enter__(self):
+                    ...
+                    return self
+
+                def __exit__(self, exc_type, exc_value, traceback):
+                    ...
+                    return False
+
+                def handle_result(self, result):
+                    # special method to handle method result call
+                    return modify(result)
+
                 ...
-                return self
-
-            def __exit__(self, exc_type, exc_value, traceback):
-                ...
-                return False
-
-            def handle_result(self, result):
-                # special method to handle method result call
-                return modify(result)
-
-            ...
     """
 
     def inner_wrapper(callback: Callable[P, T]):  # noqa: WPS430

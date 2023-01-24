@@ -49,6 +49,9 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_tabs.tabs",
+    "sphinx_toolbox.more_autodoc.autoprotocol",
+    "sphinx_substitution_extensions",
 ]
 numpydoc_show_class_members = True
 autodoc_pydantic_model_show_config = False
@@ -58,6 +61,12 @@ autodoc_pydantic_model_show_json = False
 autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_field_list_validators = False
+sphinx_tabs_disable_tab_closing = True
+
+rst_prolog = f"""
+.. |support_hooks| image:: https://img.shields.io/badge/%20-support%20hooks-blue
+    :target: https://bigdata.pages.mts.ru/platform/onetools/onetl/{ver}/hooks/index.html
+"""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
