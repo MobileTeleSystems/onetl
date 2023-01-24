@@ -11,7 +11,7 @@ spark = Mock()
 def test_writer_without_schema():
     with pytest.raises(ValueError):
         DBWriter(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="table",  # missing schema
         )
 
@@ -19,6 +19,6 @@ def test_writer_without_schema():
 def test_writer_with_too_many_dots():
     with pytest.raises(ValueError):
         DBWriter(
-            connection=Hive(spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark),
             table="schema.table.abc",  # wrong input
         )

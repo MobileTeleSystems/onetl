@@ -24,11 +24,12 @@ from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
@@ -59,7 +60,7 @@ class Hive(DBConnection):
     Parameters
     ----------
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for connection to hive.
+        Spark session
 
     Examples
     --------
@@ -73,7 +74,7 @@ class Hive(DBConnection):
 
         spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
     """
 
     class WriteOptions(GenericOptions):
@@ -315,10 +316,184 @@ class Hive(DBConnection):
     class Options(WriteOptions):
         pass  # noqa: WPS420, WPS604
 
-    # TODO (@msmarty5): Replace with active_namenode function from mtspark
+    @support_hooks
+    class slots:  # noqa: N801
+        """Slots that could be implemented by third-party plugins"""
+
+        @slot  # noqa: WPS324
+        @staticmethod
+        def normalize_cluster_name(cluster: str) -> str | None:
+            """
+            Normalize cluster name passed into Hive constructor.
+
+            If hooks didn't return anything, cluster name is left intact.
+
+            Parameters
+            ----------
+            cluster : :obj:`str`
+                Cluster name
+
+            Returns
+            -------
+            str | None
+                Normalized cluster name.
+
+                If hook cannot be applied to a specific cluster, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.normalize_cluster_name.connect
+                @hook
+                def normalize_cluster_name(cluster: str) -> str:
+                    return cluster.lower()
+            """
+            return None  # noqa: WPS324
+
+        @slot  # noqa: WPS324, WPS605
+        @staticmethod
+        def get_known_clusters() -> set[str] | None:
+            """
+            Return collection of known clusters.
+
+            Cluster passed into Hive constructor should be present in this list.
+            If hooks didn't return anything, no validation will be performed.
+
+            Returns
+            -------
+            set[str] | None
+                Collection of cluster names (in normalized form).
+
+                If hook cannot be applied, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.get_known_clusters.connect
+                @hook
+                def get_known_clusters() -> str[str]:
+                    return {"rnd-dwh", "rnd-prod"}
+            """
+            return None  # noqa: WPS324
+
+        @slot  # noqa: WPS324, WPS605
+        @staticmethod
+        def get_current_cluster() -> str | None:
+            """
+            Get current cluster name.
+
+            Used in :obj:`~check` method to verify that connection is created only from the same cluster.
+            If hooks didn't return anything, no validation will be performed.
+
+            Returns
+            -------
+            str | None
+                Current cluster name (in normalized form).
+
+                If hook cannot be applied, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.get_current_cluster.connect
+                @hook
+                def get_current_cluster() -> str:
+                    # some magic here
+                    return "rnd-dwh"
+            """
+            return None  # noqa: WPS324
+
+    cluster: str
+
+    @validator("cluster")
+    def check_cluster(cls, cluster):  # noqa: N805
+        cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+
+        known_clusters = cls.slots.get_known_clusters()
+        if known_clusters and cluster not in known_clusters:
+            clusters_str = ", ".join(repr(cluster) for cluster in sorted(known_clusters))
+            raise ValueError(f"Cluster {cluster!r} is not in the known clusters list: {clusters_str}")
+
+        return cluster
+
+    @classmethod
+    def get_current(cls, spark: SparkSession):
+        """
+        Create connection for current cluster.
+
+        .. note::
+
+            Can be used only if there are some hooks connected :obj:`~slots.get_current_cluster` slot.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Hive
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+
+            # injecting current cluster name via hooks mechanism
+            hive = Hive.get_current(spark=spark)
+        """
+
+        current_cluster = cls.slots.get_current_cluster()
+        if not current_cluster:
+            raise RuntimeError(
+                f"{cls.__name__}.get_current() can be used only if there are "
+                f"some hooks connected to {cls.__name__}.slots.get_current_cluster",
+            )
+
+        return cls(cluster=current_cluster, spark=spark)
+
     @property
     def instance_url(self) -> str:
-        return "rnd-dwh"
+        return self.cluster
+
+    def check(self):
+        current_cluster = self.slots.get_current_cluster()
+        if current_cluster and self.cluster != current_cluster:
+            raise ValueError("You can connect to a Hive cluster only from the same cluster")
+
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
+        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
+        log_with_indent(self._check_query, level=logging.DEBUG)
+
+        try:
+            self._execute_sql(self._check_query)
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
+        except Exception as e:
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     def sql(
         self,
@@ -352,7 +527,7 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
             df = connection.sql("SELECT * FROM mytable")
         """
@@ -401,7 +576,7 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
             connection.execute(
                 "CREATE TABLE mytable (id NUMBER, data VARCHAR) PARTITIONED BY (date DATE)"
@@ -411,7 +586,7 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
             connection.execute("ALTER TABLE mytable DROP PARTITION(date='2022-02-01')")
         """
@@ -423,22 +598,6 @@ class Hive(DBConnection):
 
         self._execute_sql(statement).collect()
         log.info(f"|{self.__class__.__name__}| Call succeeded")
-
-    def check(self):
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        self._log_parameters()
-
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
-        log_with_indent(self._check_query, level=logging.DEBUG)
-
-        try:
-            self._execute_sql(self._check_query)
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
-        except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
-            raise RuntimeError("Connection is unavailable") from e
-
-        return self
 
     def save_df(
         self,

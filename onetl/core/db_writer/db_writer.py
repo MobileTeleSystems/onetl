@@ -126,7 +126,7 @@ class DBWriter(FrozenModel):
 
         spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         options = {"compression": "snappy", "partitionBy": "id"}
         # or (it is the same):

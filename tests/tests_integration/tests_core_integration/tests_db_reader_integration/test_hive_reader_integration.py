@@ -5,7 +5,7 @@ from onetl.core import DBReader
 
 
 def test_hive_reader(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader = DBReader(
         connection=hive,
@@ -21,7 +21,7 @@ def test_hive_reader(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
@@ -64,7 +64,7 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
@@ -99,7 +99,7 @@ def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
@@ -122,7 +122,7 @@ def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_tab
 def test_hive_reader_non_existing_table(spark, get_schema_table):
     from pyspark.sql.utils import AnalysisException
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     reader = DBReader(
         connection=hive,
         table=get_schema_table.full_name,

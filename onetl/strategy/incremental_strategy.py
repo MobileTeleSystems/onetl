@@ -443,7 +443,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
