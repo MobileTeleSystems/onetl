@@ -102,6 +102,7 @@ class BaseProcessing(ABC):
         self,
         schema: str,
         table: str,
+        order_by: Optional[str] = None,
     ) -> "pandas.core.frame.DataFrame":
         """"""
 

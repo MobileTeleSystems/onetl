@@ -208,6 +208,14 @@ tests:
     # Minio
     MINIO_ROOT_USER: minio_admin
     MINIO_ROOT_PASSWORD: minio_password
+    # Mongo
+    MONGO_INITDB_ROOT_USERNAME: root
+    MONGO_INITDB_ROOT_PASSWORD: E4j7h!9A
+    ONETL_MONGO_HOST: mongo
+    ONETL_MONGO_PORT: 27017
+    ONETL_MONGO_USER: root
+    ONETL_MONGO_PASSWORD: E4j7h!9A
+    ONETL_MONGO_DB: admin
     # WebDAV
     APP_USER_NAME: admin
     APP_USER_PASSWD: awd123fd1
@@ -235,6 +243,8 @@ tests:
     alias: oracle
   - name: mysql
     alias: mysql
+  - name: mongo
+    alias: mongo
   - name: mcmoe/mssqldocker
     alias: mssql
   - name: ${CI_REGISTRY}/datagrip/greenplum:6.8

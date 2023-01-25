@@ -13,6 +13,7 @@ pandas>=0.24,<1.0
 psycopg2-binary
 pyarrow>=0.11,<0.12
 pyftpdlib
+pymongo<=3.10.1  # newer versions crash when importing a library
 pymssql
 PyMySQL
 pyodbc
@@ -22,7 +23,6 @@ pytest
 pytest-lazy-fixture
 pytest-mock
 pytest-rerunfailures
-
 sftpserver
 sqlalchemy
 
