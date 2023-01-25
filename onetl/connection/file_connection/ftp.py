@@ -16,11 +16,28 @@ from __future__ import annotations
 
 import ftplib  # noqa: S402
 import os
+import textwrap
 from logging import getLogger
 from typing import Optional
 
-from ftputil import FTPHost
-from ftputil import session as ftp_session
+try:
+    from ftputil import FTPHost
+    from ftputil import session as ftp_session
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "ftputil".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[ftp]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
 from pydantic import SecretStr
 
 from onetl.base import PathStatProtocol
@@ -32,7 +49,22 @@ log = getLogger(__name__)
 
 
 class FTP(FileConnection):
-    """Class for FTP file connection.
+    """FTP file connection.
+
+    Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use FTP connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[ftp]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------

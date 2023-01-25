@@ -64,7 +64,7 @@ class JDBCMixin(FrozenModel):
     driver: ClassVar[str]
 
     class JDBCOptions(GenericOptions):
-        """Class for generic options, specific for a specific JDBC driver.
+        """Generic options, related to specific JDBC driver.
 
         .. note ::
 

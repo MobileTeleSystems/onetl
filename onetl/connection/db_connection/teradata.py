@@ -19,12 +19,30 @@ from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `Teradata.package` for creating Spark session
+
 
 class Teradata(JDBCConnection):
-    """Class for Teradata JDBC connection.
+    """Teradata JDBC connection.
 
     Based on package ``com.teradata.jdbc:terajdbc4:17.20.00.08``
-    (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_)
+    (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
+
+    .. warning::
+
+        To use Teradata connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------

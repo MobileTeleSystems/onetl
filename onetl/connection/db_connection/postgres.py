@@ -19,16 +19,34 @@ from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `Postgres.package` for creating Spark session
+
 
 class Postgres(JDBCConnection):
-    """Class for PostgreSQL JDBC connection.
+    """PostgreSQL JDBC connection.
 
     Based on Maven package ``org.postgresql:postgresql:42.4.0``
-    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_)
+    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
     .. note::
 
         Supported PostgreSQL server versions: >= 8.2
+
+    .. warning::
+
+        To use Postgres connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------

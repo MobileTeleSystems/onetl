@@ -19,16 +19,34 @@ from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `MySQL.package` for creating Spark session
+
 
 class MySQL(JDBCConnection):
-    """Class for MySQL JDBC connection.
+    """MySQL JDBC connection.
 
     Based on Maven package ``mysql:mysql-connector-java:8.0.30``
-    (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_)
+    (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
     .. note::
 
         Supported MySQL server versions: >= 5.6
+
+    .. warning::
+
+        To use MySQL connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------

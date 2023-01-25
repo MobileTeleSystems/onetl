@@ -19,17 +19,35 @@ from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `MSSQL.package` for creating Spark session
+
 
 class MSSQL(JDBCConnection):
-    """Class for MSSQL JDBC connection.
+    """MSSQL JDBC connection.
 
     Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8``
     (`official MSSQL JDBC driver
-    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_)
+    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
     .. note::
 
         Supported SQL Server versions: >= 2012
+
+    .. warning::
+
+        To use MSSQL connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------

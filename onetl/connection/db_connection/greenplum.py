@@ -35,6 +35,7 @@ from onetl.exception import TooManyParallelJobsError
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
+# do not import PySpark here, as we allow user to use `Greenplum.package...` for creating Spark session
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
@@ -109,15 +110,31 @@ class ConnectionLimits:
 
 
 class Greenplum(JDBCMixin, DBConnection):
-    """Class for Greenplum connection.
+    """Greenplum connection.
 
     Based on package ``io.pivotal:greenplum-spark:2.1.3``
-    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_)
+    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_).
 
     .. note::
 
         There is no public information which Greenplum server versions are compatible with this connector,
         please contact Pivotal
+
+    .. warning::
+
+        To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -203,7 +220,7 @@ class Greenplum(JDBCMixin, DBConnection):
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark reading options, related to a specific JDBC source.
+        """Pivotal's Greenplum Spark connector reading options.
 
         .. note ::
 
@@ -339,7 +356,7 @@ class Greenplum(JDBCMixin, DBConnection):
         """
 
     class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for writing options, related to Pivotal's Greenplum Spark connector
+        """Pivotal's Greenplum Spark connector writing options.
 
         .. note ::
 

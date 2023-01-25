@@ -128,7 +128,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             extra = "allow"
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark reading options, related to a specific JDBC source.
+        """Spark JDBC options.
 
         .. note ::
 
@@ -410,7 +410,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             return values
 
     class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark writing options, related to a specific JDBC source.
+        """Spark JDBC writing options.
 
         .. note ::
 

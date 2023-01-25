@@ -21,18 +21,37 @@ from typing import ClassVar, Optional
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import StatementType
 
+# do not import PySpark here, as we allow user to use `Clickhouse.package` for creating Spark session
+
+
 log = logging.getLogger(__name__)
 
 
 class Clickhouse(JDBCConnection):
-    """Class for Clickhouse JDBC connection.
+    """Clickhouse JDBC connection.
 
     Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
-    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_)
+    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. note::
 
         Supported Clickhouse server versions: >= 20.7
+
+    .. warning::
+
+        To use Clickhouse connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------

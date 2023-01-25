@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
 from pydantic import SecretStr
@@ -87,10 +87,26 @@ KNOWN_WRITE_OPTIONS = frozenset(
 
 
 class MongoDB(DBConnection):
-    """Class for MongoDB connection.
+    """MongoDB connection.
 
     Based on package ``org.mongodb.spark:mongo-spark-connector``
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/master/python-api/>`_)
+
+    .. warning::
+
+        To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -125,8 +141,6 @@ class MongoDB(DBConnection):
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", MongoDB.package_spark_2_4)
-            .config("spark.dynamicAllocation.maxExecutors", 10)
-            .config("spark.executor.cores", 1)
             .getOrCreate()
         )
 
@@ -150,7 +164,7 @@ class MongoDB(DBConnection):
     package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
 
     class ReadOptions(GenericOptions):
-        """Class for Spark reading options, related to a specific database source.
+        """MongoDB connector for Spark reading options.
 
         .. note ::
 
@@ -174,7 +188,7 @@ class MongoDB(DBConnection):
         .. code:: python
 
             MongoDB.ReadOptions(
-                where="{'$match': {'number':{'$gte': 3}}}",
+                pipeline="{'$match': {'number':{'$gte': 3}}}",
             )
         """
 
@@ -184,7 +198,7 @@ class MongoDB(DBConnection):
             extra = "allow"
 
     class WriteOptions(GenericOptions):
-        """Class for writing options, related to MongoDB Spark connector.
+        """MongoDB connector for writing reading options.
 
         .. note ::
 
@@ -209,8 +223,8 @@ class MongoDB(DBConnection):
 
             options = MongoDB.WriteOptions(
                 mode="append",
-                sample_size=500,
-                local_threshold=20,
+                sampleSize=500,
+                localThreshold=20,
             )
         """
 

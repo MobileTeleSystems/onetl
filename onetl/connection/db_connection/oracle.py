@@ -29,6 +29,9 @@ from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.log import BASE_LOG_INDENT, log_with_indent
 
+# do not import PySpark here, as we allow user to use `Oracle.package` for creating Spark session
+
+
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
@@ -59,14 +62,30 @@ class ErrorPosition:
 
 
 class Oracle(JDBCConnection):
-    """Class for Oracle JDBC connection.
+    """Oracle JDBC connection.
 
     Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
-    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_)
+    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
     .. note::
 
         Supported Oracle Server versions: 21c, 19c, 18c, and 12.2
+
+    .. warning::
+
+        To use Oracle connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
