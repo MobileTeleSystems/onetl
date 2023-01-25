@@ -100,6 +100,10 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         try:
             self.listdir("/")
             log.info(f"|{self.__class__.__name__}| Connection is available")
+        except (RuntimeError, ValueError):
+            # left validation errors intact
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise
         except Exception as e:
             log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
             raise RuntimeError("Connection is unavailable") from e

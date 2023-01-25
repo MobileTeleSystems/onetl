@@ -20,6 +20,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from deprecated import deprecated
+from etl_entities.instance import Cluster
 from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
@@ -388,7 +389,7 @@ class Hive(DBConnection):
             Parameters
             ----------
             cluster : :obj:`str`
-                Cluster name
+                Cluster name (raw)
 
             Returns
             -------
@@ -425,7 +426,7 @@ class Hive(DBConnection):
             Returns
             -------
             set[str] | None
-                Collection of cluster names (in normalized form).
+                Collection of cluster names (normalized).
 
                 If hook cannot be applied, it should return ``None``.
 
@@ -457,7 +458,7 @@ class Hive(DBConnection):
             Returns
             -------
             str | None
-                Current cluster name (in normalized form).
+                Current cluster name (normalized).
 
                 If hook cannot be applied, it should return ``None``.
 
@@ -478,18 +479,22 @@ class Hive(DBConnection):
             """
             return None  # noqa: WPS324
 
-    cluster: str
+    cluster: Cluster
 
     @validator("cluster")
-    def check_cluster(cls, cluster):  # noqa: N805
-        cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+    def validate_cluster_name(cls, cluster):  # noqa: N805
+        log.debug(f"|{cls.__name__}| Normalizing cluster {cluster!r} name ...")
+        validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+        if validated_cluster != cluster:
+            log.debug(f"|{cls.__name__}|   Got {validated_cluster!r}")
 
+        log.debug(f"|{cls.__name__}| Checking if cluster {validated_cluster!r} is a known cluster ...")
         known_clusters = cls.slots.get_known_clusters()
-        if known_clusters and cluster not in known_clusters:
-            clusters_str = ", ".join(repr(cluster) for cluster in sorted(known_clusters))
-            raise ValueError(f"Cluster {cluster!r} is not in the known clusters list: {clusters_str}")
+        if known_clusters and validated_cluster not in known_clusters:
+            clusters_str = ", ".join(repr(name) for name in sorted(known_clusters))
+            raise ValueError(f"Cluster {validated_cluster!r} is not in the known clusters list: {clusters_str}")
 
-        return cluster
+        return validated_cluster
 
     @classmethod
     def get_current(cls, spark: SparkSession):
@@ -519,6 +524,7 @@ class Hive(DBConnection):
             hive = Hive.get_current(spark=spark)
         """
 
+        log.info(f"|{cls.__name__}| Detecting current cluster...")
         current_cluster = cls.slots.get_current_cluster()
         if not current_cluster:
             raise RuntimeError(
@@ -526,6 +532,7 @@ class Hive(DBConnection):
                 f"some hooks connected to {cls.__name__}.slots.get_current_cluster",
             )
 
+        log.info(f"|{cls.__name__}| Got {current_cluster!r}")
         return cls(cluster=current_cluster, spark=spark)
 
     @property
@@ -533,6 +540,7 @@ class Hive(DBConnection):
         return self.cluster
 
     def check(self):
+        log.debug(f"|{self.__class__.__name__}| Detecting current cluster...")
         current_cluster = self.slots.get_current_cluster()
         if current_cluster and self.cluster != current_cluster:
             raise ValueError("You can connect to a Hive cluster only from the same cluster")

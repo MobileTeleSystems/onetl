@@ -22,6 +22,7 @@ from datetime import date, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
+from etl_entities.instance import Host
 from pydantic import Field
 
 from onetl._internal import (  # noqa: WPS436
@@ -431,7 +432,7 @@ class Greenplum(JDBCMixin, DBConnection):
             ``error`` and ``ignore`` modes are not supported.
         """
 
-    host: str
+    host: Host
     database: str
     port: int = 5432
     extra: Extra = Extra()

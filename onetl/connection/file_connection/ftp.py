@@ -38,6 +38,7 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
+from etl_entities.instance import Host
 from pydantic import SecretStr
 
 from onetl.base import PathStatProtocol
@@ -96,7 +97,7 @@ class FTP(FileConnection):
         )
     """
 
-    host: str
+    host: Host
     port: int = 21
     user: Optional[str] = None
     password: Optional[SecretStr] = None

@@ -40,6 +40,7 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
+from etl_entities.instance import Host
 from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
 from typing_extensions import Literal
 
@@ -110,7 +111,7 @@ class WebDAV(FileConnection):
 
     """
 
-    host: str
+    host: Host
     user: str
     password: SecretStr
     port: Optional[int] = None

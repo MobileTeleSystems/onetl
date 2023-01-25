@@ -39,6 +39,7 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
+from etl_entities.instance import Host
 from pydantic import FilePath, SecretStr
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -109,7 +110,7 @@ class SFTP(FileConnection):
         )
     """
 
-    host: str
+    host: Host
     port: int = 22
     user: Optional[str] = None
     password: Optional[SecretStr] = None

@@ -20,6 +20,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from deprecated import deprecated
+from etl_entities.instance import Host
 from pydantic import PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
@@ -518,7 +519,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         class Config:
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options
 
-    host: str
+    host: Host
     port: int
     extra: Extra = Extra()
 

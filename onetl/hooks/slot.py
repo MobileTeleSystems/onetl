@@ -405,7 +405,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213
                 call_result = "(None)" if result is None else "(*NOT None*)"
                 logger.log(
                     NOTICE,
-                    "|Hooks| %sMethod call result %s will be replaced with result of hook '%s.%s'",
+                    "|Hooks| %sMethod call result %s will be replaced with result of calling the hook '%s.%s'",
                     " " * indent,
                     call_result,
                     before_hook.__module__,

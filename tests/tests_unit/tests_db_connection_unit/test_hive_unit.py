@@ -45,6 +45,8 @@ def test_hive_get_known_clusters_hook(request):
     with pytest.raises(ValueError, match="Cluster 'unknown' is not in the known clusters list: 'known1', 'known2'"):
         Hive(cluster="unknown", spark=spark)
 
+    Hive(cluster="known1", spark=spark)  # no exception
+
 
 def test_hive_known_normalize_cluster_name_hook(request):
     @Hive.slots.normalize_cluster_name.connect
