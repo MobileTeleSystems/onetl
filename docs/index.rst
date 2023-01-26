@@ -129,6 +129,13 @@
 
 .. toctree::
     :maxdepth: 2
+    :caption: Hooks & plugins
+
+    hooks/index
+    plugins/index
+
+.. toctree::
+    :maxdepth: 2
     :caption: Misc
 
     logging

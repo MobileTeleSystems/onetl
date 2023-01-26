@@ -55,7 +55,7 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
 
 
 class Hive(DBConnection):
-    """Spark connection with Hive MetaStore support.
+    """Spark connection with Hive MetaStore support. |support_hooks|
 
     You don't need a Hive server to use this connector.
 
@@ -95,6 +95,9 @@ class Hive(DBConnection):
 
     Parameters
     ----------
+    cluster : str
+        Cluster name. Used for HWM and lineage.
+
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session with Hive metastore support enabled
 
@@ -375,13 +378,13 @@ class Hive(DBConnection):
 
     @support_hooks
     class slots:  # noqa: N801
-        """Slots that could be implemented by third-party plugins"""
+        """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins."""
 
         @slot  # noqa: WPS324
         @staticmethod
         def normalize_cluster_name(cluster: str) -> str | None:
             """
-            Normalize cluster name passed into Hive constructor.
+            Normalize cluster name passed into Hive constructor. |support_hooks|
 
             If hooks didn't return anything, cluster name is left intact.
 
@@ -417,7 +420,7 @@ class Hive(DBConnection):
         @staticmethod
         def get_known_clusters() -> set[str] | None:
             """
-            Return collection of known clusters.
+            Return collection of known clusters. |support_hooks|
 
             Cluster passed into Hive constructor should be present in this list.
             If hooks didn't return anything, no validation will be performed.
@@ -449,7 +452,7 @@ class Hive(DBConnection):
         @staticmethod
         def get_current_cluster() -> str | None:
             """
-            Get current cluster name.
+            Get current cluster name. |support_hooks|
 
             Used in :obj:`~check` method to verify that connection is created only from the same cluster.
             If hooks didn't return anything, no validation will be performed.
