@@ -180,7 +180,6 @@ class Greenplum(JDBCMixin, DBConnection):
 
         extra = {
             "server.port": "49152-65535",
-            "pool.maxSize": "10",
         }
 
         spark = (
