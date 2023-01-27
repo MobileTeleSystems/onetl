@@ -19,6 +19,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
+from etl_entities.instance import Host
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -154,7 +155,7 @@ class MongoDB(DBConnection):
     """
 
     database: str
-    host: str
+    host: Host
     user: str
     password: SecretStr
     port: int = 27017

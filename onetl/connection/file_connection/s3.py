@@ -38,6 +38,7 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
+from etl_entities.instance import Host
 from pydantic import SecretStr, root_validator
 from typing_extensions import Literal
 
@@ -109,7 +110,7 @@ class S3(FileConnection):
 
     """
 
-    host: str
+    host: Host
     port: Optional[int] = None
     access_key: str
     secret_key: SecretStr
@@ -119,7 +120,7 @@ class S3(FileConnection):
     region: Optional[str] = None
 
     @root_validator
-    def check_port(cls, values):  # noqa: N805
+    def validate_port(cls, values):  # noqa: N805
         if values["port"] is not None:
             return values
         values["port"] = 443 if values["protocol"] == "https" else 80
