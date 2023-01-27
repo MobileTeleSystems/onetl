@@ -47,6 +47,6 @@ def __getattr__(name: str):
         from {new_module} import {name}
     """
 
-    warnings.warn(textwrap.dedent(message).strip(), category=DeprecationWarning, stacklevel=2)
+    warnings.warn(textwrap.dedent(message).strip(), category=UserWarning, stacklevel=2)
 
     return getattr(import_module(f"{new_module}.{submodule}"), name)
