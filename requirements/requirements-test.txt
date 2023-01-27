@@ -23,7 +23,7 @@ pytest-lazy-fixture
 pytest-mock
 pytest-rerunfailures
 sftpserver
-sqlalchemy
+sqlalchemy<2.0
 
 # mypy
 types-PyYAML
