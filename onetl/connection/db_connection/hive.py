@@ -410,7 +410,7 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.normalize_cluster_name.connect
+                @Hive.slots.normalize_cluster_name.bind
                 @hook
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
@@ -442,7 +442,7 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.get_known_clusters.connect
+                @Hive.slots.get_known_clusters.bind
                 @hook
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
@@ -474,7 +474,7 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.get_current_cluster.connect
+                @Hive.slots.get_current_cluster.bind
                 @hook
                 def get_current_cluster() -> str:
                     # some magic here
@@ -506,7 +506,7 @@ class Hive(DBConnection):
 
         .. note::
 
-            Can be used only if there are some hooks connected :obj:`~slots.get_current_cluster` slot.
+            Can be used only if there are some hooks bound :obj:`~slots.get_current_cluster` slot.
 
         Parameters
         ----------
@@ -532,7 +532,7 @@ class Hive(DBConnection):
         if not current_cluster:
             raise RuntimeError(
                 f"{cls.__name__}.get_current() can be used only if there are "
-                f"some hooks connected to {cls.__name__}.slots.get_current_cluster",
+                f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
             )
 
         log.info(f"|{cls.__name__}| Got {current_cluster!r}")

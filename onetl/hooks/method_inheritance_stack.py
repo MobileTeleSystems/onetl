@@ -8,7 +8,7 @@ class MethodInheritanceStack:
     Context manager which can track the method calls within class inheritance diagram.
 
     For inherited class, overridden method contains a ``super().method(...)`` call.
-    If base class method is registered as a slot, and there are some hooks connected to it,
+    If base class method is registered as a slot, and there are some hooks bound to it,
     calling the inherited class method can cause calling the same hook twice -
     both on inherited class and base (due to calling ``super()``).
 

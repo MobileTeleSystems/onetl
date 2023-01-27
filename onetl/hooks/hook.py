@@ -28,7 +28,7 @@ class HookPriority(int, Enum):  # noqa: WPS600
     FIRST = -1
     "Hooks with this priority will run first."
 
-    MIDDLE = 0
+    NORMAL = 0
     "Hooks with this priority will run after :obj:`~FIRST` but before :obj:`~LAST`."
 
     LAST = 1
@@ -72,7 +72,7 @@ class Hook(Generic[P, T]):
 
     callback: Callable[P, T]
     enabled: bool = True
-    priority: HookPriority = HookPriority.MIDDLE
+    priority: HookPriority = HookPriority.NORMAL
 
     def __post_init__(self):
         self.priority = HookPriority(self.priority)
@@ -226,13 +226,13 @@ class Hook(Generic[P, T]):
 
 
 @runtime_checkable
-class CanHandleResult(Protocol):
+class CanProcessResult(Protocol):
     """
     Protocol which should be implemented by ContextManager
-    allowing it to handle result of original method call and modify/replace it with something else.
+    allowing it to process result of original method call and modify/replace it with something else.
     """
 
-    def handle_result(self, result: T) -> T:
+    def process_result(self, result: T) -> T:
         ...
 
 
@@ -269,7 +269,7 @@ class ContextDecorator:
 
             yield something
 
-        Just remember this output and return it in :obj:`~handle_result` as is.
+        Just remember this output and return it in :obj:`~process_result` as is.
         """
 
         try:
@@ -330,7 +330,7 @@ class ContextDecorator:
             raise
         raise RuntimeError("generator didn't stop after throw()")
 
-    def handle_result(self, result: T) -> T | None:
+    def process_result(self, result: T) -> T | None:
         """
         Handle original method call result, and return new value.
 
@@ -339,7 +339,7 @@ class ContextDecorator:
         .. code:: python
 
             result = yield
-            # this is there ``handle_result`` is called
+            # this is there ``process_result`` is called
             yield result
 
         looks like:
@@ -361,7 +361,7 @@ class ContextDecorator:
         return None
 
 
-def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.MIDDLE):
+def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
     """
     Initialize hook from callable/context manager.
 
@@ -404,7 +404,7 @@ def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: Hook
 
 
             @hook(enabled=True, priority=HookPriority.FIRST)
-            class ContextManagerWithHandleResult:
+            class ContextManagerWithProcessResult:
                 def __init__(self, *args, **kwargs):
                     ...
 
@@ -416,7 +416,7 @@ def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: Hook
                     ...
                     return False
 
-                def handle_result(self, result):
+                def process_result(self, result):
                     # special method to handle method result call
                     return modify(result)
 

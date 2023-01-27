@@ -23,7 +23,7 @@ def test_hooks_execute_context_manager_enter(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -69,7 +69,7 @@ def test_hooks_execute_context_manager_exit(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class AfterCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -104,7 +104,7 @@ def test_hooks_execute_context_manager_exit(caplog):
         assert after_call_line > method_call_line
 
 
-def test_hooks_execute_context_manager_handle_result_replace(caplog):
+def test_hooks_execute_context_manager_process_result_replace(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -115,7 +115,7 @@ def test_hooks_execute_context_manager_handle_result_replace(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class ReplaceCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -128,7 +128,7 @@ def test_hooks_execute_context_manager_handle_result_replace(caplog):
         def __exit__(self, *args):
             return False
 
-        def handle_result(self, result: int) -> int:
+        def process_result(self, result: int) -> int:
             log.info("Called replace callback with %s and %s", self.instance.data, self.arg)
             return 10
 
@@ -153,7 +153,7 @@ def test_hooks_execute_context_manager_handle_result_replace(caplog):
         assert method_call_line < replace_call_line
 
 
-def test_hooks_execute_context_manager_handle_result_last_wins(caplog):
+def test_hooks_execute_context_manager_process_result_last_wins(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -163,7 +163,7 @@ def test_hooks_execute_context_manager_handle_result_last_wins(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class ReplaceCallback2:
         def __init__(self, instance: Calculator, arg: int):
@@ -176,10 +176,10 @@ def test_hooks_execute_context_manager_handle_result_last_wins(caplog):
         def __exit__(self, *args):
             return False
 
-        def handle_result(self, result: int) -> int:
+        def process_result(self, result: int) -> int:
             return 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class ReplaceCallback1:
         def __init__(self, instance: Calculator, arg: int):
@@ -192,14 +192,14 @@ def test_hooks_execute_context_manager_handle_result_last_wins(caplog):
         def __exit__(self, *args):
             return False
 
-        def handle_result(self, result: int) -> int:
+        def process_result(self, result: int) -> int:
             return 234
 
     # the last hook result is used
     assert Calculator(1).plus(2) == 234
 
 
-def test_hooks_execute_context_manager_handle_result_modify(caplog):
+def test_hooks_execute_context_manager_process_result_modify(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -210,7 +210,7 @@ def test_hooks_execute_context_manager_handle_result_modify(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class ModifyCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -223,7 +223,7 @@ def test_hooks_execute_context_manager_handle_result_modify(caplog):
         def __exit__(self, *args):
             return False
 
-        def handle_result(self, result: int) -> int:
+        def process_result(self, result: int) -> int:
             log.info("Called modify callback with %s and %s", self.instance.data, self.arg)
             return result + 10
 
@@ -259,7 +259,7 @@ def test_hooks_execute_context_manager_catch_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             raise TypeError(f"Raised with {self.data} and {arg}")
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class ContextCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -319,7 +319,7 @@ def test_hooks_execute_context_manager_pass_method_name(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int, method_name: str):
@@ -363,7 +363,7 @@ def test_hooks_execute_context_manager_different_method_types(caplog):
             log.info("Called original static method with %s and %s", arg, arg2)
             return arg * arg2
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class MethodCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -378,7 +378,7 @@ def test_hooks_execute_context_manager_different_method_types(caplog):
         def __exit__(self, *args):
             return False
 
-    @Calculator.class_method.connect
+    @Calculator.class_method.bind
     @hook
     class ClassMethodCallback:
         def __init__(self, klass: type):
@@ -392,7 +392,7 @@ def test_hooks_execute_context_manager_different_method_types(caplog):
         def __exit__(self, *args):
             return False
 
-    @Calculator.static_method.connect
+    @Calculator.static_method.bind
     @hook
     class StaticMethodCallback:
         def __init__(self, arg: int, arg2: str):
@@ -434,7 +434,7 @@ def test_hooks_execute_context_manager_init_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -473,7 +473,7 @@ def test_hooks_execute_context_manager_enter_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -514,7 +514,7 @@ def test_hooks_execute_context_manager_exit_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -527,7 +527,7 @@ def test_hooks_execute_context_manager_exit_is_raising_exception(caplog):
         def __exit__(self, *args):
             return False
 
-        def handle_result(self, result: int) -> int:
+        def process_result(self, result: int) -> int:
             if result == 4:
                 raise ValueError("Result value 4 is not allowed")
             return result
@@ -547,7 +547,7 @@ def test_hooks_execute_context_manager_exit_is_raising_exception(caplog):
     assert Calculator(1).plus(2) == 3
 
 
-def test_hooks_execute_context_manager_handle_result_is_raising_exception(caplog):
+def test_hooks_execute_context_manager_process_result_is_raising_exception(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -558,7 +558,7 @@ def test_hooks_execute_context_manager_handle_result_is_raising_exception(caplog
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class BeforeCallback:
         def __init__(self, instance: Calculator, arg: int):
@@ -598,7 +598,7 @@ def test_hooks_execute_context_manager_wrong_signature():
         def plus(self, arg: int) -> int:
             pass
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     class MissingArg:
         def __init__(self):

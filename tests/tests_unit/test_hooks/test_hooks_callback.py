@@ -23,7 +23,7 @@ def test_hooks_execute_callback_before(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def before_callback(self, arg: int):
         log.info("Called before callback with %s and %s", self.data, arg)
@@ -60,7 +60,7 @@ def test_hooks_execute_callback_after(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def after_callback(self, arg: int):
         yield
@@ -98,7 +98,7 @@ def test_hooks_execute_callback_replace_with_return(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback(self, arg: int):
         log.info("Called replace callback with %s and %s", self.data, arg)
@@ -135,12 +135,12 @@ def test_hooks_execute_callback_replace_with_return_last_wins(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback2(self, arg: int):
         return 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback1(self, arg: int):
         return 234
@@ -160,7 +160,7 @@ def test_hooks_execute_callback_replace_with_yield(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback(self, arg: int):
         log.info("Called replace callback with %s and %s", self.data, arg)
@@ -197,12 +197,12 @@ def test_hooks_execute_callback_replace_with_yield_last_wins(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback2(self, arg: int):
         yield 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def replace_callback1(self, arg: int):
         yield 234
@@ -211,7 +211,7 @@ def test_hooks_execute_callback_replace_with_yield_last_wins(caplog):
     assert Calculator(1).plus(2) == 234
 
 
-def test_hooks_execute_callback_handle_result(caplog):
+def test_hooks_execute_callback_process_result(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -222,7 +222,7 @@ def test_hooks_execute_callback_handle_result(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def modify_callback(self, arg: int):
         result = yield  # noqa: WPS325
@@ -250,7 +250,7 @@ def test_hooks_execute_callback_handle_result(caplog):
         assert method_call_line < modify_call_line
 
 
-def test_hooks_execute_callback_handle_result_last_wins(caplog):
+def test_hooks_execute_callback_process_result_last_wins(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -260,13 +260,13 @@ def test_hooks_execute_callback_handle_result_last_wins(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def modify_callback2(self, arg: int):
         result = yield  # noqa: F841
         yield 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def modify_callback1(self, arg: int):
         result = yield  # noqa: F841
@@ -286,7 +286,7 @@ def test_hooks_execute_callback_nothing_yielded(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def modify_callback(self, arg: int):
         yield from (i for i in ())  # noqa: WPS335
@@ -305,7 +305,7 @@ def test_hooks_execute_callback_too_many_yields(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def modify_callback(self, arg: int):
         yield from (i for i in (1, 2, 3))
@@ -325,7 +325,7 @@ def test_hooks_execute_callback_catch_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             raise TypeError(f"Raised with {self.data} and {arg}")
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def context_callback(self, arg: int):
         try:
@@ -377,7 +377,7 @@ def test_hooks_execute_callback_pass_method_name(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def before_callback(self, arg: int, method_name: str):
         log.info("Called before callback with %s and %s, by '%s'", self.data, arg, method_name)
@@ -411,19 +411,19 @@ def test_hooks_execute_callback_different_method_types(caplog):
             log.info("Called original static method with %s and %s", arg, arg2)
             return arg * arg2
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def method_callback(self, arg: int):
         log.info("Called method callback with %s and %s", self.data, arg)
         assert isinstance(self, Calculator)
 
-    @Calculator.class_method.connect
+    @Calculator.class_method.bind
     @hook
     def class_method_callback(cls):
         log.info("Called class method callback")
         assert cls is Calculator
 
-    @Calculator.static_method.connect
+    @Calculator.static_method.bind
     @hook
     def static_method_callback(arg: int, arg2: str):
         log.info("Called static method callback with %s and %s", arg, arg2)
@@ -457,7 +457,7 @@ def test_hooks_execute_callback_before_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def before_callback(self, arg: int):
         if arg == 3:
@@ -487,7 +487,7 @@ def test_hooks_execute_callback_after_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def after_callback(self, arg: int):
         result = yield
@@ -510,7 +510,7 @@ def test_hooks_execute_callback_after_is_raising_exception(caplog):
     assert Calculator(1).plus(2) == 3
 
 
-def test_hooks_execute_callback_handle_result_is_raising_exception(caplog):
+def test_hooks_execute_callback_process_result_is_raising_exception(caplog):
     @support_hooks
     @dataclass
     class Calculator:
@@ -521,7 +521,7 @@ def test_hooks_execute_callback_handle_result_is_raising_exception(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def after_callback(self, arg: int):
         yield
@@ -553,7 +553,7 @@ def test_hooks_execute_callback_wrong_signature():
         def plus(self, arg: int) -> int:
             pass
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def missing_arg(self):
         pass

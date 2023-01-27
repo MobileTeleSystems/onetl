@@ -9,6 +9,7 @@
 
     slot
     Slot
+    Slot.bind
     Slot.skip_hooks
     Slot.stop_hooks
     Slot.resume_hooks

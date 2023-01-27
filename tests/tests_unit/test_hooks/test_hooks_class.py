@@ -30,7 +30,7 @@ def test_hooks_inheritance(caplog):
 
     base_hook_calls: dict[tuple(int, int), int] = defaultdict(int)
 
-    @BaseCalc.plus.connect
+    @BaseCalc.plus.bind
     @hook
     def base_callback(self, arg: int):
         log.info("Called base class callback with %s and %s", self.data, arg)
@@ -38,7 +38,7 @@ def test_hooks_inheritance(caplog):
         base_hook_calls[(self.data, arg)] += 1
         assert base_hook_calls[(self.data, arg)] < 2, "Base callback should not be called twice"
 
-    @NestedCalc.plus.connect
+    @NestedCalc.plus.bind
     @hook
     def nested_callback(self, arg: int):
         log.info("Called nested class callback with %s and %s", self.data, arg)
@@ -96,28 +96,28 @@ def test_hooks_class_stop_and_resume():
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # stop & resume does not affect hook state, it should be enabled explicitly
@@ -161,28 +161,28 @@ def test_hooks_class_skip_context():
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # skip does not affect hook state, it should be enabled explicitly
@@ -231,28 +231,28 @@ def test_hooks_class_skip_decorator():
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # skip does not affect hook state, it should be enabled explicitly

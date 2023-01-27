@@ -20,12 +20,12 @@ def test_hooks_slot_skip_context(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
@@ -64,12 +64,12 @@ def test_hooks_slot_skip_decorator(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
@@ -115,17 +115,17 @@ def test_hooks_slot_resume_and_stop(caplog):
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(enabled=False)
     def callback3(self, arg: int):
         # stop & resume does not change hook state
@@ -185,7 +185,7 @@ def test_hooks_slot_dunders_are_allowed(caplog):
         def __init__(self, data: int):
             self.data = data
 
-    @Calculator.__init__.connect
+    @Calculator.__init__.bind
     @hook
     def callback(self, *args):
         log.info("Executed callback on constructor")
@@ -239,7 +239,7 @@ def test_hooks_methods_without_slot_are_unchanged():
 
 
 def test_hooks_slot_can_register_only_hook():
-    error_msg = r"@.*Calculator\.plus\.connect decorator can be used only on top function marked with @hook"
+    error_msg = r"@.*Calculator\.plus\.bind decorator can be used only on top function marked with @hook"
     with pytest.raises(TypeError, match=error_msg):
 
         @support_hooks
@@ -248,6 +248,6 @@ def test_hooks_slot_can_register_only_hook():
             def plus(self, data: int):
                 return data
 
-        @Calculator.plus.connect
+        @Calculator.plus.bind
         def callback(self, *args):
             pass

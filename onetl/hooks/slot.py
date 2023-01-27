@@ -12,7 +12,7 @@ from typing import Any, Callable, ContextManager, TypeVar
 from typing_extensions import Protocol
 
 from onetl.exception import SignatureError
-from onetl.hooks.hook import CanHandleResult, Hook, HookPriority
+from onetl.hooks.hook import CanProcessResult, Hook, HookPriority
 from onetl.hooks.hook_collection import HookCollection
 from onetl.hooks.hooks_state import HooksState
 from onetl.hooks.method_inheritance_stack import MethodInheritanceStack
@@ -40,16 +40,7 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
     Return all hooks registered for a specific method,
     sorted by priority and class nested level.
 
-    Hooks are executed in the following order:
-
-        * ``ParentClass``, ``FIRST``
-        * ``NestedClass``, ``FIRST``
-        * ``ParentClass``, ``MIDDLE``
-        * ``NestedClass``, ``MIDDLE``
-        * ``ParentClass``, ``LAST``
-        * ``NestedClass``, ``LAST``
-
-    See :obj:`onetl.hooks.hook.HookPriority` for more details.
+    See :ref:`hooks-design` for more details.
     """
 
     hooks_by_priority: dict[tuple[HookPriority, int], HookCollection] = defaultdict(HookCollection)
@@ -69,11 +60,11 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
     return result
 
 
-def connect_hook(method: Hook, inp=None):
+def bind_hook(method: Hook, inp=None):
     """
-    Connect a hook to the slot.
+    Bind a hook to the slot.
 
-    See :ref:`hooks` for more details.
+    See :ref:`hooks-design` for more details.
 
     Examples
     --------
@@ -90,14 +81,14 @@ def connect_hook(method: Hook, inp=None):
                 pass
 
 
-        @MyClass.method.connect
+        @MyClass.method.bind
         @hook
         def hook(self, arg):
             if arg == "some":
                 do_something()
 
 
-        @MyClass.method.connect
+        @MyClass.method.bind
         @hook(priority=HookPriority.FIRST, enabled=True)
         def another_hook(self, arg):
             if arg == "another":
@@ -111,7 +102,7 @@ def connect_hook(method: Hook, inp=None):
     def inner_wrapper(hook):  # noqa: WPS430
         if not isinstance(hook, Hook):
             raise TypeError(
-                f"@{method.__qualname__}.connect decorator can be used only on top function marked with @hook",
+                f"@{method.__qualname__}.bind decorator can be used only on top function marked with @hook",
             )
 
         method.__hooks__.add(hook)
@@ -156,21 +147,21 @@ def _prepare_hook_args(
 
     .. code:: python
 
-        @MyClass.method.connect
+        @MyClass.method.bind
         @hook
         def callback(self, some, named):
             ...
 
     .. code:: python
 
-        @MyClass.method.connect
+        @MyClass.method.bind
         @hook
         def callback(self, some, **kwargs):
             ...
 
     .. code:: python
 
-        @MyClass.method.connect
+        @MyClass.method.bind
         @hook
         def callback(my_class_instance, *args, **kwargs):
             ...
@@ -181,7 +172,7 @@ def _prepare_hook_args(
 
         .. code:: python
 
-            @MyClass.method.connect
+            @MyClass.method.bind
             @hook
             def callback(self, method_name, *args, **kwargs):
                 assert method_name == "method"
@@ -241,14 +232,14 @@ def _execute_hook(hook: Hook, args: inspect.BoundArguments):
         raise
 
 
-def _handle_context_result(result: Any, context: CanHandleResult, hook: Hook):
+def _handle_context_result(result: Any, context: CanProcessResult, hook: Hook):
     """
-    Calls ``context.handle_result(result)`` and handles exception, if any.
+    Calls ``context.process_result(result)`` and handles exception, if any.
 
     See :obj:`onetl.hooks.hook.hook` for more details.
     """
     try:
-        return context.handle_result(result)
+        return context.process_result(result)
     except Exception:
         logger.exception(
             "|Hooks| Error while passing method call result to the hook '%s.%s'",
@@ -409,10 +400,10 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                 result = before_result
 
             for hook, context in context_results:
-                if isinstance(context, CanHandleResult):
+                if isinstance(context, CanProcessResult):
                     logger.log(
                         NOTICE,
-                        "|Hooks| %sPassing result to 'handle_result' method of context manager '%s.%s'",
+                        "|Hooks| %sPassing result to 'process_result' method of context manager '%s.%s'",
                         " " * indent,
                         hook.__module__,
                         hook.__qualname__,
@@ -442,7 +433,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
     wrapper.skip_hooks = wrapper.__hooks__.skip  # type: ignore[attr-defined]
     wrapper.stop_hooks = wrapper.__hooks__.stop  # type: ignore[attr-defined]
     wrapper.resume_hooks = wrapper.__hooks__.resume  # type: ignore[attr-defined]
-    wrapper.connect = partial(connect_hook, wrapper)  # type: ignore[attr-defined]
+    wrapper.bind = partial(bind_hook, wrapper)  # type: ignore[attr-defined]
 
     # wrap result back to @classmethod and @staticmethod
     if isinstance(raw_method, classmethod):
@@ -477,11 +468,11 @@ class Slot(Protocol):
 
     @property
     def __hooks__(self) -> HookCollection:
-        """Collection of hooks connected to the slot"""
+        """Collection of hooks bound to the slot"""
 
     def skip_hooks(self):
         """
-        Context manager which temporary stops all the hooks connected to the method.
+        Context manager which temporary stops all the hooks bound to the slot.
 
         .. note::
 
@@ -506,7 +497,7 @@ class Slot(Protocol):
                         ...
 
 
-                @MyClass.my_method.connect
+                @MyClass.my_method.bind
                 @hook
                 def callback1(self, arg):
                     ...
@@ -531,7 +522,7 @@ class Slot(Protocol):
                         ...
 
 
-                @MyClass.my_method.connect
+                @MyClass.my_method.bind
                 @hook
                 def callback1(self, arg):
                     ...
@@ -551,7 +542,7 @@ class Slot(Protocol):
 
     def stop_hooks(self):
         """
-        Stop all the hooks connected to the method
+        Stop all the hooks bound to the slot.
 
         Examples
         --------
@@ -568,7 +559,7 @@ class Slot(Protocol):
                     ...
 
 
-            @MyClass.my_method.connect
+            @MyClass.my_method.bind
             @hook
             def callback1(self, arg):
                 ...
@@ -583,7 +574,7 @@ class Slot(Protocol):
 
     def resume_hooks(self):
         """
-        Resume all hooks connected to the slot.
+        Resume all hooks bound to the slot.
 
         .. note::
 
@@ -605,7 +596,7 @@ class Slot(Protocol):
                     ...
 
 
-            @MyClass.my_method.connect
+            @MyClass.my_method.bind
             @hook
             def callback1(self, arg):
                 ...
@@ -621,8 +612,8 @@ class Slot(Protocol):
             obj.my_method(2)  # will call callback1(obj, 2)
         """
 
-    @wraps(connect_hook)
-    def connect(self):
+    @wraps(bind_hook)
+    def bind(self):
         ...
 
 
@@ -632,7 +623,7 @@ def slot(method) -> Slot:
 
     Decorated methods get additional nested methods:
 
-        * :obj:`onetl.hooks.slot.Slot.connect`
+        * :obj:`onetl.hooks.slot.Slot.bind`
         * :obj:`onetl.hooks.slot.Slot.stop_hooks`
         * :obj:`onetl.hooks.slot.Slot.resume_hooks`
         * :obj:`onetl.hooks.slot.Slot.skip_hooks`
@@ -673,19 +664,19 @@ def slot(method) -> Slot:
                 ...
 
 
-        @MyClass.my_method.connect
+        @MyClass.my_method.bind
         @hook
         def callback1(self, arg):
             ...
 
 
-        @MyClass.class_method.connect
+        @MyClass.class_method.bind
         @hook
         def callback2(cls):
             ...
 
 
-        @MyClass.static_method.connect
+        @MyClass.static_method.bind
         @hook
         def callback3(arg):
             ...

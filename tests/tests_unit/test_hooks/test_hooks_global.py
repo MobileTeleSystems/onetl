@@ -37,28 +37,28 @@ def test_hooks_global_stop_and_resume(request):  # noqa: WPS212
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # stop & resume does not affect hook state, it should be enabled explicitly
@@ -90,7 +90,7 @@ def test_hooks_global_stop_and_resume(request):  # noqa: WPS212
         def modulus(self, arg: int) -> int:
             return self.data % arg
 
-    @Calculator3.modulus.connect
+    @Calculator3.modulus.bind
     @hook
     def callback4(self, arg: int):
         return 789
@@ -135,28 +135,28 @@ def test_hooks_global_skip_context(request):  # noqa: WPS212
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # skip does not affect hook state, it should be enabled explicitly
@@ -184,7 +184,7 @@ def test_hooks_global_skip_context(request):  # noqa: WPS212
             def modulus(self, arg: int) -> int:
                 return self.data % arg
 
-        @Calculator3.modulus.connect
+        @Calculator3.modulus.bind
         @hook
         def callback4(self, arg: int):
             return 789
@@ -238,28 +238,28 @@ def test_hooks_global_skip_decorator(request):  # noqa: WPS212
         def power(self, arg: int) -> int:
             return self.data**arg
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback1(self, arg: int):
         return 123
 
-    @Calculator1.plus.connect
+    @Calculator1.plus.bind
     @hook
     def callback2(self, arg: int):
         return 234
 
-    @Calculator1.multiply.connect
+    @Calculator1.multiply.bind
     @hook
     def another_callback(self, arg: int):
         return 345
 
-    @Calculator2.power.connect
+    @Calculator2.power.bind
     @hook
     def more_callback(self, arg: int):
         return 567
 
-    @Calculator1.plus.connect
-    @Calculator2.power.connect
+    @Calculator1.plus.bind
+    @Calculator2.power.bind
     @hook(enabled=False)
     def never_called(self, arg: int):
         # skip does not affect hook state, it should be enabled explicitly
@@ -288,7 +288,7 @@ def test_hooks_global_skip_decorator(request):  # noqa: WPS212
             def modulus(self, arg: int) -> int:
                 return self.data % arg
 
-        @Calculator3.modulus.connect
+        @Calculator3.modulus.bind
         @hook
         def callback4(self, arg: int):
             return 789
