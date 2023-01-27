@@ -191,11 +191,13 @@ class Greenplum(JDBCMixin, DBConnection):
         )
 
         # IMPORTANT!!!
-        # Each job on the executor make its own connection to Spark,
-        # so we need to limit them to avoid opening too many connections.
-        # table size ~20Gb requires about 10 executors * cores,
+        # Each job on the Spark executor make its own connection to Greenplum master node,
+        # so we need to limit number of connections to avoid opening too many of them.
+        #
+        # Table size ~20Gb requires about 10 executors * cores,
         # ~50Gb requires ~ 20 executors * cores,
         # 100Gb+ requires 30 executors * cores.
+        #
         # Cores number can be increased, but executors count should be reduced
         # to keep the same number of executors * cores.
 
