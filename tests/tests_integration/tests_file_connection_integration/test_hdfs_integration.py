@@ -84,7 +84,7 @@ def test_hdfs_wrong_source_check_error():
 
 
 def test_hdfs_check_with_hooks(request, hdfs_server):
-    @HDFS.slots.is_namenode_active.connect
+    @HDFS.slots.is_namenode_active.bind
     @hook
     def is_namenode_active(host: str, cluster: str | None) -> bool:
         return host == hdfs_server.host
@@ -105,7 +105,7 @@ def test_hdfs_check_with_hooks(request, hdfs_server):
     with pytest.raises(RuntimeError, match="Cannot get list of namenodes for a cluster 'rnd-dwh'"):
         HDFS(cluster="rnd-dwh").check()
 
-    @HDFS.slots.get_cluster_namenodes.connect
+    @HDFS.slots.get_cluster_namenodes.bind
     @hook
     def get_cluster_namenodes(cluster: str) -> set[str]:
         if cluster == "rnd-dwh":
@@ -114,7 +114,7 @@ def test_hdfs_check_with_hooks(request, hdfs_server):
 
     request.addfinalizer(get_cluster_namenodes.disable)
 
-    @HDFS.slots.get_webhdfs_port.connect
+    @HDFS.slots.get_webhdfs_port.bind
     @hook
     def get_webhdfs_port(cluster: str) -> int | None:
         if cluster == "rnd-dwh":
@@ -129,7 +129,7 @@ def test_hdfs_check_with_hooks(request, hdfs_server):
     with pytest.raises(RuntimeError, match="Cannot detect active namenode for cluster 'rnd-prod'"):
         HDFS(cluster="rnd-prod").check()
 
-    @HDFS.slots.get_current_cluster.connect
+    @HDFS.slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"

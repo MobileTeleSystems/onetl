@@ -97,7 +97,7 @@ class HDFS(FileConnection):  # noqa: WPS214
 
         Should be an active namenode (NOT standby).
 
-        If value is not set, but there are some hooks connected to
+        If value is not set, but there are some hooks bound to
         :obj:`~slots.get_cluster_namenodes` and :obj:`~slots.is_namenode_active`,
         onETL will iterate over cluster namenodes to detect which one is active.
 
@@ -233,7 +233,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.normalize_cluster_name.connect
+                @HDFS.slots.normalize_cluster_name.bind
                 @hook
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
@@ -272,7 +272,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.normalize_namenode_host.connect
+                @HDFS.slots.normalize_namenode_host.bind
                 @hook
                 def normalize_namenode_host(host: str, cluster: str) -> str | None:
                     if cluster == "rnd-dwh":
@@ -310,7 +310,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_known_clusters.connect
+                @HDFS.slots.get_known_clusters.bind
                 @hook
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
@@ -347,7 +347,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_cluster_namenodes.connect
+                @HDFS.slots.get_cluster_namenodes.bind
                 @hook
                 def get_cluster_namenodes(cluster: str) -> str[str] | None:
                     if cluster == "rnd-dwh":
@@ -381,7 +381,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_current_cluster.connect
+                @HDFS.slots.get_current_cluster.bind
                 @hook
                 def get_current_cluster() -> str:
                     # some magic here
@@ -418,7 +418,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_webhdfs_port.connect
+                @HDFS.slots.get_webhdfs_port.bind
                 @hook
                 def get_webhdfs_port(cluster: str) -> int | None:
                     if cluster == "rnd-dwh":
@@ -467,7 +467,7 @@ class HDFS(FileConnection):  # noqa: WPS214
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.is_namenode_active.connect
+                @HDFS.slots.is_namenode_active.bind
                 @hook
                 def is_namenode_active(host: str, cluster: str | None) -> bool:
                     # some magic here
@@ -587,7 +587,7 @@ class HDFS(FileConnection):  # noqa: WPS214
 
         .. note::
 
-            Can be used only if there are a some hooks connected to slot :obj:`~slots.get_current_cluster`.
+            Can be used only if there are a some hooks bound to slot :obj:`~slots.get_current_cluster`.
 
         Parameters
         ----------
@@ -614,7 +614,7 @@ class HDFS(FileConnection):  # noqa: WPS214
         if not current_cluster:
             raise RuntimeError(
                 f"{cls.__name__}.get_current() can be used only if there are "
-                f"some hooks connected to {cls.__name__}.slots.get_current_cluster",
+                f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
             )
 
         log.info(f"|{cls.__name__}| Got {current_cluster!r}")

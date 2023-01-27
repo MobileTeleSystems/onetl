@@ -17,7 +17,7 @@
 .. autodecorator:: hook
 
 .. autoclass:: HookPriority
-    :members: FIRST, MIDDLE, LAST
+    :members: FIRST, NORMAL, LAST
     :member-order: bysource
 
 .. autoclass:: Hook

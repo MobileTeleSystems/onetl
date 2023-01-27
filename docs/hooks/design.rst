@@ -16,7 +16,7 @@ Hooks mechanism allows to:
 
 * Inspect and validate input arguments and output results of method call
 * Access, modify or replace method call result (but NOT input arguments)
-* Wrap method calls with a context manager and handle raised exceptions
+* Wrap method calls with a context manager and catch raised exceptions
 
 Hooks can be placed into :ref:`plugins`, allowing to modify onETL behavior by installing some additional package.
 
@@ -57,7 +57,7 @@ TL;DR
             pass
 
 
-    @MyClass.method.connect  # bound hook to the slot
+    @MyClass.method.bind  # bound hook to the slot
     @hook  # this is hook
     def callback(obj, arg):  # this is callback
         print(obj.data, arg)
@@ -183,30 +183,30 @@ Add :ref:`hook-decorator` to create a hook from your callback:
 You can pass more options to the ``@hook`` decorator, like state or priority.
 See decorator documentation for more details.
 
-Connect hook to the slot
-^^^^^^^^^^^^^^^^^^^^^^^^
+Bind hook to the slot
+^^^^^^^^^^^^^^^^^^^^^
 
-Use ``Slot.connect`` method to bind hook to the slot:
+Use ``Slot.bind`` method to bind hook to the slot:
 
 .. code:: python
 
-    @MyClass.method.connect
+    @MyClass.method.bind
     @hook
     def callback(obj, arg):
         print(obj, arg)
 
-You can connect more than one hook to the same slot, and connect same hook to multiple slots:
+You can bind more than one hook to the same slot, and bind same hook to multiple slots:
 
 .. code:: python
 
-    @MyClass.method1.connect
-    @MyClass.method2.connect
+    @MyClass.method1.bind
+    @MyClass.method2.bind
     @hook
     def callback1(obj, arg):
         "Will be called by both MyClass.method1 and MyClass.method2"
 
 
-    @MyClass.method1.connect
+    @MyClass.method1.bind
     @hook
     def callback2(obj, arg):
         "Will be called by MyClass.method1 too"
@@ -253,7 +253,7 @@ Context managers
 
 Context manager is entered while calling the ``Slot()``, and exited then the call is finished.
 
-If present, method ``handle_result`` has a special meaning -
+If present, method ``process_result`` has a special meaning -
 it can receive ``MyClass.method`` call result, and also modify/replace it:
 
 .. code:: python
@@ -273,7 +273,7 @@ it can receive ``MyClass.method`` call result, and also modify/replace it:
             # do something on exit
             return False
 
-        def handle_result(self, result):
+        def process_result(self, result):
             # do something with method call result
             return modified(result)
 
@@ -311,7 +311,7 @@ Generator body can be wrapped with ``try..except..finally`` to catch exceptions:
 
             yield  # method is called here
         except Exception as e:
-            handle_exception(a)
+            process_exception(a)
         finally:
             # this is called while exiting the context
             finalizer()
@@ -357,7 +357,7 @@ Calling hooks in details
 
         Neither object not class are passed to the callback in this case.
 
-* If ``callback_result`` is a context manager, enter the context. Context manager can intercept all the exceptions raised.
+* If ``callback_result`` is a context manager, enter the context. Context manager can catch all the exceptions raised.
 
     If there are multiple hooks bound the the slot, every context manager will be entered.
 
@@ -367,13 +367,13 @@ Calling hooks in details
 
         original_result = method(*args, **kwargs)
 
-* Intercept ``original_result``:
+* Process ``original_result``:
 
-    * If ``callback_result`` object has method ``handle_result``, or is a generator wrapped with ``@hook``, call it:
+    * If ``callback_result`` object has method ``process_result``, or is a generator wrapped with ``@hook``, call it:
 
         .. code:: python
 
-            new_result = callback_result.handle_result(original_result)
+            new_result = callback_result.process_result(original_result)
 
     * Otherwise set ``new_result = callback_result``.
 
@@ -381,9 +381,9 @@ Calling hooks in details
 
         .. code:: python
 
-            new_result = callback1_result.handle_result(original_result)
-            new_result = callback2_result.handle_result(new_result or original_result)
-            new_result = callback3_result.handle_result(new_result or original_result)
+            new_result = callback1_result.process_result(original_result)
+            new_result = callback2_result.process_result(new_result or original_result)
+            new_result = callback3_result.process_result(new_result or original_result)
 
 * Finally return:
 
@@ -403,12 +403,12 @@ Hooks are executed in the following order:
 
 1. Parent class slot + :obj:`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
 2. Inherited class slot + :obj:`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-3. Parent class slot + :obj:`MIDDLE <onetl.hooks.hook.HookPriority.MIDDLE>`
-4. Inherited class slot + :obj:`MIDDLE <onetl.hooks.hook.HookPriority.MIDDLE>`
+3. Parent class slot + :obj:`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
+4. Inherited class slot + :obj:`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
 5. Parent class slot + :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
 6. Inherited class slot + :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
 
-Hooks with the same priority and inheritance will be executed in the same order they were registered (``Slot.connect`` call).
+Hooks with the same priority and inheritance will be executed in the same order they were registered (``Slot.bind`` call).
 
 .. note::
 
@@ -544,7 +544,7 @@ See :ref:`hive` and :ref:`hdfs` as an example.
 
 .. note::
 
-    If there are multiple hooks connected to the same slot, the result of last hook will be used.
+    If there are multiple hooks bound to the same slot, the result of last hook will be used.
     It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
 
 
@@ -575,9 +575,9 @@ Can access output result of the original method and inspect or validate it:
                 return self
 
             # original method is called between __enter__ and __exit__
-            # result is passed into handle_result method of context manager, if present
+            # result is passed into process_result method of context manager, if present
 
-            def handle_result(self, result):
+            def process_result(self, result):
                 print(result)  # result can be used in the hook
                 return None  # does not modify result. same as no return statement in the method
 
@@ -611,9 +611,9 @@ Can access output result of the original method, and return the modified one:
                 return self
 
             # original method is called between __enter__ and __exit__
-            # result is passed into handle_result method of context manager, if present
+            # result is passed into process_result method of context manager, if present
 
-            def handle_result(self, result):
+            def process_result(self, result):
                 print(result)  # result can be used in the hook
                 return result + 10  # modify output result. None values are ignored
 
@@ -622,7 +622,7 @@ Can access output result of the original method, and return the modified one:
 
 .. note::
 
-    If there are multiple hooks connected to the same slot, the result of last hook will be used.
+    If there are multiple hooks bound to the same slot, the result of last hook will be used.
     It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
 
 
@@ -672,9 +672,9 @@ Hooks registration emits logs with ``DEBUG`` level:
 
 .. code::
 
-    DEBUG  |onETL| Registered hook 'mymodule.callback1' for 'MyClass.method' (enabled=True, priority=HookPriority.MIDDLE)
-    DEBUG  |onETL| Registered hook 'mymodule.callback2' for 'MyClass.method' (enabled=True, priority=HookPriority.MIDDLE)
-    DEBUG  |onETL| Registered hook 'mymodule.callback3' for 'MyClass.method' (enabled=False, priority=HookPriority.MIDDLE)
+    DEBUG  |onETL| Registered hook 'mymodule.callback1' for 'MyClass.method' (enabled=True, priority=HookPriority.NORMAL)
+    DEBUG  |onETL| Registered hook 'mymodule.callback2' for 'MyClass.method' (enabled=True, priority=HookPriority.NORMAL)
+    DEBUG  |onETL| Registered hook 'mymodule.callback3' for 'MyClass.method' (enabled=False, priority=HookPriority.NORMAL)
 
 But most of logs are emitted with even lower level ``NOTICE``, to make output less verbose:
 
@@ -694,5 +694,5 @@ But most of logs are emitted with even lower level ``NOTICE``, to make output le
     NOTICE  |Hooks|   Calling original method 'MyClass.method'
     NOTICE  |Hooks|   Method call is finished
     NOTICE  |Hooks| Method call result (*NOT* None) will be replaced with result of hook 'mymodule.callback1'
-    NOTICE  |Hooks|   Passing result to 'handle_result' method of context manager 'mymodule.callback2'
+    NOTICE  |Hooks|   Passing result to 'process_result' method of context manager 'mymodule.callback2'
     NOTICE  |Hooks|   Method call result (*NOT* None) is modified by hook!

@@ -35,7 +35,7 @@ def test_hive_get_known_clusters_hook(request):
     # no exception
     Hive(cluster="unknown", spark=spark)
 
-    @Hive.slots.get_known_clusters.connect
+    @Hive.slots.get_known_clusters.bind
     @hook
     def get_known_clusters() -> set[str]:
         return {"known1", "known2"}
@@ -49,7 +49,7 @@ def test_hive_get_known_clusters_hook(request):
 
 
 def test_hive_known_normalize_cluster_name_hook(request):
-    @Hive.slots.normalize_cluster_name.connect
+    @Hive.slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
         return cluster.lower().replace("_", "-")
@@ -68,7 +68,7 @@ def test_hive_known_get_current_cluster_hook(request, mocker):
     Hive(cluster="rnd-prod", spark=spark).check()
     Hive(cluster="rnd-dwh", spark=spark).check()
 
-    @Hive.slots.get_current_cluster.connect
+    @Hive.slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"
@@ -83,14 +83,14 @@ def test_hive_known_get_current_cluster_hook(request, mocker):
 
 
 def test_hive_known_get_current(request):
-    # no hooks connected to Hive.slots.get_current_cluster
+    # no hooks bound to Hive.slots.get_current_cluster
     error_msg = re.escape(
-        "Hive.get_current() can be used only if there are some hooks connected to Hive.slots.get_current_cluster",
+        "Hive.get_current() can be used only if there are some hooks bound to Hive.slots.get_current_cluster",
     )
     with pytest.raises(RuntimeError, match=error_msg):
         Hive.get_current(spark=spark)
 
-    @Hive.slots.get_current_cluster.connect
+    @Hive.slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"

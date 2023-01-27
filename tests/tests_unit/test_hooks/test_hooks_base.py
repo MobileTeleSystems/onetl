@@ -20,7 +20,7 @@ def test_hook_disabled():
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(enabled=False)
     def callback(self, arg: int):
         return 123
@@ -40,32 +40,32 @@ def test_hook_priority(caplog):
             log.info("Called original method with %s and %s", self.data, arg)
             return self.data + arg
 
-    @Calculator.plus.connect
-    @hook(priority=HookPriority.MIDDLE)
-    def middle_callback1(self, arg: int):
-        log.info("Called middle1 callback with %s and %s", self.data, arg)
+    @Calculator.plus.bind
+    @hook(priority=HookPriority.NORMAL)
+    def intermediate_callback1(self, arg: int):
+        log.info("Called intermediate1 callback with %s and %s", self.data, arg)
 
-    @Calculator.plus.connect
-    @hook(priority=HookPriority.MIDDLE)
-    def middle_callback2(self, arg: int):
-        log.info("Called middle2 callback with %s and %s", self.data, arg)
+    @Calculator.plus.bind
+    @hook(priority=HookPriority.NORMAL)
+    def intermediate_callback2(self, arg: int):
+        log.info("Called intermediate2 callback with %s and %s", self.data, arg)
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(priority=HookPriority.LAST)
     def last_callback1(self, arg: int):
         log.info("Called last1 callback with %s and %s", self.data, arg)
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(priority=HookPriority.LAST)
     def last_callback2(self, arg: int):
         log.info("Called last2 callback with %s and %s", self.data, arg)
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(priority=HookPriority.FIRST)
     def first_callback1(self, arg: int):
         log.info("Called first1 callback with %s and %s", self.data, arg)
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(priority=HookPriority.FIRST)
     def first_callback2(self, arg: int):
         log.info("Called first2 callback with %s and %s", self.data, arg)
@@ -75,8 +75,8 @@ def test_hook_priority(caplog):
 
         first1_call_line = None
         first2_call_line = None
-        middle1_call_line = None
-        middle2_call_line = None
+        intermediate1_call_line = None
+        intermediate2_call_line = None
         last1_call_line = None
         last2_call_line = None
 
@@ -85,10 +85,10 @@ def test_hook_priority(caplog):
                 first1_call_line = i
             if "Called first2 callback with 1 and 2" in record.message:
                 first2_call_line = i
-            if "Called middle1 callback with 1 and 2" in record.message:
-                middle1_call_line = i
-            if "Called middle2 callback with 1 and 2" in record.message:
-                middle2_call_line = i
+            if "Called intermediate1 callback with 1 and 2" in record.message:
+                intermediate1_call_line = i
+            if "Called intermediate2 callback with 1 and 2" in record.message:
+                intermediate2_call_line = i
             if "Called last1 callback with 1 and 2" in record.message:
                 last1_call_line = i
             if "Called last2 callback with 1 and 2" in record.message:
@@ -97,18 +97,18 @@ def test_hook_priority(caplog):
         # all callbacks are executed
         assert first1_call_line is not None
         assert first2_call_line is not None
-        assert middle1_call_line is not None
-        assert middle2_call_line is not None
+        assert intermediate1_call_line is not None
+        assert intermediate2_call_line is not None
         assert last1_call_line is not None
         assert last2_call_line is not None
 
-        # but they are executed in order FIRST -> MIDDLE -> LAST,
-        assert first2_call_line < middle1_call_line
-        assert middle2_call_line < last1_call_line
+        # but they are executed in order FIRST -> NORMAL -> LAST,
+        assert first2_call_line < intermediate1_call_line
+        assert intermediate2_call_line < last1_call_line
 
         # and hooks within the same priority are executed on the same order they were registered
         assert first1_call_line < first2_call_line
-        assert middle1_call_line < middle2_call_line
+        assert intermediate1_call_line < intermediate2_call_line
         assert last1_call_line < last2_call_line
 
 
@@ -122,7 +122,7 @@ def test_hook_skip_context():
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback(self, arg: int):
         return 123
@@ -151,7 +151,7 @@ def test_hook_skip_decorator():
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook
     def callback(self, arg: int):
         return 123
@@ -183,7 +183,7 @@ def test_hook_enable_and_disable():
         def plus(self, arg: int) -> int:
             return self.data + arg
 
-    @Calculator.plus.connect
+    @Calculator.plus.bind
     @hook(enabled=False)
     def callback(self, arg: int):
         return 123
@@ -221,8 +221,8 @@ def test_hook_enable_and_disable_multiple():
         def plus(self, arg: int) -> int:
             return self.data * arg
 
-    @Calculator1.plus.connect
-    @Calculator2.plus.connect
+    @Calculator1.plus.bind
+    @Calculator2.plus.bind
     @hook(enabled=False)
     def callback(self, arg: int):
         return 123
@@ -256,7 +256,7 @@ def test_hook_applied_twice():
                 return self.data + arg
 
         @hook(enabled=True)
-        @Calculator.plus.connect
+        @Calculator.plus.bind
         @hook(enabled=False)
         def callback(self, arg: int):
             return 123
