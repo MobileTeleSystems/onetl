@@ -21,6 +21,9 @@ from etl_entities import (
 from pyspark.sql import SparkSession
 from pytest_lazyfixture import lazy_fixture
 
+# disable failing plugin import
+os.environ["ONETL_PLUGINS_BLACKLIST"] = "failing-plugin"
+
 from onetl.connection import (
     FTP,
     FTPS,

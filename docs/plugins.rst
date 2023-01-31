@@ -1,7 +1,7 @@
-.. _plugins-design:
+.. _plugins:
 
-High level design
-==================
+Plugins
+=======
 
 What are plugins?
 -----------------
@@ -76,16 +76,78 @@ How plugins are imported?
     from some_plugin.module.internals import MyClass
     from some_plugin.module.internals import my_function
 
-If specified module/class/function uses some registration capabilities of onETL,
+If specific module/class/function uses some registration capabilities of onETL,
 like :ref:`hook-decorator`, it will be executed during this import.
 
 How to enable/disable plugins?
 ------------------------------
 
+Disable/enable all plugins
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 By default plugins are enabled.
 
-To disabled them, you can set environment variable ``ONETL_ENABLE_PLUGINS`` to ``false`` BEFORE
+To disabled them, you can set environment variable ``ONETL_PLUGINS_ENABLED`` to ``false`` BEFORE
 importing onETL. This will disable all plugins autoimport.
 
 But user is still be able to explicitly import ``some_plugin.module``, executing
 all decorators and registration capabilities of onETL.
+
+Disable a specific plugin (blacklist)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If some plugin is failing during import, you can disable it by setting up environment variable
+``ONETL_PLUGINS_BLACKLIST=some-failing-plugin``. Multiple plugin names could be passed with ``,`` as delimiter.
+
+Again, this environment variable should be set BEFORE importing onETL.
+
+Disable all plugins except a specific one (whitelist)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also disable all plugins except a specific one by setting up environment variable
+``ONETL_PLUGINS_WHITELIST=some-not-failing-plugin``. Multiple plugin names could be passed with ``,`` as delimiter.
+
+Again, this environment variable should be set BEFORE importing onETL.
+
+If both whitelist and blacklist environment variables are set, blacklist has a higher priority.
+
+
+How to see logs of the plugins mechanism?
+-----------------------------------------
+
+Plugins registration emits logs with ``INFO`` level:
+
+.. code:: python
+
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+.. code::
+
+    INFO   |onETL| Found 2 plugins
+    INFO   |onETL| Loading plugin 'my-plugin'
+    INFO   |onETL| Skipping plugin 'failing' because it is in a blacklist
+
+More detailed logs are emitted with ``DEBUG`` level, to make output less verbose:
+
+.. code:: python
+
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+.. code::
+
+    DEBUG  |onETL| Searching for plugins with group 'onetl.plugins'
+    DEBUG  |Plugins| Plugins whitelist: []
+    DEBUG  |Plugins| Plugins blacklist: ['failing-plugin']
+    INFO   |Plugins| Found 2 plugins
+    INFO   |onETL| Loading plugin (1/2):
+    DEBUG            name: 'my-plugin'
+    DEBUG            package: 'my-package'
+    DEBUG            version: '0.1.0'
+    DEBUG            importing: 'my_package.my_module:MyClass'
+    DEBUG  |onETL| Successfully loaded plugin 'my-plugin'
+    DEBUG            source: '/usr/lib/python3.10/site-packages/my_package/my_module/my_class.py'
+    INFO   |onETL| Skipping plugin 'failing' because it is in a blacklist

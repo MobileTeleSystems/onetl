@@ -132,7 +132,7 @@
     :caption: Hooks & plugins
 
     hooks/index
-    plugins/index
+    plugins
 
 .. toctree::
     :maxdepth: 2

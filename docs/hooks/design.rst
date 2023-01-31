@@ -670,6 +670,12 @@ How to see logs of the hook mechanism?
 
 Hooks registration emits logs with ``DEBUG`` level:
 
+.. code:: python
+
+    from onetl.logs import setup_logging
+
+    setup_logging()
+
 .. code::
 
     DEBUG  |onETL| Registered hook 'mymodule.callback1' for 'MyClass.method' (enabled=True, priority=HookPriority.NORMAL)
@@ -680,9 +686,9 @@ But most of logs are emitted with even lower level ``NOTICE``, to make output le
 
 .. code:: python
 
-    from onetl.logs import NOTICE
+    from onetl.logs import NOTICE, setup_logging
 
-    logger.setLevel(NOTICE)
+    setup_logging(level=NOTICE)
 
 .. code::
 

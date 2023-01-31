@@ -1,1 +1,1 @@
-from onetl.plugins.auto_import import plugins_auto_import
+from onetl.plugins.import_plugins import import_plugins
