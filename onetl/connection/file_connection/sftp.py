@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import textwrap
 from logging import getLogger
@@ -187,6 +188,12 @@ class SFTP(FileConnection):
         self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
 
     def _rename(self, source: RemotePath, target: RemotePath) -> None:
+        with contextlib.suppress(OSError):
+            self.client.posix_rename(os.fspath(source), os.fspath(target))
+            return
+
+        # posix rename extension is not supported by server
+        # if OSError was caused by permissions error, client.rename will raise this exception again
         self.client.rename(os.fspath(source), os.fspath(target))
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: RemotePath) -> None:
