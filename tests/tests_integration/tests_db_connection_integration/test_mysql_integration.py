@@ -34,7 +34,7 @@ def test_mysql_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_mysql_wrong_connection_check(spark):
+def test_mysql_connection_check_fail(spark):
     mysql = MySQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):

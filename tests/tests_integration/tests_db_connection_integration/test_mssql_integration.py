@@ -36,7 +36,7 @@ def test_mssql_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_mssql_wrong_connection_check(spark):
+def test_mssql_connection_check_fail(spark):
     mssql = MSSQL(
         host="host",
         user="some_user",

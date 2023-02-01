@@ -70,7 +70,7 @@ def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spar
     assert "Connection is available" in caplog.text
 
 
-def test_oracle_wrong_connection_check(spark):
+def test_oracle_connection_check_fail(spark):
     oracle = Oracle(host="host", user="some_user", password="pwd", sid="cde", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):

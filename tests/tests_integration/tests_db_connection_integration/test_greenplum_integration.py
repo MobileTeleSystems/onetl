@@ -35,7 +35,7 @@ def test_greenplum_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_greenplum_wrong_connection_check(spark):
+def test_greenplum_connection_check_fail(spark):
     greenplum = Greenplum(host="host", database="db", user="some_user", password="pwd", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
