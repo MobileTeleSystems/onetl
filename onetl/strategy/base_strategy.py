@@ -25,7 +25,6 @@ log = logging.getLogger(__name__)
 
 class BaseStrategy(BaseModel):
     def __enter__(self):
-
         # hack to avoid circular imports
         from onetl.strategy.strategy_manager import StrategyManager
 

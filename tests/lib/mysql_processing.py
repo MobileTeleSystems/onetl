@@ -12,7 +12,6 @@ logger = getLogger(__name__)
 
 
 class MySQLProcessing(BaseProcessing):
-
     _column_types_and_names_matching = {
         "id_int": "INT NOT NULL",
         "text_string": "VARCHAR(50)",
@@ -124,7 +123,6 @@ class MySQLProcessing(BaseProcessing):
         table: str,
         values: "pandas.core.frame.DataFrame",
     ) -> None:
-
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
         psql.to_sql(

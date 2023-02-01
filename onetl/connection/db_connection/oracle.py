@@ -215,7 +215,6 @@ class Oracle(JDBCConnection):
         statement: str,
         options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
-
         statement = clear_statement(statement)
 
         log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")

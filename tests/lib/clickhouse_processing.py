@@ -13,7 +13,6 @@ logger = getLogger(__name__)
 
 
 class ClickhouseProcessing(BaseProcessing):
-
     _column_types_and_names_matching = {
         "id_int": "Int32",
         "text_string": "String",
@@ -141,7 +140,6 @@ class ClickhouseProcessing(BaseProcessing):
         table: str,
         values: "pandas.core.frame.DataFrame",
     ) -> None:
-
         self.connection.execute(f"INSERT INTO {schema}.{table} VALUES", values.to_dict("records"))
 
     def get_expected_dataframe(

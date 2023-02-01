@@ -784,7 +784,6 @@ def test_downloader_local_path_not_a_directory(request, file_all_connections):
 
 
 def test_downloader_run_input_is_not_file(request, file_all_connections, tmp_path_factory):
-
     local_path = tmp_path_factory.mktemp("local_path")
 
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")

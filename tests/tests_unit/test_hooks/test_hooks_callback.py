@@ -429,7 +429,6 @@ def test_hooks_execute_callback_different_method_types(caplog):
         log.info("Called static method callback with %s and %s", arg, arg2)
 
     with caplog.at_level(logging.INFO):
-
         method_result = Calculator(1).plus(2)
         assert "Called original method with 1 and 2" in caplog.text
         assert "Called method callback with 1 and 2" in caplog.text

@@ -372,7 +372,6 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         filters: Iterable[BaseFileFilter] | None = None,
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
-
         filters = filters or []
         limits = limits or []
 

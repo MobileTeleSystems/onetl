@@ -267,7 +267,6 @@ def test_postgres_reader_snapshot_with_pydantic_options(spark, processing, load_
     ],
 )
 def test_postgres_reader_different_options(spark, processing, load_table_data, options, mode):
-
     postgres = Postgres(
         host=processing.host,
         port=processing.port,

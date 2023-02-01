@@ -117,7 +117,6 @@ class PostgresProcessing(BaseProcessing):
         table: str,
         values: "pandas.core.frame.DataFrame",
     ) -> None:
-
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
         psql.to_sql(

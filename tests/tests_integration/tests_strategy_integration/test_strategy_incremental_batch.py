@@ -89,7 +89,6 @@ def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
 
 
 def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_schema_table):
-
     postgres = Postgres(
         host=processing.host,
         port=processing.port,

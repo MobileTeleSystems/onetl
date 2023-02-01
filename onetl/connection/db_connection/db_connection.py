@@ -33,7 +33,6 @@ log = getLogger(__name__)
 
 
 class DBConnection(BaseDBConnection, FrozenModel):
-
     # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: SparkSession = Field(repr=False)
 

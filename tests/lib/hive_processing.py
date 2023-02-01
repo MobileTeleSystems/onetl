@@ -75,7 +75,6 @@ class HiveProcessing(BaseProcessing):
         table: str,
         values: list,
     ) -> None:
-
         df = self.connection.createDataFrame(values)
         df.write.mode("append").insertInto(f"{schema}.{table}")
 

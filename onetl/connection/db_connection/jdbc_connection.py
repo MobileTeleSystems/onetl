@@ -674,7 +674,6 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-
         log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
 
         query = get_sql_query(table, columns=columns, where="1=0", compact=True)
