@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import logging
+import textwrap
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
@@ -275,7 +276,37 @@ class MongoDB(DBConnection):
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
     def check(self):
-        pass  # noqa: WPS420
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
+        try:
+            jvm = self.spark._sc._gateway.jvm  # noqa: WPS437
+            client = jvm.com.mongodb.client.MongoClients.create(self._url)
+        except Exception as e:
+            spark_version = "_".join(self.spark.version.split(".")[:1])
+
+            raise RuntimeError(
+                textwrap.dedent(
+                    f"""
+                    Cannot import Java package 'com.mongodb.client'.
+
+                    It looks like you've created Spark session without this option:
+                        SparkSession.builder.config("spark.jars.packages", MongoDB.package_spark_{spark_version})
+
+                    Please stop Spark session, restart the interpreter,
+                    and create SparkSession again with proper options.
+                    """,
+                ).strip(),
+            ) from e
+
+        try:
+            list(client.listDatabaseNames().iterator())
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
+        except Exception as e:
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     def get_schema(self, table: str, columns: list[str] | None = None) -> StructType:  # noqa: WPS463
         pass  # noqa: WPS420
@@ -289,10 +320,6 @@ class MongoDB(DBConnection):
         where: str | None = None,
     ) -> tuple[Any, Any]:
         return ""  # type: ignore
-
-    @property
-    def url(self) -> str:
-        return f"mongodb://{self.user}:{parser.quote(self.password.get_secret_value())}@{self.host}:{self.port}"
 
     def read_table(
         self,
@@ -310,9 +337,8 @@ class MongoDB(DBConnection):
         if hint:
             read_options["hint"] = hint
 
-        read_options["spark.mongodb.input.database"] = self.database
+        read_options["spark.mongodb.input.uri"] = self._url
         read_options["spark.mongodb.input.collection"] = table
-        read_options["spark.mongodb.input.uri"] = self.url
 
         df = self.spark.read.format("mongo").options(**read_options).load()
 
@@ -330,7 +356,11 @@ class MongoDB(DBConnection):
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
         write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
-        write_options["uri"] = self.url
-        write_options["spark.mongodb.output.database"] = self.database
+        write_options["spark.mongodb.output.uri"] = self._url
         write_options["spark.mongodb.output.collection"] = table
         df.write.format("mongo").mode(mode).options(**write_options).save()
+
+    @property
+    def _url(self) -> str:
+        password = parser.quote(self.password.get_secret_value())
+        return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}"

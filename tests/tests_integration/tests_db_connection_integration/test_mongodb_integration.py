@@ -1,4 +1,43 @@
+import logging
+
+import pytest
+
 from onetl.connection import MongoDB
+
+
+def test_mongodb_connection_check(spark, processing, caplog):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    with caplog.at_level(logging.INFO):
+        assert mongo.check() == mongo
+
+    assert "type = MongoDB" in caplog.text
+    assert f"host = '{processing.host}'" in caplog.text
+    assert f"port = {processing.port}" in caplog.text
+    assert f"user = '{processing.user}'" in caplog.text
+    assert f"database = '{processing.database}'" in caplog.text
+
+    if processing.password:
+        assert processing.password not in caplog.text
+
+    assert "package = " not in caplog.text
+    assert "spark = " not in caplog.text
+
+    assert "Connection is available" in caplog.text
+
+
+def test_mongodb_connection_check_fail(spark):
+    mongo = MongoDB(host="host", database="db", user="some_user", password="pwd", spark=spark)
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        mongo.check()
 
 
 def test_mongodb_connection_read(spark, processing, load_table_data):
