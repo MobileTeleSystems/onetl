@@ -15,6 +15,5 @@ source ./env
 /wait-for-it.sh -h "${ONETL_MINIO_HOST}" -p "${ONETL_MINIO_PORT}" -t 60
 /wait-for-it.sh -h "${ONETL_WEBDAV_HOST}" -p "${ONETL_WEBDAV_PORT}" -t 60
 /wait-for-it.sh -h "${ONETL_MONGO_HOST}" -p "${ONETL_MONGO_PORT}" -t 60
-python3 -m pip install -e tests/libs/dummy
 
 exec "$@"

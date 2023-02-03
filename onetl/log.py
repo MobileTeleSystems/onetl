@@ -143,9 +143,9 @@ def set_default_logging_format() -> None:
         handler.setFormatter(logging.Formatter(LOG_FORMAT, style="{"))
 
 
-def log_with_indent(inp: str, indent: int = 0, level: int = logging.INFO) -> None:
+def log_with_indent(inp: str, *args, indent: int = 0, level: int = logging.INFO) -> None:
     for line in dedent(inp).splitlines():
-        log.log(level, " " * (BASE_LOG_INDENT + indent) + line)
+        log.log(level, " " * (BASE_LOG_INDENT + indent) + line, *args)
 
 
 def log_collection(name: str, value: Collection, indent: int = 4, level: int = logging.INFO):

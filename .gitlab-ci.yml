@@ -92,7 +92,7 @@ mypy:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install mypy types-PyYAML types-Deprecated
+  - pip install -U mypy types-PyYAML types-Deprecated importlib-metadata
   - python3 -m mypy --config-file setup.cfg onetl
   rules:
   # do not run linters after pushing git tag, code was already linted
@@ -223,8 +223,6 @@ tests:
     APP_GID: 1777
     # Enables creation of a Docker network per build with the docker executor
     FF_NETWORK_PER_BUILD: 1
-    # Test results files
-    JUNIT_FILE: junitxml.xml
   rules:
   # do not run tests after pushing git tag, code was already tested
   - if: $CI_COMMIT_TAG
@@ -253,18 +251,18 @@ tests:
     alias: minio
     command: [server, /data]
   script:
-  - coverage run --rcfile=tests/.coveragerc -m pytest tests/ --junitxml=${JUNIT_FILE}
+  - ./run_tests.sh
   after_script:
-  - coverage xml -i -o coverage.xml
+  - ./combine_coverage.sh
   artifacts:
     when: always
     paths:
-    - coverage.xml
+    - ${CI_PROJECT_DIR}/reports
     reports:
       junit:
-      - junitxml.xml
+      - ${CI_PROJECT_DIR}/reports/junit/*.xml
       cobertura:
-      - coverage.xml
+      - ${CI_PROJECT_DIR}/reports/coverage.xml
   interruptible: true
 
 sonarqube_check:

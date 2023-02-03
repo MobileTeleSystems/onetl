@@ -27,8 +27,8 @@ RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-i
     && chown -R onetl:onetl ${ONETL_USER_HOME} \
     && chown -R onetl:onetl /opt/project/
 
-COPY ./docker/entrypoint.sh ./docker/wait-for-it.sh /
-RUN chmod +x /entrypoint.sh /wait-for-it.sh
+COPY ./docker/entrypoint.sh ./docker/wait-for-it.sh ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /
+RUN chmod +x /entrypoint.sh /wait-for-it.sh /run_tests.sh /pytest_runner.sh /combine_coverage.sh
 
 COPY ./requirements/ /requirements/
 
