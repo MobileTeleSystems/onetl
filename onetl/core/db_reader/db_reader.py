@@ -16,9 +16,10 @@ from __future__ import annotations
 
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from etl_entities import Column, Table
+from frozendict import frozendict
 from pydantic import root_validator, validator
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
@@ -74,8 +75,20 @@ class DBReader(FrozenModel):
 
         For example, ``["mycolumn", "another_column as alias", "count(*) over ()", "some(function) as alias2"]``
 
-    where : str, default: ``None``
-        Custom ``where`` for SQL query
+    where : str, dict, default: ``None``
+        Custom ``where`` for SQL query or MongoDB request. In the case of using MongoDB as a connector, you need to
+        specify a dictionary.
+
+        .. code:: python
+            # SQL database connection
+            where = "column_1 > 2"
+
+            # MongoDB connection
+            where = {
+                "col_1": {"$gt": 1, "$lt": 100},
+                "col_2": {"$gt": 2},
+                "col_3": {"$eq": "hello"},
+            }
 
     hwm_column : str or tuple[str, str], default: ``None``
         Column to be used as :ref:`column-hwm` value.
@@ -89,8 +102,8 @@ class DBReader(FrozenModel):
 
         HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
 
-    hint : str, default: ``None``
-        Add hint to SQL query (if underlying RDBMS supports that)
+    hint : str, dict, default: ``None``
+        Add hint to SQL query (if underlying RDBMS supports that) or to MongoDB query.
 
     options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
         Spark read options and partitioning read mode.
@@ -243,8 +256,8 @@ class DBReader(FrozenModel):
     hwm_column: Optional[Column] = None
     hwm_expression: Optional[str] = None
     columns: List[str] = ["*"]
-    where: Optional[str] = None
-    hint: Optional[str] = None
+    where: Optional[Union[str, frozendict]] = None
+    hint: Optional[Union[str, frozendict]] = None
     options: Optional[GenericOptions] = None
 
     @validator("table", pre=True, always=True)
@@ -271,6 +284,28 @@ class DBReader(FrozenModel):
         values["hwm_expression"] = hwm_expression
 
         return values
+
+    @validator("hint", pre=True)
+    def validate_hint_parameter(cls, hint, values):  # noqa: N805
+        if isinstance(hint, dict):
+            hint = frozendict(hint)
+        return hint
+
+    @validator("hint")
+    def validate_hint_type(cls, hint, values):  # noqa: N805
+        values["connection"].Dialect.check_hint_parameter(hint)
+        return hint
+
+    @validator("where", pre=True)
+    def validate_where_type(cls, where, values):  # noqa: N805
+        if isinstance(where, dict):
+            where = frozendict(where)
+        return where
+
+    @validator("where")
+    def validate_where_parameter(cls, where, values):  # noqa: N805
+        values["connection"].Dialect.check_where_parameter(where)
+        return where
 
     @validator("columns", pre=True, always=True)  # noqa: WPS238
     def validate_columns(cls, columns, values):  # noqa: N805

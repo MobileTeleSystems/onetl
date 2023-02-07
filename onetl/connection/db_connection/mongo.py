@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
 from etl_entities.instance import Host
+from frozendict import frozendict
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -31,6 +32,49 @@ from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.impl import GenericOptions
 
 log = logging.getLogger(__name__)
+
+_upper_level_operators = frozenset(  # noqa: WPS527
+    [
+        "$addFields",
+        "$bucket",
+        "$bucketAuto",
+        "$changeStream",
+        "$collStats",
+        "$count",
+        "$currentOp",
+        "$densify",
+        "$documents",
+        "$facet",
+        "$fill",
+        "$geoNear",
+        "$graphLookup",
+        "$group",
+        "$indexStats",
+        "$limit",
+        "$listLocalSessions",
+        "$listSessions",
+        "$lookup",
+        "$merge",
+        "$out",
+        "$planCacheStats",
+        "$project",
+        "$redact",
+        "$replaceRoot",
+        "$replaceWith",
+        "$sample",
+        "$search",
+        "$searchMeta",
+        "$set",
+        "$setWindowFields",
+        "$shardedDataDistribution",
+        "$skip",
+        "$sort",
+        "$sortByCount",
+        "$unionWith",
+        "$unset",
+        "$unwind",
+    ],
+)
 
 
 class MongoDBWriteMode(str, Enum):  # noqa: WPS600
@@ -46,6 +90,8 @@ PROHIBITED_OPTIONS = frozenset(
         "uri",
         "database",
         "collection",
+        "pipeline",
+        "hint",
     ),
 )
 
@@ -311,31 +357,154 @@ class MongoDB(DBConnection):
     def get_schema(self, table: str, columns: list[str] | None = None) -> StructType:  # noqa: WPS463
         pass  # noqa: WPS420
 
-    def get_min_max_bounds(  # noqa: WPS463
+    def get_min_max_bounds(  # type:ignore  # noqa: WPS463
         self,
         table: str,
         column: str,
         expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: dict | None = None,
+        where: dict | None = None,
     ) -> tuple[Any, Any]:
         return ""  # type: ignore
+
+    class Dialect:
+        """
+        The class contains methods for generating queries transmitted to the database. requests are formed from
+        parameters passed to DBReader.
+        """
+
+        @classmethod
+        def check_where_parameter(cls, where: str | dict) -> bool:
+            """
+            Checks the parameter passed to DBReader. Passed value cannot be a string.
+            """
+            if isinstance(where, str):
+                raise ValueError(
+                    "|MongoDB| Parameter 'where' cannot be a string, 'dict' must be passed.",
+                )
+            for key, _ in where.items():
+                cls._validate_top_level_keys_in_where_parameter(key)
+            return True
+
+        @classmethod
+        def check_hint_parameter(cls, hint: str | dict) -> bool:
+            """
+            Checks the parameter passed to DBReader. Passed value cannot be a string.
+            """
+            if isinstance(hint, str):
+                raise ValueError("|MongoDB| Parameter 'hint' cannot be a string, 'dict' must be passed.")
+            return True
+
+        @classmethod
+        def convert_filter_parameter_to_pipeline(
+            cls,
+            parameter: list | frozendict | dict,
+        ) -> str:  # noqa: WPS212, WPS231, WPS430
+            """
+            Converts the given dictionary, list or primitive to a string. for each element of the collection,
+            the method calls itself and internally processes each element depending on its type.
+            """
+            if isinstance(parameter, (frozendict, dict)):
+                return cls._build_string_pipeline_from_dictionary(parameter)
+
+            if isinstance(parameter, list):
+                return cls._build_string_pipeline_from_list(parameter)
+
+            return cls._build_string_pipeline_from_simple_types(parameter)
+
+        @classmethod
+        def generate_where_request(cls, where: frozendict) -> str:  # noqa: WPS212, WPS231
+            """
+            The passed frozendict is converted to a MongoDb-readable format, the original result is passed to the
+            pipeline.
+
+            """
+            blank_pipeline = "{{'$match':{custom_condition}}}"
+            return blank_pipeline.format(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
+
+        @classmethod
+        def _build_string_pipeline_from_dictionary(cls, parameter: dict):
+            """
+            Converts the passed map to a string. Map elements can be collections. Loops through all elements of the map
+            and converts each to a string depending on the type of each element.
+            """
+            list_of_operations = []
+            for key, value in parameter.items():
+                value = (
+                    cls.convert_filter_parameter_to_pipeline(key)
+                    + ":"
+                    + cls.convert_filter_parameter_to_pipeline(value)
+                )
+                list_of_operations.append(value)
+            return "{" + ",".join(list_of_operations) + "}"
+
+        @classmethod
+        def _validate_top_level_keys_in_where_parameter(cls, key: str):
+            """
+            Checks the 'where' parameter for illegal operators, such as ``$match``, ``$merge`` or ``$changeStream``.
+
+            'where' clause can contain only filtering operators, like ``{"col1" {"$eq": 1}}`` or ``{"$and": [...]}``.
+            """
+            if key.startswith("$"):
+                if key == "$match":
+                    raise ValueError(
+                        "|MongoDB| $match operator not allowed at the top level of the 'where' parameter dictionary."
+                        "This error most likely occurred due to the fact that you used the MongoDB format for the "
+                        "pipeline {'$match': {'column': ...}}. In the onETL paradigm, you do not need to specify the "
+                        "$match keyword, but write the filtering condition right away {'column': ...}",
+                    )
+                if key in _upper_level_operators:  # noqa: WPS220
+                    raise ValueError(  # noqa: WPS220
+                        f"|MongoDB| An invalid parameter {key!r} was specified in the 'where' "
+                        "field.\nYou cannot use aggregations or 'groupBy' clauses in 'where'.",
+                    )
+
+        @classmethod
+        def _build_string_pipeline_from_list(cls, param: list) -> str:
+            """
+            The passed list is converted to a string. The elements of the list can be dictionaries. Iterates through all
+            the elements of the list and processes each element by converting it to a string.
+            """
+            list_of_operations = []
+            for elem in param:
+                list_value = cls.convert_filter_parameter_to_pipeline(elem)
+                list_of_operations.append(list_value)
+            return "[" + ",".join(list_of_operations) + "]"
+
+        @classmethod
+        def _build_string_pipeline_from_simple_types(cls, param: str | int | bool | float) -> str:
+            """
+            Wraps the passed parameters in parentheses. Doesn't work with collections.
+            """
+            if isinstance(param, str):
+                return "'" + param + "'"
+
+            if isinstance(param, bool):
+                return str(param).lower()
+
+            if param is None:
+                return "null"
+
+            if isinstance(param, int):
+                return str(param)
+
+            raise ValueError(f"|MongoDB| Wrong value type : {type(param)}")
 
     def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: dict | None = None,
+        where: dict | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
         if where:
-            read_options["pipeline"] = where
+            read_options["pipeline"] = self.Dialect.generate_where_request(where)
 
         if hint:
-            read_options["hint"] = hint
+            read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)  # noqa: WPS437
 
         read_options["spark.mongodb.input.uri"] = self._url
         read_options["spark.mongodb.input.collection"] = table

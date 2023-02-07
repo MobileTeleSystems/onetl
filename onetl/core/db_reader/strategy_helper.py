@@ -43,7 +43,7 @@ class MockColumnHWM(ColumnHWM):
 
 class StrategyHelper(FrozenModel):
     @property
-    def where(self) -> str | None:  # noqa: WPS463
+    def where(self) -> str | dict | None:  # noqa: WPS463
         pass  # noqa: WPS420
 
     def save(self, df: DataFrame) -> DataFrame:
@@ -67,7 +67,7 @@ class NonHWMStrategyHelper(StrategyHelper):
         return values
 
     @property
-    def where(self) -> str | None:
+    def where(self) -> str | dict | None:
         return self.reader.where
 
     def save(self, df: DataFrame) -> DataFrame:

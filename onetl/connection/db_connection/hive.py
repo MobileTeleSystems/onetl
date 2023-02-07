@@ -696,8 +696,8 @@ class Hive(DBConnection):
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: str | None = None,  # type: ignore
+        where: str | None = None,  # type: ignore
     ) -> DataFrame:
         sql_text = get_sql_query(
             table=table,

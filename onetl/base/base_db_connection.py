@@ -74,8 +74,8 @@ class BaseDBConnection(BaseConnection):
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
     ) -> DataFrame:
         """
         Reads the table to dataframe

@@ -47,7 +47,7 @@ repos:
   - id: docker-compose-check
     files: ^docker-compose.*\.(yaml|yml)$
 - repo: https://github.com/pycqa/isort
-  rev: 5.11.4
+  rev: 5.11.5
   hooks:
   - id: isort
 - repo: https://github.com/pre-commit/pygrep-hooks
