@@ -46,6 +46,19 @@ class DBConnection(BaseDBConnection, FrozenModel):
         operator.ne: "{} != {}",
     }
 
+    class Dialect:
+        """
+        Class for checking the correctness of generated queries passed to databases.
+        """
+
+        @staticmethod
+        def check_where_parameter(where: Any):
+            ...
+
+        @staticmethod
+        def check_hint_parameter(where: Any):
+            ...
+
     def expression_with_alias(self, expression: str, alias: str) -> str:
         return f"{expression} AS {alias}"
 

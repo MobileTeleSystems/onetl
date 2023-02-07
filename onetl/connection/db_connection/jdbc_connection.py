@@ -128,6 +128,17 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         class Config:
             extra = "allow"
 
+    class Dialect:
+        @staticmethod
+        def check_where_parameter(where: Any):
+            if not isinstance(where, str):
+                raise ValueError("'where' parameter should be a string")
+
+        @staticmethod
+        def check_hint_parameter(where: Any):
+            if not isinstance(where, str):
+                raise ValueError("'hint' parameter should be a string")
+
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
         """Spark JDBC options.
 

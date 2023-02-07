@@ -470,8 +470,8 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: str | None = None,  # type: ignore
+        where: str | None = None,  # type: ignore
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
