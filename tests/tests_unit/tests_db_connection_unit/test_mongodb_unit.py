@@ -1,11 +1,18 @@
+from unittest.mock import Mock
+
 import pytest
 from frozendict import frozendict
+from pyspark.sql import SparkSession
 
 from onetl.connection.db_connection.mongo import MongoDB
 from onetl.core.db_reader.db_reader import DBReader
 
+spark = Mock(spec=SparkSession)
+spark.sparkContext = Mock()
+spark.sparkContext.appName = "abc"
 
-def test_mongodb_reader_pass_str_to_hint(spark, processing, load_table_data):
+
+def test_mongodb_reader_pass_str_to_hint(processing, load_table_data):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -26,7 +33,7 @@ def test_mongodb_reader_pass_str_to_hint(spark, processing, load_table_data):
         )
 
 
-def test_mongodb_reader_pass_str_to_where(spark, processing, load_table_data):
+def test_mongodb_reader_pass_str_to_where(processing, load_table_data):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -47,7 +54,7 @@ def test_mongodb_reader_pass_str_to_where(spark, processing, load_table_data):
         )
 
 
-def test_mongodb_reader_wrong_value_match(spark, processing, load_table_data):
+def test_mongodb_reader_wrong_value_match(processing, load_table_data):
     wrong_param = "$match"
     mongo = MongoDB(
         host="host",
@@ -69,7 +76,7 @@ def test_mongodb_reader_wrong_value_match(spark, processing, load_table_data):
         )
 
 
-def test_mongodb_reader_wrong_value(spark, processing, load_table_data):
+def test_mongodb_reader_wrong_value(processing, load_table_data):
     wrong_param = "$limit"
     mongo = MongoDB(
         host="host",
@@ -91,7 +98,7 @@ def test_mongodb_reader_wrong_value(spark, processing, load_table_data):
         )
 
 
-def test_mongodb_generate_pipeline(spark, processing, load_table_data):
+def test_mongodb_generate_pipeline(processing, load_table_data):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -107,7 +114,7 @@ def test_mongodb_generate_pipeline(spark, processing, load_table_data):
     )
 
 
-def test_mongodb_generate_pipeline_with_or_and(spark, processing, load_table_data):
+def test_mongodb_generate_pipeline_with_or_and(processing, load_table_data):
     mongo = MongoDB(
         host="host",
         user="user",

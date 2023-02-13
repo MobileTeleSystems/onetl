@@ -18,13 +18,14 @@ class MongoDBProcessing(BaseProcessing):
         "_id": "",
         "text_string": "",
         "hwm_int": "",
+        "hwm_datetime": "",
         # https://groups.google.com/g/mongodb-user/c/_Jj_yM_EQqM/m/EgRSl3HSpJYJ
-        # PyMongo doesn't support saving date instances.
+        # PyMongo doesn't support saving date instances. So there is no 'hwm_date' field.
         # TODO(@dypedchenk) fix datetime in mongo (After spark reading add 3 hours).
         "float_value": "",
     }
 
-    column_names: List = ["_id", "text_string", "hwm_int", "float_value"]
+    column_names: List = ["_id", "text_string", "hwm_int", "hwm_datetime", "float_value"]
 
     def __enter__(self):
         self.connection = self.get_conn()
@@ -126,7 +127,7 @@ class MongoDBProcessing(BaseProcessing):
 
     @staticmethod  # noqa: WPS605
     def current_datetime() -> datetime:
-        return datetime.utcnow()
+        return datetime.now()
 
     def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
         max_id = self._df_max_length if not max_id else max_id
@@ -144,6 +145,8 @@ class MongoDBProcessing(BaseProcessing):
                     values[column_name].append("This line is made to test the work")
                 elif "datetime" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
-                    values[column_name].append(self.current_datetime() + timedelta(seconds=rand_second))
+                    now = self.current_datetime() + timedelta(seconds=rand_second)
+                    now = now.replace(microsecond=round(now.microsecond, -3))  # save milliseconds
+                    values[column_name].append(now)
 
         return pd.DataFrame(data=values)

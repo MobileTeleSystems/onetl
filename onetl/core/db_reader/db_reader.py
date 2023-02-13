@@ -388,6 +388,12 @@ class DBReader(FrozenModel):
         df : pyspark.sql.dataframe.DataFrame
             Spark dataframe
 
+        .. note::
+
+            Keep in mind that with differences in the timezone settings of the source and Spark,
+            there may be discrepancies in the datetime on the source and in the Spark dataframe.
+            It depends on the ``spark.sql.session.timeZone`` option set when creating the Spark session.
+
         Examples
         --------
 
