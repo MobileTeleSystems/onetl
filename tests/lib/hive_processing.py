@@ -19,7 +19,7 @@ class HiveProcessing(BaseProcessing):
         "float_value": "float",
     }
 
-    def __init__(self, spark: "pyspark.sql.SparkSession"):
+    def __init__(self, spark: "pyspark.sql.SparkSession"):  # noqa: F821
         self.connection = spark
 
     @property
@@ -83,7 +83,7 @@ class HiveProcessing(BaseProcessing):
         schema: str,
         table: str,
         order_by: Optional[str] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         values = {column_name: [] for column_name in self.column_names}
 
         df = self.connection.sql(self.get_expected_dataframe_ddl(schema, table, order_by))
@@ -100,8 +100,8 @@ class HiveProcessing(BaseProcessing):
 
     def fix_pandas_df(
         self,
-        df: "pandas.core.frame.DataFrame",
-    ) -> "pandas.core.frame.DataFrame":
+        df: "pandas.core.frame.DataFrame",  # noqa: F821
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         # Type conversion is required since Hive returns float32 instead float64
 
         for column in df:  # noqa: WPS528

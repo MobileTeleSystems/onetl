@@ -82,3 +82,11 @@ repos:
   hooks:
   - id: flake8
     args: [--config=setup.cfg]
+- repo: https://github.com/myint/autoflake
+  rev: v2.0.1
+  hooks:
+  - id: autoflake
+    args:
+    - --in-place
+    - --remove-unused-variables
+    - --remove-all-unused-imports
