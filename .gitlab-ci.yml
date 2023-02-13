@@ -204,7 +204,7 @@ tests:
     ACCEPT_EULA: Y
     SA_PASSWORD: 2astazeY
     # Hive
-    TZ: Europe/Moscow
+    TZ: UTC
     # Minio
     MINIO_ROOT_USER: minio_admin
     MINIO_ROOT_PASSWORD: minio_password
