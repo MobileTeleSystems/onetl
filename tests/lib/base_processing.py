@@ -103,7 +103,7 @@ class BaseProcessing(ABC):
         schema: str,
         table: str,
         order_by: Optional[str] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         """"""
 
     def get_column_type(self, name: str) -> str:
@@ -117,7 +117,11 @@ class BaseProcessing(ABC):
     def current_datetime() -> datetime:
         return datetime.now()
 
-    def create_pandas_df(self, min_id: int = 1, max_id: int = _df_max_length) -> "pandas.core.frame.DataFrame":
+    def create_pandas_df(
+        self,
+        min_id: int = 1,
+        max_id: int = _df_max_length,
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         time_multiplier = 100000
 
         values = {column_name: [] for column_name in self.column_names}
@@ -141,25 +145,25 @@ class BaseProcessing(ABC):
 
     def create_spark_df(
         self,
-        spark: "pyspark.sql.SparkSession",
+        spark: "pyspark.sql.SparkSession",  # noqa: F821
         min_id: int = 1,
         max_id: int = _df_max_length,
-    ) -> "pyspark.sql.DataFrame":
+    ) -> "pyspark.sql.DataFrame":  # noqa: F821
         return spark.createDataFrame(self.create_pandas_df(min_id=min_id, max_id=max_id))
 
     def fix_pandas_df(
         self,
-        df: "pandas.core.frame.DataFrame",
-    ) -> "pandas.core.frame.DataFrame":
+        df: "pandas.core.frame.DataFrame",  # noqa: F821
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         return df
 
     def assert_equal_df(
         self,
-        df: "pyspark.sql.DataFrame",
+        df: "pyspark.sql.DataFrame",  # noqa: F821
         schema: Optional[str] = None,
         table: Optional[str] = None,
         order_by: Optional[str] = None,
-        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,
+        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,  # noqa: F821
         **kwargs,
     ) -> None:
         """Checks that df and other_frame are equal"""
@@ -193,10 +197,10 @@ class BaseProcessing(ABC):
 
     def assert_subset_df(
         self,
-        df: "pyspark.sql.DataFrame",
+        df: "pyspark.sql.DataFrame",  # noqa: F821
         schema: Optional[str] = None,
         table: Optional[str] = None,
-        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,
+        other_frame: Union["pandas.core.frame.DataFrame", "pyspark.sql.DataFrame", None] = None,  # noqa: F821
     ) -> None:
         """Checks that other_frame contains df"""
 

@@ -120,7 +120,7 @@ class MongoDBProcessing(BaseProcessing):
         schema: str,
         table: str,
         order_by: Optional[str] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         db = self.connection[self.database]
         records = db[table]
         return pd.DataFrame(list(records.find()))
@@ -129,7 +129,7 @@ class MongoDBProcessing(BaseProcessing):
     def current_datetime() -> datetime:
         return datetime.now()
 
-    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
+    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":  # noqa: F821
         max_id = self._df_max_length if not max_id else max_id
         time_multiplier = 100000
 

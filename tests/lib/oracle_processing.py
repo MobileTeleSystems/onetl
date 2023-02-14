@@ -124,7 +124,7 @@ class OracleProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",
+        values: "pandas.core.frame.DataFrame",  # noqa: F821
     ) -> None:
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
@@ -142,13 +142,13 @@ class OracleProcessing(BaseProcessing):
         schema: str,
         table: str,
         order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by), con=self.connection)
 
     def fix_pandas_df(
         self,
-        df: "pandas.core.frame.DataFrame",
-    ) -> "pandas.core.frame.DataFrame":
+        df: "pandas.core.frame.DataFrame",  # noqa: F821
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         # Oracle returns column names in UPPERCASE, convert them back to lowercase
         rename_columns = {x: x.lower() for x in df}
         df = df.rename(columns=rename_columns, inplace=False)

@@ -58,7 +58,7 @@ class ClickhouseProcessing(BaseProcessing):
     def client_port(self) -> int:
         return int(os.getenv("ONETL_CH_CONN_PORT_CLIENT"))
 
-    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":
+    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":  # noqa: F821
         max_id = self._df_max_length if not max_id else max_id
         time_multiplier = 100000
 
@@ -138,7 +138,7 @@ class ClickhouseProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",
+        values: "pandas.core.frame.DataFrame",  # noqa: F821
     ) -> None:
         self.connection.execute(f"INSERT INTO {schema}.{table} VALUES", values.to_dict("records"))
 
@@ -147,5 +147,5 @@ class ClickhouseProcessing(BaseProcessing):
         schema: str,
         table: str,
         order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         return self.connection.query_dataframe(self.get_expected_dataframe_ddl(schema, table, order_by))

@@ -115,7 +115,7 @@ class PostgresProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",
+        values: "pandas.core.frame.DataFrame",  # noqa: F821
     ) -> None:
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
@@ -133,5 +133,5 @@ class PostgresProcessing(BaseProcessing):
         schema: str,
         table: str,
         order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":
+    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by) + ";", con=self.connection)
