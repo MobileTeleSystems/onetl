@@ -282,7 +282,6 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
     """
 
     method = getattr(cls, method_name)
-    raw_method = cls.__dict__[method_name]
     original_method = _unwrap_method(method)
 
     @wraps(method)  # noqa: WPS231, WPS213
@@ -428,6 +427,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
             return result
 
     # adding __hooks__ to wrapper is important to detect them with @support_hooks decorator
+    raw_method = cls.__dict__[method_name]
     wrapper.__hooks__ = raw_method.__hooks__  # type: ignore[attr-defined]
 
     wrapper.skip_hooks = wrapper.__hooks__.skip  # type: ignore[attr-defined]

@@ -32,7 +32,7 @@ from onetl._internal import (  # noqa: WPS436
 )
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.exception import TooManyParallelJobsError
+from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
@@ -474,6 +474,7 @@ class Greenplum(JDBCMixin, DBConnection):
         where: str | None = None,  # type: ignore
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
+        self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
         query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
@@ -501,6 +502,7 @@ class Greenplum(JDBCMixin, DBConnection):
         table: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
+        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
 
@@ -567,6 +569,24 @@ class Greenplum(JDBCMixin, DBConnection):
         log_with_indent(f"MAX({column}) = {max_value!r}")
 
         return min_value, max_value
+
+    def _check_driver_imported(self):
+        gateway = self.spark._sc._gateway  # noqa: WPS437
+        class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
+        missing_class = getattr(gateway.jvm, class_name)
+
+        try:
+            gateway.help(missing_class, display=False)
+        except Exception:
+            spark_version = "_".join(self.spark.version.split(".")[:2])
+            log.error(
+                MISSING_JVM_CLASS_MSG,
+                class_name,
+                f"{self.__class__.__name__}.package_spark_{spark_version}",
+                exc_info=False,
+            )
+
+            raise
 
     def _connector_params(
         self,

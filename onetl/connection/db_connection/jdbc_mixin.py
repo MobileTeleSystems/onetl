@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, Type
 from pydantic import Field, SecretStr
 
 from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
+from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import log_with_indent
 
@@ -141,6 +142,7 @@ class JDBCMixin(FrozenModel):
         self.close()
 
     def check(self):
+        self._check_driver_imported()
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         self._log_parameters()
 
@@ -171,7 +173,7 @@ class JDBCMixin(FrozenModel):
             This function should **NOT** be used to return dataframe with large number of rows/columns,
             like ``SELECT * FROM table`` (without any filtering).
 
-            Use it **ONLY** to execute queries with **only one or just a few returning rows/columns**,
+            Use it **ONLY** to execute queries with **one or just a few returning rows/columns**,
             like ``SELECT COUNT(*) FROM table`` or ``SELECT * FROM table WHERE id = ...``.
 
             This is because all the data is fetched through master host, not in a distributed way
@@ -239,6 +241,7 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
+        self._check_driver_imported()
         query = clear_statement(query)
 
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
@@ -350,6 +353,7 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
+        self._check_driver_imported()
         statement = clear_statement(statement)
 
         log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
@@ -367,6 +371,21 @@ class JDBCMixin(FrozenModel):
 
         log.info(message)
         return df
+
+    def _check_driver_imported(self):
+        gateway = self.spark._sc._gateway  # noqa: WPS437
+        driver_class = getattr(gateway.jvm, self.driver)
+
+        try:
+            gateway.help(driver_class, display=False)
+        except Exception:
+            log.error(
+                MISSING_JVM_CLASS_MSG,
+                self.driver,
+                f"{self.__class__.__name__}.package",
+                exc_info=False,
+            )
+            raise
 
     def _query_on_driver(
         self,

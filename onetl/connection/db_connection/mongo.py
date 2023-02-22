@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import logging
-import textwrap
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
@@ -29,6 +28,7 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import GenericOptions
 
 log = logging.getLogger(__name__)
@@ -317,56 +317,6 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    @property
-    def instance_url(self) -> str:
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
-
-    def check(self):
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        self._log_parameters()
-
-        try:
-            jvm = self.spark._sc._gateway.jvm  # noqa: WPS437
-            client = jvm.com.mongodb.client.MongoClients.create(self._url)
-        except Exception as e:
-            spark_version = "_".join(self.spark.version.split(".")[:1])
-
-            raise RuntimeError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import Java package 'com.mongodb.client'.
-
-                    It looks like you've created Spark session without this option:
-                        SparkSession.builder.config("spark.jars.packages", MongoDB.package_spark_{spark_version})
-
-                    Please stop Spark session, restart the interpreter,
-                    and create SparkSession again with proper options.
-                    """,
-                ).strip(),
-            ) from e
-
-        try:
-            list(client.listDatabaseNames().iterator())
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
-        except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
-            raise RuntimeError("Connection is unavailable") from e
-
-        return self
-
-    def get_schema(self, table: str, columns: list[str] | None = None) -> StructType:  # noqa: WPS463
-        pass  # noqa: WPS420
-
-    def get_min_max_bounds(  # type:ignore  # noqa: WPS463
-        self,
-        table: str,
-        column: str,
-        expression: str | None = None,
-        hint: dict | None = None,
-        where: dict | None = None,
-    ) -> tuple[Any, Any]:
-        return ""  # type: ignore
-
     class Dialect:
         """
         The class contains methods for generating queries transmitted to the database. requests are formed from
@@ -490,6 +440,40 @@ class MongoDB(DBConnection):
 
             raise ValueError(f"|MongoDB| Wrong value type : {type(param)}")
 
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+
+    def check(self):
+        self._check_driver_imported()
+        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        self._log_parameters()
+
+        try:
+            jvm = self.spark._sc._gateway.jvm  # noqa: WPS437
+            client = jvm.com.mongodb.client.MongoClients.create(self._url)
+            list(client.listDatabaseNames().iterator())
+            log.info(f"|{self.__class__.__name__}| Connection is available.")
+        except Exception as e:
+            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
+
+    def get_schema(self, table: str, columns: list[str] | None = None) -> StructType:  # noqa: WPS463
+        self._check_driver_imported()
+
+    def get_min_max_bounds(  # type:ignore  # noqa: WPS463
+        self,
+        table: str,
+        column: str,
+        expression: str | None = None,
+        hint: dict | None = None,
+        where: dict | None = None,
+    ) -> tuple[Any, Any]:
+        self._check_driver_imported()
+        return None, None
+
     def read_table(
         self,
         table: str,
@@ -498,6 +482,7 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
+        self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
         if where:
@@ -522,6 +507,7 @@ class MongoDB(DBConnection):
         table: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
+        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
         write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
@@ -533,3 +519,37 @@ class MongoDB(DBConnection):
     def _url(self) -> str:
         password = parser.quote(self.password.get_secret_value())
         return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}"
+
+    def _check_driver_imported(self):
+        spark_version = "_".join(self.spark.version.split(".")[:2])
+
+        gateway = self.spark._sc._gateway  # noqa: WPS437
+        # Connector v10.x
+        class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
+        missing_class = getattr(gateway.jvm, class_name)
+
+        exception: Exception | None
+        try:
+            gateway.help(missing_class, display=False)
+            exception = None
+        except Exception as e:
+            exception = e
+
+        if exception:
+            # Connector v3.x or lower
+            class_name = "com.mongodb.spark.sql.DefaultSource"
+            missing_class = getattr(gateway.jvm, class_name)
+            try:
+                gateway.help(missing_class, display=False)
+                exception = None
+            except Exception as e:
+                exception = e
+
+        if exception:
+            log.error(
+                MISSING_JVM_CLASS_MSG,
+                class_name,
+                f"{self.__class__.__name__}.package_spark_{spark_version}",
+                exc_info=False,
+            )
+            raise exception

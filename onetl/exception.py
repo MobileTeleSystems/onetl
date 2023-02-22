@@ -12,7 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import textwrap
+
 from evacuator import NeedEvacuation
+
+MISSING_JVM_CLASS_MSG = textwrap.dedent(
+    """
+    |Spark| Cannot import Java class %r.
+
+        It looks like you've created Spark session without this option:
+            SparkSession.builder.config("spark.jars.packages", %s)
+
+        Please call `spark.stop()`, restart the interpreter,
+        and then create new SparkSession with proper options.
+    """,
+).lstrip()
 
 
 class DirectoryNotFoundError(OSError):
