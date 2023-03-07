@@ -1,15 +1,8 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl._internal import to_camel  # noqa: WPS436
 from onetl.connection import Oracle, Postgres
 from onetl.connection.db_connection.jdbc_connection import JDBCWriteMode
-
-spark = Mock(spec=SparkSession)
-spark.sparkContext = Mock()
-spark.sparkContext.appName = "abc"
 
 
 def test_jdbc_read_options_default():
@@ -202,8 +195,8 @@ def test_jdbc_write_options_case():
     assert camel_case == snake_case
 
 
-def test_jdbc_read_options_to_jdbc():
-    connection = Postgres(host="local", user="admin", database="default", password="1234", spark=spark)
+def test_jdbc_read_options_to_jdbc(spark_mock):
+    connection = Postgres(host="local", user="admin", database="default", password="1234", spark=spark_mock)
     jdbc_params = connection.options_to_jdbc_params(
         options=Postgres.ReadOptions(
             lowerBound=10,
@@ -237,8 +230,8 @@ def test_jdbc_read_options_to_jdbc():
     }
 
 
-def test_jdbc_write_options_to_jdbc():
-    connection = Postgres(host="local", user="admin", database="default", password="1234", spark=spark)
+def test_jdbc_write_options_to_jdbc(spark_mock):
+    connection = Postgres(host="local", user="admin", database="default", password="1234", spark=spark_mock)
     jdbc_params = connection.options_to_jdbc_params(
         options=Postgres.WriteOptions(
             batchsize=1000,
@@ -278,8 +271,8 @@ def test_jdbc_write_options_to_jdbc():
         {"mode": "wrong_mode"},
     ],
 )
-def test_jdbc_write_options_wrong_mode(options):
-    oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark)
+def test_jdbc_write_options_wrong_mode(spark_mock, options):
+    oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark_mock)
 
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
         oracle.WriteOptions(**options)

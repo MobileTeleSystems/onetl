@@ -222,7 +222,7 @@ class Oracle(JDBCConnection):
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
-        self._handle_compile_errors(statement.lower().strip(), call_options)
+        self._handle_compile_errors(statement.strip(), call_options)
 
         message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:

@@ -25,6 +25,12 @@ from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintStr,
+    SupportWhereStr,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
@@ -482,6 +488,9 @@ class Hive(DBConnection):
             """
             return None  # noqa: WPS324
 
+    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintStr, DBConnection.Dialect):
+        pass  # noqa: WPS604, WPS420
+
     cluster: Cluster
 
     @validator("cluster")
@@ -692,7 +701,7 @@ class Hive(DBConnection):
             # mode="overwrite_table" should be used
             self._save_as_table(df, table, options)
 
-    def read_table(
+    def read_table(  # type: ignore
         self,
         table: str,
         columns: list[str] | None = None,
@@ -723,7 +732,7 @@ class Hive(DBConnection):
         df = self._execute_sql(query_schema)
         return df.schema
 
-    def get_min_max_bounds(
+    def get_min_max_bounds(  # type: ignore
         self,
         table: str,
         column: str,
@@ -767,11 +776,11 @@ class Hive(DBConnection):
         table_columns = self.spark.table(table).columns
 
         # But names could have different cases, this should not cause errors
-        table_columns_lower = [column.lower() for column in table_columns]
-        df_columns_lower = [column.lower() for column in df_columns]
+        table_columns_normalized = [column.casefold() for column in table_columns]
+        df_columns_normalized = [column.casefold() for column in df_columns]
 
-        missing_columns_df = [column for column in df_columns_lower if column not in table_columns_lower]
-        missing_columns_table = [column for column in table_columns_lower if column not in df_columns_lower]
+        missing_columns_df = [column for column in df_columns_normalized if column not in table_columns_normalized]
+        missing_columns_table = [column for column in table_columns_normalized if column not in df_columns_normalized]
 
         if missing_columns_df or missing_columns_table:
             missing_columns_df_message = ""
@@ -803,7 +812,7 @@ class Hive(DBConnection):
                 ).strip(),
             )
 
-        return sorted(df_columns, key=lambda column: table_columns_lower.index(column.lower()))
+        return sorted(df_columns, key=lambda column: table_columns_normalized.index(column.casefold()))
 
     def _insert_into(
         self,

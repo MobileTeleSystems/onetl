@@ -77,12 +77,12 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     """
 
     result: list[str] = []
-    result_lower: list[str] = []
+    already_visited: set[str] = set()
 
     for orig_value in orig_list:
-        if orig_value.lower() not in result_lower:
+        if orig_value.casefold() not in already_visited:
             result.append(orig_value)
-            result_lower.append(orig_value.lower())
+            already_visited.add(orig_value.casefold())
 
     return result
 

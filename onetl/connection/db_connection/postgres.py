@@ -17,6 +17,13 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import ClassVar
 
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintNone,
+    SupportWhereStr,
+)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 # do not import PySpark here, as we allow user to use `Postgres.package` for creating Spark session
@@ -112,6 +119,9 @@ class Postgres(JDBCConnection):
 
     driver: ClassVar[str] = "org.postgresql.Driver"
     package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+
+    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
+        pass  # noqa: WPS604, WPS420
 
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://stackoverflow.com/a/9812029

@@ -1,36 +1,31 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Hive
 from onetl.core import DBReader
 
-spark = Mock(spec=SparkSession)
-
 
 # TODO(@dypedchenk): the test is temporarily disabled because not all classes implement the test
 @pytest.mark.skip
-def test_reader_without_schema():
+def test_reader_without_schema(spark_mock):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="table",  # missing schema
         )
 
 
-def test_reader_with_too_many_dots():
+def test_reader_with_too_many_dots(spark_mock):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table.abc",  # wrong input
         )
 
 
-def test_reader_hive_with_read_options():
+def test_reader_hive_with_read_options(spark_mock):
     with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             options={"some": "option"},
         )
@@ -62,10 +57,10 @@ def test_reader_hive_with_read_options():
         ["abc", "ABC", "cde"],
     ],
 )
-def test_reader_invalid_columns(columns):
+def test_reader_invalid_columns(spark_mock, columns):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             columns=columns,
         )
@@ -82,9 +77,9 @@ def test_reader_invalid_columns(columns):
         (["*", "abc"], ["*", "abc"]),
     ],
 )
-def test_reader_valid_columns(columns, real_columns):
+def test_reader_valid_columns(spark_mock, columns, real_columns):
     reader = DBReader(
-        connection=Hive(cluster="rnd-dwh", spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
         table="schema.table",
         columns=columns,
     )
@@ -136,10 +131,10 @@ def test_reader_valid_columns(columns, real_columns):
         ["name", None],
     ],
 )
-def test_reader_invalid_hwm_column(hwm_column):
+def test_reader_invalid_hwm_column(spark_mock, hwm_column):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             hwm_column=hwm_column,
         )
@@ -153,9 +148,9 @@ def test_reader_invalid_hwm_column(hwm_column):
         (("hwm_column", "hwm_column"), "hwm_column", "hwm_column"),
     ],
 )
-def test_reader_valid_hwm_column(hwm_column, real_hwm_column, real_hwm_expression):
+def test_reader_valid_hwm_column(spark_mock, hwm_column, real_hwm_column, real_hwm_expression):
     reader = DBReader(
-        connection=Hive(cluster="rnd-dwh", spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
         table="schema.table",
         hwm_column=hwm_column,
     )
@@ -185,9 +180,9 @@ def test_reader_valid_hwm_column(hwm_column, real_hwm_column, real_hwm_expressio
         (["*"], ("D", "cast")),
     ],
 )
-def test_reader_hwm_column_and_columns_are_not_in_conflict(columns, hwm_column):
+def test_reader_hwm_column_and_columns_are_not_in_conflict(spark_mock, columns, hwm_column):
     DBReader(
-        connection=Hive(cluster="rnd-dwh", spark=spark),
+        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
         table="schema.table",
         columns=columns,
         hwm_column=hwm_column,
@@ -211,10 +206,10 @@ def test_reader_hwm_column_and_columns_are_not_in_conflict(columns, hwm_column):
         ("*, D", ("d", "cast")),
     ],
 )
-def test_reader_hwm_column_and_columns_are_in_conflict(columns, hwm_column):
+def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_column):
     with pytest.raises(ValueError):
         DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark),
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             columns=columns,
             hwm_column=hwm_column,

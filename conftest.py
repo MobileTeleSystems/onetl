@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
+from unittest.mock import Mock
 
 import pytest
 from etl_entities import (
@@ -214,6 +215,14 @@ def get_spark_session(request):
     yield spark
     spark.sparkContext.stop()
     spark.stop()
+
+
+@pytest.fixture()
+def spark_mock() -> SparkSession:
+    spark = Mock(spec=SparkSession)
+    spark.sparkContext = Mock()
+    spark.sparkContext.appName = "abc"
+    return spark
 
 
 @pytest.fixture()

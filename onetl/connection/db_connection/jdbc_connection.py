@@ -25,6 +25,12 @@ from pydantic import PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintStr,
+    SupportWhereStr,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.impl.generic_options import GenericOptions
 from onetl.log import log_with_indent
@@ -128,16 +134,8 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         class Config:
             extra = "allow"
 
-    class Dialect(DBConnection.Dialect):
-        @staticmethod
-        def check_where_parameter(where: Any):
-            if not isinstance(where, str):
-                raise ValueError("'where' parameter should be a string")
-
-        @staticmethod
-        def check_hint_parameter(hint: Any):
-            if not isinstance(hint, str):
-                raise ValueError("'hint' parameter should be a string")
+    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintStr, DBConnection.Dialect):
+        pass  # noqa: WPS604, WPS420
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
         """Spark JDBC options.
@@ -731,7 +729,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         return result
 
-    def get_min_max_bounds(
+    def get_min_max_bounds(  # type: ignore
         self,
         table: str,
         column: str,

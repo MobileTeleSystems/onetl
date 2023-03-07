@@ -2,38 +2,32 @@ from __future__ import annotations
 
 import logging
 import re
-from unittest.mock import Mock
 
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Hive
 from onetl.connection.db_connection.hive import HiveWriteMode
 from onetl.hooks import hook
 
-spark = Mock(spec=SparkSession)
-spark.sparkContext = Mock()
-spark.sparkContext.appName = "abc"
 
-
-def test_hive_missing_args():
+def test_hive_missing_args(spark_mock):
     # no spark
     with pytest.raises(ValueError, match="field required"):
         Hive()
 
     # no cluster
     with pytest.raises(ValueError, match="field required"):
-        Hive(spark=spark)
+        Hive(spark=spark_mock)
 
 
-def test_hive_instance_url():
-    hive = Hive(cluster="some-cluster", spark=spark)
+def test_hive_instance_url(spark_mock):
+    hive = Hive(cluster="some-cluster", spark=spark_mock)
     assert hive.instance_url == "some-cluster"
 
 
-def test_hive_get_known_clusters_hook(request):
+def test_hive_get_known_clusters_hook(request, spark_mock):
     # no exception
-    Hive(cluster="unknown", spark=spark)
+    Hive(cluster="unknown", spark=spark_mock)
 
     @Hive.slots.get_known_clusters.bind
     @hook
@@ -43,12 +37,12 @@ def test_hive_get_known_clusters_hook(request):
     request.addfinalizer(get_known_clusters.disable)
 
     with pytest.raises(ValueError, match="Cluster 'unknown' is not in the known clusters list: 'known1', 'known2'"):
-        Hive(cluster="unknown", spark=spark)
+        Hive(cluster="unknown", spark=spark_mock)
 
-    Hive(cluster="known1", spark=spark)  # no exception
+    Hive(cluster="known1", spark=spark_mock)  # no exception
 
 
-def test_hive_known_normalize_cluster_name_hook(request):
+def test_hive_known_normalize_cluster_name_hook(request, spark_mock):
     @Hive.slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
@@ -56,17 +50,17 @@ def test_hive_known_normalize_cluster_name_hook(request):
 
     request.addfinalizer(normalize_cluster_name.disable)
 
-    assert Hive(cluster="rnd-dwh", spark=spark).cluster == "rnd-dwh"
-    assert Hive(cluster="rnd_dwh", spark=spark).cluster == "rnd-dwh"
-    assert Hive(cluster="RND-DWH", spark=spark).cluster == "rnd-dwh"
+    assert Hive(cluster="rnd-dwh", spark=spark_mock).cluster == "rnd-dwh"
+    assert Hive(cluster="rnd_dwh", spark=spark_mock).cluster == "rnd-dwh"
+    assert Hive(cluster="RND-DWH", spark=spark_mock).cluster == "rnd-dwh"
 
 
-def test_hive_known_get_current_cluster_hook(request, mocker):
+def test_hive_known_get_current_cluster_hook(request, spark_mock, mocker):
     mocker.patch.object(Hive, "_execute_sql", return_value=None)
 
     # no exception
-    Hive(cluster="rnd-prod", spark=spark).check()
-    Hive(cluster="rnd-dwh", spark=spark).check()
+    Hive(cluster="rnd-prod", spark=spark_mock).check()
+    Hive(cluster="rnd-dwh", spark=spark_mock).check()
 
     @Hive.slots.get_current_cluster.bind
     @hook
@@ -76,19 +70,19 @@ def test_hive_known_get_current_cluster_hook(request, mocker):
     request.addfinalizer(get_current_cluster.disable)
 
     with pytest.raises(ValueError, match="You can connect to a Hive cluster only from the same cluster"):
-        Hive(cluster="rnd-prod", spark=spark).check()
+        Hive(cluster="rnd-prod", spark=spark_mock).check()
 
     # same cluster as in get_current_cluster
-    Hive(cluster="rnd-dwh", spark=spark).check()
+    Hive(cluster="rnd-dwh", spark=spark_mock).check()
 
 
-def test_hive_known_get_current(request):
+def test_hive_known_get_current(request, spark_mock):
     # no hooks bound to Hive.slots.get_current_cluster
     error_msg = re.escape(
         "Hive.get_current() can be used only if there are some hooks bound to Hive.slots.get_current_cluster",
     )
     with pytest.raises(RuntimeError, match=error_msg):
-        Hive.get_current(spark=spark)
+        Hive.get_current(spark=spark_mock)
 
     @Hive.slots.get_current_cluster.bind
     @hook
@@ -97,7 +91,7 @@ def test_hive_known_get_current(request):
 
     request.addfinalizer(get_current_cluster.disable)
 
-    assert Hive.get_current(spark=spark).cluster == "rnd-dwh"
+    assert Hive.get_current(spark=spark_mock).cluster == "rnd-dwh"
 
 
 def test_hive_old_options_deprecated():

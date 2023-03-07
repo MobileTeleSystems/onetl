@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
 from onetl.base.base_connection import BaseConnection
@@ -28,6 +28,31 @@ class BaseDBConnection(BaseConnection):
     """
     Implements generic methods for reading data from and writing data to a database
     """
+
+    class Dialect(ABC):
+        """
+        Collection of methods used for validating input values before passing them to read_table/save_df
+        """
+
+        @classmethod
+        @abstractmethod
+        def validate_columns(cls, connection: BaseDBConnection, columns: Any) -> list[str] | None:
+            ...
+
+        @classmethod
+        @abstractmethod
+        def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
+            ...
+
+        @classmethod
+        @abstractmethod
+        def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
+            ...
+
+        @classmethod
+        @abstractmethod
+        def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
+            ...
 
     @property
     @abstractmethod
@@ -90,8 +115,8 @@ class BaseDBConnection(BaseConnection):
         table: str,
         column: str,
         expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
         Get MIN and MAX values for the column
