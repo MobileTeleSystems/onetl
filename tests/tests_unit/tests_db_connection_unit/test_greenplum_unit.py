@@ -1,14 +1,7 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Greenplum
 from onetl.connection.db_connection.greenplum import GreenplumWriteMode
-
-spark = Mock(spec=SparkSession)
-spark.sparkContext = Mock()
-spark.sparkContext.appName = "abc"
 
 
 def test_greenplum_class_attributes():
@@ -19,8 +12,8 @@ def test_greenplum_class_attributes():
     assert Greenplum.package_spark_3_3 == "io.pivotal:greenplum-spark_2.12:2.1.3"
 
 
-def test_greenplum():
-    conn = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_greenplum(spark_mock):
+    conn = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5432
@@ -32,8 +25,8 @@ def test_greenplum():
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true"
 
 
-def test_greenplum_with_port():
-    conn = Greenplum(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+def test_greenplum_with_port(spark_mock):
+    conn = Greenplum(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -45,12 +38,12 @@ def test_greenplum_with_port():
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true"
 
 
-def test_greenplum_without_database_error():
+def test_greenplum_without_database_error(spark_mock):
     with pytest.raises(ValueError, match="field required"):
-        Greenplum(host="some_host", port=5000, user="user", password="passwd", spark=spark)
+        Greenplum(host="some_host", port=5000, user="user", password="passwd", spark=spark_mock)
 
 
-def test_greenplum_with_extra():
+def test_greenplum_with_extra(spark_mock):
     conn = Greenplum(
         host="some_host",
         user="user",
@@ -63,7 +56,7 @@ def test_greenplum_with_extra():
             "server.port": 8000,
             "pool.maxSize": 40,
         },
-        spark=spark,
+        spark=spark_mock,
     )
 
     # `server.*` and `pool.*` options are ignored while generating jdbc_url
@@ -73,20 +66,20 @@ def test_greenplum_with_extra():
     )
 
 
-def test_greenplum_without_mandatory_args():
+def test_greenplum_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         Greenplum()
 
     with pytest.raises(ValueError, match="field required"):
         Greenplum(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Greenplum(
             host="some_host",
             database="database",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -94,7 +87,7 @@ def test_greenplum_without_mandatory_args():
             host="some_host",
             database="database",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -102,7 +95,7 @@ def test_greenplum_without_mandatory_args():
             host="some_host",
             database="database",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )
 
 

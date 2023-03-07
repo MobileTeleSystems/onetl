@@ -31,6 +31,12 @@ from onetl._internal import (  # noqa: WPS436
     to_camel,
 )
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintNone,
+    SupportWhereStr,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.impl import GenericOptions
@@ -433,6 +439,9 @@ class Greenplum(JDBCMixin, DBConnection):
             ``error`` and ``ignore`` modes are not supported.
         """
 
+    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
+        pass  # noqa: WPS604, WPS420
+
     host: Host
     database: str
     port: int = 5432
@@ -536,7 +545,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return df.schema
 
-    def get_min_max_bounds(
+    def get_min_max_bounds(  # type: ignore
         self,
         table: str,
         column: str,

@@ -16,10 +16,10 @@ from __future__ import annotations
 
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
+import frozendict
 from etl_entities import Column, Table
-from frozendict import frozendict
 from pydantic import root_validator, validator
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
@@ -287,16 +287,10 @@ class DBReader(FrozenModel):
     columns: Optional[List[str]] = None
     hwm_column: Optional[Column] = None
     hwm_expression: Optional[str] = None
-    where: Optional[Union[str, frozendict]] = None
-    hint: Optional[Union[str, frozendict]] = None
-    options: Optional[GenericOptions] = None
+    where: Optional[Any] = None
+    hint: Optional[Any] = None
     df_schema: Optional[StructType] = None
-
-    @root_validator()
-    def validate_df_schema(cls, values):  # noqa: N805
-        df_schema = values.get("df_schema")
-        values["connection"].Dialect.check_df_schema(values["connection"], df_schema)
-        return values
+    options: Optional[GenericOptions] = None
 
     @validator("table", pre=True, always=True)
     def validate_table(cls, value, values):  # noqa: N805
@@ -304,13 +298,38 @@ class DBReader(FrozenModel):
             return Table(name=value, instance=values["connection"].instance_url)
         return value
 
+    @validator("where", pre=True, always=True)
+    def validate_where(cls, where: Any, values: dict) -> Any:  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        result = dialect.validate_where(connection, where)
+        if isinstance(result, dict):
+            return frozendict.frozendict(result)  # type: ignore[attr-defined]
+        return result
+
+    @validator("hint", pre=True, always=True)
+    def validate_hint(cls, hint: Any, values: dict) -> Any:  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        result = dialect.validate_hint(connection, hint)
+        if isinstance(result, dict):
+            return frozendict.frozendict(result)  # type: ignore[attr-defined]
+        return result
+
+    @validator("df_schema", pre=True, always=True)
+    def validate_df_schema(cls, df_schema: StructType | None, values: dict) -> StructType | None:  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        return dialect.validate_df_schema(connection, df_schema)
+
     @root_validator(pre=True)  # noqa: WPS231
-    def validate_hwm_column(cls, values):  # noqa: N805
+    def validate_hwm_column(cls, values: dict) -> dict:  # noqa: N805
         hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
         df_schema: StructType | None = values.get("df_schema")
         hwm_expression: str | None = values.get("hwm_expression")
 
         if hwm_column is None or isinstance(hwm_column, Column):
+            # nothing to validate
             return values
 
         if not hwm_expression and not isinstance(hwm_column, str):
@@ -325,11 +344,11 @@ class DBReader(FrozenModel):
                 )
 
         if df_schema is not None:
-            # In this case MongoDB is used.
+            # Connection with df_schema support
             if hwm_column not in df_schema.fieldNames():
                 raise ValueError(
-                    f"|{cls.__class__.__name__}| the 'hwm_column' parameter must be "
-                    "specified among the fields in 'df_schema'.",
+                    "'df_schema' struct must contain column specified in 'hwm_column'. "
+                    "Otherwise DBReader cannot determine HWM type for this column",
                 )
 
         values["hwm_column"] = Column(name=hwm_column)
@@ -338,33 +357,29 @@ class DBReader(FrozenModel):
         return values
 
     @root_validator(pre=True)  # noqa: WPS238, WPS231
-    def validate_columns(cls, values) -> Optional[Union[str, list]]:  # noqa: N805
-        columns: Optional[list[str]] = values.get("columns")
+    def validate_columns(cls, values: dict) -> dict:  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
 
+        columns: list[str] | str | None = values.get("columns")
+        columns_list: list[str] | None
         if isinstance(columns, str):
             columns_list = columns.split(",")
         else:
             columns_list = columns
 
-        # 'columns_list' is returned as either 'None' (in the case of MongoDB)
-        # or list[str] or ["*"] in the case of other databases.
-        columns_list = values["connection"].Dialect.column_check(columns_list)
-
-        # If MongoDB connection.
+        columns_list = dialect.validate_columns(connection, columns_list)
         if columns_list is None:
             return values
 
-        # If incorrect values are passed to the 'columns' parameter.
         if not columns_list:
-            raise ValueError(
-                "|DBReader| Parameter 'columns' can not be an empty list.",
-            )
+            raise ValueError("Parameter 'columns' can not be an empty list")
 
         hwm_column = values.get("hwm_column")
         hwm_expression = values.get("hwm_expression")
 
         result: list[str] = []
-        result_lower: list[str] = []
+        already_visited: set[str] = set()
 
         for item in columns_list:
             column = item.strip()
@@ -372,39 +387,17 @@ class DBReader(FrozenModel):
             if not column:
                 raise ValueError(f"Column name cannot be empty string, got {item!r}")
 
-            if column.lower() in result_lower:
-                raise ValueError(f"Duplicated column name: {item!r}")
+            if column.casefold() in already_visited:
+                raise ValueError(f"Duplicated column name {item!r}")
 
-            if hwm_expression and hwm_column and hwm_column.name.lower() == column.lower():
+            if hwm_expression and hwm_column and hwm_column.name.casefold() == column.casefold():
                 raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as 'columns' name")
 
             result.append(column)
-            result_lower.append(column.lower())
+            already_visited.add(column.casefold())
 
         values["columns"] = result
         return values
-
-    @validator("hint", pre=True)
-    def validate_hint_parameter(cls, hint):  # noqa: N805
-        if isinstance(hint, dict):
-            hint = frozendict(hint)
-        return hint
-
-    @validator("hint")
-    def validate_hint_type(cls, hint, values):  # noqa: N805
-        values["connection"].Dialect.check_hint_parameter(hint)
-        return hint
-
-    @validator("where", pre=True)
-    def validate_where_type(cls, where):  # noqa: N805
-        if isinstance(where, dict):
-            where = frozendict(where)
-        return where
-
-    @validator("where")
-    def validate_where_parameter(cls, where, values):  # noqa: N805
-        values["connection"].Dialect.check_where_parameter(where)
-        return where
 
     @validator("options", pre=True, always=True)
     def validate_options(cls, options, values):  # noqa: N805
@@ -586,45 +579,16 @@ class DBReader(FrozenModel):
         if self.hwm_expression:
             hwm_statement = self.connection.expression_with_alias(self.hwm_expression, self.hwm_column.name)
 
-        columns_lower = [column_name.lower() for column_name in columns]
+        columns_normalized = [column_name.casefold() for column_name in columns]
+        hwm_column_name = self.hwm_column.name.casefold()
 
-        if self.hwm_column.name.lower() in columns_lower:
-            column_index = columns_lower.index(self.hwm_column.name.lower())
+        if hwm_column_name in columns_normalized:
+            column_index = columns_normalized.index(hwm_column_name)
             columns[column_index] = hwm_statement
         else:
             columns.append(hwm_statement)
 
         return columns
-
-    def _handle_columns(self, columns: str | list[str]) -> list[str]:  # noqa: WPS238
-        items: list[str]
-        if isinstance(columns, str):
-            items = columns.split(",")
-        else:
-            items = list(columns)
-
-        if not items:
-            raise ValueError("Columns list cannot be empty")
-
-        result: list[str] = []
-        result_lower: list[str] = []
-
-        for item in items:
-            column = item.strip()
-
-            if not column:
-                raise ValueError(f"Column name cannot be empty string, got {item!r}")
-
-            if column.lower() in result_lower:
-                raise ValueError(f"Duplicated column name: {item!r}")
-
-            if self.hwm_expression and self.hwm_column and self.hwm_column.name.lower() == column.lower():
-                raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as column name")
-
-            result.append(column)
-            result_lower.append(column.lower())
-
-        return result
 
     def _get_read_kwargs(self) -> dict:
         if self.options:

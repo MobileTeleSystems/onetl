@@ -16,11 +16,10 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from frozendict import frozendict
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -28,6 +27,10 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsNone,
+    SupportDfSchemaStruct,
+)
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import GenericOptions
 
@@ -317,79 +320,63 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    @property
-    def instance_url(self) -> str:
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+    class Dialect(SupportColumnsNone, SupportDfSchemaStruct, DBConnection.Dialect):
+        @classmethod  # noqa: WPS238
+        def validate_where(  # type: ignore
+            cls,
+            connection: MongoDB,
+            where: Any,
+        ) -> dict | None:
+            if where is None:
+                return None
 
-    class Dialect(DBConnection.Dialect):
-        """
-        The class contains methods for generating queries transmitted to the database. requests are formed from
-        parameters passed to DBReader.
-        """
-
-        def check_df_schema(self, df_schema: StructType | None = None):
-            """
-            Without specifying the 'df_schema', it will be impossible to check the correctness of the specified field
-            in 'hwm_column', since in the case of MongoDB, the source schema is not received in the get_df_schema()
-            method.
-            """
-            if not df_schema:
-                raise ValueError(f"|{self.__class__.__name__}| 'df_schema' parameter should be passed.")
-
-        @classmethod
-        def check_where_parameter(cls, where: str | dict) -> bool:
-            """
-            Checks the parameter passed to DBReader. Passed value cannot be a string.
-            """
-            if isinstance(where, str):
+            if not isinstance(where, dict):
                 raise ValueError(
-                    "|MongoDB| Parameter 'where' cannot be a string, 'dict' must be passed.",
+                    f"{connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
+                    f"got {where.__class__.__name__!r}",
                 )
-            for key, _ in where.items():
+
+            for key in where:
                 cls._validate_top_level_keys_in_where_parameter(key)
-            return True
+            return where
 
-        @classmethod
-        def check_hint_parameter(cls, hint: str | dict) -> bool:
-            """
-            Checks the parameter passed to DBReader. Passed value cannot be a string.
-            """
+        @classmethod  # noqa: WPS238
+        def validate_hint(  # type: ignore
+            cls,
+            connection: MongoDB,
+            hint: Any,
+        ) -> dict | None:
+            if hint is None:
+                return None
 
-            if isinstance(hint, str):
-                raise ValueError("|MongoDB| Parameter 'hint' cannot be a string, 'dict' must be passed.")
-            return True
+            if not isinstance(hint, dict):
+                raise ValueError(
+                    f"{connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
+                    f"got {hint.__class__.__name__!r}",
+                )
+            return hint
 
         @classmethod
         def convert_filter_parameter_to_pipeline(
             cls,
-            parameter: list | frozendict | dict,
+            parameter: Any,
         ) -> str:  # noqa: WPS212, WPS231, WPS430
             """
             Converts the given dictionary, list or primitive to a string. for each element of the collection,
             the method calls itself and internally processes each element depending on its type.
             """
-            if isinstance(parameter, (frozendict, dict)):
+            if isinstance(parameter, Mapping):
                 return cls._build_string_pipeline_from_dictionary(parameter)
 
-            if isinstance(parameter, list):
+            if isinstance(parameter, Iterable) and not isinstance(parameter, str):
                 return cls._build_string_pipeline_from_list(parameter)
 
             return cls._build_string_pipeline_from_simple_types(parameter)
 
-        @staticmethod  # noqa: WPS238
-        def column_check(columns: list | None) -> None:
-            if columns is not None:
-                raise ValueError(
-                    "|MongoDB| Invalid 'columns' parameter passed. MongoDB connector does not support this option.",
-                )
-
-            # Always returns None
-            return columns
-
         @classmethod
         def generate_where_request(cls, where: dict) -> str:  # noqa: WPS212, WPS231
             """
-            The passed frozendict is converted to a MongoDb-readable format, the original result is passed to the
+            The passed dict is converted to a MongoDb-readable format, the original result is passed to the
             pipeline.
 
             """
@@ -397,7 +384,7 @@ class MongoDB(DBConnection):
             return blank_pipeline.format(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
 
         @classmethod
-        def _build_string_pipeline_from_dictionary(cls, parameter: dict | frozendict):
+        def _build_string_pipeline_from_dictionary(cls, parameter: Mapping) -> str:
             """
             Converts the passed map to a string. Map elements can be collections. Loops through all elements of the map
             and converts each to a string depending on the type of each element.
@@ -422,19 +409,19 @@ class MongoDB(DBConnection):
             if key.startswith("$"):
                 if key == "$match":
                     raise ValueError(
-                        "|MongoDB| $match operator not allowed at the top level of the 'where' parameter dictionary."
+                        "'$match' operator not allowed at the top level of the 'where' parameter dictionary. "
                         "This error most likely occurred due to the fact that you used the MongoDB format for the "
                         "pipeline {'$match': {'column': ...}}. In the onETL paradigm, you do not need to specify the "
-                        "$match keyword, but write the filtering condition right away {'column': ...}",
+                        "'$match' keyword, but write the filtering condition right away, like {'column': ...}",
                     )
                 if key in _upper_level_operators:  # noqa: WPS220
                     raise ValueError(  # noqa: WPS220
-                        f"|MongoDB| An invalid parameter {key!r} was specified in the 'where' "
-                        "field.\nYou cannot use aggregations or 'groupBy' clauses in 'where'.",
+                        f"An invalid parameter {key!r} was specified in the 'where' "
+                        "field. You cannot use aggregations or 'groupBy' clauses in 'where'",
                     )
 
         @classmethod
-        def _build_string_pipeline_from_list(cls, param: list) -> str:
+        def _build_string_pipeline_from_list(cls, param: Iterable) -> str:
             """
             The passed list is converted to a string. The elements of the list can be dictionaries. Iterates through all
             the elements of the list and processes each element by converting it to a string.
@@ -446,7 +433,7 @@ class MongoDB(DBConnection):
             return "[" + ",".join(list_of_operations) + "]"
 
         @classmethod
-        def _build_string_pipeline_from_simple_types(cls, param: str | int | bool | float) -> str:
+        def _build_string_pipeline_from_simple_types(cls, param: Any) -> str:
             """
             Wraps the passed parameters in parentheses. Doesn't work with collections.
             """
@@ -462,7 +449,11 @@ class MongoDB(DBConnection):
             if isinstance(param, int):
                 return str(param)
 
-            raise ValueError(f"|MongoDB| Wrong value type : {type(param)}")
+            raise ValueError(f"Unsupported value type : {param.__class__.__name__!r}")
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
     def check(self):
         self._check_driver_imported()

@@ -1,12 +1,4 @@
 import pytest
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import Postgres
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
@@ -296,31 +288,3 @@ def test_postgres_reader_different_options(spark, processing, load_table_data, o
         table=load_table_data.table,
         df=table_df,
     )
-
-
-def test_postgres_reader_snapshot_error_pass_df_schema(spark, processing, load_table_data):
-    df_schema = StructType(
-        [
-            StructField("_id", IntegerType()),
-            StructField("text_string", StringType()),
-            StructField("hwm_int", IntegerType()),
-            StructField("hwm_datetime", TimestampType()),
-            StructField("float_value", DoubleType()),
-        ],
-    )
-
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    with pytest.raises(ValueError, match="'df_schema' parameter should be None."):
-        DBReader(
-            connection=postgres,
-            table=load_table_data.full_name,
-            df_schema=df_schema,
-        )

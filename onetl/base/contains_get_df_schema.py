@@ -14,8 +14,12 @@
 
 from __future__ import annotations
 
-from pyspark.sql.types import StructType
+from typing import TYPE_CHECKING
+
 from typing_extensions import Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from pyspark.sql.types import StructType
 
 
 @runtime_checkable
