@@ -128,15 +128,15 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         class Config:
             extra = "allow"
 
-    class Dialect:
+    class Dialect(DBConnection.Dialect):
         @staticmethod
         def check_where_parameter(where: Any):
             if not isinstance(where, str):
                 raise ValueError("'where' parameter should be a string")
 
         @staticmethod
-        def check_hint_parameter(where: Any):
-            if not isinstance(where, str):
+        def check_hint_parameter(hint: Any):
+            if not isinstance(hint, str):
                 raise ValueError("'hint' parameter should be a string")
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
@@ -625,13 +625,14 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def read_table(
+    def read_table(  # type: ignore
         self,
         table: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
         options: ReadOptions | dict | None = None,
+        df_schema: StructType | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
             table=table,
@@ -679,7 +680,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         df.write.jdbc(table=table, **write_options)
         log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 
-    def get_schema(
+    def get_df_schema(
         self,
         table: str,
         columns: list[str] | None = None,

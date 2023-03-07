@@ -60,25 +60,18 @@ class BaseDBConnection(BaseConnection):
         """
 
     @abstractmethod
-    def get_schema(
-        self,
-        table: str,
-        columns: list[str] | None = None,
-    ) -> StructType:
-        """
-        Get table schema
-        """
-
-    @abstractmethod
+    # Some heirs may have a different number of parameters.
+    # For example, the 'options' parameter may be present. This is fine.
     def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: Any | None = None,
         where: Any | None = None,
+        df_schema: StructType | None = None,
     ) -> DataFrame:
         """
-        Reads the table to dataframe
+        Reads the table to dataframe.
         """
 
     @abstractmethod

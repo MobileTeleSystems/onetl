@@ -28,6 +28,7 @@ from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
+    from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
 
@@ -51,12 +52,22 @@ class DBConnection(BaseDBConnection, FrozenModel):
         Class for checking the correctness of generated queries passed to databases.
         """
 
+        @staticmethod  # noqa: WPS238
+        def column_check(columns: list | None) -> list | None:
+            if columns is None:
+                columns = ["*"]
+            return columns
+
+        def check_df_schema(self, df_schema: StructType | None = None):
+            if df_schema:
+                raise ValueError(f"|{self.__class__.__name__}| 'df_schema' parameter should be None.")
+
         @staticmethod
         def check_where_parameter(where: Any):
             ...
 
         @staticmethod
-        def check_hint_parameter(where: Any):
+        def check_hint_parameter(hint: Any):
             ...
 
     def expression_with_alias(self, expression: str, alias: str) -> str:
