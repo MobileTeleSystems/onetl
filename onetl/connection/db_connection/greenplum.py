@@ -466,13 +466,14 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
 
-    def read_table(
+    def read_table(  # type: ignore
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,  # type: ignore
-        where: str | None = None,  # type: ignore
+        hint: str | None = None,
+        where: str | None = None,
         options: ReadOptions | dict | None = None,
+        df_schema: StructType | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -516,7 +517,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
 
-    def get_schema(
+    def get_df_schema(
         self,
         table: str,
         columns: list[str] | None = None,
@@ -571,7 +572,7 @@ class Greenplum(JDBCMixin, DBConnection):
         return min_value, max_value
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
         class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
         missing_class = getattr(gateway.jvm, class_name)
 

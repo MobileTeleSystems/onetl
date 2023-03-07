@@ -676,7 +676,7 @@ class Hive(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         try:
-            self.get_schema(table)
+            self.get_df_schema(table)
             table_exists = True
 
             log.info(f"|{self.__class__.__name__}| Table {table!r} already exists")
@@ -696,8 +696,9 @@ class Hive(DBConnection):
         self,
         table: str,
         columns: list[str] | None = None,
-        hint: str | None = None,  # type: ignore
-        where: str | None = None,  # type: ignore
+        hint: str | None = None,
+        where: str | None = None,
+        df_schema: StructType | None = None,
     ) -> DataFrame:
         sql_text = get_sql_query(
             table=table,
@@ -708,7 +709,7 @@ class Hive(DBConnection):
 
         return self.sql(sql_text)
 
-    def get_schema(
+    def get_df_schema(
         self,
         table: str,
         columns: list[str] | None = None,

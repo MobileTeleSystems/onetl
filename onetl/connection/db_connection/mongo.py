@@ -317,11 +317,24 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    class Dialect:
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+
+    class Dialect(DBConnection.Dialect):
         """
         The class contains methods for generating queries transmitted to the database. requests are formed from
         parameters passed to DBReader.
         """
+
+        def check_df_schema(self, df_schema: StructType | None = None):
+            """
+            Without specifying the 'df_schema', it will be impossible to check the correctness of the specified field
+            in 'hwm_column', since in the case of MongoDB, the source schema is not received in the get_df_schema()
+            method.
+            """
+            if not df_schema:
+                raise ValueError(f"|{self.__class__.__name__}| 'df_schema' parameter should be passed.")
 
         @classmethod
         def check_where_parameter(cls, where: str | dict) -> bool:
@@ -341,6 +354,7 @@ class MongoDB(DBConnection):
             """
             Checks the parameter passed to DBReader. Passed value cannot be a string.
             """
+
             if isinstance(hint, str):
                 raise ValueError("|MongoDB| Parameter 'hint' cannot be a string, 'dict' must be passed.")
             return True
@@ -362,8 +376,18 @@ class MongoDB(DBConnection):
 
             return cls._build_string_pipeline_from_simple_types(parameter)
 
+        @staticmethod  # noqa: WPS238
+        def column_check(columns: list | None) -> None:
+            if columns is not None:
+                raise ValueError(
+                    "|MongoDB| Invalid 'columns' parameter passed. MongoDB connector does not support this option.",
+                )
+
+            # Always returns None
+            return columns
+
         @classmethod
-        def generate_where_request(cls, where: frozendict) -> str:  # noqa: WPS212, WPS231
+        def generate_where_request(cls, where: dict) -> str:  # noqa: WPS212, WPS231
             """
             The passed frozendict is converted to a MongoDb-readable format, the original result is passed to the
             pipeline.
@@ -373,7 +397,7 @@ class MongoDB(DBConnection):
             return blank_pipeline.format(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
 
         @classmethod
-        def _build_string_pipeline_from_dictionary(cls, parameter: dict):
+        def _build_string_pipeline_from_dictionary(cls, parameter: dict | frozendict):
             """
             Converts the passed map to a string. Map elements can be collections. Loops through all elements of the map
             and converts each to a string depending on the type of each element.
@@ -440,17 +464,13 @@ class MongoDB(DBConnection):
 
             raise ValueError(f"|MongoDB| Wrong value type : {type(param)}")
 
-    @property
-    def instance_url(self) -> str:
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
-
     def check(self):
         self._check_driver_imported()
         log.info(f"|{self.__class__.__name__}| Checking connection availability...")
         self._log_parameters()
 
         try:
-            jvm = self.spark._sc._gateway.jvm  # noqa: WPS437
+            jvm = self.spark._sc._gateway.jvm  # type: ignore # noqa: WPS437
             client = jvm.com.mongodb.client.MongoClients.create(self._url)
             list(client.listDatabaseNames().iterator())
             log.info(f"|{self.__class__.__name__}| Connection is available.")
@@ -459,9 +479,6 @@ class MongoDB(DBConnection):
             raise RuntimeError("Connection is unavailable") from e
 
         return self
-
-    def get_schema(self, table: str, columns: list[str] | None = None) -> StructType:  # noqa: WPS463
-        self._check_driver_imported()
 
     def get_min_max_bounds(  # type:ignore  # noqa: WPS463
         self,
@@ -474,13 +491,14 @@ class MongoDB(DBConnection):
         self._check_driver_imported()
         return None, None
 
-    def read_table(
+    def read_table(  # type: ignore
         self,
         table: str,
         columns: list[str] | None = None,
         hint: dict | None = None,
         where: dict | None = None,
         options: ReadOptions | dict | None = None,
+        df_schema: StructType | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -494,7 +512,12 @@ class MongoDB(DBConnection):
         read_options["spark.mongodb.input.uri"] = self._url
         read_options["spark.mongodb.input.collection"] = table
 
-        df = self.spark.read.format("mongo").options(**read_options).load()
+        spark_reader = self.spark.read.format("mongo").options(**read_options)
+
+        if df_schema:
+            spark_reader = spark_reader.schema(df_schema)
+
+        df = spark_reader.load()
 
         if columns:
             return df.select(*columns)
@@ -523,7 +546,7 @@ class MongoDB(DBConnection):
     def _check_driver_imported(self):
         spark_version = "_".join(self.spark.version.split(".")[:2])
 
-        gateway = self.spark._sc._gateway  # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
         # Connector v10.x
         class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
         missing_class = getattr(gateway.jvm, class_name)

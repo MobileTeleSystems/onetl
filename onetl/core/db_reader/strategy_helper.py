@@ -186,7 +186,7 @@ class HWMStrategyHelper(StrategyHelper):
 
     @staticmethod
     def detect_hwm_column_type(reader: DBReader, hwm_column: Column) -> type[HWM]:
-        schema = {field.name.lower(): field for field in reader.get_schema()}
+        schema = {field.name.lower(): field for field in reader.get_df_schema()}
         column = hwm_column.name.lower()
         hwm_column_type = schema[column].dataType.typeName()
         return HWMClassRegistry.get(hwm_column_type)
