@@ -261,8 +261,10 @@ tests:
     reports:
       junit:
       - ${CI_PROJECT_DIR}/reports/junit/*.xml
-      cobertura:
-      - ${CI_PROJECT_DIR}/reports/coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: ${CI_PROJECT_DIR}/reports/coverage.xml
+    expire_in: 7 days
   interruptible: true
 
 sonarqube_check:
