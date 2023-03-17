@@ -15,12 +15,26 @@
 from __future__ import annotations
 
 import logging
+import operator
+from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping
+from typing import (  # noqa: WPS235
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+)
 from urllib import parse as parser
 
 from etl_entities.instance import Host
 from pydantic import SecretStr
+
+from onetl.connection.db_connection.dialect_mixins import SupportHWMExpressionNone
+from onetl.hwm import Statement
 
 if TYPE_CHECKING:
     from pyspark.sql.types import StructType
@@ -35,6 +49,7 @@ from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import GenericOptions
 
 log = logging.getLogger(__name__)
+
 
 _upper_level_operators = frozenset(  # noqa: WPS527
     [
@@ -320,7 +335,16 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    class Dialect(SupportColumnsNone, SupportDfSchemaStruct, DBConnection.Dialect):
+    class Dialect(SupportHWMExpressionNone, SupportColumnsNone, SupportDfSchemaStruct, DBConnection.Dialect):
+        _compare_statements: ClassVar[Dict[Callable, str]] = {
+            operator.ge: "$gte",
+            operator.gt: "$gt",
+            operator.le: "$lte",
+            operator.lt: "$lt",
+            operator.eq: "$eq",
+            operator.ne: "$ne",
+        }
+
         @classmethod  # noqa: WPS238
         def validate_where(  # type: ignore
             cls,
@@ -371,7 +395,7 @@ class MongoDB(DBConnection):
             if isinstance(parameter, Iterable) and not isinstance(parameter, str):
                 return cls._build_string_pipeline_from_list(parameter)
 
-            return cls._build_string_pipeline_from_simple_types(parameter)
+            return cls._build_pipeline_from_simple_types(parameter)
 
         @classmethod
         def generate_where_request(cls, where: dict) -> str:  # noqa: WPS212, WPS231
@@ -382,6 +406,45 @@ class MongoDB(DBConnection):
             """
             blank_pipeline = "{{'$match':{custom_condition}}}"
             return blank_pipeline.format(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
+
+        @classmethod
+        def _where_condition(cls, result: list) -> Optional[dict]:
+            if len(result) == 1 and result[0] is None:
+                return None
+
+            if result[0] is None:
+                result = result[1:]
+
+            if len(result) > 1:
+                return {"$and": result}
+
+            return result[0]
+
+        @classmethod
+        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> dict:
+            result_statement = {}
+            # The value with which the field is compared is substituted into the dictionary:
+            # {"$some_condition": None} => {"$some_condition": "some_value"}
+            # If the type is variable datetime then there will be a conversion:
+            # {"$some_condition": None} => {"$some_condition": {"$date": "some_value"}}
+            result_statement[arg1] = {
+                cls._compare_statements[comparator]: cls._serialize_datetime_value(arg2),
+            }
+            return result_statement
+
+        @classmethod
+        def _serialize_datetime_value(cls, value: Any) -> str | int | dict:
+            """
+            Transform the value into an SQL Dialect-supported form.
+            """
+            if isinstance(value, datetime):
+                # MongoDB requires UTC to be specified in queries.
+                # NOTE: If you pass the date through ISODate, then you must specify
+                # it in the format ISODate('2023-07-11T00:51:54Z').
+                # Thus, you must write 'Z' at the end and not '+00:00' and milliseconds are not supported.
+                return {"$date": value.astimezone().isoformat()}
+
+            return value
 
         @classmethod
         def _build_string_pipeline_from_dictionary(cls, parameter: Mapping) -> str:
@@ -433,7 +496,7 @@ class MongoDB(DBConnection):
             return "[" + ",".join(list_of_operations) + "]"
 
         @classmethod
-        def _build_string_pipeline_from_simple_types(cls, param: Any) -> str:
+        def _build_pipeline_from_simple_types(cls, param: Any) -> str:
             """
             Wraps the passed parameters in parentheses. Doesn't work with collections.
             """
@@ -490,19 +553,27 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
+
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
-        if where:
-            read_options["pipeline"] = self.Dialect.generate_where_request(where)
+        pipeline = self.Dialect._condition_assembler(  # noqa: WPS437
+            condition=where,
+            start_from=start_from,
+            end_at=end_at,
+        )
+
+        if pipeline:
+            read_options["pipeline"] = self.Dialect.generate_where_request(pipeline)
 
         if hint:
             read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)  # noqa: WPS437
 
         read_options["spark.mongodb.input.uri"] = self._url
         read_options["spark.mongodb.input.collection"] = table
-
         spark_reader = self.spark.read.format("mongo").options(**read_options)
 
         if df_schema:

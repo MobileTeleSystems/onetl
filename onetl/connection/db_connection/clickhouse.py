@@ -127,6 +127,17 @@ class Clickhouse(JDBCConnection):
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.strftime("%Y-%m-%d %H:%M:%S")
+            return f"CAST('{result}' AS DateTime)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.strftime("%Y-%m-%d")
+            return f"CAST('{result}' AS Date)"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
@@ -147,11 +158,3 @@ class Clickhouse(JDBCConnection):
     ):
         # Clickhouse does not support prepared statements, as well as calling functions/procedures
         return jdbc_connection.createStatement(*statement_args)
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S")
-        return f"CAST('{result}' AS DateTime)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.strftime("%Y-%m-%d")
-        return f"CAST('{result}' AS Date)"

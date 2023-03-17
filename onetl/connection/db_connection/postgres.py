@@ -121,7 +121,15 @@ class Postgres(JDBCConnection):
     package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
 
     class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
-        pass  # noqa: WPS604, WPS420
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"'{result}'::timestamp"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"'{result}'::date"
 
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://stackoverflow.com/a/9812029
@@ -160,11 +168,3 @@ class Postgres(JDBCConnection):
             options = options.copy(update={"readOnlyMode": "always"})
 
         return super()._options_to_connection_properties(options)
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"'{result}'::timestamp"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"'{result}'::date"

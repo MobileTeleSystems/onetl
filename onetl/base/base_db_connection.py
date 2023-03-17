@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
 from onetl.base.base_connection import BaseConnection
+from onetl.hwm import Statement
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -53,6 +54,35 @@ class BaseDBConnection(BaseConnection):
         @abstractmethod
         def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
             ...
+
+        @classmethod
+        @abstractmethod
+        def _validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+            """
+            You can't pass the hwm_strategy parameter to MongoDB
+            """
+            ...
+
+        @classmethod
+        @abstractmethod
+        def _where_condition(cls, result: list[Any]) -> Any:
+            """
+            Convert multiple WHERE conditions to one
+            """
+
+        @classmethod
+        @abstractmethod
+        def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
+            """
+            Return "expression AS alias" statement
+            """
+
+        @classmethod
+        @abstractmethod
+        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
+            """
+            Return "arg1 COMPARATOR arg2" statement
+            """
 
     @property
     @abstractmethod
@@ -94,6 +124,8 @@ class BaseDBConnection(BaseConnection):
         hint: Any | None = None,
         where: Any | None = None,
         df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         """
         Reads the table to dataframe.
@@ -120,16 +152,4 @@ class BaseDBConnection(BaseConnection):
     ) -> tuple[Any, Any]:
         """
         Get MIN and MAX values for the column
-        """
-
-    @abstractmethod
-    def expression_with_alias(self, expression: str, alias: str) -> str:
-        """
-        Return "expression AS alias" statement
-        """
-
-    @abstractmethod
-    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
-        """
-        Return "arg1 COMPARATOR arg2" statement
         """

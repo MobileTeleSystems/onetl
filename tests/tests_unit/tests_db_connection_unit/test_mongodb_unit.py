@@ -14,9 +14,9 @@ def test_mongodb_generate_pipeline(spark_mock):
         spark=spark_mock,
     )
 
-    where = frozendict({"$col_1": {"$gt": 1, "$lt": 100}, "$col_2": {"$gt": 2}, "$col_3": {"$eq": "hello"}})
+    pipeline = frozendict({"$col_1": {"$gt": 1, "$lt": 100}, "$col_2": {"$gt": 2}, "$col_3": {"$eq": "hello"}})
 
-    assert mongo.Dialect.generate_where_request(where=where) == (
+    assert mongo.Dialect.generate_where_request(where=pipeline) == (  # type: ignore
         "{'$match':{'$col_1':{'$gt':1,'$lt':100},'$col_2':{'$gt':2},'$col_3':{'$eq':'hello'}}}"
     )
 
@@ -30,14 +30,14 @@ def test_mongodb_generate_pipeline_with_or_and(spark_mock):
         spark=spark_mock,
     )
 
-    where = {
+    pipeline = {
         "$and": [
             {"$or": [{"$col_1": {"$gt": 1, "$eq": True}}, {"$col_2": {"$eq": None}}]},
             {"$and": [{"$col_3": {"$eq": "Hello"}}, {"$col_4": {"$eq": "Tom"}}]},
         ],
     }
 
-    assert mongo.Dialect.generate_where_request(where=where) == (
+    assert mongo.Dialect.generate_where_request(where=pipeline) == (
         "{'$match':"
         "{'$and':["
         "{'$or':[{'$col_1':{'$gt':1,'$eq':true}},{'$col_2':{'$eq':null}}]},"

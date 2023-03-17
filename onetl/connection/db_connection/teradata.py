@@ -150,6 +150,17 @@ class Teradata(JDBCConnection):
         conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
         return f"jdbc:teradata://{self.host}/{conn}"
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS TIMESTAMP)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS DATE)"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
         @classmethod
@@ -161,11 +172,3 @@ class Teradata(JDBCConnection):
             return f"{partition_column} mod {num_partitions}"
 
     ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS TIMESTAMP)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS DATE)"

@@ -176,6 +176,17 @@ class MSSQL(JDBCConnection):
     package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
     _check_query: ClassVar[str] = "SELECT 1 AS field"
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS datetime2)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS date)"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
         @classmethod
@@ -199,11 +210,3 @@ class MSSQL(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS datetime2)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS date)"

@@ -32,6 +32,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportWhereStr,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
+from onetl.hwm import Statement
 from onetl.impl.generic_options import GenericOptions
 from onetl.log import log_with_indent
 
@@ -129,7 +130,7 @@ class PartitioningMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
+class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS338
     class Extra(GenericOptions):
         class Config:
             extra = "allow"
@@ -631,6 +632,8 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         where: str | None = None,
         options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
             table=table,
@@ -648,9 +651,11 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         alias = "x" + secrets.token_hex(5)
 
         if read_options.partition_column:
-            aliased = self.expression_with_alias(read_options.partition_column, alias)
+            aliased = self.Dialect._expression_with_alias(read_options.partition_column, alias)  # noqa: WPS437
             read_options = read_options.copy(update={"partition_column": alias})
             new_columns.append(aliased)
+
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
 
         query = get_sql_query(
             table=table,
@@ -745,8 +750,14 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         query = get_sql_query(
             table=table,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
+                    f"min_{column}",  # noqa: WPS437
+                ),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
+                    f"max_{column}",  # noqa: WPS437
+                ),
             ],
             where=where,
             hint=hint,

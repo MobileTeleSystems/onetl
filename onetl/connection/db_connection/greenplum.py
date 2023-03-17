@@ -39,6 +39,7 @@ from onetl.connection.db_connection.dialect_mixins import (
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
+from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
@@ -440,7 +441,15 @@ class Greenplum(JDBCMixin, DBConnection):
         """
 
     class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
-        pass  # noqa: WPS604, WPS420
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"cast('{result}' as timestamp)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"cast('{result}' as date)"
 
     host: Host
     database: str
@@ -483,10 +492,13 @@ class Greenplum(JDBCMixin, DBConnection):
         where: str | None = None,
         options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
         query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
         log_with_indent(query)
 
@@ -561,8 +573,14 @@ class Greenplum(JDBCMixin, DBConnection):
         query = get_sql_query(
             table=table,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
+                    f"min_{column}",
+                ),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
+                    f"max_{column}",
+                ),
             ],
             where=where,
             hint=hint,
@@ -739,11 +757,3 @@ class Greenplum(JDBCMixin, DBConnection):
     def _log_parameters(self):
         super()._log_parameters()
         log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"cast('{result}' as timestamp)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"cast('{result}' as date)"
