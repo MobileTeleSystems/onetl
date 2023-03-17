@@ -15,12 +15,13 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING, NoReturn, Optional
+from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
 
 from etl_entities import HWM, Column, ColumnHWM
 from pydantic import Field, root_validator, validator
 
 from onetl.core.db_reader.db_reader import DBReader
+from onetl.hwm import Statement
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import FrozenModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
@@ -46,12 +47,18 @@ class StrategyHelper(FrozenModel):
     def where(self) -> str | dict | None:  # noqa: WPS463
         pass  # noqa: WPS420
 
-    def save(self, df: DataFrame) -> DataFrame:
+    def save(self, df: DataFrame) -> DataFrame:  # type: ignore
+        pass  # noqa: WPS420
+
+    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:  # type: ignore # noqa: WPS463
         pass  # noqa: WPS420
 
 
 class NonHWMStrategyHelper(StrategyHelper):
     reader: DBReader
+
+    def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
+        return None, None
 
     @root_validator(pre=True)
     def validate_current_strategy(cls, values):  # noqa: N805
@@ -203,25 +210,23 @@ class HWMStrategyHelper(StrategyHelper):
         self.strategy.update_hwm(max_hwm_value)
         return df
 
-    @property
-    def where(self) -> str:
-        result = [self.reader.where]
+    def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
+        start_from: Optional[Statement] = None
+        end_at: Optional[Statement] = None
 
         # `self.strategy.hwm is not None` is need only to handle mypy warnings
         if self.strategy.current_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.get_compare_statement(
-                self.strategy.current_value_comparator,
-                self.hwm_expression or self.strategy.hwm.name,
-                self.strategy.current_value,
+            start_from = Statement(
+                expression=self.hwm_expression or self.strategy.hwm.name,
+                operator=self.strategy.current_value_comparator,
+                value=self.strategy.current_value,
             )
-            result.append(compare)
 
         if self.strategy.next_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.get_compare_statement(
-                self.strategy.next_value_comparator,
-                self.hwm_expression or self.strategy.hwm.name,
-                self.strategy.next_value,
+            end_at = Statement(
+                expression=self.hwm_expression or self.strategy.hwm.name,
+                operator=self.strategy.next_value_comparator,
+                value=self.strategy.next_value,
             )
-            result.append(compare)
 
-        return " AND ".join(f"({where})" for where in result if where)
+        return start_from, end_at

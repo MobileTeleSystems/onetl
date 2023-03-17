@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from enum import Enum
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import frozendict
 from etl_entities import Column, Table
@@ -413,6 +413,12 @@ class DBReader(FrozenModel):
 
         return None
 
+    @validator("hwm_expression", pre=True, always=True)  # noqa: WPS238, WPS231
+    def validate_hwm_expression(cls, hwm_expression, values):  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        return dialect._validate_hwm_expression(connection=connection, value=hwm_expression)  # noqa: WPS437
+
     def get_df_schema(self) -> StructType:
         if self.df_schema:
             return self.df_schema
@@ -438,9 +444,6 @@ class DBReader(FrozenModel):
             where=self.where,  # type: ignore
             **self._get_read_kwargs(),
         )
-
-    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
-        return self.connection.get_compare_statement(comparator, arg1, arg2)
 
     def run(self) -> DataFrame:
         """
@@ -490,12 +493,16 @@ class DBReader(FrozenModel):
         else:
             helper = NonHWMStrategyHelper(reader=self)
 
+        start_from, end_at = helper.get_boundaries()
+
         df = self.connection.read_table(  # type: ignore[call-arg]
             table=str(self.table),
             columns=self._resolve_all_columns(),
             hint=self.hint,
-            where=helper.where,
+            where=self.where,
             df_schema=self.df_schema,
+            start_from=start_from,
+            end_at=end_at,
             **self._get_read_kwargs(),
         )
 
@@ -577,7 +584,10 @@ class DBReader(FrozenModel):
 
         hwm_statement = self.hwm_column.name
         if self.hwm_expression:
-            hwm_statement = self.connection.expression_with_alias(self.hwm_expression, self.hwm_column.name)
+            hwm_statement = self.connection.Dialect._expression_with_alias(  # noqa: WPS437
+                self.hwm_expression,
+                self.hwm_column.name,
+            )
 
         columns_normalized = [column_name.casefold() for column_name in columns]
         hwm_column_name = self.hwm_column.name.casefold()

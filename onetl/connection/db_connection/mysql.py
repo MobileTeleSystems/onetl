@@ -128,6 +128,17 @@ class MySQL(JDBCConnection):
 
         return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+            return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.strftime("%Y-%m-%d")
+            return f"STR_TO_DATE('{result}', '%Y-%m-%d')"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
@@ -138,11 +149,3 @@ class MySQL(JDBCConnection):
             return f"MOD({partition_column}, {num_partitions})"
 
     ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.strftime("%Y-%m-%d")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"

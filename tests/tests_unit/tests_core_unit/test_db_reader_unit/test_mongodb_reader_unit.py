@@ -124,6 +124,22 @@ def test_mongodb_reader_without_df_schema(spark_mock):
         )
 
 
+def test_mongodb_reader_error_pass_hwm_expression(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        spark=spark_mock,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="You can't pass the 'hwm_expression' parameter",
+    ):
+        DBReader(connection=mongo, table="table", df_schema=df_schema, hwm_column=("hwm_int", "expr"))
+
+
 def test_mongodb_reader_error_pass_columns(spark_mock):
     mongo = MongoDB(
         host="host",

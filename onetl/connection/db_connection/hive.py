@@ -32,6 +32,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportWhereStr,
 )
 from onetl.hooks import slot, support_hooks
+from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_with_indent
 
@@ -708,7 +709,10 @@ class Hive(DBConnection):
         hint: str | None = None,
         where: str | None = None,
         df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
         sql_text = get_sql_query(
             table=table,
             columns=columns,
@@ -745,8 +749,14 @@ class Hive(DBConnection):
         sql_text = get_sql_query(
             table=table,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
+                    f"min_{column}",  # noqa: WPS437
+                ),
+                self.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
+                    f"max_{column}",  # noqa: WPS437
+                ),
             ],
             where=where,
             hint=hint,
