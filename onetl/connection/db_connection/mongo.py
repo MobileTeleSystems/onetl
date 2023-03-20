@@ -34,6 +34,9 @@ from etl_entities.instance import Host
 from pydantic import SecretStr
 
 from onetl.connection.db_connection.dialect_mixins import SupportHWMExpressionNone
+from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
+    SupportTableWithoutDBSchema,
+)
 from onetl.hwm import Statement
 
 if TYPE_CHECKING:
@@ -335,7 +338,13 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    class Dialect(SupportHWMExpressionNone, SupportColumnsNone, SupportDfSchemaStruct, DBConnection.Dialect):
+    class Dialect(
+        SupportTableWithoutDBSchema,
+        SupportHWMExpressionNone,
+        SupportColumnsNone,
+        SupportDfSchemaStruct,
+        DBConnection.Dialect,
+    ):
         _compare_statements: ClassVar[Dict[Callable, str]] = {
             operator.ge: "$gte",
             operator.gt: "$gt",

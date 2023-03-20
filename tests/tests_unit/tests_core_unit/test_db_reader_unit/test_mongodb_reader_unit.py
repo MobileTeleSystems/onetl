@@ -22,6 +22,24 @@ df_schema = StructType(
 )
 
 
+def test_mongodb_reader_with_dbschema(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        spark=spark_mock,
+    )
+    with pytest.raises(
+        ValueError,
+        match="Table name should be passed in `table_name` format",
+    ):
+        DBReader(
+            connection=mongo,
+            table="schema.table",  # Includes schema. Required format: table="table"
+        )
+
+
 def test_mongodb_reader_pass_str_to_hint(spark_mock):
     mongo = MongoDB(
         host="host",

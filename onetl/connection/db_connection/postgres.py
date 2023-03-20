@@ -24,6 +24,9 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintNone,
     SupportWhereStr,
 )
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 # do not import PySpark here, as we allow user to use `Postgres.package` for creating Spark session
@@ -120,7 +123,14 @@ class Postgres(JDBCConnection):
     driver: ClassVar[str] = "org.postgresql.Driver"
     package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
 
-    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintNone,
+        DBConnection.Dialect,
+    ):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.isoformat()

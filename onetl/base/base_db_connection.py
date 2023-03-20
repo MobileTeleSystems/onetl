@@ -17,6 +17,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
+from etl_entities import Table
+
 from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Statement
 
@@ -82,6 +84,13 @@ class BaseDBConnection(BaseConnection):
         def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
             """
             Return "arg1 COMPARATOR arg2" statement
+            """
+
+        @classmethod
+        @abstractmethod
+        def _validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
+            """
+            Returns "db_schema.table".
             """
 
     @property

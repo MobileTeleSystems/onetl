@@ -4,24 +4,6 @@ from onetl.connection import Hive
 from onetl.core import DBReader
 
 
-# TODO(@dypedchenk): the test is temporarily disabled because not all classes implement the test
-@pytest.mark.skip
-def test_reader_without_schema(spark_mock):
-    with pytest.raises(ValueError):
-        DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="table",  # missing schema
-        )
-
-
-def test_reader_with_too_many_dots(spark_mock):
-    with pytest.raises(ValueError):
-        DBReader(
-            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table.abc",  # wrong input
-        )
-
-
 def test_reader_hive_with_read_options(spark_mock):
     with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(
