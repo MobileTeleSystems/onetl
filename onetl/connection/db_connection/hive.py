@@ -31,6 +31,9 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintStr,
     SupportWhereStr,
 )
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
@@ -489,7 +492,14 @@ class Hive(DBConnection):
             """
             return None  # noqa: WPS324
 
-    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintStr, DBConnection.Dialect):
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintStr,
+        DBConnection.Dialect,
+    ):
         pass  # noqa: WPS604, WPS420
 
     cluster: Cluster

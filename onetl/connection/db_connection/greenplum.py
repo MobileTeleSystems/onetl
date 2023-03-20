@@ -37,6 +37,9 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintNone,
     SupportWhereStr,
 )
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hwm import Statement
@@ -440,7 +443,14 @@ class Greenplum(JDBCMixin, DBConnection):
             ``error`` and ``ignore`` modes are not supported.
         """
 
-    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintNone, DBConnection.Dialect):
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintNone,
+        DBConnection.Dialect,
+    ):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.isoformat()

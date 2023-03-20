@@ -31,6 +31,9 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintStr,
     SupportWhereStr,
 )
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.hwm import Statement
 from onetl.impl.generic_options import GenericOptions
@@ -135,7 +138,14 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         class Config:
             extra = "allow"
 
-    class Dialect(SupportColumnsList, SupportDfSchemaNone, SupportWhereStr, SupportHintStr, DBConnection.Dialect):
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintStr,
+        DBConnection.Dialect,
+    ):
         pass  # noqa: WPS604, WPS420
 
     class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
