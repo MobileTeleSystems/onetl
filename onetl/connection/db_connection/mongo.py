@@ -194,6 +194,15 @@ class MongoDB(DBConnection):
     database : str
         Database in MongoDB.
 
+    extra : dict, default: ``None``
+        Specifies one or more extra parameters by which clients can connect to the instance.
+
+        For example: ``{"tls": "false"}``
+
+        See `Connection string options documentation
+        <https://www.mongodb.com/docs/manual/reference/connection-string/#std-label-connections-connection-options>`_
+        for more details
+
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
 
@@ -222,11 +231,16 @@ class MongoDB(DBConnection):
         )
     """
 
+    class Extra(GenericOptions):
+        class Config:
+            extra = "allow"
+
     database: str
     host: Host
     user: str
     password: SecretStr
     port: int = 27017
+    extra: Extra = Extra()
     package_spark_2_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"  # noqa: WPS114
     package_spark_2_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"  # noqa: WPS114
     package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
@@ -534,7 +548,7 @@ class MongoDB(DBConnection):
 
         try:
             jvm = self.spark._sc._gateway.jvm  # type: ignore # noqa: WPS437
-            client = jvm.com.mongodb.client.MongoClients.create(self._url)
+            client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
             log.info(f"|{self.__class__.__name__}| Connection is available.")
         except Exception as e:
@@ -581,7 +595,7 @@ class MongoDB(DBConnection):
         if hint:
             read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)  # noqa: WPS437
 
-        read_options["spark.mongodb.input.uri"] = self._url
+        read_options["spark.mongodb.input.uri"] = self.connection_url
         read_options["spark.mongodb.input.collection"] = table
         spark_reader = self.spark.read.format("mongo").options(**read_options)
 
@@ -605,14 +619,17 @@ class MongoDB(DBConnection):
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
         write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
-        write_options["spark.mongodb.output.uri"] = self._url
+        write_options["spark.mongodb.output.uri"] = self.connection_url
         write_options["spark.mongodb.output.collection"] = table
         df.write.format("mongo").mode(mode).options(**write_options).save()
 
     @property
-    def _url(self) -> str:
+    def connection_url(self) -> str:
+        prop = self.extra.dict(by_alias=True)
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(prop.items()))
+        parameters = "?" + parameters if parameters else ""
         password = parser.quote(self.password.get_secret_value())
-        return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}"
+        return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
 
     def _check_driver_imported(self):
         spark_version = "_".join(self.spark.version.split(".")[:2])
