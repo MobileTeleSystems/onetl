@@ -5,6 +5,32 @@ from onetl.connection.db_connection.mongo import MongoDB
 # TODO(@msmarty4): add unit tests for MongoDB
 
 
+def test_mongodb_with_extra(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        extra={"tls": "true", "tlsCertificateKeyFile": "/some/path"},
+        spark=spark_mock,
+    )
+
+    assert (
+        mongo.connection_url == "mongodb://user:password@host:27017/database?tls=true&tlsCertificateKeyFile=/some"
+        "/path"
+    )
+
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        spark=spark_mock,
+    )
+
+    assert mongo.connection_url == "mongodb://user:password@host:27017/database"
+
+
 def test_mongodb_generate_pipeline(spark_mock):
     mongo = MongoDB(
         host="host",
