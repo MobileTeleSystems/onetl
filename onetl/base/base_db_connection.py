@@ -59,7 +59,14 @@ class BaseDBConnection(BaseConnection):
 
         @classmethod
         @abstractmethod
-        def _validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+        def validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
+            """
+            Returns "db_schema.table".
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
             """
             You can't pass the hwm_strategy parameter to MongoDB
             """
@@ -84,13 +91,6 @@ class BaseDBConnection(BaseConnection):
         def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
             """
             Return "arg1 COMPARATOR arg2" statement
-            """
-
-        @classmethod
-        @abstractmethod
-        def _validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
-            """
-            Returns "db_schema.table".
             """
 
     @property
