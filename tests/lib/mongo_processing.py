@@ -146,7 +146,10 @@ class MongoDBProcessing(BaseProcessing):
                 elif "datetime" in column_name.split("_"):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     now = self.current_datetime() + timedelta(seconds=rand_second)
-                    now = now.replace(microsecond=round(now.microsecond, -3))  # save milliseconds
+                    # In the case that after rounding the result
+                    # will not be in the range from 0 to 999999
+                    microsecond = min(round(now.microsecond, -3), 999999)
+                    now = now.replace(microsecond=microsecond)  # save milliseconds
                     values[column_name].append(now)
 
         return pd.DataFrame(data=values)
