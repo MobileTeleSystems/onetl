@@ -39,5 +39,5 @@ def test_reader_wrong_table(spark_mock, table):
     with pytest.raises(ValueError, match="Table name should be passed in `schema.name` format"):
         DBReader(
             connection=teradata,
-            table=table,  # Missing schema. Required format: table="shema.table"
+            table=table,  # Required format: table="shema.table"
         )

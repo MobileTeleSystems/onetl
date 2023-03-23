@@ -300,7 +300,7 @@ class DBReader(FrozenModel):
             # table="dbschema.table" or table="table", If table="dbschema.some.table" in class Table will raise error.
             table = Table(name=table, instance=connection.instance_url)
             # Here Table(name='table', db='sbschema', instance='some_instance')
-        return dialect._validate_table(connection, table)  # noqa: WPS437
+        return dialect.validate_table(connection, table)
 
     @validator("where", pre=True, always=True)
     def validate_where(cls, where: Any, values: dict) -> Any:  # noqa: N805
@@ -421,7 +421,7 @@ class DBReader(FrozenModel):
     def validate_hwm_expression(cls, hwm_expression, values):  # noqa: N805
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
-        return dialect._validate_hwm_expression(connection=connection, value=hwm_expression)  # noqa: WPS437
+        return dialect.validate_hwm_expression(connection=connection, value=hwm_expression)  # noqa: WPS437
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:

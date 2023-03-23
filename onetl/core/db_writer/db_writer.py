@@ -144,10 +144,14 @@ class DBWriter(FrozenModel):
     options: Optional[GenericOptions] = None
 
     @validator("table", pre=True, always=True)
-    def validate_table(cls, value, values):  # noqa: N805
-        if isinstance(value, str):
-            return Table(name=value, instance=values["connection"].instance_url)
-        return value
+    def validate_table(cls, table, values):  # noqa: N805
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        if isinstance(table, str):
+            # table="dbschema.table" or table="table", If table="dbschema.some.table" in class Table will raise error.
+            table = Table(name=table, instance=connection.instance_url)
+            # Here Table(name='table', db='sbschema', instance='some_instance')
+        return dialect.validate_table(connection, table)
 
     @validator("options", pre=True, always=True)
     def validate_options(cls, options, values):  # noqa: N805

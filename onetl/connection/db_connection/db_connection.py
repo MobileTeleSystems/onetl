@@ -41,6 +41,10 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     class Dialect(BaseDBConnection.Dialect):
         @classmethod
+        def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+            return value
+
+        @classmethod
         def _expression_with_alias(cls, expression: str, alias: str) -> str:
             return f"{expression} AS {alias}"
 
@@ -138,10 +142,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
             result = cls._serialize_datetime_value(value)
 
             return f"MIN({result})"
-
-        @classmethod
-        def _validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-            return value
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
