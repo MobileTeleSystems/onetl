@@ -44,7 +44,8 @@ RUN pip install \
     -r /requirements/requirements-webdav.txt \
     -r /requirements/requirements-spark.txt \
     -r /requirements/requirements-kerberos.txt \
-    -r /requirements/requirements-test.txt
+    -r /requirements/requirements-test.txt \
+    -r /requirements/requirements-docs.txt
 
 USER onetl
 

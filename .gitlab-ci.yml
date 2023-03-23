@@ -43,8 +43,8 @@ include:
   file: .base_check_sonarqube.yml
 
 # PIP BUILD AND DEPLOY TO JFROG
-- project: DevOps/cicd-store/gitlabci/pip
-  ref: v2
+- project: DevOps/cicd-store/gitlabci/python
+  ref: v3
   file: .base_pip_pkg_build_and_deploy_to_jfrog.yml
 
 # Pages
@@ -282,21 +282,26 @@ sonarqube_check:
 build_and_deploy:
   extends: .base_pip_pkg_build_and_deploy_to_jfrog
   stage: artifactory
-  variables:
-    PYTHON_VERSION: '3.7'
   interruptible: true
 
 # TODO: rewrite for versions before release
 build_docs:
-  image: $CI_REGISTRY/platform/python:${PYTHON_VERSION}
+  image:
+    name: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
+    entrypoint: ['']
   variables:
-    PYTHON_VERSION: '3.7'
+    DOCKER_IMAGE_TAG: ${CI_COMMIT_REF_SLUG}
+  rules:
+  - if: $CI_COMMIT_TAG
+    variables:
+      DOCKER_IMAGE_TAG: develop
+    when: on_success
+  - when: on_success
   stage: build_docs
   before_script:
   - export VERSION=$(python setup.py --version)
   - echo "VERSION=$VERSION" >> deploy.env
   script:
-  - pip install -r ./requirements/requirements.txt -r ./requirements/requirements-docs.txt
   - cd docs
   - make html
   - tar cvzf html-${VERSION}.tar.gz -C _build/html .
