@@ -47,7 +47,7 @@ class HooksState:
         .. note::
 
             This function does not enable hooks which were disabled by :obj:`onetl.hooks.hook.Hook.disable`,
-            or stopped by :obj:`onetl.hooks.support_hooks.stop_hooks`.
+            or stopped by :obj:`onetl.hooks.support_hooks.suspend_hooks`.
 
         Examples
         --------

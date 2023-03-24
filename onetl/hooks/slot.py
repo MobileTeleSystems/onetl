@@ -431,7 +431,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
     wrapper.__hooks__ = raw_method.__hooks__  # type: ignore[attr-defined]
 
     wrapper.skip_hooks = wrapper.__hooks__.skip  # type: ignore[attr-defined]
-    wrapper.stop_hooks = wrapper.__hooks__.stop  # type: ignore[attr-defined]
+    wrapper.suspend_hooks = wrapper.__hooks__.stop  # type: ignore[attr-defined]
     wrapper.resume_hooks = wrapper.__hooks__.resume  # type: ignore[attr-defined]
     wrapper.bind = partial(bind_hook, wrapper)  # type: ignore[attr-defined]
 
@@ -476,7 +476,7 @@ class Slot(Protocol):
 
         .. note::
 
-            If hooks were stopped by :obj:`~stop_hooks`, they will not be resumed
+            If hooks were stopped by :obj:`~suspend_hooks`, they will not be resumed
             after exiting the context/decorated function.
             You should call :obj:`~resume_hooks` explicitly.
 
@@ -540,7 +540,7 @@ class Slot(Protocol):
                 obj.my_method(2)  # will call callback1(obj, 2)
         """
 
-    def stop_hooks(self):
+    def suspend_hooks(self):
         """
         Stop all the hooks bound to the slot.
 
@@ -568,7 +568,7 @@ class Slot(Protocol):
             obj = MyClass()
             obj.my_method(1)  # will call callback1(obj, 1)
 
-            MyClass.my_method.stop_hooks()
+            MyClass.my_method.suspend_hooks()
             obj.my_method(1)  # will NOT call callback1
         """
 
@@ -605,7 +605,7 @@ class Slot(Protocol):
             obj = MyClass()
             obj.my_method(1)  # will call callback1(obj, 1)
 
-            MyClass.my_method.stop_hooks()
+            MyClass.my_method.suspend_hooks()
             obj.my_method(1)  # will NOT call callback1
 
             MyClass.my_method.resume_hooks()
@@ -624,7 +624,7 @@ def slot(method) -> Slot:
     Decorated methods get additional nested methods:
 
         * :obj:`onetl.hooks.slot.Slot.bind`
-        * :obj:`onetl.hooks.slot.Slot.stop_hooks`
+        * :obj:`onetl.hooks.slot.Slot.suspend_hooks`
         * :obj:`onetl.hooks.slot.Slot.resume_hooks`
         * :obj:`onetl.hooks.slot.Slot.skip_hooks`
 

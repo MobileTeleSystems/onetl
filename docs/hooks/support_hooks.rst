@@ -9,13 +9,13 @@
 
     support_hooks
     skip_hooks
-    stop_hooks
+    suspend_hooks
     resume_hooks
 
 .. autodecorator:: support_hooks
 
 .. autofunction:: skip_hooks
 
-.. autofunction:: stop_hooks
+.. autofunction:: suspend_hooks
 
 .. autofunction:: resume_hooks

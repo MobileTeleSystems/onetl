@@ -639,13 +639,13 @@ You can enable/disable/temporary disable hooks on 4 different levels:
 
 * Manage all hooks bound to a specific class (level 2):
 
-    * :obj:`onetl.hooks.support_hooks.stop_hooks`
+    * :obj:`onetl.hooks.support_hooks.suspend_hooks`
     * :obj:`onetl.hooks.support_hooks.resume_hooks`
     * :obj:`onetl.hooks.support_hooks.skip_hooks`
 
 * Manage all hooks bound to a specific slot (level 3):
 
-    * :obj:`onetl.hooks.slot.Slot.stop_hooks`
+    * :obj:`onetl.hooks.slot.Slot.suspend_hooks`
     * :obj:`onetl.hooks.slot.Slot.resume_hooks`
     * :obj:`onetl.hooks.slot.Slot.skip_hooks`
 
