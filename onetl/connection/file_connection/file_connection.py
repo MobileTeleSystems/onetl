@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -507,10 +507,10 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
             [
                 {
-                    "created": "2022-12-08T18:33:39Z",
+                    "created": "2023-12-08T18:33:39Z",
                     "owner": None,
                     "size": "23",
-                    "modified": "2022-12-08 18:33:20",
+                    "modified": "2023-12-08 18:33:20",
                     "isdir": False,
                     "path": "/path/to/the/file.txt",
                 },
@@ -541,10 +541,10 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
             for entry in connection._scan_entries(path="/a/path/to/the/directory"):
                 assert entry == {
-                    "created": "2022-12-08T18:33:39Z",
+                    "created": "2023-12-08T18:33:39Z",
                     "owner": None,
                     "size": "23",
-                    "modified": "2022-12-08 18:33:20",
+                    "modified": "2023-12-08 18:33:20",
                     "isdir": False,
                     "path": "/path/to/the/file.txt",
                 }

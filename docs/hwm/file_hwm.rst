@@ -14,8 +14,8 @@ For example, there is a folder with files:
 
     $ hdfs dfs -ls /path
 
-    2MB 2022-09-09 10:13 /path/my/file123
-    4Mb 2022-09-09 10:15 /path/my/file234
+    2MB 2023-09-09 10:13 /path/my/file123
+    4Mb 2023-09-09 10:15 /path/my/file234
 
 When new file is being added to this folder:
 
@@ -23,9 +23,9 @@ When new file is being added to this folder:
 
     $ hdfs dfs -ls /path
 
-    2MB 2022-09-09 10:13 /path/my/file123
-    4Mb 2022-09-09 10:15 /path/my/file234
-    5Mb 2022-09-09 10:20 /path/my/file345  # new one
+    2MB 2023-09-09 10:13 /path/my/file123
+    4Mb 2023-09-09 10:15 /path/my/file234
+    5Mb 2023-09-09 10:20 /path/my/file345  # new one
 
 To download only new files, if is required to somehow track them, and then filter using the information
 from a previous run.
