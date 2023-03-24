@@ -159,7 +159,7 @@ class MongoDB(DBConnection):
     """MongoDB connection.
 
     Based on package ``org.mongodb.spark:mongo-spark-connector``
-    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/master/python-api/>`_)
+    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/master/>`_)
 
     .. warning::
 
