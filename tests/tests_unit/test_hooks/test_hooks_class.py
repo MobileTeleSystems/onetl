@@ -127,7 +127,7 @@ def test_hooks_class_stop_and_resume():
     assert Calculator1(1).multiply(1) == 345
     assert Calculator2(1).power(1) == 567
 
-    Calculator1.stop_hooks()
+    Calculator1.suspend_hooks()
     assert Calculator1(2).plus(1) == 3
     assert Calculator1(2).multiply(1) == 2
     assert Calculator2(2).power(1) == 567

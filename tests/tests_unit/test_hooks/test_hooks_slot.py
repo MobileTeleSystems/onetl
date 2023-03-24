@@ -42,7 +42,7 @@ def test_hooks_slot_skip_context(caplog):
         # hooks are still enabled
         assert Calculator(1).plus(3) == 234
 
-        Calculator.plus.stop_hooks()
+        Calculator.plus.suspend_hooks()
 
         with Calculator.plus.skip_hooks():
             # hooks are disabled
@@ -94,7 +94,7 @@ def test_hooks_slot_skip_decorator(caplog):
         result = call_with_hooks(1, 3)
         assert result == 234
 
-        Calculator.plus.stop_hooks()
+        Calculator.plus.suspend_hooks()
 
         # hooks are disabled
         result = call_without_hooks(2, 2)
@@ -133,7 +133,7 @@ def test_hooks_slot_resume_and_stop(caplog):
         raise AssertionError("Never called")
 
     with caplog.at_level(logging.INFO):
-        Calculator.plus.stop_hooks()
+        Calculator.plus.suspend_hooks()
 
         # hooks are stopped
         assert Calculator(1).plus(2) == 3
@@ -143,7 +143,7 @@ def test_hooks_slot_resume_and_stop(caplog):
         # hooks are resumed
         assert Calculator(2).plus(1) == 234
 
-        Calculator.plus.stop_hooks()
+        Calculator.plus.suspend_hooks()
 
         # hooks are stopped again
         assert Calculator(5).plus(1) == 6
@@ -234,8 +234,8 @@ def test_hooks_methods_without_slot_are_unchanged():
         def another_method(self, arg: int):
             return self.data * arg
 
-    assert hasattr(Calculator.plus, "stop_hooks")
-    assert not hasattr(Calculator.another_method, "stop_hooks")
+    assert hasattr(Calculator.plus, "suspend_hooks")
+    assert not hasattr(Calculator.another_method, "suspend_hooks")
 
 
 def test_hooks_slot_can_register_only_hook():

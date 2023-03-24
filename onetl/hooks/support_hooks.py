@@ -96,7 +96,7 @@ def skip_hooks(cls: type):
         yield
 
 
-def stop_hooks(cls: type) -> None:
+def suspend_hooks(cls: type) -> None:
     """
     Disables all hooks for all the methods of a specific class.
 
@@ -120,7 +120,7 @@ def stop_hooks(cls: type) -> None:
         obj = MyClass()
         obj.my_method(1)  # will execute callback(obj, 1)
 
-        MyClass.stop_hooks()
+        MyClass.suspend_hooks()
 
         obj.my_method(2)  # will NOT execute callback
     """
@@ -128,7 +128,7 @@ def stop_hooks(cls: type) -> None:
     slots = get_slots(cls)
 
     for slot in slots:
-        slot.stop_hooks()
+        slot.suspend_hooks()
 
 
 def resume_hooks(cls: type) -> None:
@@ -154,7 +154,7 @@ def resume_hooks(cls: type) -> None:
 
         obj = MyClass()
 
-        MyClass.stop_hooks()
+        MyClass.suspend_hooks()
         obj.my_method(1)  # will NOT execute callback
 
         MyClass.resume_hooks()
@@ -174,7 +174,7 @@ def support_hooks(cls):
 
     Only methods decorated with :obj:`~slot` can be used for connecting hooks.
 
-    Adds :obj:`~skip_hooks`, :obj:`~stop_hooks` and :obj:`~resume_hooks` to the class.
+    Adds :obj:`~skip_hooks`, :obj:`~suspend_hooks` and :obj:`~resume_hooks` to the class.
 
     Examples
     ---------
@@ -209,6 +209,6 @@ def support_hooks(cls):
         raise SyntaxError("@support_hooks can be used only with @slot decorator on some of class methods")
 
     cls.skip_hooks = partial(skip_hooks, cls)
-    cls.stop_hooks = partial(stop_hooks, cls)
+    cls.suspend_hooks = partial(suspend_hooks, cls)
     cls.resume_hooks = partial(resume_hooks, cls)
     return cls
