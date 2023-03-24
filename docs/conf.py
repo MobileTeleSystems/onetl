@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 # -- Project information -----------------------------------------------------
 
 project = "onETL"
-copyright = "2022, ONEtools Team"
+copyright = "2023, ONEtools Team"
 author = "ONEtools Team"
 
 # The version info for the project you're documenting, acts as replacement for

@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         - column:
             name: id
             partition: {}
-          modified_time: '2022-02-11T17:10:49.659019'
+          modified_time: '2023-02-11T17:10:49.659019'
           process:
               dag: ''
               host: myhostname
@@ -137,7 +137,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         - column:
               name: id
               partition: {}
-          modified_time: '2022-02-11T16:00:31.962150'
+          modified_time: '2023-02-11T16:00:31.962150'
           process:
               dag: ''
               host: myhostname

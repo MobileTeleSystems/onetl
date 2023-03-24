@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ def setup_notebook_logging(level: int = logging.INFO) -> None:
 
     What this function does:
         * Adds stderr logging handler
-        * Changes root logger format to ``2022-05-31 11:22:33.456 [INFO]: message``
+        * Changes root logger format to ``2023-05-31 11:22:33.456 [INFO]: message``
         * Changes root logger level to ``level``
         * Changes onETL logger level to ``level``
         * Disables loggers of underlying client modules
@@ -74,7 +74,7 @@ def setup_logging(level: int = logging.INFO) -> None:
 
     What this function does:
         * Adds stderr logging handler
-        * Changes root logger format to ``2022-05-31 11:22:33.456 [INFO]: message``
+        * Changes root logger format to ``2023-05-31 11:22:33.456 [INFO]: message``
         * Changes root logger level to ``level``
         * Changes onETL logger level to ``level``
         * Disables loggers of underlying client modules
@@ -125,7 +125,7 @@ def disable_clients_logging() -> None:
 def set_default_logging_format() -> None:
     """Sets default logging format to preferred by onETL.
 
-    Example log message: ``2022-05-31 11:22:33.456 [INFO]: message``
+    Example log message: ``2023-05-31 11:22:33.456 [INFO]: message``
 
     .. note::
 

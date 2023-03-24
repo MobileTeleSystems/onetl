@@ -393,7 +393,7 @@ def upload_test_files_s3(s3, resource_path, source_path_s3):
             DateHWM(
                 source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
                 column=Column(name=secrets.token_hex(5)),
-                value=date(year=2022, month=8, day=15),
+                value=date(year=2023, month=8, day=15),
             ),
             timedelta(days=31),
         ),
@@ -401,7 +401,7 @@ def upload_test_files_s3(s3, resource_path, source_path_s3):
             DateTimeHWM(
                 source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
                 column=Column(name=secrets.token_hex(5)),
-                value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
+                value=datetime(year=2023, month=8, day=15, hour=11, minute=22, second=33),
             ),
             timedelta(seconds=50),
         ),

@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     from pyspark.sql import SparkSession
 
-# e.g. 20220524122150
+# e.g. 20230524122150
 DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
 
@@ -159,12 +159,12 @@ def generate_temp_path(root: PurePath) -> PurePath:
         from pathlib import Path
 
         assert generate_temp_path(Path("/tmp")) == Path(
-            "/tmp/onetl/currenthost/myprocess/20220524122150",
+            "/tmp/onetl/currenthost/myprocess/20230524122150",
         )
 
         with Process(dag="mydag", task="mytask"):
             assert generate_temp_path(Path("/abc")) == Path(
-                "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
+                "/abc/onetl/currenthost/mydag.mytask.myprocess/20230524122150",
             )
     """
 
