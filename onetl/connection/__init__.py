@@ -13,9 +13,27 @@
 #  limitations under the License.
 
 from importlib import import_module
+from typing import TYPE_CHECKING
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.file_connection.file_connection import FileConnection
+
+if TYPE_CHECKING:
+    from onetl.connection.db_connection.clickhouse import Clickhouse
+    from onetl.connection.db_connection.greenplum import Greenplum
+    from onetl.connection.db_connection.hive import Hive
+    from onetl.connection.db_connection.mongo import MongoDB
+    from onetl.connection.db_connection.mssql import MSSQL
+    from onetl.connection.db_connection.mysql import MySQL
+    from onetl.connection.db_connection.oracle import Oracle
+    from onetl.connection.db_connection.postgres import Postgres
+    from onetl.connection.db_connection.teradata import Teradata
+    from onetl.connection.file_connection.ftp import FTP
+    from onetl.connection.file_connection.ftps import FTPS
+    from onetl.connection.file_connection.hdfs import HDFS
+    from onetl.connection.file_connection.s3 import S3
+    from onetl.connection.file_connection.sftp import SFTP
+    from onetl.connection.file_connection.webdav import WebDAV
 
 db_connection_modules = {
     "Clickhouse": "clickhouse",
@@ -40,9 +58,22 @@ file_connections_modules = {
 
 __all__ = [  # noqa: WPS410
     "FileConnection",
-    *db_connection_modules.keys(),
+    "Clickhouse",
+    "Greenplum",
+    "MongoDB",
+    "Hive",
+    "MSSQL",
+    "MySQL",
+    "Oracle",
+    "Postgres",
+    "Teradata",
     "DBConnection",
-    *file_connections_modules.keys(),
+    "FTP",
+    "FTPS",
+    "HDFS",
+    "S3",
+    "SFTP",
+    "WebDAV",
 ]
 
 
