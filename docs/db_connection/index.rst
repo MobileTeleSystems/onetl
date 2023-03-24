@@ -11,9 +11,9 @@ DB Connections
     Clickhouse <clickhouse>
     Greenplum <greenplum>
     Hive <hive>
+    MongoDB <mongo>
     MSSQL <mssql>
     MySQL <mysql>
     Oracle <oracle>
     Postgres <postgres>
     Teradata <teradata>
-    MongoDB <mongo>

@@ -59,6 +59,8 @@ Storage Compatibility
 +------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | Greenplum  | `Greenplum connection <db_connection/greenplum.html>`_   | Powered by Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
 +------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| MongoDB    | `MongoDB connection <db_connection/mongodb.html>`_       | Powered by `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/master/>`_                        |
++------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | HDFS       | `HDFS connection <file_connection/hdfs.html>`_           | Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_                                                   |
 +------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | S3         | `S3 connection <file_connection/s3.html>`_               | Powered by `minio-py client <https://pypi.org/project/minio/>`_                                                     |
