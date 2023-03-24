@@ -1,8 +1,93 @@
+import pytest
 from frozendict import frozendict
 
 from onetl.connection.db_connection.mongo import MongoDB
 
 # TODO(@msmarty4): add unit tests for MongoDB
+
+
+def test_mongodb(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        spark=spark_mock,
+    )
+
+    assert mongo.host == "host"
+    assert mongo.port == 27017
+    assert mongo.user == "user"
+    assert mongo.password != "password"
+    assert mongo.password.get_secret_value() == "password"
+    assert mongo.database == "database"
+
+    assert mongo.connection_url == "mongodb://user:password@host:27017/database"
+
+
+def test_mongodb_class_attributes():
+    assert MongoDB.package_spark_2_4 == "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"
+    assert MongoDB.package_spark_2_3 == "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"
+    assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
+    assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
+
+
+def test_mongodb_with_port(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        port=12345,
+        spark=spark_mock,
+    )
+
+    assert mongo.host == "host"
+    assert mongo.port == 12345
+    assert mongo.user == "user"
+    assert mongo.password != "password"
+    assert mongo.password.get_secret_value() == "password"
+    assert mongo.database == "database"
+
+    assert mongo.connection_url == "mongodb://user:password@host:12345/database"
+
+
+def test_mongodb_without_mandatory_args(spark_mock):
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB()
+
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB(
+            spark=spark_mock,
+        )
+
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB(
+            host="some_host",
+            spark=spark_mock,
+        )
+
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB(
+            host="some_host",
+            user="user",
+            spark=spark_mock,
+        )
+
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB(
+            host="some_host",
+            password="passwd",
+            spark=spark_mock,
+        )
+
+    with pytest.raises(ValueError, match="field required"):
+        MongoDB(
+            host="some_host",
+            user="user",
+            password="passwd",
+            spark=spark_mock,
+        )
 
 
 def test_mongodb_with_extra(spark_mock):
