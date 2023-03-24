@@ -25,6 +25,7 @@ try:
     from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
     from paramiko.sftp_attr import SFTPAttributes
     from paramiko.sftp_client import SFTPClient
+    from paramiko.ssh_exception import ConfigParseError
 except (ImportError, NameError) as e:
     raise ImportError(
         textwrap.dedent(
@@ -157,10 +158,12 @@ class SFTP(FileConnection):
 
     def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None
-
         key_file = os.fspath(self.key_file) if self.key_file else None
 
-        if SSH_CONFIG_PATH.exists() and SSH_CONFIG_PATH.is_file():
+        if not SSH_CONFIG_PATH.exists() or not SSH_CONFIG_PATH.is_file():
+            return host_proxy, key_file
+
+        try:
             ssh_conf = SSHConfig()
             ssh_conf.parse(SSH_CONFIG_PATH.read_text())
             host_info = ssh_conf.lookup(self.host) or {}
@@ -169,6 +172,8 @@ class SFTP(FileConnection):
 
             if not (self.password or key_file) and host_info.get("identityfile"):
                 key_file = host_info.get("identityfile")[0]
+        except ConfigParseError:
+            log.exception("Failed to parse SSH config")
 
         return host_proxy, key_file
 
