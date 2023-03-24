@@ -14,6 +14,8 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.mongodb
+
 df_schema = StructType(
     [
         StructField("_id", IntegerType()),

@@ -6,6 +6,8 @@ import pytest
 
 from onetl.connection import Oracle
 
+pytestmark = pytest.mark.oracle
+
 
 def test_oracle_connection_check_with_sid(spark, processing, caplog):
     oracle = Oracle(

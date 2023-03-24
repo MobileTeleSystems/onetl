@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import MSSQL
 
+pytestmark = pytest.mark.mssql
+
 
 def test_mssql_class_attributes():
     assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"

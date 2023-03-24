@@ -4,6 +4,8 @@ import pytest
 
 from onetl.connection import FTPS
 
+pytestmark = pytest.mark.ftps
+
 
 def test_ftps_check(ftps_connection, caplog):
     with caplog.at_level(logging.INFO):

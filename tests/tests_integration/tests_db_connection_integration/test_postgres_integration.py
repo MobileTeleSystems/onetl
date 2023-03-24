@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import Postgres
 
+pytestmark = pytest.mark.postgres
+
 
 def test_postgres_connection_check(spark, processing, caplog):
     postgres = Postgres(

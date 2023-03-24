@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import MongoDB
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.mongodb
+
 
 def test_mongodb_writer_wrong_table(spark_mock):
     mongo = MongoDB(

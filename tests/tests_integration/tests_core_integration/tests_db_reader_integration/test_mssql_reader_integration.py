@@ -1,6 +1,10 @@
+import pytest
+
 from onetl.connection import MSSQL
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
+
+pytestmark = pytest.mark.mssql
 
 
 def test_mssql_reader_snapshot(spark, processing, load_table_data):

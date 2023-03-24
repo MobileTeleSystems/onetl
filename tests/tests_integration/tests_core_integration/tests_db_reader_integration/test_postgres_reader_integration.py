@@ -4,6 +4,8 @@ from onetl.connection import Postgres
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.postgres
+
 
 def test_postgres_reader_snapshot(spark, processing, load_table_data):
     postgres = Postgres(

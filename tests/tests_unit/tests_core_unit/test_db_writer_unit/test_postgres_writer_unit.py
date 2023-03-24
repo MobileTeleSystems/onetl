@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import Postgres
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.postgres
+
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
 def test_postgres_writer_wrong_table(spark_mock, table):

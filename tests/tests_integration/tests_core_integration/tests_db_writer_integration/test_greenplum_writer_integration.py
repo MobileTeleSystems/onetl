@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Greenplum
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.greenplum
 
 
 def test_greenplum_writer_snapshot(spark, processing, prepare_schema_table):

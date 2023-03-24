@@ -6,6 +6,8 @@ import pytest
 from onetl.connection import Hive
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_writer(spark, processing, get_schema_table, caplog):
     df = processing.create_spark_df(spark)

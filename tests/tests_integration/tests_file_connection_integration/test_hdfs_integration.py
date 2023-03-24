@@ -12,6 +12,8 @@ from onetl.connection import HDFS
 from onetl.connection.file_connection import hdfs
 from onetl.hooks import hook
 
+pytestmark = pytest.mark.hdfs
+
 
 def test_hdfs_check(hdfs_connection, caplog):
     with caplog.at_level(logging.INFO):

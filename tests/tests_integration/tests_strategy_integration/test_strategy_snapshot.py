@@ -12,6 +12,8 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy, SnapshotBatchStrategy, SnapshotStrategy
 
+pytestmark = pytest.mark.postgres
+
 
 def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepare_schema_table):
     postgres = Postgres(

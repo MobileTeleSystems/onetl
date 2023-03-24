@@ -11,6 +11,8 @@ from pyspark.sql.types import (
 from onetl.connection import Greenplum
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.greenplum
+
 
 def test_greenplum_reader_snapshot_error_pass_df_schema(spark_mock):
     df_schema = StructType(

@@ -4,6 +4,8 @@ import pytest
 
 from onetl.connection import MongoDB
 
+pytestmark = pytest.mark.mongodb
+
 
 def test_mongodb_connection_check(spark, processing, caplog):
     mongo = MongoDB(

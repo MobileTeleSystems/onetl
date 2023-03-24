@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import FTPS, FileConnection
 
+pytestmark = pytest.mark.ftps
+
 
 def test_ftps_connection():
     ftps = FTPS(host="some_host", user="some_user", password="pwd")

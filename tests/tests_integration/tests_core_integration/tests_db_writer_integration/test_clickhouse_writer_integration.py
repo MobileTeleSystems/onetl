@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Clickhouse
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.clickhouse
 
 
 def test_clickhouse_writer_snapshot(spark, processing, prepare_schema_table):

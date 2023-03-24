@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import MSSQL
 
+pytestmark = pytest.mark.mssql
+
 
 def test_mssql_connection_check(spark, processing, caplog):
     mssql = MSSQL(

@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import Greenplum
 
+pytestmark = pytest.mark.greenplum
+
 
 def test_greenplum_connection_check(spark, processing, caplog):
     greenplum = Greenplum(

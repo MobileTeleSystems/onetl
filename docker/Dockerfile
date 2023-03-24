@@ -27,8 +27,8 @@ RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-i
     && chown -R onetl:onetl ${ONETL_USER_HOME} \
     && chown -R onetl:onetl /opt/project/
 
-COPY ./docker/entrypoint.sh ./docker/wait-for-it.sh ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /
-RUN chmod +x /entrypoint.sh /wait-for-it.sh /run_tests.sh /pytest_runner.sh /combine_coverage.sh
+COPY ./docker/wait-for-it.sh ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /
+RUN chmod +x /wait-for-it.sh /run_tests.sh /pytest_runner.sh /combine_coverage.sh
 
 COPY ./requirements/ /requirements/
 
@@ -48,12 +48,11 @@ RUN pip install \
     -r /requirements/requirements-docs.txt
 
 USER onetl
+WORKDIR /opt/project/
+
+FROM base as ci
 
 COPY . /opt/project/
 
-WORKDIR /opt/project/
-
-# Build /opt/build_dir/dist/oneloader*.whl
+# Build /opt/build_dir/dist/onetl*.whl
 RUN python3 setup.py bdist_wheel
-
-ENTRYPOINT ["/entrypoint.sh"]

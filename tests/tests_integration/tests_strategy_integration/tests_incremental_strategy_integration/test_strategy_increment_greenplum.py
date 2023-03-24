@@ -6,6 +6,8 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.greenplum
+
 
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",

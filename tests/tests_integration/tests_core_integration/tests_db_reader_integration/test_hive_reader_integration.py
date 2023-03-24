@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import Hive
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_reader(spark, processing, load_table_data):
     hive = Hive(cluster="rnd-dwh", spark=spark)

@@ -11,6 +11,8 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalBatchStrategy, IncrementalStrategy
 
+pytestmark = pytest.mark.postgres
+
 
 def test_postgres_strategy_incremental_batch_outside_loop(
     spark,
