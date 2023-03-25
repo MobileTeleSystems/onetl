@@ -40,7 +40,7 @@ def test_mongodb_reader_with_dbschema(spark_mock):
         )
 
 
-def test_mongodb_reader_pass_str_to_hint(spark_mock):
+def test_mongodb_reader_wrong_hint_type(spark_mock):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -61,7 +61,7 @@ def test_mongodb_reader_pass_str_to_hint(spark_mock):
         )
 
 
-def test_mongodb_reader_pass_str_to_where(spark_mock):
+def test_mongodb_reader_wrong_where_type(spark_mock):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -82,7 +82,7 @@ def test_mongodb_reader_pass_str_to_where(spark_mock):
         )
 
 
-def test_mongodb_reader_wrong_value_match(spark_mock):
+def test_mongodb_reader_where_wrong_value_match(spark_mock):
     wrong_param = "$match"
     mongo = MongoDB(
         host="host",
@@ -104,7 +104,7 @@ def test_mongodb_reader_wrong_value_match(spark_mock):
         )
 
 
-def test_mongodb_reader_wrong_value(spark_mock):
+def test_mongodb_reader_where_wrong_value(spark_mock):
     wrong_param = "$limit"
     mongo = MongoDB(
         host="host",
@@ -174,7 +174,7 @@ def test_mongodb_reader_error_pass_columns(spark_mock):
         DBReader(connection=mongo, table="table", columns=["_id", "test"], df_schema=df_schema)
 
 
-def test_mongodb_reader_hwm_wrong_columns(spark_mock):
+def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock):
     mongo = MongoDB(
         host="host",
         user="user",

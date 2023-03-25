@@ -4,7 +4,7 @@ from onetl.connection import MongoDB
 from onetl.core import DBWriter
 
 
-def test_mongodb_writer_wrong_table(spark_mock):
+def test_mongodb_writer_wrong_table_name(spark_mock):
     mongo = MongoDB(
         host="host",
         user="user",

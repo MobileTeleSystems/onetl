@@ -34,10 +34,39 @@ def test_hive_reader_snapshot_error_pass_df_schema(spark_mock):
 
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
-def test_reader_wrong_table(spark_mock, table):
+def test_hive_reader_wrong_table_name(spark_mock, table):
     hive = Hive(cluster="rnd-dwh", spark=spark_mock)
+
     with pytest.raises(ValueError):
         DBReader(
             connection=hive,
             table=table,  # Required format: table="shema.table"
+        )
+
+
+def test_hive_reader_wrong_hint_type(spark_mock):
+    hive = Hive(cluster="rnd-dwh", spark=spark_mock)
+
+    with pytest.raises(
+        ValueError,
+        match="Hive requires 'hint' parameter type to be 'str', got 'dict'",
+    ):
+        DBReader(
+            connection=hive,
+            hint={"col1": 1},
+            table="schema.table",
+        )
+
+
+def test_hive_reader_wrong_where_type(spark_mock):
+    hive = Hive(cluster="rnd-dwh", spark=spark_mock)
+
+    with pytest.raises(
+        ValueError,
+        match="Hive requires 'where' parameter type to be 'str', got 'dict'",
+    ):
+        DBReader(
+            connection=hive,
+            where={"col1": 1},
+            table="schema.table",
         )
