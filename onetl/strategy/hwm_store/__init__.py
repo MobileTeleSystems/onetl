@@ -12,41 +12,52 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# TODO: remove in 1.0.0
+
 import textwrap
 import warnings
 from importlib import import_module
+from typing import TYPE_CHECKING
 
-new_module = "onetl.hwm.store"
+if TYPE_CHECKING:
+    from onetl.hwm.store import (
+        BaseHWMStore,
+        HWMClassRegistry,
+        HWMStoreClassRegistry,
+        HWMStoreManager,
+        MemoryHWMStore,
+        YAMLHWMStore,
+        default_hwm_store_class,
+        detect_hwm_store,
+        register_hwm_class,
+        register_hwm_store_class,
+    )
 
-imports_source = {
-    "BaseHWMStore": "base_hwm_store",
-    "HWMClassRegistry": "hwm_class_registry",
-    "register_hwm_class": "hwm_class_registry",
-    "HWMStoreClassRegistry": "hwm_store_class_registry",
-    "default_hwm_store_class": "hwm_store_class_registry",
-    "detect_hwm_store": "hwm_store_class_registry",
-    "register_hwm_store_class": "hwm_store_class_registry",
-    "HWMStoreManager": "hwm_store_manager",
-    "MemoryHWMStore": "memory_hwm_store",
-    "YAMLHWMStore": "yaml_hwm_store",
-}
-
-__all__ = list(imports_source.keys())  # noqa: WPS410
+__all__ = [  # noqa: WPS410
+    "BaseHWMStore",
+    "HWMClassRegistry",
+    "register_hwm_class",
+    "HWMStoreClassRegistry",
+    "default_hwm_store_class",
+    "detect_hwm_store",
+    "register_hwm_store_class",
+    "HWMStoreManager",
+    "MemoryHWMStore",
+    "YAMLHWMStore",
+]
 
 
 def __getattr__(name: str):
-    if name not in imports_source:
+    if name not in __all__:
         raise ImportError(f"cannot import name {name!r} from {__name__!r}")
-
-    submodule = imports_source[name]
 
     message = f"""
         Imports from module {__name__!r} are deprecated since v0.6.0 and will be removed in v1.0.0.
         Please use instead:
 
-        from {new_module} import {name}
+        from onetl.hwm.store import {name}
     """
 
     warnings.warn(textwrap.dedent(message).strip(), category=UserWarning, stacklevel=2)
 
-    return getattr(import_module(f"{new_module}.{submodule}"), name)
+    return getattr(import_module("onetl.hwm.store"), name)
