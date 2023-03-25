@@ -333,13 +333,11 @@ class DBReader(FrozenModel):
                     "the 'hwm_column' field should be a string.",
                 )
 
-        if df_schema is not None:
-            # Connection with df_schema support
-            if hwm_column not in df_schema.fieldNames():
-                raise ValueError(
-                    "'df_schema' struct must contain column specified in 'hwm_column'. "
-                    "Otherwise DBReader cannot determine HWM type for this column",
-                )
+        if df_schema is not None and hwm_column not in df_schema.fieldNames():
+            raise ValueError(
+                "'df_schema' struct must contain column specified in 'hwm_column'. "
+                "Otherwise DBReader cannot determine HWM type for this column",
+            )
 
         values["hwm_column"] = Column(name=hwm_column)
         values["hwm_expression"] = hwm_expression
