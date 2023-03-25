@@ -127,7 +127,7 @@ def test_mongodb_generate_pipeline(spark_mock):
 
     pipeline = frozendict({"$col_1": {"$gt": 1, "$lt": 100}, "$col_2": {"$gt": 2}, "$col_3": {"$eq": "hello"}})
 
-    assert mongo.Dialect.generate_where_request(where=pipeline) == (  # type: ignore
+    assert mongo.Dialect.generate_where_request(where=pipeline) == (
         "{'$match':{'$col_1':{'$gt':1,'$lt':100},'$col_2':{'$gt':2},'$col_3':{'$eq':'hello'}}}"
     )
 

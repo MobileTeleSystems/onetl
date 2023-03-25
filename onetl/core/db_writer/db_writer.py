@@ -191,7 +191,7 @@ class DBWriter(FrozenModel):
         self._log_parameters()
         self._log_dataframe_schema(df)
         self.connection.check()
-        self.connection.save_df(  # type: ignore[call-arg]
+        self.connection.save_df(
             df=df,
             table=str(self.table),
             **self._get_write_kwargs(),

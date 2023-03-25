@@ -634,16 +634,16 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def read_table(  # type: ignore
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
             table=table,
@@ -744,7 +744,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
         return result
 
-    def get_min_max_bounds(  # type: ignore
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,

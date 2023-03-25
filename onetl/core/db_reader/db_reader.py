@@ -294,7 +294,7 @@ class DBReader(FrozenModel):
         dialect = connection.Dialect
         result = dialect.validate_where(connection, where)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined]
+            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
     @validator("hint", pre=True, always=True)
@@ -303,7 +303,7 @@ class DBReader(FrozenModel):
         dialect = connection.Dialect
         result = dialect.validate_hint(connection, hint)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined]
+            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
     @validator("df_schema", pre=True, always=True)
@@ -413,25 +413,25 @@ class DBReader(FrozenModel):
         if self.df_schema:
             return self.df_schema
 
-        if not self.df_schema and not isinstance(self.connection, ContainsGetDFSchemaMethod):
-            raise ValueError(
-                "|DBReader| You should specify `df_schema` field to use DBReader with "
-                f"{self.connection.__class__.__name__} connection",
+        if not self.df_schema and isinstance(self.connection, ContainsGetDFSchemaMethod):
+            return self.connection.get_df_schema(
+                table=str(self.table),
+                columns=self._resolve_all_columns(),
+                **self._get_read_kwargs(),
             )
 
-        return self.connection.get_df_schema(  # type: ignore
-            table=str(self.table),
-            columns=self._resolve_all_columns(),
-            **self._get_read_kwargs(),
+        raise ValueError(
+            "|DBReader| You should specify `df_schema` field to use DBReader with "
+            f"{self.connection.__class__.__name__} connection",
         )
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        return self.connection.get_min_max_bounds(  # type: ignore[call-arg]
+        return self.connection.get_min_max_bounds(
             table=str(self.table),
             column=column,
             expression=expression,
-            hint=self.hint,  # type: ignore
-            where=self.where,  # type: ignore
+            hint=self.hint,
+            where=self.where,
             **self._get_read_kwargs(),
         )
 
@@ -485,7 +485,7 @@ class DBReader(FrozenModel):
 
         start_from, end_at = helper.get_boundaries()
 
-        df = self.connection.read_table(  # type: ignore[call-arg]
+        df = self.connection.read_table(
             table=str(self.table),
             columns=self._resolve_all_columns(),
             hint=self.hint,
@@ -532,21 +532,23 @@ class DBReader(FrozenModel):
             log_with_indent("options = None")
         log_with_indent("")
 
-    def _resolve_columns(self) -> list[str]:
+    def _resolve_all_columns(self) -> list[str] | None:
         """
         Unwraps "*" in columns list to real column names from existing table.
+
+        Also adds 'hwm_column' to the result if it is not present.
         """
 
+        if not isinstance(self.connection, ContainsGetDFSchemaMethod):
+            # Some databases have no `get_df_schema` method
+            return self.columns
+
         columns: list[str] = []
-
-        original_columns = self.columns
-
-        if not original_columns:
-            original_columns = ["*"]
+        original_columns = self.columns or ["*"]
 
         for column in original_columns:
             if column == "*":
-                schema = self.connection.get_df_schema(  # type: ignore
+                schema = self.connection.get_df_schema(
                     table=str(self.table),
                     columns=["*"],
                     **self._get_read_kwargs(),
@@ -556,18 +558,7 @@ class DBReader(FrozenModel):
             else:
                 columns.append(column)
 
-        return uniq_ignore_case(columns)
-
-    def _resolve_all_columns(self) -> list[str]:
-        """
-        Like self._resolve_columns(), but adds 'hwm_column' to result if it is not present.
-        """
-
-        if not isinstance(self.connection, ContainsGetDFSchemaMethod):
-            # In the case of MongoDB, the schema is set in the 'df_schema' parameter.
-            return self.columns  # type: ignore
-
-        columns = self._resolve_columns()
+        columns = uniq_ignore_case(columns)
 
         if not self.hwm_column:
             return columns

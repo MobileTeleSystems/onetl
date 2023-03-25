@@ -494,16 +494,16 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
 
-    def read_table(  # type: ignore
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -567,7 +567,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return df.schema
 
-    def get_min_max_bounds(  # type: ignore
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,

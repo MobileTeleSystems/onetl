@@ -712,7 +712,7 @@ class Hive(DBConnection):
             # mode="overwrite_table" should be used
             self._save_as_table(df, table, options)
 
-    def read_table(  # type: ignore
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
@@ -746,7 +746,7 @@ class Hive(DBConnection):
         df = self._execute_sql(query_schema)
         return df.schema
 
-    def get_min_max_bounds(  # type: ignore
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,

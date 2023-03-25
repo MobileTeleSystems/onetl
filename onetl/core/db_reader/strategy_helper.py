@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
+from typing import TYPE_CHECKING, NoReturn, Optional, Protocol, Tuple
 
 from etl_entities import HWM, Column, ColumnHWM
 from pydantic import Field, root_validator, validator
@@ -42,19 +42,15 @@ class MockColumnHWM(ColumnHWM):
         pass  # noqa: WPS420
 
 
-class StrategyHelper(FrozenModel):
-    @property
-    def where(self) -> str | dict | None:  # noqa: WPS463
-        pass  # noqa: WPS420
+class StrategyHelper(Protocol):
+    def save(self, df: DataFrame) -> DataFrame:
+        ...  # noqa: WPS420
 
-    def save(self, df: DataFrame) -> DataFrame:  # type: ignore
-        pass  # noqa: WPS420
-
-    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:  # type: ignore # noqa: WPS463
-        pass  # noqa: WPS420
+    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:  # noqa: WPS463
+        ...  # noqa: WPS420
 
 
-class NonHWMStrategyHelper(StrategyHelper):
+class NonHWMStrategyHelper(FrozenModel):
     reader: DBReader
 
     def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
@@ -73,15 +69,11 @@ class NonHWMStrategyHelper(StrategyHelper):
 
         return values
 
-    @property
-    def where(self) -> str | dict | None:
-        return self.reader.where
-
     def save(self, df: DataFrame) -> DataFrame:
         return df
 
 
-class HWMStrategyHelper(StrategyHelper):
+class HWMStrategyHelper(FrozenModel):
     reader: DBReader
     hwm_column: Column
     hwm_expression: Optional[str] = None

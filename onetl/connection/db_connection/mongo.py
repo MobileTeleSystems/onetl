@@ -33,6 +33,7 @@ from urllib import parse as parser
 from etl_entities.instance import Host
 from pydantic import SecretStr
 
+from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.dialect_mixins import SupportHWMExpressionNone
 from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
     SupportTableWithoutDBSchema,
@@ -369,9 +370,9 @@ class MongoDB(DBConnection):
         }
 
         @classmethod  # noqa: WPS238
-        def validate_where(  # type: ignore
+        def validate_where(
             cls,
-            connection: MongoDB,
+            connection: BaseDBConnection,
             where: Any,
         ) -> dict | None:
             if where is None:
@@ -388,9 +389,9 @@ class MongoDB(DBConnection):
             return where
 
         @classmethod  # noqa: WPS238
-        def validate_hint(  # type: ignore
+        def validate_hint(
             cls,
-            connection: MongoDB,
+            connection: BaseDBConnection,
             hint: Any,
         ) -> dict | None:
             if hint is None:
@@ -568,16 +569,16 @@ class MongoDB(DBConnection):
         self._check_driver_imported()
         return None, None
 
-    def read_table(  # type: ignore
+    def read_table(
         self,
         table: str,
         columns: list[str] | None = None,
         hint: dict | None = None,
         where: dict | None = None,
-        options: ReadOptions | dict | None = None,
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         self._check_driver_imported()
 
