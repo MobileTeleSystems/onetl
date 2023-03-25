@@ -15,10 +15,11 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING, NoReturn, Optional, Protocol, Tuple
+from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
 
 from etl_entities import HWM, Column, ColumnHWM
 from pydantic import Field, root_validator, validator
+from typing_extensions import Protocol
 
 from onetl.core.db_reader.db_reader import DBReader
 from onetl.hwm import Statement
