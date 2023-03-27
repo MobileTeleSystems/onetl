@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import Postgres
 
+pytestmark = pytest.mark.postgres
+
 
 def test_postgres_class_attributes():
     assert Postgres.driver == "org.postgresql.Driver"

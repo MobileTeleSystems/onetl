@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import Oracle
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.oracle
+
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
 def test_oracle_writer_wrong_table_name(spark_mock, table):

@@ -5,6 +5,8 @@ from onetl.connection import Hive
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.hive
+
 
 @pytest.mark.parametrize(
     "hwm_column",

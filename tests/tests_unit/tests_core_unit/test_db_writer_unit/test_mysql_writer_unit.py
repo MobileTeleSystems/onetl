@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import MySQL
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.mysql
+
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
 def test_mysql_writer_wrong_table_name(spark_mock, table):

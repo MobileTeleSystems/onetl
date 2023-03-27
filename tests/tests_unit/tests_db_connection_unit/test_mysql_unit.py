@@ -1,11 +1,8 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import MySQL
 
-spark = Mock(spec=SparkSession)
+pytestmark = pytest.mark.mysql
 
 
 def test_mysql_class_attributes():

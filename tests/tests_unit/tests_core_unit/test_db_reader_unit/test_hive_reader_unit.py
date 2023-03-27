@@ -11,6 +11,8 @@ from pyspark.sql.types import (
 from onetl.connection import Hive
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_reader_snapshot_error_pass_df_schema(spark_mock):
     df_schema = StructType(

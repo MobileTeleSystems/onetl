@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Postgres
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.postgres
 
 
 def test_postgres_writer_snapshot(spark, processing, prepare_schema_table):

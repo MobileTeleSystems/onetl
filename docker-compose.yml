@@ -1,53 +1,79 @@
-version: '3.5'
+version: '3.9'
 
-# NOTE: Только для разработки и локального/CI тестирования
+# NOTE: local development only
 services:
-
-  mongo:
-    image: mongo
-    restart: always
+  onetl:
+    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl:develop
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: base
+    command: ./run_tests.sh
+    env_file: onetl_docker.env
+    volumes:
+    - ./:/opt/project/
     networks:
     - onetl
+    - default
+    extra_hosts:
+    - rep.msk.mts.ru:10.73.8.86
+    ulimits:
+      # https://stackoverflow.com/a/56895801
+      nofile:
+        soft: 10000
+        hard: 10000
+    # no dependencies from other containers to allow running limited set of tests instead of all
+
+
+  mongodb:
+    image: mongo
+    restart: unless-stopped
     ports:
     - 27017:27017
-    env_file: onetl_local.default.env
+    env_file: dependencies.env
+    networks:
+    - onetl
 
   minio:
     image: minio/minio
-    env_file: onetl_local.default.env
+    restart: unless-stopped
     command: server /data --console-address ":9001"
-    networks: [onetl]
+    env_file: dependencies.env
     ports:
     - 9010:9000
     - 9011:9001
+    networks:
+    - onetl
 
   postgres:
-    # TODO: fix later
+    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/postgres:develop
     build:
       dockerfile: ./docker/postgres/Dockerfile
       context: .
-    env_file: onetl_local.default.env
-    restart: always
-    networks: [onetl]
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
     - 5432:5432
+    networks:
+    - onetl
 
   greenplum:
     image: datagrip/greenplum:6.8
-    env_file: onetl_local.default.env
-    restart: always
-    networks: [default, onetl]
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
     - 5433:5432
+    networks:
+    - onetl
 
   hive2:
-    # TODO: fix later
+    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/hive2:develop
     build:
       dockerfile: ./docker/hive2/Dockerfile
       context: .
-    env_file: onetl_local.default.env
     hostname: hive2
-    networks: [onetl]
+    restart: unless-stopped
+    env_file: dependencies.env
     depends_on:
     - postgres
     ports:
@@ -66,56 +92,62 @@ services:
     - 8040:8040
     - 8042:8042
     - 8088:8088
+    networks:
+    - onetl
 
   oracle:
+    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/oracle:develop
     build:
       dockerfile: ./docker/oracle/Dockerfile
       context: .
-    restart: always
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
     - 1522:1521
     - 5501:5500
-    networks: [onetl]
+    networks:
+    - onetl
 
   webdav:
+    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/webdav:develop
     build:
       dockerfile: ./docker/webdav/Dockerfile
       context: .
-    container_name: webdav
+    hostname: webdav
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
-    - 80:80
-    - 443:443
-    env_file: onetl_local.default.env
-    restart: always
+    - 8000:80
+    - 8443:443
     networks:
     - onetl
 
   clickhouse:
     image: yandex/clickhouse-server
-    env_file: onetl_local.default.env
+    restart: unless-stopped
     ports:
     - 8123:8123
     - 9001:9000
-    networks: [onetl]
+    networks:
+    - onetl
 
   mysql:
     image: mysql
-    env_file: onetl_local.default.env
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
     - 3306:3306
-    networks: [onetl]
+    networks:
+    - onetl
 
   mssql:
     image: mcmoe/mssqldocker
-    env_file: onetl_local.default.env
+    restart: unless-stopped
+    env_file: dependencies.env
     ports:
     - 1433:1433
-    networks: [onetl]
-
-# Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
-#  тогда содержимое БД будет сохраняться между подъемами docker-compose.
-volumes:
-  tmp:
+    networks:
+    - onetl
 
 networks:
   onetl:

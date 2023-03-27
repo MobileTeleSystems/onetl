@@ -153,12 +153,4 @@ dmypy.json
 # Configuration VS Code
 .vscode/
 
-# Local stuff
-test_conf*
-onetl_local*
-
-!onetl_local.default.env
-
-# Spark folders
-**/spark_warehouse
-**/metastore_db
+*.env

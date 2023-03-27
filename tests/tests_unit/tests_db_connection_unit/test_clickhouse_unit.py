@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import Clickhouse
 
+pytestmark = pytest.mark.clickhouse
+
 
 def test_clickhouse_class_attributes():
     assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"

@@ -258,87 +258,172 @@ To install all connectors and dependencies, you can pass ``all`` into ``extras``
 
 .. develops
 
-Development
----------------
+Develop
+-------
 
+Clone repo
+~~~~~~~~~~
 
-Building
-~~~~~~~~
+Clone repo:
 
-Set up your Docker using the link below:
+.. code:: bash
 
-(https://wiki.bd.msk.mts.ru/pages/viewpage.action?pageId=42960827).
+    git clone git@gitlab.services.mts.ru:bigdata/platform/onetools/onetl.git -b develop
 
+    cd onetl
 
-Build:
+Setup environment
+~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+Create virtualenv and install dependencies:
 
-    docker build -t onetl -f ./docker/Dockerfile .
+.. code:: bash
 
-    docker system prune --volumes
+    python -m venv venv
+    source venv/bin/activate
+    pip install -U wheel
+    pip install -U pip setuptools
+    pip install -U \
+        -r requirements/requirements.txt \
+        -r requirements/requirements-ftp.txt \
+        -r requirements/requirements-hdfs.txt \
+        -r requirements/requirements-kerberos.txt \
+        -r requirements/requirements-s3.txt \
+        -r requirements/requirements-sftp.txt \
+        -r requirements/requirements-spark.txt \
+        -r requirements/requirements-webdav.txt \
+        -r requirements/requirements-dev.txt \
+        -r requirements/requirements-test.txt
 
-Now you have Docker Image **onetl**.
+Enable pre-commit hooks
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Testing
-~~~~~~~~
+Install pre-commit hooks:
 
-Up services for integration tests:
+.. code:: bash
 
-.. code-block:: bash
+    pre-commit install --install-hooks
 
-    docker-compose down
+Test pre-commit hooks run:
 
-    docker system prune --volumes
+.. code:: bash
+
+    pre-commit run
+
+.. tests
+
+Tests
+~~~~~
+
+Using docker-compose
+^^^^^^^^^^^^^^^^^^^^
+
+Build image for running tests:
+
+.. code:: bash
+
+    docker-compose build
+
+Start all containers with dependencies:
+
+.. code:: bash
 
     docker-compose up -d
 
-You can start a specific service using ``docker-compose up -d servicename`` command
+You can run limited set of dependencies:
 
+.. code:: bash
 
-IDE (PyCharm)
-^^^^^^^^^^^^^^
+    docker-compose up -d mongodb
 
-Settings:
+Run tests:
 
-Project Interpreter -> Add -> Docker -> Image name: ``onetl:latest``
+.. code:: bash
 
+    docker-compose run --rm onetl ./run_tests.sh
 
-Run -> Edit Configurations -> New -> ``pytest``:
-1. Name **Test All**.
+You can pass additional arguments, they will be passed to pytest:
 
-2. Script path **tests**.
+.. code:: bash
 
-3. Additional Arguments **--verbose -s -c pytest.ini**.
+    docker-compose run --rm onetl ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
 
-4. Python interpreter **Project Default** (``onetl:latest``). **You should write Python interpreter path:** ``python3``.
+You can run interactive bash session and use it:
 
-5. Working directory ``/opt/project``
+.. code:: bash
 
-6. ``Add content roots`` and ``source roots`` - **remove these buttons**
+    docker-compose run --rm onetl bash
 
-7. Docker container settings:
+    ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
 
-    1. Network mode **onetl** (network from ``docker-compose.yml``) or  Add ``--net onetl`` into ``Run options``
+See logs of test container:
 
-    2. Add ``--env-file $(absolute path to)/onetl_local.default.env`` into docker ``Run options``
+.. code:: bash
 
-    3. Volume bindings (container -> local): **/opt/project -> (absolute path to)/onetl**
-        PyCharm will do it for you, but check it one more time!!!
+    docker-compose logs -f onetl
 
-Run -> Edit Configurations -> Copy Configuration **Test All**:
+Stop all containers and remove created volumes:
 
-Now you can run tests with configuration **Test All**.
+.. code:: bash
 
-Console
-^^^^^^^^
+    docker-compose down -v
 
-1. Set ``SPARK_EXTERNAL_IP`` environment variable to IP address of ``docker0`` network interface, e.g. ``172.17.0.1``
+Run tests locally
+^^^^^^^^^^^^^^^^^
 
-2. Set all environment variables from ``onetl_local.default.env``,
-    but change all ``*_HOST`` variables to ``localhost``,
-    and ``*_PORT`` variables to external ports from ``docker-compose.yml``
+.. warning::
 
-3. Run ``pytest``
+    To run HDFS and Hive tests locally you should add the following line to your ``/etc/hosts`` (file path depends on OS):
 
-.. usage
+    .. code::
+
+        127.0.0.1 hive2
+
+.. note::
+
+    To run Oracle tests you need to install `Oracle instantclient <https://www.oracle.com/database/technologies/instant-client.html>`__,
+    and pass its path to ``ONETL_ORA_CLIENT_PATH`` environment variable, e.g. ``ONETL_ORA_CLIENT_PATH=/path/to/client64/lib``.
+
+    It may also require to add the same path into ``LD_LIBRARY_PATH`` environment variable
+
+Build image for running tests:
+
+.. code:: bash
+
+    docker-compose build
+
+Start all containers with dependencies:
+
+.. code:: bash
+
+    docker-compose up -d
+
+You can run limited set of dependencies:
+
+.. code:: bash
+
+    docker-compose up -d mongodb
+
+Load environment variables with connection properties:
+
+.. code:: bash
+
+    source onetl_local.env
+
+Run tests:
+
+.. code:: bash
+
+    ./run_tests.sh
+
+You can pass additional arguments, they will be passed to pytest:
+
+.. code:: bash
+
+    ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
+
+Stop all containers and remove created volumes:
+
+.. code:: bash
+
+    docker-compose down -v

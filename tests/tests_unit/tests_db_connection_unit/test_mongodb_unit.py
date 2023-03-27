@@ -3,7 +3,7 @@ from frozendict import frozendict
 
 from onetl.connection.db_connection.mongo import MongoDB
 
-# TODO(@msmarty4): add unit tests for MongoDB
+pytestmark = pytest.mark.mongodb
 
 
 def test_mongodb(spark_mock):

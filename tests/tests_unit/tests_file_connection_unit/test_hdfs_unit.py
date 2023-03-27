@@ -9,6 +9,8 @@ import pytest
 from onetl.connection import HDFS, FileConnection
 from onetl.hooks import hook
 
+pytestmark = pytest.mark.hdfs
+
 
 def test_hdfs_connection_with_host():
     hdfs = HDFS(host="some-host.domain.com")

@@ -2,14 +2,14 @@ import logging
 
 import pytest
 
+pytestmark = pytest.mark.s3
 
-@pytest.mark.S3
+
 def test_s3_connection_check(caplog, s3):
     with caplog.at_level(logging.INFO):
         assert s3.check() == s3
 
 
-@pytest.mark.S3
 def test_s3_connection_list_dir(s3):
     s3.client.fput_object(
         "testbucket",

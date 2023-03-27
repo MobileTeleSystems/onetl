@@ -91,14 +91,14 @@ def s3():
     s3 = S3(
         host=os.getenv("ONETL_MINIO_HOST"),
         port=os.getenv("ONETL_MINIO_PORT"),
-        access_key=os.getenv("MINIO_ROOT_USER"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
+        access_key=os.getenv("ONETL_MINIO_USER"),
+        secret_key=os.getenv("ONETL_MINIO_PASSWORD"),
         bucket=os.getenv("ONETL_MINIO_BUCKET"),
         protocol="http",
     )
 
-    if not s3.client.bucket_exists("testbucket"):
-        s3.client.make_bucket("testbucket")
+    if not s3.client.bucket_exists(s3.bucket):
+        s3.client.make_bucket(s3.bucket)
 
     yield s3
 
@@ -116,6 +116,7 @@ def sftp_server(tmp_path_factory):
 def webdav_connection():
     wd = WebDAV(
         host=os.getenv("ONETL_WEBDAV_HOST"),
+        port=os.getenv("ONETL_WEBDAV_PORT"),
         user=os.getenv("ONETL_WEBDAV_USER"),
         password=os.getenv("ONETL_WEBDAV_PASSWORD"),
         ssl_verify=False,
@@ -135,8 +136,8 @@ def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
     return HDFSServer(
-        os.getenv("ONETL_HDFS_CONN_HOST", "hive2"),
-        int(os.getenv("ONETL_HDFS_CONN_PORT", "50070")),
+        os.getenv("ONETL_HDFS_HOST"),
+        int(os.getenv("ONETL_HDFS_PORT")),
     )
 
 
@@ -179,8 +180,24 @@ def upload_files_with_encoding(file_all_connections, source_path):
     }
 
 
+@pytest.fixture(scope="session")
+def warehouse_dir(tmp_path_factory):
+    # https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html
+    path = tmp_path_factory.mktemp("spark-warehouse")
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def spark_metastore_dir(tmp_path_factory):
+    # https://stackoverflow.com/a/44048667
+    path = tmp_path_factory.mktemp("metastore_db")
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
 @pytest.fixture(scope="session", name="spark")
-def get_spark_session(request):
+def get_spark_session(warehouse_dir, spark_metastore_dir):
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
@@ -206,7 +223,8 @@ def get_spark_session(request):
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
-        .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true")
+        .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
+        .config("spark.sql.warehouse.dir", warehouse_dir)
         .config("spark.jars.ivySettings", os.fspath(Path(__file__).parent / "tests" / "ivysettings.xml"))
         .enableHiveSupport()
         .getOrCreate()
@@ -312,11 +330,11 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.FTP),
-        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
-        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
-        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
-        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.WebDAV),
+        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.ftp),
+        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.ftps),
+        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.sftp),
+        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.hdfs),
+        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.webdav),
     ],
 )
 def file_connection_without_s3(request):
@@ -326,7 +344,7 @@ def file_connection_without_s3(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("s3"), marks=pytest.mark.S3),
+        pytest.param(lazy_fixture("s3"), marks=pytest.mark.s3),
         lazy_fixture("file_connection_without_s3"),
     ],
 )

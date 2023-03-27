@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import Hive
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_check(spark, caplog):
     hive = Hive(cluster="rnd-dwh", spark=spark)

@@ -5,6 +5,8 @@ from onetl.connection import Oracle
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.oracle
+
 
 # There is no INTEGER column in Oracle, only NUMERIC
 # Do not fail in such the case

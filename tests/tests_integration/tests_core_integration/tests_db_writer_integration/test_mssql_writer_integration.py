@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import MSSQL
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.mssql
 
 
 def test_mssql_writer_snapshot(spark, processing, prepare_schema_table):

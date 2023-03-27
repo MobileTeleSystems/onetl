@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import FTP, FileConnection
 
+pytestmark = pytest.mark.ftp
+
 
 def test_ftp_connection():
     ftp = FTP(host="some_host", user="some_user", password="pwd")

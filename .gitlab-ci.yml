@@ -180,10 +180,12 @@ tests:
   stage: tests
   variables:
     DOCKER_IMAGE_TAG: ${CI_COMMIT_REF_SLUG}
+    # below is just a copy of dependencies.env
+    # Gitlab does not support including environment variables for services from another file or artifacts:dotenv, they should be set explicitly
+    TZ: UTC
     # Postgres
     POSTGRES_USER: onetl
     POSTGRES_DB: onetl
-    POSTGRES_HOST: postgres
     POSTGRES_PASSWORD: ohtae0luxeshi1uraeluMoh9IShah7ai
     # Oracle
     ORACLE_BASE: /opt/oracle
@@ -195,29 +197,17 @@ tests:
     MYSQL_DATABASE: onetl
     MYSQL_USER: onetl
     MYSQL_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
-    MYSQL_HOST: mysql
-    MYSQL_TCP_PORT: '3306'
     # MSSQL
     MSSQL_DB: onetl
     MSSQL_USER: onetl
     MSSQL_PASSWORD: 7ellowEl7akey
     ACCEPT_EULA: Y
     SA_PASSWORD: 2astazeY
-    # Hive
-    TZ: UTC
-    # Minio
-    MINIO_ROOT_USER: minio_admin
-    MINIO_ROOT_PASSWORD: minio_password
     # Mongo
-    MONGO_INITDB_ROOT_USERNAME: root
+    MONGO_INITDB_ROOT_USERNAME: onetl
     MONGO_INITDB_ROOT_PASSWORD: E4j7h!9A
-    ONETL_MONGO_HOST: mongo
-    ONETL_MONGO_PORT: 27017
-    ONETL_MONGO_USER: root
-    ONETL_MONGO_PASSWORD: E4j7h!9A
-    ONETL_MONGO_DB: admin
     # WebDAV
-    APP_USER_NAME: admin
+    APP_USER_NAME: onetl
     APP_USER_PASSWD: awd123fd1
     APP_UID: 1777
     APP_GID: 1777
@@ -242,7 +232,7 @@ tests:
   - name: mysql
     alias: mysql
   - name: mongo
-    alias: mongo
+    alias: mongodb
   - name: mcmoe/mssqldocker
     alias: mssql
   - name: ${CI_REGISTRY}/datagrip/greenplum:6.8
@@ -251,6 +241,18 @@ tests:
     alias: minio
     command: [server, /data]
   script:
+  - sed '/^$/d' ./onetl_docker.env | sed '/^#/d' | sed 's/^/export /' > ./env
+  - source ./env
+  - /wait-for-it.sh -h postgres -p 5432 -t 60
+  - /wait-for-it.sh -h mysql -p 3306 -t 60
+  - /wait-for-it.sh -h clickhouse -p 8123 -t 60
+  - /wait-for-it.sh -h mssql -p 1433 -t 60
+  - /wait-for-it.sh -h greenplum -p 5432 -t 60
+  - /wait-for-it.sh -h oracle -p 1521 -t 60
+  - /wait-for-it.sh -h hive2 -p 10000 -t 60
+  - /wait-for-it.sh -h minio -p 9000 -t 60
+  - /wait-for-it.sh -h webdav -p 80 -t 60
+  - /wait-for-it.sh -h mongodb -p 27017 -t 60
   - ./run_tests.sh
   after_script:
   - ./combine_coverage.sh

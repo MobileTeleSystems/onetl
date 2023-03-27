@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import MySQL
 
+pytestmark = pytest.mark.mysql
+
 
 def test_mysql_connection_check(spark, processing, caplog):
     mysql = MySQL(

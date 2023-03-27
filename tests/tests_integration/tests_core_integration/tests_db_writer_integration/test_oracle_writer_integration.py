@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Oracle
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.oracle
 
 
 def test_oracle_writer_snapshot(spark, processing, prepare_schema_table):

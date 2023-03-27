@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import Clickhouse
 
+pytestmark = pytest.mark.clickhouse
+
 
 def test_clickhouse_connection_check(spark, processing, caplog):
     clickhouse = Clickhouse(

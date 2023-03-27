@@ -1,3 +1,4 @@
+import pytest
 from pyspark.sql.types import (
     DoubleType,
     IntegerType,
@@ -9,6 +10,8 @@ from pyspark.sql.types import (
 
 from onetl.connection import MongoDB
 from onetl.core import DBReader
+
+pytestmark = pytest.mark.mongodb
 
 df_schema = StructType(
     [

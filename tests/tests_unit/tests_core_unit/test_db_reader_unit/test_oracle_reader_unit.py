@@ -11,6 +11,8 @@ from pyspark.sql.types import (
 from onetl.connection import Oracle
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.oracle
+
 
 def test_oracle_reader_error_df_schema(spark_mock):
     df_schema = StructType(

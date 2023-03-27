@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import Oracle
 
+pytestmark = pytest.mark.oracle
+
 
 def test_oracle_class_attributes():
     assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"

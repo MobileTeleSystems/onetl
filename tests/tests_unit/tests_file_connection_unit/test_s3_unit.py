@@ -1,4 +1,8 @@
+import pytest
+
 from onetl.connection import S3
+
+pytestmark = pytest.mark.s3
 
 
 def test_s3_connection():

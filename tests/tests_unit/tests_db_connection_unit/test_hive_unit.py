@@ -9,6 +9,8 @@ from onetl.connection import Hive
 from onetl.connection.db_connection.hive import HiveWriteMode
 from onetl.hooks import hook
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_missing_args(spark_mock):
     # no spark

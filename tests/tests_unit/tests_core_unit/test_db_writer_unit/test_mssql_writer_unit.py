@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import MSSQL
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.mssql
+
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
 def test_mssql_writer_wrong_table_name(spark_mock, table):

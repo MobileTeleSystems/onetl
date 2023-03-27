@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import Greenplum
 from onetl.connection.db_connection.greenplum import GreenplumWriteMode
 
+pytestmark = pytest.mark.greenplum
+
 
 def test_greenplum_class_attributes():
     assert Greenplum.driver == "org.postgresql.Driver"

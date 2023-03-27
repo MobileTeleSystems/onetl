@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import SFTP
 
+pytestmark = pytest.mark.sftp
+
 
 def test_sftp_connection():
     sftp = SFTP(host="some_host")

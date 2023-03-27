@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import MongoDB
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.mongodb
 
 
 def test_mongodb_writer_snapshot(spark, processing, prepare_schema_table):

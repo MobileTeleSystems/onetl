@@ -2,6 +2,8 @@ import pytest
 
 from onetl.connection import Teradata
 
+pytestmark = pytest.mark.teradata
+
 
 def test_teradata_class_attributes():
     assert Teradata.driver == "com.teradata.jdbc.TeraDriver"

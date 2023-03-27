@@ -4,6 +4,8 @@ import pytest
 
 from onetl.connection import SFTP
 
+pytestmark = pytest.mark.sftp
+
 
 def test_sftp_check(sftp_connection, caplog):
     with caplog.at_level(logging.INFO):

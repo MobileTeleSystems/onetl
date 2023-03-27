@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Greenplum
 from onetl.core import DBReader
+
+pytestmark = pytest.mark.greenplum
 
 
 def test_greenplum_reader_snapshot(spark, processing, load_table_data):

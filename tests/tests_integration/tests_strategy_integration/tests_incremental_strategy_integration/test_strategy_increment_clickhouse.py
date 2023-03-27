@@ -6,6 +6,8 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.clickhouse
+
 
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",

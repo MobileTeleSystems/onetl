@@ -3,6 +3,8 @@ import pytest
 from onetl.connection import Teradata
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.teradata
+
 
 @pytest.mark.parametrize("table", ["table", "table.table.table"])
 def test_teradata_writer_wrong_table_name(spark_mock, table):

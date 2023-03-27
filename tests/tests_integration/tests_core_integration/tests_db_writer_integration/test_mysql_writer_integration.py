@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import MySQL
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.mysql
 
 
 def test_mysql_writer_snapshot(spark, processing, prepare_schema_table):
