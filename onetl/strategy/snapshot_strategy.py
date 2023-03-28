@@ -50,7 +50,7 @@ class SnapshotStrategy(BaseStrategy):
 
         .. code:: python
 
-            download_result = DownloadResult(
+            assert download_result == DownloadResult(
                 successful=[
                     "/path/my/file1",
                     "/path/my/file2",
@@ -154,7 +154,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. note::
 
         This strategy uses HWM column value to filter data for each batch,
-        but **does not** save it into HWM Store.
+        but **does not** save it into :ref:`hwm-store`.
         So every run starts from the beginning, not from the previous HWM value.
 
     .. note::
