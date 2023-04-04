@@ -175,7 +175,7 @@ class FileUploader(FrozenModel):
         ----------
 
         files : Iterator[str | os.PathLike] | None, default ``None``
-            File collection to upload.
+            File list to upload.
 
             If empty, upload files from ``local_path``.
 
@@ -238,7 +238,7 @@ class FileUploader(FrozenModel):
         """
 
         if files is None and not self.local_path:
-            raise ValueError("Neither file collection nor ``local_path`` are passed")
+            raise ValueError("Neither file list nor ``local_path`` are passed")
 
         self._log_options(files)
 
@@ -252,11 +252,11 @@ class FileUploader(FrozenModel):
         self.connection.mkdir(self.target_path)
 
         if files is None:
-            log.info(f"|{self.__class__.__name__}| File collection is not passed to `run` method")
+            log.info("|%s| File list is not passed to `run` method", self.__class__.__name__)
             files = self.view_files()
 
         if not files:
-            log.info(f"|{self.__class__.__name__}| No files to upload!")
+            log.info("|%s| No files to upload!", self.__class__.__name__)
             return UploadResult()
 
         current_temp_dir: RemotePath | None = None
@@ -283,7 +283,7 @@ class FileUploader(FrozenModel):
 
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file collection in the ``local_path``
+        Get file list in the ``local_path``
 
         Raises
         -------
@@ -321,14 +321,14 @@ class FileUploader(FrozenModel):
             }
         """
 
-        log.info(f"|Local FS| Getting files list from path '{self.local_path}'")
+        log.info("|Local FS| Getting files list from path '%s'", self.local_path)
 
         self._check_local_path()
         result = FileSet()
 
         try:
             for root, dirs, files in os.walk(self.local_path):
-                log.debug(f"|Local FS| Listing dir '{root}': {len(dirs)} dirs, {len(files)} files")
+                log.debug("|Local FS| Listing dir '%s': %s dirs, %s files", root, len(dirs), len(files))
                 result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
@@ -340,31 +340,27 @@ class FileUploader(FrozenModel):
     def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
         entity_boundary_log(msg="FileUploader starts")
 
-        log.info(f"|Local FS| -> |{self.connection.__class__.__name__}| Uploading files using parameters:'")
-        local_path_str = f"'{self.local_path}'" if self.local_path else "None"
-        log_with_indent(f"local_path = {local_path_str}")
-        log_with_indent(f"target_path = '{self.target_path}'")
-        if self.temp_path:
-            log_with_indent(f"temp_path = '{self.temp_path}'")
-        else:
-            log_with_indent("temp_path = None")
+        log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
+        log_with_indent("local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
+        log_with_indent("target_path = '%s'", self.target_path)
+        log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
 
         log_with_indent("options:")
         for option, value in self.options.dict(by_alias=True).items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent(f"{option} = {value_wrapped}", indent=4)
+            log_with_indent("%s = %s", option, value_wrapped, indent=4)
         log_with_indent("")
 
         if self.options.delete_local:
-            log.warning(f"|{self.__class__.__name__}| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!")
+            log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)
 
         if self.options.mode == FileWriteMode.DELETE_ALL:
-            log.warning(f"|{self.__class__.__name__}| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!")
+            log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.local_path:
             log.warning(
-                f"|{self.__class__.__name__}| Passed both ``local_path`` and file collection at the same time. "
-                "File collection will be used",
+                "|%s| Passed both ``local_path`` and files list at the same time. Using explicit files list",
+                self.__class__.__name__,
             )
 
     def _validate_files(  # noqa: WPS231
@@ -423,18 +419,18 @@ class FileUploader(FrozenModel):
         total_files = len(to_upload)
         files = FileSet(item[0] for item in to_upload)
 
-        log.info(f"|{self.__class__.__name__}| Files to be uploaded:")
-        log_with_indent(str(files))
+        log.info("|%s| Files to be uploaded:", self.__class__.__name__)
+        log_with_indent("%s", str(files))
         log_with_indent("")
-        log.info(f"|{self.__class__.__name__}| Starting the upload process")
+        log.info("|%s| Starting the upload process", self.__class__.__name__)
 
         result = UploadResult()
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
-            log.info(f"|{self.__class__.__name__}| Uploading file {i+1} of {total_files}")
-            log_with_indent(f"from = '{local_file}'")
+            log.info("|%s| Uploading file %s of %r", self.__class__.__name__, i + 1, total_files)
+            log_with_indent("from = '%s'", local_file)
             if tmp_file:
-                log_with_indent(f"temp = '{tmp_file}'")
-            log_with_indent(f"to = '{target_file}'")
+                log_with_indent("temp = '%s'", tmp_file)
+            log_with_indent("to = '%s'", target_file)
 
             self._upload_file(local_file, target_file, tmp_file, result)
 
@@ -448,7 +444,7 @@ class FileUploader(FrozenModel):
         result: UploadResult,
     ) -> None:
         if not local_file.exists():
-            log.warning(f"|{self.__class__.__name__}| Missing file '{local_file}', skipping")
+            log.warning("|%s| Missing file '%s', skipping", self.__class__.__name__, local_file)
             result.missing.add(local_file)
             return
 
@@ -456,12 +452,12 @@ class FileUploader(FrozenModel):
             replace = False
             if self.connection.path_exists(target_file):
                 file = self.connection.get_file(target_file)
-                error_message = f"|{self.__class__.__name__}| File {path_repr(file)} already exists"
+                error_message = "|%s| File %s already exists"
                 if self.options.mode == FileWriteMode.ERROR:
-                    raise FileExistsError(error_message)
+                    raise FileExistsError(error_message % (self.__class__.__name__, path_repr(file)))
 
                 if self.options.mode == FileWriteMode.IGNORE:
-                    log.warning(f"{error_message}, skipping")
+                    log.warning(f"{error_message}, skipping", self.__class__.__name__, path_repr(file))
                     result.skipped.add(local_file)
                     return
 
@@ -479,22 +475,22 @@ class FileUploader(FrozenModel):
 
             if self.options.delete_local:
                 local_file.unlink()
-                log.warning(f"|LocalFS| Successfully removed file {path_repr(local_file)}")
+                log.warning("|LocalFS| Successfully removed file %s", local_file)
 
             result.successful.add(uploaded_file)
 
         except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Couldn't upload file to target dir: {e}", exc_info=False)
+            log.exception("|%s| Couldn't upload file to target dir: %s", self.__class__.__name__, e, exc_info=False)
             result.failed.add(FailedLocalFile(path=local_file, exception=e))
 
     def _remove_temp_dir(self, temp_dir: RemotePath) -> None:
         try:
             self.connection.rmdir(temp_dir, recursive=True)
         except Exception:
-            log.exception(f"|{self.__class__.__name__}| Error while removing temp directory")
+            log.exception("|%s| Error while removing temp directory", self.__class__.__name__)
 
     def _log_result(self, result: UploadResult) -> None:
         log.info("")
-        log.info(f"|{self.__class__.__name__}| Upload result:")
-        log_with_indent(str(result))
+        log.info("|%s| Upload result:", self.__class__.__name__)
+        log_with_indent("%s", str(result))
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")

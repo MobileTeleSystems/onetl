@@ -171,7 +171,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|Spark| Using connection parameters:")
-        log_with_indent(f"type = {self.__class__.__name__}")
+        log_with_indent("type = %s", self.__class__.__name__)
         parameters = self.dict(by_alias=True, exclude_none=True, exclude={"spark"})
         for attr, value in sorted(parameters.items()):
-            log_with_indent(f"{attr} = {value!r}")
+            log_with_indent("%s = %r", attr, value)

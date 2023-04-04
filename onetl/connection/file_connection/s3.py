@@ -127,18 +127,22 @@ class S3(FileConnection):
 
         return values
 
+    @property
+    def instance_url(self) -> str:
+        return f"s3://{self.host}:{self.port}"
+
     def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
         # and the method must return the created directory
 
-        log.debug(f"|{self.__class__.__name__}| Creating directory '{path}'")
+        log.debug("|%s| Creating directory '%s'", self.__class__.__name__, path)
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
             return self.get_directory(remote_directory)
 
         self._mkdir(remote_directory)
-        log.info(f"|{self.__class__.__name__}| Successfully created directory '{remote_directory}'")
+        log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
     def path_exists(self, path: os.PathLike | str) -> bool:

@@ -31,13 +31,12 @@ def match_all_filters(filters: Iterable[BaseFileFilter], path: RemotePath) -> bo
             not_match.append(file_filter)
 
     if not_match:
-        if len(not_match) > 1:
-            filters_str = "filters " + ", ".join(repr(item) for item in not_match)
-        else:
-            filters_str = f"filter {not_match[0]!r}"
-
-        log.debug(f"|FileFilter| Path {path_repr(path)} does NOT MATCH {filters_str}, skipping")
+        log.debug(
+            "|FileFilter| Path %s does NOT MATCH filters %r, skipping",
+            path_repr(path),
+            not_match,
+        )
         return False
 
-    log.debug(f"|FileFilter| Path {path_repr(path)} does match all filters")
+    log.debug("|FileFilter| Path %s does match all filters", path_repr(path))
     return True

@@ -130,6 +130,10 @@ class WebDAV(FileConnection):
 
         return values
 
+    @property
+    def instance_url(self) -> str:
+        return f"webdav://{self.host}:{self.port}"
+
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.check(os.fspath(path))
 

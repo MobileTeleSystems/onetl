@@ -147,4 +147,4 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
     def log_options(self, indent: int = 0):
         for key, value in self.dict(exclude_none=True, by_alias=True).items():  # noqa: WPS528
-            log_with_indent(f"{key} = {value!r}", indent=indent)
+            log_with_indent("%s = %r", key, value, indent=indent)

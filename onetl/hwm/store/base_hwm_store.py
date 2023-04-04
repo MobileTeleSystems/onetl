@@ -32,7 +32,7 @@ class BaseHWMStore(BaseModel, ABC):
         # hack to avoid circular imports
         from onetl.hwm.store import HWMStoreManager
 
-        log.debug(f"|{self.__class__.__name__}| Entered stack at level {HWMStoreManager.get_current_level()}")
+        log.debug("|%s| Entered stack at level %r", self.__class__.__name__, HWMStoreManager.get_current_level())
         HWMStoreManager.push(self)
 
         self._log_parameters()
@@ -41,7 +41,7 @@ class BaseHWMStore(BaseModel, ABC):
     def __exit__(self, _exc_type, _exc_value, _traceback):
         from onetl.hwm.store import HWMStoreManager
 
-        log.debug(f"|{self}| Exiting stack at level {HWMStoreManager.get_current_level()-1}")
+        log.debug("|%s| Exiting stack at level %r", self, HWMStoreManager.get_current_level() - 1)
         HWMStoreManager.pop()
         return False
 
@@ -57,13 +57,13 @@ class BaseHWMStore(BaseModel, ABC):
         ...  # noqa: WPS428
 
     def _log_parameters(self) -> None:
-        log.info(f"|onETL| Using {self.__class__.__name__} as HWM Store")
+        log.info("|onETL| Using %s as HWM Store", self.__class__.__name__)
         options = self.dict(by_alias=True, exclude_none=True)
 
         if options:
-            log.info(f"|{self.__class__.__name__}| Using options:")
+            log.info("|%s| Using options:", self.__class__.__name__)
             for option, value in options.items():
                 if isinstance(value, os.PathLike):
-                    log_with_indent(f"{option} = {path_repr(value)}")
+                    log_with_indent("%s = %s", option, path_repr(value))
                 else:
-                    log_with_indent(f"{option} = {value!r}")
+                    log_with_indent("%s = %r", option, value)

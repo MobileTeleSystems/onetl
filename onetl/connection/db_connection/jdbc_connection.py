@@ -626,8 +626,8 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
+        log_with_indent("%s", query)
 
         df = self._query_on_executor(query, self.ReadOptions.parse(options))
 
@@ -689,9 +689,9 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
     ) -> None:
         write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
         df.write.jdbc(table=table, **write_options)
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
+        log.info("|%s| Table %r successfully written", self.__class__.__name__, table)
 
     def get_df_schema(
         self,
@@ -699,16 +699,16 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, table)
 
         query = get_sql_query(table, columns=columns, where="1=0", compact=True)
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_with_indent("%s", query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
-        log.info(f"|{self.__class__.__name__}| Schema fetched")
+        log.info("|%s| Schema fetched", self.__class__.__name__)
 
         return df.schema
 
@@ -753,7 +753,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         where: str | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         read_options = self._exclude_partition_options(options, fetchsize=1)
 
@@ -773,15 +773,15 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
             hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_with_indent("%s", query)
 
         df = self._query_on_driver(query, read_options)
 
         min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%s) = %r", column, min_value)
+        log_with_indent("MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -826,10 +826,11 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
             return result_options
 
         log.warning(
-            f"|Spark| Passed numPartitions = {result_options.num_partitions!r}, "
-            f"but {' and '.join(missing_values)} value is not set. "
-            "It will be detected automatically based on values "
-            f"in partitionColumn {result_options.partition_column!r}",
+            "|Spark| Passed numPartitions = %r, but values %r are not set. "
+            "They will be detected automatically based on values in partitionColumn %r",
+            result_options.num_partitions,
+            missing_values,
+            result_options.partition_column,
         )
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(
@@ -851,4 +852,4 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
     def _log_parameters(self):
         super()._log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
+        log_with_indent("jdbc_url = %r", self.jdbc_url)

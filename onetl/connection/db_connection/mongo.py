@@ -544,16 +544,16 @@ class MongoDB(DBConnection):
 
     def check(self):
         self._check_driver_imported()
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
 
         try:
             jvm = self.spark._sc._gateway.jvm  # type: ignore # noqa: WPS437
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
 
         return self

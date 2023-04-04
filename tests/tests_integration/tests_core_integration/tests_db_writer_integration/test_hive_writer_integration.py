@@ -277,11 +277,14 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
 @pytest.mark.parametrize(
     "options, option_kv",
     [
-        (Hive.WriteOptions(partitionBy="str"), "partitionBy='str'"),
-        (Hive.WriteOptions(bucketBy=(10, "id_int")), "bucketBy=(10, 'id_int')"),
-        (Hive.WriteOptions(bucketBy=(5, "id_int"), sortBy="hwm_int"), "sortBy='hwm_int'"),
-        (Hive.WriteOptions(compression="snappy"), "compression='snappy'"),
-        (Hive.WriteOptions(format="orc"), "format='orc'"),
+        (Hive.WriteOptions(partitionBy="str"), "{'partitionBy': 'str'}"),
+        (Hive.WriteOptions(bucketBy=(10, "id_int")), "{'bucketBy': (10, 'id_int')}"),
+        (
+            Hive.WriteOptions(bucketBy=(5, "id_int"), sortBy="hwm_int"),
+            "{'bucketBy': (5, 'id_int'), 'sortBy': 'hwm_int'}",
+        ),
+        (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
+        (Hive.WriteOptions(format="orc"), "{'format': 'orc'}"),
     ],
 )
 def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_table, options, option_kv, caplog):
@@ -294,7 +297,7 @@ def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_
         options=options,
     )
 
-    error_msg = f"|Hive| Option {option_kv} is not supported while inserting into existing table, ignoring"
+    error_msg = f"|Hive| Options {option_kv} are not supported while inserting into existing table, ignoring"
     with caplog.at_level(logging.WARNING):
         writer.run(df)
 
@@ -564,24 +567,24 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
         options=Hive.WriteOptions(mode=mode),
     )
 
-    prefix = f"""
+    prefix = rf"""
         Inconsistent columns between a table and the dataframe!
 
         Table '{prepare_schema_table.full_name}' has columns:
-            id_int, text_string, hwm_int, hwm_date, hwm_datetime, float_value
+            \['id_int', 'text_string', 'hwm_int', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """.strip()
 
     # new column
     df2 = df.withColumn("unknown", df.id_int)
     error_msg2 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, text_string, hwm_int, hwm_date, hwm_datetime, float_value, unknown
+            \['id_int', 'text_string', 'hwm_int', 'hwm_date', 'hwm_datetime', 'float_value', 'unknown'\]
 
         These columns present only in dataframe:
-            unknown
+            \['unknown'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg2):
@@ -590,14 +593,14 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     # too less columns
     df3 = df.select(df.id_int, df.hwm_int)
     error_msg3 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, hwm_int
+            \['id_int', 'hwm_int'\]
 
         These columns present only in table:
-            text_string, hwm_date, hwm_datetime, float_value
+            \['text_string', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg3):
@@ -606,17 +609,17 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     # too much columns
     df4 = df.withColumn("unknown", df.id_int).select(df.id_int, df.hwm_int, "unknown")
     error_msg3 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, hwm_int, unknown
+            \['id_int', 'hwm_int', 'unknown'\]
 
         These columns present only in dataframe:
-            unknown
+            \['unknown'\]
 
         These columns present only in table:
-            text_string, hwm_date, hwm_datetime, float_value
+            \['text_string', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg3):

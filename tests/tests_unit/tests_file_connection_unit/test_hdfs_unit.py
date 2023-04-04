@@ -141,7 +141,10 @@ def test_hdfs_get_known_clusters_hook(request):
 
     request.addfinalizer(get_known_clusters.disable)
 
-    with pytest.raises(ValueError, match="Cluster 'unknown' is not in the known clusters list: 'known1', 'known2'"):
+    with pytest.raises(
+        ValueError,
+        match=r"Cluster 'unknown' is not in the known clusters list: \['known1', 'known2'\]",
+    ):
         HDFS(cluster="unknown")
 
     HDFS(cluster="known1")  # no exception
@@ -170,7 +173,7 @@ def test_hdfs_get_cluster_namenodes_hook(request):
 
     error_msg = (
         "Namenode 'unknown.domain.com' is not in the known nodes list of cluster 'rnd-dwh': "
-        "'some-node1.domain.com', 'some-node2.domain.com"
+        r"\['some-node1.domain.com', 'some-node2.domain.com'\]"
     )
     with pytest.raises(ValueError, match=error_msg):
         HDFS(cluster="rnd-dwh", host="unknown.domain.com")

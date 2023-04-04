@@ -57,6 +57,7 @@ class BaseFileConnection(BaseConnection):
         self,
         local_file_path: os.PathLike | str,
         remote_file_path: os.PathLike | str,
+        replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
         Uploads local file to path on remote filesystem

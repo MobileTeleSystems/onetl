@@ -507,10 +507,10 @@ class Greenplum(JDBCMixin, DBConnection):
     ) -> DataFrame:
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
+        log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
         query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
-        log_with_indent(query)
+        log_with_indent("%s", query)
 
         df = self.spark.read.format("greenplum").options(**self._connector_params(table), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
@@ -540,13 +540,13 @@ class Greenplum(JDBCMixin, DBConnection):
 
         self._check_expected_jobs_number(df, action="write")
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
         df.write.format("greenplum").options(
             **self._connector_params(table),
             **options_dict,
         ).mode(write_options.mode).save()
 
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
+        log.info("|%s| Table %r successfully written", self.__class__.__name__, table)
 
     def get_df_schema(
         self,
@@ -554,16 +554,16 @@ class Greenplum(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, table)
 
         query = get_sql_query(table, columns=columns, where="1=0", compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_with_indent("%s", query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, jdbc_options)
-        log.info(f"|{self.__class__.__name__}| Schema fetched")
+        log.info("|%s| Schema fetched", self.__class__.__name__)
 
         return df.schema
 
@@ -576,7 +576,7 @@ class Greenplum(JDBCMixin, DBConnection):
         where: str | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
 
@@ -596,15 +596,15 @@ class Greenplum(JDBCMixin, DBConnection):
             hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_with_indent("%s", query)
 
         df = self._query_on_driver(query, jdbc_options)
 
         min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%r) = %r", column, min_value)
+        log_with_indent("MAX(%r) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -659,14 +659,14 @@ class Greenplum(JDBCMixin, DBConnection):
                 FROM   pg_settings
                 WHERE  name = '{name}'
                 """
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):")
+        log_with_indent("%s", query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
 
         log.debug(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
         )
         if result:
             return result[0][0]
@@ -679,14 +679,14 @@ class Greenplum(JDBCMixin, DBConnection):
                 SELECT SUM(numbackends)
                 FROM pg_stat_database
                 """
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):")
+        log_with_indent("%s", query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
 
         log.debug(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
         )
         return int(result[0][0])
 
@@ -762,8 +762,8 @@ class Greenplum(JDBCMixin, DBConnection):
         if max_jobs >= self.CONNECTIONS_EXCEPTION_LIMIT:
             raise TooManyParallelJobsError(message)
 
-        log_with_indent(f"|{self.__class__.__name__}| {message}", level=logging.WARNING)
+        log_with_indent("|%s| %s", message, level=logging.WARNING)
 
     def _log_parameters(self):
         super()._log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
+        log_with_indent("jdbc_url = %r", self.jdbc_url)

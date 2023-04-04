@@ -51,11 +51,17 @@ class BatchHWMStrategy(HWMStrategy):
         self._iteration += 1  # noqa: WPS601
 
         if self.is_finished:
-            log.info(f"|{self.__class__.__name__}| Reached max HWM value, exiting after {self._iteration} iteration(s)")
+            log.info(
+                "|%s| Reached max HWM value, exiting after %s iteration(s)",
+                self.__class__.__name__,
+                self._iteration,
+            )
             raise StopIteration
 
-        iteration_name = "First" if self.is_first_run else "Next"
-        log.info(f"|{self.__class__.__name__}| {iteration_name} iteration")
+        if self.is_first_run:
+            log.info("|%s| First iteration", self.__class__.__name__)
+        else:
+            log.info("|%s| Next iteration", self.__class__.__name__)
 
         return self.current_value
 

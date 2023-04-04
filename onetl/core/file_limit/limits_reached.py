@@ -33,12 +33,7 @@ def limits_reached(limits: Iterable[BaseFileLimit], path: RemotePath) -> bool:
             reached.append(limit)
 
     if reached:
-        if len(reached) > 1:
-            limits_str = "|FileLimit| Limits " + ", ".join(repr(item) for item in reached) + " are reached"
-        else:
-            limits_str = f"|FileLimit| Limit {reached[0]!r} is reached"
-
-        log.debug(limits_str)
+        log.debug("|FileLimit| Limits %r are reached", reached)
         return True
 
     return False
