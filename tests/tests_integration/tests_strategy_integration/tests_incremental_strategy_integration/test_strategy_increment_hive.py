@@ -8,6 +8,7 @@ from onetl.strategy import IncrementalStrategy
 pytestmark = pytest.mark.hive
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_column",
     [

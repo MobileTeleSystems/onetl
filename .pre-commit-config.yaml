@@ -23,17 +23,17 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.4.2
+  rev: v1.5.1
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.2
+  rev: v2.2.4
   hooks:
   - id: codespell
     args: [-w]
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.6.0
+  rev: v2.8.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
@@ -65,7 +65,7 @@ repos:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/ambv/black
-  rev: 23.1.0
+  rev: 23.3.0
   hooks:
   - id: black
     language_version: python3
@@ -77,15 +77,26 @@ repos:
   hooks:
   - id: check-hooks-apply
   - id: check-useless-excludes
-- repo: https://github.com/PyCQA/flake8
-  rev: 5.0.4
-  hooks:
-  - id: flake8
-    args: [--config=setup.cfg]
 - repo: https://github.com/myint/autoflake
-  rev: v2.0.1
+  rev: v2.0.2
   hooks:
   - id: autoflake
     args:
     - --in-place
     - --config=setup.cfg
+- repo: local
+  hooks:
+  - id: flake8
+    name: flake8
+    entry: python3 -m flake8
+    language: system
+    types: [python]
+    files: ^(onetl|tests)/.*$
+    pass_filenames: true
+  - id: mypy
+    name: mypy
+    entry: python3 -m mypy --config-file setup.cfg
+    language: system
+    types: [python]
+    files: ^onetl/.*$
+    pass_filenames: true

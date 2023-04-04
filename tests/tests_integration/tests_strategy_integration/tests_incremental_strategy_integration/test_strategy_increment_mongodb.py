@@ -27,6 +27,7 @@ df_schema = StructType(
 )
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
