@@ -520,16 +520,17 @@ class HDFS(FileConnection):  # noqa: WPS214
 
     @validator("cluster")
     def validate_cluster_name(cls, cluster):
-        log.debug(f"|{cls.__name__}| Normalizing cluster {cluster!r} name ...")
+        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
         validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
-            log.debug(f"|{cls.__name__}|   Got {validated_cluster!r}")
+            log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
-        log.debug(f"|{cls.__name__}| Checking if cluster {validated_cluster!r} is a known cluster ...")
+        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
         known_clusters = cls.slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
-            clusters_str = ", ".join(repr(name) for name in sorted(known_clusters))
-            raise ValueError(f"Cluster {validated_cluster!r} is not in the known clusters list: {clusters_str}")
+            raise ValueError(
+                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
+            )
 
         return validated_cluster
 
@@ -537,18 +538,18 @@ class HDFS(FileConnection):  # noqa: WPS214
     def validate_host_name(cls, host, values):
         cluster = values.get("cluster")
 
-        log.debug(f"|{cls.__name__}| Normalizing namenode {host!r} ...")
+        log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
         namenode = cls.slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
-            log.debug(f"|{cls.__name__}|   Got {namenode!r}")
+            log.debug("|%s|   Got %r", cls.__name__, namenode)
 
         if cluster:
-            log.debug(f"|{cls.__name__}| Checking if {namenode!r} is a known namenode of cluster {cluster!r} ...")
+            log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
             known_namenodes = cls.slots.get_cluster_namenodes(cluster)
             if known_namenodes and namenode not in known_namenodes:
-                namenodes_str = ", ".join(repr(name) for name in sorted(known_namenodes))
                 raise ValueError(
-                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: {namenodes_str}",
+                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
+                    f"{sorted(known_namenodes)!r}",
                 )
 
         return namenode
@@ -557,10 +558,10 @@ class HDFS(FileConnection):  # noqa: WPS214
     def validate_port_number(cls, port, values):
         cluster = values.get("cluster")
         if cluster:
-            log.debug(f"|{cls.__name__}| Getting WebHDFS port of cluster {cluster!r} ...")
+            log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
             result = cls.slots.get_webhdfs_port(cluster) or port
             if result != port:
-                log.debug(f"|{cls.__name__}|   Got {result!r}")
+                log.debug("|%s|   Got %r", cls.__name__, result)
             return result
 
         return port
@@ -609,7 +610,7 @@ class HDFS(FileConnection):  # noqa: WPS214
             hdfs = HDFS.get_current(user="me", password="pass")
         """
 
-        log.info(f"|{cls.__name__}| Detecting current cluster...")
+        log.info("|%s| Detecting current cluster...", cls.__name__)
         current_cluster = cls.slots.get_current_cluster()
         if not current_cluster:
             raise RuntimeError(
@@ -617,21 +618,21 @@ class HDFS(FileConnection):  # noqa: WPS214
                 f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
             )
 
-        log.info(f"|{cls.__name__}| Got {current_cluster!r}")
+        log.info("|%s|   Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, **kwargs)
 
     @property
     def instance_url(self) -> str:
         if self.cluster:
             return self.cluster
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.webhdfs_port}"
+        return f"hdfs://{self.host}:{self.webhdfs_port}"
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
 
     def _get_active_namenode(self) -> str:
         class_name = self.__class__.__name__
-        log.info(f"|{class_name}| Detecting active namenode of cluster {self.cluster!r} ...")
+        log.info("|%s| Detecting active namenode of cluster %r ...", class_name, self.cluster)
 
         host: str | None = None
         namenodes = self.slots.get_cluster_namenodes(self.cluster)
@@ -641,12 +642,12 @@ class HDFS(FileConnection):  # noqa: WPS214
 
         nodes_len = len(namenodes)
         for i, namenode in enumerate(namenodes):
-            log.debug(f"|{class_name}|   Trying namenode {namenode!r} ({i} of {nodes_len}) ...")
+            log.debug("|%s|   Trying namenode %r (%r of %r) ...", class_name, namenode, i, nodes_len)
             if self.slots.is_namenode_active(namenode, self.cluster):
-                log.info(f"|{class_name}|     Node {namenode!r} is active!")
+                log.info("|%s|     Node %r is active!", class_name, namenode)
                 host = namenode
                 break
-            log.debug(f"|{class_name}|     Node {namenode!r} is not active, skipping")
+            log.debug("|%s|     Node %r is not active, skipping", class_name, namenode)
 
         if not host:
             raise RuntimeError(f"Cannot detect active namenode for cluster {self.cluster!r}")
@@ -658,23 +659,25 @@ class HDFS(FileConnection):  # noqa: WPS214
             return self._get_active_namenode()
 
         class_name = self.__class__.__name__
+        cluster_log_suffix = ""
         cluster_suffix = ""
+        log_args = []
         if self.cluster:
             cluster_suffix = f" of cluster {self.cluster!r}"
+            cluster_log_suffix = " of cluster %r"
+            log_args.append(self.cluster)
 
         # host is passed explicitly or cluster not set
 
-        log.info(f"|{class_name}| Detecting if namenode {self.host!r}{cluster_suffix} is active...")
+        log.info(f"|%s| Detecting if namenode %r{cluster_log_suffix} is active...", class_name, self.host, *log_args)
 
         is_active = self.slots.is_namenode_active(self.host, self.cluster)
         if is_active:
-            log.info(f"|{class_name}|   Namenode {self.host!r} is active!")
+            log.info("|%s|   Namenode %r is active!", class_name, self.host)
             return self.host
 
         if is_active is None:
-            log.debug(
-                f"|{class_name}|   No hooks, skip validation",
-            )
+            log.debug("|%s|   No hooks, skip validation", class_name)
             return self.host
 
         raise RuntimeError(f"Host {self.host!r} is not an active namenode{cluster_suffix}")

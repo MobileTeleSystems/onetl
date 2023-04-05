@@ -200,8 +200,8 @@ class DBWriter(FrozenModel):
         entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _log_parameters(self) -> None:
-        log.info(f"|Spark| -> |{self.connection.__class__.__name__}| Writing DataFrame to table using parameters:")
-        log_with_indent(f"table = '{self.table}'")
+        log.info("|Spark| -> |%s| Writing DataFrame to table using parameters:", self.connection.__class__.__name__)
+        log_with_indent("table = '%s'", self.table)
 
         log_with_indent("")
         options = self.options and self.options.dict(by_alias=True, exclude_none=True)
@@ -209,7 +209,7 @@ class DBWriter(FrozenModel):
             log_with_indent("options:")
             for option, value in options.items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent(f"{option} = {value_wrapped}", indent=4)
+                log_with_indent("%s = %s", option, value_wrapped, indent=4)
         else:
             log_with_indent("options = None")
         log_with_indent("")
@@ -224,7 +224,7 @@ class DBWriter(FrozenModel):
             df.printSchema()
 
         for line in schema_tree.getvalue().splitlines():
-            log_with_indent(line, indent=4)
+            log_with_indent("%s", line, indent=4)
 
     def _get_write_kwargs(self) -> dict:
         if self.options:

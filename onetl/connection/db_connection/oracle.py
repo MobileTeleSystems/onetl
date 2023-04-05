@@ -228,19 +228,21 @@ class Oracle(JDBCConnection):
     ) -> DataFrame | None:
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
+        log_with_indent("%s", statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
         self._handle_compile_errors(statement.strip(), call_options)
 
-        message = f"|{self.__class__.__name__}| Execution succeeded"
+        message = "|%s| Execution succeeded"
+        log_args: list[str | int] = [self.__class__.__name__]
         if df is not None:
             rows_count = df.count()
-            message += f", resulting dataframe contains {rows_count} rows"
+            message += ", resulting dataframe contains %r rows"
+            log_args.append(rows_count)
 
-        log.info(message)
+        log.info(message, *log_args)
         return df
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
@@ -369,8 +371,7 @@ class Oracle(JDBCConnection):
         fail = any(error.level == logging.ERROR for error in aggregated_errors)
 
         message = self._build_error_message(aggregated_errors)
-
-        log_with_indent(message, level=logging.ERROR if fail else logging.WARNING)
+        log_with_indent("%s", message, level=logging.ERROR if fail else logging.WARNING)
 
         if fail:
             raise ValueError(message)

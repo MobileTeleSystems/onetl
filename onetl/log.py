@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-import os
 from textwrap import dedent
 from typing import Collection
 
@@ -24,8 +23,8 @@ onetl_log = logging.getLogger("onetl")
 root_log = logging.getLogger()
 
 HALF_SCREEN_SIZE = 45
-BASE_LOG_INDENT = 9
-LOG_FORMAT = "{asctime} [{levelname:8s}] {message}"
+BASE_LOG_INDENT = 8
+LOG_FORMAT = "%(asctime)s [%(levelname:8s)s] %(message)s"
 CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
 
 DISABLED = 9999  # CRITICAL is 50, we need even higher to disable all logs
@@ -140,20 +139,23 @@ def set_default_logging_format() -> None:
 
     handlers = onetl_log.handlers or root_log.handlers
     for handler in handlers:
-        handler.setFormatter(logging.Formatter(LOG_FORMAT, style="{"))
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
 
 def log_with_indent(inp: str, *args, indent: int = 0, level: int = logging.INFO, **kwargs) -> None:
     for line in dedent(inp).splitlines():
-        log.log(level, " " * (BASE_LOG_INDENT + indent) + line, *args, **kwargs)
+        log.log(level, "%s" + line, " " * (BASE_LOG_INDENT + indent), *args, **kwargs)
 
 
-def log_collection(name: str, value: Collection, indent: int = 4, level: int = logging.INFO):
-    log_with_indent(f"{name} = [", level=level)
-    log_with_indent(os.linesep.join(f"{item!r}," for item in value), indent=indent, level=level)
-    log_with_indent("]", level=level)
+def log_collection(name: str, items: Collection, indent: int = 0, level: int = logging.INFO):
+    base_indent = " " * (BASE_LOG_INDENT + indent)
+    nested_indent = " " * (BASE_LOG_INDENT + indent + 4)
+    log.log(level, "%s%s = [", base_indent, name)
+    for item in items:
+        log.log(level, "%s%r", nested_indent, item)
+    log.log(level, "%s]", base_indent)
 
 
 def entity_boundary_log(msg: str, char: str = "=") -> None:
-    msg = f" {msg} "
-    log.info(char * (HALF_SCREEN_SIZE - len(msg) // 2) + msg + char * (HALF_SCREEN_SIZE - len(msg) // 2))  # noqa:WPS221
+    filing = char * (HALF_SCREEN_SIZE - len(msg) // 2)
+    log.info("%s %s %s", filing, msg, filing)

@@ -11,8 +11,7 @@ class SupportTableWithDBSchema:
         if value.db is None:
             # Same error text as in etl_entites.Table value error.
             raise ValueError(
-                f"{connection.__class__.__name__} Table name should be passed in `schema.name` format, "
-                f"got '{value}'",
+                f"Table name should be passed in `schema.name` format, got '{value}'",
             )
 
         return value

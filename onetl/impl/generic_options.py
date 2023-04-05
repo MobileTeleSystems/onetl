@@ -71,14 +71,7 @@ class GenericOptions(FrozenModel):
         matching_options = sorted(cls._get_matching_options(unknown_options, prohibited))
         if matching_options:
             class_name = cls.__name__  # type: ignore[attr-defined]
-
-            if len(matching_options) > 1:
-                options_str = ", ".join(repr(option) for option in matching_options)
-                message = f"Options {options_str} are not allowed to use in a {class_name}"
-            else:
-                message = f"Option {matching_options[0]!r} is not allowed to use in a {class_name}"
-
-            raise ValueError(message)
+            raise ValueError(f"Options {matching_options!r} are not allowed to use in a {class_name}")
 
         return values
 
@@ -100,13 +93,12 @@ class GenericOptions(FrozenModel):
         if not unknown_options:
             return values
 
-        if len(unknown_options) > 1:
-            options_str = ", ".join(repr(option) for option in unknown_options)
-            message = f"Options {options_str} are not known by {class_name}, are you sure they are valid?"
-        else:
-            message = f"Option {unknown_options[0]!r} is not known by {class_name}, are you sure it is valid?"
-
-        log.warning(f"|{class_name}| {message}")
+        log.warning(
+            "|%s| Options %s are not known by %s, are you sure they are valid?",
+            class_name,
+            unknown_options,
+            class_name,
+        )
         return values
 
     @classmethod

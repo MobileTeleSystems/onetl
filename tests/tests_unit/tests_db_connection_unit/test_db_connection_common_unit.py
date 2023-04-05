@@ -34,7 +34,7 @@ def test_secure_str_and_repr(spark_mock):
     ],
 )
 def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, value):
-    with pytest.raises(ValueError, match=f"Option '{arg}' is not allowed to use in a {options_class.__name__}"):
+    with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
         options_class(**{arg: value})
 
 
@@ -55,13 +55,13 @@ def test_db_options_warn_for_unknown(options_class, options_class_name, known_op
         options_class(some_unknown_option="value", **known_options)
 
         assert (
-            f"Option 'some_unknown_option' is not known by {options_class_name}, are you sure it is valid?"
+            f"Options ['some_unknown_option'] are not known by {options_class_name}, are you sure they are valid?"
         ) in caplog.text
 
         options_class(option1="value1", option2=None, **known_options)
 
         assert (
-            f"Options 'option1', 'option2' are not known by {options_class_name}, are you sure they are valid?"
+            f"Options ['option1', 'option2'] are not known by {options_class_name}, are you sure they are valid?"
         ) in caplog.text
 
         for known_option in known_options:

@@ -109,15 +109,15 @@ def test_greenplum_write_options_default():
 
 
 def test_greenplum_read_write_options_populated_by_connection_class():
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a ReadOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(dbschema="myschema", dbtable="mytable")
 
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a WriteOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(dbschema="myschema", dbtable="mytable")
 
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a Extra"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a Extra"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.Extra(dbschema="myschema", dbtable="mytable")
 
@@ -142,7 +142,7 @@ def test_greenplum_read_write_options_populated_by_connection_class():
     ],
 )
 def test_greenplum_read_write_options_prohibited(arg, value, options_class):
-    with pytest.raises(ValueError, match=f"Option '{arg}' is not allowed to use in a {options_class.__name__}"):
+    with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
         options_class(**{arg: value})
 
 
@@ -158,7 +158,7 @@ def test_greenplum_read_write_options_prohibited(arg, value, options_class):
     ],
 )
 def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
-    error_msg = f"Option '{arg}' is not allowed to use in a ReadOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(**{arg: value})
 
@@ -174,7 +174,7 @@ def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
     ],
 )
 def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
-    error_msg = f"Option '{arg}' is not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(**{arg: value})
 

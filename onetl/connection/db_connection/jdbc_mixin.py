@@ -143,17 +143,17 @@ class JDBCMixin(FrozenModel):
 
     def check(self):
         self._check_driver_imported()
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_with_indent(self._check_query, level=logging.DEBUG)
 
         try:
             self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
 
         return self
@@ -244,13 +244,15 @@ class JDBCMixin(FrozenModel):
         self._check_driver_imported()
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_with_indent("%s", query)
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
         log.info(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {df.count()} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %r rows",
+            self.__class__.__name__,
+            df.count(),
         )
         return df
 
@@ -356,20 +358,22 @@ class JDBCMixin(FrozenModel):
         self._check_driver_imported()
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
+        log_with_indent("%s", statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
 
-        message = f"|{self.__class__.__name__}| Execution succeeded"
+        message = "|%s| Execution succeeded"
+        log_args: list[str | int] = [self.__class__.__name__]
         if df is not None:
             rows_count = df.count()
-            message += f", resulting in-memory dataframe contains {rows_count} rows"
+            message += ", resulting in-memory dataframe contains %r rows"
+            log_args.append(rows_count)
         else:
             message += ", nothing returned"
 
-        log.info(message)
+        log.info(message, *log_args)
         return df
 
     def _check_driver_imported(self):

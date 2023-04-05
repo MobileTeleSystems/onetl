@@ -102,6 +102,10 @@ class FTP(FileConnection):
     user: Optional[str] = None
     password: Optional[SecretStr] = None
 
+    @property
+    def instance_url(self) -> str:
+        return f"ftp://{self.host}:{self.port}"
+
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.path.exists(os.fspath(path))
 

@@ -121,6 +121,10 @@ class SFTP(FileConnection):
     host_key_check: bool = False
     compress: bool = True
 
+    @property
+    def instance_url(self) -> str:
+        return f"sftp://{self.host}:{self.port}"
+
     def path_exists(self, path: os.PathLike | str) -> bool:
         try:
             self.client.stat(os.fspath(path))
@@ -246,13 +250,9 @@ class SFTP(FileConnection):
             return file.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
-        if not isinstance(content, str):
-            raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content.encode(encoding))
 
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
-        if not isinstance(content, bytes):
-            raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content)

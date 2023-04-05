@@ -218,7 +218,7 @@ def test_downloader_file_filter_exclude_dir(
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
 
-        skip_msg = "Path '/export/news_parse/exclude_dir.* does NOT MATCH filter FileFilter"
+        skip_msg = r"Path '/export/news_parse/exclude_dir.* does NOT MATCH filters \[FileFilter"
         assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
@@ -253,7 +253,7 @@ def test_downloader_file_filter_glob(file_all_connections, source_path, upload_t
         download_result = downloader.run()
 
         for exclude in excluded:
-            skip_msg = rf"Path '{exclude}' \(kind='file', .*\) does NOT MATCH filter FileFilter"
+            skip_msg = rf"Path '{exclude}' \(kind='file', .*\) does NOT MATCH filters \[FileFilter"
             assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
@@ -315,7 +315,7 @@ def test_downloader_run_with_files_absolute(
 
         if source_path_value:
             assert (
-                "Passed both ``source_path`` and file collection at the same time. File collection will be used"
+                "Passed both ``source_path`` and files list at the same time. Using explicit files list"
             ) in caplog.text
 
     assert not download_result.failed
@@ -399,7 +399,7 @@ def test_downloader_run_without_files_and_source_path(file_all_connections, tmp_
         connection=file_all_connections,
         local_path=local_path,
     )
-    with pytest.raises(ValueError, match="Neither file collection nor ``source_path`` are passed"):
+    with pytest.raises(ValueError, match="Neither file list nor ``source_path`` are passed"):
         downloader.run()
 
 
@@ -821,14 +821,14 @@ def test_downloader_file_limit_custom(file_all_connections, source_path, upload_
     with caplog.at_level(logging.DEBUG):
         files = downloader.view_files()
 
-        assert f"Limit FileLimit(count_limit={limit}) is reached" in caplog.text
+        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
 
     assert len(files) == limit
 
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
         assert "    count_limit = 2" in caplog.text
-        assert f"Limit FileLimit(count_limit={limit}) is reached" in caplog.text
+        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
 
     assert len(download_result.successful) == limit
 
@@ -846,7 +846,7 @@ def test_downloader_no_file_limit(file_all_connections, source_path, upload_test
     with caplog.at_level(logging.DEBUG):
         files = downloader.view_files()
 
-        assert "is reached" not in caplog.text
+        assert "are reached" not in caplog.text
 
     assert len(files) == len(upload_test_files)
 
@@ -855,7 +855,7 @@ def test_downloader_no_file_limit(file_all_connections, source_path, upload_test
 
         assert "limit = None" in caplog.text
         assert "count_limit = 2" not in caplog.text
-        assert "is reached" not in caplog.text
+        assert "are reached" not in caplog.text
 
     assert sorted(download_result.successful) == sorted(
         local_path / file.relative_to(source_path) for file in upload_test_files

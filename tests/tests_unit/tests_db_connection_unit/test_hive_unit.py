@@ -38,7 +38,10 @@ def test_hive_get_known_clusters_hook(request, spark_mock):
 
     request.addfinalizer(get_known_clusters.disable)
 
-    with pytest.raises(ValueError, match="Cluster 'unknown' is not in the known clusters list: 'known1', 'known2'"):
+    with pytest.raises(
+        ValueError,
+        match=r"Cluster 'unknown' is not in the known clusters list: \['known1', 'known2'\]",
+    ):
         Hive(cluster="unknown", spark=spark_mock)
 
     Hive(cluster="known1", spark=spark_mock)  # no exception

@@ -506,16 +506,17 @@ class Hive(DBConnection):
 
     @validator("cluster")
     def validate_cluster_name(cls, cluster):  # noqa: N805
-        log.debug(f"|{cls.__name__}| Normalizing cluster {cluster!r} name ...")
+        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
         validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
-            log.debug(f"|{cls.__name__}|   Got {validated_cluster!r}")
+            log.debug("|%s|   Got %r", cls.__name__)
 
-        log.debug(f"|{cls.__name__}| Checking if cluster {validated_cluster!r} is a known cluster ...")
+        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
         known_clusters = cls.slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
-            clusters_str = ", ".join(repr(name) for name in sorted(known_clusters))
-            raise ValueError(f"Cluster {validated_cluster!r} is not in the known clusters list: {clusters_str}")
+            raise ValueError(
+                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
+            )
 
         return validated_cluster
 
@@ -547,7 +548,7 @@ class Hive(DBConnection):
             hive = Hive.get_current(spark=spark)
         """
 
-        log.info(f"|{cls.__name__}| Detecting current cluster...")
+        log.info("|%s| Detecting current cluster...", cls.__name__)
         current_cluster = cls.slots.get_current_cluster()
         if not current_cluster:
             raise RuntimeError(
@@ -555,7 +556,7 @@ class Hive(DBConnection):
                 f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
             )
 
-        log.info(f"|{cls.__name__}| Got {current_cluster!r}")
+        log.info("|%s| Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, spark=spark)
 
     @property
@@ -563,22 +564,22 @@ class Hive(DBConnection):
         return self.cluster
 
     def check(self):
-        log.debug(f"|{self.__class__.__name__}| Detecting current cluster...")
+        log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
         current_cluster = self.slots.get_current_cluster()
         if current_cluster and self.cluster != current_cluster:
             raise ValueError("You can connect to a Hive cluster only from the same cluster")
 
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
         log_with_indent(self._check_query, level=logging.DEBUG)
 
         try:
             self._execute_sql(self._check_query)
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
 
         return self
@@ -622,8 +623,8 @@ class Hive(DBConnection):
 
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query:")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query:", self.__class__.__name__)
+        log_with_indent("%s", query)
 
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
@@ -681,11 +682,11 @@ class Hive(DBConnection):
 
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement:")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement:", self.__class__.__name__)
+        log_with_indent("%s", statement)
 
         self._execute_sql(statement).collect()
-        log.info(f"|{self.__class__.__name__}| Call succeeded")
+        log.info("|%s| Call succeeded", self.__class__.__name__)
 
     def save_df(
         self,
@@ -699,7 +700,7 @@ class Hive(DBConnection):
             self.get_df_schema(table)
             table_exists = True
 
-            log.info(f"|{self.__class__.__name__}| Table {table!r} already exists")
+            log.info("|%s| Table %r already exists", self.__class__.__name__, table)
         except Exception:
             table_exists = False
 
@@ -739,9 +740,9 @@ class Hive(DBConnection):
     ) -> StructType:
         query_schema = get_sql_query(table, columns=columns, where="1=0", compact=True)
 
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
-        log.debug(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(query_schema, level=logging.DEBUG)
+        log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, table)
+        log.debug("|%s| SQL statement:", self.__class__.__name__)
+        log_with_indent("%s", query_schema, level=logging.DEBUG)
 
         df = self._execute_sql(query_schema)
         return df.schema
@@ -754,7 +755,7 @@ class Hive(DBConnection):
         hint: str | None = None,
         where: str | None = None,
     ) -> Tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         sql_text = get_sql_query(
             table=table,
@@ -772,16 +773,16 @@ class Hive(DBConnection):
             hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(sql_text)
+        log.info("|%s| SQL statement:", self.__class__.__name__)
+        log_with_indent("%s", sql_text)
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
         min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
 
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%s) = %r", column, min_value)
+        log_with_indent("MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -807,14 +808,14 @@ class Hive(DBConnection):
             if missing_columns_df:
                 missing_columns_df_message = f"""
                     These columns present only in dataframe:
-                        {', '.join(missing_columns_df)}
+                        {missing_columns_df!r}
                     """
 
             missing_columns_table_message = ""
             if missing_columns_table:
                 missing_columns_table_message = f"""
                     These columns present only in table:
-                        {', '.join(missing_columns_table)}
+                        {missing_columns_table!r}
                     """
 
             raise ValueError(
@@ -823,10 +824,10 @@ class Hive(DBConnection):
                     Inconsistent columns between a table and the dataframe!
 
                     Table {table!r} has columns:
-                        {', '.join(table_columns)}
+                        {table_columns!r}
 
                     Dataframe has columns:
-                        {', '.join(df_columns)}
+                        {df_columns!r}
                     {missing_columns_df_message}{missing_columns_table_message}
                     """,
                 ).strip(),
@@ -842,12 +843,14 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        log.info(f"|{self.__class__.__name__}| Inserting data into existing table {table!r}")
+        log.info("|%s| Inserting data into existing table %r", self.__class__.__name__, table)
 
-        for key, value in write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"}).items():
+        unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"})
+        if unsupported_options:
             log.warning(
-                f"|{self.__class__.__name__}| Option {key}={value!r} is not supported "
-                "while inserting into existing table, ignoring",
+                "|%s| Options %r are not supported while inserting into existing table, ignoring",
+                self.__class__.__name__,
+                unsupported_options,
             )
 
         # Hive is inserting data to table by column position, not by name
@@ -878,7 +881,7 @@ class Hive(DBConnection):
             if original_partition_overwrite_mode:
                 self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, original_partition_overwrite_mode)
 
-        log.info(f"|{self.__class__.__name__}| Data is successfully inserted into table {table!r}")
+        log.info("|%s| Data is successfully inserted into table %r", self.__class__.__name__, table)
 
     def _save_as_table(
         self,
@@ -888,7 +891,7 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
 
         writer = df.write
         for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"}).items():
@@ -905,4 +908,4 @@ class Hive(DBConnection):
         overwrite = write_options.mode != HiveWriteMode.APPEND
         writer.mode("overwrite" if overwrite else "append").saveAsTable(table)
 
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully created")
+        log.info("|%s| Table %r successfully created", self.__class__.__name__, table)

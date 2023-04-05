@@ -500,11 +500,11 @@ class DBReader(FrozenModel):
         return df
 
     def _log_parameters(self) -> None:
-        log.info(f"|{self.connection.__class__.__name__}| -> |Spark| Reading table to DataFrame using parameters:")
-        log_with_indent(f"table = '{self.table}'")
+        log.info("|%s| -> |Spark| Reading table to DataFrame using parameters:", self.connection.__class__.__name__)
+        log_with_indent("table = '%s'", self.table)
 
         if self.hint:
-            log_with_indent(f"hint = {self.hint!r}")
+            log_with_indent("hint = %r", self.hint)
 
         if self.columns:
             log_collection("columns", self.columns)
@@ -512,10 +512,10 @@ class DBReader(FrozenModel):
             log_with_indent("columns = None")
 
         if self.where:
-            log_with_indent(f"where = {self.where!r}")
+            log_with_indent("where = %r", self.where)
 
         if self.hwm_column:
-            log_with_indent(f"hwm_column = '{self.hwm_column}'")
+            log_with_indent("hwm_column = '%s'", self.hwm_column)
 
         log_with_indent("")
 
@@ -525,7 +525,7 @@ class DBReader(FrozenModel):
             log_with_indent("options:")
             for option, value in options.items():
                 value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent(f"{option} = {value_wrapped}", indent=4)
+                log_with_indent("%s = %s", option, value_wrapped, indent=4)
         else:
             log_with_indent("options = None")
         log_with_indent("")

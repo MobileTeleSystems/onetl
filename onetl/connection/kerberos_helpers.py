@@ -44,13 +44,13 @@ def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
     path = check_keytab_file(keytab)
 
     cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
-    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+    log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
     subprocess.check_call(cmd)
 
 
 def kinit_password(user: str, password: str) -> None:
     cmd = ["kinit", user]
-    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+    log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
 
     proc = subprocess.Popen(
         cmd,

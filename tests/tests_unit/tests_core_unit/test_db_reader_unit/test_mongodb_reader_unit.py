@@ -155,7 +155,7 @@ def test_mongodb_reader_error_pass_hwm_expression(spark_mock):
 
     with pytest.raises(
         ValueError,
-        match="You can't pass the 'hwm_expression' parameter",
+        match="'hwm_expression' parameter is not supported by MongoDB",
     ):
         DBReader(connection=mongo, table="table", df_schema=df_schema, hwm_column=("hwm_int", "expr"))
 
