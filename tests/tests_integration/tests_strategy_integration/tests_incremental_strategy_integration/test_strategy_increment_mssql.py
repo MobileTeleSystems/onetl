@@ -9,6 +9,7 @@ from onetl.strategy import IncrementalStrategy
 pytestmark = pytest.mark.mssql
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [

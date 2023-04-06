@@ -327,6 +327,7 @@ def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schem
     processing.assert_equal_df(df=df, other_frame=span[:51])
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [

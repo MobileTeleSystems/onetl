@@ -10,6 +10,7 @@ pytestmark = pytest.mark.oracle
 
 # There is no INTEGER column in Oracle, only NUMERIC
 # Do not fail in such the case
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_column",
     [

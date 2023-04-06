@@ -81,7 +81,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
+
 html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -111,7 +111,7 @@ htmlhelp_basename = "my-project-doc"
 
 tags = {ver}
 tags.update(Version.parse(tag) for tag in get_all_tags())
-tags = [tag.public for tag in reversed(sorted(list(tags)))]
+tags = [tag.public for tag in sorted(tags, reverse=True)]
 
 versions = [("latest", "/latest/")]
 versions.extend([(tag, f"/{tag}/") for tag in tags])

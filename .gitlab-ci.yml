@@ -92,7 +92,7 @@ mypy:
     PYTHON_VERSION: '3.7'
   stage: static analysis
   script:
-  - pip install -U mypy types-PyYAML types-Deprecated importlib-metadata
+  - pip install -U mypy==1.1.1 types-PyYAML types-Deprecated importlib-metadata
   - python3 -m mypy --config-file setup.cfg onetl
   rules:
   # do not run linters after pushing git tag, code was already linted
