@@ -113,7 +113,7 @@ class HWMStrategy(BaseStrategy):
                 # file list can be very large, dont' show it unless user asked for
                 log_collection("value", hwm.value, level=logging.DEBUG)
             else:
-                log_with_indent("value = %r<%r items>", hwm.value.__class__.__name__, len(hwm.value))
+                log_with_indent("value = %r<%d items>", hwm.value.__class__.__name__, len(hwm.value))
         else:
             log_with_indent("value = %r", hwm.value)
 

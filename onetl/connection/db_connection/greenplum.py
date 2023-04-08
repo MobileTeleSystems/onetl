@@ -666,7 +666,8 @@ class Greenplum(JDBCMixin, DBConnection):
         result = df.collect()
 
         log.debug(
-            "|%s| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
+            len(result),
         )
         if result:
             return result[0][0]
@@ -686,7 +687,8 @@ class Greenplum(JDBCMixin, DBConnection):
         result = df.collect()
 
         log.debug(
-            "|%s| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
+            len(result),
         )
         return int(result[0][0])
 

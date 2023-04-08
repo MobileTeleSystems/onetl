@@ -28,7 +28,7 @@ class BaseStrategy(BaseModel):
         # hack to avoid circular imports
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug("|%s| Entered stack at level %r", self.__class__.__name__, StrategyManager.get_current_level())
+        log.debug("|%s| Entered stack at level %d", self.__class__.__name__, StrategyManager.get_current_level())
         StrategyManager.push(self)
 
         self._log_parameters()
@@ -38,7 +38,7 @@ class BaseStrategy(BaseModel):
     def __exit__(self, exc_type, _exc_value, _traceback):
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug("|%s| Exiting stack at level %r", self.__class__.__name__, StrategyManager.get_current_level() - 1)
+        log.debug("|%s| Exiting stack at level %d", self.__class__.__name__, StrategyManager.get_current_level() - 1)
         strategy = StrategyManager.pop()
 
         failed = bool(exc_type)

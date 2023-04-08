@@ -250,7 +250,7 @@ class JDBCMixin(FrozenModel):
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
         log.info(
-            "|%s| Query succeeded, resulting in-memory dataframe contains %r rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
             self.__class__.__name__,
             df.count(),
         )
@@ -364,16 +364,15 @@ class JDBCMixin(FrozenModel):
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
 
-        message = "|%s| Execution succeeded"
-        log_args: list[str | int] = [self.__class__.__name__]
         if df is not None:
             rows_count = df.count()
-            message += ", resulting in-memory dataframe contains %r rows"
-            log_args.append(rows_count)
+            log.info(
+                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
+                self.__class__.__name__,
+                rows_count,
+            )
         else:
-            message += ", nothing returned"
-
-        log.info(message, *log_args)
+            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
 
     def _check_driver_imported(self):

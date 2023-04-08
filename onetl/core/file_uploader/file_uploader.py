@@ -328,7 +328,7 @@ class FileUploader(FrozenModel):
 
         try:
             for root, dirs, files in os.walk(self.local_path):
-                log.debug("|Local FS| Listing dir '%s': %s dirs, %s files", root, len(dirs), len(files))
+                log.debug("|Local FS| Listing dir '%s': %d dirs, %d files", root, len(dirs), len(files))
                 result.update(LocalPath(root) / file for file in files)
         except Exception as e:
             raise RuntimeError(
@@ -402,7 +402,7 @@ class FileUploader(FrozenModel):
                     raise ValueError(f"File path '{local_file}' does not match source_path '{self.local_path}'")
 
             if local_file.exists() and not local_file.is_file():
-                raise NotAFileError(f"|Local FS| {path_repr(local_file)} is not a file")
+                raise NotAFileError(f"{path_repr(local_file)} is not a file")
 
             result.add((local_file, target_file, tmp_file))
 
@@ -410,10 +410,10 @@ class FileUploader(FrozenModel):
 
     def _check_local_path(self):
         if not self.local_path.exists():
-            raise DirectoryNotFoundError(f"|Local FS| '{self.local_path}' does not exist")
+            raise DirectoryNotFoundError(f"'{self.local_path}' does not exist")
 
         if not self.local_path.is_dir():
-            raise NotADirectoryError(f"|Local FS| {path_repr(self.local_path)} is not a directory")
+            raise NotADirectoryError(f"{path_repr(self.local_path)} is not a directory")
 
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         total_files = len(to_upload)
@@ -426,7 +426,7 @@ class FileUploader(FrozenModel):
 
         result = UploadResult()
         for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
-            log.info("|%s| Uploading file %s of %r", self.__class__.__name__, i + 1, total_files)
+            log.info("|%s| Uploading file %d of %d", self.__class__.__name__, i + 1, total_files)
             log_with_indent("from = '%s'", local_file)
             if tmp_file:
                 log_with_indent("temp = '%s'", tmp_file)
@@ -452,12 +452,11 @@ class FileUploader(FrozenModel):
             replace = False
             if self.connection.path_exists(target_file):
                 file = self.connection.get_file(target_file)
-                error_message = "|%s| File %s already exists"
                 if self.options.mode == FileWriteMode.ERROR:
-                    raise FileExistsError(error_message % (self.__class__.__name__, path_repr(file)))
+                    raise FileExistsError(f"File {path_repr(file)} already exists")
 
                 if self.options.mode == FileWriteMode.IGNORE:
-                    log.warning(f"{error_message}, skipping", self.__class__.__name__, path_repr(file))
+                    log.warning("|%s| File %s already exists, skipping", self.__class__.__name__, path_repr(file))
                     result.skipped.add(local_file)
                     return
 

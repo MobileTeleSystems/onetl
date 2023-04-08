@@ -29,13 +29,13 @@ def check_keytab_file(path: str | os.PathLike) -> Path:
     path = Path(os.path.expandvars(path)).expanduser().resolve()
 
     if not path.exists():
-        raise FileNotFoundError(f"|Kerberos| File '{path}' does not exist")
+        raise FileNotFoundError(f"File '{path}' does not exist")
 
     if not path.is_file():
-        raise NotAFileError(f"|Kerberos| {path_repr(path)} is not a file")
+        raise NotAFileError(f"{path_repr(path)} is not a file")
 
     if not os.access(path, os.R_OK):
-        raise OSError(f"|Kerberos| No access to keytab file {path_repr(path)}")
+        raise OSError(f"No access to keytab file {path_repr(path)}")
 
     return path
 

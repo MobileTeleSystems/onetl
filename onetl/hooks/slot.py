@@ -323,7 +323,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
             for i, hook in enumerate(hooks):
                 logger.log(
                     NOTICE,
-                    "|Hooks| %sCalling hook '%s.%s' (%s/%s)",
+                    "|Hooks| %sCalling hook '%s.%s' (%d of %d)",
                     " " * indent,
                     hook.__module__,
                     hook.__qualname__,

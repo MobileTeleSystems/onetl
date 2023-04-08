@@ -826,7 +826,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
             return result_options
 
         log.warning(
-            "|Spark| Passed numPartitions = %r, but values %r are not set. "
+            "|Spark| Passed numPartitions = %d, but values %r are not set. "
             "They will be detected automatically based on values in partitionColumn %r",
             result_options.num_partitions,
             missing_values,

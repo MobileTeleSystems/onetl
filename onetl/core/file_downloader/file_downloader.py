@@ -479,13 +479,13 @@ class FileDownloader(FrozenModel):
 
         if self.hwm_type:
             if not isinstance(strategy, HWMStrategy):
-                raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in snapshot strategy.")
+                raise ValueError("`hwm_type` cannot be used in snapshot strategy.")
             elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
                 # but the logic is quite messy
-                raise ValueError(f"|{self.__class__.__name__}| If `hwm_type` is passed you can't specify an `offset`")
+                raise ValueError("If `hwm_type` is passed you can't specify an `offset`")
 
             if isinstance(strategy, BatchHWMStrategy):
-                raise ValueError(f"|{self.__class__.__name__}| `hwm_type` cannot be used in batch strategy.")
+                raise ValueError("`hwm_type` cannot be used in batch strategy.")
 
     def _init_hwm(self) -> FileHWM:
         strategy: HWMStrategy = StrategyManager.get_current()
@@ -596,7 +596,7 @@ class FileDownloader(FrozenModel):
 
     def _check_local_path(self):
         if self.local_path.exists() and not self.local_path.is_dir():
-            raise NotADirectoryError(f"|Local FS| {path_repr(self.local_path)} is not a directory")
+            raise NotADirectoryError(f"{path_repr(self.local_path)} is not a directory")
 
         self.local_path.mkdir(exist_ok=True, parents=True)
 
@@ -614,7 +614,7 @@ class FileDownloader(FrozenModel):
 
         result = DownloadResult()
         for i, (source_file, local_file, tmp_file) in enumerate(to_download):
-            log.info("|%s| Downloading file %r of %r", self.__class__.__name__, i + 1, total_files)
+            log.info("|%s| Downloading file %d of %d", self.__class__.__name__, i + 1, total_files)
             log_with_indent("from = '%s'", source_file)
             if tmp_file:
                 log_with_indent("temp = '%s'", tmp_file)
@@ -646,12 +646,11 @@ class FileDownloader(FrozenModel):
 
             replace = False
             if local_file.exists():
-                error_message = "|LocalFS| File %s already exists"
                 if self.options.mode == FileWriteMode.ERROR:
-                    raise FileExistsError(error_message % (path_repr(local_file),))
+                    raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
                 if self.options.mode == FileWriteMode.IGNORE:
-                    log.warning(f"{error_message}, skipping", path_repr(local_file))
+                    log.warning("|LocalFS| File %s already exists, skipping", path_repr(local_file))
                     result.skipped.add(remote_file)
                     return
 
@@ -666,7 +665,7 @@ class FileDownloader(FrozenModel):
                 # remove existing file only after new file is downloaded
                 # to avoid issues then there is no free space to download new file, but existing one is already gone
                 if replace and local_file.exists():
-                    log.warning(f"{error_message}, overwriting", path_repr(local_file))
+                    log.warning("|LocalFS| File %s already exists, overwriting", path_repr(local_file))
                     local_file.unlink()
 
                 local_file.parent.mkdir(parents=True, exist_ok=True)

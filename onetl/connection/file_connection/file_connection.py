@@ -114,7 +114,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         remote_path = RemotePath(path)
 
         if not self.path_exists(remote_path):
-            raise FileNotFoundError(f"|{self.__class__.__name__}| File '{remote_path}' does not exist")
+            raise FileNotFoundError(f"File '{remote_path}' does not exist")
 
         return self._is_file(remote_path)
 
@@ -122,7 +122,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         remote_path = RemotePath(path)
 
         if not self.path_exists(remote_path):
-            raise DirectoryNotFoundError(f"|{self.__class__.__name__}| Directory '{remote_path}' does not exist")
+            raise DirectoryNotFoundError(f"Directory '{remote_path}' does not exist")
 
         return self._is_dir(remote_path)
 
@@ -137,7 +137,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         if not is_dir:
             raise NotADirectoryError(
-                f"|{self.__class__.__name__}| {path_repr(RemoteFile(path, stats=stat))} is not a directory",
+                f"{path_repr(RemoteFile(path, stats=stat))} is not a directory",
             )
 
         return RemoteDirectory(path=path, stats=stat)
@@ -148,7 +148,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         remote_path = RemoteFile(path=path, stats=stat)
 
         if not is_file:
-            raise NotAFileError(f"|{self.__class__.__name__}| {path_repr(remote_path)} is not a file")
+            raise NotAFileError(f"{path_repr(remote_path)} is not a file")
 
         return remote_path
 
@@ -175,7 +175,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
             raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
 
         log.debug(
-            "|%s| Writing string size %r with encoding %r and options %r to '%s'",
+            "|%s| Writing string size %d with encoding %r and options %r to '%s'",
             self.__class__.__name__,
             len(content),
             encoding,
@@ -243,13 +243,12 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         if local_file.exists():
             if not local_file.is_file():
-                raise NotAFileError(f"|LocalFS| {path_repr(local_file)} is not a file")
+                raise NotAFileError(f"{path_repr(local_file)} is not a file")
 
-            error_msg = "|LocalFS| File %s already exists"
             if not replace:
-                raise FileExistsError(error_msg % (path_repr(local_file),))
+                raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
-            log.warning(f"{error_msg}, overwriting", path_repr(local_file))
+            log.warning("|LocalFS| File %s already exists, overwriting", path_repr(local_file))
             local_file.unlink()
 
         log.debug("|Local FS| Creating target directory '%s'", local_file.parent)
@@ -258,8 +257,8 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         if local_file.stat().st_size != remote_file.stat().st_size:
             raise RuntimeError(
-                f"|{self.__class__.__name__}|"
-                " The size of the downloaded file does not match the size of the file on the source",
+                f"The size of the downloaded file ({naturalsize(local_file.stat().st_size)}) does not match "
+                f"the size of the file on the source ({naturalsize(remote_file.stat().st_size)})",
             )
 
         log.info("|Local FS| Successfully downloaded file '%s'", local_file)
@@ -299,19 +298,18 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         local_file = LocalPath(local_file_path)
         if not local_file.exists():
-            raise FileNotFoundError(f"|LocalFS| File '{local_file}' does not exist")
+            raise FileNotFoundError(f"File '{local_file}' does not exist")
 
         if not local_file.is_file():
-            raise NotAFileError(f"|LocalFS| {path_repr(local_file)} is not a file")
+            raise NotAFileError(f"{path_repr(local_file)} is not a file")
 
         remote_file = RemotePath(remote_file_path)
         if self.path_exists(remote_file):
             file = self.get_file(remote_file_path)
-            error_msg = "|%s| File %s already exists"
             if not replace:
-                raise FileExistsError(error_msg % (self.__class__.__name__, path_repr(file)))
+                raise FileExistsError(f"File {path_repr(file)} already exists")
 
-            log.warning(f"{error_msg}, overwriting", self.__class__.__name__, path_repr(file))
+            log.warning("|%s| File %s already exists, overwriting", self.__class__.__name__, path_repr(file))
             self._remove_file(remote_file)
 
         self.mkdir(remote_file.parent)
@@ -321,8 +319,8 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         if result.stat().st_size != local_file.stat().st_size:
             raise RuntimeError(
-                f"|{self.__class__.__name__}|"
-                " The size of the uploaded file does not match the size of the file on the source",
+                f"The size of the uploaded file ({naturalsize(result.stat().st_size)}) does not match "
+                f"the size of the file on the source ({naturalsize(local_file.stat().st_size)})",
             )
 
         log.info("|%s| Successfully uploaded file '%s'", self.__class__.__name__, remote_file)
@@ -341,11 +339,10 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
 
         if self.path_exists(target_file):
             file = self.get_file(target_file)
-            error_msg = "|%s| File %s already exists"
             if not replace:
-                raise FileExistsError(error_msg % (self.__class__.__name__, path_repr(file)))
+                raise FileExistsError(f"File {path_repr(file)} already exists")
 
-            log.warning(f"{error_msg}, overwriting", self.__class__.__name__, path_repr(file))
+            log.warning("|%s| File %s already exists, overwriting", self.__class__.__name__, path_repr(file))
             self._remove_file(target_file)
 
         self.mkdir(target_file.parent)
@@ -476,7 +473,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
                 yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
 
         log.debug(
-            "|%s| Directory '%s' contains %r nested directories and %r files",
+            "|%s| Directory '%s' contains %d nested directories and %d files",
             self.__class__.__name__,
             root,
             len(dirs),

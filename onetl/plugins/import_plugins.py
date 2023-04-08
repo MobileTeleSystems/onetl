@@ -88,7 +88,7 @@ def import_plugins(group: str, whitelist: list[str] | None = None, blacklist: li
         log.debug("|Plugins| No plugins registered")
         return
 
-    log.debug("|Plugins| Found %r plugins", plugins_count)
+    log.debug("|Plugins| Found %d plugins", plugins_count)
     log.debug("|Plugins| Plugins whitelist: %r", whitelist or [])
     log.debug("|Plugins| Plugins blacklist: %r", blacklist or [])
 
@@ -102,7 +102,7 @@ def import_plugins(group: str, whitelist: list[str] | None = None, blacklist: li
             continue
 
         if log.isEnabledFor(logging.DEBUG):
-            log.info("|onETL| Loading plugin (%r/%r):", i + 1, plugins_count)
+            log.info("|onETL| Loading plugin (%d of %d):", i + 1, plugins_count)
             log_with_indent("name: %r", entrypoint.name, level=logging.DEBUG)
             log_with_indent("package: %r", entrypoint.dist.name, level=logging.DEBUG)
             log_with_indent("version: %r", entrypoint.dist.version, level=logging.DEBUG)

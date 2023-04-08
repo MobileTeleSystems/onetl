@@ -642,7 +642,7 @@ class HDFS(FileConnection):  # noqa: WPS214
 
         nodes_len = len(namenodes)
         for i, namenode in enumerate(namenodes):
-            log.debug("|%s|   Trying namenode %r (%r of %r) ...", class_name, namenode, i, nodes_len)
+            log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
             if self.slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
                 host = namenode
@@ -658,18 +658,12 @@ class HDFS(FileConnection):  # noqa: WPS214
         if not self.host and self.cluster:
             return self._get_active_namenode()
 
-        class_name = self.__class__.__name__
-        cluster_log_suffix = ""
-        cluster_suffix = ""
-        log_args = []
-        if self.cluster:
-            cluster_suffix = f" of cluster {self.cluster!r}"
-            cluster_log_suffix = " of cluster %r"
-            log_args.append(self.cluster)
-
         # host is passed explicitly or cluster not set
-
-        log.info(f"|%s| Detecting if namenode %r{cluster_log_suffix} is active...", class_name, self.host, *log_args)
+        class_name = self.__class__.__name__
+        if self.cluster:
+            log.info("|%s| Detecting if namenode %r of cluster %r is active...", class_name, self.host, self.cluster)
+        else:
+            log.info("|%s| Detecting if namenode %r is active...", class_name, self.host)
 
         is_active = self.slots.is_namenode_active(self.host, self.cluster)
         if is_active:
@@ -680,7 +674,10 @@ class HDFS(FileConnection):  # noqa: WPS214
             log.debug("|%s|   No hooks, skip validation", class_name)
             return self.host
 
-        raise RuntimeError(f"Host {self.host!r} is not an active namenode{cluster_suffix}")
+        if self.cluster:
+            raise RuntimeError(f"Host {self.host!r} is not an active namenode of cluster {self.cluster!r}")
+
+        raise RuntimeError(f"Host {self.host!r} is not an active namenode")
 
     def _get_client(self) -> KerberosClient | InsecureClient:
         if self.user:
@@ -787,13 +784,9 @@ class HDFS(FileConnection):  # noqa: WPS214
             return file.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
-        if not isinstance(content, str):
-            raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, encoding=encoding, overwrite=True, **kwargs)
 
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
-        if not isinstance(content, bytes):
-            raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         self.client.write(os.fspath(path), data=content, overwrite=True, **kwargs)
 
     def _extract_name_from_entry(self, entry: ENTRY_TYPE) -> str:

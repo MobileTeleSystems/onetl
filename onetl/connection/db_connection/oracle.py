@@ -235,14 +235,15 @@ class Oracle(JDBCConnection):
         df = self._call_on_driver(statement, call_options)
         self._handle_compile_errors(statement.strip(), call_options)
 
-        message = "|%s| Execution succeeded"
-        log_args: list[str | int] = [self.__class__.__name__]
         if df is not None:
             rows_count = df.count()
-            message += ", resulting dataframe contains %r rows"
-            log_args.append(rows_count)
-
-        log.info(message, *log_args)
+            log.info(
+                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
+                self.__class__.__name__,
+                rows_count,
+            )
+        else:
+            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
