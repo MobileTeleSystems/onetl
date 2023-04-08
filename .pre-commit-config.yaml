@@ -95,8 +95,7 @@ repos:
     pass_filenames: true
   - id: mypy
     name: mypy
-    entry: python3 -m mypy --config-file setup.cfg
+    entry: python3 -m mypy --config-file setup.cfg onetl
     language: system
     types: [python]
-    files: ^onetl/.*$
-    pass_filenames: true
+    pass_filenames: false
