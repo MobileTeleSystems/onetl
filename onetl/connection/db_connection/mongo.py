@@ -39,6 +39,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschem
     SupportTableWithoutDBSchema,
 )
 from onetl.hwm import Statement
+from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql.types import StructType
@@ -433,11 +434,10 @@ class MongoDB(DBConnection):
 
         @classmethod
         def _where_condition(cls, result: list) -> Optional[dict]:
-            if len(result) == 1 and result[0] is None:
-                return None
+            result = list(filter(None, result))
 
-            if result[0] is None:
-                result = result[1:]
+            if not result:
+                return None
 
             if len(result) > 1:
                 return {"$and": result}
@@ -562,12 +562,42 @@ class MongoDB(DBConnection):
         self,
         table: str,
         column: str,
-        expression: str | None = None,
-        hint: dict | None = None,
+        expression: str | None = None,  # noqa: U100
+        hint: dict | None = None,  # noqa: U100
         where: dict | None = None,
+        options: ReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
         self._check_driver_imported()
-        return None, None
+
+        log.info("|Spark| Getting min and max values for column %r", column)
+
+        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+
+        # The '_id' field must be specified in the request.
+        min_max_pipeline_dict = {"$group": {"_id": {}, "min": {"$min": f"${column}"}, "max": {"$max": f"${column}"}}}
+        min_max_pipeline = self.Dialect.convert_filter_parameter_to_pipeline(min_max_pipeline_dict)
+
+        if where is not None:
+            pipeline = f"[{self.Dialect.generate_where_request(where=where)},{min_max_pipeline}]"
+        else:
+            pipeline = min_max_pipeline
+
+        read_options["spark.mongodb.input.uri"] = self.connection_url
+        read_options["spark.mongodb.input.collection"] = table
+        read_options["pipeline"] = pipeline
+
+        log.info("|%s| Getting a data frame from MongoDB with a pipeline:", self.__class__.__name__)
+        log_with_indent(pipeline)
+
+        min_max_df = self.spark.read.format("mongo").options(**read_options).load()
+        # Fields 'max' and 'min' go in the reverse order specified in the pipeline.
+        max_value, min_value = min_max_df.collect()[0]
+
+        log.info("|Spark| Received values:")
+        log_with_indent("MIN(%s) = %r", column, min_value)
+        log_with_indent("MAX(%s) = %r", column, max_value)
+
+        return min_value, max_value
 
     def read_table(
         self,

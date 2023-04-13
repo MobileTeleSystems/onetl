@@ -229,7 +229,7 @@ def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = Fals
 
     if "local" in master:
         # no executors, only driver
-        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # noqa: WPS437
+        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # type: ignore # noqa: WPS437
         config["spark.driver.cores"] = expected_cores
     else:
         cores = int(conf.get("spark.executor.cores", "1"))

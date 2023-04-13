@@ -143,15 +143,15 @@ def test_mongodb_generate_pipeline_with_or_and(spark_mock):
 
     pipeline = {
         "$and": [
-            {"$or": [{"$col_1": {"$gt": 1, "$eq": True}}, {"$col_2": {"$eq": None}}]},
-            {"$and": [{"$col_3": {"$eq": "Hello"}}, {"$col_4": {"$eq": "Tom"}}]},
+            {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
+            {"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": "Tom"}}]},
         ],
     }
 
     assert mongo.Dialect.generate_where_request(where=pipeline) == (
         "{'$match':"
         "{'$and':["
-        "{'$or':[{'$col_1':{'$gt':1,'$eq':true}},{'$col_2':{'$eq':null}}]},"
-        "{'$and':[{'$col_3':{'$eq':'Hello'}},{'$col_4':{'$eq':'Tom'}}]}"
+        "{'$or':[{'col_1':{'$gt':1,'$eq':true}},{'col_2':{'$eq':null}}]},"
+        "{'$and':[{'col_3':{'$eq':'Hello'}},{'col_4':{'$eq':'Tom'}}]}"
         "]}}"
     )
