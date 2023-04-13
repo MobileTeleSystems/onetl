@@ -63,6 +63,7 @@ class JDBCMixin(FrozenModel):
     user: str
     password: SecretStr
     driver: ClassVar[str]
+    _check_query: ClassVar[str]
 
     class JDBCOptions(GenericOptions):
         """Generic options, related to specific JDBC driver.
@@ -134,7 +135,7 @@ class JDBCMixin(FrozenModel):
     def __enter__(self):
         return self
 
-    def __exit__(self, _exc_type, _exc_value, _traceback):
+    def __exit__(self, _exc_type, _exc_value, _traceback):  # noqa: U101
         self.close()
 
     def __del__(self):  # noqa: WPS603
@@ -144,13 +145,13 @@ class JDBCMixin(FrozenModel):
     def check(self):
         self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
-        self._log_parameters()
+        self._log_parameters()  # type: ignore
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_with_indent(self._check_query, level=logging.DEBUG)
 
         try:
-            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))
+            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))  # type: ignore
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -376,7 +377,7 @@ class JDBCMixin(FrozenModel):
         return df
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
         driver_class = getattr(gateway.jvm, self.driver)
 
         try:
@@ -462,12 +463,12 @@ class JDBCMixin(FrozenModel):
 
         jdbc_properties = self._get_jdbc_properties(options, exclude_unset=True)
 
-        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc
+        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_options = jdbc_utils_package.JDBCOptions(
             self.jdbc_url,
             # JDBCOptions class requires `table` argument to be passed, but it is not used in asConnectionProperties
             "table",
-            self.spark._jvm.PythonUtils.toScalaMap(jdbc_properties),
+            self.spark._jvm.PythonUtils.toScalaMap(jdbc_properties),  # type: ignore
         )
         return jdbc_options.asConnectionProperties()
 
@@ -481,7 +482,7 @@ class JDBCMixin(FrozenModel):
             last_connection.close()
 
         connection_properties = self._options_to_connection_properties(options)
-        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager
+        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
         self._last_connection_and_options = (new_connection, options)  # noqa: WPS601
@@ -495,7 +496,7 @@ class JDBCMixin(FrozenModel):
         self._last_connection_and_options = None  # noqa: WPS601
 
     def _get_statement_args(self) -> tuple[int, ...]:
-        ResultSet = self.spark._jvm.java.sql.ResultSet
+        ResultSet = self.spark._jvm.java.sql.ResultSet  # type: ignore
 
         return ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
 
@@ -515,7 +516,7 @@ class JDBCMixin(FrozenModel):
         """
 
         jdbc_connection = self._get_jdbc_connection(options)
-        jdbc_connection.setReadOnly(read_only)
+        jdbc_connection.setReadOnly(read_only)  # type: ignore
 
         statement_args = self._get_statement_args()
         jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
@@ -542,10 +543,10 @@ class JDBCMixin(FrozenModel):
         def jvm_is_instance(obj, klass):  # noqa: WPS430
             import py4j
 
-            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)
+            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)  # type: ignore
 
-        PreparedStatement = self.spark._jvm.java.sql.PreparedStatement
-        CallableStatement = self.spark._jvm.java.sql.CallableStatement
+        PreparedStatement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
+        CallableStatement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
 
         with closing(jdbc_statement):
             if options.fetchsize is not None:
@@ -627,18 +628,18 @@ class JDBCMixin(FrozenModel):
 
         from pyspark.sql import DataFrame  # noqa: WPS442
 
-        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
+        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc  # type: ignore
         jdbc_dialect = jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
 
-        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc
+        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_utils = jdbc_utils_package.JdbcUtils
 
-        java_converters = self.spark._jvm.scala.collection.JavaConverters
+        java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
         result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
         result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema)
         result_list = java_converters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
-        jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)
+        jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)  # type: ignore
 
         # DataFrame constructor in Spark 2.3 and 2.4 required second argument to be a SQLContext class
         # E.g. spark._wrapped = SQLContext(spark).
@@ -646,4 +647,4 @@ class JDBCMixin(FrozenModel):
         # attribute was removed from SparkSession
         spark_context = getattr(self.spark, "_wrapped", self.spark)
 
-        return DataFrame(jdf, spark_context)
+        return DataFrame(jdf, spark_context)  # type: ignore
