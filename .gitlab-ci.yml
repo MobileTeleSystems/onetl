@@ -159,21 +159,25 @@ build_docker_image_webdav:
   variables:
     DOCKER_FILE_PATH: ./docker/webdav/Dockerfile
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}/webdav:develop
 build_docker_image_postgres:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/postgres/Dockerfile
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}/postgres:develop
 build_docker_image_oracle:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/oracle/Dockerfile
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}/oracle:develop
 build_docker_image_hive2:
   extends: .build_docker_images
   variables:
     DOCKER_FILE_PATH: ./docker/hive2/Dockerfile
     DOCKER_IMAGE_NAME: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2
+    DOCKER_CACHE_FROM: ${CI_REGISTRY}/${CI_PROJECT_PATH}/hive2:develop
 
 tests:
   image: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${DOCKER_IMAGE_TAG}
