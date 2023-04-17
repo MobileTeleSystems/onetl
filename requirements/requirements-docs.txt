@@ -3,6 +3,7 @@ graphviz
 numpydoc
 setuptools-git-versioning
 sphinx
+sphinx-design
 sphinx-tabs
 sphinx-toolbox
 sphinx_rtd_theme

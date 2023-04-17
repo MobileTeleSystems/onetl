@@ -124,12 +124,15 @@ class Greenplum(JDBCMixin, DBConnection):
     """Greenplum connection.
 
     Based on package ``io.pivotal:greenplum-spark:2.1.3``
-    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_).
+    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1279474/file_groups/12996>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        There is no public information which Greenplum server versions are compatible with this connector,
-        please contact Pivotal
+        * Greenplum server versions: 5.x, 6.x
+        * Spark versions: 2.3.x - 3.2.x (Spark 3.3.x is not supported yet)
+        * Java versions: 8 - 17
+
+        See `official documentation <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-release_notes.html>`_.
 
     .. warning::
 
@@ -470,7 +473,6 @@ class Greenplum(JDBCMixin, DBConnection):
     package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
     package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
     package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
-    package_spark_3_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
 
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100

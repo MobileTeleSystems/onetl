@@ -67,9 +67,13 @@ class Oracle(JDBCConnection):
     Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported Oracle Server versions: 21c, 19c, 18c, and 12.2
+        * Oracle Server versions: 21c, 19c, 18c, and 12.2
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 11
+
+        See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
 
     .. warning::
 

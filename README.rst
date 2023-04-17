@@ -32,8 +32,8 @@ Python ETL/ELT framework powered by `Apache Spark <https://spark.apache.org/>`_ 
 
 Requirements
 ------------
-* **Python 3.7...3.10**
-* PySpark 2.3...3.3
+* **Python 3.7 - 3.10**
+* PySpark 2.3 - 3.3 (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive`` and ``HDFS`` connectors)
 
@@ -151,17 +151,17 @@ Firstly, you should install JDK. The exact installation instruction depends on y
 
 Compatibility matrix (`see also <https://spark.apache.org/docs/latest/>`_):
 
-+--------+------------+------------+
-| Spark  | Java       | Python     |
-+========+============+============+
-| 2.3.x  | 8 only     | 2.7..3.7   |
-+--------+------------+------------+
-| 2.4.x  | 8 only     | 2.7..3.7   |
-+--------+------------+------------+
-| 3.2.x  | 8u201..11  | 3.7..3.10  |
-+--------+------------+------------+
-| 3.3.x  | 8u201..17  | 3.7..3.11  |
-+--------+------------+------------+
++--------+-------------+-------------+
+| Spark  | Java        | Python      |
++========+=============+=============+
+| 2.3.x  | 8 only      | 2.7 - 3.7   |
++--------+-------------+-------------+
+| 2.4.x  | 8 only      | 2.7 - 3.7   |
++--------+-------------+-------------+
+| 3.2.x  | 8u201 - 11  | 3.7 - 3.10  |
++--------+-------------+-------------+
+| 3.3.x  | 8u201 - 17  | 3.7 - 3.10  |
++--------+-------------+-------------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
 

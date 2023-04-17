@@ -70,6 +70,12 @@ class Hive(DBConnection):
 
     You don't need a Hive server to use this connector.
 
+    .. dropdown:: Version compatibility
+
+        * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 17
+
     .. warning::
 
         To use Hive connector you should have PySpark installed (or injected to ``sys.path``)
@@ -89,7 +95,7 @@ class Hive(DBConnection):
     .. warning::
 
         This connector requires some additional configuration files to be present (``hive-site.xml`` and so on),
-        as well as .jar files with Hive MetaStore client (compatible with current Spark version).
+        as well as .jar files with Hive MetaStore client.
 
         See `Spark Hive Tables documentation <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_
         and `this guide <https://dataedo.com/docs/apache-spark-hive-metastore>`_ for more details.

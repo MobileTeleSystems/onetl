@@ -29,9 +29,13 @@ class MSSQL(JDBCConnection):
     (`official MSSQL JDBC driver
     <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported SQL Server versions: >= 2012
+        * SQL Server versions: 2012 or higher
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8
+
+        See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_.
 
     .. warning::
 

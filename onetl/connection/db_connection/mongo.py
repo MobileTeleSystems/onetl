@@ -163,6 +163,14 @@ class MongoDB(DBConnection):
     Based on package ``org.mongodb.spark:mongo-spark-connector``
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/master/>`_)
 
+    .. dropdown:: Version compatibility
+
+        * MongoDB server versions: 2.6 - 4.2
+        * Spark versions: 2.3.x - 3.2.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://www.mongodb.com/docs/spark-connector/master/>`_.
+
     .. warning::
 
         To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
