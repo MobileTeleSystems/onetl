@@ -44,14 +44,15 @@ release = ver.public
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autosummary",
     "numpydoc",
+    "sphinx_design",
     "sphinx_rtd_theme",
-    "sphinx.ext.autodoc",
-    "sphinxcontrib.autodoc_pydantic",
+    "sphinx_substitution_extensions",
     "sphinx_tabs.tabs",
     "sphinx_toolbox.more_autodoc.autoprotocol",
-    "sphinx_substitution_extensions",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 numpydoc_show_class_members = True
 autodoc_pydantic_model_show_config = False

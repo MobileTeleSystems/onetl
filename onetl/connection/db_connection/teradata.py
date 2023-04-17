@@ -28,6 +28,14 @@ class Teradata(JDBCConnection):
     Based on package ``com.teradata.jdbc:terajdbc4:17.20.00.08``
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
 
+    .. dropdown:: Version compatibility
+
+        * Teradata server versions: 16.10 - 20.0
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html>`_.
+
     .. warning::
 
         To use Teradata connector you should have PySpark installed (or injected to ``sys.path``)

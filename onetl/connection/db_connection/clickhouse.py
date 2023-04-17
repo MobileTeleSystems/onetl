@@ -33,9 +33,13 @@ class Clickhouse(JDBCConnection):
     Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported Clickhouse server versions: >= 20.7
+        * Clickhouse server versions: 20.7 or higher
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
 
     .. warning::
 

@@ -34,12 +34,12 @@
     db_connection/clickhouse
     db_connection/greenplum
     db_connection/hive
+    db_connection/mongodb
     db_connection/mssql
     db_connection/mysql
     db_connection/oracle
     db_connection/postgres
     db_connection/teradata
-    db_connection/mongodb
 
 .. toctree::
     :maxdepth: 2

@@ -28,9 +28,13 @@ class MySQL(JDBCConnection):
     Based on Maven package ``mysql:mysql-connector-java:8.0.30``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported MySQL server versions: >= 5.6
+        * MySQL server versions: 5.6 or higher
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
 
     .. warning::
 

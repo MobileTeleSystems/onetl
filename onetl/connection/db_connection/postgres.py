@@ -38,9 +38,13 @@ class Postgres(JDBCConnection):
     Based on Maven package ``org.postgresql:postgresql:42.4.0``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported PostgreSQL server versions: >= 8.2
+        * PostgreSQL server versions: 8.2 or higher
+        * Spark versions: 2.3.x - 3.3.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://jdbc.postgresql.org/download/>`_.
 
     .. warning::
 
