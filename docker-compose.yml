@@ -8,10 +8,9 @@ services:
       dockerfile: ./docker/Dockerfile
       context: .
       target: base
-    command: ./run_tests.sh
-    env_file: onetl_docker.env
+    env_file: .env.docker
     volumes:
-    - ./:/opt/project/
+    - ./:/app/
     networks:
     - onetl
     - default
@@ -30,7 +29,7 @@ services:
     restart: unless-stopped
     ports:
     - 27017:27017
-    env_file: dependencies.env
+    env_file: .env.dependencies
     networks:
     - onetl
 
@@ -38,7 +37,7 @@ services:
     image: minio/minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 9010:9000
     - 9011:9001
@@ -51,7 +50,7 @@ services:
       dockerfile: ./docker/postgres/Dockerfile
       context: .
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 5432:5432
     networks:
@@ -60,7 +59,7 @@ services:
   greenplum:
     image: datagrip/greenplum:6.8
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 5433:5432
     networks:
@@ -73,7 +72,7 @@ services:
       context: .
     hostname: hive2
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     depends_on:
     - postgres
     ports:
@@ -101,7 +100,7 @@ services:
       dockerfile: ./docker/oracle/Dockerfile
       context: .
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 1522:1521
     - 5501:5500
@@ -115,7 +114,7 @@ services:
       context: .
     hostname: webdav
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 8000:80
     - 8443:443
@@ -134,7 +133,7 @@ services:
   mysql:
     image: mysql
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 3306:3306
     networks:
@@ -143,7 +142,7 @@ services:
   mssql:
     image: mcmoe/mssqldocker
     restart: unless-stopped
-    env_file: dependencies.env
+    env_file: .env.dependencies
     ports:
     - 1433:1433
     networks:

@@ -293,6 +293,7 @@ Create virtualenv and install dependencies:
         -r requirements/requirements-spark.txt \
         -r requirements/requirements-webdav.txt \
         -r requirements/requirements-dev.txt \
+        -r requirements/requirements-docs.txt \
         -r requirements/requirements-test.txt
 
 Enable pre-commit hooks
@@ -408,7 +409,7 @@ Load environment variables with connection properties:
 
 .. code:: bash
 
-    source onetl_local.env
+    source .env.local
 
 Run tests:
 

@@ -97,6 +97,7 @@ class DBReader(FrozenModel):
         Specifies the schema for the date frame to be loaded from the source
 
         .. code:: python
+
             from pyspark.sql.types import (
                 DoubleType,
                 IntegerType,
