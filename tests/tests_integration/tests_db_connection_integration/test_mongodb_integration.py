@@ -80,3 +80,85 @@ def test_mongodb_connection_write(spark, prepare_schema_table, processing):
         table=prepare_schema_table.table,
         df=df,
     )
+
+
+def test_mongodb_connection_read_pipeline_match(
+    spark,
+    prepare_schema_table,
+    load_table_data,
+    processing,
+):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    df = mongo.pipeline(
+        collection=prepare_schema_table.table,
+        pipeline={"$match": {"_id": {"$eq": 1}}},
+    )
+
+    assert df
+    assert df.count() == 1
+
+    collected = df.collect()
+
+    assert collected[0][0] == 1  # _id
+
+
+def test_mongodb_connection_read_pipeline_match_with_df_schema(
+    spark,
+    prepare_schema_table,
+    load_table_data,
+    processing,
+):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    df = mongo.pipeline(
+        collection=prepare_schema_table.table,
+        pipeline={"$match": {"_id": {"$eq": 1}}},
+        df_schema=prepare_schema_table.schema,
+    )
+
+    assert df
+    assert df.count() == 1
+
+    collected = df.collect()
+
+    assert collected[0][0] == 1  # _id
+
+
+def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, load_table_data, processing):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    df = mongo.pipeline(
+        collection=prepare_schema_table.table,
+        pipeline={"$group": {"_id": {}, "min": {"$min": "$hwm_int"}, "max": {"$max": "$hwm_int"}}},
+        df_schema=prepare_schema_table.schema,
+    )
+
+    assert df
+    assert df.count() == 1
+
+    collected = df.collect()
+
+    assert collected[0][1] == 1
+    assert collected[0][0] == 100
