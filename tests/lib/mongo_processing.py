@@ -75,13 +75,13 @@ class MongoDBProcessing(BaseProcessing):
         return ""
 
     def create_schema(self, schema: str) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def create_table_ddl(self, table: str, fields: Dict[str, str], schema: str = None) -> str:
         return ""
 
     def create_table(self, table: str, fields: Dict[str, str], schema: str) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def drop_database_ddl(self, schema: str) -> str:
         return ""
@@ -93,10 +93,10 @@ class MongoDBProcessing(BaseProcessing):
         self,
         schema: str,
     ) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def drop_table(self, table: str, schema: str) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         list_to_insert = []
@@ -125,7 +125,7 @@ class MongoDBProcessing(BaseProcessing):
         records = db[table]
         return pd.DataFrame(list(records.find()))
 
-    @staticmethod  # noqa: WPS605
+    @staticmethod
     def current_datetime() -> datetime:
         return datetime.now()
 

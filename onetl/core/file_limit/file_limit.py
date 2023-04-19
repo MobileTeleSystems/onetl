@@ -51,7 +51,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
     _counter: int = 0
 
     def reset(self):
-        self._counter = 0  # noqa: WPS601
+        self._counter = 0
 
     def stops_at(self, path: PathProtocol) -> bool:
         if self.is_reached:
@@ -61,7 +61,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
             return False
 
         # directories count does not matter
-        self._counter += 1  # noqa: WPS601
+        self._counter += 1
         return self.is_reached
 
     @property

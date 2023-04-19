@@ -67,7 +67,7 @@ class HWMStrategy(BaseStrategy):
             result = hwm_store.get(self.hwm.qualified_name)
 
             if result is not None:
-                self.hwm = result  # noqa: WPS601
+                self.hwm = result
                 log.info("|%s| Got HWM:", class_name)
                 self._log_hwm(self.hwm)
             else:

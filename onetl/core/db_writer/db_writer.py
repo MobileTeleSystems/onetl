@@ -144,7 +144,7 @@ class DBWriter(FrozenModel):
     options: Optional[GenericOptions] = None
 
     @validator("table", pre=True, always=True)
-    def validate_table(cls, table, values):  # noqa: N805
+    def validate_table(cls, table, values):
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
         if isinstance(table, str):
@@ -154,7 +154,7 @@ class DBWriter(FrozenModel):
         return dialect.validate_table(connection, table)
 
     @validator("options", pre=True, always=True)
-    def validate_options(cls, options, values):  # noqa: N805
+    def validate_options(cls, options, values):
         connection = values.get("connection")
         write_options_class = getattr(connection, "WriteOptions", None)
         if write_options_class:

@@ -53,7 +53,7 @@ log = getLogger(__name__)
 ENTRY_TYPE = Tuple[str, dict]
 
 
-class HDFS(FileConnection):  # noqa: WPS214
+class HDFS(FileConnection):
     """HDFS file connection.
 
     Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_.
@@ -238,7 +238,6 @@ class HDFS(FileConnection):  # noqa: WPS214
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
             """
-            return None
 
         @slot
         @staticmethod
@@ -283,9 +282,8 @@ class HDFS(FileConnection):  # noqa: WPS214
 
                     return None
             """
-            return None
 
-        @slot  # noqa: WPS605
+        @slot
         @staticmethod
         def get_known_clusters() -> set[str] | None:
             """
@@ -315,9 +313,8 @@ class HDFS(FileConnection):  # noqa: WPS214
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
             """
-            return None
 
-        @slot  # noqa: WPS605
+        @slot
         @staticmethod
         def get_cluster_namenodes(cluster: str) -> set[str] | None:
             """
@@ -354,9 +351,8 @@ class HDFS(FileConnection):  # noqa: WPS214
                         return {"namenode1.domain.com", "namenode2.domain.com"}
                     return None
             """
-            return None
 
-        @slot  # noqa: WPS605
+        @slot
         @staticmethod
         def get_current_cluster() -> str | None:
             """
@@ -387,9 +383,8 @@ class HDFS(FileConnection):  # noqa: WPS214
                     # some magic here
                     return "rnd-dwh"
             """
-            return None
 
-        @slot  # noqa: WPS605
+        @slot
         @staticmethod
         def get_webhdfs_port(cluster: str) -> int | None:
             """
@@ -425,9 +420,8 @@ class HDFS(FileConnection):  # noqa: WPS214
                         return 50007  # Cloudera
                     return None
             """
-            return None
 
-        @slot  # noqa: WPS605
+        @slot
         @staticmethod
         def is_namenode_active(host: str, cluster: str | None) -> bool | None:
             """
@@ -473,7 +467,6 @@ class HDFS(FileConnection):  # noqa: WPS214
                     # some magic here
                     return True
             """
-            return None
 
     cluster: Optional[Cluster] = None
     host: Optional[Host] = None
@@ -706,7 +699,7 @@ class HDFS(FileConnection):  # noqa: WPS214
 
     def _close_client(self) -> None:  # NOSONAR
         # Underlying client does not support closing
-        pass  # noqa: WPS420
+        pass
 
     def _rmdir(self, path: RemotePath) -> None:
         self.client.delete(os.fspath(path), recursive=False)

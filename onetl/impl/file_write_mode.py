@@ -15,7 +15,7 @@
 from enum import Enum
 
 
-class FileWriteMode(str, Enum):  # noqa: WPS600
+class FileWriteMode(str, Enum):
     ERROR = "error"
     IGNORE = "ignore"
     OVERWRITE = "overwrite"

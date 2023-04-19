@@ -25,8 +25,8 @@ class LocalPath(Path):
 
 
 class LocalPosixPath(LocalPath, PurePosixPath):
-    pass  # noqa: WPS604, WPS420
+    pass
 
 
 class LocalWindowsPath(LocalPath, PureWindowsPath):
-    pass  # noqa: WPS604, WPS420
+    pass

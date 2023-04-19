@@ -48,13 +48,13 @@ class BaseHWMStore(BaseModel, ABC):
     def __str__(self):
         return self.__class__.__name__
 
-    @abstractmethod  # noqa: WPS324
+    @abstractmethod
     def get(self, name: str) -> HWM | None:
-        ...  # noqa: WPS428
+        ...
 
     @abstractmethod
     def save(self, hwm: HWM) -> Any:
-        ...  # noqa: WPS428
+        ...
 
     def _log_parameters(self) -> None:
         log.info("|onETL| Using %s as HWM Store", self.__class__.__name__)

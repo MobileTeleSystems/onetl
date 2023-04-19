@@ -45,7 +45,6 @@ repos:
   rev: v2.1.1
   hooks:
   - id: docker-compose-check
-    files: ^docker-compose.*\.(yaml|yml)$
 - repo: https://github.com/pycqa/isort
   rev: 5.11.5
   hooks:
@@ -99,3 +98,9 @@ repos:
     language: system
     types: [python]
     pass_filenames: false
+
+ci:
+  skip:
+  - flake8  # checked with Github Actions
+  - mypy  # checked with Github Actions
+  - docker-compose-check  # cannot run on pre-commit.ci

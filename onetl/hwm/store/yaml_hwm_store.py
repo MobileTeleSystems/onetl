@@ -161,7 +161,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
     @validator("path", pre=True, always=True)
-    def validate_path(cls, path):  # noqa: N805
+    def validate_path(cls, path):
         path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
         return path

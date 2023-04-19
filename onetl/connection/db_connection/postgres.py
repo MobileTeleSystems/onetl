@@ -162,12 +162,8 @@ class Postgres(JDBCConnection):
         extra = self.extra.dict(by_alias=True)
         extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
 
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
-        if params_str:
-            params_str = f"?{params_str}"
-
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
     @property
     def instance_url(self) -> str:

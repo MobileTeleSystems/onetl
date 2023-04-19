@@ -97,32 +97,32 @@ class FileFilter(BaseFileFilter, FrozenModel):
     exclude_dirs: List[RemotePath] = Field(default_factory=list)
 
     @validator("glob", pre=True)
-    def check_glob(cls, value: str) -> str:  # noqa: N805
+    def check_glob(cls, value: str) -> str:
         if not glob.has_magic(value):
             raise ValueError("Invalid glob")
 
         return value
 
     @validator("regexp", pre=True)
-    def check_regexp(cls, value: Union[re.Pattern, str]) -> re.Pattern:  # noqa: N805
+    def check_regexp(cls, value: Union[re.Pattern, str]) -> re.Pattern:
         if isinstance(value, str):
             return re.compile(value, re.IGNORECASE | re.DOTALL)
 
         return value
 
     @validator("exclude_dirs", each_item=True, pre=True)
-    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> RemotePath:  # noqa: N805
+    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> RemotePath:
         return RemotePath(value)
 
     @root_validator
-    def disallow_empty_fields(cls, value: dict) -> dict:  # noqa: N805
+    def disallow_empty_fields(cls, value: dict) -> dict:
         if value.get("glob") is None and value.get("regexp") is None and not value.get("exclude_dirs"):
             raise ValueError("One of the following fields must be set: `glob`, `regexp`, `exclude_dirs`")
 
         return value
 
     @root_validator
-    def disallow_both_glob_and_regexp(cls, value: dict) -> dict:  # noqa: N805
+    def disallow_both_glob_and_regexp(cls, value: dict) -> dict:
         if value.get("glob") and value.get("regexp"):
             raise ValueError("Only one of `glob`, `regexp` fields can passed, not both")
 

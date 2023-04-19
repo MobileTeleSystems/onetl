@@ -167,7 +167,7 @@ def test_hwm_store_wrong_config_and_key_value_error(config_constructor, config, 
 
         @detect_hwm_store(key)
         def main(config):
-            ...  # noqa: WPS428
+            ...
 
         conf = config_constructor(config)
         main(conf)

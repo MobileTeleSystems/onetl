@@ -47,7 +47,7 @@ PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 log = logging.getLogger(__name__)
 
 
-class HiveWriteMode(str, Enum):  # noqa: WPS600
+class HiveWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE_TABLE = "overwrite_table"
     OVERWRITE_PARTITIONS = "overwrite_partitions"
@@ -56,7 +56,7 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
     @classmethod  # noqa: WPS120
-    def _missing_(cls, value: object):
+    def _missing_(cls, value: object):  # noqa: WPS120
         if str(value) == "overwrite":
             log.warning(
                 "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, "
@@ -361,7 +361,7 @@ class Hive(DBConnection):
         """
 
         @validator("sort_by")
-        def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):  # noqa: N805
+        def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
             options = values.copy()
             bucket_by = options.pop("bucket_by", None)
             if sort_by and not bucket_by:
@@ -370,7 +370,7 @@ class Hive(DBConnection):
             return sort_by
 
         @root_validator
-        def partition_overwrite_mode_is_not_allowed(cls, values):  # noqa: N805
+        def partition_overwrite_mode_is_not_allowed(cls, values):
             if values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode"):
                 raise ValueError(
                     "`partitionOverwriteMode` option should be replaced "
@@ -391,13 +391,13 @@ class Hive(DBConnection):
         action="always",
     )
     class Options(WriteOptions):
-        pass  # noqa: WPS420, WPS604
+        pass
 
     @support_hooks
     class slots:  # noqa: N801
         """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins."""
 
-        @slot  # noqa: WPS324
+        @slot
         @staticmethod
         def normalize_cluster_name(cluster: str) -> str | None:
             """
@@ -431,9 +431,8 @@ class Hive(DBConnection):
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
             """
-            return None  # noqa: WPS324
 
-        @slot  # noqa: WPS324, WPS605
+        @slot
         @staticmethod
         def get_known_clusters() -> set[str] | None:
             """
@@ -463,9 +462,8 @@ class Hive(DBConnection):
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
             """
-            return None  # noqa: WPS324
 
-        @slot  # noqa: WPS324, WPS605
+        @slot
         @staticmethod
         def get_current_cluster() -> str | None:
             """
@@ -496,7 +494,6 @@ class Hive(DBConnection):
                     # some magic here
                     return "rnd-dwh"
             """
-            return None  # noqa: WPS324
 
     class Dialect(  # noqa: WPS215
         SupportTableWithDBSchema,
@@ -506,12 +503,12 @@ class Hive(DBConnection):
         SupportHintStr,
         DBConnection.Dialect,
     ):
-        pass  # noqa: WPS604, WPS420
+        pass
 
     cluster: Cluster
 
     @validator("cluster")
-    def validate_cluster_name(cls, cluster):  # noqa: N805
+    def validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
         validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
@@ -729,7 +726,7 @@ class Hive(DBConnection):
         start_from: Statement | None = None,
         end_at: Statement | None = None,
     ) -> DataFrame:
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         sql_text = get_sql_query(
             table=table,
             columns=columns,
@@ -766,13 +763,13 @@ class Hive(DBConnection):
         sql_text = get_sql_query(
             table=table,
             columns=[
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
-                    f"min_{column}",  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
+                    f"min_{column}",
                 ),
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
-                    f"max_{column}",  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
+                    f"max_{column}",
                 ),
             ],
             where=where,

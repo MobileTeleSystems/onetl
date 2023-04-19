@@ -119,7 +119,7 @@ class WebDAV(FileConnection):
     protocol: Union[Literal["http"], Literal["https"]] = "https"
 
     @root_validator
-    def check_port(cls, values):  # noqa: N805
+    def check_port(cls, values):
         if values["port"] is not None:
             return values
 
@@ -150,10 +150,10 @@ class WebDAV(FileConnection):
         return client
 
     def _is_client_closed(self) -> bool:
-        pass  # noqa: WPS420
+        pass
 
     def _close_client(self) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         self.client.download_sync(

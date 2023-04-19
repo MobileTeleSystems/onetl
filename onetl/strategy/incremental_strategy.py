@@ -31,7 +31,7 @@ class OffsetMixin(BaseModel):
         super().fetch_hwm()
 
         if self.hwm and self.offset is not None:
-            self.hwm -= self.offset  # noqa: WPS601
+            self.hwm -= self.offset
 
 
 class IncrementalStrategy(OffsetMixin, HWMStrategy):

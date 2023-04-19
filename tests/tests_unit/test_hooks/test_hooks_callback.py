@@ -225,7 +225,7 @@ def test_hooks_execute_callback_process_result(caplog):
     @Calculator.plus.bind
     @hook
     def modify_callback(self, arg: int):
-        result = yield  # noqa: WPS325
+        result = yield
         log.info("Called modify callback with %s and %s", self.data, arg)
         yield result + 10
 

@@ -208,11 +208,11 @@ def _prepare_hook_args(
                 Method signature:
                     {inspect.signature(method)}
 
-                Hook name: '{hook.__module__}.{hook.__qualname__}'
+                Hook name: '{hook.callback.__module__}.{hook.callback.__qualname__}'
                 Hook source: '{inspect.getsourcefile(hook.callback)}:{hook_source_line}'
                 Hook signature:
                     {inspect.signature(hook.callback)}
-                """,  # type: ignore[attr-defined]
+                """,
             ),
         ) from e
 
@@ -285,7 +285,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
     original_method = _unwrap_method(method)
 
     @wraps(method)  # noqa: WPS231, WPS213
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):  # noqa: WPS231, WPS213
         with MethodInheritanceStack(cls, method_name) as stack_manager, ExitStack() as context_stack:
             if not HooksState.enabled():
                 logger.log(NOTICE, "|Hooks| All hooks are disabled")

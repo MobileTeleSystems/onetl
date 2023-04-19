@@ -56,26 +56,6 @@ file_connections_modules = {
     "WebDAV": "webdav",
 }
 
-__all__ = [  # noqa: WPS410
-    "FileConnection",
-    "Clickhouse",
-    "Greenplum",
-    "MongoDB",
-    "Hive",
-    "MSSQL",
-    "MySQL",
-    "Oracle",
-    "Postgres",
-    "Teradata",
-    "DBConnection",
-    "FTP",
-    "FTPS",
-    "HDFS",
-    "S3",
-    "SFTP",
-    "WebDAV",
-]
-
 
 def __getattr__(name: str):
     if name in db_connection_modules:

@@ -32,7 +32,7 @@ class TestFTPServer:
 
     def start(self):
         if self.server:
-            pass  # noqa: WPS420
+            pass
         else:
             if not os.path.exists(self.homedir):
                 os.mkdir(self.homedir)

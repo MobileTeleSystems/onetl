@@ -156,15 +156,15 @@ class FileUploader(FrozenModel):
     options: Options = Options()
 
     @validator("local_path", pre=True, always=True)
-    def resolve_local_path(cls, local_path):  # noqa: N805
+    def resolve_local_path(cls, local_path):
         return LocalPath(local_path).resolve() if local_path else None
 
     @validator("target_path", pre=True, always=True)
-    def check_target_path(cls, target_path):  # noqa: N805
+    def check_target_path(cls, target_path):
         return RemotePath(target_path)
 
     @validator("temp_path", pre=True, always=True)
-    def check_temp_path(cls, temp_path):  # noqa: N805
+    def check_temp_path(cls, temp_path):
         return RemotePath(temp_path) if temp_path else None
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:

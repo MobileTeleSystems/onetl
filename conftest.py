@@ -314,7 +314,7 @@ def load_table_data(prepare_schema_table, processing):
     return prepare_schema_table
 
 
-@pytest.fixture(scope="function", autouse=True)  # noqa: WPS325
+@pytest.fixture(scope="function", autouse=True)
 def use_memory_hwm_store(request):
     test_function = request.function
     entities = test_function.__name__.split("_")

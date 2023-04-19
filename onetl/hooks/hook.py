@@ -18,7 +18,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class HookPriority(int, Enum):  # noqa: WPS600
+class HookPriority(int, Enum):
     """
     Hook priority enum.
 
@@ -36,7 +36,7 @@ class HookPriority(int, Enum):  # noqa: WPS600
 
 
 @dataclass  # noqa: WPS338
-class Hook(Generic[P, T]):
+class Hook(Generic[P, T]):  # noqa: WPS338
     """
     Hook representation.
 
@@ -279,7 +279,7 @@ class ContextDecorator:
 
         return self
 
-    def __exit__(self, exc_type, value, traceback):  # noqa: WPS231, WPS238
+    def __exit__(self, exc_type, value, traceback):  # noqa: WPS231
         """
         Copy of :obj:`contextlib._GeneratorContextManager.__exit__`
         """
