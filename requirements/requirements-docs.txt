@@ -1,7 +1,5 @@
 autodoc_pydantic
-graphviz
 numpydoc
-setuptools-git-versioning
 sphinx
 sphinx-design
 sphinx-tabs
