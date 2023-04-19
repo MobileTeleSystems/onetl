@@ -18,6 +18,7 @@ import logging
 import operator
 from datetime import datetime
 from enum import Enum
+from string import Template
 from typing import (  # noqa: WPS235
     TYPE_CHECKING,
     Any,
@@ -107,6 +108,15 @@ class MongoDBWriteMode(str, Enum):  # noqa: WPS600
     def __str__(self) -> str:
         return str(self.value)
 
+
+PIPELINE_PROHIBITED_OPTIONS = frozenset(
+    (
+        "uri",
+        "database",
+        "collection",
+        "pipeline",
+    ),
+)
 
 PROHIBITED_OPTIONS = frozenset(
     (
@@ -256,8 +266,10 @@ class MongoDB(DBConnection):
     package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
     package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
 
-    class ReadOptions(GenericOptions):
-        """MongoDB connector for Spark reading options.
+    class PipelineOptions(GenericOptions):
+        """Aggregation pipeline options for MongoDB connector.
+
+        The only difference from :obj:`~ReadOptions` that it is allowed to pass the 'hint' parameter.
 
         .. note ::
 
@@ -270,8 +282,42 @@ class MongoDB(DBConnection):
 
         .. warning::
 
-            Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
-            and cannot be set in ``ReadOptions`` class.
+            Options ``uri``, ``database``, ``collection``, ``pipeline`` are populated from connection attributes,
+            and cannot be set in ``PipelineOptions`` class.
+
+        Examples
+        --------
+
+        Pipeline options initialization
+
+        .. code:: python
+
+            MongoDB.PipelineOptions(
+                hint="{'_id': 1}",
+            )
+        """
+
+        class Config:
+            prohibited_options = PIPELINE_PROHIBITED_OPTIONS
+            known_options = KNOWN_READ_OPTIONS
+            extra = "allow"
+
+    class ReadOptions(GenericOptions):
+        """Reading options for MongoDB connector.
+
+        .. note ::
+
+            You can pass any value
+            `supported by connector <https://www.mongodb.com/docs/spark-connector/master/configuration/
+            #:~:text=See%20Cache%20Configuration.-,Input%20Configuration,-You%20can%20configure>`_,
+            even if it is not mentioned in this documentation.
+
+            The set of supported options depends on connector version.
+
+        .. warning::
+
+            Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
+            attributes, and cannot be set in ``ReadOptions`` class.
 
         Examples
         --------
@@ -281,7 +327,7 @@ class MongoDB(DBConnection):
         .. code:: python
 
             MongoDB.ReadOptions(
-                pipeline="{'$match': {'number':{'$gte': 3}}}",
+                batchSize=10000,
             )
         """
 
@@ -291,7 +337,7 @@ class MongoDB(DBConnection):
             extra = "allow"
 
     class WriteOptions(GenericOptions):
-        """MongoDB connector for writing reading options.
+        """Writing options for MongoDB connector.
 
         .. note ::
 
@@ -437,8 +483,8 @@ class MongoDB(DBConnection):
             pipeline.
 
             """
-            blank_pipeline = "{{'$match':{custom_condition}}}"
-            return blank_pipeline.format(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
+            blank_pipeline = Template("{'$$match':$custom_condition}")
+            return blank_pipeline.substitute(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
 
         @classmethod
         def _where_condition(cls, result: list) -> Optional[dict]:
@@ -545,6 +591,133 @@ class MongoDB(DBConnection):
                 return str(param)
 
             raise ValueError(f"Unsupported value type : {param.__class__.__name__!r}")
+
+    def pipeline(
+        self,
+        collection: str,
+        pipeline: dict | list[dict],
+        df_schema: StructType | None = None,
+        options: PipelineOptions | dict | None = None,
+    ):
+        """
+        Execute a pipeline for a specific collection, and return DataFrame.
+
+        Almost like `Aggregation pipeline syntax <https://www.mongodb.com/docs/manual/core/aggregation-pipeline/>`_
+        in MongoDB:
+
+        .. code:: js
+
+            db.collection.aggregate([{"$match": ...}, {"$group": ...}])
+
+        but pipeline is executed on Spark executors, in a distributed way.
+
+        .. note::
+
+            This method does not support :ref:`strategy`, use :obj:`onetl.core.db_reader.db_reader.DBReader` instead
+
+        .. note::
+
+            Statement is executed in read-write connection,
+            so if you're calling some stored functions, you can make changes
+            to the data source.
+
+            Unfortunately, Spark does no provide any option to change this behavior.
+
+        Parameters
+        ----------
+
+        collection : str
+            Collection name.
+
+        pipeline : dict | list[dict]
+            Pipeline containing a database query.
+            See `Aggregation pipeline syntax <https://www.mongodb.com/docs/manual/core/aggregation-pipeline/>`_.
+
+        df_schema : StructType, default: ``None``
+            Schema describing the resulting DataFrame.
+
+        options : PipelineOptions | dict, default:  ``None``
+            Additional pipeline options, see :obj:`~PipelineOptions`.
+
+        Examples
+        --------
+
+        Get document with a specific ``_id``:
+
+        .. code:: python
+
+            df = connection.pipeline(
+                collection="collection_name",
+                pipeline={"$match": {"_id": {"$eq": 1}}},
+            )
+
+        Calculate aggregation and get result:
+
+        .. code:: python
+
+            df = connection.pipeline(
+                collection="collection_name",
+                pipeline={
+                    "$group": {
+                        "_id": {},
+                        "min": {"$min": "$column_int"},
+                        "max": {"$max": "$column_int"},
+                    }
+                },
+            )
+
+        Explicitly pass DataFrame schema:
+
+        .. code:: python
+
+            from pyspark.sql.types import (
+                DoubleType,
+                IntegerType,
+                StringType,
+                StructField,
+                StructType,
+                TimestampType,
+            )
+
+            df_schema = StructType(
+                [
+                    StructField("_id", IntegerType()),
+                    StructField("some_string", StringType()),
+                    StructField("some_int", IntegerType()),
+                    StructField("some_datetime", TimestampType()),
+                    StructField("some_float", DoubleType()),
+                ],
+            )
+
+            df = connection.pipeline(
+                collection="collection_name",
+                df_schema=df_schema,
+                pipeline={"$match": {"some_int": {"$gt": 999}}},
+            )
+
+        Pass additional options to pipeline execution:
+
+        .. code:: python
+
+            df = connection.pipeline(
+                collection="collection_name",
+                pipeline={"$match": {"_id": {"$eq": 1}}},
+                options=MongoDB.PipelineOptions(hint={"_id": 1}),
+            )
+
+        """
+        self._check_driver_imported()
+
+        read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options["pipeline"] = self.Dialect.convert_filter_parameter_to_pipeline(pipeline)
+        read_options["spark.mongodb.input.uri"] = self.connection_url
+        read_options["spark.mongodb.input.collection"] = collection
+        spark_reader = self.spark.read.format("mongo").options(**read_options)
+
+        if df_schema:
+            spark_reader = spark_reader.schema(df_schema)
+
+        return spark_reader.load()
 
     @property
     def instance_url(self) -> str:

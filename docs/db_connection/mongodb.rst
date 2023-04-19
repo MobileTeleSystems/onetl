@@ -12,7 +12,7 @@ MongoDB connection
     MongoDB.WriteOptions
 
 .. autoclass:: MongoDB
-    :members: __init__
+    :members: __init__, check, pipeline
 
 .. currentmodule:: onetl.connection.db_connection.mongo.MongoDB
 
@@ -21,3 +21,5 @@ MongoDB connection
 .. autopydantic_model:: WriteOptions
     :members: mode
     :member-order: bysource
+
+.. autopydantic_model:: PipelineOptions

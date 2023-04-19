@@ -32,6 +32,24 @@ def test_mongodb_class_attributes():
     assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
 
 
+@pytest.mark.parametrize(
+    "prohibited_options",
+    [
+        {"uri": "uri"},
+        {"database": "db"},
+        {"collection": "collection"},
+        {"pipeline": {"$match": {"_id": [{"$eq": 1}]}}},
+    ],
+)
+def test_mongodb_prohibited_options_error(prohibited_options):
+    with pytest.raises(ValueError):  # noqa: PT011
+        MongoDB.PipelineOptions(**prohibited_options)
+
+
+def test_mongodb_options_hint():
+    MongoDB.PipelineOptions(hint={"_id": 1})
+
+
 def test_mongodb_with_port(spark_mock):
     mongo = MongoDB(
         host="host",
