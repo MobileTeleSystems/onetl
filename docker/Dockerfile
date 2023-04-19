@@ -10,7 +10,7 @@ ENV LANGUAGE=en_US.UTF-8 \
     PYSPARK_DRIVER_PYTHON=python3 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    HADOOP_CONF_DIR=/opt/project/docker/hive2/hadoop/conf/
+    HADOOP_CONF_DIR=/app/docker/hive2/hadoop/conf/
 
 RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
     && yum -y install /tmp/oracle-instantclient-basic-21.3.0.0.0-1.el8.x86_64.rpm \
@@ -22,37 +22,38 @@ RUN wget -P /tmp http://docker.rep.msk.mts.ru:80/artifactory/common-rpm/oracle-i
         libsasl2-dev\
     && yum clean all \
     && rm -rf /tmp/* /var/tmp/* /root/.cache/* \
-    && mkdir /opt/project/ \
+    && mkdir /app/ \
     && useradd -ms /bin/bash -d ${ONETL_USER_HOME} onetl \
     && chown -R onetl:onetl ${ONETL_USER_HOME} \
-    && chown -R onetl:onetl /opt/project/
+    && chown -R onetl:onetl /app/
 
-COPY ./docker/wait-for-it.sh ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /
-RUN chmod +x /wait-for-it.sh /run_tests.sh /pytest_runner.sh /combine_coverage.sh
+WORKDIR /app
+USER onetl
+ENV PATH=${ONETL_USER_HOME}/.local/bin:${PATH}
 
-COPY ./requirements/ /requirements/
+COPY --chown=onetl:onetl ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /app/
+COPY --chown=onetl:onetl ./docker/wait-for-it.sh /app/docker/wait-for-it.sh
+RUN chmod +x /app/run_tests.sh /app/pytest_runner.sh /app/combine_coverage.sh /app/docker/wait-for-it.sh
+
+COPY --chown=onetl:onetl ./requirements/ /app/requirements/
 
 ARG BUILD_NUMBER
 ARG BRANCH_NAME
 
 RUN pip install \
-    -r /requirements/requirements.txt \
-    -r /requirements/requirements-ftp.txt \
-    -r /requirements/requirements-hdfs.txt \
-    -r /requirements/requirements-s3.txt \
-    -r /requirements/requirements-sftp.txt \
-    -r /requirements/requirements-webdav.txt \
-    -r /requirements/requirements-spark.txt \
-    -r /requirements/requirements-kerberos.txt \
-    -r /requirements/requirements-test.txt \
-    -r /requirements/requirements-docs.txt
-
-USER onetl
-WORKDIR /opt/project/
+    -r /app/requirements/requirements.txt \
+    -r /app/requirements/requirements-ftp.txt \
+    -r /app/requirements/requirements-hdfs.txt \
+    -r /app/requirements/requirements-s3.txt \
+    -r /app/requirements/requirements-sftp.txt \
+    -r /app/requirements/requirements-webdav.txt \
+    -r /app/requirements/requirements-spark.txt \
+    -r /app/requirements/requirements-kerberos.txt \
+    -r /app/requirements/requirements-test.txt \
+    -r /app/requirements/requirements-docs.txt
 
 FROM base as ci
 
-COPY . /opt/project/
+COPY . .
 
-# Build /opt/build_dir/dist/onetl*.whl
 RUN python3 setup.py bdist_wheel

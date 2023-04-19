@@ -12,7 +12,7 @@ repos:
   - id: check-yaml
     args: [--unsafe]
   - id: requirements-txt-fixer
-    files: ^(requirements.*\.txt)$
+    files: ^(requirements/.*\.txt)$
   - id: end-of-file-fixer
     exclude: ^.*/VERSION$
   - id: fix-byte-order-marker
