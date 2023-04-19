@@ -2,22 +2,23 @@
 
 onETL
 =====
+|Repo Status| |PyPI| |PyPI License| |PyPI Python Version|
+|Documentation| |Build Status| |Coverage|
 
-|Build Status| |Quality Gate Status| |Maintainability Rating| |Coverage|
-|Documentation| |PyPI|
-
-.. |Build Status| image:: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/badges/develop/pipeline.svg
-    :target: https://gitlab.services.mts.ru/bigdata/platform/onetools/onetl/-/pipelines
-.. |Quality Gate Status| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=alert_status
-    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
-.. |Maintainability Rating| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=sqale_rating
-    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
-.. |Coverage| image:: https://sonar.bd.msk.mts.ru/api/project_badges/measure?project=onetl&metric=coverage
-    :target: https://sonar.bd.msk.mts.ru/dashboard?id=onetl
-.. |Documentation| image:: https://img.shields.io/badge/docs-latest-success
-    :target: https://bigdata.pages.mts.ru/platform/onetools/onetl/
-.. |PyPI| image:: https://img.shields.io/badge/pypi-download-orange
-    :target: http://rep.msk.mts.ru/ui/packages/pypi:%2F%2Fonetl?name=onetl&type=packages
+.. |Repo Status| image:: https://www.repostatus.org/badges/latest/active.svg
+    :target: https://www.repostatus.org/#active
+.. |PyPI| image:: https://img.shields.io/pypi/v/onetl
+    :target: https://pypi.org/project/onetl/
+.. |PyPI License| image:: https://img.shields.io/pypi/l/onetl.svg
+    :target: https://github.com/MobileTeleSystems/onetl/blob/develop/LICENSE.txt
+.. |PyPI Python Version| image:: https://img.shields.io/pypi/pyversions/onetl.svg
+    :target: https://badge.fury.io/py/onetl
+.. |Documentation| image:: https://readthedocs.org/projects/onetl/badge/?version=stable
+    :target: https://onetl.readthedocs.io/en/stable/
+.. |Build Status| image:: https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg
+    :target: https://github.com/MobileTeleSystems/onetl/actions
+.. |Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
+    :target: https://codecov.io/gh/MobileTeleSystems/onetl
 
 What is onETL?
 --------------
@@ -27,7 +28,7 @@ Python ETL/ELT framework powered by `Apache Spark <https://spark.apache.org/>`_ 
 * Provides unified classes to extract data from (**E**) & load data to (**L**) various stores.
 * Relies on `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*.
 * Provides direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines.
-* Supports different `read strategies <https://bigdata.pages.mts.ru/platform/onetools/onetl/strategy/index.html>`_ for incremental and batch data fetching.
+* Supports different `read strategies <https://onetl.readthedocs.io/en/stable/strategy/index.html>`_ for incremental and batch data fetching.
 * Provides hooks & plugins mechanism for altering behavior of internal classes.
 
 Requirements
@@ -80,14 +81,7 @@ Storage Compatibility
 Documentation
 -------------
 
-See https://bigdata.pages.mts.ru/platform/onetools/onetl/
-
-.. wiki
-
-Wiki page
--------------
-
-See https://wiki.bd.msk.mts.ru/display/ONE/onETL
+See https://onetl.readthedocs.io/en/stable/
 
 .. contribution
 
@@ -268,7 +262,7 @@ Clone repo:
 
 .. code:: bash
 
-    git clone git@gitlab.services.mts.ru:bigdata/platform/onetools/onetl.git -b develop
+    git clone git@github.com:MobileTeleSystems/onetl.git -b develop
 
     cd onetl
 

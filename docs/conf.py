@@ -66,7 +66,7 @@ sphinx_tabs_disable_tab_closing = True
 
 rst_prolog = f"""
 .. |support_hooks| image:: https://img.shields.io/badge/%20-support%20hooks-blue
-    :target: https://bigdata.pages.mts.ru/platform/onetools/onetl/{ver}/hooks/index.html
+    :target: https://onetl.readthedocs.io/en/{ver}/hooks/index.html
 """
 
 # Add any paths that contain templates here, relative to this directory.
