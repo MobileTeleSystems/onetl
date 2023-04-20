@@ -39,15 +39,15 @@ if TYPE_CHECKING:
 # small hack to bypass this exception
 class MockColumnHWM(ColumnHWM):
     def serialize_value(self):
-        pass  # noqa: WPS420
+        pass
 
 
 class StrategyHelper(Protocol):
     def save(self, df: DataFrame) -> DataFrame:
-        ...  # noqa: WPS420
+        ...
 
     def get_boundaries(self) -> tuple[Statement | None, Statement | None]:  # noqa: WPS463
-        ...  # noqa: WPS420
+        ...
 
 
 class NonHWMStrategyHelper(FrozenModel):
@@ -57,7 +57,7 @@ class NonHWMStrategyHelper(FrozenModel):
         return None, None
 
     @root_validator(pre=True)
-    def validate_current_strategy(cls, values):  # noqa: N805
+    def validate_current_strategy(cls, values):
         reader = values.get("reader")
         strategy = StrategyManager.get_current()
 
@@ -83,7 +83,7 @@ class HWMStrategyHelper(FrozenModel):
         validate_all = True
 
     @validator("strategy", always=True, pre=True)
-    def validate_strategy_is_hwm(cls, strategy, values):  # noqa: N805
+    def validate_strategy_is_hwm(cls, strategy, values):
         reader = values.get("reader")
 
         if not isinstance(strategy, HWMStrategy):
@@ -95,7 +95,7 @@ class HWMStrategyHelper(FrozenModel):
         return strategy
 
     @validator("strategy", always=True)
-    def validate_strategy_matching_reader(cls, strategy, values):  # noqa: N805
+    def validate_strategy_matching_reader(cls, strategy, values):
         if strategy.hwm is None:
             return strategy
 
@@ -116,7 +116,7 @@ class HWMStrategyHelper(FrozenModel):
         return strategy
 
     @validator("strategy", always=True)
-    def init_hwm(cls, strategy, values):  # noqa: N805
+    def init_hwm(cls, strategy, values):
         reader = values.get("reader")
         hwm_column = values.get("hwm_column")
 
@@ -150,7 +150,7 @@ class HWMStrategyHelper(FrozenModel):
         return strategy
 
     @validator("strategy", always=True)
-    def detect_hwm_column_boundaries(cls, strategy, values):  # noqa: N805
+    def detect_hwm_column_boundaries(cls, strategy, values):
         if not isinstance(strategy, BatchHWMStrategy):
             return strategy
 

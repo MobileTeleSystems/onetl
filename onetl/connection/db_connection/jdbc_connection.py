@@ -116,7 +116,7 @@ READ_TOP_LEVEL_OPTIONS = frozenset(("url", "column", "lower_bound", "upper_bound
 WRITE_TOP_LEVEL_OPTIONS = frozenset(("url", "mode"))
 
 
-class JDBCWriteMode(str, Enum):  # noqa: WPS600
+class JDBCWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
 
@@ -124,7 +124,7 @@ class JDBCWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-class PartitioningMode(str, Enum):  # noqa: WPS600
+class PartitioningMode(str, Enum):
     range = "range"
     hash = "hash"
     mod = "mod"
@@ -146,9 +146,9 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         SupportHintStr,
         DBConnection.Dialect,
     ):
-        pass  # noqa: WPS604, WPS420
+        pass
 
-    class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+    class ReadOptions(JDBCMixin.JDBCOptions):
         """Spark JDBC options.
 
         .. note ::
@@ -394,7 +394,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         """
 
         @root_validator
-        def partitioning_mode_actions(cls, values):  # noqa: N805
+        def partitioning_mode_actions(cls, values):
             mode = values["partitioning_mode"]
             num_partitions = values.get("num_partitions")
             partition_column = values.get("partition_column")
@@ -430,7 +430,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
             return values
 
-    class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+    class WriteOptions(JDBCMixin.JDBCOptions):
         """Spark JDBC writing options.
 
         .. note ::
@@ -661,11 +661,11 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         alias = "x" + secrets.token_hex(5)
 
         if read_options.partition_column:
-            aliased = self.Dialect._expression_with_alias(read_options.partition_column, alias)  # noqa: WPS437
+            aliased = self.Dialect._expression_with_alias(read_options.partition_column, alias)
             read_options = read_options.copy(update={"partition_column": alias})
             new_columns.append(aliased)
 
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
 
         query = get_sql_query(
             table=table,
@@ -760,13 +760,13 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         query = get_sql_query(
             table=table,
             columns=[
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
-                    f"min_{column}",  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
+                    f"min_{column}",
                 ),
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
-                    f"max_{column}",  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
+                    f"max_{column}",
                 ),
             ],
             where=where,

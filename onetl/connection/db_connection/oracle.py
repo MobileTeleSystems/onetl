@@ -172,7 +172,7 @@ class Oracle(JDBCConnection):
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
 
     @root_validator
-    def only_one_of_sid_or_service_name(cls, values):  # noqa: N805
+    def only_one_of_sid_or_service_name(cls, values):
         sid = values.get("sid")
         service_name = values.get("service_name")
 
@@ -208,15 +208,13 @@ class Oracle(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
-
-        if params_str:
-            params_str = f"?{params_str}"
+        extra = self.extra.dict(by_alias=True)
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
 
         if self.sid:
-            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}{params_str}"
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}?{parameters}".rstrip("?")
 
-        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}{params_str}"
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}?{parameters}".rstrip("?")
 
     @property
     def instance_url(self) -> str:

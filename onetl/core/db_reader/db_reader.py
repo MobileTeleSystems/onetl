@@ -280,7 +280,7 @@ class DBReader(FrozenModel):
     options: Optional[GenericOptions] = None
 
     @validator("table", pre=True, always=True)
-    def validate_table(cls, table, values):  # noqa: N805
+    def validate_table(cls, table, values):
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
         if isinstance(table, str):
@@ -290,7 +290,7 @@ class DBReader(FrozenModel):
         return dialect.validate_table(connection, table)
 
     @validator("where", pre=True, always=True)
-    def validate_where(cls, where: Any, values: dict) -> Any:  # noqa: N805
+    def validate_where(cls, where: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
         result = dialect.validate_where(connection, where)
@@ -299,7 +299,7 @@ class DBReader(FrozenModel):
         return result
 
     @validator("hint", pre=True, always=True)
-    def validate_hint(cls, hint: Any, values: dict) -> Any:  # noqa: N805
+    def validate_hint(cls, hint: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
         result = dialect.validate_hint(connection, hint)
@@ -308,13 +308,13 @@ class DBReader(FrozenModel):
         return result
 
     @validator("df_schema", pre=True, always=True)
-    def validate_df_schema(cls, df_schema: StructType | None, values: dict) -> StructType | None:  # noqa: N805
+    def validate_df_schema(cls, df_schema: StructType | None, values: dict) -> StructType | None:
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
         return dialect.validate_df_schema(connection, df_schema)
 
     @root_validator(pre=True)  # noqa: WPS231
-    def validate_hwm_column(cls, values: dict) -> dict:  # noqa: N805
+    def validate_hwm_column(cls, values: dict) -> dict:
         hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
         df_schema: StructType | None = values.get("df_schema")
         hwm_expression: str | None = values.get("hwm_expression")
@@ -345,8 +345,8 @@ class DBReader(FrozenModel):
 
         return values
 
-    @root_validator(pre=True)  # noqa: WPS238, WPS231
-    def validate_columns(cls, values: dict) -> dict:  # noqa: N805
+    @root_validator(pre=True)  # noqa: WPS231
+    def validate_columns(cls, values: dict) -> dict:
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
 
@@ -389,7 +389,7 @@ class DBReader(FrozenModel):
         return values
 
     @validator("options", pre=True, always=True)
-    def validate_options(cls, options, values):  # noqa: N805
+    def validate_options(cls, options, values):
         connection = values.get("connection")
         read_options_class = getattr(connection, "ReadOptions", None)
         if read_options_class:
@@ -403,10 +403,10 @@ class DBReader(FrozenModel):
         return None
 
     @validator("hwm_expression", pre=True, always=True)  # noqa: WPS238, WPS231
-    def validate_hwm_expression(cls, hwm_expression, values):  # noqa: N805
+    def validate_hwm_expression(cls, hwm_expression, values):
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
-        return dialect.validate_hwm_expression(connection=connection, value=hwm_expression)  # noqa: WPS437
+        return dialect.validate_hwm_expression(connection=connection, value=hwm_expression)
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:

@@ -221,19 +221,19 @@ class FileDownloader(FrozenModel):
     options: Options = Options()
 
     @validator("local_path", pre=True, always=True)
-    def resolve_local_path(cls, local_path):  # noqa: N805
+    def resolve_local_path(cls, local_path):
         return LocalPath(local_path).resolve()
 
     @validator("source_path", pre=True, always=True)
-    def check_source_path(cls, source_path):  # noqa: N805
+    def check_source_path(cls, source_path):
         return RemotePath(source_path) if source_path else None
 
     @validator("temp_path", pre=True, always=True)
-    def check_temp_path(cls, temp_path):  # noqa: N805
+    def check_temp_path(cls, temp_path):
         return LocalPath(temp_path).resolve() if temp_path else None
 
     @validator("hwm_type", pre=True, always=True)
-    def check_hwm_type(cls, hwm_type, values):  # noqa: N805
+    def check_hwm_type(cls, hwm_type, values):
         source_path = values.get("source_path")
 
         if hwm_type:

@@ -27,7 +27,7 @@ T = TypeVar("T", bound=PathProtocol)
 INDENT = " " * 4
 
 
-class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
+class FileSet(OrderedSet[T], Generic[T]):
     """
     Ordered set of pathlib-like objects.
 

@@ -47,7 +47,7 @@ from onetl.log import log_with_indent
 log = getLogger(__name__)
 
 
-class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
+class FileConnection(BaseFileConnection, FrozenModel):
     _client: Any = None
 
     @property
@@ -56,7 +56,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
             return self._client
 
         client = self._get_client()
-        self._client = client  # noqa: WPS601
+        self._client = client
         return client
 
     def close(self):
@@ -85,7 +85,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         if self._client:
             self._close_client()
 
-        self._client = None  # noqa: WPS601
+        self._client = None
 
     def __enter__(self):
         return self
@@ -288,7 +288,7 @@ class FileConnection(BaseFileConnection, FrozenModel):  # noqa: WPS214
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return self.get_directory(remote_directory)
 
-    def upload_file(  # noqa: WPS238
+    def upload_file(
         self,
         local_file_path: os.PathLike | str,
         remote_file_path: os.PathLike | str,

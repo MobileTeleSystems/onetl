@@ -67,7 +67,7 @@ class MSSQLProcessing(BaseProcessing):
             database=self.database,
         )
 
-    @staticmethod  # noqa: WPS605
+    @staticmethod
     def current_datetime() -> datetime:
         # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
         return datetime.now().replace(microsecond=0)

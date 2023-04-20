@@ -12,7 +12,7 @@ from onetl.hooks import (
 )
 
 
-def test_hooks_global_stop_and_resume(request):  # noqa: WPS212
+def test_hooks_global_stop_and_resume(request):
     request.addfinalizer(resume_all_hooks)
 
     @support_hooks
@@ -110,7 +110,7 @@ def test_hooks_global_stop_and_resume(request):  # noqa: WPS212
     assert Calculator3(5).modulus(2) == 1
 
 
-def test_hooks_global_skip_context(request):  # noqa: WPS212
+def test_hooks_global_skip_context(request):
     request.addfinalizer(resume_all_hooks)
 
     @support_hooks
@@ -213,7 +213,7 @@ def test_hooks_global_skip_context(request):  # noqa: WPS212
     assert Calculator3(5).modulus(1) == 0
 
 
-def test_hooks_global_skip_decorator(request):  # noqa: WPS212
+def test_hooks_global_skip_decorator(request):
     request.addfinalizer(resume_all_hooks)
 
     @support_hooks

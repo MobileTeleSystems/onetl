@@ -109,11 +109,11 @@ class BaseProcessing(ABC):
     def get_column_type(self, name: str) -> str:
         return self._column_types_and_names_matching[name]
 
-    @staticmethod  # noqa: WPS605
+    @staticmethod
     def current_date() -> date:
         return date.today()
 
-    @staticmethod  # noqa: WPS605
+    @staticmethod
     def current_datetime() -> datetime:
         return datetime.now()
 

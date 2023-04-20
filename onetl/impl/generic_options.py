@@ -57,7 +57,7 @@ class GenericOptions(FrozenModel):
 
     @root_validator
     def check_options_not_prohibited(
-        cls,  # noqa: N805
+        cls,
         values,
     ) -> None:
         prohibited = cls.__config__.prohibited_options  # type: ignore[attr-defined]
@@ -77,7 +77,7 @@ class GenericOptions(FrozenModel):
 
     @root_validator
     def warn_unknown_options(
-        cls,  # noqa: N805
+        cls,
         values,
     ) -> None:
         class_name = cls.__name__  # type: ignore[attr-defined]

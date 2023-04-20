@@ -90,7 +90,7 @@ READ_OPTIONS = frozenset(
 )
 
 
-class GreenplumWriteMode(str, Enum):  # noqa: WPS600
+class GreenplumWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
 
@@ -234,7 +234,7 @@ class Greenplum(JDBCMixin, DBConnection):
             extra = "allow"
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
 
-    class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+    class ReadOptions(JDBCMixin.JDBCOptions):
         """Pivotal's Greenplum Spark connector reading options.
 
         .. note ::
@@ -370,7 +370,7 @@ class Greenplum(JDBCMixin, DBConnection):
             or both should be ``None``
         """
 
-    class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
+    class WriteOptions(JDBCMixin.JDBCOptions):
         """Pivotal's Greenplum Spark connector writing options.
 
         .. note ::
@@ -510,7 +510,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)  # noqa: WPS437
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
         log_with_indent("%s", query)
 
@@ -585,12 +585,12 @@ class Greenplum(JDBCMixin, DBConnection):
         query = get_sql_query(
             table=table,
             columns=[
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_min_value_sql(expression or column),  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
                     f"min_{column}",
                 ),
-                self.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.Dialect._get_max_value_sql(expression or column),  # noqa: WPS437
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
                     f"max_{column}",
                 ),
             ],
@@ -611,7 +611,7 @@ class Greenplum(JDBCMixin, DBConnection):
         return min_value, max_value
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore
         class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
         missing_class = getattr(gateway.jvm, class_name)
 
@@ -645,7 +645,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCMixin.JDBCOptions):  # noqa: WPS437
+    def _options_to_connection_properties(self, options: JDBCMixin.JDBCOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

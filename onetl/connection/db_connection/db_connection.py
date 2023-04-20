@@ -67,7 +67,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
             full_condition = [condition]
 
             if start_from:
-                condition1 = cls._get_compare_statement(  # noqa: WPS437
+                condition1 = cls._get_compare_statement(
                     comparator=start_from.operator,
                     arg1=start_from.expression,
                     arg2=start_from.value,
@@ -75,14 +75,14 @@ class DBConnection(BaseDBConnection, FrozenModel):
                 full_condition.append(condition1)
 
             if end_at:
-                condition2 = cls._get_compare_statement(  # noqa: WPS437
+                condition2 = cls._get_compare_statement(
                     comparator=end_at.operator,
                     arg1=end_at.expression,
                     arg2=end_at.value,
                 )
                 full_condition.append(condition2)
 
-            return cls._where_condition(full_condition)  # noqa: WPS437
+            return cls._where_condition(full_condition)
 
         _compare_statements: ClassVar[Dict[Callable, str]] = {
             operator.ge: "{} >= {}",

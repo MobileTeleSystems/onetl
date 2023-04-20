@@ -120,7 +120,7 @@ class S3(FileConnection):
     region: Optional[str] = None
 
     @root_validator
-    def validate_port(cls, values):  # noqa: N805
+    def validate_port(cls, values):
         if values["port"] is not None:
             return values
         values["port"] = 443 if values["protocol"] == "https" else 80
@@ -170,10 +170,10 @@ class S3(FileConnection):
         )
 
     def _is_client_closed(self) -> bool:
-        pass  # noqa: WPS420
+        pass
 
     def _close_client(self) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         remote_file_path = self._delete_absolute_path_slash(remote_file_path)
@@ -199,7 +199,7 @@ class S3(FileConnection):
 
     def _mkdir(self, path: RemotePath) -> None:
         # in s3 dirs do not exist
-        pass  # noqa: WPS420
+        pass
 
     @staticmethod
     def _delete_absolute_path_slash(path: RemotePath) -> RemotePath:
@@ -244,7 +244,7 @@ class S3(FileConnection):
 
     def _rmdir(self, path: RemotePath) -> None:
         # Empty. S3 does not have directories.
-        pass  # noqa: WPS420
+        pass
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         path = self._delete_absolute_path_slash(path)

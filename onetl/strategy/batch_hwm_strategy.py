@@ -37,18 +37,18 @@ class BatchHWMStrategy(HWMStrategy):
     MAX_ITERATIONS: ClassVar[int] = 100
 
     @validator("step", always=True)
-    def step_is_not_none(cls, step):  # noqa: N805
+    def step_is_not_none(cls, step):
         if not step:
             raise ValueError(f"'step' argument of {cls.__name__} cannot be empty!")
 
         return step
 
     def __iter__(self):
-        self._iteration = -1  # noqa: WPS601
+        self._iteration = -1
         return self
 
     def __next__(self):
-        self._iteration += 1  # noqa: WPS601
+        self._iteration += 1
 
         if self.is_finished:
             log.info(

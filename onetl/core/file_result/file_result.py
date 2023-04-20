@@ -33,7 +33,7 @@ GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
 
 
-class FileResult(BaseModel):  # noqa: WPS214
+class FileResult(BaseModel):
     """
     Result of some file manipulation process, e.g. download, upload, etc.
 
@@ -58,7 +58,7 @@ class FileResult(BaseModel):  # noqa: WPS214
     "Unknown paths which cannot be handled"
 
     @validator("successful", "failed", "skipped", "missing")
-    def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:  # noqa: N805
+    def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:
         return FileSet(value)
 
     @property

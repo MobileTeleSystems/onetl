@@ -101,7 +101,7 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 )
 
 
-class MongoDBWriteMode(str, Enum):  # noqa: WPS600
+class MongoDBWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
 
@@ -261,10 +261,10 @@ class MongoDB(DBConnection):
     password: SecretStr
     port: int = 27017
     extra: Extra = Extra()
-    package_spark_2_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"  # noqa: WPS114
-    package_spark_2_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"  # noqa: WPS114
-    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
-    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"  # noqa: WPS114
+    package_spark_2_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"
+    package_spark_2_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"
+    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
+    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.
@@ -424,7 +424,7 @@ class MongoDB(DBConnection):
             operator.ne: "$ne",
         }
 
-        @classmethod  # noqa: WPS238
+        @classmethod
         def validate_where(
             cls,
             connection: BaseDBConnection,
@@ -443,7 +443,7 @@ class MongoDB(DBConnection):
                 cls._validate_top_level_keys_in_where_parameter(key)
             return where
 
-        @classmethod  # noqa: WPS238
+        @classmethod
         def validate_hint(
             cls,
             connection: BaseDBConnection,
@@ -463,7 +463,7 @@ class MongoDB(DBConnection):
         def convert_filter_parameter_to_pipeline(
             cls,
             parameter: Any,
-        ) -> str:  # noqa: WPS212, WPS231, WPS430
+        ) -> str:  # noqa: WPS231
             """
             Converts the given dictionary, list or primitive to a string. for each element of the collection,
             the method calls itself and internally processes each element depending on its type.
@@ -477,7 +477,7 @@ class MongoDB(DBConnection):
             return cls._build_pipeline_from_simple_types(parameter)
 
         @classmethod
-        def generate_where_request(cls, where: dict) -> str:  # noqa: WPS212, WPS231
+        def generate_where_request(cls, where: dict) -> str:  # noqa: WPS231
             """
             The passed dict is converted to a MongoDb-readable format, the original result is passed to the
             pipeline.
@@ -729,7 +729,7 @@ class MongoDB(DBConnection):
         self._log_parameters()
 
         try:
-            jvm = self.spark._sc._gateway.jvm  # type: ignore # noqa: WPS437
+            jvm = self.spark._sc._gateway.jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
             log.info("|%s| Connection is available.", self.__class__.__name__)
@@ -739,7 +739,7 @@ class MongoDB(DBConnection):
 
         return self
 
-    def get_min_max_bounds(  # type:ignore  # noqa: WPS463
+    def get_min_max_bounds(
         self,
         table: str,
         column: str,
@@ -795,7 +795,7 @@ class MongoDB(DBConnection):
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
-        pipeline = self.Dialect._condition_assembler(  # noqa: WPS437
+        pipeline = self.Dialect._condition_assembler(
             condition=where,
             start_from=start_from,
             end_at=end_at,
@@ -805,7 +805,7 @@ class MongoDB(DBConnection):
             read_options["pipeline"] = self.Dialect.generate_where_request(pipeline)
 
         if hint:
-            read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)  # noqa: WPS437
+            read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)
 
         read_options["spark.mongodb.input.uri"] = self.connection_url
         read_options["spark.mongodb.input.collection"] = table
@@ -846,7 +846,7 @@ class MongoDB(DBConnection):
     def _check_driver_imported(self):
         spark_version = "_".join(self.spark.version.split(".")[:2])
 
-        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore
         # Connector v10.x
         class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
         missing_class = getattr(gateway.jvm, class_name)

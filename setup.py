@@ -13,7 +13,7 @@ def get_version():
         return os.environ["CI_COMMIT_TAG"]
 
     version_file = here / "onetl" / "VERSION"
-    version = version_file.read_text().strip()  # noqa: WPS410
+    version = version_file.read_text().strip()
 
     build_num = os.environ.get("CI_PIPELINE_IID", "")
     branch_name = os.environ.get("CI_COMMIT_REF_SLUG", "")

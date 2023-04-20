@@ -377,7 +377,7 @@ class JDBCMixin(FrozenModel):
         return df
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # type: ignore # noqa: WPS437
+        gateway = self.spark._sc._gateway  # type: ignore
         driver_class = getattr(gateway.jvm, self.driver)
 
         try:
@@ -485,7 +485,7 @@ class JDBCMixin(FrozenModel):
         driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
-        self._last_connection_and_options = (new_connection, options)  # noqa: WPS601
+        self._last_connection_and_options = (new_connection, options)
         return new_connection
 
     def _close_connections(self):
@@ -493,12 +493,12 @@ class JDBCMixin(FrozenModel):
             last_connection, _ = self._last_connection_and_options
             last_connection.close()
 
-        self._last_connection_and_options = None  # noqa: WPS601
+        self._last_connection_and_options = None
 
     def _get_statement_args(self) -> tuple[int, ...]:
-        ResultSet = self.spark._jvm.java.sql.ResultSet  # type: ignore
+        resultset = self.spark._jvm.java.sql.ResultSet  # type: ignore
 
-        return ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
+        return resultset.TYPE_FORWARD_ONLY, resultset.CONCUR_READ_ONLY
 
     def _execute_on_driver(
         self,
@@ -545,8 +545,8 @@ class JDBCMixin(FrozenModel):
 
             return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)  # type: ignore
 
-        PreparedStatement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
-        CallableStatement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
+        prepared_statement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
+        callable_statement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
 
         with closing(jdbc_statement):
             if options.fetchsize is not None:
@@ -556,7 +556,9 @@ class JDBCMixin(FrozenModel):
                 jdbc_statement.setQueryTimeout(options.query_timeout)
 
             # Java SQL classes are not consistent..
-            if jvm_is_instance(jdbc_statement, PreparedStatement) or jvm_is_instance(jdbc_statement, CallableStatement):
+            if jvm_is_instance(jdbc_statement, prepared_statement):
+                jdbc_statement.execute()
+            elif jvm_is_instance(jdbc_statement, callable_statement):
                 jdbc_statement.execute()
             elif read_only:
                 jdbc_statement.executeQuery(statement)

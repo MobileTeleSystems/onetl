@@ -417,7 +417,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     """
 
     def fetch_hwm(self) -> None:
-        pass  # noqa: WPS420,WPS604
+        pass
 
     def save_hwm(self) -> None:
-        pass  # noqa: WPS420,WPS604
+        pass

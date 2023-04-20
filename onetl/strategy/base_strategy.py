@@ -50,19 +50,19 @@ class BaseStrategy(BaseModel):
         strategy.exit_hook(failed=failed)
         return False
 
-    @property  # noqa: WPS324
+    @property
     def current_value(self) -> Any:
-        return None  # noqa: WPS324
+        pass
 
-    @property  # noqa: WPS324
+    @property
     def next_value(self) -> Any:
-        return None  # noqa: WPS324
+        pass
 
     def enter_hook(self) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def exit_hook(self, failed: bool = False) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def _log_parameters(self) -> None:
         log.info("|onETL| Using %s as a strategy", self.__class__.__name__)
