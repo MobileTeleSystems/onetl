@@ -1,4 +1,4 @@
-name: CodeQL
+name: Code analysis
 
 on:
   push:
@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  linters:
+    name: Linters
     runs-on: ubuntu-latest
     permissions:
       actions: read
