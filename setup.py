@@ -9,20 +9,19 @@ here = Path(__file__).parent.resolve()
 
 
 def get_version():
-    if "CI_COMMIT_TAG" in os.environ:
-        return os.environ["CI_COMMIT_TAG"]
+    if os.getenv("GITHUB_REF_TYPE", "branch") == "tag":
+        return os.environ["GITHUB_REF_NAME"]
 
     version_file = here / "onetl" / "VERSION"
     version = version_file.read_text().strip()
 
-    build_num = os.environ.get("CI_PIPELINE_IID", "")
-    branch_name = os.environ.get("CI_COMMIT_REF_SLUG", "")
-    branches_protect = ["master", "develop"]
+    build_num = os.environ.get("GITHUB_RUN_ID", "0")
+    branch_name = os.environ.get("GITHUB_REF_NAME", "")
 
-    if not branch_name or branch_name in branches_protect:
-        return f"{version}.dev{build_num}"
+    if not branch_name:
+        return version
 
-    return f"{version}.dev{build_num}+{branch_name}"
+    return f"{version}.dev{build_num}"
 
 
 def parse_requirements(file: Path) -> list[str]:
@@ -48,9 +47,9 @@ long_description = (here / "README.rst").read_text()
 setup(
     name="onetl",
     version=get_version(),
-    author="ONEtools Team",
+    author="DataOps.ETL",
     author_email="onetools@mts.ru",
-    description="etl-tool for extract and load operations",
+    description="One ETL tool to rule them all",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     license="Apache License 2.0",
@@ -60,7 +59,6 @@ setup(
         "Development Status :: 3 - Alpha",
         "Framework :: Pydantic",
         "Framework :: Pydantic :: 1",
-        "Intended Audience :: Data engineers",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
@@ -71,7 +69,8 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Topic :: Software Development :: Libraries",
-        "Topic :: Software Development :: Spark Tools",
+        "Topic :: Software Development :: Libraries :: Java Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: System :: Distributed Computing",
         "Typing :: Typed",
     ],
