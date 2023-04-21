@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from onetl.connection import SFTP
-
 pytestmark = pytest.mark.sftp
 
 
 def test_sftp_connection():
+    from onetl.connection import SFTP
+
     sftp = SFTP(host="some_host")
     assert sftp.host == "some_host"
     assert sftp.port == 22
@@ -18,6 +18,8 @@ def test_sftp_connection():
 
 
 def test_sftp_connection_with_port():
+    from onetl.connection import SFTP
+
     sftp = SFTP(host="some_host", port=500)
     assert sftp.host == "some_host"
     assert sftp.port == 500
@@ -27,6 +29,8 @@ def test_sftp_connection_with_port():
 
 
 def test_sftp_connection_with_password():
+    from onetl.connection import SFTP
+
     sftp = SFTP(host="some_host", user="some_user", password="pwd")
     assert sftp.host == "some_host"
     assert sftp.port == 22
@@ -37,6 +41,8 @@ def test_sftp_connection_with_password():
 
 
 def test_sftp_connection_with_key_file(request, tmp_path_factory):
+    from onetl.connection import SFTP
+
     folder: Path = tmp_path_factory.mktemp("key_file")
     folder.mkdir(exist_ok=True, parents=True)
     key_file = folder / "id_rsa"
@@ -56,11 +62,15 @@ def test_sftp_connection_with_key_file(request, tmp_path_factory):
 
 
 def test_sftp_connection_key_file_does_not_exist():
+    from onetl.connection import SFTP
+
     with pytest.raises(ValueError, match='file or directory at path "/path/to/key_file" does not exist'):
         SFTP(host="some_host", user="some_user", key_file="/path/to/key_file")
 
 
 def test_sftp_connection_keytab_is_directory(request, tmp_path_factory):
+    from onetl.connection import SFTP
+
     folder: Path = tmp_path_factory.mktemp("key_file")
     key_file = folder / "id_rsa"
     key_file.mkdir(exist_ok=True, parents=True)
@@ -75,5 +85,7 @@ def test_sftp_connection_keytab_is_directory(request, tmp_path_factory):
 
 
 def test_sftp_connection_without_mandatory_args():
+    from onetl.connection import SFTP
+
     with pytest.raises(ValueError):
         SFTP()

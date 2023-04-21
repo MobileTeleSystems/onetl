@@ -2,8 +2,6 @@ import logging
 
 import pytest
 
-from onetl.connection import FTP
-
 pytestmark = pytest.mark.ftp
 
 
@@ -23,6 +21,8 @@ def test_ftp_check(ftp_connection, caplog):
 
 
 def test_ftp_wrong_source_check():
+    from onetl.connection import FTP
+
     ftp = FTP(user="some_user", password="pwd", host="host", port=123)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):

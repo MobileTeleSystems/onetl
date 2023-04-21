@@ -1,11 +1,13 @@
 import pytest
 
-from onetl.connection import FTP, FileConnection
+from onetl.connection import FileConnection
 
 pytestmark = pytest.mark.ftp
 
 
 def test_ftp_connection():
+    from onetl.connection import FTP
+
     ftp = FTP(host="some_host", user="some_user", password="pwd")
     assert isinstance(ftp, FileConnection)
     assert ftp.host == "some_host"
@@ -16,6 +18,8 @@ def test_ftp_connection():
 
 
 def test_ftp_connection_with_port():
+    from onetl.connection import FTP
+
     ftp = FTP(host="some_host", user="some_user", password="pwd", port=500)
     assert ftp.host == "some_host"
     assert ftp.user == "some_user"
@@ -25,5 +29,7 @@ def test_ftp_connection_with_port():
 
 
 def test_ftp_connection_without_mandatory_args():
+    from onetl.connection import FTP
+
     with pytest.raises(ValueError):
         FTP()

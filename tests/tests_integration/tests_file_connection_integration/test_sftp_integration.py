@@ -2,8 +2,6 @@ import logging
 
 import pytest
 
-from onetl.connection import SFTP
-
 pytestmark = pytest.mark.sftp
 
 
@@ -27,6 +25,8 @@ def test_sftp_check(sftp_connection, caplog):
 
 
 def test_sftp_wrong_source_check():
+    from onetl.connection import SFTP
+
     sftp = SFTP(user="some_user", password="pwd", host="host", port=123)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):

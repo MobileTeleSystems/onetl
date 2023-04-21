@@ -278,17 +278,27 @@ Create virtualenv and install dependencies:
     pip install -U wheel
     pip install -U pip setuptools
     pip install -U \
-        -r requirements/requirements.txt \
-        -r requirements/requirements-ftp.txt \
-        -r requirements/requirements-hdfs.txt \
-        -r requirements/requirements-kerberos.txt \
-        -r requirements/requirements-s3.txt \
-        -r requirements/requirements-sftp.txt \
-        -r requirements/requirements-spark.txt \
-        -r requirements/requirements-webdav.txt \
-        -r requirements/requirements-dev.txt \
-        -r requirements/requirements-docs.txt \
-        -r requirements/requirements-test.txt
+        -r requirements/core.txt \
+        -r requirements/ftp.txt \
+        -r requirements/hdfs.txt \
+        -r requirements/kerberos.txt \
+        -r requirements/s3.txt \
+        -r requirements/sftp.txt \
+        -r requirements/spark.txt \
+        -r requirements/webdav.txt \
+        -r requirements/dev.txt \
+        -r requirements/docs.txt \
+        -r requirements/test/base.txt \
+        -r requirements/test/clickhouse.txt \
+        -r requirements/test/ftp.txt \
+        -r requirements/test/postgres.txt \
+        -r requirements/test/mongodb.txt \
+        -r requirements/test/mssql.txt \
+        -r requirements/test/mysql.txt \
+        -r requirements/test/oracle.txt \
+        -r requirements/test/postgres.txt \
+        -r requirements/test/sftp.txt \
+        -r requirements/test/spark-3.2.0.txt
 
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~

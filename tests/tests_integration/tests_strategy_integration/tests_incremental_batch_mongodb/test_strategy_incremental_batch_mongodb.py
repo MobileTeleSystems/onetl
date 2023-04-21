@@ -16,7 +16,7 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalBatchStrategy
 
-pytestmark = pytest.mark.postgres
+pytestmark = pytest.mark.mongodb
 
 
 df_schema = StructType(

@@ -1,0 +1,87 @@
+name: Tests for Clickhouse
+on:
+  workflow_call:
+    inputs:
+      clickhouse-image:
+        required: true
+        type: string
+      clickhouse-version:
+        required: true
+        type: string
+      spark-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+
+jobs:
+  test-clickhouse:
+    name: Run Clickhouse tests (server=${{ inputs.clickhouse-version }}, spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    services:
+      clickhouse:
+        image: ${{ inputs.clickhouse-image }}:${{ inputs.clickhouse-version }}
+        env:
+          TZ: UTC
+        ports:
+        - 8123:8123
+        - 9001:9000
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I \
+          -r requirements/core.txt \
+          -r requirements/tests/base.txt \
+          -r requirements/tests/clickhouse.txt \
+          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+
+    - name: Wait for Clickhouse to be ready
+      run: |
+        ./docker/wait-for-it.sh -h localhost -p 8123 -t 60
+
+    - name: Run tests
+      run: |
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m clickhouse
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*

@@ -1,11 +1,11 @@
 import pytest
 
-from onetl.connection import S3
-
 pytestmark = pytest.mark.s3
 
 
 def test_s3_connection():
+    from onetl.connection import S3
+
     s3 = S3(
         host="some_host",
         port=9000,
@@ -23,6 +23,8 @@ def test_s3_connection():
 
 
 def test_s3_connection_sec():
+    from onetl.connection import S3
+
     s3 = S3(
         host="some_host",
         access_key="access_key",
@@ -40,6 +42,8 @@ def test_s3_connection_sec():
 
 
 def test_s3_connection_no_sec():
+    from onetl.connection import S3
+
     s3 = S3(
         host="some_host",
         access_key="access_key",
