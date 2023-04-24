@@ -122,7 +122,7 @@ services:
     - onetl
 
   clickhouse:
-    image: yandex/clickhouse-server
+    image: clickhouse/clickhouse-server
     restart: unless-stopped
     ports:
     - 8123:8123

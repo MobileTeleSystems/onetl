@@ -15,8 +15,8 @@ def get_version():
     version_file = here / "onetl" / "VERSION"
     version = version_file.read_text().strip()
 
-    build_num = os.environ.get("GITHUB_RUN_ID", "0")
-    branch_name = os.environ.get("GITHUB_REF_NAME", "")
+    build_num = os.getenv("GITHUB_RUN_ID", "0")
+    branch_name = os.getenv("GITHUB_REF_NAME", "")
 
     if not branch_name:
         return version
@@ -29,17 +29,17 @@ def parse_requirements(file: Path) -> list[str]:
     return [line.rstrip() for line in lines if line and not line.startswith("#")]
 
 
-requirements = parse_requirements(here / "requirements" / "requirements.txt")
+requirements_core = parse_requirements(here / "requirements" / "core.txt")
 
-requirements_ftp = parse_requirements(here / "requirements" / "requirements-ftp.txt")
-requirements_sftp = parse_requirements(here / "requirements" / "requirements-sftp.txt")
-requirements_hdfs = parse_requirements(here / "requirements" / "requirements-hdfs.txt")
-requirements_s3 = parse_requirements(here / "requirements" / "requirements-s3.txt")
-requirements_webdav = parse_requirements(here / "requirements" / "requirements-webdav.txt")
+requirements_ftp = parse_requirements(here / "requirements" / "ftp.txt")
+requirements_sftp = parse_requirements(here / "requirements" / "sftp.txt")
+requirements_hdfs = parse_requirements(here / "requirements" / "hdfs.txt")
+requirements_s3 = parse_requirements(here / "requirements" / "s3.txt")
+requirements_webdav = parse_requirements(here / "requirements" / "webdav.txt")
 requirements_files = [*requirements_ftp, *requirements_sftp, *requirements_hdfs, *requirements_s3, *requirements_webdav]
 
-requirements_kerberos = parse_requirements(here / "requirements" / "requirements-kerberos.txt")
-requirements_spark = parse_requirements(here / "requirements" / "requirements-spark.txt")
+requirements_kerberos = parse_requirements(here / "requirements" / "kerberos.txt")
+requirements_spark = parse_requirements(here / "requirements" / "spark.txt")
 requirements_all = [*requirements_files, *requirements_kerberos, *requirements_spark]
 
 long_description = (here / "README.rst").read_text()
@@ -83,7 +83,7 @@ setup(
     keywords=["Spark", "ETL", "JDBC", "HWM"],
     packages=find_packages(exclude=["docs", "docs.*", "tests", "tests.*"]),
     python_requires=">=3.7",
-    install_requires=requirements,
+    install_requires=requirements_core,
     extras_require={
         "spark": requirements_spark,
         "ftp": requirements_ftp,

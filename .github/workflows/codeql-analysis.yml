@@ -51,15 +51,15 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -I \
-          -r requirements/requirements.txt \
-          -r requirements/requirements-dev.txt \
-          -r requirements/requirements-ftp.txt \
-          -r requirements/requirements-hdfs.txt \
-          -r requirements/requirements-kerberos.txt \
-          -r requirements/requirements-s3.txt \
-          -r requirements/requirements-sftp.txt \
-          -r requirements/requirements-spark.txt \
-          -r requirements/requirements-webdav.txt
+          -r requirements/core.txt \
+          -r requirements/dev.txt \
+          -r requirements/ftp.txt \
+          -r requirements/hdfs.txt \
+          -r requirements/kerberos.txt \
+          -r requirements/s3.txt \
+          -r requirements/sftp.txt \
+          -r requirements/spark.txt \
+          -r requirements/webdav.txt
 
         # Set the `CODEQL-PYTHON` environment variable to the Python executable
         # that includes the dependencies

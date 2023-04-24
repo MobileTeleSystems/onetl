@@ -1,0 +1,88 @@
+name: Tests
+on:
+  push:
+    branches:
+    - develop
+  pull_request:
+    branches:
+    - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-clickhouse:
+    name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - clickhouse-image: clickhouse/clickhouse-server
+          clickhouse-version: 23.2.6-alpine
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - clickhouse-image: clickhouse/clickhouse-server
+          clickhouse-version: 23.2.6-alpine
+          spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-clickhouse.yml
+    with:
+      clickhouse-image: ${{ matrix.clickhouse-image }}
+      clickhouse-version: ${{ matrix.clickhouse-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  all_done:
+    name: Tests done
+    runs-on: ubuntu-latest
+    needs: [tests-clickhouse]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-3.11-coverage
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: pip install -I coverage pytest
+
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v3
+      with:
+        path: reports
+
+    - name: Move coverage data to the root folder
+      run: find reports -type f -exec mv '{}' reports \;
+
+    - name: Generate coverate reports
+      run: ./combine_coverage.sh
+
+    - name: Check coverage
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./reports
+        fail_ci_if_error: true
+
+    - name: All done
+      run: echo 1

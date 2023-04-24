@@ -4,6 +4,7 @@ import secrets
 import shutil
 from collections import namedtuple
 from datetime import date, datetime, timedelta
+from importlib import import_module
 from pathlib import Path, PurePosixPath
 from time import sleep
 from typing import Dict
@@ -25,41 +26,19 @@ from pytest_lazyfixture import lazy_fixture
 # disable failing plugin import
 os.environ["ONETL_PLUGINS_BLACKLIST"] = "failing-plugin"
 
-from onetl.connection import (
-    FTP,
-    FTPS,
-    HDFS,
-    MSSQL,
-    S3,
-    SFTP,
-    Clickhouse,
-    Greenplum,
-    MongoDB,
-    MySQL,
-    Oracle,
-    Postgres,
-    Teradata,
-    WebDAV,
-)
 from onetl.hwm.store import MemoryHWMStore
-from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
-from tests.lib.greenplum_processing import GreenplumProcessing
-from tests.lib.hive_processing import HiveProcessing
-from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
-from tests.lib.mongo_processing import MongoDBProcessing
-from tests.lib.mssql_processing import MSSQLProcessing
-from tests.lib.mysql_processing import MySQLProcessing
-from tests.lib.oracle_processing import OracleProcessing
-from tests.lib.postgres_processing import PostgresProcessing
 
 log = logging.getLogger(__name__)
 
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
+@pytest.mark.ftp
 @pytest.fixture(scope="session")
 def ftp_server(tmp_path_factory):
+    from tests.lib.mock_file_servers import TestFTPServer
+
     server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
     server.start()
     sleep(5)
@@ -69,11 +48,16 @@ def ftp_server(tmp_path_factory):
 
 @pytest.fixture(scope="function")
 def ftp_connection(ftp_server):
+    from onetl.connection import FTP
+
     return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
 
 
+@pytest.mark.ftps
 @pytest.fixture(scope="session")
 def ftps_server(tmp_path_factory):
+    from tests.lib.mock_file_servers import TestFTPServer
+
     server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
     server.start()
     sleep(5)
@@ -83,11 +67,16 @@ def ftps_server(tmp_path_factory):
 
 @pytest.fixture(scope="function")
 def ftps_connection(ftps_server):
+    from onetl.connection import FTPS
+
     return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
 
 
+@pytest.mark.s3
 @pytest.fixture(scope="session")
 def s3():
+    from onetl.connection import S3
+
     s3 = S3(
         host=os.getenv("ONETL_MINIO_HOST"),
         port=os.getenv("ONETL_MINIO_PORT"),
@@ -103,8 +92,11 @@ def s3():
     yield s3
 
 
+@pytest.mark.sftp
 @pytest.fixture(scope="session")
 def sftp_server(tmp_path_factory):
+    from tests.lib.mock_file_servers import TestSFTPServer
+
     server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
     server.start()
     sleep(5)
@@ -112,8 +104,11 @@ def sftp_server(tmp_path_factory):
     server.stop()
 
 
+@pytest.mark.webdav
 @pytest.fixture(scope="session")
 def webdav_connection():
+    from onetl.connection import WebDAV
+
     wd = WebDAV(
         host=os.getenv("ONETL_WEBDAV_HOST"),
         port=os.getenv("ONETL_WEBDAV_PORT"),
@@ -128,9 +123,12 @@ def webdav_connection():
 
 @pytest.fixture(scope="function")
 def sftp_connection(sftp_server):
+    from onetl.connection import SFTP
+
     return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
 
 
+@pytest.mark.hdfs
 @pytest.fixture(scope="session")
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
@@ -143,6 +141,8 @@ def hdfs_server():
 
 @pytest.fixture(scope="function")
 def hdfs_connection(hdfs_server):
+    from onetl.connection import HDFS
+
     return HDFS(host=hdfs_server.host, port=hdfs_server.port)
 
 
@@ -198,24 +198,34 @@ def spark_metastore_dir(tmp_path_factory):
 
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(warehouse_dir, spark_metastore_dir):
+    import pyspark
+
+    from onetl.connection import MSSQL, Clickhouse, MongoDB, MySQL, Oracle, Postgres
+
+    packages = [
+        Clickhouse.package,
+        MSSQL.package,
+        MySQL.package,
+        Oracle.package,
+        Postgres.package,
+    ]
+
+    pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
+    if pyspark_version == "2.3":
+        packages.extend([MongoDB.package_spark_2_3])  # Greenplum.package_spark_2_3
+    elif pyspark_version == "2.4":
+        packages.extend([MongoDB.package_spark_2_4])  # Greenplum.package_spark_2_4
+    elif pyspark_version == "3.2":
+        packages.extend([MongoDB.package_spark_3_2])  # Greenplum.package_spark_3_2
+    elif pyspark_version == "3.3":
+        packages.extend([MongoDB.package_spark_3_3])
+    else:
+        raise ValueError(f"Unsupported pyspark version: {pyspark.__version__}")
+
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
-        .config(
-            "spark.jars.packages",
-            ",".join(
-                [
-                    Oracle.package,
-                    Clickhouse.package,
-                    Postgres.package,
-                    Greenplum.package_spark_2_4,
-                    MySQL.package,
-                    MSSQL.package,
-                    Teradata.package,
-                    MongoDB.package_spark_2_4,
-                ],
-            ),
-        )
+        .config("spark.jars.packages", ",".join(packages))
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
@@ -225,7 +235,6 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
         .config("spark.default.parallelism", "1")
         .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
         .config("spark.sql.warehouse.dir", warehouse_dir)
-        .config("spark.jars.ivySettings", os.fspath(Path(__file__).parent / "tests" / "ivysettings.xml"))
         .enableHiveSupport()
         .getOrCreate()
     )
@@ -245,25 +254,24 @@ def spark_mock() -> SparkSession:
 
 @pytest.fixture()
 def processing(request, spark):
-    storage_matching: Dict = {
-        "greenplum": GreenplumProcessing,
-        "postgres": PostgresProcessing,
-        "hive": HiveProcessing,
-        "oracle": OracleProcessing,
-        "clickhouse": ClickhouseProcessing,
-        "mysql": MySQLProcessing,
-        "mssql": MSSQLProcessing,
-        "mongodb": MongoDBProcessing,
+    processing_classes: Dict = {
+        "clickhouse": ("tests.lib.clickhouse_processing", "ClickhouseProcessing"),
+        "greenplum": ("tests.lib.greenplum_processing", "GreenplumProcessing"),
+        "hive": ("tests.lib.hive_processing", "HiveProcessing"),
+        "mongodb": ("tests.lib.mongodb_processing", "MongoDBProcessing"),
+        "mssql": ("tests.lib.mssql_processing", "MSSQLProcessing"),
+        "mysql": ("tests.lib.mysql_processing", "MySQLProcessing"),
+        "oracle": ("tests.lib.oracle_processing", "OracleProcessing"),
+        "postgres": ("tests.lib.postgres_processing", "PostgresProcessing"),
     }
 
-    test_function = request.function
+    db_storage_name = request.function.__name__.split("_")[1]
+    if db_storage_name not in processing_classes:
+        raise ValueError(f"Wrong name. Please use one of: {list(processing_classes.keys())}")
 
-    db_storage_name = test_function.__name__.split("_")[1]
-
-    if db_storage_name not in storage_matching:
-        raise ValueError(f"Wrong name. Please use {list(storage_matching.keys())}")
-
-    db_processing = storage_matching[db_storage_name]
+    module_name, class_name = processing_classes[db_storage_name]
+    module = import_module(module_name)
+    db_processing = getattr(module, class_name)
 
     if db_storage_name == "hive":
         yield db_processing(spark)
@@ -330,11 +338,11 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.ftp),
-        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.ftps),
-        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.sftp),
-        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.hdfs),
-        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.webdav),
+        lazy_fixture("ftp_connection"),
+        lazy_fixture("ftps_connection"),
+        lazy_fixture("sftp_connection"),
+        lazy_fixture("hdfs_connection"),
+        lazy_fixture("webdav_connection"),
     ],
 )
 def file_connection_without_s3(request):
@@ -344,7 +352,7 @@ def file_connection_without_s3(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("s3"), marks=pytest.mark.s3),
+        lazy_fixture("s3"),
         lazy_fixture("file_connection_without_s3"),
     ],
 )

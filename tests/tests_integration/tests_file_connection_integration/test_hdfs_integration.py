@@ -4,12 +4,9 @@ import logging
 import shutil
 from getpass import getuser
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
-from onetl.connection import HDFS
-from onetl.connection.file_connection import hdfs
 from onetl.hooks import hook
 
 pytestmark = pytest.mark.hdfs
@@ -32,8 +29,12 @@ def test_hdfs_check(hdfs_connection, caplog):
     assert "Connection is available" in caplog.text
 
 
-@patch.object(hdfs, "kinit")
-def test_hdfs_check_with_keytab(kinit, hdfs_server, caplog, request, tmp_path_factory):
+def test_hdfs_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
+    from onetl.connection import HDFS
+    from onetl.connection.file_connection import hdfs
+
+    mocker.patch.object(hdfs, "kinit")
+
     folder: Path = tmp_path_factory.mktemp("keytab")
     folder.mkdir(exist_ok=True, parents=True)
     keytab = folder / "user.keytab"
@@ -61,8 +62,12 @@ def test_hdfs_check_with_keytab(kinit, hdfs_server, caplog, request, tmp_path_fa
     assert "Connection is available" in caplog.text
 
 
-@patch.object(hdfs, "kinit")
-def test_hdfs_check_with_password(kinit, hdfs_server, caplog):
+def test_hdfs_check_with_password(mocker, hdfs_server, caplog):
+    from onetl.connection import HDFS
+    from onetl.connection.file_connection import hdfs
+
+    mocker.patch.object(hdfs, "kinit")
+
     hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port, user=getuser(), password="somepass")
 
     with caplog.at_level(logging.INFO):
@@ -81,11 +86,15 @@ def test_hdfs_check_with_password(kinit, hdfs_server, caplog):
 
 
 def test_hdfs_wrong_source_check_error():
+    from onetl.connection import HDFS
+
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         HDFS(host="hive1", port=1234).check()
 
 
 def test_hdfs_check_with_hooks(request, hdfs_server):
+    from onetl.connection import HDFS
+
     @HDFS.slots.is_namenode_active.bind
     @hook
     def is_namenode_active(host: str, cluster: str | None) -> bool:

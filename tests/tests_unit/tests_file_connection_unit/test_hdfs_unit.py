@@ -6,13 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from onetl.connection import HDFS, FileConnection
+from onetl.connection import FileConnection
 from onetl.hooks import hook
 
 pytestmark = pytest.mark.hdfs
 
 
 def test_hdfs_connection_with_host():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(host="some-host.domain.com")
     assert isinstance(hdfs, FileConnection)
     assert hdfs.host == "some-host.domain.com"
@@ -24,6 +26,8 @@ def test_hdfs_connection_with_host():
 
 
 def test_hdfs_connection_with_cluster():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(cluster="rnd-dwh")
     assert isinstance(hdfs, FileConnection)
     assert hdfs.cluster == "rnd-dwh"
@@ -35,6 +39,8 @@ def test_hdfs_connection_with_cluster():
 
 
 def test_hdfs_connection_with_cluster_and_host():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(cluster="rnd-dwh", host="some-host.domain.com")
     assert isinstance(hdfs, FileConnection)
     assert hdfs.cluster == "rnd-dwh"
@@ -47,6 +53,8 @@ def test_hdfs_connection_with_cluster_and_host():
 
 
 def test_hdfs_connection_with_port():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(host="some-host.domain.com", port=9080)
     assert isinstance(hdfs, FileConnection)
     assert hdfs.host == "some-host.domain.com"
@@ -58,6 +66,8 @@ def test_hdfs_connection_with_port():
 
 
 def test_hdfs_connection_with_user():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(host="some-host.domain.com", user="some_user")
     assert hdfs.host == "some-host.domain.com"
     assert hdfs.webhdfs_port == 50070
@@ -67,6 +77,8 @@ def test_hdfs_connection_with_user():
 
 
 def test_hdfs_connection_with_password():
+    from onetl.connection import HDFS
+
     hdfs = HDFS(host="some-host.domain.com", user="some_user", password="pwd")
     assert hdfs.host == "some-host.domain.com"
     assert hdfs.webhdfs_port == 50070
@@ -77,6 +89,8 @@ def test_hdfs_connection_with_password():
 
 
 def test_hdfs_connection_with_keytab(request, tmp_path_factory):
+    from onetl.connection import HDFS
+
     folder: Path = tmp_path_factory.mktemp("keytab")
     folder.mkdir(exist_ok=True, parents=True)
     keytab = folder / "user.keytab"
@@ -95,11 +109,15 @@ def test_hdfs_connection_with_keytab(request, tmp_path_factory):
 
 
 def test_hdfs_connection_keytab_does_not_exist():
+    from onetl.connection import HDFS
+
     with pytest.raises(ValueError, match='file or directory at path "/path/to/keytab" does not exist'):
         HDFS(host="some-host.domain.com", user="some_user", keytab="/path/to/keytab")
 
 
 def test_hdfs_connection_keytab_is_directory(request, tmp_path_factory):
+    from onetl.connection import HDFS
+
     folder: Path = tmp_path_factory.mktemp("keytab")
     keytab = folder / "user.keytab"
     keytab.mkdir(exist_ok=True, parents=True)
@@ -114,11 +132,15 @@ def test_hdfs_connection_keytab_is_directory(request, tmp_path_factory):
 
 
 def test_hdfs_connection_without_cluster_and_host():
+    from onetl.connection import HDFS
+
     with pytest.raises(ValueError):
         HDFS()
 
 
 def test_hdfs_connection_with_password_and_keytab(request, tmp_path_factory):
+    from onetl.connection import HDFS
+
     folder: Path = tmp_path_factory.mktemp("keytab")
     folder.mkdir(exist_ok=True, parents=True)
     keytab = folder / "user.keytab"
@@ -134,6 +156,8 @@ def test_hdfs_connection_with_password_and_keytab(request, tmp_path_factory):
 
 
 def test_hdfs_get_known_clusters_hook(request):
+    from onetl.connection import HDFS
+
     @HDFS.slots.get_known_clusters.bind
     @hook
     def get_known_clusters() -> set[str]:
@@ -151,6 +175,8 @@ def test_hdfs_get_known_clusters_hook(request):
 
 
 def test_hdfs_known_normalize_cluster_name_hook(request):
+    from onetl.connection import HDFS
+
     @HDFS.slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
@@ -164,6 +190,8 @@ def test_hdfs_known_normalize_cluster_name_hook(request):
 
 
 def test_hdfs_get_cluster_namenodes_hook(request):
+    from onetl.connection import HDFS
+
     @HDFS.slots.get_cluster_namenodes.bind
     @hook
     def get_cluster_namenodes(cluster: str) -> set[str]:
@@ -182,6 +210,8 @@ def test_hdfs_get_cluster_namenodes_hook(request):
 
 
 def test_hdfs_normalize_namenode_host_hook(request):
+    from onetl.connection import HDFS
+
     @HDFS.slots.normalize_namenode_host.bind
     @hook
     def normalize_namenode_host(host: str, cluster: str | None) -> str:
@@ -200,6 +230,8 @@ def test_hdfs_normalize_namenode_host_hook(request):
 
 
 def test_hdfs_get_webhdfs_port_hook(request):
+    from onetl.connection import HDFS
+
     @HDFS.slots.get_webhdfs_port.bind
     @hook
     def get_webhdfs_port(cluster: str) -> int | None:
@@ -217,6 +249,8 @@ def test_hdfs_get_webhdfs_port_hook(request):
 
 
 def test_hdfs_known_get_current(request, mocker):
+    from onetl.connection import HDFS
+
     mocker.patch.object(HDFS, "listdir", return_value=None)
 
     # no hooks bound to HDFS.slots.get_current_cluster

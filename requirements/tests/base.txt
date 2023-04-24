@@ -1,0 +1,8 @@
+coverage
+omegaconf
+pandas
+pytest
+pytest-lazy-fixture
+pytest-mock
+pytest-rerunfailures
+sqlalchemy<2.0
