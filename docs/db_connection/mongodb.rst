@@ -10,6 +10,7 @@ MongoDB connection
     MongoDB
     MongoDB.ReadOptions
     MongoDB.WriteOptions
+    MongoDB.PipelineOptions
 
 .. autoclass:: MongoDB
     :members: __init__, check, pipeline
