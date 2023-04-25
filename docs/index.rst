@@ -1,24 +1,22 @@
 .. include:: ../README.rst
+    :end-before: |Logo|
+
+.. image:: static/logo_wide.svg
+    :alt: onETL logo
+
+.. include:: ../README.rst
+    :start-after: |Logo|
     :end-before: documentation
-
-.. toctree::
-    :maxdepth: 2
-    :caption: onETL
-    :hidden:
-
-    self
-    security
-    contributing
-    concepts
-    quickstart
 
 .. toctree::
     :maxdepth: 2
     :caption: How to
     :hidden:
 
+    self
     install
-    develop
+    quickstart
+    concepts
 
 ..
     TODO (@msmarty5): убрать блоки ниже после перехода на тему Furo.
@@ -126,10 +124,10 @@
     strategy/index
     hwm_store/index
 
-
 .. toctree::
     :maxdepth: 2
     :caption: Hooks & plugins
+    :hidden:
 
     hooks/index
     plugins
@@ -137,5 +135,15 @@
 .. toctree::
     :maxdepth: 2
     :caption: Misc
+    :hidden:
 
     logging
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Development
+    :hidden:
+
+    develop
+    security
+    contributing

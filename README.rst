@@ -2,6 +2,7 @@
 
 onETL
 =====
+
 |Repo Status| |PyPI| |PyPI License| |PyPI Python Version|
 |Documentation| |Build Status| |Coverage|
 
@@ -20,6 +21,12 @@ onETL
 .. |Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
     :target: https://codecov.io/gh/MobileTeleSystems/onetl
 
+|Logo|
+
+.. |Logo| image:: docs/static/logo_wide.svg
+    :alt: onETL logo
+    :target: https://github.com/MobileTeleSystems/onetl
+
 What is onETL?
 --------------
 
@@ -34,46 +41,46 @@ Python ETL/ELT framework powered by `Apache Spark <https://spark.apache.org/>`_ 
 Requirements
 ------------
 * **Python 3.7 - 3.10**
-* PySpark 2.3 - 3.3 (depends on used connector)
+* PySpark 2.3.x - 3.3.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive`` and ``HDFS`` connectors)
 
-Storage Compatibility
----------------------
+Supported storages
+------------------
 
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Storage    | Documentation                                            | Notes                                                                                                               |
-+============+==========================================================+=====================================================================================================================+
-| Clickhouse | `Clickhouse connection <db_connection/clickhouse.html>`_ | Powered by Apache Spark `JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_        |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| MSSQL      | `MSSQL connection <db_connection/mssql.html>`_           |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| MySQL      | `MySQL connection <db_connection/mysql.html>`_           |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Postgres   | `Postgres connection <db_connection/postgres.html>`_     |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Oracle     | `Oracle connection <db_connection/oracle.html>`_         |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Teradata   | `Teradata connection <db_connection/teradata.html>`_     |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Hive       | `Hive connection <db_connection/hive.html>`_             | Powered by Apache Spark `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_ |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Greenplum  | `Greenplum connection <db_connection/greenplum.html>`_   | Powered by Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| MongoDB    | `MongoDB connection <db_connection/mongodb.html>`_       | Powered by `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/master/>`_                        |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| HDFS       | `HDFS connection <file_connection/hdfs.html>`_           | Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_                                                   |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| S3         | `S3 connection <file_connection/s3.html>`_               | Powered by `minio-py client <https://pypi.org/project/minio/>`_                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| SFTP       | `SFTP connection <file_connection/sftp.html>`_           | Powered by `Paramiko library <https://pypi.org/project/paramiko/>`_                                                 |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| FTP        | `FTP connection <file_connection/ftp.html>`_             | Powered by `FTPUtil library <https://pypi.org/project/ftputil/>`_                                                   |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| FTPS       | `FTPS connection <file_connection/ftps.html>`_           |                                                                                                                     |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| WebDAV     | `WebDAV connection <file_connection/webdav.html>`_       | Powered by `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_                                       |
-+------------+----------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
++------------+------------+----------------------------------------------------------------------------------------------------------+
+| Type       | Storage    | Powered by                                                                                               |
++============+============+==========================================================================================================+
+| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_        |
++            +------------+                                                                                                          +
+|            | MSSQL      |                                                                                                          |
++            +------------+                                                                                                          +
+|            | MySQL      |                                                                                                          |
++            +------------+                                                                                                          +
+|            | Postgres   |                                                                                                          |
++            +------------+                                                                                                          +
+|            | Oracle     |                                                                                                          |
++            +------------+                                                                                                          +
+|            | Teradata   |                                                                                                          |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_ |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | Greenplum  | Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | MongoDB    | `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/master/>`_                        |
++------------+------------+----------------------------------------------------------------------------------------------------------+
+| File       | HDFS       | `HDFS Python client <https://pypi.org/project/hdfs/>`_                                                   |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | S3         | `minio-py client <https://pypi.org/project/minio/>`_                                                     |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | SFTP       | `Paramiko library <https://pypi.org/project/paramiko/>`_                                                 |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | FTP        | `FTPUtil library <https://pypi.org/project/ftputil/>`_                                                   |
++            +------------+                                                                                                          +
+|            | FTPS       |                                                                                                          |
++            +------------+----------------------------------------------------------------------------------------------------------+
+|            | WebDAV     | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_                                       |
++------------+------------+----------------------------------------------------------------------------------------------------------+
 
 
 .. documentation

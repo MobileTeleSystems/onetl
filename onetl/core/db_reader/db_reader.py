@@ -68,6 +68,7 @@ class DBReader(FrozenModel):
         specify a dictionary.
 
         .. code:: python
+
             # SQL database connection
             where = "column_1 > 2"
 
