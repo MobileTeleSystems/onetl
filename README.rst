@@ -291,7 +291,6 @@ Create virtualenv and install dependencies:
         -r requirements/kerberos.txt \
         -r requirements/s3.txt \
         -r requirements/sftp.txt \
-        -r requirements/spark.txt \
         -r requirements/webdav.txt \
         -r requirements/dev.txt \
         -r requirements/docs.txt \

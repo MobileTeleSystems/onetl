@@ -15,6 +15,7 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader = DBReader(
@@ -38,6 +39,7 @@ def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_ta
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader = DBReader(
@@ -68,6 +70,7 @@ def test_oracle_reader_snapshot_partitioning_mode_hash(spark, processing, load_t
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader = DBReader(
@@ -98,6 +101,7 @@ def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data)
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader1 = DBReader(
@@ -148,6 +152,7 @@ def test_oracle_reader_snapshot_with_where(spark, processing, load_table_data):
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader = DBReader(
@@ -205,6 +210,7 @@ def test_oracle_reader_snapshot_with_columns_and_where(spark, processing, load_t
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     reader1 = DBReader(

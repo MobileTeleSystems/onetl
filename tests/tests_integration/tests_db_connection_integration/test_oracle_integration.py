@@ -1,5 +1,4 @@
 import logging
-from unittest.mock import patch
 
 import pytest
 
@@ -14,7 +13,7 @@ from onetl.connection import Oracle
 pytestmark = pytest.mark.oracle
 
 
-def test_oracle_connection_check_with_sid(spark, processing, caplog):
+def test_oracle_connection_check(spark, processing, caplog):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -22,6 +21,7 @@ def test_oracle_connection_check_with_sid(spark, processing, caplog):
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     with caplog.at_level(logging.INFO):
@@ -30,46 +30,17 @@ def test_oracle_connection_check_with_sid(spark, processing, caplog):
     assert "type = Oracle" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
-    assert f"user = '{processing.user}'" in caplog.text
-    assert f"sid = '{processing.sid}'" in caplog.text
-    assert "service_name" not in caplog.text
     assert "database" not in caplog.text
-
-    if processing.password:
-        assert processing.password not in caplog.text
-
-    assert "package = " not in caplog.text
-    assert "spark = " not in caplog.text
-
-    assert "Connection is available" in caplog.text
-
-
-@patch.object(Oracle, "_query_optional_on_driver")
-def test_oracle_connection_check_with_service_name(query_or_none_on_driver, spark, processing, caplog):
-    query_or_none_on_driver.result = None
-
-    oracle = Oracle(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        spark=spark,
-        service_name="abc",
-    )
-
-    with caplog.at_level(logging.INFO):
-        assert oracle.check() == oracle
-
-    assert "type = Oracle" in caplog.text
-    assert f"host = '{processing.host}'" in caplog.text
-    assert f"port = {processing.port}" in caplog.text
     assert f"user = '{processing.user}'" in caplog.text
-    assert "service_name = 'abc'" in caplog.text
-    assert "sid" not in caplog.text
-    assert "database" not in caplog.text
+    assert "password = SecretStr('**********')" in caplog.text
+    assert processing.password not in caplog.text
 
-    if processing.password:
-        assert processing.password not in caplog.text
+    if processing.sid:
+        assert f"sid = '{processing.sid}'" in caplog.text
+        assert "service_name" not in caplog.text
+    else:
+        assert "sid =" not in caplog.text
+        assert f"service_name = '{processing.service_name}'" in caplog.text
 
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
@@ -93,6 +64,7 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -126,6 +98,7 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -160,6 +133,7 @@ def test_oracle_connection_execute_ddl(spark, processing, get_schema_table, suff
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table_name, schema, table = get_schema_table
@@ -210,6 +184,7 @@ def test_oracle_connection_execute_dml(request, spark, processing, load_table_da
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table_name, schema, table = load_table_data
@@ -269,6 +244,7 @@ def test_oracle_connection_execute_procedure(request, spark, processing, load_ta
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -403,6 +379,7 @@ def test_oracle_connection_execute_procedure_arguments(
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -525,6 +502,7 @@ def test_oracle_connection_execute_procedure_inout(
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -587,6 +565,7 @@ def test_oracle_connection_execute_procedure_ddl(request, spark, processing, get
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = get_schema_table.full_name
@@ -618,6 +597,7 @@ def test_oracle_connection_execute_procedure_dml(request, spark, processing, get
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = get_schema_table.full_name
@@ -660,6 +640,7 @@ def test_oracle_connection_execute_function(request, spark, processing, load_tab
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -810,6 +791,7 @@ def test_oracle_connection_execute_function_arguments(
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -883,6 +865,7 @@ def test_oracle_connection_execute_function_table(
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = load_table_data.full_name
@@ -952,6 +935,7 @@ def test_oracle_connection_execute_function_ddl(request, spark, processing, get_
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = get_schema_table.full_name
@@ -1006,6 +990,7 @@ def test_oracle_connection_execute_function_dml(request, spark, processing, get_
         password=processing.password,
         spark=spark,
         sid=processing.sid,
+        service_name=processing.service_name,
     )
 
     table = get_schema_table.full_name

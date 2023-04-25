@@ -113,6 +113,31 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-oracle:
+    name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - oracle-version: 21.3.0-faststart
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - oracle-version: 21.3.0-faststart
+          spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-oracle.yml
+    with:
+      oracle-version: ${{ matrix.oracle-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-postgres:
     name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -187,6 +212,7 @@ jobs:
     - tests-clickhouse
     - tests-mysql
     - tests-mssql
+    - tests-oracle
     - tests-postgres
     - tests-teradata
     - tests-s3

@@ -34,6 +34,10 @@ class OracleProcessing(BaseProcessing):
         return os.getenv("ONETL_ORA_CONN_SID")
 
     @property
+    def service_name(self) -> str:
+        return os.getenv("ONETL_ORA_CONN_SERVICE_NAME")
+
+    @property
     def user(self) -> str:
         return os.getenv("ONETL_ORA_CONN_USER")
 
@@ -55,15 +59,15 @@ class OracleProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        sid = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
-        return f"oracle://{self.user}:{self.password}@{sid}"
+        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
+        return f"oracle://{self.user}:{self.password}@{dsn}"
 
     def get_conn(self) -> cx_Oracle.Connection:
         try:
             cx_Oracle.init_oracle_client(lib_dir=os.getenv("ONETL_ORA_CLIENT_PATH"))
         except Exception:
             logger.debug("cx_Oracle client is already initialized.", exc_info=True)
-        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid)
+        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
         return cx_Oracle.connect(user=self.user, password=self.password, dsn=dsn)
 
     def create_schema_ddl(
