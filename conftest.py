@@ -200,7 +200,15 @@ def spark_metastore_dir(tmp_path_factory):
 def get_spark_session(warehouse_dir, spark_metastore_dir):
     import pyspark
 
-    from onetl.connection import MSSQL, Clickhouse, MongoDB, MySQL, Oracle, Postgres
+    from onetl.connection import (
+        MSSQL,
+        Clickhouse,
+        MongoDB,
+        MySQL,
+        Oracle,
+        Postgres,
+        Teradata,
+    )
 
     packages = [
         Clickhouse.package,
@@ -208,6 +216,7 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
         MySQL.package,
         Oracle.package,
         Postgres.package,
+        Teradata.package,
     ]
 
     pyspark_version = ".".join(pyspark.__version__.split(".")[:2])

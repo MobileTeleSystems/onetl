@@ -7,7 +7,7 @@ pytestmark = pytest.mark.teradata
 
 def test_teradata_class_attributes():
     assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-    assert Teradata.package == "com.teradata.jdbc:terajdbc4:17.20.00.08"
+    assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
 
 
 def test_teradata(spark_mock):

@@ -25,7 +25,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class Teradata(JDBCConnection):
     """Teradata JDBC connection.
 
-    Based on package ``com.teradata.jdbc:terajdbc4:17.20.00.08``
+    Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
 
     .. dropdown:: Version compatibility
@@ -142,7 +142,7 @@ class Teradata(JDBCConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.20.00.08"
+    package: ClassVar[str] = "com.teradata.jdbc:terajdbc:17.20.00.15"
 
     _check_query: ClassVar[str] = "SELECT 1 AS check_result"
 
