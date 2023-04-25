@@ -4,9 +4,8 @@ Core classes
 ============
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: Core classes
-    :hidden:
 
     db_reader
     db_writer

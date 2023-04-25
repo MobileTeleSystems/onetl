@@ -31,7 +31,32 @@ All connection types are inherited from the parent class ``BaseConnection``.
 Class diagram
 -------------
 
-.. image:: static/connections.svg
+.. md-mermaid::
+    :name: class-diagrams
+
+    classDiagram
+        BaseConnection <|-- DBConnection
+        BaseConnection <|-- FileConnection
+
+        DBConnection <|-- JDBCConnection
+        DBConnection <|-- Hive
+        DBConnection <|-- Greenplum
+        DBConnection <|-- MongoDB
+
+        JDBCConnection <|-- Clickhouse
+        JDBCConnection <|-- MSSQL
+        JDBCConnection <|-- MySQL
+        JDBCConnection <|-- Postgres
+        JDBCConnection <|-- Oracle
+        JDBCConnection <|-- Teradata
+
+        FileConnection <|-- FTP
+        FileConnection <|-- FTPS
+        FileConnection <|-- HDFS
+        FileConnection <|-- WebDAV
+        FileConnection <|-- SFTP
+        FileConnection <|-- S3
+
 
 DBConnection
 ------------

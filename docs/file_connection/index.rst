@@ -4,9 +4,8 @@ File Connections
 ================
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: File Connections
-    :hidden:
 
     FTP <ftp>
     FTPS <ftps>
