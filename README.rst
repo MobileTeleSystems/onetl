@@ -150,19 +150,19 @@ Firstly, you should install JDK. The exact installation instruction depends on y
     dnf install java-11-openjdk-devel  # CentOS 8 + Spark 3
     apt-get install openjdk-11-jdk  # Debian-based + Spark 3
 
-Compatibility matrix (`see also <https://spark.apache.org/docs/latest/>`_):
+Compatibility matrix:
 
-+--------+-------------+-------------+
-| Spark  | Java        | Python      |
-+========+=============+=============+
-| 2.3.x  | 8 only      | 2.7 - 3.7   |
-+--------+-------------+-------------+
-| 2.4.x  | 8 only      | 2.7 - 3.7   |
-+--------+-------------+-------------+
-| 3.2.x  | 8u201 - 11  | 3.7 - 3.10  |
-+--------+-------------+-------------+
-| 3.3.x  | 8u201 - 17  | 3.7 - 3.10  |
-+--------+-------------+-------------+
++--------------------------------------------------------------+-------------+-------------+
+| Spark                                                        | Java        | Python      |
++==============================================================+=============+=============+
+| `2.3.x <https://spark.apache.org/docs/2.3.0/#downloading>`_  | 8 only      | 2.7 - 3.7   |
++--------------------------------------------------------------+-------------+-------------+
+| `2.4.x <https://spark.apache.org/docs/2.4.8/#downloading>`_  | 8 only      | 2.7 - 3.7   |
++--------------------------------------------------------------+-------------+-------------+
+| `3.2.x <https://spark.apache.org/docs/3.2.3/#downloading>`_  | 8u201 - 11  | 3.7 - 3.10  |
++--------------------------------------------------------------+-------------+-------------+
+| `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 8u201 - 17  | 3.7 - 3.10  |
++--------------------------------------------------------------+-------------+-------------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
 
@@ -174,7 +174,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.3.1  # install a specific PySpark version
+    pip install onetl pyspark==3.3.2  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise class import will fail.**

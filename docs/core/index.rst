@@ -1,17 +1,12 @@
 .. _core:
 
-Core classes
-============
-
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: Core classes
-    :hidden:
 
     db_reader
     db_writer
-    file_downloader
-    download_result
-    file_uploader
-    upload_result
+    file_downloader/index
+    file_uploader/index
     file_filter
+    file_limit

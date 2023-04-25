@@ -193,7 +193,7 @@ class MongoDB(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+            pip install onetl pyspark=3.3.2  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
@@ -235,6 +235,12 @@ class MongoDB(DBConnection):
 
         from onetl.connection import MongoDB
         from pyspark.sql import SparkSession
+
+        # Package should match your Spark version:
+        # MongoDB.package_spark_2_3
+        # MongoDB.package_spark_2_4
+        # MongoDB.package_spark_3_2
+        # MongoDB.package_spark_3_3
 
         spark = (
             SparkSession.builder.appName("spark-app-name")

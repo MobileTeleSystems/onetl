@@ -88,7 +88,7 @@ class Hive(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+            pip install onetl pyspark=3.3.2  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

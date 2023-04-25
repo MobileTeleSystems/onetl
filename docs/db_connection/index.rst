@@ -4,9 +4,8 @@ DB Connections
 ==============
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: DB Connections
-    :hidden:
 
     Clickhouse <clickhouse>
     Greenplum <greenplum>
