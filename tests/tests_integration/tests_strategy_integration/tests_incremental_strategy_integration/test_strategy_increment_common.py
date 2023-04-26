@@ -2,8 +2,13 @@ import secrets
 from contextlib import suppress
 from datetime import timedelta
 
-import pandas as pd
 import pytest
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -263,7 +268,7 @@ def test_postgres_strategy_incremental_offset(
     with IncrementalStrategy(offset=offset):
         next_df = reader.run()
 
-    total_span = pd.concat([second_span, first_span], ignore_index=True)
+    total_span = pandas.concat([second_span, first_span], ignore_index=True)
     processing.assert_equal_df(df=next_df, other_frame=total_span)
 
 

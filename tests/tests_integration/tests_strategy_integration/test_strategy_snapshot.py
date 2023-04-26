@@ -3,9 +3,14 @@ import secrets
 from contextlib import suppress
 from datetime import date, datetime, timedelta
 
-import pandas as pd
 import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -422,7 +427,7 @@ def test_postgres_strategy_snapshot_batch(
     assert store.get(hwm.qualified_name) is None
 
     # all the rows will be read
-    total_span = pd.concat([first_span, second_span], ignore_index=True)
+    total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
     total_df = total_df.sort(total_df.id_int.asc())
     processing.assert_equal_df(df=total_df, other_frame=total_span)
@@ -503,7 +508,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
 
     # init hwm value will be ignored
     # all the rows will be read
-    total_span = pd.concat([first_span, second_span], ignore_index=True)
+    total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
     total_df = total_df.sort(total_df.id_int.asc())
     processing.assert_equal_df(df=total_df, other_frame=total_span)
@@ -640,7 +645,7 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
                 total_df = total_df.union(next_df)
 
     # all the rows will be read
-    total_span = pd.concat([first_span, second_span], ignore_index=True)
+    total_span = pandas.concat([first_span, second_span], ignore_index=True)
     total_df = total_df.sort(total_df.id_int.asc())
 
     processing.assert_equal_df(df=total_df, other_frame=total_span)

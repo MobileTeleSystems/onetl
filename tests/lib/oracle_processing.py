@@ -3,7 +3,7 @@ from logging import getLogger
 from typing import Dict, List, Optional
 
 import cx_Oracle
-import pandas as pd
+import pandas
 from pandas.io import sql as psql
 
 from tests.lib.base_processing import BaseProcessing
@@ -143,7 +143,7 @@ class OracleProcessing(BaseProcessing):
         table: str,
         order_by: Optional[List[str]] = None,
     ) -> "pandas.core.frame.DataFrame":  # noqa: F821
-        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by), con=self.connection)
+        return pandas.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by), con=self.connection)
 
     def fix_pandas_df(
         self,

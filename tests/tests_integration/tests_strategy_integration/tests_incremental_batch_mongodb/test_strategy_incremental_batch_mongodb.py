@@ -2,14 +2,6 @@ from datetime import timedelta
 
 import pytest
 from etl_entities import DateTimeHWM, IntHWM
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import MongoDB
 from onetl.core import DBReader
@@ -19,15 +11,26 @@ from onetl.strategy import IncrementalBatchStrategy
 pytestmark = pytest.mark.mongodb
 
 
-df_schema = StructType(
-    [
-        StructField("_id", IntegerType()),
-        StructField("text_string", StringType()),
-        StructField("hwm_int", IntegerType()),
-        StructField("hwm_datetime", TimestampType()),
-        StructField("float_value", DoubleType()),
-    ],
-)
+@pytest.fixture(scope="function")
+def df_schema():
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
+    return StructType(
+        [
+            StructField("_id", IntegerType()),
+            StructField("text_string", StringType()),
+            StructField("hwm_int", IntegerType()),
+            StructField("hwm_datetime", TimestampType()),
+            StructField("float_value", DoubleType()),
+        ],
+    )
 
 
 @pytest.mark.flaky(reruns=5)
@@ -55,6 +58,7 @@ def test_mongodb_strategy_incremental_batch(
     spark,
     processing,
     prepare_schema_table,
+    df_schema,
     hwm_type,
     hwm_column,
     step,
@@ -170,7 +174,7 @@ def test_mongodb_strategy_incremental_batch(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_schema_table):
+def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_schema_table, df_schema):
     mongodb = MongoDB(
         host=processing.host,
         port=processing.port,

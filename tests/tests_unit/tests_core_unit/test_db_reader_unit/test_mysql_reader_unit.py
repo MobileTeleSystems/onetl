@@ -1,12 +1,4 @@
 import pytest
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import MySQL
 from onetl.core import DBReader
@@ -15,6 +7,15 @@ pytestmark = pytest.mark.mysql
 
 
 def test_mysql_reader_snapshot_error_pass_df_schema(spark_mock):
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
     df_schema = StructType(
         [
             StructField("_id", IntegerType()),

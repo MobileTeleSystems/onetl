@@ -12,12 +12,12 @@ def test_s3_connection_check(caplog, s3):
 
 def test_s3_connection_list_dir(s3):
     s3.client.fput_object(
-        "testbucket",
+        s3.bucket,
         "export/resources/src/exclude_dir/file_4.txt",
         "tests/resources/src/exclude_dir/file_4.txt",
     )
     s3.client.fput_object(
-        "testbucket",
+        s3.bucket,
         "export/resources/src/exclude_dir/file_5.txt",
         "tests/resources/src/exclude_dir/file_5.txt",
     )

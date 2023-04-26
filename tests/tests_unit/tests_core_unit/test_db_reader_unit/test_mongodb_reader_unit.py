@@ -1,27 +1,31 @@
 import pytest
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import MongoDB
 from onetl.core import DBReader
 
 pytestmark = pytest.mark.mongodb
 
-df_schema = StructType(
-    [
-        StructField("_id", IntegerType()),
-        StructField("text_string", StringType()),
-        StructField("hwm_int", IntegerType()),
-        StructField("hwm_datetime", TimestampType()),
-        StructField("float_value", DoubleType()),
-    ],
-)
+
+@pytest.fixture(scope="function")
+def df_schema():
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
+    return StructType(
+        [
+            StructField("_id", IntegerType()),
+            StructField("text_string", StringType()),
+            StructField("hwm_int", IntegerType()),
+            StructField("hwm_datetime", TimestampType()),
+            StructField("float_value", DoubleType()),
+        ],
+    )
 
 
 def test_mongodb_reader_with_dbschema(spark_mock):
@@ -42,7 +46,7 @@ def test_mongodb_reader_with_dbschema(spark_mock):
         )
 
 
-def test_mongodb_reader_wrong_hint_type(spark_mock):
+def test_mongodb_reader_wrong_hint_type(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -60,10 +64,11 @@ def test_mongodb_reader_wrong_hint_type(spark_mock):
             where={"col_2": {"$eq": 2}, "col_1": {"$gt": 1, "$lt": 100}},
             hint="{'col1': 1}",
             table="table",
+            df_schema=df_schema,
         )
 
 
-def test_mongodb_reader_wrong_where_type(spark_mock):
+def test_mongodb_reader_wrong_where_type(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -81,10 +86,11 @@ def test_mongodb_reader_wrong_where_type(spark_mock):
             where="{'col_2': {'$eq': 2}, 'col_1': {'$gt': 1, '$lt': 100}, }",
             hint={"col1": 1},
             table="table",
+            df_schema=df_schema,
         )
 
 
-def test_mongodb_reader_where_wrong_value_match(spark_mock):
+def test_mongodb_reader_where_wrong_value_match(spark_mock, df_schema):
     wrong_param = "$match"
     mongo = MongoDB(
         host="host",
@@ -103,10 +109,11 @@ def test_mongodb_reader_where_wrong_value_match(spark_mock):
             connection=mongo,
             where=where,
             table="table",
+            df_schema=df_schema,
         )
 
 
-def test_mongodb_reader_where_wrong_value(spark_mock):
+def test_mongodb_reader_where_wrong_value(spark_mock, df_schema):
     wrong_param = "$limit"
     mongo = MongoDB(
         host="host",
@@ -125,6 +132,7 @@ def test_mongodb_reader_where_wrong_value(spark_mock):
             connection=mongo,
             where=where,
             table="table",
+            df_schema=df_schema,
         )
 
 
@@ -144,7 +152,7 @@ def test_mongodb_reader_without_df_schema(spark_mock):
         )
 
 
-def test_mongodb_reader_error_pass_hwm_expression(spark_mock):
+def test_mongodb_reader_error_pass_hwm_expression(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -160,7 +168,7 @@ def test_mongodb_reader_error_pass_hwm_expression(spark_mock):
         DBReader(connection=mongo, table="table", df_schema=df_schema, hwm_column=("hwm_int", "expr"))
 
 
-def test_mongodb_reader_error_pass_columns(spark_mock):
+def test_mongodb_reader_error_pass_columns(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",
         user="user",
@@ -176,7 +184,7 @@ def test_mongodb_reader_error_pass_columns(spark_mock):
         DBReader(connection=mongo, table="table", columns=["_id", "test"], df_schema=df_schema)
 
 
-def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock):
+def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",
         user="user",

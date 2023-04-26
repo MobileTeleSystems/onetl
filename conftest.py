@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import secrets
@@ -7,7 +9,7 @@ from datetime import date, datetime, timedelta
 from importlib import import_module
 from pathlib import Path, PurePosixPath
 from time import sleep
-from typing import Dict
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
@@ -20,8 +22,10 @@ from etl_entities import (
     RemoteFolder,
     Table,
 )
-from pyspark.sql import SparkSession
 from pytest_lazyfixture import lazy_fixture
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 # disable failing plugin import
 os.environ["ONETL_PLUGINS_BLACKLIST"] = "failing-plugin"
@@ -199,6 +203,7 @@ def spark_metastore_dir(tmp_path_factory):
 @pytest.fixture(scope="session", name="spark")
 def get_spark_session(warehouse_dir, spark_metastore_dir):
     import pyspark
+    from pyspark.sql import SparkSession
 
     from onetl.connection import (
         MSSQL,
@@ -255,6 +260,8 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
 
 @pytest.fixture()
 def spark_mock() -> SparkSession:
+    from pyspark.sql import SparkSession
+
     spark = Mock(spec=SparkSession)
     spark.sparkContext = Mock()
     spark.sparkContext.appName = "abc"
@@ -263,7 +270,7 @@ def spark_mock() -> SparkSession:
 
 @pytest.fixture()
 def processing(request, spark):
-    processing_classes: Dict = {
+    processing_classes = {
         "clickhouse": ("tests.lib.clickhouse_processing", "ClickhouseProcessing"),
         "greenplum": ("tests.lib.greenplum_processing", "GreenplumProcessing"),
         "hive": ("tests.lib.hive_processing", "HiveProcessing"),

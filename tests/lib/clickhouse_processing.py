@@ -5,7 +5,7 @@ from random import randint
 from typing import Dict, List, Optional
 
 import clickhouse_driver
-import pandas as pd
+import pandas
 
 from tests.lib.base_processing import BaseProcessing
 
@@ -80,7 +80,7 @@ class ClickhouseProcessing(BaseProcessing):
                     # Clickhouse DATETIME format has time range: 00:00:00 through 23:59:59
                     values[column_name].append(datetime.now().replace(microsecond=0) + timedelta(seconds=rand_second))
 
-        return pd.DataFrame(data=values)
+        return pandas.DataFrame(data=values)
 
     def create_schema_ddl(
         self,

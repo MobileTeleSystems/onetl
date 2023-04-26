@@ -123,8 +123,8 @@ class S3(FileConnection):
     def validate_port(cls, values):
         if values["port"] is not None:
             return values
-        values["port"] = 443 if values["protocol"] == "https" else 80
 
+        values["port"] = 443 if values["protocol"] == "https" else 80
         return values
 
     @property

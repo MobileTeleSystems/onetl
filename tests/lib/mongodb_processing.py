@@ -5,7 +5,7 @@ from random import randint
 from typing import Dict, List, Optional
 from urllib import parse as parser
 
-import pandas as pd
+import pandas
 from pymongo import MongoClient
 
 from tests.lib.base_processing import BaseProcessing
@@ -123,7 +123,7 @@ class MongoDBProcessing(BaseProcessing):
     ) -> "pandas.core.frame.DataFrame":  # noqa: F821
         db = self.connection[self.database]
         records = db[table]
-        return pd.DataFrame(list(records.find()))
+        return pandas.DataFrame(list(records.find()))
 
     @staticmethod
     def current_datetime() -> datetime:
@@ -152,4 +152,4 @@ class MongoDBProcessing(BaseProcessing):
                     now = now.replace(microsecond=microsecond)  # save milliseconds
                     values[column_name].append(now)
 
-        return pd.DataFrame(data=values)
+        return pandas.DataFrame(data=values)
