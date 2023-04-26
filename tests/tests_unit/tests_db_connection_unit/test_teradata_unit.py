@@ -25,6 +25,9 @@ def test_teradata(spark_mock):
         "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
     )
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
+
 
 def test_teradata_with_port(spark_mock):
     conn = Teradata(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)

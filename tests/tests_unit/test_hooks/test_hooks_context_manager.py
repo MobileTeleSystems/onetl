@@ -610,15 +610,9 @@ def test_hooks_execute_context_manager_wrong_signature():
         def __exit__(self, *args):
             return False
 
-    method_name = (
-        "test_hooks.test_hooks_context_manager.test_hooks_execute_context_manager_wrong_signature."
-        "<locals>.Calculator.plus"
-    )
-
-    hook_name = (
-        "test_hooks.test_hooks_context_manager.test_hooks_execute_context_manager_wrong_signature."
-        "<locals>.MissingArg"
-    )
+    local_name = "test_hooks_context_manager.test_hooks_execute_context_manager_wrong_signature"
+    method_name = f"{local_name}.<locals>.Calculator.plus"
+    hook_name = f"{local_name}.<locals>.MissingArg"
 
     error_msg = textwrap.dedent(
         rf"""

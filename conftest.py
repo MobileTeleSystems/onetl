@@ -38,7 +38,47 @@ log = logging.getLogger(__name__)
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
-@pytest.mark.ftp
+def pytest_collection_modifyitems(items):
+    # pytest.mark placed on top of fixture does nothing, so we need to modify tests using pytest hook.
+    # see https://github.com/pytest-dev/pytest/issues/1368
+    db_markers = {"db_connection", "connection"}
+    file_markers = {"file_connection", "connection"}
+    markers_for = {
+        ("clickhouse",): {"clickhouse", *db_markers},
+        ("greenplum",): {"greenplum", *db_markers},
+        ("hive",): {"hive", *db_markers},
+        ("mongodb",): {"mongodb", *db_markers},
+        ("mssql",): {"mssql", *db_markers},
+        ("mysql",): {"mysql", *db_markers},
+        ("oracle",): {"oracle", *db_markers},
+        ("postgres",): {"postgres", *db_markers},
+        ("teradata",): {"teradata", *db_markers},
+        ("spark", "spark_mock"): db_markers,
+        ("ftp", "ftp_connection", "file_all_connections", "file_connection_without_s3"): {"ftp", *file_markers},
+        ("ftps", "ftps_connection", "file_all_connections", "file_connection_without_s3"): {"ftps", *file_markers},
+        ("hdfs", "hdfs_connection", "hdfs_server", "file_all_connections", "file_connection_without_s3"): {
+            "hdfs",
+            *file_markers,
+        },
+        ("sftp", "sftp_connection", "file_all_connections", "file_connection_without_s3"): {"sftp", *file_markers},
+        ("s3", "file_all_connections"): {"s3", *file_markers},
+        ("webdav_connection", "file_all_connections", "file_connection_without_s3"): {"webdav", *file_markers},
+    }
+
+    for item in items:
+        new_markers = set()
+        for to_search, to_add in markers_for.items():
+            fixtures = set(item.fixturenames)
+            match_fixtures = bool(fixtures.intersection(to_search))
+            match_marks = any(item.get_closest_marker(existing_marker) for existing_marker in to_search)
+
+            if match_fixtures or match_marks:
+                new_markers.update(to_add)
+
+        for new_marker in new_markers:
+            item.add_marker(new_marker)
+
+
 @pytest.fixture(scope="session")
 def ftp_server(tmp_path_factory):
     from tests.lib.mock_file_servers import TestFTPServer
@@ -57,7 +97,6 @@ def ftp_connection(ftp_server):
     return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
 
 
-@pytest.mark.ftps
 @pytest.fixture(scope="session")
 def ftps_server(tmp_path_factory):
     from tests.lib.mock_file_servers import TestFTPServer
@@ -76,7 +115,6 @@ def ftps_connection(ftps_server):
     return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
 
 
-@pytest.mark.s3
 @pytest.fixture(scope="session")
 def s3():
     from onetl.connection import S3
@@ -93,10 +131,9 @@ def s3():
     if not s3.client.bucket_exists(s3.bucket):
         s3.client.make_bucket(s3.bucket)
 
-    yield s3
+    return s3
 
 
-@pytest.mark.sftp
 @pytest.fixture(scope="session")
 def sftp_server(tmp_path_factory):
     from tests.lib.mock_file_servers import TestSFTPServer
@@ -108,12 +145,18 @@ def sftp_server(tmp_path_factory):
     server.stop()
 
 
-@pytest.mark.webdav
+@pytest.fixture(scope="function")
+def sftp_connection(sftp_server):
+    from onetl.connection import SFTP
+
+    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
+
+
 @pytest.fixture(scope="session")
 def webdav_connection():
     from onetl.connection import WebDAV
 
-    wd = WebDAV(
+    return WebDAV(
         host=os.getenv("ONETL_WEBDAV_HOST"),
         port=os.getenv("ONETL_WEBDAV_PORT"),
         user=os.getenv("ONETL_WEBDAV_USER"),
@@ -122,17 +165,7 @@ def webdav_connection():
         protocol="http",
     )
 
-    yield wd
 
-
-@pytest.fixture(scope="function")
-def sftp_connection(sftp_server):
-    from onetl.connection import SFTP
-
-    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
-
-
-@pytest.mark.hdfs
 @pytest.fixture(scope="session")
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])

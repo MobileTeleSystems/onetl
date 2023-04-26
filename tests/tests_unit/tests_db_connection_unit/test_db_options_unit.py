@@ -6,13 +6,6 @@ import pytest
 from onetl.connection import Greenplum, Hive, Oracle, Postgres
 
 
-def test_secure_str_and_repr(spark_mock):
-    conn = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark_mock)
-
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
-
-
 @pytest.mark.parametrize(
     "options_class",
     [

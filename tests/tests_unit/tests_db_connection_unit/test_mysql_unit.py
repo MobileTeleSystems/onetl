@@ -22,6 +22,9 @@ def test_mysql(spark_mock):
 
     assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database?characterEncoding=UTF-8&useUnicode=yes"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
+
 
 def test_mysql_with_port(spark_mock):
     conn = MySQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)

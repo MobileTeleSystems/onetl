@@ -22,6 +22,9 @@ def test_oracle(spark_mock):
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
+
 
 def test_oracle_with_port(spark_mock):
     conn = Oracle(host="some_host", port=5000, user="user", sid="sid", password="passwd", spark=spark_mock)

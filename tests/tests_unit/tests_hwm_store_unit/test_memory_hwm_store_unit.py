@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 from onetl.hwm.store import HWMStoreManager, MemoryHWMStore, YAMLHWMStore
 
 

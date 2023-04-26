@@ -557,8 +557,8 @@ def test_hooks_execute_callback_wrong_signature():
     def missing_arg(self):
         pass
 
-    method_name = "test_hooks.test_hooks_callback.test_hooks_execute_callback_wrong_signature.<locals>.Calculator.plus"
-    hook_name = "test_hooks.test_hooks_callback.test_hooks_execute_callback_wrong_signature.<locals>.missing_arg"
+    method_name = "test_hooks_callback.test_hooks_execute_callback_wrong_signature.<locals>.Calculator.plus"
+    hook_name = "test_hooks_callback.test_hooks_execute_callback_wrong_signature.<locals>.missing_arg"
 
     error_msg = textwrap.dedent(
         rf"""
