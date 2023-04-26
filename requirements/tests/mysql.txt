@@ -1,1 +1,1 @@
-PyMySQL
+pymysql[rsa]

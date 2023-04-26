@@ -41,6 +41,31 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-mysql:
+    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - mysql-version: 8.0.33
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - mysql-version: 8.0.33
+          spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-mysql.yml
+    with:
+      mysql-version: ${{ matrix.mysql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-teradata:
     name: Run Teradata tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -66,7 +91,10 @@ jobs:
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
-    needs: [tests-clickhouse, tests-teradata]
+    needs:
+    - tests-clickhouse
+    - tests-mysql
+    - tests-teradata
 
     steps:
     - name: Checkout code
@@ -103,6 +131,7 @@ jobs:
     - name: Check coverage
       uses: codecov/codecov-action@v3
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./reports
         fail_ci_if_error: true
 
