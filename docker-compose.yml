@@ -3,19 +3,19 @@ version: '3.9'
 # NOTE: local development only
 services:
   onetl:
-    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl:develop
+    image: mtsrus/onetl:develop
     build:
       dockerfile: ./docker/Dockerfile
       context: .
       target: base
+      args:
+        SPARK_VERSION: 3.3.2
     env_file: .env.docker
     volumes:
     - ./:/app/
     networks:
     - onetl
     - default
-    extra_hosts:
-    - rep.msk.mts.ru:10.73.8.86
     ulimits:
       # https://stackoverflow.com/a/56895801
       nofile:
@@ -25,7 +25,7 @@ services:
 
 
   mongodb:
-    image: mongo
+    image: mongo:latest
     restart: unless-stopped
     ports:
     - 27017:27017
@@ -94,15 +94,11 @@ services:
     - onetl
 
   oracle:
-    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/oracle:develop
-    build:
-      dockerfile: ./docker/oracle/Dockerfile
-      context: .
+    image: gvenzl/oracle-xe:21.3.0-faststart
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
     - 1522:1521
-    - 5501:5500
     networks:
     - onetl
 
@@ -121,7 +117,7 @@ services:
     - onetl
 
   clickhouse:
-    image: clickhouse/clickhouse-server
+    image: clickhouse/clickhouse-server:latest
     restart: unless-stopped
     ports:
     - 8123:8123
@@ -130,7 +126,7 @@ services:
     - onetl
 
   mysql:
-    image: mysql
+    image: mysql:latest
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -139,7 +135,7 @@ services:
     - onetl
 
   mssql:
-    image: mcmoe/mssqldocker
+    image: mcmoe/mssqldocker:latest
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -149,4 +145,3 @@ services:
 
 networks:
   onetl:
-    name: onetl

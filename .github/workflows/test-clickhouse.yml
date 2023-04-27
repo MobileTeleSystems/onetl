@@ -53,9 +53,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements*.txt') }}
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/clickhouse.txt', 'requirements/tests/spark-*.txt') }}
         restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/clickhouse.txt', 'requirements/tests/spark-*.txt') }}
           ${{ runner.os }}-python-${{ inputs.python-version }}-tests-clickhouse-
 
     - name: Upgrade pip
