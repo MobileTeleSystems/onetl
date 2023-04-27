@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-def _unwrap_method(method):
+def _unwrap_method(method: Callable) -> Callable:
     """Unwrap @classmethod and @staticmethod to get original function"""
     return getattr(method, "__func__", method)
 
@@ -617,7 +617,7 @@ class Slot(Protocol):
         ...
 
 
-def slot(method) -> Slot:
+def slot(original_method) -> Slot:
     """
     Decorator which enables hooks functionality on a specific class method.
 
@@ -688,15 +688,15 @@ def slot(method) -> Slot:
         MyClass.static_method(3)  # will execute callback3(3)
     """
 
-    if hasattr(method, "__hooks__"):
+    if hasattr(original_method, "__hooks__"):
         raise SyntaxError("Cannot place @slot hook twice on the same method")
 
-    method = getattr(method, "__wrapped__", method)
+    method = getattr(original_method, "__wrapped__", original_method)
     if not _is_method(method):
         raise TypeError(f"@slot decorator could be applied to only to methods of class, got {type(method)}")
 
     if _is_private(method):
         raise ValueError(f"@slot decorator could be applied to public methods only, got '{method.__name__}'")
 
-    method.__hooks__ = HookCollection()
-    return method
+    original_method.__hooks__ = HookCollection()
+    return original_method

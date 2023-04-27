@@ -22,6 +22,9 @@ def test_postgres(spark_mock):
 
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
+
 
 def test_postgres_with_port(spark_mock):
     conn = Postgres(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)

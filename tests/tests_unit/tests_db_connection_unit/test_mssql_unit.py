@@ -22,6 +22,9 @@ def test_mssql(spark_mock):
 
     assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433;databaseName=database"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
+
 
 def test_mssql_with_port(spark_mock):
     conn = MSSQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)

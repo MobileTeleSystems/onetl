@@ -7,7 +7,7 @@ pytestmark = pytest.mark.mongodb
 
 
 def test_mongodb(spark_mock):
-    mongo = MongoDB(
+    conn = MongoDB(
         host="host",
         user="user",
         password="password",
@@ -15,14 +15,17 @@ def test_mongodb(spark_mock):
         spark=spark_mock,
     )
 
-    assert mongo.host == "host"
-    assert mongo.port == 27017
-    assert mongo.user == "user"
-    assert mongo.password != "password"
-    assert mongo.password.get_secret_value() == "password"
-    assert mongo.database == "database"
+    assert conn.host == "host"
+    assert conn.port == 27017
+    assert conn.user == "user"
+    assert conn.password != "password"
+    assert conn.password.get_secret_value() == "password"
+    assert conn.database == "database"
 
-    assert mongo.connection_url == "mongodb://user:password@host:27017/database"
+    assert conn.connection_url == "mongodb://user:password@host:27017/database"
+
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
 
 def test_mongodb_class_attributes():

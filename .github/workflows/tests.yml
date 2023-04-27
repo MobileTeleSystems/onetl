@@ -13,6 +13,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tests-core:
+    name: Run core tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-core.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-clickhouse:
     name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -161,6 +183,7 @@ jobs:
     name: Tests done
     runs-on: ubuntu-latest
     needs:
+    - tests-core
     - tests-clickhouse
     - tests-mysql
     - tests-mssql

@@ -10,6 +10,24 @@ from onetl.hwm.store import (
     detect_hwm_store,
 )
 
+hwm_store = [
+    MemoryHWMStore(),
+    YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
+]
+
+
+@pytest.mark.parametrize("hwm_store", hwm_store)
+def test_hwm_store_get_save(hwm_store, hwm_delta):
+    hwm, delta = hwm_delta
+    assert hwm_store.get(hwm.qualified_name) is None
+
+    hwm_store.save(hwm)
+    assert hwm_store.get(hwm.qualified_name) == hwm
+
+    hwm2 = hwm + delta
+    hwm_store.save(hwm2)
+    assert hwm_store.get(hwm.qualified_name) == hwm2
+
 
 @pytest.mark.parametrize(
     "hwm_store_class, input_config, key",
