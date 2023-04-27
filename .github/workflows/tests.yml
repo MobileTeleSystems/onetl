@@ -229,6 +229,25 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-sftp:
+    name: Run SFTP tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - openssh-version: 9.1_p1-r2-ls111
+          python-version: '3.7'
+          os: ubuntu-latest
+        - openssh-version: 9.1_p1-r2-ls111
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-sftp.yml
+    with:
+      openssh-version: ${{ matrix.openssh-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
@@ -242,6 +261,7 @@ jobs:
     - tests-postgres
     - tests-teradata
     - tests-s3
+    - tests-sftp
 
     steps:
     - name: Checkout code

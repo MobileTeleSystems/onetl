@@ -1,3 +1,4 @@
+import os
 import secrets
 from pathlib import PurePosixPath
 
@@ -9,28 +10,25 @@ from onetl.impl import RemotePath
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rm_dir_recursive_without_s3(
-    file_connection_without_s3,
-    upload_test_files_without_s3,
+def test_file_connection_rm_dir_recursive(
+    file_all_connections,
+    source_path,
     path_type,
 ):
-    file_connection_without_s3.rmdir(path_type("/export/news_parse/"), recursive=True)
+    file_all_connections.rmdir(path_type(os.fspath(source_path)), recursive=True)
 
-    assert not file_connection_without_s3.listdir("/export")
+    assert not file_all_connections.path_exists(source_path)
 
-
-@pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rm_dir_recursive_s3(s3, upload_test_files_s3, path_type):
-    s3.rmdir(path_type("/export/news_parse/"), recursive=True)
-
-    with pytest.raises(DirectoryNotFoundError):
-        s3.is_dir("/export")
+    if file_all_connections.path_exists(source_path.parent):
+        # S3 does not support creating directories
+        parent_paths = [os.fspath(path) for path in file_all_connections.listdir(source_path.parent)]
+        assert source_path.name not in parent_paths
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rmdir_non_empty(file_all_connections, upload_test_files, path_type):
+def test_file_connection_rmdir_non_empty(file_all_connections, source_path, upload_test_files, path_type):
     with pytest.raises(Exception):
-        file_all_connections.rmdir(path_type("/export/news_parse/"))
+        file_all_connections.rmdir(path_type(os.fspath(source_path)))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -40,38 +38,42 @@ def test_file_connection_rmdir_fake_dir(file_all_connections, upload_test_files,
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_mkdir(file_connection_without_s3, upload_test_files_without_s3, path_type):
-    file_connection_without_s3.close()
-    file_connection_without_s3.mkdir(path_type("/some_dir"))
-    file_connection_without_s3.close()
-    # `close` called twice is not an error
-    file_connection_without_s3.close()
+def test_file_connection_mkdir(file_all_connections, source_path, path_type):
+    path = source_path / "some_dir"
 
-    assert RemotePath("some_dir") in file_connection_without_s3.listdir("/")
+    file_all_connections.close()
+    file_all_connections.mkdir(path_type(os.fspath(path)))
+    file_all_connections.close()
+    # `close` called twice is not an error
+    file_all_connections.close()
+
+    if file_all_connections.path_exists(path):
+        # S3 does not support creating directories
+        assert RemotePath("some_dir") in file_all_connections.listdir(path.parent)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rename_file(file_all_connections, upload_test_files, path_type):
+def test_file_connection_rename_file(file_all_connections, source_path, upload_test_files, path_type):
     with file_all_connections as connection:
         connection.rename_file(
-            source_file_path=path_type("/export/news_parse/exclude_dir/file_5.txt"),
-            target_file_path=path_type("/export/news_parse/exclude_dir/file_55.txt"),
+            source_file_path=path_type(os.fspath(source_path / "exclude_dir/file_5.txt")),
+            target_file_path=path_type(os.fspath(source_path / "exclude_dir/file_55.txt")),
         )
 
-    list_dir = file_all_connections.listdir("/export/news_parse/exclude_dir/")
+    list_dir = file_all_connections.listdir(source_path / "exclude_dir/")
 
     assert RemotePath("file_55.txt") in list_dir
     assert RemotePath("file_5.txt") not in list_dir
 
 
-def test_file_connection_read_text(file_all_connections, source_path, upload_files_with_encoding):
+def test_file_connection_read_text(file_all_connections, upload_files_with_encoding):
     read_text = file_all_connections.read_text(path=upload_files_with_encoding["utf"])
 
     assert isinstance(read_text, str)
     assert read_text == "тестовый текст в  тестовом файле\n"
 
 
-def test_file_connection_read_bytes(file_all_connections, source_path, upload_files_with_encoding):
+def test_file_connection_read_bytes(file_all_connections, upload_files_with_encoding):
     read_bytes = file_all_connections.read_bytes(path=upload_files_with_encoding["ascii"])
 
     assert isinstance(read_bytes, bytes)
@@ -80,7 +82,7 @@ def test_file_connection_read_bytes(file_all_connections, source_path, upload_fi
 
 @pytest.mark.parametrize(
     "path,exception",
-    [(lazy_fixture("source_path"), NotAFileError), ("/export/news_parse/no_such_file.txt", FileNotFoundError)],
+    [(lazy_fixture("source_path"), NotAFileError), ("/no_such_file.txt", FileNotFoundError)],
 )
 def test_file_connection_read_text_negative(
     file_all_connections,
@@ -95,7 +97,7 @@ def test_file_connection_read_text_negative(
 
 @pytest.mark.parametrize(
     "path,exception",
-    [(lazy_fixture("source_path"), NotAFileError), ("/export/news_parse/no_such_file.txt", FileNotFoundError)],
+    [(lazy_fixture("source_path"), NotAFileError), ("/no_such_file.txt", FileNotFoundError)],
 )
 def test_file_connection_read_bytes_negative(
     file_all_connections,
@@ -164,43 +166,43 @@ def test_file_connection_read_encoding(file_all_connections, source_path):
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_path_exists(file_all_connections, upload_test_files, path_type):
-    assert file_all_connections.path_exists(path_type("/export/news_parse/exclude_dir/file_5.txt"))
-    assert file_all_connections.path_exists(path_type("/export/news_parse/exclude_dir"))
-    assert not file_all_connections.path_exists(path_type("/export/news_parse/path_not_exist"))
+def test_file_connection_path_exists(file_all_connections, source_path, upload_test_files, path_type):
+    assert file_all_connections.path_exists(path_type(os.fspath(source_path / "exclude_dir/file_5.txt")))
+    assert file_all_connections.path_exists(path_type(os.fspath(source_path / "exclude_dir")))
+    assert not file_all_connections.path_exists(path_type(os.fspath(source_path / "path_not_exist")))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_is_dir(file_all_connections, upload_test_files, path_type):
-    assert file_all_connections.is_dir(path_type("/export/news_parse/exclude_dir"))
-    assert not file_all_connections.is_dir(path_type("/export/news_parse/exclude_dir/file_5.txt"))
+def test_file_connection_is_dir(file_all_connections, source_path, upload_test_files, path_type):
+    assert file_all_connections.is_dir(path_type(os.fspath(source_path / "exclude_dir")))
+    assert not file_all_connections.is_dir(path_type(os.fspath(source_path / "exclude_dir/file_5.txt")))
 
-
-@pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_is_dir_negative(file_all_connections, upload_test_files, path_type):
     with pytest.raises(DirectoryNotFoundError):
-        file_all_connections.is_dir(path_type("/export/news_parse/path_not_exist"))
+        file_all_connections.is_dir(path_type(os.fspath(source_path / "path_not_exist")))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_is_file(file_all_connections, upload_test_files, path_type):
-    assert file_all_connections.is_file(path_type("/export/news_parse/exclude_dir/file_5.txt"))
-    assert not file_all_connections.is_file(path_type("/export/news_parse/exclude_dir"))
+def test_file_connection_is_file(file_all_connections, source_path, upload_test_files, path_type):
+    assert file_all_connections.is_file(path_type(os.fspath(source_path / "exclude_dir/file_5.txt")))
+    assert not file_all_connections.is_file(path_type(os.fspath(source_path / "exclude_dir")))
 
-
-@pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_is_file_negative(file_all_connections, upload_test_files, path_type):
     with pytest.raises(FileNotFoundError):
-        file_all_connections.is_file(path_type("/export/news_parse/path_not_exist"))
+        file_all_connections.is_file(path_type(os.fspath(source_path / "path_not_exist")))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_download_file(file_all_connections, upload_test_files, tmp_path_factory, path_type):
+def test_file_connection_download_file(
+    file_all_connections,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    path_type,
+):
     local_path = tmp_path_factory.mktemp("local_path")
-    remote_file_path = "/export/news_parse/news_parse_zp/2018_03_05_10_00_00/newsage-zp-2018_03_05_10_00_00.csv"
+    remote_file_path = source_path / "news_parse_zp/2018_03_05_10_00_00/newsage-zp-2018_03_05_10_00_00.csv"
 
     download_result = file_all_connections.download_file(
-        remote_file_path=path_type(remote_file_path),
+        remote_file_path=path_type(os.fspath(remote_file_path)),
         local_file_path=path_type(local_path / "file.csv"),
     )
 
@@ -222,10 +224,10 @@ def test_file_connection_upload_file(file_all_connections, test_files, path_type
 
 
 @pytest.mark.parametrize(
-    "source,exception",
+    "path,exception",
     [
-        ("/export/news_parse/exclude_dir/", NotAFileError),
-        ("/export/news_parse/exclude_dir/file_not_exists", FileNotFoundError),
+        ("exclude_dir/", NotAFileError),
+        ("exclude_dir/file_not_exists", FileNotFoundError),
     ],
     ids=["directory", "file"],
 )
@@ -233,13 +235,14 @@ def test_file_connection_download_file_wrong_source_type(
     file_all_connections,
     upload_test_files,
     tmp_path_factory,
-    source,
+    source_path,
+    path,
     exception,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
     with pytest.raises(exception):
         file_all_connections.download_file(
-            remote_file_path=source,
+            remote_file_path=source_path / path,
             local_file_path=local_path / "file_5.txt",
         )
 
@@ -247,6 +250,7 @@ def test_file_connection_download_file_wrong_source_type(
 @pytest.mark.parametrize("replace", [True, False])
 def test_file_connection_download_file_wrong_target_type(
     file_all_connections,
+    source_path,
     upload_test_files,
     tmp_path_factory,
     replace,
@@ -254,7 +258,7 @@ def test_file_connection_download_file_wrong_target_type(
     local_path = tmp_path_factory.mktemp("local_path")
     with pytest.raises(NotAFileError):
         file_all_connections.download_file(
-            remote_file_path="/export/news_parse/exclude_dir/file_5.txt",
+            remote_file_path=source_path / "exclude_dir/file_5.txt",
             local_file_path=local_path,
             replace=replace,
         )
@@ -276,6 +280,7 @@ def test_file_connection_upload_file_wrong_source_type(file_all_connections, res
 @pytest.mark.parametrize("replace", [True, False])
 def test_file_connection_upload_file_wrong_target_type(
     file_all_connections,
+    source_path,
     upload_test_files,
     test_files,
     replace,
@@ -283,7 +288,7 @@ def test_file_connection_upload_file_wrong_target_type(
     with pytest.raises(NotAFileError):
         file_all_connections.upload_file(
             local_file_path=test_files[0],
-            remote_file_path="/export/news_parse/exclude_dir",
+            remote_file_path=source_path / "exclude_dir",
             replace=replace,
         )
 
@@ -291,6 +296,7 @@ def test_file_connection_upload_file_wrong_target_type(
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_download_replace_target(
     file_all_connections,
+    source_path,
     upload_files_with_encoding,
     tmp_path_factory,
     path_type,
@@ -298,7 +304,7 @@ def test_file_connection_download_replace_target(
     local_path = tmp_path_factory.mktemp("local_path")
     file_path = local_path / "file.txt"
     file_path.write_text("text to replace")
-    remote_file_path = "/export/news_parse/file_connection_utf.txt"
+    remote_file_path = source_path / "file_connection_utf.txt"
 
     download_result = file_all_connections.download_file(
         remote_file_path=path_type(remote_file_path),
@@ -313,13 +319,14 @@ def test_file_connection_download_replace_target(
 
 def test_file_connection_download_replace_target_negative(
     file_all_connections,
+    source_path,
     upload_files_with_encoding,
     tmp_path_factory,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
     file_path = local_path / "file.txt"
     file_path.write_text("test file")
-    remote_file_path = "/export/news_parse/file_connection_utf.txt"
+    remote_file_path = source_path / "file_connection_utf.txt"
 
     with pytest.raises(FileExistsError):
         file_all_connections.download_file(
@@ -331,14 +338,20 @@ def test_file_connection_download_replace_target_negative(
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_upload_replace_target(file_all_connections, upload_test_files, tmp_path_factory, path_type):
+def test_file_connection_upload_replace_target(
+    file_all_connections,
+    source_path,
+    upload_test_files,
+    tmp_path_factory,
+    path_type,
+):
     local_path = tmp_path_factory.mktemp("local_path")
     file_path = local_path / "file.txt"
     file_path.write_text("test local file")
 
     upload_result = file_all_connections.upload_file(
         local_file_path=path_type(file_path),
-        remote_file_path=path_type("/export/news_parse/exclude_dir/file_5.txt"),
+        remote_file_path=path_type(os.fspath(source_path / "exclude_dir/file_5.txt")),
         replace=True,
     )
 
@@ -349,6 +362,7 @@ def test_file_connection_upload_replace_target(file_all_connections, upload_test
 
 def test_file_connection_upload_replace_target_negative(
     file_all_connections,
+    source_path,
     tmp_path_factory,
     upload_files_with_encoding,
     test_files,
@@ -360,11 +374,10 @@ def test_file_connection_upload_replace_target_negative(
     with pytest.raises(FileExistsError):
         file_all_connections.upload_file(
             local_file_path=file_path,
-            remote_file_path="/export/news_parse/file_connection_utf.txt",
+            remote_file_path=source_path / "file_connection_utf.txt",
             replace=False,
         )
 
     assert (
-        file_all_connections.read_text("/export/news_parse/file_connection_utf.txt")
-        == "тестовый текст в  тестовом файле\n"
+        file_all_connections.read_text(source_path / "file_connection_utf.txt") == "тестовый текст в  тестовом файле\n"
     )

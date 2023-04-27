@@ -303,7 +303,6 @@ Create virtualenv and install dependencies:
         -r requirements/test/mysql.txt \
         -r requirements/test/oracle.txt \
         -r requirements/test/postgres.txt \
-        -r requirements/test/sftp.txt \
         -r requirements/test/spark-3.2.0.txt
 
 Enable pre-commit hooks

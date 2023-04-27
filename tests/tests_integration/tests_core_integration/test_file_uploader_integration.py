@@ -659,17 +659,17 @@ def test_uploader_run_relative_paths_without_local_path(file_all_connections):
     "temp_path",
     [
         None,
-        "/tmp" + secrets.token_hex(5),
+        "/tmp/" + secrets.token_hex(5),
         PurePosixPath("/tmp") / secrets.token_hex(5),
     ],
     ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
 )
-def test_uploader_run_with_temp_path_without_s3(file_connection_without_s3, test_files, temp_path):
+def test_uploader_run_with_temp_path(file_all_connections, test_files, temp_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # upload files
     uploader = FileUploader(
-        connection=file_connection_without_s3,
+        connection=file_all_connections,
         target_path=target_path,
         temp_path=temp_path,
     )
@@ -683,41 +683,7 @@ def test_uploader_run_with_temp_path_without_s3(file_connection_without_s3, test
 
     assert sorted(upload_result.successful) == sorted(target_path / file.name for file in test_files)
 
-    if temp_path:
+    if temp_path and file_all_connections.path_exists(temp_path):
         # temp_path is not removed after upload is finished,
         # because this may conflict with processes running in parallel
-        assert file_connection_without_s3.is_dir(temp_path)
-
-
-@pytest.mark.parametrize(
-    "temp_path",
-    [
-        None,
-        "/tmp" + secrets.token_hex(5),
-        PurePosixPath("/tmp") / secrets.token_hex(5),
-    ],
-    ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
-)
-def test_uploader_run_with_temp_path_s3(s3, test_files, temp_path):
-    target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-
-    # upload files
-    uploader = FileUploader(
-        connection=s3,
-        target_path=target_path,
-        temp_path=temp_path,
-    )
-
-    upload_result = uploader.run(test_files)
-
-    assert not upload_result.failed
-    assert not upload_result.missing
-    assert not upload_result.skipped
-    assert upload_result.successful
-
-    assert sorted(upload_result.successful) == sorted(target_path / file.name for file in test_files)
-
-    if temp_path:
-        # there are not empty directories in S3
-        with pytest.raises(DirectoryNotFoundError):  # directory does not exist
-            s3.is_dir(temp_path)
+        file_all_connections.is_dir(temp_path)

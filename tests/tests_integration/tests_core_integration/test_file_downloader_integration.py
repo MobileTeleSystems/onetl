@@ -8,8 +8,8 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 from etl_entities import FileListHWM
+from pytest_lazyfixture import lazy_fixture
 
-from onetl import connection
 from onetl.core import FileDownloader, FileFilter, FileLimit, FileSet
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.impl import (
@@ -94,19 +94,19 @@ def test_downloader_run(
         assert local_file.read_bytes() == file_all_connections.read_bytes(remote_file)
 
 
-def test_downloader_run_delete_source_without_s3(
-    file_connection_without_s3,
-    source_path_without_s3,
+def test_downloader_run_delete_source(
+    file_all_connections,
+    source_path,
+    upload_test_files,
     resource_path,
-    upload_test_files_without_s3,
     tmp_path_factory,
     caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
-        connection=file_connection_without_s3,
-        source_path=source_path_without_s3,
+        connection=file_all_connections,
+        source_path=source_path,
         local_path=local_path,
         options=FileDownloader.Options(delete_source=True),
     )
@@ -122,7 +122,7 @@ def test_downloader_run_delete_source_without_s3(
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path_without_s3) for file in upload_test_files_without_s3
+        local_path / file.relative_to(source_path) for file in upload_test_files
     )
 
     for local_file in download_result.successful:
@@ -137,59 +137,14 @@ def test_downloader_run_delete_source_without_s3(
         assert local_file.stat().st_size == original_file.stat().st_size
         assert local_file.read_bytes() == original_file.read_bytes()
 
-    remote_files = FileSet()
-    for root, _dirs, files in file_connection_without_s3.walk(source_path_without_s3):
-        for file in files:
-            remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
+    if file_all_connections.path_exists(source_path):
+        # S3 does not support creating directories
+        remote_files = FileSet()
+        for root, _dirs, files in file_all_connections.walk(source_path):
+            for file in files:
+                remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
 
-    assert not remote_files
-
-
-def test_downloader_run_delete_source_s3(
-    s3,
-    source_path_s3,
-    resource_path,
-    upload_test_files_s3,
-    tmp_path_factory,
-    caplog,
-):
-    local_path = tmp_path_factory.mktemp("local_path")
-
-    downloader = FileDownloader(
-        connection=s3,
-        source_path=source_path_s3,
-        local_path=local_path,
-        options=FileDownloader.Options(delete_source=True),
-    )
-
-    with caplog.at_level(logging.WARNING):
-        download_result = downloader.run()
-
-        assert "SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!" in caplog.text
-
-    assert not download_result.failed
-    assert not download_result.skipped
-    assert not download_result.missing
-    assert download_result.successful
-
-    assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path_s3) for file in upload_test_files_s3
-    )
-
-    for local_file in download_result.successful:
-        assert local_file.exists()
-        assert local_file.is_file()
-        assert not local_file.is_dir()
-
-        # source_path contain a copy of files from resource_path
-        # so check downloaded files content using them as a reference
-        original_file = resource_path / local_file.relative_to(local_path)
-
-        assert local_file.stat().st_size == original_file.stat().st_size
-        assert local_file.read_bytes() == original_file.read_bytes()
-
-    with pytest.raises(DirectoryNotFoundError):
-        s3.is_dir(source_path_s3)
+        assert not remote_files
 
 
 @pytest.mark.parametrize("path_type", [str, Path])
@@ -207,18 +162,18 @@ def test_downloader_file_filter_exclude_dir(
         connection=file_all_connections,
         source_path=source_path,
         local_path=local_path,
-        filter=FileFilter(exclude_dirs=[path_type("/export/news_parse/exclude_dir")]),
+        filter=FileFilter(exclude_dirs=[path_type(source_path / "exclude_dir")]),
     )
 
     excluded = [
-        "/export/news_parse/exclude_dir/file_4.txt",
-        "/export/news_parse/exclude_dir/file_5.txt",
+        source_path / "exclude_dir/file_4.txt",
+        source_path / "exclude_dir/file_5.txt",
     ]
 
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
 
-        skip_msg = r"Path '/export/news_parse/exclude_dir.* does NOT MATCH filters \[FileFilter"
+        skip_msg = rf"Path '{source_path}/exclude_dir.* does NOT MATCH filters \[FileFilter"
         assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
@@ -227,7 +182,7 @@ def test_downloader_file_filter_exclude_dir(
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
+        local_path / file.relative_to(source_path) for file in upload_test_files if file not in excluded
     )
 
 
@@ -242,11 +197,11 @@ def test_downloader_file_filter_glob(file_all_connections, source_path, upload_t
     )
 
     excluded = [
-        "/export/news_parse/exclude_dir/file_4.txt",
-        "/export/news_parse/exclude_dir/file_5.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_1.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_2.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_3.txt",
+        source_path / "exclude_dir/file_4.txt",
+        source_path / "exclude_dir/file_5.txt",
+        source_path / "news_parse_zp/exclude_dir/file_1.txt",
+        source_path / "news_parse_zp/exclude_dir/file_2.txt",
+        source_path / "news_parse_zp/exclude_dir/file_3.txt",
     ]
 
     with caplog.at_level(logging.DEBUG):
@@ -262,7 +217,7 @@ def test_downloader_file_filter_glob(file_all_connections, source_path, upload_t
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in upload_test_files if os.fspath(file) not in excluded
+        local_path / file.relative_to(source_path) for file in upload_test_files if file not in excluded
     )
 
 
@@ -291,7 +246,7 @@ def test_downloader_file_filter_is_ignored_by_user_input(
 
 @pytest.mark.parametrize(
     "source_path_value",
-    [None, "/export/news_parse"],
+    [None, lazy_fixture("source_path")],
     ids=["Without source_path", "With source path"],
 )
 def test_downloader_run_with_files_absolute(
@@ -431,29 +386,32 @@ def test_downloader_run_with_empty_files_input(
     assert not download_result.successful
 
 
-def test_downloader_run_with_empty_source_path(request, file_connection_without_s3, tmp_path_factory):
+def test_downloader_run_with_empty_source_path(request, file_all_connections, tmp_path_factory):
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    file_connection_without_s3.mkdir(source_path)
 
-    def finalizer():
-        file_connection_without_s3.rmdir(source_path, recursive=True)
+    file_all_connections.mkdir(source_path)
+    if file_all_connections.path_exists(source_path):
+        # S3 does not support creating directories
 
-    request.addfinalizer(finalizer)
+        def finalizer():
+            file_all_connections.rmdir(source_path, recursive=True)
 
-    local_path = tmp_path_factory.mktemp("local_path")
+        request.addfinalizer(finalizer)
 
-    downloader = FileDownloader(
-        connection=file_connection_without_s3,
-        local_path=local_path,
-        source_path=source_path,
-    )
+        local_path = tmp_path_factory.mktemp("local_path")
 
-    download_result = downloader.run()
+        downloader = FileDownloader(
+            connection=file_all_connections,
+            local_path=local_path,
+            source_path=source_path,
+        )
 
-    assert not download_result.failed
-    assert not download_result.skipped
-    assert not download_result.missing
-    assert not download_result.successful
+        download_result = downloader.run()
+
+        assert not download_result.failed
+        assert not download_result.skipped
+        assert not download_result.missing
+        assert not download_result.successful
 
 
 def test_downloader_run_relative_path_without_source_path(file_all_connections, tmp_path_factory):
@@ -688,11 +646,11 @@ def test_downloader_mode_delete_all(
 
 def test_downloader_run_missing_file(request, file_all_connections, upload_test_files, tmp_path_factory, caplog):
     local_path = tmp_path_factory.mktemp("local_path")
-
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    if not isinstance(file_all_connections, connection.S3):
-        file_all_connections.mkdir(target_path)
+    file_all_connections.mkdir(target_path)
+    if file_all_connections.path_exists(target_path):
+        # S3 does not support creating directories
 
         def finalizer():
             file_all_connections.rmdir(target_path, recursive=True)
@@ -734,9 +692,8 @@ def test_downloader_source_path_does_not_exist(file_all_connections, tmp_path_fa
         local_path=local_path,
     )
 
-    if not isinstance(file_all_connections, connection.S3):
-        with pytest.raises(DirectoryNotFoundError, match=f"'{source_path}' does not exist"):
-            downloader.run()
+    with pytest.raises(DirectoryNotFoundError, match=f"'{source_path}' does not exist"):
+        downloader.run()
 
 
 def test_downloader_source_path_not_a_directory(request, file_all_connections, tmp_path_factory):
@@ -756,11 +713,8 @@ def test_downloader_source_path_not_a_directory(request, file_all_connections, t
         local_path=local_path,
     )
 
-    if not isinstance(file_all_connections, connection.S3):
-        with pytest.raises(NotADirectoryError, match=rf"'{source_path}' \(kind='file', .*\) is not a directory"):
-            downloader.run()
-
-    file_all_connections.remove_file(source_path)
+    with pytest.raises(NotADirectoryError, match=rf"'{source_path}' \(kind='file', .*\) is not a directory"):
+        downloader.run()
 
 
 def test_downloader_local_path_not_a_directory(request, file_all_connections):
@@ -791,18 +745,19 @@ def test_downloader_run_input_is_not_file(request, file_all_connections, tmp_pat
 
     file_all_connections.mkdir(not_a_file)
 
-    def finalizer():
-        file_all_connections.rmdir(source_path, recursive=True)
+    if file_all_connections.path_exists(not_a_file):
+        # S3 does not support creating directories
 
-    request.addfinalizer(finalizer)
+        def finalizer():
+            file_all_connections.rmdir(source_path, recursive=True)
 
-    downloader = FileDownloader(
-        connection=file_all_connections,
-        local_path=local_path,
-    )
+        request.addfinalizer(finalizer)
 
-    # download file
-    if not isinstance(file_all_connections, connection.S3):  # S3 does not create dirs
+        downloader = FileDownloader(
+            connection=file_all_connections,
+            local_path=local_path,
+        )
+
         with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
             downloader.run([not_a_file])
 
@@ -895,11 +850,11 @@ def test_downloader_limit_applied_after_filter(file_all_connections, source_path
     )
 
     excluded = [
-        "/export/news_parse/exclude_dir/file_4.txt",
-        "/export/news_parse/exclude_dir/file_5.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_1.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_2.txt",
-        "/export/news_parse/news_parse_zp/exclude_dir/file_3.txt",
+        source_path / "exclude_dir/file_4.txt",
+        source_path / "exclude_dir/file_5.txt",
+        source_path / "news_parse_zp/exclude_dir/file_1.txt",
+        source_path / "news_parse_zp/exclude_dir/file_2.txt",
+        source_path / "news_parse_zp/exclude_dir/file_3.txt",
     ]
 
     download_result = downloader.run()
