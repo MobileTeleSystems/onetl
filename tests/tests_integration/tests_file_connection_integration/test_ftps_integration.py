@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-pytestmark = pytest.mark.ftps
+pytestmark = [pytest.mark.ftps, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_ftps_check(ftps_connection, caplog):

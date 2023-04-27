@@ -155,7 +155,15 @@ def sftp_connection(request):
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param(
+            "fake",
+            marks=[pytest.mark.webdav, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
 def webdav_connection():
     from onetl.connection import WebDAV
 
@@ -184,6 +192,7 @@ def hdfs_server():
     )
 
 
+@pytest.fixture(scope="function")
 def hdfs_connection(hdfs_server):
     from onetl.connection import HDFS
 

@@ -9,7 +9,7 @@ import pytest
 
 from onetl.hooks import hook
 
-pytestmark = pytest.mark.hdfs
+pytestmark = [pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_hdfs_check(hdfs_connection, caplog):
