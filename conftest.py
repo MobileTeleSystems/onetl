@@ -399,8 +399,8 @@ def file_connection_without_s3(request):
 @pytest.fixture(
     scope="function",
     params=[
-        lazy_fixture("s3"),
-        pytest.param(lazy_fixture("file_connection_without_s3"), marks=pytest.mark.s3),
+        pytest.param(lazy_fixture("s3"), marks=pytest.mark.s3),
+        lazy_fixture("file_connection_without_s3"),
     ],
 )
 def file_all_connections(request):
