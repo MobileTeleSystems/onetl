@@ -2,7 +2,7 @@ import os
 from logging import getLogger
 from typing import Dict, Optional
 
-import pandas as pd
+import pandas
 
 from tests.lib.base_processing import BaseProcessing
 
@@ -96,7 +96,7 @@ class HiveProcessing(BaseProcessing):
                 # Row(id=1, text='hello') -> values = ['id':[1], 'text': ['hello']]
                 values[self.column_names[idx]].append(row[idx])
 
-        return pd.DataFrame(data=values)
+        return pandas.DataFrame(data=values)
 
     def fix_pandas_df(
         self,

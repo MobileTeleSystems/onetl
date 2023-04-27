@@ -1,12 +1,4 @@
 import pytest
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import Oracle
 from onetl.core import DBReader
@@ -15,6 +7,15 @@ pytestmark = pytest.mark.oracle
 
 
 def test_oracle_reader_error_df_schema(spark_mock):
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
     df_schema = StructType(
         [
             StructField("_id", IntegerType()),

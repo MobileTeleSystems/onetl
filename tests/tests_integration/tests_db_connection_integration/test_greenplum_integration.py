@@ -1,7 +1,12 @@
 import logging
 
-import pandas
 import pytest
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Greenplum
 

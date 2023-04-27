@@ -1,13 +1,5 @@
 import pytest
 from etl_entities import DateTimeHWM, IntHWM
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import MongoDB
 from onetl.core import DBReader
@@ -16,15 +8,27 @@ from onetl.strategy import IncrementalStrategy
 
 pytestmark = pytest.mark.mongodb
 
-df_schema = StructType(
-    [
-        StructField("_id", IntegerType()),
-        StructField("text_string", StringType()),
-        StructField("hwm_int", IntegerType()),
-        StructField("hwm_datetime", TimestampType()),
-        StructField("float_value", DoubleType()),
-    ],
-)
+
+@pytest.fixture(scope="function")
+def df_schema():
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
+    return StructType(
+        [
+            StructField("_id", IntegerType()),
+            StructField("text_string", StringType()),
+            StructField("hwm_int", IntegerType()),
+            StructField("hwm_datetime", TimestampType()),
+            StructField("float_value", DoubleType()),
+        ],
+    )
 
 
 @pytest.mark.flaky(reruns=5)
@@ -46,6 +50,7 @@ def test_mongodb_strategy_incremental(
     spark,
     processing,
     prepare_schema_table,
+    df_schema,
     hwm_type,
     hwm_column,
     span_gap,
@@ -135,7 +140,7 @@ def test_mongodb_strategy_incremental(
         "text_string",
     ],
 )
-def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
+def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, df_schema, hwm_column):
     mongodb = MongoDB(
         host=processing.host,
         port=processing.port,

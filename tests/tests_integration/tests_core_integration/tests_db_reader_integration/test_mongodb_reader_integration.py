@@ -1,30 +1,34 @@
 import pytest
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import MongoDB
 from onetl.core import DBReader
 
 pytestmark = pytest.mark.mongodb
 
-df_schema = StructType(
-    [
-        StructField("_id", IntegerType()),
-        StructField("text_string", StringType()),
-        StructField("hwm_int", IntegerType()),
-        StructField("hwm_datetime", TimestampType()),
-        StructField("float_value", DoubleType()),
-    ],
-)
+
+@pytest.fixture(scope="function")
+def df_schema():
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
+    return StructType(
+        [
+            StructField("_id", IntegerType()),
+            StructField("text_string", StringType()),
+            StructField("hwm_int", IntegerType()),
+            StructField("hwm_datetime", TimestampType()),
+            StructField("float_value", DoubleType()),
+        ],
+    )
 
 
-def test_mongodb_reader_snapshot(spark, processing, load_table_data):
+def test_mongodb_reader_snapshot(spark, processing, load_table_data, df_schema):
     mongo = MongoDB(
         host=processing.host,
         port=processing.port,
@@ -51,7 +55,7 @@ def test_mongodb_reader_snapshot(spark, processing, load_table_data):
     )
 
 
-def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data):
+def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, df_schema):
     mongo = MongoDB(
         host=processing.host,
         port=processing.port,

@@ -166,7 +166,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
             ) from e
 
         refs["SparkSession"] = SparkSession
-
         return refs
 
     def _log_parameters(self):

@@ -34,9 +34,8 @@ services:
     - onetl
 
   minio:
-    image: minio/minio
+    image: bitnami/minio:latest
     restart: unless-stopped
-    command: server /data --console-address ":9001"
     env_file: .env.dependencies
     ports:
     - 9010:9000

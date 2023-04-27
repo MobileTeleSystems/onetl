@@ -4,7 +4,7 @@ from logging import getLogger
 from random import randint
 from typing import Dict, List, Optional, Union
 
-import pandas as pd
+import pandas
 from pandas.util.testing import assert_frame_equal
 
 logger = getLogger(__name__)
@@ -141,7 +141,7 @@ class BaseProcessing(ABC):
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     values[column_name].append(self.current_datetime() + timedelta(seconds=rand_second))
 
-        return pd.DataFrame(data=values)
+        return pandas.DataFrame(data=values)
 
     def create_spark_df(
         self,
@@ -171,7 +171,7 @@ class BaseProcessing(ABC):
         if other_frame is None:
             other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
 
-        if not isinstance(other_frame, pd.core.frame.DataFrame):
+        if not isinstance(other_frame, pandas.core.frame.DataFrame):
             other_frame = other_frame.toPandas()
 
         left_df = self.fix_pandas_df(df.toPandas())
@@ -207,7 +207,7 @@ class BaseProcessing(ABC):
         if other_frame is None:
             other_frame = self.get_expected_dataframe(schema=schema, table=table)
 
-        if not isinstance(other_frame, pd.core.frame.DataFrame):
+        if not isinstance(other_frame, pandas.core.frame.DataFrame):
             other_frame = other_frame.toPandas()
 
         df = self.fix_pandas_df(df.toPandas())

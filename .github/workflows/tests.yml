@@ -138,6 +138,25 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-s3:
+    name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - minio-version: 2023.4.20
+          python-version: '3.7'
+          os: ubuntu-latest
+        - minio-version: 2023.4.20
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-s3.yml
+    with:
+      minio-version: ${{ matrix.minio-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
@@ -147,6 +166,7 @@ jobs:
     - tests-mssql
     - tests-postgres
     - tests-teradata
+    - tests-s3
 
     steps:
     - name: Checkout code

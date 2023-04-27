@@ -2,9 +2,14 @@ import re
 import secrets
 from datetime import date, datetime, timedelta
 
-import pandas as pd
 import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -769,7 +774,7 @@ def test_postgres_strategy_incremental_batch_offset(
             else:
                 total_df = total_df.union(next_df)
 
-    total_span = pd.concat([first_span, second_span], ignore_index=True)
+    total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
     if full:
         total_df = total_df.sort(total_df.id_int.asc())
