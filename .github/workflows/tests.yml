@@ -63,6 +63,31 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-mongodb:
+    name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - mongodb-version: 5.0.16
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - mongodb-version: 5.0.16
+          spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-mongodb.yml
+    with:
+      mongodb-version: ${{ matrix.mongodb-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-mysql:
     name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -210,6 +235,7 @@ jobs:
     needs:
     - tests-core
     - tests-clickhouse
+    - tests-mongodb
     - tests-mysql
     - tests-mssql
     - tests-oracle
