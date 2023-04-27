@@ -150,7 +150,7 @@ Download files from FTP & upload them to HDFS.
 
     # Initiate HDFS connection
     hdfs = HDFS(
-        host="my-nn-001.msk.ru",
+        host="my.name.node",
         user="onetl",
         password="onetl",  # or keytab
     )

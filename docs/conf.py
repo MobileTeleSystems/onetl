@@ -45,10 +45,10 @@ release = ver.public
 extensions = [
     "numpydoc",
     "sphinx_design",
-    "sphinx_rtd_theme",
     "sphinx_substitution_extensions",
     "sphinx_tabs.tabs",
     "sphinx_toolbox.more_autodoc.autoprotocol",
+    "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinxcontrib.autodoc_pydantic",
@@ -82,12 +82,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {"style_nav_header_background": "transparent"}
+html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

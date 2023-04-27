@@ -80,7 +80,7 @@ class FileDownloader(FrozenModel):
         Remote path to download files from.
 
         Could be ``None``, but only if you pass absolute file paths directly to
-        :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.run` method
+        :obj:`~run` method
 
     temp_path : os.PathLike or str, optional, default: ``None``
         If set, this path will be used for downloading a file, and then renaming it to the target file path.
@@ -107,7 +107,7 @@ class FileDownloader(FrozenModel):
         Options of the file  limiting. See :obj:`onetl.core.file_limit.file_limit.FileLimit`
         Default file count limit is 100
 
-    options : :obj:`onetl.core.file_downloader.file_downloader.FileDownloader.Options`  | dict | None, default: ``None``
+    options : :obj:`~FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options. See :obj:`~FileDownloader.Options`
 
     hwm_type : str | type[HWM] | None, default: ``None``
@@ -153,7 +153,8 @@ class FileDownloader(FrozenModel):
             local_path="/path/to/local",
             temp_path="/tmp",
             filter=FileFilter(
-                glob="*.txt", exclude_dirs=["/path/to/remote/source/exclude_dir"]
+                glob="*.txt",
+                exclude_dirs=["/path/to/remote/source/exclude_dir"],
             ),
             limit=FileLimit(count_limit=10),
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),

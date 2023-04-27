@@ -67,7 +67,7 @@ class FileUploader(FrozenModel):
         The local directory from which the data is loaded.
 
         Could be ``None``, but only if you pass absolute file paths directly to
-        :obj:`onetl.core.file_uploader.file_uploader.FileUploader.run` method
+        :obj:`~run` method
 
     temp_path : os.PathLike or str, optional, default: ``None``
         If set, this path will be used for uploading a file, and then renaming it to the target file path.
@@ -87,8 +87,8 @@ class FileUploader(FrozenModel):
             Otherwise instead of ``rename``, remote OS will move file between filesystems,
             which is NOT atomic operation.
 
-    options : :obj:`onetl.core.file_uploader.file_uploader.FileUploader.Options` | dict | None, default: ``None``
-        File upload options. See :obj:`~Options`
+    options : :obj:`~FileUploader.Options` | dict | None, default: ``None``
+        File upload options. See :obj:`~FileUploader.Options`
 
     Examples
     --------

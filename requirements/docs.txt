@@ -1,8 +1,9 @@
 autodoc_pydantic
+furo
 numpydoc
 sphinx
+sphinx-copybutton
 sphinx-design
 sphinx-tabs
 sphinx-toolbox
-sphinx_rtd_theme
 sphinx_substitution_extensions

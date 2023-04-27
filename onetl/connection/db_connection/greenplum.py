@@ -143,10 +143,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         .. code:: bash
 
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.3.1  # pass specific PySpark version
+            pip install onetl pyspark=3.2.3  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
@@ -191,9 +188,17 @@ class Greenplum(JDBCMixin, DBConnection):
         from onetl.connection import Greenplum
         from pyspark.sql import SparkSession
 
+        # Please ask your DevOps and Greenplum admin what port range
+        # on Spark side can be used to accept requests from Greenplum segments
+
         extra = {
             "server.port": "49152-65535",
         }
+
+        # Package should match your Spark version:
+        # Greenplum.package_spark_2_3
+        # Greenplum.package_spark_2_4
+        # Greenplum.package_spark_3_2
 
         spark = (
             SparkSession.builder.appName("spark-app-name")

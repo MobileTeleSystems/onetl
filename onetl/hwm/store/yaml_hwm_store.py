@@ -36,7 +36,7 @@ DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 @default_hwm_store_class
 @register_hwm_store_class("yaml", "yml")
 class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML local store for HWM values
+    r"""YAML local store for HWM values. Used as default HWM store.
 
     Parameters
     ----------
