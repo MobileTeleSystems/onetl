@@ -54,15 +54,13 @@ def pytest_collection_modifyitems(items):
         ("postgres",): {"postgres", *db_markers},
         ("teradata",): {"teradata", *db_markers},
         ("spark", "spark_mock"): db_markers,
-        ("ftp", "ftp_connection", "file_all_connections", "file_connection_without_s3"): {"ftp", *file_markers},
-        ("ftps", "ftps_connection", "file_all_connections", "file_connection_without_s3"): {"ftps", *file_markers},
-        ("hdfs", "hdfs_connection", "hdfs_server", "file_all_connections", "file_connection_without_s3"): {
-            "hdfs",
-            *file_markers,
-        },
-        ("sftp", "sftp_connection", "file_all_connections", "file_connection_without_s3"): {"sftp", *file_markers},
-        ("s3", "file_all_connections"): {"s3", *file_markers},
-        ("webdav_connection", "file_all_connections", "file_connection_without_s3"): {"webdav", *file_markers},
+        ("ftp", "ftp_connection"): {"ftp", *file_markers},
+        ("ftps", "ftps_connection"): {"ftps", *file_markers},
+        ("hdfs", "hdfs_connection", "hdfs_server"): {"hdfs", *file_markers},
+        ("sftp", "sftp_connection"): {"sftp", *file_markers},
+        ("s3",): {"s3", *file_markers},
+        ("webdav_connection"): {"webdav", *file_markers},
+        ("file_all_connections", "file_connection_without_s3"): file_markers,
     }
 
     for item in items:
@@ -387,11 +385,11 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        lazy_fixture("ftp_connection"),
-        lazy_fixture("ftps_connection"),
-        lazy_fixture("sftp_connection"),
-        lazy_fixture("hdfs_connection"),
-        lazy_fixture("webdav_connection"),
+        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.ftp),
+        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.ftps),
+        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.sftp),
+        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.hdfs),
+        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.webdav),
     ],
 )
 def file_connection_without_s3(request):
@@ -402,7 +400,7 @@ def file_connection_without_s3(request):
     scope="function",
     params=[
         lazy_fixture("s3"),
-        lazy_fixture("file_connection_without_s3"),
+        pytest.param(lazy_fixture("file_connection_without_s3"), marks=pytest.mark.s3),
     ],
 )
 def file_all_connections(request):
