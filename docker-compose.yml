@@ -143,5 +143,14 @@ services:
     networks:
     - onetl
 
+  sftp:
+    image: linuxserver/openssh-server
+    restart: unless-stopped
+    env_file: .env.dependencies
+    ports:
+    - 2222:2222
+    networks:
+    - onetl
+
 networks:
   onetl:

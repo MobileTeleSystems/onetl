@@ -21,7 +21,7 @@ def upload_files(
     if local_path.exists() and local_path.is_dir():
         for root_path, _dir_names, file_names in os.walk(local_path):
             local_root = LocalPath(root_path)
-            remote_root = remote_path / local_root.relative_to(local_path)
+            remote_root = RemotePath(remote_path) / local_root.relative_to(local_path)
 
             for filename in file_names:
                 local_filename = local_root / filename

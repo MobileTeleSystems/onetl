@@ -58,15 +58,22 @@ def ftp_server(tmp_path_factory):
         ),
     ],
 )
-def ftp_connection(request):
+def ftp_data(request):
     from onetl.connection import FTP
 
-    return FTP(
+    ftp = FTP(
         host=request.param.host,
         port=request.param.port,
         user=request.param.user,
         password=request.param.password,
     )
+
+    return ftp, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def ftp_connection(ftp_data):
+    return ftp_data[0]
 
 
 @pytest.fixture(scope="session")
@@ -89,24 +96,31 @@ def ftps_server(tmp_path_factory):
         ),
     ],
 )
-def ftps_connection(request):
+def ftps_data(request):
     from onetl.connection import FTPS
 
-    return FTPS(
+    ftps = FTPS(
         host=request.param.host,
         port=request.param.port,
         user=request.param.user,
         password=request.param.password,
     )
 
+    return ftps, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def ftps_connection(ftps_data):
+    return ftps_data[0]
+
 
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param("fake", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
+        pytest.param("real", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
     ],
 )
-def s3():
+def s3_data():
     from onetl.connection import S3
 
     s3 = S3(
@@ -121,53 +135,54 @@ def s3():
     if not s3.client.bucket_exists(s3.bucket):
         s3.client.make_bucket(s3.bucket)
 
-    return s3
+    return s3, PurePosixPath("/export/news_parse")
 
 
-@pytest.fixture(scope="session")
-def sftp_server(tmp_path_factory):
-    from tests.lib.mock_file_servers import TestSFTPServer
-
-    server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
+@pytest.fixture()
+def s3_connection(s3_data):
+    return s3_data[0]
 
 
 @pytest.fixture(
     scope="function",
     params=[
         pytest.param(
-            lazy_fixture("sftp_server"),
+            "real",
             marks=[pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection],
         ),
     ],
 )
-def sftp_connection(request):
+def sftp_data():
     from onetl.connection import SFTP
 
-    return SFTP(
-        host=request.param.host,
-        port=request.param.port,
-        user=request.param.user,
-        password=request.param.password,
+    sftp = SFTP(
+        host=os.getenv("ONETL_SFTP_HOST"),
+        port=os.getenv("ONETL_SFTP_PORT"),
+        user=os.getenv("ONETL_SFTP_USER"),
+        password=os.getenv("ONETL_SFTP_PASSWORD"),
     )
+
+    return sftp, PurePosixPath("/app/news_parse")
+
+
+@pytest.fixture()
+def sftp_connection(sftp_data):
+    return sftp_data[0]
 
 
 @pytest.fixture(
     scope="session",
     params=[
         pytest.param(
-            "fake",
+            "real",
             marks=[pytest.mark.webdav, pytest.mark.file_connection, pytest.mark.connection],
         ),
     ],
 )
-def webdav_connection():
+def webdav_data():
     from onetl.connection import WebDAV
 
-    return WebDAV(
+    webdav = WebDAV(
         host=os.getenv("ONETL_WEBDAV_HOST"),
         port=os.getenv("ONETL_WEBDAV_PORT"),
         user=os.getenv("ONETL_WEBDAV_USER"),
@@ -176,11 +191,18 @@ def webdav_connection():
         protocol="http",
     )
 
+    return webdav, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def webdav_connection(webdav_data):
+    return webdav_data[0]
+
 
 @pytest.fixture(
     scope="session",
     params=[
-        pytest.param("fake", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
+        pytest.param("real", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
     ],
 )
 def hdfs_server():
@@ -193,10 +215,16 @@ def hdfs_server():
 
 
 @pytest.fixture(scope="function")
-def hdfs_connection(hdfs_server):
+def hdfs_data(hdfs_server):
     from onetl.connection import HDFS
 
-    return HDFS(host=hdfs_server.host, port=hdfs_server.port)
+    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
+    return hdfs, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def hdfs_connection(hdfs_data):
+    return hdfs_data[0]
 
 
 @pytest.fixture(scope="function")
@@ -253,7 +281,7 @@ def spark_metastore_dir(tmp_path_factory):
     scope="session",
     name="spark",
     params=[
-        pytest.param("fake", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
 def get_spark_session(warehouse_dir, spark_metastore_dir):
@@ -316,7 +344,7 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param("fake", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
 def spark_mock() -> SparkSession:
@@ -412,73 +440,36 @@ def use_memory_hwm_store(request):
 
 
 @pytest.fixture(
-    scope="function",
     params=[
-        lazy_fixture("ftp_connection"),
-        lazy_fixture("ftps_connection"),
-        lazy_fixture("sftp_connection"),
-        lazy_fixture("hdfs_connection"),
-        lazy_fixture("webdav_connection"),
+        lazy_fixture("ftp_data"),
+        lazy_fixture("ftps_data"),
+        lazy_fixture("hdfs_data"),
+        lazy_fixture("s3_data"),
+        lazy_fixture("sftp_data"),
+        lazy_fixture("webdav_data"),
     ],
 )
-def file_connection_without_s3(request):
+def file_connections_data(request):
     return request.param
 
 
-@pytest.fixture(
-    scope="function",
-    params=[
-        lazy_fixture("s3"),
-        lazy_fixture("file_connection_without_s3"),
-    ],
-)
-def file_all_connections(request):
-    return request.param
+@pytest.fixture()
+def file_all_connections(file_connections_data):
+    return file_connections_data[0]
 
 
 @pytest.fixture(scope="function")
-def source_path(file_all_connections):
-    source_path = PurePosixPath("/export/news_parse")
-
-    file_all_connections.rmdir(source_path, recursive=True)
-    file_all_connections.mkdir(source_path)
-    yield source_path
-    file_all_connections.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def source_path_s3(s3):
-    source_path = PurePosixPath("/export/news_parse")
-
-    s3.rmdir(source_path, recursive=True)
-    s3.mkdir(source_path)
-    yield source_path
-    s3.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def source_path_without_s3(file_connection_without_s3):
-    source_path = PurePosixPath("/export/news_parse")
-
-    file_connection_without_s3.rmdir(source_path, recursive=True)
-    file_connection_without_s3.mkdir(source_path)
-    yield source_path
-    file_connection_without_s3.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def upload_test_files_without_s3(file_connection_without_s3, resource_path, source_path_without_s3):
-    return upload_files(resource_path, source_path_without_s3, file_connection_without_s3)
+def source_path(file_connections_data):
+    connection, path = file_connections_data
+    connection.rmdir(path, recursive=True)
+    connection.mkdir(path)
+    yield path
+    connection.rmdir(path, recursive=True)
 
 
 @pytest.fixture(scope="function")
 def upload_test_files(file_all_connections, resource_path, source_path):
     return upload_files(resource_path, source_path, file_all_connections)
-
-
-@pytest.fixture(scope="function")
-def upload_test_files_s3(s3, resource_path, source_path_s3):
-    return upload_files(resource_path, source_path_s3, s3)
 
 
 @pytest.fixture(

@@ -22,7 +22,7 @@ from stat import S_ISDIR, S_ISREG
 from typing import Optional
 
 try:
-    from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
+    from paramiko import ProxyCommand, SSHClient, SSHConfig, WarningPolicy
     from paramiko.sftp_attr import SFTPAttributes
     from paramiko.sftp_client import SFTPClient
     from paramiko.ssh_exception import ConfigParseError
@@ -139,7 +139,7 @@ class SFTP(FileConnection):
         client.load_system_host_keys()
         if not self.host_key_check:
             # Default is RejectPolicy
-            client.set_missing_host_key_policy(AutoAddPolicy())
+            client.set_missing_host_key_policy(WarningPolicy())
 
         client.connect(
             hostname=self.host,

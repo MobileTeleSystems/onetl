@@ -68,8 +68,7 @@ RUN pip install \
     -r /app/requirements/tests/mssql.txt \
     -r /app/requirements/tests/mysql.txt \
     -r /app/requirements/tests/oracle.txt \
-    -r /app/requirements/tests/postgres.txt \
-    -r /app/requirements/tests/sftp.txt
+    -r /app/requirements/tests/postgres.txt
 
 FROM base AS full
 

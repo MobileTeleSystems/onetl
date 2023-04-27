@@ -6,7 +6,7 @@ import pytest
 pytestmark = [pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection]
 
 
-def test_sftp_connection():
+def test_sftp_connection_anonymous():
     from onetl.connection import SFTP
 
     sftp = SFTP(host="some_host")
@@ -21,23 +21,21 @@ def test_sftp_connection_with_port():
     from onetl.connection import SFTP
 
     sftp = SFTP(host="some_host", port=500)
-    assert sftp.host == "some_host"
+
     assert sftp.port == 500
-    assert not sftp.user
-    assert not sftp.password
-    assert not sftp.key_file
 
 
 def test_sftp_connection_with_password():
     from onetl.connection import SFTP
 
     sftp = SFTP(host="some_host", user="some_user", password="pwd")
-    assert sftp.host == "some_host"
-    assert sftp.port == 22
     assert sftp.user == "some_user"
     assert sftp.password != "pwd"
     assert sftp.password.get_secret_value() == "pwd"
     assert not sftp.key_file
+
+    assert "password='pwd'" not in str(sftp)
+    assert "password='pwd'" not in repr(sftp)
 
 
 def test_sftp_connection_with_key_file(request, tmp_path_factory):
@@ -54,8 +52,6 @@ def test_sftp_connection_with_key_file(request, tmp_path_factory):
     request.addfinalizer(finalizer)
 
     sftp = SFTP(host="some_host", user="some_user", key_file=key_file)
-    assert sftp.host == "some_host"
-    assert sftp.port == 22
     assert sftp.user == "some_user"
     assert not sftp.password
     assert sftp.key_file == key_file
