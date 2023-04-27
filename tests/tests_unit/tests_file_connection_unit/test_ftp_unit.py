@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import FileConnection
 
-pytestmark = pytest.mark.ftp
+pytestmark = [pytest.mark.ftp, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_ftp_connection():

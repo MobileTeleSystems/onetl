@@ -38,45 +38,6 @@ log = logging.getLogger(__name__)
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
-def pytest_collection_modifyitems(items):
-    # pytest.mark placed on top of fixture does nothing, so we need to modify tests using pytest hook.
-    # see https://github.com/pytest-dev/pytest/issues/1368
-    db_markers = {"db_connection", "connection"}
-    file_markers = {"file_connection", "connection"}
-    markers_for = {
-        ("clickhouse",): {"clickhouse", *db_markers},
-        ("greenplum",): {"greenplum", *db_markers},
-        ("hive",): {"hive", *db_markers},
-        ("mongodb",): {"mongodb", *db_markers},
-        ("mssql",): {"mssql", *db_markers},
-        ("mysql",): {"mysql", *db_markers},
-        ("oracle",): {"oracle", *db_markers},
-        ("postgres",): {"postgres", *db_markers},
-        ("teradata",): {"teradata", *db_markers},
-        ("spark", "spark_mock"): db_markers,
-        ("ftp", "ftp_connection"): {"ftp", *file_markers},
-        ("ftps", "ftps_connection"): {"ftps", *file_markers},
-        ("hdfs", "hdfs_connection", "hdfs_server"): {"hdfs", *file_markers},
-        ("sftp", "sftp_connection"): {"sftp", *file_markers},
-        ("s3",): {"s3", *file_markers},
-        ("webdav_connection"): {"webdav", *file_markers},
-        ("file_all_connections", "file_connection_without_s3"): file_markers,
-    }
-
-    for item in items:
-        new_markers = set()
-        for to_search, to_add in markers_for.items():
-            fixtures = set(item.fixturenames)
-            match_fixtures = bool(fixtures.intersection(to_search))
-            match_marks = any(item.get_closest_marker(existing_marker) for existing_marker in to_search)
-
-            if match_fixtures or match_marks:
-                new_markers.update(to_add)
-
-        for new_marker in new_markers:
-            item.add_marker(new_marker)
-
-
 @pytest.fixture(scope="session")
 def ftp_server(tmp_path_factory):
     from tests.lib.mock_file_servers import TestFTPServer
@@ -88,11 +49,24 @@ def ftp_server(tmp_path_factory):
     server.stop()
 
 
-@pytest.fixture(scope="function")
-def ftp_connection(ftp_server):
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            lazy_fixture("ftp_server"),
+            marks=[pytest.mark.ftp, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def ftp_connection(request):
     from onetl.connection import FTP
 
-    return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
+    return FTP(
+        host=request.param.host,
+        port=request.param.port,
+        user=request.param.user,
+        password=request.param.password,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -106,14 +80,32 @@ def ftps_server(tmp_path_factory):
     server.stop()
 
 
-@pytest.fixture(scope="function")
-def ftps_connection(ftps_server):
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            lazy_fixture("ftps_server"),
+            marks=[pytest.mark.ftps, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def ftps_connection(request):
     from onetl.connection import FTPS
 
-    return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
+    return FTPS(
+        host=request.param.host,
+        port=request.param.port,
+        user=request.param.user,
+        password=request.param.password,
+    )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param("fake", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
+    ],
+)
 def s3():
     from onetl.connection import S3
 
@@ -143,11 +135,24 @@ def sftp_server(tmp_path_factory):
     server.stop()
 
 
-@pytest.fixture(scope="function")
-def sftp_connection(sftp_server):
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            lazy_fixture("sftp_server"),
+            marks=[pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def sftp_connection(request):
     from onetl.connection import SFTP
 
-    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
+    return SFTP(
+        host=request.param.host,
+        port=request.param.port,
+        user=request.param.user,
+        password=request.param.password,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -164,7 +169,12 @@ def webdav_connection():
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param("fake", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
+    ],
+)
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
@@ -174,7 +184,6 @@ def hdfs_server():
     )
 
 
-@pytest.fixture(scope="function")
 def hdfs_connection(hdfs_server):
     from onetl.connection import HDFS
 
@@ -231,7 +240,13 @@ def spark_metastore_dir(tmp_path_factory):
     shutil.rmtree(path, ignore_errors=True)
 
 
-@pytest.fixture(scope="session", name="spark")
+@pytest.fixture(
+    scope="session",
+    name="spark",
+    params=[
+        pytest.param("fake", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
 def get_spark_session(warehouse_dir, spark_metastore_dir):
     import pyspark
     from pyspark.sql import SparkSession
@@ -289,7 +304,12 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
     spark.stop()
 
 
-@pytest.fixture()
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param("fake", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
 def spark_mock() -> SparkSession:
     from pyspark.sql import SparkSession
 
@@ -385,11 +405,11 @@ def use_memory_hwm_store(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.ftp),
-        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.ftps),
-        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.sftp),
-        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.hdfs),
-        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.webdav),
+        lazy_fixture("ftp_connection"),
+        lazy_fixture("ftps_connection"),
+        lazy_fixture("sftp_connection"),
+        lazy_fixture("hdfs_connection"),
+        lazy_fixture("webdav_connection"),
     ],
 )
 def file_connection_without_s3(request):
@@ -399,7 +419,7 @@ def file_connection_without_s3(request):
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param(lazy_fixture("s3"), marks=pytest.mark.s3),
+        lazy_fixture("s3"),
         lazy_fixture("file_connection_without_s3"),
     ],
 )

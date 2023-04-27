@@ -1,6 +1,6 @@
 import pytest
 
-pytestmark = pytest.mark.s3
+pytestmark = [pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_s3_connection():

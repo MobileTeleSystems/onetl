@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = pytest.mark.sftp
+pytestmark = [pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_sftp_connection():
