@@ -63,6 +63,28 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-hive:
+    name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - spark-version: 3.3.2
+          java-version: 17
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-hive.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-mongodb:
     name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -254,6 +276,7 @@ jobs:
     needs:
     - tests-core
     - tests-clickhouse
+    - tests-hive
     - tests-mongodb
     - tests-mysql
     - tests-mssql
