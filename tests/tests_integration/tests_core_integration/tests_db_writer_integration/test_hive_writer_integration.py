@@ -45,7 +45,10 @@ def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    assert "`compression` 'snappy'" in response
+    if spark.version[0] == "2":
+        assert "`compression` 'snappy'" in response
+    else:
+        assert "'compression' = 'snappy'" in response
 
 
 def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
@@ -62,7 +65,10 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    assert "`compression` 'snappy'" in response
+    if spark.version[0] == "2":
+        assert "`compression` 'snappy'" in response
+    else:
+        assert "'compression' = 'snappy'" in response
 
 
 @pytest.mark.parametrize(
