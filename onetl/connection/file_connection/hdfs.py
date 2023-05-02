@@ -673,13 +673,12 @@ class HDFS(FileConnection):
         raise RuntimeError(f"Host {self.host!r} is not an active namenode")
 
     def _get_client(self) -> KerberosClient | InsecureClient:
-        if self.user:
-            from hdfs.ext.kerberos import KerberosClient
-
         host = self._get_host()
         conn_str = f"http://{host}:{self.webhdfs_port}"  # NOSONAR
 
         if self.user and (self.keytab or self.password):
+            from hdfs.ext.kerberos import KerberosClient
+
             kinit(
                 self.user,
                 keytab=self.keytab,

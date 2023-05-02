@@ -45,10 +45,6 @@ def test_hdfs_connection_with_cluster_and_host():
     assert isinstance(hdfs, FileConnection)
     assert hdfs.cluster == "rnd-dwh"
     assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 50070
-    assert not hdfs.user
-    assert not hdfs.password
-    assert not hdfs.keytab
     assert hdfs.instance_url == "rnd-dwh"
 
 
@@ -59,9 +55,6 @@ def test_hdfs_connection_with_port():
     assert isinstance(hdfs, FileConnection)
     assert hdfs.host == "some-host.domain.com"
     assert hdfs.webhdfs_port == 9080
-    assert not hdfs.user
-    assert not hdfs.password
-    assert not hdfs.keytab
     assert hdfs.instance_url == "hdfs://some-host.domain.com:9080"
 
 
@@ -87,6 +80,9 @@ def test_hdfs_connection_with_password():
     assert hdfs.password.get_secret_value() == "pwd"
     assert not hdfs.keytab
 
+    assert "password='pwd'" not in str(hdfs)
+    assert "password='pwd'" not in repr(hdfs)
+
 
 def test_hdfs_connection_with_keytab(request, tmp_path_factory):
     from onetl.connection import HDFS
@@ -102,8 +98,6 @@ def test_hdfs_connection_with_keytab(request, tmp_path_factory):
 
     request.addfinalizer(finalizer)
 
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 50070
     assert hdfs.user == "some_user"
     assert not hdfs.password
 

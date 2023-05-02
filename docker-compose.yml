@@ -25,7 +25,7 @@ services:
 
 
   mongodb:
-    image: mongo:latest
+    image: ${MONGODB_IMAGE:-mongo:latest}
     restart: unless-stopped
     ports:
     - 27017:27017
@@ -34,7 +34,7 @@ services:
     - onetl
 
   minio:
-    image: bitnami/minio:latest
+    image: ${MINIO_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -44,10 +44,7 @@ services:
     - onetl
 
   postgres:
-    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/postgres:develop
-    build:
-      dockerfile: ./docker/postgres/Dockerfile
-      context: .
+    image: ${POSTGRES_IMAGE:-postgres:15.2}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -56,7 +53,7 @@ services:
     - onetl
 
   greenplum:
-    image: datagrip/greenplum:6.8
+    image: ${GREENPLUM_IMAGE:-datagrip/greenplum:6.8}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -64,37 +61,22 @@ services:
     networks:
     - onetl
 
-  hive2:
-    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/hive2:develop
-    build:
-      dockerfile: ./docker/hive2/Dockerfile
-      context: .
-    hostname: hive2
+  hdfs:
+    image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
+    hostname: hdfs
     restart: unless-stopped
     env_file: .env.dependencies
-    depends_on:
-    - postgres
     ports:
-    - 50010:50010
-    - 50020:50020
-    - 50070:50070
-    - 50075:50075
-    - 10000:10000
-    - 10020:10020
-    - 19888:19888
-    - 9000:9000
-    - 8030:8030
-    - 8031:8031
-    - 8032:8032
-    - 8033:8033
-    - 8040:8040
-    - 8042:8042
-    - 8088:8088
+    - 9820:9820  # HDFS IPC
+    - 9870:9870  # WebHDFS
+    - 9864:9864  # Datanode UI
+    volumes:
+    - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
     networks:
     - onetl
 
   oracle:
-    image: gvenzl/oracle-xe:21.3.0-faststart
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-xe:21.3.0-faststart}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -115,7 +97,7 @@ services:
     - onetl
 
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest}
     restart: unless-stopped
     ports:
     - 8123:8123
@@ -124,7 +106,7 @@ services:
     - onetl
 
   mysql:
-    image: mysql:latest
+    image: ${MYSQL_IMAGE:-mysql:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -133,7 +115,7 @@ services:
     - onetl
 
   mssql:
-    image: mcmoe/mssqldocker:latest
+    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -142,7 +124,7 @@ services:
     - onetl
 
   sftp:
-    image: linuxserver/openssh-server
+    image: ${SFTP_IMAGE:-linuxserver/openssh-server}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

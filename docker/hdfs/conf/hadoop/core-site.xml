@@ -19,7 +19,7 @@
 <configuration>
     <property>
         <name>fs.defaultFS</name>
-        <value>hdfs://hive2:9000</value>
+        <value>hdfs://hdfs:9820</value>
     </property>
     <property>
         <name>hadoop.proxyuser.hue.hosts</name>

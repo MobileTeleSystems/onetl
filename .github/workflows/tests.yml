@@ -232,6 +232,25 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-hdfs:
+    name: Run HDFS tests (server=${{ matrix.hadoop-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - hadoop-version: hadoop2-hdfs
+          python-version: '3.7'
+          os: ubuntu-latest
+        - hadoop-version: hadoop3-hdfs
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-hdfs.yml
+    with:
+      hadoop-version: ${{ matrix.hadoop-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-s3:
     name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -302,6 +321,7 @@ jobs:
     - tests-oracle
     - tests-postgres
     - tests-teradata
+    - tests-hdfs
     - tests-s3
     - tests-sftp
     - tests-webdav
