@@ -79,11 +79,15 @@ class FTPS(FTP):
     port : int, default: ``21``
         Port of FTPS source
 
-    user : str
-        User, which have access to the file source. For example: ``someuser``
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``someuser``.
+
+        ``None`` means that the user is anonymous.
 
     password : str, default: ``None``
-        Password for file source connection
+        Password for file source connection.
+
+        ``None`` means that the user is anonymous.
 
     Examples
     --------
@@ -119,7 +123,7 @@ class FTPS(FTP):
 
         return FTPHost(
             self.host,
-            self.user or "",
-            self.password.get_secret_value() if self.password else "None",
+            self.user,
+            self.password.get_secret_value() if self.password else None,
             session_factory=session_factory,
         )

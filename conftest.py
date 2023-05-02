@@ -8,7 +8,6 @@ from collections import namedtuple
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from pathlib import Path, PurePosixPath
-from time import sleep
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
@@ -39,33 +38,34 @@ PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
 @pytest.fixture(scope="session")
-def ftp_server(tmp_path_factory):
-    from tests.lib.mock_file_servers import TestFTPServer
+def ftp_server():
+    FTPServer = namedtuple("FTPServer", ["host", "port", "user", "password"])
 
-    server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
+    return FTPServer(
+        host=os.getenv("ONETL_FTP_HOST"),
+        port=os.getenv("ONETL_FTP_PORT"),
+        user=os.getenv("ONETL_FTP_USER"),
+        password=os.getenv("ONETL_FTP_PASSWORD"),
+    )
 
 
 @pytest.fixture(
     scope="function",
     params=[
         pytest.param(
-            lazy_fixture("ftp_server"),
+            "real",
             marks=[pytest.mark.ftp, pytest.mark.file_connection, pytest.mark.connection],
         ),
     ],
 )
-def ftp_data(request):
+def ftp_data(ftp_server):
     from onetl.connection import FTP
 
     ftp = FTP(
-        host=request.param.host,
-        port=request.param.port,
-        user=request.param.user,
-        password=request.param.password,
+        host=ftp_server.host,
+        port=ftp_server.port,
+        user=ftp_server.user,
+        password=ftp_server.password,
     )
 
     return ftp, PurePosixPath("/export/news_parse")
@@ -77,33 +77,34 @@ def ftp_connection(ftp_data):
 
 
 @pytest.fixture(scope="session")
-def ftps_server(tmp_path_factory):
-    from tests.lib.mock_file_servers import TestFTPServer
+def ftps_server():
+    FTPSServer = namedtuple("FTPSServer", ["host", "port", "user", "password"])
 
-    server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
+    return FTPSServer(
+        host=os.getenv("ONETL_FTPS_HOST"),
+        port=os.getenv("ONETL_FTPS_PORT"),
+        user=os.getenv("ONETL_FTPS_USER"),
+        password=os.getenv("ONETL_FTPS_PASSWORD"),
+    )
 
 
 @pytest.fixture(
     scope="function",
     params=[
         pytest.param(
-            lazy_fixture("ftps_server"),
+            "real",
             marks=[pytest.mark.ftps, pytest.mark.file_connection, pytest.mark.connection],
         ),
     ],
 )
-def ftps_data(request):
+def ftps_data(ftps_server):
     from onetl.connection import FTPS
 
     ftps = FTPS(
-        host=request.param.host,
-        port=request.param.port,
-        user=request.param.user,
-        password=request.param.password,
+        host=ftps_server.host,
+        port=ftps_server.port,
+        user=ftps_server.user,
+        password=ftps_server.password,
     )
 
     return ftps, PurePosixPath("/export/news_parse")
@@ -114,26 +115,40 @@ def ftps_connection(ftps_data):
     return ftps_data[0]
 
 
+@pytest.fixture(scope="session")
+def s3_server():
+    S3Server = namedtuple("S3Server", ["host", "port", "bucket", "access_key", "secret_key", "protocol"])
+
+    return S3Server(
+        host=os.getenv("ONETL_S3_HOST"),
+        port=os.getenv("ONETL_S3_PORT"),
+        bucket=os.getenv("ONETL_S3_BUCKET"),
+        access_key=os.getenv("ONETL_S3_ACCESS_KEY"),
+        secret_key=os.getenv("ONETL_S3_SECRET_KEY"),
+        protocol=os.getenv("ONETL_S3_PROTOCOL", "http").lower(),
+    )
+
+
 @pytest.fixture(
     scope="function",
     params=[
         pytest.param("real", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
     ],
 )
-def s3_data():
+def s3_data(s3_server):
     from onetl.connection import S3
 
     s3 = S3(
-        host=os.getenv("ONETL_MINIO_HOST"),
-        port=os.getenv("ONETL_MINIO_PORT"),
-        access_key=os.getenv("ONETL_MINIO_USER"),
-        secret_key=os.getenv("ONETL_MINIO_PASSWORD"),
-        bucket=os.getenv("ONETL_MINIO_BUCKET"),
-        protocol="http",
+        host=s3_server.host,
+        port=s3_server.port,
+        bucket=s3_server.bucket,
+        access_key=s3_server.access_key,
+        secret_key=s3_server.secret_key,
+        protocol=s3_server.protocol,
     )
 
-    if not s3.client.bucket_exists(s3.bucket):
-        s3.client.make_bucket(s3.bucket)
+    if not s3.client.bucket_exists(s3_server.bucket):
+        s3.client.make_bucket(s3_server.bucket)
 
     return s3, PurePosixPath("/export/news_parse")
 
@@ -141,6 +156,18 @@ def s3_data():
 @pytest.fixture()
 def s3_connection(s3_data):
     return s3_data[0]
+
+
+@pytest.fixture(scope="session")
+def sftp_server():
+    SFTPServer = namedtuple("SFTPServer", ["host", "port", "user", "password"])
+
+    return SFTPServer(
+        host=os.getenv("ONETL_SFTP_HOST"),
+        port=os.getenv("ONETL_SFTP_PORT"),
+        user=os.getenv("ONETL_SFTP_USER"),
+        password=os.getenv("ONETL_SFTP_PASSWORD"),
+    )
 
 
 @pytest.fixture(
@@ -152,14 +179,14 @@ def s3_connection(s3_data):
         ),
     ],
 )
-def sftp_data():
+def sftp_data(sftp_server):
     from onetl.connection import SFTP
 
     sftp = SFTP(
-        host=os.getenv("ONETL_SFTP_HOST"),
-        port=os.getenv("ONETL_SFTP_PORT"),
-        user=os.getenv("ONETL_SFTP_USER"),
-        password=os.getenv("ONETL_SFTP_PASSWORD"),
+        host=sftp_server.host,
+        port=sftp_server.port,
+        user=sftp_server.user,
+        password=sftp_server.password,
     )
 
     return sftp, PurePosixPath("/app/news_parse")
@@ -168,6 +195,20 @@ def sftp_data():
 @pytest.fixture()
 def sftp_connection(sftp_data):
     return sftp_data[0]
+
+
+@pytest.fixture(scope="session")
+def webdav_server():
+    WebDAVServer = namedtuple("WebDAVServer", ["host", "port", "user", "password", "ssl_verify", "protocol"])
+
+    return WebDAVServer(
+        host=os.getenv("ONETL_WEBDAV_HOST"),
+        port=os.getenv("ONETL_WEBDAV_PORT"),
+        user=os.getenv("ONETL_WEBDAV_USER"),
+        password=os.getenv("ONETL_WEBDAV_PASSWORD"),
+        ssl_verify=os.getenv("ONETL_WEBDAV_SSL_VERIFY", "false").lower() != "true",
+        protocol=os.getenv("ONETL_WEBDAV_PROTOCOL", "http").lower(),
+    )
 
 
 @pytest.fixture(
@@ -179,16 +220,16 @@ def sftp_connection(sftp_data):
         ),
     ],
 )
-def webdav_data():
+def webdav_data(webdav_server):
     from onetl.connection import WebDAV
 
     webdav = WebDAV(
-        host=os.getenv("ONETL_WEBDAV_HOST"),
-        port=os.getenv("ONETL_WEBDAV_PORT"),
-        user=os.getenv("ONETL_WEBDAV_USER"),
-        password=os.getenv("ONETL_WEBDAV_PASSWORD"),
-        ssl_verify=False,
-        protocol="http",
+        host=webdav_server.host,
+        port=webdav_server.port,
+        user=webdav_server.user,
+        password=webdav_server.password,
+        ssl_verify=webdav_server.ssl_verify,
+        protocol=webdav_server.protocol,
     )
 
     return webdav, PurePosixPath("/export/news_parse")
@@ -209,8 +250,8 @@ def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
     return HDFSServer(
-        os.getenv("ONETL_HDFS_HOST"),
-        int(os.getenv("ONETL_HDFS_PORT")),
+        host=os.getenv("ONETL_HDFS_HOST"),
+        port=os.getenv("ONETL_HDFS_PORT"),
     )
 
 

@@ -23,10 +23,10 @@ def test_sftp_check(sftp_connection, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_sftp_wrong_source_check():
+def test_sftp_wrong_source_check(sftp_server):
     from onetl.connection import SFTP
 
-    sftp = SFTP(user="some_user", password="pwd", host="host", port=123)
+    sftp = SFTP(host=sftp_server.host, port=sftp_server.port, user="unknown", password="unknown")
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         sftp.check()

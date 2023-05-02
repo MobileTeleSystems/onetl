@@ -74,14 +74,14 @@ class S3(FileConnection):
     port : int, optional
         Port of S3 source
 
+    bucket : str
+        Bucket name in the S3 file source
+
     access_key : str
         Access key (aka user ID) of an account in the S3 service
 
     secret_key : str
         Secret key (aka password) of an account in the S3 service
-
-    bucket : str
-        Bucket name in the S3 file source
 
     protocol : str, default : ``https``
         Connection protocol. Allowed values: ``https`` or ``http``
@@ -112,11 +112,11 @@ class S3(FileConnection):
 
     host: Host
     port: Optional[int] = None
+    bucket: str
     access_key: str
     secret_key: SecretStr
-    bucket: str
     protocol: Union[Literal["http"], Literal["https"]] = "https"
-    session_token: Optional[str] = None
+    session_token: Optional[SecretStr] = None
     region: Optional[str] = None
 
     @root_validator
@@ -165,7 +165,7 @@ class S3(FileConnection):
             access_key=self.access_key,
             secret_key=self.secret_key.get_secret_value(),
             secure=self.protocol == "https",
-            session_token=self.session_token,
+            session_token=self.session_token.get_secret_value() if self.session_token else None,
             region=self.region,
         )
 

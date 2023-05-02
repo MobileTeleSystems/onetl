@@ -12,7 +12,7 @@ from onetl.hooks import hook
 pytestmark = [pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]
 
 
-def test_hdfs_check(hdfs_connection, caplog):
+def test_hdfs_check_anonymous(hdfs_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert hdfs_connection.check() == hdfs_connection
 
