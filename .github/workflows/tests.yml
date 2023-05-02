@@ -232,6 +232,44 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-ftp:
+    name: Run FTP tests (server=${{ matrix.ftp-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ftp-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - ftp-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-ftp.yml
+    with:
+      ftp-version: ${{ matrix.ftp-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-ftps:
+    name: Run FTPS tests (server=${{ matrix.ftps-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ftps-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - ftps-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-ftps.yml
+    with:
+      ftps-version: ${{ matrix.ftps-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-hdfs:
     name: Run HDFS tests (server=${{ matrix.hadoop-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
@@ -321,6 +359,8 @@ jobs:
     - tests-oracle
     - tests-postgres
     - tests-teradata
+    - tests-ftp
+    - tests-ftps
     - tests-hdfs
     - tests-s3
     - tests-sftp

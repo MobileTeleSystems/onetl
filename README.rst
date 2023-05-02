@@ -296,7 +296,6 @@ Create virtualenv and install dependencies:
         -r requirements/docs.txt \
         -r requirements/test/base.txt \
         -r requirements/test/clickhouse.txt \
-        -r requirements/test/ftp.txt \
         -r requirements/test/postgres.txt \
         -r requirements/test/mongodb.txt \
         -r requirements/test/mssql.txt \

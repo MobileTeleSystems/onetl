@@ -33,8 +33,8 @@ services:
     networks:
     - onetl
 
-  minio:
-    image: ${MINIO_IMAGE:-bitnami/minio:latest}
+  s3:
+    image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
@@ -81,6 +81,38 @@ services:
     env_file: .env.dependencies
     ports:
     - 1522:1521
+    networks:
+    - onetl
+
+  ftp:
+    image: ${FTP_IMAGE:-chonjay21/ftps:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    environment:
+    - USE_SSL=false
+    - PASSV_MIN_PORT=30000
+    - PASSV_MAX_PORT=30010
+    ports:
+    - 2121:21
+    - 30000-30010:30000-30010
+    volumes:
+    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
+    networks:
+    - onetl
+
+  ftps:
+    image: ${FTPS_IMAGE:-chonjay21/ftps:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    environment:
+    - USE_SSL=true
+    - PASSV_MIN_PORT=30020
+    - PASSV_MAX_PORT=30030
+    ports:
+    - 2122:21
+    - 30020-30030:30020-30030
+    volumes:
+    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
     - onetl
 

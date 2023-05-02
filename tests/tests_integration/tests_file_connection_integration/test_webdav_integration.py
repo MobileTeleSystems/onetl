@@ -21,10 +21,16 @@ def test_webdav_check(webdav_connection, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_webdav_wrong_source_check():
+def test_webdav_wrong_source_check(webdav_server):
     from onetl.connection import WebDAV
 
-    webdav = WebDAV(user="some_user", password="pwd", host="host", port=123)
+    webdav = WebDAV(
+        host=webdav_server.host,
+        port=webdav_server.port,
+        protocol=webdav_server.protocol,
+        user="unknown",
+        password="unknown",
+    )
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         webdav.check()

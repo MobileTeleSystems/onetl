@@ -35,9 +35,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-hdfs-${{ hashFiles('requirements/core.txt', 'requirements/kerberos.txt', 'requirements/hdfs.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-hdfs-${{ hashFiles('requirements/core.txt', 'requirements/kerberos.txt', 'requirements/hdfs.txt', 'requirements/tests/base.txt') }}
         restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-hdfs-${{ hashFiles('requirements/core.txt', 'requirements/kerberos.txt', 'requirements/hdfs.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-hdfs-${{ hashFiles('requirements/core.txt', 'requirements/kerberos.txt', 'requirements/hdfs.txt', 'requirements/tests/base.txt') }}
           ${{ runner.os }}-python-${{ inputs.python-version }}-tests-hdfs-
 
     - name: Upgrade pip
