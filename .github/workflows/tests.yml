@@ -289,6 +289,25 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-webdav:
+    name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - webdav-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - webdav-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-webdav.yml
+    with:
+      webdav-version: ${{ matrix.webdav-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
@@ -305,6 +324,7 @@ jobs:
     - tests-hdfs
     - tests-s3
     - tests-sftp
+    - tests-webdav
 
     steps:
     - name: Checkout code
