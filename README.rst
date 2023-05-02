@@ -383,11 +383,11 @@ Run tests locally
 
 .. warning::
 
-    To run HDFS and Hive tests locally you should add the following line to your ``/etc/hosts`` (file path depends on OS):
+    To run HDFS tests locally you should add the following line to your ``/etc/hosts`` (file path depends on OS):
 
     .. code::
 
-        127.0.0.1 hive2
+        127.0.0.1 hdfs
 
 .. note::
 

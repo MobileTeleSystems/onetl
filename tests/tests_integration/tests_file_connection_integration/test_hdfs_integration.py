@@ -19,12 +19,10 @@ def test_hdfs_check(hdfs_connection, caplog):
     assert "type = HDFS" in caplog.text
     assert f"host = '{hdfs_connection.host}'" in caplog.text
     assert f"port = {hdfs_connection.webhdfs_port}" in caplog.text
-    assert "user = " not in caplog.text
     assert "timeout = 10" in caplog.text
+    assert "user = " not in caplog.text
     assert "keytab =" not in caplog.text
-
-    if hdfs_connection.password:
-        assert hdfs_connection.password.get_secret_value() not in caplog.text
+    assert "password =" not in caplog.text
 
     assert "Connection is available" in caplog.text
 
@@ -55,8 +53,8 @@ def test_hdfs_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_f
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"port = {hdfs.webhdfs_port}" in caplog.text
     assert f"user = '{hdfs.user}'" in caplog.text
-    assert f"keytab = '{keytab}' (kind='file'" in caplog.text
     assert "timeout = 10" in caplog.text
+    assert f"keytab = '{keytab}' (kind='file'" in caplog.text
     assert "password =" not in caplog.text
 
     assert "Connection is available" in caplog.text
@@ -76,10 +74,10 @@ def test_hdfs_check_with_password(mocker, hdfs_server, caplog):
     assert "type = HDFS" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"port = {hdfs.webhdfs_port}" in caplog.text
-    assert f"user = '{hdfs.user}'" in caplog.text
     assert "timeout = 10" in caplog.text
+    assert f"user = '{hdfs.user}'" in caplog.text
     assert "keytab =" not in caplog.text
-
+    assert "password = SecretStr('**********')" in caplog.text
     assert "somepass" not in caplog.text
 
     assert "Connection is available" in caplog.text
