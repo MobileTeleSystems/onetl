@@ -103,16 +103,14 @@ services:
     - onetl
 
   webdav:
-    image: docker.rep.msk.mts.ru/bigdata/platform/onetools/onetl/webdav:develop
-    build:
-      dockerfile: ./docker/webdav/Dockerfile
-      context: .
-    hostname: webdav
+    image: chonjay21/webdav:latest
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
     - 8000:80
-    - 8443:443
+    volumes:
+    # Remove after https://github.com/chonjay21/docker-webdav/pull/3
+    - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
     - onetl
 

@@ -1,0 +1,81 @@
+name: Tests for WebDAV
+on:
+  workflow_call:
+    inputs:
+      webdav-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+
+jobs:
+  test-webdav:
+    name: Run WebDAV tests (server=${{ inputs.webdav-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-webdav-${{ hashFiles('requirements/core.txt', 'requirements/webdav.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-webdav-${{ hashFiles('requirements/core.txt', 'requirements/webdav.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-webdav-
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I \
+          -r requirements/core.txt \
+          -r requirements/webdav.txt \
+          -r requirements/tests/base.txt
+
+    # Replace with Github Actions' services after https://github.com/chonjay21/docker-webdav/pull/3
+    # Cannot use services because we need to mount config file from the repo, but services start before checkout.
+    # See https://github.com/orgs/community/discussions/25792
+    - name: Start WebDAV
+      run: |
+        docker compose down -v --remove-orphans
+        docker compose up -d webdav
+      env:
+        WEBDAV_IMAGE: chonjay21/webdav:${{ inputs.webdav-version }}
+        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-webdav${{ inputs.webdav-version }}
+
+    - name: Wait for WebDAV to be ready
+      run: |
+        ./docker/wait-for-it.sh -h localhost -p 8000 -t 60
+
+    - name: Run tests
+      run: |
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m webdav
+
+    - name: Shutdown WebDAV
+      if: always()
+      run: |
+        docker compose down -v --remove-orphans
+      env:
+        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-webdav${{ inputs.webdav-version }}
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: webdav-${{ inputs.webdav-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*
