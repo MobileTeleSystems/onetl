@@ -8,8 +8,7 @@ ENV LANGUAGE=en_US.UTF-8 \
     PYSPARK_PYTHON=python3 \
     PYSPARK_DRIVER_PYTHON=python3 \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    HADOOP_CONF_DIR=/app/docker/hive2/hadoop/conf/
+    PYTHONDONTWRITEBYTECODE=1
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
