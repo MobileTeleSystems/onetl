@@ -244,7 +244,7 @@ class MongoDB(DBConnection):
 
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MongoDB.package_spark_2_4)
+            .config("spark.jars.packages", MongoDB.package_spark_3_2)
             .getOrCreate()
         )
 

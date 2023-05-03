@@ -13,7 +13,7 @@ Clickhouse connection
     Clickhouse.JDBCOptions
 
 .. autoclass:: Clickhouse
-    :members: __init__, check, sql, fetch, execute
+    :members: check, sql, fetch, execute
 
 .. currentmodule:: onetl.connection.db_connection.clickhouse.Clickhouse
 

@@ -4,6 +4,6 @@ python:
   version: '3.8'
   install:
   - requirements: requirements/core.txt
-  - requirements: requirements/docs.txt
   - method: pip
     path: .[ftp, ftps, hdfs, s3, sftp, webdav, spark]
+  - requirements: requirements/docs.txt

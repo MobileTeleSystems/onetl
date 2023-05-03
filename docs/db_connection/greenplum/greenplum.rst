@@ -1,6 +1,6 @@
 .. _greenplum:
 
-Greenplum connection
+Greenplum connector
 ====================
 
 .. currentmodule:: onetl.connection.db_connection.greenplum

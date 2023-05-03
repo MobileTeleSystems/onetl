@@ -123,29 +123,12 @@ class ConnectionLimits:
 class Greenplum(JDBCMixin, DBConnection):
     """Greenplum connection.
 
-    Based on package ``io.pivotal:greenplum-spark:2.1.3``
-    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1279474/file_groups/12996>`_).
-
-    .. dropdown:: Version compatibility
-
-        * Greenplum server versions: 5.x, 6.x
-        * Spark versions: 2.3.x - 3.2.x (Spark 3.3.x is not supported yet)
-        * Java versions: 8 - 17
-
-        See `official documentation <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-release_notes.html>`_.
+    Based on package ``io.pivotal:greenplum-spark:2.1.4``
+    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1287433/file_groups/13260>`_).
 
     .. warning::
 
-        To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl pyspark=3.2.3  # pass specific PySpark version
-
-        See :ref:`spark-install` instruction for more details.
+        Before using this connector please take into account :ref:`greenplum-prerequisites`
 
     Parameters
     ----------
@@ -196,13 +179,16 @@ class Greenplum(JDBCMixin, DBConnection):
         }
 
         # Package should match your Spark version:
+
         # Greenplum.package_spark_2_3
         # Greenplum.package_spark_2_4
         # Greenplum.package_spark_3_2
 
+        # See Prerequisites page for more details
+
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Greenplum.package_spark_2_4)
+            .config("spark.jars.packages", Greenplum.package_spark_3_2)
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
             .getOrCreate()
@@ -475,9 +461,9 @@ class Greenplum(JDBCMixin, DBConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
-    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
-    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
+    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
+    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
+    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.4"
 
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
@@ -495,11 +481,8 @@ class Greenplum(JDBCMixin, DBConnection):
         }
         extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
 
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-        if params_str:
-            params_str = f"?{params_str}"
-
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
     def read_table(
         self,
@@ -516,7 +499,7 @@ class Greenplum(JDBCMixin, DBConnection):
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
-        query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
+        query = get_sql_query(table=table, columns=columns, where=where)
         log_with_indent("%s", query)
 
         df = self.spark.read.format("greenplum").options(**self._connector_params(table), **read_options).load()
@@ -527,9 +510,6 @@ class Greenplum(JDBCMixin, DBConnection):
 
         if columns:
             df = df.selectExpr(*columns)
-
-        if hint:
-            df = df.hint(hint)
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
 
@@ -600,7 +580,6 @@ class Greenplum(JDBCMixin, DBConnection):
                 ),
             ],
             where=where,
-            hint=hint,
         )
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)

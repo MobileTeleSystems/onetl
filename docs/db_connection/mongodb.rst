@@ -13,7 +13,7 @@ MongoDB connection
     MongoDB.PipelineOptions
 
 .. autoclass:: MongoDB
-    :members: __init__, check, pipeline
+    :members: check, pipeline
 
 .. currentmodule:: onetl.connection.db_connection.mongo.MongoDB
 

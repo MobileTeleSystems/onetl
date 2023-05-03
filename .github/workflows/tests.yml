@@ -63,6 +63,34 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-greenplum:
+    name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - greenplum-version: 6.8
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - greenplum-version: 6.8
+          spark-version: 3.2.3  # Greenplum connector currently does not support Spark 3.3+
+          java-version: 11
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-greenplum.yml
+    with:
+      greenplum-version: ${{ matrix.greenplum-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+    secrets:
+      GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
+      GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
+
   tests-hive:
     name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     strategy:
