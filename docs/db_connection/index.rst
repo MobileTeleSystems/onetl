@@ -8,7 +8,7 @@ DB Connections
     :caption: DB Connections
 
     Clickhouse <clickhouse>
-    Greenplum <greenplum>
+    Greenplum <greenplum/index>
     Hive <hive>
     MongoDB <mongodb>
     MSSQL <mssql>

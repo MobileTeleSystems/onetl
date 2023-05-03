@@ -318,20 +318,19 @@ def spark_metastore_dir(tmp_path_factory):
     shutil.rmtree(path, ignore_errors=True)
 
 
-@pytest.fixture(
-    scope="session",
-    name="spark",
-    params=[
-        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
-    ],
-)
-def get_spark_session(warehouse_dir, spark_metastore_dir):
+@pytest.fixture(scope="session")
+def ivysettings_path():
+    return Path(__file__).parent / "tests" / "ivysettings.xml"
+
+
+@pytest.fixture(scope="session")
+def spark_packages():
     import pyspark
-    from pyspark.sql import SparkSession
 
     from onetl.connection import (
         MSSQL,
         Clickhouse,
+        Greenplum,
         MongoDB,
         MySQL,
         Oracle,
@@ -348,26 +347,52 @@ def get_spark_session(warehouse_dir, spark_metastore_dir):
         Teradata.package,
     ]
 
+    with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
+
     pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
-    if pyspark_version == "2.3":
-        packages.extend([MongoDB.package_spark_2_3])  # Greenplum.package_spark_2_3
-    elif pyspark_version == "2.4":
-        packages.extend([MongoDB.package_spark_2_4])  # Greenplum.package_spark_2_4
-    elif pyspark_version == "3.2":
-        packages.extend([MongoDB.package_spark_3_2])  # Greenplum.package_spark_3_2
-    elif pyspark_version == "3.3":
+
+    if pyspark_version == "2.4":
+        packages.extend([MongoDB.package_spark_2_4])
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_2_4])
+        return packages
+
+    if pyspark_version == "3.2":
+        packages.extend([MongoDB.package_spark_3_2])
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_3_2])
+        return packages
+
+    if pyspark_version == "3.3":
         packages.extend([MongoDB.package_spark_3_3])
-    else:
-        raise ValueError(f"Unsupported pyspark version: {pyspark.__version__}")
+        if not with_greenplum:
+            return packages
+
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+
+    raise ValueError(f"Unsupported Spark version: {pyspark.__version__}")
+
+
+@pytest.fixture(
+    scope="session",
+    name="spark",
+    params=[
+        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
+def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spark_packages):
+    from pyspark.sql import SparkSession
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
-        .config("spark.jars.packages", ",".join(packages))
+        .config("spark.jars.packages", ",".join(spark_packages))
+        .config("spark.jars.ivySettings", os.fspath(ivysettings_path))
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
         .config("spark.executor.memory", "1g")
+        .config("spark.executor.allowSparkContext", "true")  # Greenplum uses SparkContext on executor if master==local
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
@@ -468,7 +493,7 @@ def load_table_data(prepare_schema_table, processing):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def use_memory_hwm_store(request):
+def use_memory_hwm_store(request):  # noqa: WPS325
     test_function = request.function
     entities = test_function.__name__.split("_")
 

@@ -150,19 +150,22 @@ Firstly, you should install JDK. The exact installation instruction depends on y
     dnf install java-11-openjdk-devel  # CentOS 8 + Spark 3
     apt-get install openjdk-11-jdk  # Debian-based + Spark 3
 
-Compatibility matrix:
+.. _spark-compatibility-matrix:
 
-+--------------------------------------------------------------+-------------+-------------+
-| Spark                                                        | Java        | Python      |
-+==============================================================+=============+=============+
-| `2.3.x <https://spark.apache.org/docs/2.3.0/#downloading>`_  | 8 only      | 2.7 - 3.7   |
-+--------------------------------------------------------------+-------------+-------------+
-| `2.4.x <https://spark.apache.org/docs/2.4.8/#downloading>`_  | 8 only      | 2.7 - 3.7   |
-+--------------------------------------------------------------+-------------+-------------+
-| `3.2.x <https://spark.apache.org/docs/3.2.3/#downloading>`_  | 8u201 - 11  | 3.7 - 3.10  |
-+--------------------------------------------------------------+-------------+-------------+
-| `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 8u201 - 17  | 3.7 - 3.10  |
-+--------------------------------------------------------------+-------------+-------------+
+Compatibility matrix
+^^^^^^^^^^^^^^^^^^^^
+
++--------------------------------------------------------------+-------------+-------------+-------+
+| Spark                                                        | Python      | Java        | Scala |
++==============================================================+=============+=============+=======+
+| `2.3.x <https://spark.apache.org/docs/2.3.0/#downloading>`_  | 2.7 - 3.7   | 8 only      | 2.11  |
++--------------------------------------------------------------+-------------+-------------+-------+
+| `2.4.x <https://spark.apache.org/docs/2.4.8/#downloading>`_  | 2.7 - 3.7   | 8 only      | 2.11  |
++--------------------------------------------------------------+-------------+-------------+-------+
+| `3.2.x <https://spark.apache.org/docs/3.2.3/#downloading>`_  | 3.7 - 3.10  | 8u201 - 11  | 2.12  |
++--------------------------------------------------------------+-------------+-------------+-------+
+| `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
++--------------------------------------------------------------+-------------+-------------+-------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
 
@@ -302,7 +305,7 @@ Create virtualenv and install dependencies:
         -r requirements/test/mysql.txt \
         -r requirements/test/oracle.txt \
         -r requirements/test/postgres.txt \
-        -r requirements/test/spark-3.2.0.txt
+        -r requirements/test/spark-3.3.2.txt
 
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -394,6 +397,14 @@ Run tests locally
     and pass its path to ``ONETL_ORA_CLIENT_PATH`` environment variable, e.g. ``ONETL_ORA_CLIENT_PATH=/path/to/client64/lib``.
 
     It may also require to add the same path into ``LD_LIBRARY_PATH`` environment variable
+
+.. note::
+
+    To run Greenplum tests, you should:
+
+    * Download `Pivotal connector for Spark <https://onetl.org.readthedocs.build/en/latest/db_connection/greenplum/prerequisites.html>`_
+    * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
+    * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
 
 Build image for running tests:
 

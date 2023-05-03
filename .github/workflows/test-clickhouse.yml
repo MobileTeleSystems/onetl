@@ -18,8 +18,9 @@ on:
         required: true
         type: string
       os:
-        required: true
+        required: false
         type: string
+        default: ubuntu-latest
 
 jobs:
   test-clickhouse:
@@ -38,16 +39,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ inputs.python-version }}
-
     - name: Set up Java ${{ inputs.java-version }}
       uses: actions/setup-java@v3
       with:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-
 
     - name: Cache pip
       uses: actions/cache@v3

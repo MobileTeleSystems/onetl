@@ -15,8 +15,9 @@ on:
         required: true
         type: string
       os:
-        required: true
+        required: false
         type: string
+        default: ubuntu-latest
 
 jobs:
   test-oracle:
@@ -37,25 +38,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ inputs.python-version }}
-
     - name: Set up Java ${{ inputs.java-version }}
       uses: actions/setup-java@v3
       with:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
 
-    - name: Set up Oracle instantclient
-      if: runner.os == 'Linux'
-      run: |
-        mkdir ./tmp
-        wget -P ./tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
-        mkdir -p ./oracle
-        unzip ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip -d ./oracle
-        rm -rf ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-
 
     - name: Cache pip
       uses: actions/cache@v3
@@ -65,6 +66,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt') }}
           ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-
+
+    - name: Set up Oracle instantclient
+      if: runner.os == 'Linux'
+      run: |
+        mkdir ./tmp
+        wget -P ./tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
+        mkdir -p ./oracle
+        unzip ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip -d ./oracle
+        rm -rf ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
 
     - name: Upgrade pip
       run: python -m pip install --upgrade pip setuptools wheel

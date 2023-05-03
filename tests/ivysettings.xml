@@ -1,0 +1,21 @@
+<ivysettings>
+    <settings defaultResolver="main"/>
+    <properties environment="env"/>
+    <property name="repo.username" value="${env.GREENPLUM_PACKAGES_USER}"/>
+    <property name="repo.pass" value="${env.GREENPLUM_PACKAGES_PASSWORD}"/>
+    <credentials host="maven.pkg.github.com" username="${repo.username}" passwd="${repo.pass}" realm="GitHub Package Registry" />
+    <resolvers>
+      <chain name="main" returnFirst="true">
+        <!-- Use Maven cache -->
+        <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
+        <!-- Use ~/.ivy2/jars/*.jar files -->
+        <ibiblio name="local-ivy2-cache" m2compatible="false" root="file://${user.home}/.ivy2/jars"/>
+        <!-- Download packages from Maven -->
+        <ibiblio name="central" m2compatible="true" />
+        <!-- Download packages from SparkPackages -->
+        <ibiblio name="spark-packages" m2compatible="true" root="https://repos.spark-packages.org/" />
+        <!-- Download packages from private repo (requires credentials) -->
+        <ibiblio name="pivotal-greenplum-spark-connector" m2compatible="true" root="https://maven.pkg.github.com/MobileTeleSystems/pivotal-greenplum-spark-connector" />
+      </chain>
+    </resolvers>
+</ivysettings>
