@@ -117,7 +117,7 @@ services:
     - onetl
 
   webdav:
-    image: chonjay21/webdav:latest
+    image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
