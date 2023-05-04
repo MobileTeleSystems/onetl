@@ -35,6 +35,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintNone,
+    SupportHWMExpressionStr,
     SupportWhereStr,
 )
 from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
@@ -443,6 +444,7 @@ class Greenplum(JDBCMixin, DBConnection):
         SupportDfSchemaNone,
         SupportWhereStr,
         SupportHintNone,
+        SupportHWMExpressionStr,
         DBConnection.Dialect,
     ):
         @classmethod

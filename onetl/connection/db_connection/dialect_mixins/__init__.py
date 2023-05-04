@@ -19,6 +19,9 @@ from onetl.connection.db_connection.dialect_mixins.support_hint_str import (
 from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_none import (
     SupportHWMExpressionNone,
 )
+from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_str import (
+    SupportHWMExpressionStr,
+)
 from onetl.connection.db_connection.dialect_mixins.support_where_str import (
     SupportWhereStr,
 )

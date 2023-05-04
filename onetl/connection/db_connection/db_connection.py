@@ -40,10 +40,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     class Dialect(BaseDBConnection.Dialect):
         @classmethod
-        def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-            return value
-
-        @classmethod
         def _expression_with_alias(cls, expression: str, alias: str) -> str:
             return f"{expression} AS {alias}"
 

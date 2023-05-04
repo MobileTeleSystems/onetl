@@ -36,3 +36,4 @@ class ContainsGetDFSchemaMethod(Protocol):
         """
         Description of the dataframe schema.
         """
+        ...
