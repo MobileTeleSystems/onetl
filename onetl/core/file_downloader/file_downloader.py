@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import os
 import shutil
-from enum import Enum
 from logging import getLogger
 from typing import Iterable, Optional, Tuple, Type
 
@@ -42,7 +41,7 @@ from onetl.impl import (
     RemotePath,
     path_repr,
 )
-from onetl.log import entity_boundary_log, log_with_indent
+from onetl.log import entity_boundary_log, log_lines, log_options, log_with_indent
 from onetl.strategy import StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -528,11 +527,7 @@ class FileDownloader(FrozenModel):
         else:
             log_with_indent("limit = None")
 
-        log_with_indent("options:")
-        for option, value in self.options.dict(by_alias=True).items():
-            value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent("%s = %s", option, value_wrapped, indent=4)
-        log_with_indent("")
+        log_options(self.options.dict(by_alias=True))
 
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
@@ -609,7 +604,7 @@ class FileDownloader(FrozenModel):
         files = FileSet(item[0] for item in to_download)
 
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
-        log_with_indent("%s", str(files))
+        log_lines(str(files))
         log_with_indent("")
         log.info("|%s| Starting the download process", self.__class__.__name__)
 
@@ -706,7 +701,7 @@ class FileDownloader(FrozenModel):
     def _log_result(self, result: DownloadResult) -> None:
         log_with_indent("")
         log.info("|%s| Download result:", self.__class__.__name__)
-        log_with_indent("%s", str(result))
+        log_lines(str(result))
         entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
 
     @staticmethod

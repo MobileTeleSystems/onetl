@@ -27,7 +27,7 @@ from pydantic import root_validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.log import BASE_LOG_INDENT, log_with_indent
+from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.package` for creating Spark session
 
@@ -231,7 +231,7 @@ class Oracle(JDBCConnection):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_with_indent("%s", statement)
+        log_lines(statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
@@ -374,7 +374,7 @@ class Oracle(JDBCConnection):
         fail = any(error.level == logging.ERROR for error in aggregated_errors)
 
         message = self._build_error_message(aggregated_errors)
-        log_with_indent("%s", message, level=logging.ERROR if fail else logging.WARNING)
+        log_lines(message, level=logging.ERROR if fail else logging.WARNING)
 
         if fail:
             raise ValueError(message)

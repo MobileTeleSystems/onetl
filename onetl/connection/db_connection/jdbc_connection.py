@@ -38,7 +38,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.hwm import Statement
 from onetl.impl.generic_options import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -629,7 +629,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self._query_on_executor(query, self.ReadOptions.parse(options))
 
@@ -707,7 +707,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent("%s", query, level=logging.DEBUG)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
         log.info("|%s| Schema fetched", self.__class__.__name__)
@@ -764,11 +764,11 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
-                    f"min_{column}",
+                    "min",
                 ),
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_max_value_sql(expression or column),
-                    f"max_{column}",
+                    "max",
                 ),
             ],
             where=where,
@@ -776,11 +776,13 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         )
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self._query_on_driver(query, read_options)
+        row = df.collect()[0]
+        min_value = row["min"]
+        max_value = row["max"]
 
-        min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
         log_with_indent("MIN(%s) = %r", column, min_value)
         log_with_indent("MAX(%s) = %r", column, max_value)

@@ -211,7 +211,7 @@ def get_sql_query(
     ).strip()
 
 
-def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int, dict]:
+def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
     """
     Calculate maximum number of cores which can be used by Spark
 
