@@ -1,7 +1,8 @@
-import pytest
-from frozendict import frozendict
+from datetime import datetime
 
-from onetl.connection.db_connection.mongo import MongoDB
+import pytest
+
+from onetl.connection import MongoDB
 
 pytestmark = pytest.mark.mongodb
 
@@ -29,10 +30,8 @@ def test_mongodb(spark_mock):
 
 
 def test_mongodb_class_attributes():
-    assert MongoDB.package_spark_2_4 == "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"
-    assert MongoDB.package_spark_2_3 == "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"
-    assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
-    assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
+    assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+    assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
 
 @pytest.mark.parametrize(
@@ -117,62 +116,46 @@ def test_mongodb_with_extra(spark_mock):
         user="user",
         password="password",
         database="database",
-        extra={"tls": "true", "tlsCertificateKeyFile": "/some/path"},
+        extra={"tls": "true", "opt1": "value1"},
         spark=spark_mock,
     )
 
-    assert (
-        mongo.connection_url == "mongodb://user:password@host:27017/database?tls=true&tlsCertificateKeyFile=/some"
-        "/path"
-    )
-
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
-
-    assert mongo.connection_url == "mongodb://user:password@host:27017/database"
+    assert mongo.connection_url == "mongodb://user:password@host:27017/database?opt1=value1&tls=true"
 
 
-def test_mongodb_generate_pipeline(spark_mock):
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
+def test_mongodb_convert_list_to_str():
+    where = [
+        {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
+        {
+            "$and": [
+                {"col_3": {"$eq": "Hello"}},
+                {"col_4": {"$eq": datetime.fromisoformat("2022-12-23T11:22:33.456+03:00")}},
+            ],
+        },
+    ]
 
-    pipeline = frozendict({"$col_1": {"$gt": 1, "$lt": 100}, "$col_2": {"$gt": 2}, "$col_3": {"$eq": "hello"}})
-
-    assert mongo.Dialect.generate_where_request(where=pipeline) == (
-        "{'$match':{'$col_1':{'$gt':1,'$lt':100},'$col_2':{'$gt':2},'$col_3':{'$eq':'hello'}}}"
+    assert MongoDB.Dialect.convert_to_str(where) == (
+        '[{"$or": [{"col_1": {"$gt": 1, "$eq": true}}, {"col_2": {"$eq": null}}]}, '
+        '{"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}}]}]'
     )
 
 
-def test_mongodb_generate_pipeline_with_or_and(spark_mock):
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
-
-    pipeline = {
+def test_mongodb_convert_dict_to_str():
+    where = {
         "$and": [
             {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
-            {"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": "Tom"}}]},
+            {
+                "$and": [
+                    {"col_3": {"$eq": "Hello"}},
+                    {"col_4": {"$eq": datetime.fromisoformat("2022-12-23T11:22:33.456+03:00")}},
+                ],
+            },
         ],
     }
 
-    assert mongo.Dialect.generate_where_request(where=pipeline) == (
-        "{'$match':"
-        "{'$and':["
-        "{'$or':[{'col_1':{'$gt':1,'$eq':true}},{'col_2':{'$eq':null}}]},"
-        "{'$and':[{'col_3':{'$eq':'Hello'}},{'col_4':{'$eq':'Tom'}}]}"
-        "]}}"
+    assert MongoDB.Dialect.convert_to_str(where) == (
+        '{"$and": '
+        '[{"$or": [{"col_1": {"$gt": 1, "$eq": true}}, {"col_2": {"$eq": null}}]}, '
+        '{"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}}]}]'
+        "}"
     )

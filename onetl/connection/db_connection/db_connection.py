@@ -34,7 +34,6 @@ log = getLogger(__name__)
 
 
 class DBConnection(BaseDBConnection, FrozenModel):
-    # TODO:(@dypedchenk) Create abstract class for engine. Engine uses pyhive session or Engine uses pyspark session
     spark: SparkSession = Field(repr=False)
 
     _check_query: ClassVar[str] = "SELECT 1"
@@ -49,22 +48,25 @@ class DBConnection(BaseDBConnection, FrozenModel):
             return f"{expression} AS {alias}"
 
         @classmethod
-        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> str | dict:
+        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
             template = cls._compare_statements[comparator]
             return template.format(arg1, cls._serialize_datetime_value(arg2))
 
         @classmethod
-        def _where_condition(cls, result: list) -> str | dict | None:
-            return " AND ".join(f"({where})" for where in result if where)
+        def _merge_conditions(cls, conditions: list[Any]) -> Any:
+            if len(conditions) == 1:
+                return conditions[0]
+
+            return " AND ".join(f"({item})" for item in conditions)
 
         @classmethod
         def _condition_assembler(
             cls,
-            condition: str | dict | None,
+            condition: Any,
             start_from: Statement | None,
             end_at: Statement | None,
-        ):
-            full_condition = [condition]
+        ) -> Any:
+            conditions = [condition]
 
             if start_from:
                 condition1 = cls._get_compare_statement(
@@ -72,7 +74,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
                     arg1=start_from.expression,
                     arg2=start_from.value,
                 )
-                full_condition.append(condition1)
+                conditions.append(condition1)
 
             if end_at:
                 condition2 = cls._get_compare_statement(
@@ -80,9 +82,13 @@ class DBConnection(BaseDBConnection, FrozenModel):
                     arg1=end_at.expression,
                     arg2=end_at.value,
                 )
-                full_condition.append(condition2)
+                conditions.append(condition2)
 
-            return cls._where_condition(full_condition)
+            result: list[Any] = list(filter(None, conditions))
+            if not result:
+                return None
+
+            return cls._merge_conditions(result)
 
         _compare_statements: ClassVar[Dict[Callable, str]] = {
             operator.ge: "{} >= {}",

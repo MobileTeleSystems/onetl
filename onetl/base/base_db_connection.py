@@ -74,7 +74,7 @@ class BaseDBConnection(BaseConnection):
 
         @classmethod
         @abstractmethod
-        def _where_condition(cls, result: list[Any]) -> Any:
+        def _merge_conditions(cls, conditions: list[Any]) -> Any:
             """
             Convert multiple WHERE conditions to one
             """

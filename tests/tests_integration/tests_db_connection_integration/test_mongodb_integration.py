@@ -34,8 +34,15 @@ def test_mongodb_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_mongodb_connection_check_fail(spark):
-    mongo = MongoDB(host="host", database="db", user="some_user", password="pwd", spark=spark)
+def test_mongodb_connection_check_fail(processing, spark):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user="unknown",
+        password="unknown",
+        database=processing.database,
+        spark=spark,
+    )
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         mongo.check()
@@ -135,7 +142,7 @@ def test_mongodb_connection_read_pipeline_match_with_df_schema(
 
     collected = df.collect()
 
-    assert collected[0][0] == 1  # _id
+    assert collected[0]["_id"] == 1
 
 
 def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, load_table_data, processing):
@@ -150,7 +157,7 @@ def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, loa
 
     df = mongo.pipeline(
         collection=prepare_schema_table.table,
-        pipeline={"$group": {"_id": {}, "min": {"$min": "$hwm_int"}, "max": {"$max": "$hwm_int"}}},
+        pipeline={"$group": {"_id": 1, "min": {"$min": "$hwm_int"}, "max": {"$max": "$hwm_int"}}},
         df_schema=prepare_schema_table.schema,
     )
 
@@ -159,5 +166,5 @@ def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, loa
 
     collected = df.collect()
 
-    assert collected[0][1] == 1
-    assert collected[0][0] == 100
+    assert collected[0]["min"] == 1
+    assert collected[0]["max"] == 100
