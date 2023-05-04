@@ -29,6 +29,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintStr,
+    SupportHWMExpressionStr,
     SupportWhereStr,
 )
 from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
@@ -144,6 +145,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         SupportDfSchemaNone,
         SupportWhereStr,
         SupportHintStr,
+        SupportHWMExpressionStr,
         DBConnection.Dialect,
     ):
         pass
