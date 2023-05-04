@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from onetl.connection.db_connection.clickhouse import Clickhouse
     from onetl.connection.db_connection.greenplum import Greenplum
     from onetl.connection.db_connection.hive import Hive
-    from onetl.connection.db_connection.mongo import MongoDB
+    from onetl.connection.db_connection.mongodb import MongoDB
     from onetl.connection.db_connection.mssql import MSSQL
     from onetl.connection.db_connection.mysql import MySQL
     from onetl.connection.db_connection.oracle import Oracle
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 db_connection_modules = {
     "Clickhouse": "clickhouse",
     "Greenplum": "greenplum",
-    "MongoDB": "mongo",
+    "MongoDB": "mongodb",
     "Hive": "hive",
     "MSSQL": "mssql",
     "MySQL": "mysql",

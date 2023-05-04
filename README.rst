@@ -67,7 +67,7 @@ Supported storages
 +            +------------+----------------------------------------------------------------------------------------------------------+
 |            | Greenplum  | Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
 +            +------------+----------------------------------------------------------------------------------------------------------+
-|            | MongoDB    | `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/master/>`_                        |
+|            | MongoDB    | `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/current>`_                        |
 +------------+------------+----------------------------------------------------------------------------------------------------------+
 | File       | HDFS       | `HDFS Python client <https://pypi.org/project/hdfs/>`_                                                   |
 +            +------------+----------------------------------------------------------------------------------------------------------+

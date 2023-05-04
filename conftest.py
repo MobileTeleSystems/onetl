@@ -352,7 +352,6 @@ def spark_packages():
     pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
 
     if pyspark_version == "2.4":
-        packages.extend([MongoDB.package_spark_2_4])
         if with_greenplum:
             packages.extend([Greenplum.package_spark_2_4])
         return packages

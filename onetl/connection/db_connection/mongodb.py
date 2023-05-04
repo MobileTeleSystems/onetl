@@ -14,45 +14,35 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import operator
 from datetime import datetime
 from enum import Enum
-from string import Template
-from typing import (  # noqa: WPS235
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mapping
 from urllib import parse as parser
 
 from etl_entities.instance import Host
 from pydantic import SecretStr
 
 from onetl.base.base_db_connection import BaseDBConnection
-from onetl.connection.db_connection.dialect_mixins import SupportHWMExpressionNone
-from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
-    SupportTableWithoutDBSchema,
-)
-from onetl.hwm import Statement
-from onetl.log import log_with_indent
-
-if TYPE_CHECKING:
-    from pyspark.sql.types import StructType
-    from pyspark.sql import DataFrame
-
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaStruct,
+    SupportHWMExpressionNone,
+)
+from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
+    SupportTableWithoutDBSchema,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
+from onetl.hwm import Statement
 from onetl.impl import GenericOptions
+from onetl.log import log_with_indent
+
+if TYPE_CHECKING:
+    from pyspark.sql import DataFrame
+    from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
 
@@ -171,19 +161,19 @@ class MongoDB(DBConnection):
     """MongoDB connection.
 
     Based on package ``org.mongodb.spark:mongo-spark-connector``
-    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/master/>`_)
+    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
 
     .. dropdown:: Version compatibility
 
         * MongoDB server versions: 2.6 - 4.2
-        * Spark versions: 2.3.x - 3.2.x
+        * Spark versions: 3.2.x - 3.3.x
         * Java versions: 8 - 17
 
-        See `official documentation <https://www.mongodb.com/docs/spark-connector/master/>`_.
+        See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
     .. warning::
 
-        To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
+        To use MongoDB connector you should have PySpark installed (or injected to ``sys.path``)
         BEFORE creating the connector instance.
 
         You can install PySpark as follows:
@@ -237,8 +227,6 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Package should match your Spark version:
-        # MongoDB.package_spark_2_3
-        # MongoDB.package_spark_2_4
         # MongoDB.package_spark_3_2
         # MongoDB.package_spark_3_3
 
@@ -267,10 +255,8 @@ class MongoDB(DBConnection):
     password: SecretStr
     port: int = 27017
     extra: Extra = Extra()
-    package_spark_2_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.4.4"
-    package_spark_2_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.11:2.3.6"
-    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
-    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:3.0.2"
+    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.
@@ -280,8 +266,7 @@ class MongoDB(DBConnection):
         .. note ::
 
             You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/master/configuration/
-            #:~:text=See%20Cache%20Configuration.-,Input%20Configuration,-You%20can%20configure>`_,
+            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
             The set of supported options depends on connector version.
@@ -314,8 +299,7 @@ class MongoDB(DBConnection):
         .. note ::
 
             You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/master/configuration/
-            #:~:text=See%20Cache%20Configuration.-,Input%20Configuration,-You%20can%20configure>`_,
+            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
             The set of supported options depends on connector version.
@@ -348,8 +332,7 @@ class MongoDB(DBConnection):
         .. note ::
 
             You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/master/configuration/
-            #:~:text=input.database%3Dbar-,Output%20Configuration,-The%20following%20options>`_,
+            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/write/>`_,
             even if it is not mentioned in this documentation.
 
             The set of supported options depends on connector version.
@@ -466,85 +449,61 @@ class MongoDB(DBConnection):
             return hint
 
         @classmethod
-        def convert_filter_parameter_to_pipeline(
+        def prepare_pipeline(
             cls,
-            parameter: Any,
-        ) -> str:  # noqa: WPS231
+            pipeline: Any,
+        ) -> Any:
             """
-            Converts the given dictionary, list or primitive to a string. for each element of the collection,
-            the method calls itself and internally processes each element depending on its type.
+            Prepares pipeline (list or dict) to MongoDB syntax, but without converting it to string.
             """
-            if isinstance(parameter, Mapping):
-                return cls._build_string_pipeline_from_dictionary(parameter)
 
-            if isinstance(parameter, Iterable) and not isinstance(parameter, str):
-                return cls._build_string_pipeline_from_list(parameter)
+            if isinstance(pipeline, datetime):
+                return {"$date": pipeline.astimezone().isoformat()}
 
-            return cls._build_pipeline_from_simple_types(parameter)
+            if isinstance(pipeline, Mapping):
+                return {cls.prepare_pipeline(key): cls.prepare_pipeline(value) for key, value in pipeline.items()}
+
+            if isinstance(pipeline, Iterable) and not isinstance(pipeline, str):
+                return [cls.prepare_pipeline(item) for item in pipeline]
+
+            return pipeline
 
         @classmethod
-        def generate_where_request(cls, where: dict) -> str:  # noqa: WPS231
+        def convert_to_str(
+            cls,
+            value: Any,
+        ) -> str:
             """
-            The passed dict is converted to a MongoDb-readable format, the original result is passed to the
-            pipeline.
+            Converts the given dictionary, list or primitive to a string.
+            """
 
-            """
-            blank_pipeline = Template("{'$$match':$custom_condition}")
-            return blank_pipeline.substitute(custom_condition=cls.convert_filter_parameter_to_pipeline(where))
+            return json.dumps(cls.prepare_pipeline(value))
 
         @classmethod
-        def _where_condition(cls, result: list) -> Optional[dict]:
-            result = list(filter(None, result))
+        def _merge_conditions(cls, conditions: list[Any]) -> Any:
+            if len(conditions) == 1:
+                return conditions[0]
 
-            if not result:
-                return None
-
-            if len(result) > 1:
-                return {"$and": result}
-
-            return result[0]
+            return {"$and": conditions}
 
         @classmethod
         def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> dict:
-            result_statement = {}
-            # The value with which the field is compared is substituted into the dictionary:
-            # {"$some_condition": None} => {"$some_condition": "some_value"}
-            # If the type is variable datetime then there will be a conversion:
-            # {"$some_condition": None} => {"$some_condition": {"$date": "some_value"}}
-            result_statement[arg1] = {
-                cls._compare_statements[comparator]: cls._serialize_datetime_value(arg2),
+            """
+            Returns the comparison statement in MongoDB syntax:
+
+            .. code::
+
+                {
+                    "field": {
+                        "$gt": "some_value",
+                    }
+                }
+            """
+            return {
+                arg1: {
+                    cls._compare_statements[comparator]: arg2,
+                },
             }
-            return result_statement
-
-        @classmethod
-        def _serialize_datetime_value(cls, value: Any) -> str | int | dict:
-            """
-            Transform the value into an SQL Dialect-supported form.
-            """
-            if isinstance(value, datetime):
-                # MongoDB requires UTC to be specified in queries.
-                # NOTE: If you pass the date through ISODate, then you must specify
-                # it in the format ISODate('2023-07-11T00:51:54Z').
-                # Thus, you must write 'Z' at the end and not '+00:00' and milliseconds are not supported.
-                return {"$date": value.astimezone().isoformat()}
-
-            return value
-
-        @classmethod
-        def _build_string_pipeline_from_dictionary(cls, parameter: Mapping) -> str:
-            """
-            Converts the passed map to a string. Map elements can be collections. Loops through all elements of the map
-            and converts each to a string depending on the type of each element.
-            """
-            list_of_operations = []
-            for key, value in parameter.items():
-                value = (
-                    cls.convert_filter_parameter_to_pipeline(key)
-                    + ":"
-                    + cls.convert_filter_parameter_to_pipeline(value)
-                )
-                list_of_operations.append(value)
-            return "{" + ",".join(list_of_operations) + "}"
 
         @classmethod
         def _validate_top_level_keys_in_where_parameter(cls, key: str):
@@ -566,37 +525,6 @@ class MongoDB(DBConnection):
                         f"An invalid parameter {key!r} was specified in the 'where' "
                         "field. You cannot use aggregations or 'groupBy' clauses in 'where'",
                     )
-
-        @classmethod
-        def _build_string_pipeline_from_list(cls, param: Iterable) -> str:
-            """
-            The passed list is converted to a string. The elements of the list can be dictionaries. Iterates through all
-            the elements of the list and processes each element by converting it to a string.
-            """
-            list_of_operations = []
-            for elem in param:
-                list_value = cls.convert_filter_parameter_to_pipeline(elem)
-                list_of_operations.append(list_value)
-            return "[" + ",".join(list_of_operations) + "]"
-
-        @classmethod
-        def _build_pipeline_from_simple_types(cls, param: Any) -> str:
-            """
-            Wraps the passed parameters in parentheses. Doesn't work with collections.
-            """
-            if isinstance(param, str):
-                return "'" + param + "'"
-
-            if isinstance(param, bool):
-                return str(param).lower()
-
-            if param is None:
-                return "null"
-
-            if isinstance(param, int):
-                return str(param)
-
-            raise ValueError(f"Unsupported value type : {param.__class__.__name__!r}")
 
     def pipeline(
         self,
@@ -665,7 +593,7 @@ class MongoDB(DBConnection):
                 collection="collection_name",
                 pipeline={
                     "$group": {
-                        "_id": {},
+                        "_id": 1,
                         "min": {"$min": "$column_int"},
                         "max": {"$max": "$column_int"},
                     }
@@ -715,10 +643,10 @@ class MongoDB(DBConnection):
         self._check_driver_imported()
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        read_options["pipeline"] = self.Dialect.convert_filter_parameter_to_pipeline(pipeline)
-        read_options["spark.mongodb.input.uri"] = self.connection_url
-        read_options["spark.mongodb.input.collection"] = collection
-        spark_reader = self.spark.read.format("mongo").options(**read_options)
+        read_options["collection"] = collection
+        read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
+        read_options["connection.uri"] = self.connection_url
+        spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:
             spark_reader = spark_reader.schema(df_schema)
@@ -761,24 +689,24 @@ class MongoDB(DBConnection):
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
         # The '_id' field must be specified in the request.
-        min_max_pipeline_dict = {"$group": {"_id": {}, "min": {"$min": f"${column}"}, "max": {"$max": f"${column}"}}}
-        min_max_pipeline = self.Dialect.convert_filter_parameter_to_pipeline(min_max_pipeline_dict)
+        pipeline = [{"$group": {"_id": 1, "min": {"$min": f"${column}"}, "max": {"$max": f"${column}"}}}]
+        if where:
+            pipeline.insert(0, {"$match": where})
 
-        if where is not None:
-            pipeline = f"[{self.Dialect.generate_where_request(where=where)},{min_max_pipeline}]"
-        else:
-            pipeline = min_max_pipeline
+        read_options["connection.uri"] = self.connection_url
+        read_options["collection"] = table
+        read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
 
-        read_options["spark.mongodb.input.uri"] = self.connection_url
-        read_options["spark.mongodb.input.collection"] = table
-        read_options["pipeline"] = pipeline
+        if hint:
+            read_options["hint"] = self.Dialect.convert_to_str(hint)
 
-        log.info("|%s| Getting a data frame from MongoDB with a pipeline:", self.__class__.__name__)
-        log_with_indent(pipeline)
+        log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
+        log_with_indent(self.Dialect.convert_to_str(pipeline))
 
-        min_max_df = self.spark.read.format("mongo").options(**read_options).load()
-        # Fields 'max' and 'min' go in the reverse order specified in the pipeline.
-        max_value, min_value = min_max_df.collect()[0]
+        df = self.spark.read.format("mongodb").options(**read_options).load()
+        row = df.collect()[0]
+        min_value = row["min"]
+        max_value = row["max"]
 
         log.info("|Spark| Received values:")
         log_with_indent("MIN(%s) = %r", column, min_value)
@@ -801,21 +729,21 @@ class MongoDB(DBConnection):
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
-        pipeline = self.Dialect._condition_assembler(
+        final_where = self.Dialect._condition_assembler(
             condition=where,
             start_from=start_from,
             end_at=end_at,
         )
 
-        if pipeline:
-            read_options["pipeline"] = self.Dialect.generate_where_request(pipeline)
+        if final_where:
+            read_options["aggregation.pipeline"] = self.Dialect.convert_to_str({"$match": final_where})
 
         if hint:
-            read_options["hint"] = self.Dialect.convert_filter_parameter_to_pipeline(hint)
+            read_options["hint"] = self.Dialect.convert_to_str(hint)
 
-        read_options["spark.mongodb.input.uri"] = self.connection_url
-        read_options["spark.mongodb.input.collection"] = table
-        spark_reader = self.spark.read.format("mongo").options(**read_options)
+        read_options["connection.uri"] = self.connection_url
+        read_options["collection"] = table
+        spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:
             spark_reader = spark_reader.schema(df_schema)
@@ -837,9 +765,9 @@ class MongoDB(DBConnection):
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
         write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
-        write_options["spark.mongodb.output.uri"] = self.connection_url
-        write_options["spark.mongodb.output.collection"] = table
-        df.write.format("mongo").mode(mode).options(**write_options).save()
+        write_options["connection.uri"] = self.connection_url
+        write_options["collection"] = table
+        df.write.format("mongodb").mode(mode).options(**write_options).save()
 
     @property
     def connection_url(self) -> str:
@@ -853,32 +781,16 @@ class MongoDB(DBConnection):
         spark_version = "_".join(self.spark.version.split(".")[:2])
 
         gateway = self.spark._sc._gateway  # type: ignore
-        # Connector v10.x
         class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
         missing_class = getattr(gateway.jvm, class_name)
 
-        exception: Exception | None
         try:
             gateway.help(missing_class, display=False)
-            exception = None
         except Exception as e:
-            exception = e
-
-        if exception:
-            # Connector v3.x or lower
-            class_name = "com.mongodb.spark.sql.DefaultSource"
-            missing_class = getattr(gateway.jvm, class_name)
-            try:
-                gateway.help(missing_class, display=False)
-                exception = None
-            except Exception as e:
-                exception = e
-
-        if exception:
             log.error(
                 MISSING_JVM_CLASS_MSG,
                 class_name,
                 f"{self.__class__.__name__}.package_spark_{spark_version}",
                 exc_info=False,
             )
-            raise exception
+            raise e
