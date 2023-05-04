@@ -38,7 +38,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschem
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -642,7 +642,19 @@ class MongoDB(DBConnection):
         """
         self._check_driver_imported()
 
+        log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
+
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        pipeline = self.Dialect.prepare_pipeline(pipeline)
+        log_with_indent("collection = %r", collection)
+        log_json(pipeline, name="pipeline")
+
+        if df_schema:
+            empty_df = self.spark.createDataFrame([], df_schema)
+            log_dataframe_schema(empty_df)
+
+        log_options(read_options)
+
         read_options["collection"] = collection
         read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
         read_options["connection.uri"] = self.connection_url
@@ -701,7 +713,7 @@ class MongoDB(DBConnection):
             read_options["hint"] = self.Dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_with_indent(self.Dialect.convert_to_str(pipeline))
+        log_json(pipeline)
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
         row = df.collect()[0]

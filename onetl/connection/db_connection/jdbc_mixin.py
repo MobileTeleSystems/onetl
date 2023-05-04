@@ -25,7 +25,7 @@ from pydantic import Field, SecretStr
 from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import FrozenModel, GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
@@ -148,7 +148,7 @@ class JDBCMixin(FrozenModel):
         self._log_parameters()  # type: ignore
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent(self._check_query, level=logging.DEBUG)
+        log_lines(self._check_query, level=logging.DEBUG)
 
         try:
             self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))  # type: ignore
@@ -246,7 +246,7 @@ class JDBCMixin(FrozenModel):
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
@@ -360,7 +360,7 @@ class JDBCMixin(FrozenModel):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_with_indent("%s", statement)
+        log_lines(statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)

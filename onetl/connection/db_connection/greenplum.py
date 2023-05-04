@@ -45,7 +45,7 @@ from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
 # do not import PySpark here, as we allow user to use `Greenplum.package...` for creating Spark session
 if TYPE_CHECKING:
@@ -502,7 +502,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         query = get_sql_query(table=table, columns=columns, where=where)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self.spark.read.format("greenplum").options(**self._connector_params(table), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
@@ -549,7 +549,7 @@ class Greenplum(JDBCMixin, DBConnection):
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent("%s", query, level=logging.DEBUG)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, jdbc_options)
         log.info("|%s| Schema fetched", self.__class__.__name__)
@@ -574,22 +574,24 @@ class Greenplum(JDBCMixin, DBConnection):
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
-                    f"min_{column}",
+                    "min",
                 ),
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_max_value_sql(expression or column),
-                    f"max_{column}",
+                    "max",
                 ),
             ],
             where=where,
         )
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self._query_on_driver(query, jdbc_options)
+        row = df.collect()[0]
+        min_value = row["min"]
+        max_value = row["max"]
 
-        min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
         log_with_indent("MIN(%r) = %r", column, min_value)
         log_with_indent("MAX(%r) = %r", column, max_value)
@@ -648,7 +650,7 @@ class Greenplum(JDBCMixin, DBConnection):
                 WHERE  name = '{name}'
                 """
         log.debug("|%s| Executing SQL query (on driver):")
-        log_with_indent("%s", query, level=logging.DEBUG)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
@@ -669,7 +671,7 @@ class Greenplum(JDBCMixin, DBConnection):
                 FROM pg_stat_database
                 """
         log.debug("|%s| Executing SQL query (on driver):")
-        log_with_indent("%s", query, level=logging.DEBUG)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
@@ -752,7 +754,7 @@ class Greenplum(JDBCMixin, DBConnection):
         if max_jobs >= self.CONNECTIONS_EXCEPTION_LIMIT:
             raise TooManyParallelJobsError(message)
 
-        log_with_indent("|%s| %s", message, level=logging.WARNING)
+        log_lines(message, level=logging.WARNING)
 
     def _log_parameters(self):
         super()._log_parameters()

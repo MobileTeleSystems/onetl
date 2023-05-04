@@ -38,7 +38,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
@@ -578,7 +578,7 @@ class Hive(DBConnection):
         self._log_parameters()
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
-        log_with_indent(self._check_query, level=logging.DEBUG)
+        log_lines(self._check_query, level=logging.DEBUG)
 
         try:
             self._execute_sql(self._check_query)
@@ -629,7 +629,7 @@ class Hive(DBConnection):
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
-        log_with_indent("%s", query)
+        log_lines(query)
 
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
@@ -688,7 +688,7 @@ class Hive(DBConnection):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement:", self.__class__.__name__)
-        log_with_indent("%s", statement)
+        log_lines(statement)
 
         self._execute_sql(statement).collect()
         log.info("|%s| Call succeeded", self.__class__.__name__)
@@ -743,13 +743,14 @@ class Hive(DBConnection):
         table: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        query_schema = get_sql_query(table, columns=columns, where="1=0", compact=True)
-
         log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, table)
-        log.debug("|%s| SQL statement:", self.__class__.__name__)
-        log_with_indent("%s", query_schema, level=logging.DEBUG)
+        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
 
-        df = self._execute_sql(query_schema)
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(query, level=logging.DEBUG)
+
+        df = self._execute_sql(query)
+        log.info("|%s| Schema fetched", self.__class__.__name__)
         return df.schema
 
     def get_min_max_bounds(
@@ -767,23 +768,24 @@ class Hive(DBConnection):
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
-                    f"min_{column}",
+                    "min",
                 ),
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_max_value_sql(expression or column),
-                    f"max_{column}",
+                    "max",
                 ),
             ],
             where=where,
             hint=hint,
         )
 
-        log.info("|%s| SQL statement:", self.__class__.__name__)
-        log_with_indent("%s", sql_text)
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(sql_text, level=logging.DEBUG)
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
-        min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
+        min_value = row["min"]
+        max_value = row["max"]
 
         log.info("|Spark| Received values:")
         log_with_indent("MIN(%s) = %r", column, min_value)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import textwrap
-from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional
 
@@ -13,7 +12,14 @@ from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.base import BaseDBConnection
 from onetl.base.contains_get_df_schema import ContainsGetDFSchemaMethod
 from onetl.impl import FrozenModel, GenericOptions
-from onetl.log import entity_boundary_log, log_collection, log_with_indent
+from onetl.log import (
+    entity_boundary_log,
+    log_collection,
+    log_dataframe_schema,
+    log_json,
+    log_options,
+    log_with_indent,
+)
 
 log = getLogger(__name__)
 
@@ -506,31 +512,27 @@ class DBReader(FrozenModel):
         log_with_indent("table = '%s'", self.table)
 
         if self.hint:
-            log_with_indent("hint = %r", self.hint)
+            log_json(self.hint, "hint")
 
         if self.columns:
             log_collection("columns", self.columns)
-        else:
-            log_with_indent("columns = None")
 
         if self.where:
-            log_with_indent("where = %r", self.where)
+            log_json(self.where, "where")
 
         if self.hwm_column:
             log_with_indent("hwm_column = '%s'", self.hwm_column)
 
-        log_with_indent("")
+        if self.hwm_expression:
+            log_json(self.hwm_expression, "hwm_expression")
+
+        if self.df_schema:
+            empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore
+            log_dataframe_schema(empty_df)
 
     def _log_options(self) -> None:
-        options = self.options and self.options.dict(by_alias=True, exclude_none=True)
-        if options:
-            log_with_indent("options:")
-            for option, value in options.items():
-                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent("%s = %s", option, value_wrapped, indent=4)
-        else:
-            log_with_indent("options = None")
-        log_with_indent("")
+        options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
+        log_options(options)
 
     def _resolve_all_columns(self) -> list[str] | None:
         """

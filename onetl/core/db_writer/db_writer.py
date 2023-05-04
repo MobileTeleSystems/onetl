@@ -14,9 +14,6 @@
 
 from __future__ import annotations
 
-import io
-from contextlib import redirect_stdout
-from enum import Enum
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
@@ -25,7 +22,12 @@ from pydantic import validator
 
 from onetl.base import BaseDBConnection
 from onetl.impl import FrozenModel, GenericOptions
-from onetl.log import entity_boundary_log, log_with_indent
+from onetl.log import (
+    entity_boundary_log,
+    log_dataframe_schema,
+    log_options,
+    log_with_indent,
+)
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -189,7 +191,7 @@ class DBWriter(FrozenModel):
         entity_boundary_log(msg="DBWriter starts")
 
         self._log_parameters()
-        self._log_dataframe_schema(df)
+        log_dataframe_schema(df)
         self.connection.check()
         self.connection.save_df(
             df=df,
@@ -203,28 +205,8 @@ class DBWriter(FrozenModel):
         log.info("|Spark| -> |%s| Writing DataFrame to table using parameters:", self.connection.__class__.__name__)
         log_with_indent("table = '%s'", self.table)
 
-        log_with_indent("")
-        options = self.options and self.options.dict(by_alias=True, exclude_none=True)
-        if options:
-            log_with_indent("options:")
-            for option, value in options.items():
-                value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-                log_with_indent("%s = %s", option, value_wrapped, indent=4)
-        else:
-            log_with_indent("options = None")
-        log_with_indent("")
-
-    def _log_dataframe_schema(self, df: DataFrame) -> None:
-        log_with_indent("DataFrame schema:")
-
-        schema_tree = io.StringIO()
-        with redirect_stdout(schema_tree):
-            # unfortunately, printSchema immediately prints tree instead of returning it
-            # so we need a hack
-            df.printSchema()
-
-        for line in schema_tree.getvalue().splitlines():
-            log_with_indent("%s", line, indent=4)
+        options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
+        log_options(options)
 
     def _get_write_kwargs(self) -> dict:
         if self.options:
