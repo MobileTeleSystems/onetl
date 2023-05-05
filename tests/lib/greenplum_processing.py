@@ -6,27 +6,27 @@ from tests.lib.postgres_processing import PostgresProcessing
 class GreenplumProcessing(PostgresProcessing):
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_GP_CONN_USER")
+        return os.environ["ONETL_GP_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_GP_CONN_PASSWORD")
+        return os.environ["ONETL_GP_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_GP_CONN_HOST")
+        return os.environ["ONETL_GP_HOST"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_GP_CONN_PORT"))
+        return int(os.environ["ONETL_GP_PORT"])
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_GP_CONN_DATABASE")
+        return os.environ["ONETL_GP_DATABASE"]
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_GP_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_GP_SCHEMA", "onetl")
 
     @property
     def extra(self) -> dict:

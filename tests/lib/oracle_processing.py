@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 from logging import getLogger
-from typing import Dict, List, Optional
 
 import cx_Oracle
 import pandas
@@ -30,32 +31,32 @@ class OracleProcessing(BaseProcessing):
         return False
 
     @property
-    def sid(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_SID")
+    def sid(self) -> str | None:
+        return os.getenv("ONETL_ORA_SID")
 
     @property
-    def service_name(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_SERVICE_NAME")
+    def service_name(self) -> str | None:
+        return os.getenv("ONETL_ORA_SERVICE_NAME")
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_USER")
+        return os.environ["ONETL_ORA_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_PASSWORD")
+        return os.environ["ONETL_ORA_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_HOST")
+        return os.environ["ONETL_ORA_HOST"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_ORA_CONN_PORT"))
+        return int(os.environ["ONETL_ORA_PORT"])
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_ORA_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_ORA_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:
@@ -87,7 +88,7 @@ class OracleProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
@@ -128,7 +129,7 @@ class OracleProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",  # noqa: F821
+        values: pandas.DataFrame,
     ) -> None:
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
@@ -145,33 +146,32 @@ class OracleProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
         return pandas.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by), con=self.connection)
 
     def fix_pandas_df(
         self,
-        df: "pandas.core.frame.DataFrame",  # noqa: F821
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
+        df: pandas.DataFrame,
+    ) -> pandas.DataFrame:
+        df = super().fix_pandas_df(df)
         # Oracle returns column names in UPPERCASE, convert them back to lowercase
-        rename_columns = {x: x.lower() for x in df}
+        # Nota: this is only for dataframe comparison purpose
+        rename_columns = {x: x.lower() for x in df.columns}
         df = df.rename(columns=rename_columns, inplace=False)
 
-        for column in df:  # noqa: WPS528
-            column_names = column.split("_")
+        for column in df.columns:
+            column_name = column.lower()
 
             # Type conversion is required since Spark stores both Integer and Float as Numeric
-            if "int" in column_names:
+            if "int" in column_name:
                 df[column] = df[column].astype("int64")
-            elif "float" in column_names:
+            elif "float" in column_name:
                 df[column] = df[column].astype("float64")
-            elif "datetime" in column_names:
-                # I'm not sure why, but something does not support milliseconds
-                # It's either Spark 2.3 (https://stackoverflow.com/a/57929964/16977118) or pandas.io.sql
-                # So cut them off
+            elif "datetime" in column_name:
+                # I'm not sure why, but something does not support reading milliseconds from Oracle.
+                # It's probably Oracle JDBC Dialect, but I'm not sure.
+                # Just cut them off.
                 df[column] = df[column].astype("datetime64[ns]").dt.floor("S")
-            elif "date" in column_names:
-                # Oracle's Date type is actually Datetime, so we need to truncate dates
-                df[column] = df[column].astype("datetime64[ns]").dt.date
 
         return df

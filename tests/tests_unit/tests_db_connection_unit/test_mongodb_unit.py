@@ -32,6 +32,7 @@ def test_mongodb(spark_mock):
 def test_mongodb_class_attributes():
     assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
     assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+    assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
 
 @pytest.mark.parametrize(

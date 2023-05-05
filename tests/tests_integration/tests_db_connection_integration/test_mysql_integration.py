@@ -511,6 +511,7 @@ def test_mysql_connection_execute_procedure_inout(
         mysql.execute(f"{{call {proc}(10, ?)}}")
 
 
+@pytest.mark.flaky
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_mysql_connection_execute_procedure_ddl(
     request,

@@ -36,7 +36,7 @@ class Clickhouse(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * Clickhouse server versions: 20.7 or higher
-        * Spark versions: 2.3.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
@@ -53,7 +53,7 @@ class Clickhouse(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

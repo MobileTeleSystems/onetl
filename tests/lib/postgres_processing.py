@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 from logging import getLogger
-from typing import Dict, List, Optional
 
 import pandas
 from pandas.io import sql as psql
@@ -32,27 +33,27 @@ class PostgresProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_PG_CONN_USER")
+        return os.environ["ONETL_PG_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_PG_CONN_PASSWORD")
+        return os.environ["ONETL_PG_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_PG_CONN_HOST")
+        return os.environ["ONETL_PG_HOST"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_PG_CONN_PORT"))
+        return int(os.environ["ONETL_PG_PORT"])
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_PG_CONN_DATABASE")
+        return os.environ["ONETL_PG_DATABASE"]
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_PG_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_PG_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:
@@ -78,7 +79,7 @@ class PostgresProcessing(BaseProcessing):
     def create_table_ddl(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> str:
         str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
@@ -87,7 +88,7 @@ class PostgresProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
@@ -115,7 +116,7 @@ class PostgresProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",  # noqa: F821
+        values: pandas.DataFrame,
     ) -> None:
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
@@ -126,15 +127,16 @@ class PostgresProcessing(BaseProcessing):
             index=False,
             schema=schema,
             if_exists="append",
+            method="multi",
         )
 
     def get_expected_dataframe(
         self,
         schema: str,
         table: str,
-        order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
         return pandas.read_sql_query(
             self.get_expected_dataframe_ddl(schema, table, order_by) + ";",
-            con=self.connection,
+            con=self.url,
         )

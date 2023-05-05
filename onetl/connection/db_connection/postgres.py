@@ -42,7 +42,7 @@ class Postgres(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * PostgreSQL server versions: 8.2 or higher
-        * Spark versions: 2.3.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://jdbc.postgresql.org/download/>`_.
@@ -59,7 +59,7 @@ class Postgres(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

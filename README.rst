@@ -40,8 +40,8 @@ Python ETL/ELT framework powered by `Apache Spark <https://spark.apache.org/>`_ 
 
 Requirements
 ------------
-* **Python 3.7 - 3.10**
-* PySpark 2.3.x - 3.3.x (depends on used connector)
+* **Python 3.7 - 3.11**
+* PySpark 2.3.x - 3.4.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive`` and ``HDFS`` connectors)
 
@@ -166,6 +166,8 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
+| `3.4.x <https://spark.apache.org/docs/3.4.0/#downloading>`_  | 3.7 - 3.11  | 8u362 - 17  | 2.12  |
++--------------------------------------------------------------+-------------+-------------+-------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
 
@@ -177,7 +179,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.3.2  # install a specific PySpark version
+    pip install onetl pyspark==3.4.0  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise class import will fail.**
@@ -297,15 +299,15 @@ Create virtualenv and install dependencies:
         -r requirements/webdav.txt \
         -r requirements/dev.txt \
         -r requirements/docs.txt \
-        -r requirements/test/base.txt \
-        -r requirements/test/clickhouse.txt \
-        -r requirements/test/postgres.txt \
-        -r requirements/test/mongodb.txt \
-        -r requirements/test/mssql.txt \
-        -r requirements/test/mysql.txt \
-        -r requirements/test/oracle.txt \
-        -r requirements/test/postgres.txt \
-        -r requirements/test/spark-3.3.2.txt
+        -r requirements/tests/base.txt \
+        -r requirements/tests/clickhouse.txt \
+        -r requirements/tests/postgres.txt \
+        -r requirements/tests/mongodb.txt \
+        -r requirements/tests/mssql.txt \
+        -r requirements/tests/mysql.txt \
+        -r requirements/tests/oracle.txt \
+        -r requirements/tests/postgres.txt \
+        -r requirements/tests/spark-3.4.0.txt
 
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~

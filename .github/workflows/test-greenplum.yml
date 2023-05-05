@@ -94,8 +94,8 @@ jobs:
         # Greenplum init script is running very late
         sleep 30
 
-        export PGPASSWORD=$ONETL_GP_CONN_PASSWORD
-        pg_isready -h localhost -p 5433 -U $ONETL_GP_CONN_USER -d $ONETL_GP_CONN_DATABASE -t 60
+        export PGPASSWORD=$ONETL_GP_PASSWORD
+        pg_isready -h localhost -p 5433 -U $ONETL_GP_USER -d $ONETL_GP_DATABASE -t 60
 
     - name: Run tests
       run: |

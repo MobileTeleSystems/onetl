@@ -166,7 +166,7 @@ class MongoDB(DBConnection):
     .. dropdown:: Version compatibility
 
         * MongoDB server versions: 2.6 - 4.2
-        * Spark versions: 3.2.x - 3.3.x
+        * Spark versions: 3.2.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
@@ -183,7 +183,7 @@ class MongoDB(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
@@ -229,6 +229,7 @@ class MongoDB(DBConnection):
         # Package should match your Spark version:
         # MongoDB.package_spark_3_2
         # MongoDB.package_spark_3_3
+        # MongoDB.package_spark_3_4
 
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -257,6 +258,7 @@ class MongoDB(DBConnection):
     extra: Extra = Extra()
     package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
     package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+    package_spark_3_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.
