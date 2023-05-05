@@ -147,14 +147,14 @@ class S3(FileConnection):
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(os.fspath(path))
-
-        remote_path = self._delete_absolute_path_slash(remote_path)
-
-        if remote_path == RemotePath("."):
+        if self._is_root(remote_path):
             return True
 
-        for component in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
-            if RemotePath(component.object_name) == remote_path:
+        remote_path_str = self._delete_absolute_path_slash(remote_path)
+        for component in self.client.list_objects(self.bucket, prefix=remote_path_str):
+            component_path = RemotePath(component.object_name)
+            component_path_str = self._delete_absolute_path_slash(component_path)
+            if component_path_str == remote_path_str:
                 return True
 
         return False
@@ -170,21 +170,34 @@ class S3(FileConnection):
         )
 
     def _is_client_closed(self) -> bool:
-        pass
+        return True
 
     def _close_client(self) -> None:
         pass
 
-    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
-        remote_file_path = self._delete_absolute_path_slash(remote_file_path)
+    @staticmethod
+    def _is_root(path: RemotePath) -> bool:
+        return path.name == ""
 
-        self.client.fget_object(self.bucket, os.fspath(remote_file_path), os.fspath(local_file_path))
+    @classmethod
+    def _delete_absolute_path_slash(cls, path: RemotePath) -> str:
+        if cls._is_root(path):
+            return ""
+
+        if path.is_absolute():
+            path = path.relative_to("/")
+
+        return os.fspath(path)
+
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.fget_object(self.bucket, path_str, os.fspath(local_file_path))
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
-        path = self._delete_absolute_path_slash(path)
+        path_str = self._delete_absolute_path_slash(path)
 
         try:
-            stat = self.client.stat_object(self.bucket, os.fspath(path))
+            stat = self.client.stat_object(self.bucket, path_str)
             return RemotePathStat(
                 st_size=stat.size or 0,
                 st_mtime=stat.last_modified.timestamp() if stat.last_modified else None,
@@ -195,36 +208,31 @@ class S3(FileConnection):
             return RemotePathStat()
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
-        self.client.remove_object(self.bucket, os.fspath(remote_file_path))
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.remove_object(self.bucket, path_str)
 
     def _mkdir(self, path: RemotePath) -> None:
         # in s3 dirs do not exist
         pass
 
-    @staticmethod
-    def _delete_absolute_path_slash(path: RemotePath) -> RemotePath:
-        if path.is_absolute():
-            return path.relative_to("/")
-
-        return path
-
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
-        remote_file_path = self._delete_absolute_path_slash(remote_file_path)
-        self.client.fput_object(self.bucket, os.fspath(remote_file_path), os.fspath(local_file_path))
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.fput_object(self.bucket, path_str, os.fspath(local_file_path))
 
     def _rename(self, source: RemotePath, target: RemotePath) -> None:
-        source_str = os.fspath(self._delete_absolute_path_slash(source))
-        target_str = os.fspath(self._delete_absolute_path_slash(target))
+        source_str = self._delete_absolute_path_slash(source)
+        target_str = self._delete_absolute_path_slash(target)
         self.client.copy_object(
             bucket_name=self.bucket,
             object_name=target_str,
             source=commonconfig.CopySource(self.bucket, source_str),
         )
 
-        self._remove_file(source_str)
+        self._remove_file(source)
 
     def _scan_entries(self, path: RemotePath) -> list[Object]:
-        return self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")
+        path_str = self._delete_absolute_path_slash(path)
+        return self.client.list_objects(self.bucket, prefix=path_str + "/")
 
     def _extract_name_from_entry(self, entry: Object) -> str:
         return RemotePath(entry.object_name).name
@@ -247,20 +255,17 @@ class S3(FileConnection):
         pass
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
-        path = self._delete_absolute_path_slash(path)
-
+        path_str = self._delete_absolute_path_slash(path)
         file_handler = self.client.get_object(
             self.bucket,
-            os.fspath(path),
+            path_str,
             **kwargs,
         )
         return file_handler.read().decode(encoding)
 
     def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
-        path = self._delete_absolute_path_slash(path)
-
-        file_handler = self.client.get_object(self.bucket, os.fspath(path), **kwargs)
-
+        path_str = self._delete_absolute_path_slash(path)
+        file_handler = self.client.get_object(self.bucket, path_str, **kwargs)
         return file_handler.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
@@ -269,7 +274,7 @@ class S3(FileConnection):
         self.client.put_object(
             self.bucket,
             data=stream,
-            object_name=os.fspath(self._delete_absolute_path_slash(path)),
+            object_name=self._delete_absolute_path_slash(path),
             length=len(content_bytes),
             **kwargs,
         )
@@ -279,25 +284,23 @@ class S3(FileConnection):
         self.client.put_object(
             self.bucket,
             data=stream,
-            object_name=os.fspath(path),
+            object_name=self._delete_absolute_path_slash(path),
             length=len(content),
             **kwargs,
         )
 
     def _is_dir(self, path: RemotePath) -> bool:
-        if RemotePath(path).name == "":
-            # For the root directory
+        if self._is_root(path):
             return True
 
-        path = self._delete_absolute_path_slash(path)
-
-        return bool(list(self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")))
+        path_str = self._delete_absolute_path_slash(path)
+        return bool(list(self.client.list_objects(self.bucket, prefix=path_str + "/")))
 
     def _is_file(self, path: RemotePath) -> bool:
-        path = self._delete_absolute_path_slash(path)
+        path_str = self._delete_absolute_path_slash(path)
 
         try:
-            self.client.stat_object(self.bucket, os.fspath(path))
+            self.client.stat_object(self.bucket, path_str)
             return True
         except Exception:  # noqa: B001, E722
             return False

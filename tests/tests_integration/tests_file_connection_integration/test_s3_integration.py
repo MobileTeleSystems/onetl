@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pytest
 
@@ -37,7 +38,8 @@ def test_s3_wrong_source_check(s3_server):
         anonymous_connection.check()
 
 
-def test_s3_connection_list_dir(s3_connection):
+@pytest.mark.parametrize("path_prefix", ["/", ""])
+def test_s3_connection_list_dir(path_prefix, s3_connection):
     s3_connection.client.fput_object(
         s3_connection.bucket,
         "export/resources/src/exclude_dir/file_4.txt",
@@ -49,7 +51,11 @@ def test_s3_connection_list_dir(s3_connection):
         "tests/resources/src/exclude_dir/file_5.txt",
     )
 
-    assert [str(file) for file in s3_connection.listdir(directory="export/resources/src/exclude_dir")] == [
-        "file_4.txt",
-        "file_5.txt",
-    ]
+    def dir_content(path):
+        return [os.fspath(file) for file in s3_connection.listdir(path)]
+
+    assert dir_content(f"{path_prefix}export/resources/src/exclude_dir") == ["file_4.txt", "file_5.txt"]
+    assert dir_content(f"{path_prefix}export/resources/src") == ["exclude_dir"]
+    assert dir_content(f"{path_prefix}export/resources") == ["src"]
+    assert dir_content(f"{path_prefix}export") == ["resources"]
+    assert "export" in dir_content(path_prefix)  # "tmp" could present
