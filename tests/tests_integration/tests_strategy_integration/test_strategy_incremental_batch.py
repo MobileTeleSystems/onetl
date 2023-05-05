@@ -684,7 +684,9 @@ def test_postgres_strategy_incremental_batch_stop(
     processing.assert_subset_df(df=total_df, other_frame=span)
 
     # check that stop clause working as expected
+    total_df = processing.fix_pyspark_df(total_df)
     total_pandas_df = total_df.toPandas()
+    total_pandas_df = processing.fix_pandas_df(total_pandas_df)
     assert (total_pandas_df[hwm_column] <= stop).all()
 
 

@@ -31,7 +31,7 @@ class Teradata(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * Teradata server versions: 16.10 - 20.0
-        * Spark versions: 2.3.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html>`_.
@@ -48,7 +48,7 @@ class Teradata(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

@@ -676,7 +676,7 @@ Hooks registration emits logs with ``DEBUG`` level:
 
     setup_logging()
 
-.. code::
+.. code-block:: text
 
     DEBUG  |onETL| Registered hook 'mymodule.callback1' for 'MyClass.method' (enabled=True, priority=HookPriority.NORMAL)
     DEBUG  |onETL| Registered hook 'mymodule.callback2' for 'MyClass.method' (enabled=True, priority=HookPriority.NORMAL)

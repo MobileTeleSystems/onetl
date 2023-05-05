@@ -369,6 +369,13 @@ def spark_packages():
 
         raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
 
+    if pyspark_version == "3.4":
+        packages.extend([MongoDB.package_spark_3_4])
+        if not with_greenplum:
+            return packages
+
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+
     raise ValueError(f"Unsupported Spark version: {pyspark.__version__}")
 
 
@@ -409,7 +416,7 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spar
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("mock", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
 def spark_mock() -> SparkSession:

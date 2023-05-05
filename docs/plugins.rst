@@ -123,7 +123,7 @@ Plugins registration emits logs with ``INFO`` level:
 
     logging.basicConfig(level=logging.INFO)
 
-.. code::
+.. code-block:: text
 
     INFO   |onETL| Found 2 plugins
     INFO   |onETL| Loading plugin 'my-plugin'
@@ -137,7 +137,7 @@ More detailed logs are emitted with ``DEBUG`` level, to make output less verbose
 
     logging.basicConfig(level=logging.DEBUG)
 
-.. code::
+.. code-block:: text
 
     DEBUG  |onETL| Searching for plugins with group 'onetl.plugins'
     DEBUG  |Plugins| Plugins whitelist: []
@@ -149,5 +149,5 @@ More detailed logs are emitted with ``DEBUG`` level, to make output less verbose
     DEBUG            version: '0.1.0'
     DEBUG            importing: 'my_package.my_module:MyClass'
     DEBUG  |onETL| Successfully loaded plugin 'my-plugin'
-    DEBUG            source: '/usr/lib/python3.10/site-packages/my_package/my_module/my_class.py'
+    DEBUG            source: '/usr/lib/python3.11/site-packages/my_package/my_module/my_class.py'
     INFO   |onETL| Skipping plugin 'failing' because it is in a blacklist

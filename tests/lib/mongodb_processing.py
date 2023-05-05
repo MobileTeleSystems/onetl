@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
+from collections import defaultdict
 from datetime import datetime, timedelta
 from logging import getLogger
 from random import randint
-from typing import Dict, List, Optional
 from urllib import parse as parser
 
 import pandas
@@ -25,7 +27,7 @@ class MongoDBProcessing(BaseProcessing):
         "float_value": "",
     }
 
-    column_names: List = ["_id", "text_string", "hwm_int", "hwm_datetime", "float_value"]
+    column_names: list = ["_id", "text_string", "hwm_int", "hwm_datetime", "float_value"]
 
     def __enter__(self):
         self.connection = self.get_conn()
@@ -37,56 +39,58 @@ class MongoDBProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_MONGO_USER")
+        return os.environ["ONETL_MONGO_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_MONGO_PASSWORD")
+        return os.environ["ONETL_MONGO_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_MONGO_HOST")
+        return os.environ["ONETL_MONGO_HOST"]
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_MONGO_DB")
+        return os.environ["ONETL_MONGO_DB"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_MONGO_PORT"))
+        return int(os.environ["ONETL_MONGO_PORT"])
 
     @property
     def schema(self) -> str:
+        # Mongo does not support schemas
         return ""
 
     @property
     def url(self) -> str:
-        return (
-            f"mongodb://{os.getenv('ONETL_MONGO_USER')}:"  # noqa: WPS221
-            f"{parser.quote(os.getenv('ONETL_MONGO_PASSWORD'))}@"
-            f"{os.getenv('ONETL_MONGO_HOST')}:"
-            f"{os.getenv('ONETL_MONGO_PORT')}",
-        )
+        return f"mongodb://{self.user}:{parser.quote(self.password)}@{self.host}:{self.port}"
 
     def get_conn(self):
         return MongoClient(self.url)
 
     def create_schema_ddl(self, schema: str) -> str:
+        # Mongo does not support DDL
         return ""
 
     def create_schema(self, schema: str) -> None:
+        # Mongo does not support schemas
         pass
 
-    def create_table_ddl(self, table: str, fields: Dict[str, str], schema: str = None) -> str:
+    def create_table_ddl(self, table: str, fields: dict[str, str], schema: str) -> str:
+        # Mongo does not support DDL
         return ""
 
-    def create_table(self, table: str, fields: Dict[str, str], schema: str) -> None:
+    def create_table(self, table: str, fields: dict[str, str], schema: str) -> None:
+        # Mongo creates collections automatically
         pass
 
     def drop_database_ddl(self, schema: str) -> str:
+        # Mongo does not support DDL
         return ""
 
     def drop_table_ddl(self, table: str, schema: str) -> str:
+        # Mongo does not support DDL
         return ""
 
     def drop_database(
@@ -96,6 +100,7 @@ class MongoDBProcessing(BaseProcessing):
         pass
 
     def drop_table(self, table: str, schema: str) -> None:
+        # Mongo does not support DDL
         pass
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
@@ -112,15 +117,16 @@ class MongoDBProcessing(BaseProcessing):
         records = db[table]
         records.insert_many(list_to_insert)
 
-    def get_expected_dataframe_ddl(self, schema: str, table: str, order_by: Optional[str] = None) -> str:
+    def get_expected_dataframe_ddl(self, schema: str, table: str, order_by: str | None = None) -> str:
+        # Mongo does not support DDL
         return ""
 
     def get_expected_dataframe(
         self,
         schema: str,
         table: str,
-        order_by: Optional[str] = None,
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
         db = self.connection[self.database]
         records = db[table]
         return pandas.DataFrame(list(records.find()))
@@ -129,21 +135,22 @@ class MongoDBProcessing(BaseProcessing):
     def current_datetime() -> datetime:
         return datetime.now()
 
-    def create_pandas_df(self, min_id: int = 1, max_id: int = None) -> "pandas.core.frame.DataFrame":  # noqa: F821
+    def create_pandas_df(self, min_id: int = 1, max_id: int | None = None) -> pandas.DataFrame:
         max_id = self._df_max_length if not max_id else max_id
         time_multiplier = 100000
 
-        values = {column_name: [] for column_name in self.column_names}
-
+        values = defaultdict(list)
         for i in range(min_id, max_id + 1):
-            for column_name in values.keys():
-                if column_name == "_id" or "int" in column_name.split("_"):
+            for column_name in self.column_names:
+                column_name = column_name.lower()
+
+                if column_name == "_id" or "int" in column_name:
                     values[column_name].append(i)
-                elif "float" in column_name.split("_"):
+                elif "float" in column_name:
                     values[column_name].append(float(f"{i}.{i}"))
-                elif "text" in column_name.split("_"):
+                elif "text" in column_name:
                     values[column_name].append("This line is made to test the work")
-                elif "datetime" in column_name.split("_"):
+                elif "datetime" in column_name:
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     now = self.current_datetime() + timedelta(seconds=rand_second)
                     # In the case that after rounding the result

@@ -31,7 +31,7 @@ class MySQL(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * MySQL server versions: 5.6 or higher
-        * Spark versions: 2.3.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
@@ -48,7 +48,7 @@ class MySQL(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

@@ -638,7 +638,12 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
+        if self.spark.version[:3] >= "3.4":
+            # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
+            result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
+        else:
+            result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
+
         result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema)
         result_list = java_converters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
         jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)  # type: ignore

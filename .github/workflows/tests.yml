@@ -23,9 +23,9 @@ jobs:
           java-version: 8
           python-version: '3.7'
           os: ubuntu-latest
-        - spark-version: 3.3.2
+        - spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-core.yml
@@ -49,9 +49,9 @@ jobs:
           os: ubuntu-latest
         - clickhouse-image: clickhouse/clickhouse-server
           clickhouse-version: 23.2.6-alpine
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-clickhouse.yml
@@ -101,9 +101,9 @@ jobs:
           java-version: 8
           python-version: '3.7'
           os: ubuntu-latest
-        - spark-version: 3.3.2
+        - spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-hive.yml
@@ -125,9 +125,9 @@ jobs:
           python-version: '3.7'
           os: ubuntu-latest
         - mongodb-version: 5.0.16
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-mongodb.yml
@@ -150,9 +150,9 @@ jobs:
           python-version: '3.7'
           os: ubuntu-latest
         - mysql-version: 8.0.33
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-mysql.yml
@@ -175,9 +175,9 @@ jobs:
           python-version: '3.7'
           os: ubuntu-latest
         - mssql-version: latest
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-mssql.yml
@@ -200,9 +200,9 @@ jobs:
           python-version: '3.7'
           os: ubuntu-latest
         - oracle-version: 21.3.0-faststart
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-oracle.yml
@@ -225,9 +225,9 @@ jobs:
           python-version: '3.7'
           os: ubuntu-latest
         - postgres-version: 15.2
-          spark-version: 3.3.2
+          spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-postgres.yml
@@ -248,9 +248,9 @@ jobs:
           java-version: 8
           python-version: '3.7'
           os: ubuntu-latest
-        - spark-version: 3.3.2
+        - spark-version: 3.4.0
           java-version: 17
-          python-version: '3.10'
+          python-version: '3.11'
           os: ubuntu-latest
 
     uses: ./.github/workflows/test-teradata.yml

@@ -32,7 +32,7 @@ class MSSQL(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * SQL Server versions: 2012 or higher
-        * Spark versions: 2.3.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
         See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_.
@@ -49,7 +49,7 @@ class MSSQL(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.3.2  # pass specific PySpark version
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

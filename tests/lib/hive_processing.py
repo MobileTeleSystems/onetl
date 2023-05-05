@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import os
+from collections import defaultdict
 from logging import getLogger
-from typing import Dict, Optional
+from typing import TYPE_CHECKING
 
 import pandas
 
 from tests.lib.base_processing import BaseProcessing
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 logger = getLogger(__name__)
 
@@ -19,12 +25,12 @@ class HiveProcessing(BaseProcessing):
         "float_value": "float",
     }
 
-    def __init__(self, spark: "pyspark.sql.SparkSession"):  # noqa: F821
+    def __init__(self, spark: SparkSession):
         self.connection = spark
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_HIVE_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_HIVE_SCHEMA", "onetl")
 
     def create_schema(
         self,
@@ -35,7 +41,7 @@ class HiveProcessing(BaseProcessing):
     def create_table_ddl(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> str:
         str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
@@ -44,7 +50,7 @@ class HiveProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> None:
         self.connection.sql(self.create_table_ddl(table, fields, schema))
@@ -82,10 +88,9 @@ class HiveProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        order_by: Optional[str] = None,
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
-        values = {column_name: [] for column_name in self.column_names}
-
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
+        values = defaultdict(list)
         df = self.connection.sql(self.get_expected_dataframe_ddl(schema, table, order_by))
 
         if order_by:
@@ -100,14 +105,13 @@ class HiveProcessing(BaseProcessing):
 
     def fix_pandas_df(
         self,
-        df: "pandas.core.frame.DataFrame",  # noqa: F821
-    ) -> "pandas.core.frame.DataFrame":  # noqa: F821
-        # Type conversion is required since Hive returns float32 instead float64
+        df: pandas.DataFrame,
+    ) -> pandas.DataFrame:
+        df = super().fix_pandas_df(df)
 
-        for column in df:  # noqa: WPS528
-            column_names = column.split("_")
-
-            if "float" in column_names:
+        for column in df.columns:
+            if "float" in column.lower():
+                # Hive returns float32 instead float64
                 df[column] = df[column].astype("float32")
 
         return df
