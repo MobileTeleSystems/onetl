@@ -25,17 +25,18 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class MSSQL(JDBCConnection):
     """MSSQL JDBC connection.
 
-    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8``
+    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8``
     (`official MSSQL JDBC driver
     <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
     .. dropdown:: Version compatibility
 
-        * SQL Server versions: 2012 or higher
+        * SQL Server versions: 2014 - 2022
         * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
-        See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_.
+        See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
+        and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.
 
     .. warning::
 
@@ -177,7 +178,7 @@ class MSSQL(JDBCConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
+    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
     _check_query: ClassVar[str] = "SELECT 1 AS field"
 
     class Dialect(JDBCConnection.Dialect):

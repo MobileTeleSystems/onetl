@@ -36,7 +36,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection.
 
-    Based on Maven package ``org.postgresql:postgresql:42.4.0``
+    Based on Maven package ``org.postgresql:postgresql:42.6.0``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
     .. dropdown:: Version compatibility
@@ -126,7 +126,7 @@ class Postgres(JDBCConnection):
     port: int = 5432
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.6.0"
 
     class Dialect(  # noqa: WPS215
         SupportTableWithDBSchema,

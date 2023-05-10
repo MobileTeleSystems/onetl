@@ -7,7 +7,7 @@ pytestmark = pytest.mark.oracle
 
 def test_oracle_class_attributes():
     assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
-    assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
+    assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
 
 def test_oracle(spark_mock):
