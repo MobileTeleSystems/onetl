@@ -15,7 +15,7 @@ def test_mongodb_writer_wrong_table_name(spark_mock):
         spark=spark_mock,
     )
 
-    with pytest.raises(ValueError, match="Table name should be passed in `table_name` format"):
+    with pytest.raises(ValueError, match="Table name should be passed in `mytable` format"):
         DBWriter(
             connection=mongo,
             table="schema.table",  # Includes schema. Required format: table="table"

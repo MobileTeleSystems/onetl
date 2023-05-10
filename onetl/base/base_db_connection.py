@@ -34,43 +34,86 @@ class BaseDBConnection(BaseConnection):
 
     class Dialect(ABC):
         """
-        Collection of methods used for validating input values before passing them to read_table/save_df
+        Collection of methods used for validating input values before passing them to read_df/write_df
         """
 
         @classmethod
         @abstractmethod
-        def validate_columns(cls, connection: BaseDBConnection, columns: Any) -> list[str] | None:
-            ...
+        def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
+            """Check if ``source`` or ``target`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
+            """Check if ``columns`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
 
         @classmethod
         @abstractmethod
         def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
-            ...
+            """Check if ``df_schema`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
 
         @classmethod
         @abstractmethod
         def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
-            ...
+            """Check if ``where`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
 
         @classmethod
         @abstractmethod
         def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
-            ...
+            """Check if ``hint`` value is valid.
 
-        @classmethod
-        @abstractmethod
-        def validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
-            """
-            Returns "db_schema.table".
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
             """
 
         @classmethod
         @abstractmethod
         def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+            """Check if ``hwm_expression`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
             """
-            You can't pass the hwm_strategy parameter to MongoDB
-            """
-            ...
 
         @classmethod
         @abstractmethod
@@ -126,9 +169,9 @@ class BaseDBConnection(BaseConnection):
     @abstractmethod
     # Some heirs may have a different number of parameters.
     # For example, the 'options' parameter may be present. This is fine.
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: Any | None = None,
         where: Any | None = None,
@@ -137,28 +180,28 @@ class BaseDBConnection(BaseConnection):
         end_at: Statement | None = None,
     ) -> DataFrame:
         """
-        Reads the table to dataframe.
+        Reads the source to dataframe.
         """
 
     @abstractmethod
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
     ) -> None:
         """
-        Saves dataframe to a specific table
+        Saves dataframe to a specific target
         """
 
     @abstractmethod
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: Any | None = None,
         where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
-        Get MIN and MAX values for the column
+        Get MIN and MAX values for the column in the source
         """

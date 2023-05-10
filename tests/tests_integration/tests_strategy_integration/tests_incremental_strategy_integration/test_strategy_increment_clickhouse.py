@@ -43,9 +43,9 @@ def test_clickhouse_strategy_incremental(
         password=processing.password,
         spark=spark,
     )
-    reader = DBReader(connection=clickhouse, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=clickhouse, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -119,7 +119,7 @@ def test_clickhouse_strategy_incremental_wrong_type(spark, processing, prepare_s
         password=processing.password,
         spark=spark,
     )
-    reader = DBReader(connection=clickhouse, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=clickhouse, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -182,7 +182,7 @@ def test_clickhouse_strategy_incremental_with_hwm_expr(
 
     reader = DBReader(
         connection=clickhouse,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
 

@@ -40,7 +40,7 @@ def test_mongodb_reader_snapshot(spark, processing, load_table_data, df_schema):
 
     reader = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
     )
 
@@ -67,14 +67,14 @@ def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, 
 
     reader = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
     )
     table_df = reader.run()
 
     reader1 = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
         hint={"_id": 1},
         where={"_id": {"$lt": 1000}},
@@ -86,7 +86,7 @@ def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, 
 
     reader2 = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
         where={"$or": [{"_id": {"$lt": 1000}}, {"_id": {"$eq": 1000}}]},
     )
@@ -102,7 +102,7 @@ def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, 
 
     one_reader = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
         where={"_id": {"$eq": 50}},
     )
@@ -112,7 +112,7 @@ def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, 
 
     empty_reader = DBReader(
         connection=mongo,
-        table=load_table_data.table,
+        source=load_table_data.table,
         df_schema=df_schema,
         where={"_id": {"$gt": 1000}},
     )

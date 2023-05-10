@@ -74,7 +74,7 @@ def test_mongodb_strategy_incremental(
         df_schema=df_schema,
     )
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
 

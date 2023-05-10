@@ -46,7 +46,7 @@ Read data from MSSQL, transform & write to Hive.
     # Initiate reader
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         columns=["on", "etl"],
         # Set some MSSQL read options:
         options=MSSQL.ReadOptions(fetchsize=10000),
@@ -67,7 +67,7 @@ Read data from MSSQL, transform & write to Hive.
     # Initiate writer
     writer = DBWriter(
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
         # Set some Hive write options:
         options=Hive.WriteOptions(mode="overwrite"),
     )

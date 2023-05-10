@@ -693,34 +693,34 @@ class Hive(DBConnection):
         self._execute_sql(statement).collect()
         log.info("|%s| Call succeeded", self.__class__.__name__)
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
         try:
-            self.get_df_schema(table)
+            self.get_df_schema(target)
             table_exists = True
 
-            log.info("|%s| Table %r already exists", self.__class__.__name__, table)
+            log.info("|%s| Table %r already exists", self.__class__.__name__, target)
         except Exception:
             table_exists = False
 
         if table_exists and write_options.mode != HiveWriteMode.OVERWRITE_TABLE:
             # using saveAsTable on existing table does not handle
             # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
-            self._insert_into(df, table, options)
+            self._insert_into(df, target, options)
         else:
             # if someone needs to recreate the entire table using new set of options, like partitionBy or bucketBy,
             # mode="overwrite_table" should be used
-            self._save_as_table(df, table, options)
+            self._save_as_table(df, target, options)
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
@@ -730,7 +730,7 @@ class Hive(DBConnection):
     ) -> DataFrame:
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         sql_text = get_sql_query(
-            table=table,
+            table=source,
             columns=columns,
             where=where,
             hint=hint,
@@ -740,11 +740,11 @@ class Hive(DBConnection):
 
     def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, table)
-        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, source)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(query, level=logging.DEBUG)
@@ -755,7 +755,7 @@ class Hive(DBConnection):
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
@@ -764,7 +764,7 @@ class Hive(DBConnection):
         log.info("|Spark| Getting min and max values for column %r", column)
 
         sql_text = get_sql_query(
-            table=table,
+            table=source,
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
@@ -915,4 +915,4 @@ class Hive(DBConnection):
         overwrite = write_options.mode != HiveWriteMode.APPEND
         writer.mode("overwrite" if overwrite else "append").saveAsTable(table)
 
-        log.info("|%s| Table %r successfully created", self.__class__.__name__, table)
+        log.info("|%s| Table %r is successfully created", self.__class__.__name__, table)

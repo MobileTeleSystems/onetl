@@ -111,7 +111,7 @@ All of these classes have a method ``run()`` that starts extracting/loading the 
 
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         columns=["column_1", "column_2"],
     )
 
@@ -120,7 +120,7 @@ All of these classes have a method ``run()`` that starts extracting/loading the 
 
     writer = DBWriter(
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
     )
 
     # Load df to hive table
@@ -165,7 +165,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
     reader = DBReader(
         # WHAT do we extract:
         connection=mssql,
-        table="dbo.demo_table",  # some table from MSSQL
+        source="dbo.demo_table",  # some table from MSSQL
         columns=["column_1", "column_2"],  # but only specific set of columns
         where="column_2 > 1000",  # only rows matching the clause
         # HOW do we extract:
@@ -180,7 +180,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
     writer = DBWriter(
         # WHERE do we load - to some table in Hive
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
         # HOW do we load - overwrite all the data in existing table
         options=Hive.WriteOptions(mode="overwrite_all"),
     )
@@ -234,7 +234,7 @@ For example, an incremental strategy allows you to get only new data from the ta
 
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         hwm_column="id",  # detect new data based on value of "id" column
     )
 

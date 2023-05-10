@@ -7,7 +7,7 @@ from onetl.base import BaseDBConnection
 
 class SupportTableWithDBSchema:
     @classmethod
-    def validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
+    def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
         if value.db is None:
             # Same error text as in etl_entites.Table value error.
             raise ValueError(

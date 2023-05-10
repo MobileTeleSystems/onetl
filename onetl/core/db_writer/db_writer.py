@@ -18,7 +18,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
 from etl_entities import Table
-from pydantic import validator
+from pydantic import Field, validator
 
 from onetl.base import BaseDBConnection
 from onetl.impl import FrozenModel, GenericOptions
@@ -43,10 +43,11 @@ class DBWriter(FrozenModel):
     connection : :obj:`onetl.connection.DBConnection`
         Class which contains DB connection properties. See :ref:`db-connections` section.
 
-    table : str
-        Schema and table which is read data from.
+    target : str
+        Table/collection/etc name to write data to.
 
-        You need to specify the full path to the table, like ``schema.table``
+        If connection has schema support, you need to specify the full name of the source
+        including the schema, e.g. ``schema.name``.
 
     options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
         Spark write options.
@@ -55,6 +56,10 @@ class DBWriter(FrozenModel):
         ``{"mode": "overwrite", "compression": "snappy"}``
         or
         ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
+
+        .. note::
+
+            Some sources does not support writing options.
 
 
     Examples
@@ -83,7 +88,7 @@ class DBWriter(FrozenModel):
 
         writer = DBWriter(
             connection=postgres,
-            table="fiddle.dummy",
+            target="fiddle.dummy",
         )
 
     Writer creation with options:
@@ -114,7 +119,7 @@ class DBWriter(FrozenModel):
 
         writer = DBWriter(
             connection=postgres,
-            table="fiddle.dummy",
+            target="fiddle.dummy",
             options=options,
         )
 
@@ -136,24 +141,24 @@ class DBWriter(FrozenModel):
 
         writer = DBWriter(
             connection=hive,
-            table="default.test",
+            target="default.test",
             options=options,
         )
     """
 
     connection: BaseDBConnection
-    table: Table
+    target: Table = Field(alias="table")
     options: Optional[GenericOptions] = None
 
-    @validator("table", pre=True, always=True)
-    def validate_table(cls, table, values):
+    @validator("target", pre=True, always=True)
+    def validate_target(cls, target, values):
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
-        if isinstance(table, str):
-            # table="dbschema.table" or table="table", If table="dbschema.some.table" in class Table will raise error.
-            table = Table(name=table, instance=connection.instance_url)
-            # Here Table(name='table', db='sbschema', instance='some_instance')
-        return dialect.validate_table(connection, table)
+        if isinstance(target, str):
+            # target="dbschema.table" or target="table", If target="dbschema.some.table" in class Table will raise error.
+            target = Table(name=target, instance=connection.instance_url)
+            # Here Table(name='target', db='dbschema', instance='some_instance')
+        return dialect.validate_name(connection, target)
 
     @validator("options", pre=True, always=True)
     def validate_options(cls, options, values):
@@ -171,7 +176,7 @@ class DBWriter(FrozenModel):
 
     def run(self, df: DataFrame):
         """
-        Method for writing your df to specified table.
+        Method for writing your df to specified target.
 
         Parameters
         ----------
@@ -181,7 +186,7 @@ class DBWriter(FrozenModel):
         Examples
         --------
 
-        Write df to table:
+        Write df to target:
 
         .. code:: python
 
@@ -193,17 +198,17 @@ class DBWriter(FrozenModel):
         self._log_parameters()
         log_dataframe_schema(df)
         self.connection.check()
-        self.connection.save_df(
+        self.connection.write_df(
             df=df,
-            table=str(self.table),
+            target=str(self.target),
             **self._get_write_kwargs(),
         )
 
         entity_boundary_log(msg="DBWriter ends", char="-")
 
     def _log_parameters(self) -> None:
-        log.info("|Spark| -> |%s| Writing DataFrame to table using parameters:", self.connection.__class__.__name__)
-        log_with_indent("table = '%s'", self.table)
+        log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)
+        log_with_indent("target = '%s'", self.target)
 
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
         log_options(options)

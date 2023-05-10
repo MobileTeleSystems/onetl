@@ -20,7 +20,7 @@ def test_clickhouse_writer_snapshot(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=clickhouse,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
     )
     writer.run(df)
 

@@ -486,9 +486,9 @@ class Greenplum(JDBCMixin, DBConnection):
         parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
@@ -501,10 +501,10 @@ class Greenplum(JDBCMixin, DBConnection):
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
-        query = get_sql_query(table=table, columns=columns, where=where)
+        query = get_sql_query(table=source, columns=columns, where=where)
         log_lines(query)
 
-        df = self.spark.read.format("greenplum").options(**self._connector_params(table), **read_options).load()
+        df = self.spark.read.format("greenplum").options(**self._connector_params(source), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
 
         if where:
@@ -514,13 +514,12 @@ class Greenplum(JDBCMixin, DBConnection):
             df = df.selectExpr(*columns)
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
-
         return df
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         self._check_driver_imported()
@@ -529,23 +528,23 @@ class Greenplum(JDBCMixin, DBConnection):
 
         self._check_expected_jobs_number(df, action="write")
 
-        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
         df.write.format("greenplum").options(
-            **self._connector_params(table),
+            **self._connector_params(target),
             **options_dict,
         ).mode(write_options.mode).save()
 
-        log.info("|%s| Table %r successfully written", self.__class__.__name__, table)
+        log.info("|%s| Table %r is successfully written", self.__class__.__name__, target)
 
     def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, table)
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
-        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -558,7 +557,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
@@ -570,7 +569,7 @@ class Greenplum(JDBCMixin, DBConnection):
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
 
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),

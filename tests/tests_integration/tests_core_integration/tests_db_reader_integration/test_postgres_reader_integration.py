@@ -19,7 +19,7 @@ def test_postgres_reader_snapshot(spark, processing, load_table_data):
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader.run()
 
@@ -42,7 +42,7 @@ def test_postgres_reader_snapshot_partitioning_mode_mod(spark, processing, load_
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=postgres.ReadOptions(
             partitioning_mode=PartitioningMode.mod,
             partition_column="id_int",
@@ -72,7 +72,7 @@ def test_postgres_reader_snapshot_partitioning_mode_hash(spark, processing, load
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=postgres.ReadOptions(
             partitioning_mode=PartitioningMode.hash,
             partition_column="text_string",
@@ -102,7 +102,7 @@ def test_postgres_reader_snapshot_with_columns(spark, processing, load_table_dat
 
     reader1 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader1.run()
 
@@ -117,7 +117,7 @@ def test_postgres_reader_snapshot_with_columns(spark, processing, load_table_dat
 
     reader2 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=columns,
     )
     table_df_with_columns = reader2.run()
@@ -131,7 +131,7 @@ def test_postgres_reader_snapshot_with_columns(spark, processing, load_table_dat
 
     reader3 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*) as abc"],
     )
     count_df = reader3.run()
@@ -153,13 +153,13 @@ def test_postgres_reader_snapshot_with_where(spark, processing, load_table_data)
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader.run()
 
     reader1 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 1000",
     )
     table_df1 = reader1.run()
@@ -167,7 +167,7 @@ def test_postgres_reader_snapshot_with_where(spark, processing, load_table_data)
 
     reader2 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 1000 OR id_int = 1000",
     )
     table_df2 = reader2.run()
@@ -181,7 +181,7 @@ def test_postgres_reader_snapshot_with_where(spark, processing, load_table_data)
 
     reader3 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int = 50",
     )
     one_df = reader3.run()
@@ -190,7 +190,7 @@ def test_postgres_reader_snapshot_with_where(spark, processing, load_table_data)
 
     reader4 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int > 1000",
     )
     empty_df = reader4.run()
@@ -210,14 +210,14 @@ def test_postgres_reader_snapshot_with_columns_and_where(spark, processing, load
 
     reader1 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 80 AND id_int > 10",
     )
     table_df = reader1.run()
 
     reader2 = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*)"],
         where="id_int < 80 AND id_int > 10",
     )
@@ -238,7 +238,7 @@ def test_postgres_reader_snapshot_with_pydantic_options(spark, processing, load_
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=Postgres.ReadOptions(fetchsize=500),
     )
 
@@ -280,7 +280,7 @@ def test_postgres_reader_different_options(spark, processing, load_table_data, o
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=options.update(mode),
     )
     table_df = reader.run()

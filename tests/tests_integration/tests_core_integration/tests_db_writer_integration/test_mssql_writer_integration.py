@@ -21,7 +21,7 @@ def test_mssql_writer_snapshot(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=mssql,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
     )
     writer.run(df)
 

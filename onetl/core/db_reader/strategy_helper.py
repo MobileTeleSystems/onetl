@@ -39,15 +39,15 @@ if TYPE_CHECKING:
 # small hack to bypass this exception
 class MockColumnHWM(ColumnHWM):
     def serialize_value(self):
-        pass
+        """Fake implementation of ColumnHWM.serialize_value"""
 
 
 class StrategyHelper(Protocol):
     def save(self, df: DataFrame) -> DataFrame:
-        ...
+        """Saves HWM value to HWMStore"""
 
-    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:  # noqa: WPS463
-        ...
+    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:
+        """Returns ``(min_boundary, max_boundary)`` for applying HWM to source"""
 
 
 class NonHWMStrategyHelper(FrozenModel):
@@ -105,10 +105,10 @@ class HWMStrategyHelper(FrozenModel):
         if not isinstance(strategy.hwm, ColumnHWM):
             cls.raise_wrong_hwm_type(reader, type(strategy.hwm))
 
-        if strategy.hwm.source != reader.table or strategy.hwm.column != hwm_column:
+        if strategy.hwm.source != reader.source or strategy.hwm.column != hwm_column:
             raise ValueError(
                 f"{reader.__class__.__name__} was created "
-                f"with `hwm_column={reader.hwm_column}` and `table={reader.table}` "
+                f"with `hwm_column={reader.hwm_column}` and `source={reader.source}` "
                 f"but current HWM is created for ",
                 f"`column={strategy.hwm.column}` and `source={strategy.hwm.source}` ",
             )
@@ -122,7 +122,7 @@ class HWMStrategyHelper(FrozenModel):
 
         if strategy.hwm is None:
             # Small hack used only to generate qualified_name
-            strategy.hwm = MockColumnHWM(source=reader.table, column=hwm_column)
+            strategy.hwm = MockColumnHWM(source=reader.source, column=hwm_column)
 
         if not strategy.hwm:
             strategy.fetch_hwm()
@@ -146,7 +146,7 @@ class HWMStrategyHelper(FrozenModel):
         if hwm_type == MockColumnHWM or not issubclass(hwm_type, ColumnHWM):
             cls.raise_wrong_hwm_type(reader, hwm_type)
 
-        strategy.hwm = hwm_type(source=reader.table, column=hwm_column, value=strategy.hwm.value)
+        strategy.hwm = hwm_type(source=reader.source, column=hwm_column, value=strategy.hwm.value)
         return strategy
 
     @validator("strategy", always=True)
@@ -166,7 +166,7 @@ class HWMStrategyHelper(FrozenModel):
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
-                f"Table '{reader.table}' column '{hwm_column}' cannot be used as `hwm_column`",
+                f"Table '{reader.source}' column '{hwm_column}' cannot be used as `hwm_column`",
             )
 
         if not strategy.has_lower_limit and not strategy.hwm:

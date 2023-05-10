@@ -64,7 +64,7 @@ def test_greenplum_with_extra(spark_mock):
     )
 
     # `server.*` and `pool.*` options are ignored while generating jdbc_url
-    # they are used only in `read_table` and `save_df`
+    # they are used only in `read_df` and `write_df`
     assert conn.jdbc_url == (
         "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&tcpKeepAlive=false"
     )

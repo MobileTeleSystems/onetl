@@ -7,9 +7,9 @@ from onetl.base import BaseDBConnection
 
 class SupportTableWithoutDBSchema:
     @classmethod
-    def validate_table(cls, connection: BaseDBConnection, value: Table) -> Table:
+    def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
         if value.db is not None:
             raise ValueError(
-                f"Table name should be passed in `table_name` format (not `schema.table`), got '{value}'",
+                f"Table name should be passed in `mytable` format (not `myschema.mytable`), got '{value}'",
             )
         return value

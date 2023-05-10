@@ -78,7 +78,7 @@ def test_mongodb_strategy_incremental_batch(
     )
     reader = DBReader(connection=mongodb, table=prepare_schema_table.table, hwm_column=hwm_column, df_schema=df_schema)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100

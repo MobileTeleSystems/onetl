@@ -689,7 +689,7 @@ class MongoDB(DBConnection):
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,  # noqa: U100
         hint: dict | None = None,  # noqa: U100
@@ -707,15 +707,19 @@ class MongoDB(DBConnection):
         if where:
             pipeline.insert(0, {"$match": where})
 
+        pipeline = self.Dialect.prepare_pipeline(pipeline)
+
         read_options["connection.uri"] = self.connection_url
-        read_options["collection"] = table
+        read_options["collection"] = source
         read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
 
         if hint:
             read_options["hint"] = self.Dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_json(pipeline)
+        log_with_indent("collection = %r", source)
+        log_json(pipeline, "pipeline")
+        log_json(hint, "hint")
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
         row = df.collect()[0]
@@ -728,9 +732,9 @@ class MongoDB(DBConnection):
 
         return min_value, max_value
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: dict | None = None,
         where: dict | None = None,
@@ -742,21 +746,26 @@ class MongoDB(DBConnection):
         self._check_driver_imported()
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
-
         final_where = self.Dialect._condition_assembler(
             condition=where,
             start_from=start_from,
             end_at=end_at,
         )
+        pipeline = self.Dialect.prepare_pipeline({"$match": final_where}) if final_where else None
 
-        if final_where:
-            read_options["aggregation.pipeline"] = self.Dialect.convert_to_str({"$match": final_where})
+        if pipeline:
+            read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
 
         if hint:
             read_options["hint"] = self.Dialect.convert_to_str(hint)
 
         read_options["connection.uri"] = self.connection_url
-        read_options["collection"] = table
+        read_options["collection"] = source
+
+        log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
+        log_with_indent("collection = %r", source)
+        log_json(pipeline, "pipeline")
+        log_json(hint, "hint")
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:
@@ -765,14 +774,15 @@ class MongoDB(DBConnection):
         df = spark_reader.load()
 
         if columns:
-            return df.select(*columns)
+            df = df.select(*columns)
 
+        log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         self._check_driver_imported()
@@ -780,8 +790,11 @@ class MongoDB(DBConnection):
         mode = write_options.mode
         write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
         write_options["connection.uri"] = self.connection_url
-        write_options["collection"] = table
+        write_options["collection"] = target
+
+        log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
         df.write.format("mongodb").mode(mode).options(**write_options).save()
+        log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
 
     @property
     def connection_url(self) -> str:

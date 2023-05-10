@@ -86,12 +86,12 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with YAMLHWMStore():
             with IncrementalStrategy():

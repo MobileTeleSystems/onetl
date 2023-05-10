@@ -30,7 +30,7 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
         spark=spark,
     )
     column = secrets.token_hex()
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=column)
 
     with SnapshotStrategy():
         with pytest.raises(ValueError, match="SnapshotStrategy cannot be used with `hwm_column` passed into DBReader"):
@@ -46,7 +46,7 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name)
 
     # there is a span 0..50
     span_begin = 0
@@ -97,7 +97,7 @@ def test_postgres_strategy_snapshot_batch_step_wrong_type(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     with pytest.raises((TypeError, ValueError)):
         with SnapshotBatchStrategy(step=step) as part:
@@ -130,7 +130,7 @@ def test_postgres_strategy_snapshot_batch_step_negative(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     error_msg = "HWM value is not increasing, please check options passed to SnapshotBatchStrategy"
     with pytest.raises(ValueError, match=error_msg):
@@ -166,7 +166,7 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=hwm_column,
     )
 
@@ -193,7 +193,7 @@ def test_postgres_strategy_snapshot_batch_outside_loop(
 
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         hwm_column="hwm_int",
     )
 
@@ -253,7 +253,7 @@ def test_postgres_strategy_snapshot_batch_unknown_hwm_column(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column="unknown_column",  # there is no such column in a table
     )
 
@@ -279,7 +279,7 @@ def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
         hwm_column="hwm_int",
     )
@@ -302,7 +302,7 @@ def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schem
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         where="float_value < 50 OR float_value = 50.50",
         hwm_column="hwm_int",
     )
@@ -374,9 +374,9 @@ def test_postgres_strategy_snapshot_batch(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # hwm is not in the store
     assert store.get(hwm.qualified_name) is None
@@ -461,7 +461,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=[hwm_column, "*"],
         hwm_column=hwm_column,
     )
@@ -536,7 +536,7 @@ def test_postgres_strategy_snapshot_batch_stop(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there is a span 0..100
     span_begin = 0
@@ -584,7 +584,7 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     step = 10
 
@@ -700,7 +700,7 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=processing.column_names,
         hwm_column=(hwm_column, hwm_expr),
     )
