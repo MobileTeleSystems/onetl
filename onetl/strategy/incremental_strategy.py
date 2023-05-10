@@ -239,12 +239,12 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with IncrementalStrategy():
             df = reader.run()
@@ -286,7 +286,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
@@ -497,12 +497,12 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with IncrementalBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -601,7 +601,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )

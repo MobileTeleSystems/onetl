@@ -34,7 +34,7 @@ def test_postgres_strategy_incremental_batch_outside_loop(
     )
     reader = DBReader(
         connection=postgres,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         hwm_column="hwm_int",
     )
 
@@ -58,7 +58,7 @@ def test_postgres_strategy_incremental_batch_unknown_hwm_column(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column="unknown_column",
     )
 
@@ -84,7 +84,7 @@ def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
         hwm_column="hwm_int",
     )
@@ -107,7 +107,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         where="float_value < 51 OR float_value BETWEEN 101 AND 120",
         hwm_column="hwm_int",
     )
@@ -216,7 +216,7 @@ def test_postgres_strategy_incremental_batch_wrong_hwm_type(spark, processing, p
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -259,7 +259,7 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=load_table_data.full_name, hwm_column=hwm_column)
 
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
@@ -306,7 +306,7 @@ def test_postgres_strategy_incremental_batch_step_wrong_type(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -371,7 +371,7 @@ def test_postgres_strategy_incremental_batch_step_negative(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -439,7 +439,7 @@ def test_postgres_strategy_incremental_batch_step_too_small(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=hwm_column,
     )
 
@@ -527,9 +527,9 @@ def test_postgres_strategy_incremental_batch(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100
@@ -654,7 +654,7 @@ def test_postgres_strategy_incremental_batch_stop(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there is a span 0..100
     span_begin = 0
@@ -727,7 +727,7 @@ def test_postgres_strategy_incremental_batch_offset(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         # the error is raised if hwm_expr is set, and hwm_column in the columns list
         # but if columns list is not passed, this is not an error
         hwm_column=(hwm_column, hwm_column),
@@ -839,7 +839,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         # the error is raised if hwm_expr is set, and hwm_column in the columns list
         # but here hwm_column is not in the columns list, no error
         columns=["*"],

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 
 import frozendict
 from etl_entities import Column, Table
-from pydantic import root_validator, validator
+from pydantic import Field, root_validator, validator
 
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.base import BaseDBConnection
@@ -58,20 +58,35 @@ class DBReader(FrozenModel):
     connection : :obj:`onetl.connection.BaseDBConnection`
         Class which contains DB connection properties. See :ref:`db-connections` section
 
-    table : str
-        Table name from which to read. You need to specify the full path to the table, including the schema.
-        Name like ``schema.name``
+    source : str
+        Table/collection/etc name to read data from.
+
+        If connection has schema support, you need to specify the full name of the source
+        including the schema, e.g. ``schema.name``.
 
     columns : list of str, default: None
         The list of columns to be read.
 
         If RDBMS supports any kind of expressions, you can pass them too.
 
-        For example, ``["mycolumn", "another_column as alias", "count(*) over ()", "some(function) as alias2"]``
+        .. code:: python
 
-    where : str, dict, default: ``None``
-        Custom ``where`` for SQL query or MongoDB request. In the case of using MongoDB as a connector, you need to
-        specify a dictionary.
+            columns = [
+                "mycolumn",
+                "another_column as alias",
+                "count(*) over ()",
+                "some(function) as alias2",
+            ]
+
+        .. note::
+
+            Some connections does not have columns.
+
+    where : Any, default: ``None``
+        Custom ``where`` for SQL query or MongoDB pipeline.
+
+        ``where`` syntax depends on the source. For example, SQL sources
+        accept ``where`` as a string, but MongoDB sources accept ``where`` as a dictionary.
 
         .. code:: python
 
@@ -85,7 +100,11 @@ class DBReader(FrozenModel):
                 "col_3": {"$eq": "hello"},
             }
 
-    hwm_column : str or tuple[str, str], default: ``None``
+        .. note::
+
+            Some sources does not support data filtering.
+
+    hwm_column : str or tuple[str, any], default: ``None``
         Column to be used as :ref:`column-hwm` value.
 
         If you want to use some SQL expression as HWM value, you can pass it as tuple
@@ -97,11 +116,32 @@ class DBReader(FrozenModel):
 
         HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
 
-    hint : str, dict, default: ``None``
-        Add hint to SQL query (if underlying RDBMS supports that) or to MongoDB query.
+        .. note::
+
+            Some sources does not support ``("column_name", "expression")`` syntax.
+
+    hint : Any, default: ``None``
+        Hint expression used for querying the data.
+
+        ``hint`` syntax depends on the source. For example, SQL sources
+        accept ``hint`` as a string, but MongoDB sources accept ``hint`` as a dictionary.
+
+        .. code:: python
+
+            # SQL database connection
+            hint = "index(myschema.mytable mycolumn)"
+
+            # MongoDB connection
+            hint = {
+                "mycolumn": 1,
+            }
+
+        .. note::
+
+            Some sources does not support hints.
 
     df_schema : StructType, optional, default: ``None``
-        Specifies the schema for the date frame to be loaded from the source
+        Spark DataFrame schema, used for proper type casting of the rows.
 
         .. code:: python
 
@@ -126,14 +166,16 @@ class DBReader(FrozenModel):
 
             reader = DBReader(
                 connection=connection,
-                table="fiddle.dummy",
+                source="fiddle.dummy",
                 df_schema=df_schema,
             )
 
-    options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
-        Spark read options and partitioning read mode.
+        .. note::
 
-        For example:
+            Some sources does not support passing dataframe schema.
+
+    options : dict, :obj:`onetl.connection.BaseDBConnection.ReadOptions`, default: ``None``
+        Spark read options, like partitioning mode.
 
         .. code:: python
 
@@ -143,6 +185,10 @@ class DBReader(FrozenModel):
                 numPartitions=20,
                 fetchsize=1000,
             )
+
+        .. note::
+
+            Some sources does not support reading options.
 
     Examples
     --------
@@ -169,7 +215,7 @@ class DBReader(FrozenModel):
         )
 
         # create reader
-        reader = DBReader(connection=postgres, table="fiddle.dummy")
+        reader = DBReader(connection=postgres, source="fiddle.dummy")
 
         # read data from table "fiddle.dummy"
         df = reader.run()
@@ -200,7 +246,7 @@ class DBReader(FrozenModel):
         options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
         # create reader and pass some options to the underlying connection object
-        reader = DBReader(connection=postgres, table="fiddle.dummy", options=options)
+        reader = DBReader(connection=postgres, source="fiddle.dummy", options=options)
 
         # read data from table "fiddle.dummy"
         df = reader.run()
@@ -231,7 +277,7 @@ class DBReader(FrozenModel):
         # create reader with specific columns, rows filter
         reader = DBReader(
             connection=postgres,
-            table="default.test",
+            source="default.test",
             where="d_id > 100",
             hint="NOWAIT",
             columns=["d_id", "d_name", "d_age"],
@@ -266,7 +312,7 @@ class DBReader(FrozenModel):
 
         reader = DBReader(
             connection=postgres,
-            table="fiddle.dummy",
+            source="fiddle.dummy",
             hwm_column="d_age",  # mandatory for IncrementalStrategy
         )
 
@@ -277,7 +323,7 @@ class DBReader(FrozenModel):
     """
 
     connection: BaseDBConnection
-    table: Table
+    source: Table = Field(alias="table")
     columns: Optional[List[str]] = None
     hwm_column: Optional[Column] = None
     hwm_expression: Optional[str] = None
@@ -286,15 +332,15 @@ class DBReader(FrozenModel):
     df_schema: Optional[StructType] = None
     options: Optional[GenericOptions] = None
 
-    @validator("table", pre=True, always=True)
-    def validate_table(cls, table, values):
+    @validator("source", pre=True, always=True)
+    def validate_source(cls, source, values):
         connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
-        if isinstance(table, str):
-            # table="dbschema.table" or table="table", If table="dbschema.some.table" in class Table will raise error.
-            table = Table(name=table, instance=connection.instance_url)
-            # Here Table(name='table', db='sbschema', instance='some_instance')
-        return dialect.validate_table(connection, table)
+        if isinstance(source, str):
+            # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
+            source = Table(name=source, instance=connection.instance_url)
+            # Here Table(name='source', db='dbschema', instance='some_instance')
+        return dialect.validate_name(connection, source)
 
     @validator("where", pre=True, always=True)
     def validate_where(cls, where: Any, values: dict) -> Any:
@@ -421,7 +467,7 @@ class DBReader(FrozenModel):
 
         if not self.df_schema and isinstance(self.connection, ContainsGetDFSchemaMethod):
             return self.connection.get_df_schema(
-                table=str(self.table),
+                source=str(self.source),
                 columns=self._resolve_all_columns(),
                 **self._get_read_kwargs(),
             )
@@ -433,7 +479,7 @@ class DBReader(FrozenModel):
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
         return self.connection.get_min_max_bounds(
-            table=str(self.table),
+            source=str(self.source),
             column=column,
             expression=expression,
             hint=self.hint,
@@ -491,8 +537,8 @@ class DBReader(FrozenModel):
 
         start_from, end_at = helper.get_boundaries()
 
-        df = self.connection.read_table(
-            table=str(self.table),
+        df = self.connection.read_df(
+            source=str(self.source),
             columns=self._resolve_all_columns(),
             hint=self.hint,
             where=self.where,
@@ -508,8 +554,8 @@ class DBReader(FrozenModel):
         return df
 
     def _log_parameters(self) -> None:
-        log.info("|%s| -> |Spark| Reading table to DataFrame using parameters:", self.connection.__class__.__name__)
-        log_with_indent("table = '%s'", self.table)
+        log.info("|%s| -> |Spark| Reading DataFrame from source using parameters:", self.connection.__class__.__name__)
+        log_with_indent("source = '%s'", self.source)
 
         if self.hint:
             log_json(self.hint, "hint")
@@ -551,7 +597,7 @@ class DBReader(FrozenModel):
         for column in original_columns:
             if column == "*":
                 schema = self.connection.get_df_schema(
-                    table=str(self.table),
+                    source=str(self.source),
                     columns=["*"],
                     **self._get_read_kwargs(),
                 )

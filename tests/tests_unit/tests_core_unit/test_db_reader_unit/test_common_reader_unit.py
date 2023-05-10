@@ -4,6 +4,19 @@ from onetl.connection import Hive
 from onetl.core import DBReader
 
 
+def test_reader_source_alias(spark_mock):
+    reader1 = DBReader(
+        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
+        source="schema.table",
+    )
+    reader2 = DBReader(
+        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
+        table="schema.table",
+    )
+
+    assert reader1.source == reader2.source
+
+
 def test_reader_hive_with_read_options(spark_mock):
     with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(

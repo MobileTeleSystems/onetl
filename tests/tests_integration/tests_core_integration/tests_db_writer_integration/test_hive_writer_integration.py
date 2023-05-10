@@ -15,14 +15,14 @@ def test_hive_writer(spark, processing, get_schema_table, caplog):
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,  # new table
+        target=get_schema_table.full_name,  # new table
     )
 
     with caplog.at_level(logging.INFO):
         writer.run(df)
 
         assert f"|Hive| Saving data to a table '{get_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Table '{get_schema_table.full_name}' successfully created" in caplog.text
+        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created" in caplog.text
 
     processing.assert_equal_df(
         schema=get_schema_table.schema,
@@ -37,7 +37,7 @@ def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options={"compression": "snappy"},
     )
     writer.run(df)
@@ -57,7 +57,7 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(compression="snappy"),
     )
     writer.run(df)
@@ -85,7 +85,7 @@ def test_hive_writer_with_format(spark, processing, get_schema_table, options, f
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=options,
     )
     writer.run(df)
@@ -116,7 +116,7 @@ def test_hive_writer_with_bucket_by(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(bucketBy=(bucket_number, bucket_columns)),
     )
     writer.run(df)
@@ -147,7 +147,7 @@ def test_hive_writer_with_bucket_by_and_sort_by(
     hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(bucketBy=(10, "id_int"), sortBy=sort_by),
     )
     writer.run(df)
@@ -170,7 +170,7 @@ def test_hive_writer_default_not_bucketed(spark, processing, get_schema_table):
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
     )
     writer.run(df)
 
@@ -196,7 +196,7 @@ def test_hive_writer_with_partition_by(spark, processing, get_schema_table, part
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy=partition_by),
     )
     writer.run(df)
@@ -216,7 +216,7 @@ def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
     )
     writer.run(df)
 
@@ -242,7 +242,7 @@ def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table,
     hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=options,
     )
 
@@ -264,7 +264,7 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,  # table already exist
+        target=prepare_schema_table.full_name,  # table already exist
     )
 
     with caplog.at_level(logging.INFO):
@@ -299,7 +299,7 @@ def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,  # table already exist
+        target=prepare_schema_table.full_name,  # table already exist
         options=options,
     )
 
@@ -335,7 +335,7 @@ def test_hive_writer_insert_into_with_mode_append(spark, processing, prepare_sch
     hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=options,
     )
 
@@ -370,7 +370,7 @@ def test_hive_writer_insert_into_with_mode_overwrite_table(spark, processing, pr
     hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_table", partitionBy="id_int"),
     )
 
@@ -399,7 +399,7 @@ def test_hive_writer_insert_into_with_mode_overwrite_partitions(spark, processin
     hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="id_int"),
     )
 
@@ -437,7 +437,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_append(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -446,7 +446,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_append(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="append"),
     )
     df13 = df1.union(df3)
@@ -483,7 +483,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -492,7 +492,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_table", partitionBy="hwm_int"),
     )
 
@@ -530,7 +530,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -539,7 +539,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="hwm_int"),
     )
 
@@ -569,7 +569,7 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode=mode),
     )
 

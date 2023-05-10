@@ -43,7 +43,7 @@ def test_oracle_strategy_incremental(
         service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -109,7 +109,7 @@ def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_s
         service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -174,7 +174,7 @@ def test_oracle_strategy_incremental_with_hwm_expr(
 
     reader = DBReader(
         connection=oracle,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
 

@@ -86,12 +86,12 @@ class SnapshotStrategy(BaseStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with SnapshotStrategy():
             df = reader.run()
@@ -252,12 +252,12 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with SnapshotBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -377,7 +377,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )

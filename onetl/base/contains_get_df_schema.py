@@ -30,7 +30,7 @@ class ContainsGetDFSchemaMethod(Protocol):
 
     def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
     ) -> StructType:
         """

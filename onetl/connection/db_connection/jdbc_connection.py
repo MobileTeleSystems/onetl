@@ -636,9 +636,9 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
@@ -648,7 +648,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
-            table=table,
+            table=source,
             where=where,
             hint=hint,
             options=self.ReadOptions.parse(options).copy(exclude={"mode", "partitioning_mode"}),
@@ -670,7 +670,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
 
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=new_columns,
             where=where,
             hint=hint,
@@ -683,27 +683,27 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
         return result
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
 
-        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
-        df.write.jdbc(table=table, **write_options)
-        log.info("|%s| Table %r successfully written", self.__class__.__name__, table)
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
+        df.write.jdbc(table=target, **write_options)
+        log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
     def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, table)
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
-        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -748,7 +748,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
@@ -760,7 +760,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         read_options = self._exclude_partition_options(options, fetchsize=1)
 
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
@@ -838,7 +838,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         )
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(
-            table=table,
+            source=table,
             column=result_options.partition_column,
             where=where,
             hint=hint,

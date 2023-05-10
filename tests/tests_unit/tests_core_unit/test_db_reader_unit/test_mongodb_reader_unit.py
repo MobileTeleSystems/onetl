@@ -38,7 +38,7 @@ def test_mongodb_reader_with_dbschema(spark_mock):
     )
     with pytest.raises(
         ValueError,
-        match="Table name should be passed in `table_name` format",
+        match="Table name should be passed in `mytable` format",
     ):
         DBReader(
             connection=mongo,
