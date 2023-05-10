@@ -7,7 +7,7 @@ pytestmark = pytest.mark.postgres
 
 def test_postgres_class_attributes():
     assert Postgres.driver == "org.postgresql.Driver"
-    assert Postgres.package == "org.postgresql:postgresql:42.4.0"
+    assert Postgres.package == "org.postgresql:postgresql:42.6.0"
 
 
 def test_postgres(spark_mock):

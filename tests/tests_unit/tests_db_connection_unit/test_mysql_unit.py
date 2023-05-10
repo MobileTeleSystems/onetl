@@ -6,8 +6,8 @@ pytestmark = pytest.mark.mysql
 
 
 def test_mysql_class_attributes():
-    assert MySQL.driver == "com.mysql.jdbc.Driver"
-    assert MySQL.package == "mysql:mysql-connector-java:8.0.30"
+    assert MySQL.driver == "com.mysql.cj.jdbc.Driver"
+    assert MySQL.package == "com.mysql:mysql-connector-j:8.0.33"
 
 
 def test_mysql(spark_mock):

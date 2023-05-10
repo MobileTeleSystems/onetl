@@ -25,12 +25,12 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 class MySQL(JDBCConnection):
     """MySQL JDBC connection.
 
-    Based on Maven package ``mysql:mysql-connector-java:8.0.30``
+    Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
     .. dropdown:: Version compatibility
 
-        * MySQL server versions: 5.6 or higher
+        * MySQL server versions: 5.7, 8.0
         * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
@@ -119,8 +119,8 @@ class MySQL(JDBCConnection):
     database: Optional[str] = None
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.mysql.jdbc.Driver"
-    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.30"
+    driver: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
+    package: ClassVar[str] = "com.mysql:mysql-connector-j:8.0.33"
 
     @property
     def jdbc_url(self):

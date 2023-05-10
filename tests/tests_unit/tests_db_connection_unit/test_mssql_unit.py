@@ -7,7 +7,7 @@ pytestmark = pytest.mark.mssql
 
 def test_mssql_class_attributes():
     assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
+    assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
 
 
 def test_mssql(spark_mock):

@@ -165,7 +165,7 @@ class MongoDB(DBConnection):
 
     .. dropdown:: Version compatibility
 
-        * MongoDB server versions: 2.6 - 4.2
+        * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
         * Java versions: 8 - 17
 

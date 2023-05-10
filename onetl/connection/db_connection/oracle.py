@@ -64,12 +64,12 @@ class ErrorPosition:
 class Oracle(JDBCConnection):
     """Oracle JDBC connection.
 
-    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
+    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
     .. dropdown:: Version compatibility
 
-        * Oracle Server versions: 21c, 19c, 18c, and 12.2
+        * Oracle Server versions: 23c, 21c, 19c, 18c, and 12.2
         * Spark versions: 2.3.x - 3.4.x
         * Java versions: 8 - 17
 
@@ -167,7 +167,7 @@ class Oracle(JDBCConnection):
     service_name: Optional[str] = None
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
+    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
 
