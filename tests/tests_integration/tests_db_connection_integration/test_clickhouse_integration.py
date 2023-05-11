@@ -1,3 +1,4 @@
+import contextlib
 import logging
 
 import pytest
@@ -175,6 +176,7 @@ def test_clickhouse_connection_execute_ddl(spark, processing, get_schema_table, 
         clickhouse.execute(f"DROP DATABASE rand_db{suffix}")
 
 
+@pytest.mark.flaky
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_execute_dml(request, spark, processing, load_table_data, suffix):
     clickhouse = Clickhouse(
@@ -190,6 +192,12 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
+    table_df = processing.get_expected_dataframe(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        order_by="id_int",
+    )
+
     assert not clickhouse.execute(processing.create_table_ddl(temp_name, fields, schema) + suffix)
     assert not clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
@@ -209,18 +217,43 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
         order_by="id_int",
     )
 
-    # not supported by Clickhouse
-    with pytest.raises(Exception):
-        clickhouse.execute(f"UPDATE {temp_table} SET id_int = 1 WHERE id_int < 50{suffix}")
+    clickhouse.execute(f"ALTER TABLE {temp_table} UPDATE hwm_int = 1 WHERE id_int < 20{suffix}")
+    df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
+    assert df.count()
+
+    updated_rows = table_df[table_df.id_int < 20]
+    updated_rows["hwm_int"] = 1
+
+    unchanged_rows = table_df[table_df.id_int >= 20]
+    updated_df = pandas.concat([updated_rows, unchanged_rows])
+    processing.assert_equal_df(df=df, other_frame=updated_df, order_by="id_int")
 
     # not supported by Clickhouse
     with pytest.raises(Exception):
-        clickhouse.execute(f"DELETE FROM {temp_table} WHERE id_int < 80{suffix}")
+        clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
+
+    clickhouse.execute(f"ALTER TABLE {temp_table} DELETE WHERE id_int < 70{suffix}")
+    df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
+    assert df.count()
+
+    left_df = updated_df[updated_df.id_int >= 70]
+    processing.assert_equal_df(df=df, other_frame=left_df, order_by="id_int")
+
+    # supported only by Clickhouse 22.8+ (experimental)
+    with contextlib.suppress(Exception):
+        clickhouse.execute(f"DELETE FROM {temp_table} WHERE id_int < 90{suffix}")
+
+        df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
+        assert df.count()
+
+        left_df = updated_df[updated_df.id_int >= 90]
+        processing.assert_equal_df(df=df, other_frame=left_df, order_by="id_int")
 
     assert not clickhouse.execute(f"TRUNCATE TABLE {temp_table}{suffix}")
     assert not clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
 
+@pytest.mark.xfail(reason="Clickhouse 20.7 doesn't support functions")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_execute_function(
     request,

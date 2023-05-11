@@ -1,0 +1,3 @@
+**/webdav*
+docker-compose.yml
+.env.dependencies

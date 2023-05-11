@@ -1,0 +1,34 @@
+min: &min
+  spark-version: 2.3.1
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.0
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - mysql-version: 8.0.33
+    <<: *max
+  full:
+  # Min supported version by JDBC driver is 5.7
+  - mysql-version: 5.7.42
+    <<: *min
+  # Max supported version by JDBC driver is 8.0
+  - mysql-version: 8.0.33
+    <<: *max
+  nightly:
+  - mysql-version: 5.7.42
+    <<: *min
+  - mysql-version: latest
+    <<: *latest

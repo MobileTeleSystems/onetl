@@ -351,6 +351,11 @@ def spark_packages():
 
     pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
 
+    if pyspark_version == "2.3":
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_2_3])
+        return packages
+
     if pyspark_version == "2.4":
         if with_greenplum:
             packages.extend([Greenplum.package_spark_2_4])

@@ -1,0 +1,23 @@
+min: &min
+  python-version: '3.7'
+  os: ubuntu-latest
+
+max: &max
+  python-version: '3.11'
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - openssh-version: 9.1_p1-r2-ls113
+    <<: *max
+  full:
+  # prior image versions does not accept incoming connections, seems like a bug
+  - openssh-version: 8.1_p1-r0-ls5
+    <<: *min
+  - openssh-version: 9.1_p1-r2-ls113
+    <<: *max
+  nightly:
+  - openssh-version: 8.1_p1-r0-ls5
+    <<: *min
+  - openssh-version: latest
+    <<: *max

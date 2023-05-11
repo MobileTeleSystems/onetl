@@ -9,9 +9,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-s3:
@@ -23,7 +26,9 @@ jobs:
         env:
           TZ: UTC
           MINIO_ROOT_USER: onetl
+          MINIO_ACCESS_KEY: onetl
           MINIO_ROOT_PASSWORD: woh3fogh3Biereu3quee1aidu9theiro
+          MINIO_SECRET_KEY: woh3fogh3Biereu3quee1aidu9theiro
         ports:
         - 9010:9000
 
@@ -38,6 +43,7 @@ jobs:
 
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-${{ hashFiles('requirements/core.txt', 'requirements/s3.txt', 'requirements/tests/base.txt') }}
@@ -50,10 +56,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/s3.txt \
-          -r requirements/tests/base.txt
+        pip install -I -r requirements/core.txt -r requirements/s3.txt -r requirements/tests/base.txt
 
     - name: Wait for S3 to be ready
       run: |

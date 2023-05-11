@@ -9,9 +9,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-webdav:
@@ -29,6 +32,7 @@ jobs:
 
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-webdav-${{ hashFiles('requirements/core.txt', 'requirements/webdav.txt', 'requirements/tests/base.txt') }}
@@ -41,10 +45,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/webdav.txt \
-          -r requirements/tests/base.txt
+        pip install -I -r requirements/core.txt -r requirements/webdav.txt -r requirements/tests/base.txt
 
     # Replace with Github Actions' services after https://github.com/chonjay21/docker-webdav/pull/3
     # Cannot use services because we need to mount config file from the repo, but services start before checkout.

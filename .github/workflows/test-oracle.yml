@@ -5,6 +5,10 @@ on:
       oracle-version:
         required: true
         type: string
+      db-name:
+        required: false
+        type: string
+        default: XEPDB1
       spark-version:
         required: true
         type: string
@@ -15,9 +19,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-oracle:
@@ -51,6 +58,7 @@ jobs:
 
     - name: Cache Ivy
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.ivy2
         key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-${{ hashFiles('onetl/connection/db_connection/*.py') }}
@@ -60,6 +68,7 @@ jobs:
 
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt') }}
@@ -81,11 +90,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/tests/base.txt \
-          -r requirements/tests/oracle.txt \
-          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/oracle.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Wait for Oracle to be ready
       run: |
@@ -100,6 +105,7 @@ jobs:
         mkdir reports/ || echo "Directory exists"
         sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
         source ./env
+        export "ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}"
         ./pytest_runner.sh -m oracle
 
     - name: Upload coverage results
