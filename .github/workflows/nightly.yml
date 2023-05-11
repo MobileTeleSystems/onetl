@@ -1,0 +1,342 @@
+name: Nightly tests
+on:
+  schedule:
+    # Run every week
+  - cron: 30 12 * * WED
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  get-matrix:
+    name: Get version matrix for nightly tests
+    uses: ./.github/workflows/get-matrix.yml
+    with:
+      nightly: true
+
+  tests-core:
+    name: Run core tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-core) }}
+
+    uses: ./.github/workflows/test-core.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-clickhouse:
+    name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-clickhouse) }}
+
+    uses: ./.github/workflows/test-clickhouse.yml
+    with:
+      clickhouse-image: ${{ matrix.clickhouse-image }}
+      clickhouse-version: ${{ matrix.clickhouse-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-greenplum:
+    name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-greenplum) }}
+
+    uses: ./.github/workflows/test-greenplum.yml
+    with:
+      greenplum-version: ${{ matrix.greenplum-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+    secrets:
+      GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
+      GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
+
+  tests-hive:
+    name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-hive) }}
+
+    uses: ./.github/workflows/test-hive.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-mongodb:
+    name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mongodb) }}
+
+    uses: ./.github/workflows/test-mongodb.yml
+    with:
+      mongodb-version: ${{ matrix.mongodb-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-mysql:
+    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mysql) }}
+
+    uses: ./.github/workflows/test-mysql.yml
+    with:
+      mysql-version: ${{ matrix.mysql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-mssql:
+    name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mssql) }}
+
+    uses: ./.github/workflows/test-mssql.yml
+    with:
+      mssql-version: ${{ matrix.mssql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-oracle:
+    name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-oracle) }}
+
+    uses: ./.github/workflows/test-oracle.yml
+    with:
+      oracle-version: ${{ matrix.oracle-version }}
+      db-name: ${{ matrix.db-name }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-postgres:
+    name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-postgres) }}
+
+    uses: ./.github/workflows/test-postgres.yml
+    with:
+      postgres-version: ${{ matrix.postgres-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-teradata:
+    name: Run Teradata tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-teradata) }}
+
+    uses: ./.github/workflows/test-teradata.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-ftp:
+    name: Run FTP tests (server=${{ matrix.ftp-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-ftp) }}
+
+    uses: ./.github/workflows/test-ftp.yml
+    with:
+      ftp-version: ${{ matrix.ftp-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-ftps:
+    name: Run FTPS tests (server=${{ matrix.ftps-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-ftps) }}
+
+    uses: ./.github/workflows/test-ftps.yml
+    with:
+      ftps-version: ${{ matrix.ftps-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-hdfs:
+    name: Run HDFS tests (server=${{ matrix.hadoop-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-hdfs) }}
+
+    uses: ./.github/workflows/test-hdfs.yml
+    with:
+      hadoop-version: ${{ matrix.hadoop-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-s3:
+    name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-s3) }}
+
+    uses: ./.github/workflows/test-s3.yml
+    with:
+      minio-version: ${{ matrix.minio-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-sftp:
+    name: Run SFTP tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-sftp) }}
+
+    uses: ./.github/workflows/test-sftp.yml
+    with:
+      openssh-version: ${{ matrix.openssh-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-webdav:
+    name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-webdav) }}
+
+    uses: ./.github/workflows/test-webdav.yml
+    with:
+      webdav-version: ${{ matrix.webdav-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  all_done:
+    name: Tests done
+    runs-on: ubuntu-latest
+    needs:
+    - tests-core
+    - tests-clickhouse
+    - tests-hive
+    - tests-mongodb
+    - tests-mysql
+    - tests-mssql
+    - tests-oracle
+    - tests-postgres
+    - tests-teradata
+    - tests-ftp
+    - tests-ftps
+    - tests-hdfs
+    - tests-s3
+    - tests-sftp
+    - tests-webdav
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-3.11-coverage
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: pip install -I coverage pytest
+
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v3
+      with:
+        path: reports
+
+    - name: Move coverage data to the root folder
+      run: find reports -type f -exec mv '{}' reports \;
+
+    - name: Generate coverate reports
+      run: ./combine_coverage.sh
+
+    - name: Check coverage
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        directory: ./reports
+        flags: nightly
+        fail_ci_if_error: true
+
+    - name: All done
+      run: echo 1

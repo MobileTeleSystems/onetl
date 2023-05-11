@@ -396,7 +396,8 @@ Run tests locally
 .. note::
 
     To run Oracle tests you need to install `Oracle instantclient <https://www.oracle.com/database/technologies/instant-client.html>`__,
-    and pass its path to ``ONETL_ORA_CLIENT_PATH`` environment variable, e.g. ``ONETL_ORA_CLIENT_PATH=/path/to/client64/lib``.
+    and pass its path to ``ONETL_ORA_CLIENT_PATH`` and ``LD_LIBRARY_PATH`` environment variables,
+    e.g. ``ONETL_ORA_CLIENT_PATH=/path/to/client64/lib``.
 
     It may also require to add the same path into ``LD_LIBRARY_PATH`` environment variable
 

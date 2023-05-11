@@ -1,0 +1,18 @@
+min: &min
+  python-version: '3.7'
+  os: ubuntu-latest
+
+max: &max
+  python-version: '3.11'
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - hadoop-version: hadoop3-hdfs
+    <<: *max
+  full: &full
+  - hadoop-version: hadoop2-hdfs
+    <<: *min
+  - hadoop-version: hadoop3-hdfs
+    <<: *max
+  nightly: *full

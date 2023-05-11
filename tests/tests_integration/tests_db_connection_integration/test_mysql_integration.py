@@ -137,7 +137,7 @@ def test_mysql_connection_execute_ddl(spark, processing, get_schema_table, suffi
     assert not mysql.execute(f"CREATE INDEX {table}_id_int_idx ON {table_name} (id_int){suffix}")
     assert not mysql.execute(f"DROP INDEX {table}_id_int_idx ON {table_name}{suffix}")
 
-    assert not mysql.execute(f"ALTER TABLE {table_name} ADD COLUMN new_column INT, ALGORITHM=INSTANT{suffix}")
+    assert not mysql.execute(f"ALTER TABLE {table_name} ADD COLUMN new_column INT, ALGORITHM=INPLACE{suffix}")
     assert not mysql.execute(
         f"ALTER TABLE {table_name} CHANGE COLUMN new_column new_column BIGINT, ALGORITHM=COPY{suffix}",
     )

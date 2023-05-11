@@ -275,6 +275,7 @@ def test_postgres_connection_dml(request, spark, processing, load_table_data, su
     assert not postgres.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
 
+@pytest.mark.xfail(reason="Postgres prior to v11 does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_postgres_connection_execute_procedure(
     request,
@@ -383,6 +384,7 @@ def test_postgres_connection_execute_procedure(
         )
 
 
+@pytest.mark.xfail(reason="Postgres prior to v11 does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_postgres_connection_execute_procedure_arguments(
     request,
@@ -433,6 +435,7 @@ def test_postgres_connection_execute_procedure_arguments(
         postgres.execute(f"CALL {proc}(10, 1){suffix}")
 
 
+@pytest.mark.xfail(reason="Postgres prior to v11 does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_postgres_connection_execute_procedure_inout(
     request,
@@ -488,6 +491,7 @@ def test_postgres_connection_execute_procedure_inout(
         postgres.execute(f"CALL {proc}(10, ?){suffix}")
 
 
+@pytest.mark.xfail(reason="Postgres prior to v11 does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_postgres_connection_execute_procedure_ddl(
     request,
@@ -527,6 +531,7 @@ def test_postgres_connection_execute_procedure_ddl(
     assert not postgres.execute(f"DROP TABLE {table}")
 
 
+@pytest.mark.xfail(reason="Postgres prior to v11 does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_postgres_connection_execute_procedure_dml(
     request,
@@ -605,7 +610,7 @@ def test_postgres_connection_execute_function(
     )
 
     def function_finalizer():
-        postgres.execute(f"DROP FUNCTION {func}")
+        postgres.execute(f"DROP FUNCTION {func}()")
 
     request.addfinalizer(function_finalizer)
 
@@ -746,7 +751,7 @@ def test_postgres_connection_execute_function_arguments(
     )
 
     def function_finalizer():
-        postgres.execute(f"DROP FUNCTION {func}")
+        postgres.execute(f"DROP FUNCTION {func}(INT)")
 
     request.addfinalizer(function_finalizer)
 
@@ -825,7 +830,7 @@ def test_postgres_connection_execute_function_table(
     )
 
     def function_finalizer():
-        postgres.execute(f"DROP FUNCTION {func}")
+        postgres.execute(f"DROP FUNCTION {func}(INT)")
 
     request.addfinalizer(function_finalizer)
 
@@ -873,7 +878,7 @@ def test_postgres_connection_execute_function_ddl(
     )
 
     def function_finalizer():
-        postgres.execute(f"DROP FUNCTION {func}")
+        postgres.execute(f"DROP FUNCTION {func}()")
 
     request.addfinalizer(function_finalizer)
 
@@ -941,7 +946,7 @@ def test_postgres_connection_execute_function_dml(
     )
 
     def function_finalizer():
-        postgres.execute(f"DROP FUNCTION {func}")
+        postgres.execute(f"DROP FUNCTION {func}(INT, VARCHAR)")
 
     request.addfinalizer(function_finalizer)
 

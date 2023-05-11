@@ -1,0 +1,564 @@
+name: Get version matrix for tests
+on:
+  workflow_call:
+    inputs:
+      nightly:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      matrix-core:
+        value: ${{ jobs.get-matrix.outputs.matrix-core }}
+      matrix-clickhouse:
+        value: ${{ jobs.get-matrix.outputs.matrix-clickhouse }}
+      matrix-greenplum:
+        value: ${{ jobs.get-matrix.outputs.matrix-greenplum }}
+      matrix-hive:
+        value: ${{ jobs.get-matrix.outputs.matrix-hive }}
+      matrix-mongodb:
+        value: ${{ jobs.get-matrix.outputs.matrix-mongodb }}
+      matrix-mssql:
+        value: ${{ jobs.get-matrix.outputs.matrix-mssql }}
+      matrix-mysql:
+        value: ${{ jobs.get-matrix.outputs.matrix-mysql }}
+      matrix-oracle:
+        value: ${{ jobs.get-matrix.outputs.matrix-oracle }}
+      matrix-postgres:
+        value: ${{ jobs.get-matrix.outputs.matrix-postgres }}
+      matrix-teradata:
+        value: ${{ jobs.get-matrix.outputs.matrix-teradata }}
+      matrix-ftp:
+        value: ${{ jobs.get-matrix.outputs.matrix-ftp }}
+      matrix-ftps:
+        value: ${{ jobs.get-matrix.outputs.matrix-ftps }}
+      matrix-hdfs:
+        value: ${{ jobs.get-matrix.outputs.matrix-hdfs }}
+      matrix-s3:
+        value: ${{ jobs.get-matrix.outputs.matrix-s3 }}
+      matrix-sftp:
+        value: ${{ jobs.get-matrix.outputs.matrix-sftp }}
+      matrix-webdav:
+        value: ${{ jobs.get-matrix.outputs.matrix-webdav }}
+
+jobs:
+  get-matrix:
+    name: Get version matrix based on changes in PR/commit
+    runs-on: ubuntu-latest
+    outputs:
+      matrix-core: ${{ toJson(fromJson(steps.matrix-core.outputs.result)[steps.key-core.outputs.key]) }}
+      matrix-clickhouse: ${{ toJson(fromJson(steps.matrix-clickhouse.outputs.result)[steps.key-clickhouse.outputs.key]) }}
+      matrix-greenplum: ${{ toJson(fromJson(steps.matrix-greenplum.outputs.result)[steps.key-greenplum.outputs.key]) }}
+      matrix-hive: ${{ toJson(fromJson(steps.matrix-hive.outputs.result)[steps.key-hive.outputs.key]) }}
+      matrix-mongodb: ${{ toJson(fromJson(steps.matrix-mongodb.outputs.result)[steps.key-mongodb.outputs.key]) }}
+      matrix-mssql: ${{ toJson(fromJson(steps.matrix-mssql.outputs.result)[steps.key-mssql.outputs.key]) }}
+      matrix-mysql: ${{ toJson(fromJson(steps.matrix-mysql.outputs.result)[steps.key-mysql.outputs.key]) }}
+      matrix-oracle: ${{ toJson(fromJson(steps.matrix-oracle.outputs.result)[steps.key-oracle.outputs.key]) }}
+      matrix-postgres: ${{ toJson(fromJson(steps.matrix-postgres.outputs.result)[steps.key-postgres.outputs.key]) }}
+      matrix-teradata: ${{ toJson(fromJson(steps.matrix-teradata.outputs.result)[steps.key-teradata.outputs.key]) }}
+      matrix-ftp: ${{ toJson(fromJson(steps.matrix-ftp.outputs.result)[steps.key-ftp.outputs.key]) }}
+      matrix-ftps: ${{ toJson(fromJson(steps.matrix-ftps.outputs.result)[steps.key-ftps.outputs.key]) }}
+      matrix-hdfs: ${{ toJson(fromJson(steps.matrix-hdfs.outputs.result)[steps.key-hdfs.outputs.key]) }}
+      matrix-s3: ${{ toJson(fromJson(steps.matrix-s3.outputs.result)[steps.key-s3.outputs.key]) }}
+      matrix-sftp: ${{ toJson(fromJson(steps.matrix-sftp.outputs.result)[steps.key-sftp.outputs.key]) }}
+      matrix-webdav: ${{ toJson(fromJson(steps.matrix-webdav.outputs.result)[steps.key-webdav.outputs.key]) }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Check if base files are changed
+      id: changed-base
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/base/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/base/ignored.txt
+
+    - name: Print base files changed
+      run: |
+        echo '${{ steps.changed-base.outputs.all_changed_files }}'
+
+    - name: Check if core files are changed
+      id: changed-core
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/core/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/core/ignored.txt
+
+    - name: Print core files changed
+      run: |
+        echo '${{ steps.changed-core.outputs.all_changed_files }}'
+
+    - name: Calculate Core matrix key
+      id: key-core
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-core.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Core matrix
+      id: matrix-core
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/core/matrix.yml
+
+    - name: Check if Clickhouse files are changed
+      id: changed-clickhouse
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/clickhouse/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/clickhouse/ignored.txt
+
+    - name: Print Clickhouse files changed
+      run: |
+        echo '${{ steps.changed-clickhouse.outputs.all_changed_files }}'
+
+    - name: Calculate Clickhouse matrix key
+      id: key-clickhouse
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-clickhouse.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Clickhouse matrix
+      id: matrix-clickhouse
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/clickhouse/matrix.yml
+
+    - name: Check if Greenplum files are changed
+      id: changed-greenplum
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/greenplum/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/greenplum/ignored.txt
+
+    - name: Print Greenplum files changed
+      run: |
+        echo '${{ steps.changed-greenplum.outputs.all_changed_files }}'
+
+    - name: Calculate Greenplum matrix key
+      id: key-greenplum
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-greenplum.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Greenplum matrix
+      id: matrix-greenplum
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/greenplum/matrix.yml
+
+    - name: Check if Hive files are changed
+      id: changed-hive
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/hive/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/hive/ignored.txt
+
+    - name: Print Hive files changed
+      run: |
+        echo '${{ steps.changed-hive.outputs.all_changed_files }}'
+
+    - name: Calculate Hive matrix key
+      id: key-hive
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-hive.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Hive matrix
+      id: matrix-hive
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/hive/matrix.yml
+
+    - name: Check if MongoDB files are changed
+      id: changed-mongodb
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/mongodb/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/mongodb/ignored.txt
+
+    - name: Print MongoDB files changed
+      run: |
+        echo '${{ steps.changed-mongodb.outputs.all_changed_files }}'
+
+    - name: Calculate MongoDB matrix key
+      id: key-mongodb
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mongodb.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get MongoDB matrix
+      id: matrix-mongodb
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/mongodb/matrix.yml
+
+    - name: Check if MSSQL files are changed
+      id: changed-mssql
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/mssql/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/mssql/ignored.txt
+
+    - name: Print MSSQL files changed
+      run: |
+        echo '${{ steps.changed-mssql.outputs.all_changed_files }}'
+
+    - name: Calculate MSSQL matrix key
+      id: key-mssql
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mssql.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get MSSQL matrix
+      id: matrix-mssql
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/mssql/matrix.yml
+
+    - name: Check if MySQL files are changed
+      id: changed-mysql
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/mysql/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/mysql/ignored.txt
+
+    - name: Print MSSQL MySQL changed
+      run: |
+        echo '${{ steps.changed-mysql.outputs.all_changed_files }}'
+
+    - name: Calculate MySQL matrix key
+      id: key-mysql
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mysql.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get MySQL matrix
+      id: matrix-mysql
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/mysql/matrix.yml
+
+    - name: Check if Oracle files are changed
+      id: changed-oracle
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/oracle/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/oracle/ignored.txt
+
+    - name: Print Oracle MySQL changed
+      run: |
+        echo '${{ steps.changed-oracle.outputs.all_changed_files }}'
+
+    - name: Calculate Oracle matrix key
+      id: key-oracle
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-oracle.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Oracle matrix
+      id: matrix-oracle
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/oracle/matrix.yml
+
+    - name: Check if Postgres files are changed
+      id: changed-postgres
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/postgres/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/postgres/ignored.txt
+
+    - name: Print Postgres files changed
+      run: |
+        echo '${{ steps.changed-postgres.outputs.all_changed_files }}'
+
+    - name: Calculate Postgres matrix key
+      id: key-postgres
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-postgres.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Postgres matrix
+      id: matrix-postgres
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/postgres/matrix.yml
+
+    - name: Check if Teradata files are changed
+      id: changed-teradata
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/teradata/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/teradata/ignored.txt
+
+    - name: Print Teradata files changed
+      run: |
+        echo '${{ steps.changed-teradata.outputs.all_changed_files }}'
+
+    - name: Calculate Teradata matrix key
+      id: key-teradata
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-teradata.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Teradata matrix
+      id: matrix-teradata
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/teradata/matrix.yml
+
+    - name: Check if FTP files are changed
+      id: changed-ftp
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/ftp/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/ftp/ignored.txt
+
+    - name: Print FTP files changed
+      run: |
+        echo '${{ steps.changed-ftp.outputs.all_changed_files }}'
+
+    - name: Calculate FTP matrix key
+      id: key-ftp
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-ftp.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get FTP matrix
+      id: matrix-ftp
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/ftp/matrix.yml
+
+    - name: Check if FTPS files are changed
+      id: changed-ftps
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/ftps/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/ftps/ignored.txt
+
+    - name: Print FTPS files changed
+      run: |
+        echo '${{ steps.changed-ftps.outputs.all_changed_files }}'
+
+    - name: Calculate FTPS matrix key
+      id: key-ftps
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-ftps.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get FTPS matrix
+      id: matrix-ftps
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/ftps/matrix.yml
+
+    - name: Check if HDFS files are changed
+      id: changed-hdfs
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/hdfs/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/hdfs/ignored.txt
+
+    - name: Print HDFS files changed
+      run: |
+        echo '${{ steps.changed-hdfs.outputs.all_changed_files }}'
+
+    - name: Calculate HDFS matrix key
+      id: key-hdfs
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-hdfs.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get HDFS matrix
+      id: matrix-hdfs
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/hdfs/matrix.yml
+
+    - name: Check if S3 files are changed
+      id: changed-s3
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/s3/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/s3/ignored.txt
+
+    - name: Print S3 files changed
+      run: |
+        echo '${{ steps.changed-s3.outputs.all_changed_files }}'
+
+    - name: Calculate S3 matrix key
+      id: key-s3
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-s3.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get S3 matrix
+      id: matrix-s3
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/s3/matrix.yml
+
+    - name: Check if SFTP files are changed
+      id: changed-sftp
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/sftp/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/sftp/ignored.txt
+
+    - name: Print SFTP files changed
+      run: |
+        echo '${{ steps.changed-sftp.outputs.all_changed_files }}'
+
+    - name: Calculate SFTP matrix key
+      id: key-sftp
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-sftp.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get SFTP matrix
+      id: matrix-sftp
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/sftp/matrix.yml
+
+    - name: Check if WebDAV files are changed
+      id: changed-webdav
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/webdav/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/webdav/ignored.txt
+
+    - name: Print WebDAV files changed
+      run: |
+        echo '${{ steps.changed-webdav.outputs.all_changed_files }}'
+
+    - name: Calculate WebDAV matrix key
+      id: key-webdav
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-webdav.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get WebDAV matrix
+      id: matrix-webdav
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/webdav/matrix.yml

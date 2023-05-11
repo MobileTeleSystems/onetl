@@ -12,9 +12,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-core:
@@ -36,8 +39,19 @@ jobs:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
 
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      if: inputs.with-cache
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-
+
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
@@ -50,10 +64,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/tests/base.txt \
-          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Run tests
       run: |

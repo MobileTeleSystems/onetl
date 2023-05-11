@@ -1,0 +1,15 @@
+.github/workflows/tests.yml
+.github/workflows/get-matrix.yml
+.github/workflows/data/base/**
+requirements/core.txt
+requirements/tests/base.txt
+onetl/db_connection/db_connection.py
+onetl/db_connection/jdbc*.py
+onetl/db_connection/dialect_mixins/*
+onetl/file_connection/file_connection.py
+onetl/core/**
+onetl/hwm/**
+onetl/impl/**
+onetl/strategy/**
+onetl/exception.py
+.env.local
