@@ -3,7 +3,7 @@
 MongoDB connection
 =====================
 
-.. currentmodule:: onetl.connection.db_connection.mongo
+.. currentmodule:: onetl.connection.db_connection.mongodb
 
 .. autosummary::
 
@@ -15,7 +15,7 @@ MongoDB connection
 .. autoclass:: MongoDB
     :members: check, pipeline
 
-.. currentmodule:: onetl.connection.db_connection.mongo.MongoDB
+.. currentmodule:: onetl.connection.db_connection.mongodb.MongoDB
 
 .. autopydantic_model:: ReadOptions
 
