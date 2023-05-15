@@ -231,6 +231,9 @@ class S3(FileConnection):
         self._remove_file(source)
 
     def _scan_entries(self, path: RemotePath) -> list[Object]:
+        if self._is_root(path):
+            self.client.list_objects(self.bucket)
+
         path_str = self._delete_absolute_path_slash(path)
         return self.client.list_objects(self.bucket, prefix=path_str + "/")
 

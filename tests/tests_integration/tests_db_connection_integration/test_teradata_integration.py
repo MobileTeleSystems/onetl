@@ -2,7 +2,6 @@ import logging
 import secrets
 from unittest.mock import patch
 
-import pandas
 import pytest
 
 from onetl.connection import Teradata

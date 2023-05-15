@@ -701,7 +701,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """"""
 
     @abstractmethod
-    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> LocalPath:
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         """"""
 
     @abstractmethod
@@ -717,7 +717,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """"""
 
     @abstractmethod
-    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> RemoteFile:
+    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         """"""
 
     @abstractmethod

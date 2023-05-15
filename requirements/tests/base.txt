@@ -1,6 +1,5 @@
 coverage
 omegaconf
-pandas
 pytest
 pytest-lazy-fixture
 pytest-mock
