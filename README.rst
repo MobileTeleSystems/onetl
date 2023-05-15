@@ -51,7 +51,7 @@ Supported storages
 +------------+------------+----------------------------------------------------------------------------------------------------------+
 | Type       | Storage    | Powered by                                                                                               |
 +============+============+==========================================================================================================+
-| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/2.4.8/sql-data-sources-jdbc.html>`_        |
+| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/3.4.0/sql-data-sources-jdbc.html>`_        |
 +            +------------+                                                                                                          +
 |            | MSSQL      |                                                                                                          |
 +            +------------+                                                                                                          +
@@ -63,7 +63,7 @@ Supported storages
 +            +------------+                                                                                                          +
 |            | Teradata   |                                                                                                          |
 +            +------------+----------------------------------------------------------------------------------------------------------+
-|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/2.4.8/sql-data-sources-hive-tables.html>`_ |
+|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/3.4.0/sql-data-sources-hive-tables.html>`_ |
 +            +------------+----------------------------------------------------------------------------------------------------------+
 |            | Greenplum  | Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
 +            +------------+----------------------------------------------------------------------------------------------------------+
