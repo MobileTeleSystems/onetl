@@ -7,7 +7,7 @@ onETL
 |Documentation| |Build Status| |Coverage|
 
 .. |Repo Status| image:: https://www.repostatus.org/badges/latest/active.svg
-    :target: https://www.repostatus.org/#active
+    :target: https://github.com/MobileTeleSystems/onetl
 .. |PyPI| image:: https://img.shields.io/pypi/v/onetl
     :target: https://pypi.org/project/onetl/
 .. |PyPI License| image:: https://img.shields.io/pypi/l/onetl.svg
