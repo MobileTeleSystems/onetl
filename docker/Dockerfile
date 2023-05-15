@@ -1,8 +1,6 @@
 FROM python:3.11-slim as base
 LABEL maintainer="DataOps.ETL"
 
-ARG ONETL_USER_HOME=/usr/local/onetl
-
 ENV LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     PYSPARK_PYTHON=python3 \
@@ -24,8 +22,7 @@ RUN apt-get update && \
         unzip && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir /app/ \
-    && useradd -ms /bin/bash -d ${ONETL_USER_HOME} onetl \
-    && chown -R onetl:onetl ${ONETL_USER_HOME} \
+    && useradd -ms /bin/bash -d /app onetl \
     && chown -R onetl:onetl /app/
 
 RUN wget -P /tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip && \
@@ -39,7 +36,7 @@ ENV LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH} \
 
 WORKDIR /app
 USER onetl
-ENV PATH=${ONETL_USER_HOME}/.local/bin:${PATH}
+ENV PATH=/app/.local/bin:${PATH}
 
 COPY --chown=onetl:onetl ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /app/
 COPY --chown=onetl:onetl ./docker/wait-for-it.sh /app/docker/wait-for-it.sh
@@ -62,7 +59,6 @@ RUN pip install \
     -r /app/requirements/docs.txt \
     -r /app/requirements/tests/base.txt \
     -r /app/requirements/tests/clickhouse.txt \
-    -r /app/requirements/tests/ftp.txt \
     -r /app/requirements/tests/mongodb.txt \
     -r /app/requirements/tests/mssql.txt \
     -r /app/requirements/tests/mysql.txt \
