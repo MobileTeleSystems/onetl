@@ -15,7 +15,7 @@ onETL
 .. |PyPI Python Version| image:: https://img.shields.io/pypi/pyversions/onetl.svg
     :target: https://badge.fury.io/py/onetl
 .. |Documentation| image:: https://readthedocs.org/projects/onetl/badge/?version=stable
-    :target: https://onetl.readthedocs.io/en/stable/
+    :target: https://onetl.readthedocs.io/
 .. |Build Status| image:: https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg
     :target: https://github.com/MobileTeleSystems/onetl/actions
 .. |Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
@@ -88,7 +88,7 @@ Supported storages
 Documentation
 -------------
 
-See https://onetl.readthedocs.io/en/stable/
+See https://onetl.readthedocs.io/
 
 .. contribution
 
