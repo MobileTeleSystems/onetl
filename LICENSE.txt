@@ -1,4 +1,4 @@
-Copyright 2022 MTS (Mobile Telesystems).  All rights reserved.
+Copyright 2023 MTS (Mobile Telesystems).  All rights reserved.
 
                                  Apache License
                            Version 2.0, January 2004

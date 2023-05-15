@@ -1,22 +1,17 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Postgres
 
-spark = Mock(spec=SparkSession)
-spark.sparkContext = Mock()
-spark.sparkContext.appName = "abc"
+pytestmark = pytest.mark.postgres
 
 
 def test_postgres_class_attributes():
     assert Postgres.driver == "org.postgresql.Driver"
-    assert Postgres.package == "org.postgresql:postgresql:42.4.0"
+    assert Postgres.package == "org.postgresql:postgresql:42.6.0"
 
 
-def test_postgres():
-    conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_postgres(spark_mock):
+    conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5432
@@ -27,9 +22,12 @@ def test_postgres():
 
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
-def test_postgres_with_port():
-    conn = Postgres(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+
+def test_postgres_with_port(spark_mock):
+    conn = Postgres(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -41,38 +39,38 @@ def test_postgres_with_port():
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc"
 
 
-def test_postgres_without_database_error():
+def test_postgres_without_database_error(spark_mock):
     with pytest.raises(ValueError, match="field required"):
-        Postgres(host="some_host", port=5000, user="user", password="passwd", spark=spark)
+        Postgres(host="some_host", port=5000, user="user", password="passwd", spark=spark_mock)
 
 
-def test_postgres_with_extra():
+def test_postgres_with_extra(spark_mock):
     conn = Postgres(
         host="some_host",
         user="user",
         password="passwd",
         database="database",
         extra={"ssl": "true", "autosave": "always"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&autosave=always&ssl=true"
 
 
-def test_postgres_without_mandatory_args():
+def test_postgres_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         Postgres()
 
     with pytest.raises(ValueError, match="field required"):
         Postgres(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Postgres(
             host="some_host",
             database="database",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -80,7 +78,7 @@ def test_postgres_without_mandatory_args():
             host="some_host",
             database="database",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -88,5 +86,5 @@ def test_postgres_without_mandatory_args():
             host="some_host",
             database="database",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )

@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,18 +21,41 @@ from typing import ClassVar, Optional
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import StatementType
 
+# do not import PySpark here, as we allow user to use `Clickhouse.package` for creating Spark session
+
+
 log = logging.getLogger(__name__)
 
 
 class Clickhouse(JDBCConnection):
-    """Class for Clickhouse JDBC connection.
+    """Clickhouse JDBC connection.
 
     Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
-    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_)
+    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported Clickhouse server versions: >= 20.7
+        * Clickhouse server versions: 20.7 or higher
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
+
+    .. warning::
+
+        To use Clickhouse connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -101,12 +124,24 @@ class Clickhouse(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
+        extra = self.extra.dict(by_alias=True)
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
 
         if self.database:
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
+
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.strftime("%Y-%m-%d %H:%M:%S")
+            return f"CAST('{result}' AS DateTime)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.strftime("%Y-%m-%d")
+            return f"CAST('{result}' AS Date)"
 
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
@@ -128,11 +163,3 @@ class Clickhouse(JDBCConnection):
     ):
         # Clickhouse does not support prepared statements, as well as calling functions/procedures
         return jdbc_connection.createStatement(*statement_args)
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S")
-        return f"CAST('{result}' AS DateTime)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.strftime("%Y-%m-%d")
-        return f"CAST('{result}' AS Date)"

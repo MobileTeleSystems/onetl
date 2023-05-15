@@ -14,5 +14,3 @@ spark:
   spark.dynamicAllocation.maxExecutors: 4
   spark.metrics.conf.*.sink.graphite.host: some.unknown.node
   spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation: true
-  spark.jars.repositories:
-  - http://rep.msk.mts.ru/artifactory/libs-release-local

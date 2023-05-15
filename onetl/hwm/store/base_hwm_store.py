@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ class BaseHWMStore(BaseModel, ABC):
         # hack to avoid circular imports
         from onetl.hwm.store import HWMStoreManager
 
-        log.debug(f"|{self.__class__.__name__}| Entered stack at level {HWMStoreManager.get_current_level()}")
+        log.debug("|%s| Entered stack at level %d", self.__class__.__name__, HWMStoreManager.get_current_level())
         HWMStoreManager.push(self)
 
         self._log_parameters()
@@ -41,29 +41,29 @@ class BaseHWMStore(BaseModel, ABC):
     def __exit__(self, _exc_type, _exc_value, _traceback):
         from onetl.hwm.store import HWMStoreManager
 
-        log.debug(f"|{self}| Exiting stack at level {HWMStoreManager.get_current_level()-1}")
+        log.debug("|%s| Exiting stack at level %d", self, HWMStoreManager.get_current_level() - 1)
         HWMStoreManager.pop()
         return False
 
     def __str__(self):
         return self.__class__.__name__
 
-    @abstractmethod  # noqa: WPS324
+    @abstractmethod
     def get(self, name: str) -> HWM | None:
-        ...  # noqa: WPS428
+        ...
 
     @abstractmethod
     def save(self, hwm: HWM) -> Any:
-        ...  # noqa: WPS428
+        ...
 
     def _log_parameters(self) -> None:
-        log.info(f"|onETL| Using {self.__class__.__name__} as HWM Store")
+        log.info("|onETL| Using %s as HWM Store", self.__class__.__name__)
         options = self.dict(by_alias=True, exclude_none=True)
 
         if options:
-            log.info(f"|{self.__class__.__name__}| Using options:")
+            log.info("|%s| Using options:", self.__class__.__name__)
             for option, value in options.items():
                 if isinstance(value, os.PathLike):
-                    log_with_indent(f"{option} = {path_repr(value)}")
+                    log_with_indent("%s = %s", option, path_repr(value))
                 else:
-                    log_with_indent(f"{option} = {value!r}")
+                    log_with_indent("%s = %r", option, value)

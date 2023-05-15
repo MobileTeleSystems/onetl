@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Postgres
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.postgres
 
 
 def test_postgres_writer_snapshot(spark, processing, prepare_schema_table):
@@ -16,7 +20,7 @@ def test_postgres_writer_snapshot(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
     )
 
     writer.run(df)
@@ -42,7 +46,7 @@ def test_postgres_writer_snapshot_with_dict_options(spark, processing, prepare_s
 
     writer = DBWriter(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options={"batchsize": "500"},
     )
 
@@ -69,7 +73,7 @@ def test_postgres_writer_snapshot_with_pydantic_options(spark, processing, prepa
 
     writer = DBWriter(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Postgres.WriteOptions(batchsize=500),
     )
 
@@ -98,7 +102,7 @@ def test_postgres_writer_mode_append(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Postgres.WriteOptions(mode="append"),
     )
 
@@ -128,7 +132,7 @@ def test_postgres_writer_mode_overwrite(spark, processing, prepare_schema_table)
 
     writer = DBWriter(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Postgres.WriteOptions(mode="overwrite"),
     )
 

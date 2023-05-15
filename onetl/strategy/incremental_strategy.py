@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -31,14 +31,14 @@ class OffsetMixin(BaseModel):
         super().fetch_hwm()
 
         if self.hwm and self.offset is not None:
-            self.hwm -= self.offset  # noqa: WPS601
+            self.hwm -= self.offset
 
 
 class IncrementalStrategy(OffsetMixin, HWMStrategy):
     """Incremental strategy for :ref:`db-reader`/:ref:`file-downloader`.
 
     Used for fetching only new rows/files from a source
-    by filtering items not covered by the previous HWM value.
+    by filtering items not covered by the previous :ref:`HWM` value.
 
     For :ref:`db-reader`:
         First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`:
@@ -47,7 +47,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             SELECT id, data FROM mydata;
 
-        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to HWM Store.
+        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to :ref:`hwm-store`.
 
         Next incremental run will read only new data from the source:
 
@@ -56,6 +56,20 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             SELECT id, data FROM mydata WHERE id > 1000; -- hwm value
 
         Pay attention to resulting dataframe **does not include** row with ``id=1000`` because it has been read before.
+
+        .. warning::
+
+            If code inside the context manager raised an exception, like:
+
+            .. code:: python
+
+                with IncrementalStrategy():
+                    df = reader.run()  # something went wrong here
+                    writer.run(df)  # or here
+                    # or here...
+
+            When DBReader will **NOT** update HWM in HWM Store.
+            This allows to resume reading process from the *last successful run*.
 
     For :ref:`file-downloader`:
         Behavior depends on ``hwm_type`` parameter.
@@ -73,14 +87,14 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             .. code:: python
 
-                download_result = DownloadResult(
+                assert download_result == DownloadResult(
                     successful=[
                         "/path/my/file1",
                         "/path/my/file2",
                     ]
                 )
 
-            Then the downloaded files list is saved as ``FileListHWM`` object into HWM Store:
+            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`hwm-store`:
 
             .. code:: python
 
@@ -103,13 +117,13 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
                 # only files which are not in FileListHWM
 
-                download_result = DownloadResult(
+                assert download_result == DownloadResult(
                     successful=[
                         "/path/my/file3",
                     ]
                 )
 
-            New files will be added to the ``FileListHWM`` and saved to HWM Store:
+            New files will be added to the ``FileListHWM`` and saved to :ref:`hwm-store`:
 
             .. code:: python
 
@@ -118,6 +132,27 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
                     "/path/my/file2",
                     "/path/my/file3",
                 ]
+
+        .. warning::
+
+            FileDownload updates HWM in HWM Store after downloading **each** file, because files are downloading
+            one after another, not in one batch.
+
+        .. warning::
+
+            If code inside the context manager raised an exception, like:
+
+            .. code:: python
+
+                with IncrementalStrategy():
+                    download_result = downloader.run()  # something went wrong here
+                    uploader.run(download_result.success)  # or here
+                    # or here...
+
+            When FileDownloader **will** update HWM in HWM Store, because:
+
+            * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.core.file_downloader.file_downloader.FileDownloader.Options.mode>`.
+            * It can remove files from the source if :obj:`delete_source <onetl.core.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
 
     Parameters
     ----------
@@ -204,12 +239,12 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with IncrementalStrategy():
             df = reader.run()
@@ -251,7 +286,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
@@ -320,9 +355,24 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     This allows to use less CPU and RAM than reading all the data in the one batch,
     but takes proportionally more time.
 
-    Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
-    it saves current HWM value after each batch into HWM Store. This allows to resume
-    reading process from the last HWM value, if previous run was interrupted.
+    .. warning::
+
+        Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
+        it **saves** current HWM value after **each batch** into :ref:`hwm-store`.
+
+        So if code inside the context manager raised an exception, like:
+
+        .. code:: python
+
+            with IncrementalBatchStrategy() as batches:
+                for _ in batches:
+                    df = reader.run()  # something went wrong here
+                    writer.run(df)  # or here
+                    # or here...
+
+        DBReader will **NOT** update HWM in HWM Store for the failed batch.
+
+        All of that allows to resume reading process from the *last successful batch*.
 
     Parameters
     ----------
@@ -443,16 +493,16 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with IncrementalBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -551,7 +601,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )

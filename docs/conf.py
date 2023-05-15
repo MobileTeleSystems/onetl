@@ -14,18 +14,17 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from packaging import version as Version
-from setuptools_git_versioning import get_all_tags, get_sha, get_tag
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-
+sys.path.insert(0, os.fspath(Path(__file__).parent.parent.absolute()))
 
 # -- Project information -----------------------------------------------------
 
 project = "onETL"
-copyright = "2022, ONEtools Team"
-author = "ONEtools Team"
+copyright = "2023, DataOps.ETL"
+author = "DataOps.ETL"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -44,10 +43,14 @@ release = ver.public
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autosummary",
     "numpydoc",
-    "sphinx_rtd_theme",
+    "sphinx_design",
+    "sphinx_substitution_extensions",
+    "sphinx_tabs.tabs",
+    "sphinx_toolbox.more_autodoc.autoprotocol",
+    "sphinx_copybutton",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinxcontrib.autodoc_pydantic",
 ]
 numpydoc_show_class_members = True
@@ -58,6 +61,12 @@ autodoc_pydantic_model_show_json = False
 autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_field_list_validators = False
+sphinx_tabs_disable_tab_closing = True
+
+rst_prolog = f"""
+.. |support_hooks| image:: https://img.shields.io/badge/%20-support%20hooks-blue
+    :target: https://onetl.readthedocs.io/en/{ver}/hooks/index.html
+"""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -72,13 +81,19 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
+
+html_theme = "furo"
+
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = ["static"]
+html_logo = "./static/logo.svg"
 # The master toctree document.
 master_doc = "index"
 
@@ -98,37 +113,4 @@ todo_include_todos = False
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "my-project-doc"
-
-tags = {ver}
-tags.update(Version.parse(tag) for tag in get_all_tags())
-tags = [tag.public for tag in reversed(sorted(list(tags)))]
-
-versions = [("latest", "/latest/")]
-versions.extend([(tag, f"/{tag}/") for tag in tags])
-
-tag = get_tag()
-tag_sha = get_sha(tag)
-head_sha = get_sha("HEAD")
-on_tag = tag and head_sha is not None and head_sha == tag_sha
-
-context = {
-    "current_version": release,
-    "version_slug": release,
-    "versions": versions,
-    "downloads": [("html", f"https://rep.msk.mts.ru/artifactory/files/onetools/onetl/docs/html-{release}.tar.gz")],
-    "single_version": False,
-    "gitlab_host": "gitlab.services.mts.ru",
-    "gitlab_user": "bigdata/platform/onetools",
-    "gitlab_repo": "onetl",
-    "gitlab_version": version if on_tag else "master",
-    "conf_py_path": "/docs/",  # префикс для путей к файлам
-    "display_gitlab": True,
-    "commit": head_sha[:8] if head_sha is not None else None,
-}
-
-if "html_context" in globals():
-    html_context.update(context)
-
-else:
-    html_context = context
+htmlhelp_basename = "onetl-doc"

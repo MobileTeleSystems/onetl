@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import os
 from logging import getLogger
-from typing import Dict, List, Optional
 
-import pandas as pd
+import pandas
 import pymysql
 from pandas.io import sql as psql
 
@@ -12,7 +13,6 @@ logger = getLogger(__name__)
 
 
 class MySQLProcessing(BaseProcessing):
-
     _column_types_and_names_matching = {
         "id_int": "INT NOT NULL",
         "text_string": "VARCHAR(50)",
@@ -32,27 +32,27 @@ class MySQLProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_USER")
+        return os.environ["ONETL_MYSQL_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_PASSWORD")
+        return os.environ["ONETL_MYSQL_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_HOST")
+        return os.environ["ONETL_MYSQL_HOST"]
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_DATABASE")
+        return os.environ["ONETL_MYSQL_DATABASE"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_MYSQL_CONN_PORT"))
+        return int(os.environ["ONETL_MYSQL_PORT"])
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_MYSQL_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_MYSQL_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:
@@ -85,7 +85,7 @@ class MySQLProcessing(BaseProcessing):
     def create_table_ddl(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> str:
         str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
@@ -94,7 +94,7 @@ class MySQLProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
@@ -122,9 +122,8 @@ class MySQLProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",
+        values: pandas.DataFrame,
     ) -> None:
-
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
         psql.to_sql(
@@ -134,12 +133,16 @@ class MySQLProcessing(BaseProcessing):
             index=False,
             schema=schema,
             if_exists="append",
+            method="multi",
         )
 
     def get_expected_dataframe(
         self,
         schema: str,
         table: str,
-        order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":
-        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by) + ";", con=self.connection)
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
+        return pandas.read_sql_query(
+            self.get_expected_dataframe_ddl(schema, table, order_by) + ";",
+            con=self.url,
+        )

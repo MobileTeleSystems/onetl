@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
     _counter: int = 0
 
     def reset(self):
-        self._counter = 0  # noqa: WPS601
+        self._counter = 0
 
     def stops_at(self, path: PathProtocol) -> bool:
         if self.is_reached:
@@ -61,7 +61,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
             return False
 
         # directories count does not matter
-        self._counter += 1  # noqa: WPS601
+        self._counter += 1
         return self.is_reached
 
     @property
@@ -70,4 +70,4 @@ class FileLimit(BaseFileLimit, FrozenModel):
 
     def log_options(self, indent: int = 0):
         for key, value in self.dict(by_alias=True).items():  # noqa: WPS528
-            log_with_indent(f"{key} = {value!r}", indent=indent)
+            log_with_indent("%s = %r", key, value, indent=indent)

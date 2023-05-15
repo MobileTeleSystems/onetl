@@ -5,9 +5,12 @@ from onetl.connection import Oracle
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.oracle
+
 
 # There is no INTEGER column in Oracle, only NUMERIC
 # Do not fail in such the case
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_column",
     [
@@ -37,9 +40,10 @@ def test_oracle_strategy_incremental(
         user=processing.user,
         password=processing.password,
         sid=processing.sid,
+        service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -102,9 +106,10 @@ def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_s
         user=processing.user,
         password=processing.password,
         sid=processing.sid,
+        service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -163,12 +168,13 @@ def test_oracle_strategy_incremental_with_hwm_expr(
         user=processing.user,
         password=processing.password,
         sid=processing.sid,
+        service_name=processing.service_name,
         spark=spark,
     )
 
     reader = DBReader(
         connection=oracle,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
 

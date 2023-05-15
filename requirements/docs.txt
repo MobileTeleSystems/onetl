@@ -1,0 +1,12 @@
+autodoc_pydantic
+furo
+numpydoc
+sphinx
+sphinx-copybutton
+sphinx-design
+sphinx-tabs
+sphinx-toolbox
+sphinx_substitution_extensions
+# ReadTheDocs uses old OpenSSL version
+# https://github.com/urllib3/urllib3/issues/2168
+urllib3<2.0

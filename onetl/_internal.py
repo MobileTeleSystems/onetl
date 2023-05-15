@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ if TYPE_CHECKING:
 
     from pyspark.sql import SparkSession
 
-# e.g. 20220524122150
-DATETIME_FORMAT = "%Y%m%d%H%M%S"  # noqa: WPS323
+# e.g. 20230524122150
+DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
 
 def clear_statement(statement: str) -> str:
@@ -77,12 +77,12 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     """
 
     result: list[str] = []
-    result_lower: list[str] = []
+    already_visited: set[str] = set()
 
     for orig_value in orig_list:
-        if orig_value.lower() not in result_lower:
+        if orig_value.casefold() not in already_visited:
             result.append(orig_value)
-            result_lower.append(orig_value.lower())
+            already_visited.add(orig_value.casefold())
 
     return result
 
@@ -159,12 +159,12 @@ def generate_temp_path(root: PurePath) -> PurePath:
         from pathlib import Path
 
         assert generate_temp_path(Path("/tmp")) == Path(
-            "/tmp/onetl/currenthost/myprocess/20220524122150",
+            "/tmp/onetl/currenthost/myprocess/20230524122150",
         )
 
         with Process(dag="mydag", task="mytask"):
             assert generate_temp_path(Path("/abc")) == Path(
-                "/abc/onetl/currenthost/mydag.mytask.myprocess/20220524122150",
+                "/abc/onetl/currenthost/mydag.mytask.myprocess/20230524122150",
             )
     """
 
@@ -211,7 +211,7 @@ def get_sql_query(
     ).strip()
 
 
-def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int, dict]:
+def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
     """
     Calculate maximum number of cores which can be used by Spark
 
@@ -229,7 +229,7 @@ def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = Fals
 
     if "local" in master:
         # no executors, only driver
-        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # noqa: WPS437
+        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # type: ignore # noqa: WPS437
         config["spark.driver.cores"] = expected_cores
     else:
         cores = int(conf.get("spark.executor.cores", "1"))

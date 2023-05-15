@@ -46,7 +46,7 @@ Read data from MSSQL, transform & write to Hive.
     # Initiate reader
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         columns=["on", "etl"],
         # Set some MSSQL read options:
         options=MSSQL.ReadOptions(fetchsize=10000),
@@ -62,12 +62,12 @@ Read data from MSSQL, transform & write to Hive.
 
 
     # Initiate Hive connection
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     # Initiate writer
     writer = DBWriter(
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
         # Set some Hive write options:
         options=Hive.WriteOptions(mode="overwrite"),
     )
@@ -150,7 +150,7 @@ Download files from FTP & upload them to HDFS.
 
     # Initiate HDFS connection
     hdfs = HDFS(
-        host="my-nn-001.msk.ru",
+        host="my.name.node",
         user="onetl",
         password="onetl",  # or keytab
     )

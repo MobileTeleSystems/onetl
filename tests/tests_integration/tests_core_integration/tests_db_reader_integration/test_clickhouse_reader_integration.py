@@ -1,6 +1,10 @@
+import pytest
+
 from onetl.connection import Clickhouse
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.core import DBReader
+
+pytestmark = pytest.mark.clickhouse
 
 
 def test_clickhouse_reader_snapshot(spark, processing, load_table_data):
@@ -15,7 +19,7 @@ def test_clickhouse_reader_snapshot(spark, processing, load_table_data):
 
     reader = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     df = reader.run()
 
@@ -38,7 +42,7 @@ def test_clickhouse_reader_snapshot_partitioning_mode_mod(spark, processing, loa
 
     reader = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=clickhouse.ReadOptions(
             partitioning_mode=PartitioningMode.mod,
             partition_column="id_int",
@@ -68,7 +72,7 @@ def test_clickhouse_reader_snapshot_partitioning_mode_hash(spark, processing, lo
 
     reader = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         options=clickhouse.ReadOptions(
             partitioning_mode=PartitioningMode.hash,
             partition_column="text_string",
@@ -97,7 +101,7 @@ def test_clickhouse_reader_snapshot_without_set_database(spark, processing, load
 
     reader = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     df = reader.run()
 
@@ -120,7 +124,7 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
 
     reader1 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader1.run()
 
@@ -135,7 +139,7 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
 
     reader2 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=columns,
     )
     table_df_with_columns = reader2.run()
@@ -148,7 +152,7 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
 
     reader3 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*) as abc"],
     )
     count_df = reader3.run()
@@ -170,13 +174,13 @@ def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_dat
 
     reader = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader.run()
 
     reader1 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 1000",
     )
     table_df1 = reader1.run()
@@ -185,7 +189,7 @@ def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_dat
 
     reader2 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 1000 OR id_int = 1000",
     )
     table_df2 = reader2.run()
@@ -199,7 +203,7 @@ def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_dat
 
     reader3 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int = 50",
     )
     one_df = reader3.run()
@@ -208,7 +212,7 @@ def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_dat
 
     reader4 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int > 1000",
     )
     empty_df = reader4.run()
@@ -228,14 +232,14 @@ def test_clickhouse_reader_snapshot_with_columns_and_where(spark, processing, lo
 
     reader1 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 80 AND id_int > 10",
     )
     table_df = reader1.run()
 
     reader2 = DBReader(
         connection=clickhouse,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*)"],
         where="id_int < 80 AND id_int > 10",
     )

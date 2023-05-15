@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,13 +20,25 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from deprecated import deprecated
+from etl_entities.instance import Host
 from pydantic import PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintStr,
+    SupportHWMExpressionStr,
+    SupportWhereStr,
+)
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
+from onetl.hwm import Statement
 from onetl.impl.generic_options import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -105,7 +117,7 @@ READ_TOP_LEVEL_OPTIONS = frozenset(("url", "column", "lower_bound", "upper_bound
 WRITE_TOP_LEVEL_OPTIONS = frozenset(("url", "mode"))
 
 
-class JDBCWriteMode(str, Enum):  # noqa: WPS600
+class JDBCWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
 
@@ -113,7 +125,7 @@ class JDBCWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-class PartitioningMode(str, Enum):  # noqa: WPS600
+class PartitioningMode(str, Enum):
     range = "range"
     hash = "hash"
     mod = "mod"
@@ -122,13 +134,24 @@ class PartitioningMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
 
-class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
+class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS338
     class Extra(GenericOptions):
         class Config:
             extra = "allow"
 
-    class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark reading options, related to a specific JDBC source.
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintStr,
+        SupportHWMExpressionStr,
+        DBConnection.Dialect,
+    ):
+        pass
+
+    class ReadOptions(JDBCMixin.JDBCOptions):
+        """Spark JDBC options.
 
         .. note ::
 
@@ -373,7 +396,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         """
 
         @root_validator
-        def partitioning_mode_actions(cls, values):  # noqa: N805
+        def partitioning_mode_actions(cls, values):
             mode = values["partitioning_mode"]
             num_partitions = values.get("num_partitions")
             partition_column = values.get("partition_column")
@@ -409,8 +432,8 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
             return values
 
-    class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark writing options, related to a specific JDBC source.
+    class WriteOptions(JDBCMixin.JDBCOptions):
+        """Spark JDBC writing options.
 
         .. note ::
 
@@ -518,7 +541,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         class Config:
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options
 
-    host: str
+    host: Host
     port: int
     extra: Extra = Extra()
 
@@ -605,24 +628,27 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
+        log_lines(query)
 
         df = self._query_on_executor(query, self.ReadOptions.parse(options))
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
-            table=table,
+            table=source,
             where=where,
             hint=hint,
             options=self.ReadOptions.parse(options).copy(exclude={"mode", "partitioning_mode"}),
@@ -637,12 +663,14 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         alias = "x" + secrets.token_hex(5)
 
         if read_options.partition_column:
-            aliased = self.expression_with_alias(read_options.partition_column, alias)
+            aliased = self.Dialect._expression_with_alias(read_options.partition_column, alias)
             read_options = read_options.copy(update={"partition_column": alias})
             new_columns.append(aliased)
 
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
+
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=new_columns,
             where=where,
             hint=hint,
@@ -655,35 +683,34 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         return result
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
-        df.write.jdbc(table=table, **write_options)
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
+        df.write.jdbc(table=target, **write_options)
+        log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
-    def get_schema(
+    def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
-
-        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
-        log.info(f"|{self.__class__.__name__}| Schema fetched")
+        log.info("|%s| Schema fetched", self.__class__.__name__)
 
         return df.schema
 
@@ -721,36 +748,44 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         read_options = self._exclude_partition_options(options, fetchsize=1)
 
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
+                    "min",
+                ),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
+                    "max",
+                ),
             ],
             where=where,
             hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(query)
 
         df = self._query_on_driver(query, read_options)
+        row = df.collect()[0]
+        min_value = row["min"]
+        max_value = row["max"]
 
-        min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%s) = %r", column, min_value)
+        log_with_indent("MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -795,14 +830,15 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             return result_options
 
         log.warning(
-            f"|Spark| Passed numPartitions = {result_options.num_partitions!r}, "
-            f"but {' and '.join(missing_values)} value is not set. "
-            "It will be detected automatically based on values "
-            f"in partitionColumn {result_options.partition_column!r}",
+            "|Spark| Passed numPartitions = %d, but values %r are not set. "
+            "They will be detected automatically based on values in partitionColumn %r",
+            result_options.num_partitions,
+            missing_values,
+            result_options.partition_column,
         )
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(
-            table=table,
+            source=table,
             column=result_options.partition_column,
             where=where,
             hint=hint,
@@ -820,4 +856,4 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
     def _log_parameters(self):
         super()._log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
+        log_with_indent("jdbc_url = %r", self.jdbc_url)

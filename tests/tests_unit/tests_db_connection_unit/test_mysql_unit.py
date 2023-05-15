@@ -1,20 +1,17 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import MySQL
 
-spark = Mock(spec=SparkSession)
+pytestmark = pytest.mark.mysql
 
 
 def test_mysql_class_attributes():
-    assert MySQL.driver == "com.mysql.jdbc.Driver"
-    assert MySQL.package == "mysql:mysql-connector-java:8.0.30"
+    assert MySQL.driver == "com.mysql.cj.jdbc.Driver"
+    assert MySQL.package == "com.mysql:mysql-connector-j:8.0.33"
 
 
-def test_mysql():
-    conn = MySQL(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_mysql(spark_mock):
+    conn = MySQL(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 3306
@@ -25,9 +22,12 @@ def test_mysql():
 
     assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database?characterEncoding=UTF-8&useUnicode=yes"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
-def test_mysql_with_port():
-    conn = MySQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+
+def test_mysql_with_port(spark_mock):
+    conn = MySQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -39,8 +39,8 @@ def test_mysql_with_port():
     assert conn.jdbc_url == "jdbc:mysql://some_host:5000/database?characterEncoding=UTF-8&useUnicode=yes"
 
 
-def test_mysql_without_database():
-    conn = MySQL(host="some_host", user="user", password="passwd", spark=spark)
+def test_mysql_without_database(spark_mock):
+    conn = MySQL(host="some_host", user="user", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 3306
@@ -52,14 +52,14 @@ def test_mysql_without_database():
     assert conn.jdbc_url == "jdbc:mysql://some_host:3306?characterEncoding=UTF-8&useUnicode=yes"
 
 
-def test_mysql_with_extra():
+def test_mysql_with_extra(spark_mock):
     conn = MySQL(
         host="some_host",
         user="user",
         password="passwd",
         database="database",
         extra={"allowMultiQueries": "true", "requireSSL": "true"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert conn.jdbc_url == (
@@ -73,37 +73,37 @@ def test_mysql_with_extra():
         password="passwd",
         database="database",
         extra={"characterEncoding": "CP-1251", "useUnicode": "no"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert conn.jdbc_url == ("jdbc:mysql://some_host:3306/database?characterEncoding=CP-1251&useUnicode=no")
 
 
-def test_mysql_without_mandatory_args():
+def test_mysql_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         MySQL()
 
     with pytest.raises(ValueError, match="field required"):
         MySQL(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         MySQL(
             host="some_host",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         MySQL(
             host="some_host",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         MySQL(
             host="some_host",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )

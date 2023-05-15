@@ -4,13 +4,13 @@ DB Connections
 ==============
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: DB Connections
-    :hidden:
 
     Clickhouse <clickhouse>
-    Greenplum <greenplum>
+    Greenplum <greenplum/index>
     Hive <hive>
+    MongoDB <mongodb>
     MSSQL <mssql>
     MySQL <mysql>
     Oracle <oracle>

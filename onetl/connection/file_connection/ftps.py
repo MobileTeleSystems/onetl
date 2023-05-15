@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,11 +13,27 @@
 #  limitations under the License.
 
 import ftplib  # NOQA: S402
+import textwrap
 
 from ftputil import FTPHost
 from ftputil import session as ftp_session
 
-from onetl.connection.file_connection.ftp import FTP
+try:
+    from onetl.connection.file_connection.ftp import FTP
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "ftputil".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[ftps]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
 
 
 class TLSfix(ftplib.FTP_TLS):  # noqa: N801
@@ -38,7 +54,22 @@ class TLSfix(ftplib.FTP_TLS):  # noqa: N801
 
 
 class FTPS(FTP):
-    """Class for FTPS file connection.
+    """FTPS file connection.
+
+    Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use FTPS connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[ftps]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
@@ -48,11 +79,15 @@ class FTPS(FTP):
     port : int, default: ``21``
         Port of FTPS source
 
-    user : str
-        User, which have access to the file source. For example: ``someuser``
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``someuser``.
+
+        ``None`` means that the user is anonymous.
 
     password : str, default: ``None``
-        Password for file source connection
+        Password for file source connection.
+
+        ``None`` means that the user is anonymous.
 
     Examples
     --------
@@ -70,6 +105,10 @@ class FTPS(FTP):
         )
     """
 
+    @property
+    def instance_url(self) -> str:
+        return f"ftps://{self.host}:{self.port}"
+
     def _get_client(self) -> FTPHost:
         """
         Returns a FTPS connection object
@@ -84,7 +123,7 @@ class FTPS(FTP):
 
         return FTPHost(
             self.host,
-            self.user or "",
-            self.password.get_secret_value() if self.password else "None",
+            self.user,
+            self.password.get_secret_value() if self.password else None,
             session_factory=session_factory,
         )

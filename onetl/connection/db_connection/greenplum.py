@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ from datetime import date, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
+from etl_entities.instance import Host
 from pydantic import Field
 
 from onetl._internal import (  # noqa: WPS436
@@ -30,11 +31,23 @@ from onetl._internal import (  # noqa: WPS436
     to_camel,
 )
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintNone,
+    SupportHWMExpressionStr,
+    SupportWhereStr,
+)
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.exception import TooManyParallelJobsError
+from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
+from onetl.hwm import Statement
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
+# do not import PySpark here, as we allow user to use `Greenplum.package...` for creating Spark session
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
@@ -78,7 +91,7 @@ READ_OPTIONS = frozenset(
 )
 
 
-class GreenplumWriteMode(str, Enum):  # noqa: WPS600
+class GreenplumWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
 
@@ -109,15 +122,14 @@ class ConnectionLimits:
 
 
 class Greenplum(JDBCMixin, DBConnection):
-    """Class for Greenplum connection.
+    """Greenplum connection.
 
-    Based on package ``io.pivotal:greenplum-spark:2.1.3``
-    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_)
+    Based on package ``io.pivotal:greenplum-spark:2.1.4``
+    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1287433/file_groups/13260>`_).
 
-    .. note::
+    .. warning::
 
-        There is no public information which Greenplum server versions are compatible with this connector,
-        please contact Pivotal
+        Before using this connector please take into account :ref:`greenplum-prerequisites`
 
     Parameters
     ----------
@@ -160,25 +172,37 @@ class Greenplum(JDBCMixin, DBConnection):
         from onetl.connection import Greenplum
         from pyspark.sql import SparkSession
 
+        # Please ask your DevOps and Greenplum admin what port range
+        # on Spark side can be used to accept requests from Greenplum segments
+
         extra = {
             "server.port": "49152-65535",
-            "pool.maxSize": "10",
         }
+
+        # Package should match your Spark version:
+
+        # Greenplum.package_spark_2_3
+        # Greenplum.package_spark_2_4
+        # Greenplum.package_spark_3_2
+
+        # See Prerequisites page for more details
 
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Greenplum.package_spark_2_4)
+            .config("spark.jars.packages", Greenplum.package_spark_3_2)
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
             .getOrCreate()
         )
 
         # IMPORTANT!!!
-        # Each job on the executor make its own connection to Spark,
-        # so we need to limit them to avoid opening too many connections.
-        # table size ~20Gb requires about 10 executors * cores,
+        # Each job on the Spark executor make its own connection to Greenplum master node,
+        # so we need to limit number of connections to avoid opening too many of them.
+        #
+        # Table size ~20Gb requires about 10 executors * cores,
         # ~50Gb requires ~ 20 executors * cores,
         # 100Gb+ requires 30 executors * cores.
+        #
         # Cores number can be increased, but executors count should be reduced
         # to keep the same number of executors * cores.
 
@@ -202,8 +226,8 @@ class Greenplum(JDBCMixin, DBConnection):
             extra = "allow"
             prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
 
-    class ReadOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for Spark reading options, related to a specific JDBC source.
+    class ReadOptions(JDBCMixin.JDBCOptions):
+        """Pivotal's Greenplum Spark connector reading options.
 
         .. note ::
 
@@ -338,8 +362,8 @@ class Greenplum(JDBCMixin, DBConnection):
             or both should be ``None``
         """
 
-    class WriteOptions(JDBCMixin.JDBCOptions):  # noqa: WPS437
-        """Class for writing options, related to Pivotal's Greenplum Spark connector
+    class WriteOptions(JDBCMixin.JDBCOptions):
+        """Pivotal's Greenplum Spark connector writing options.
 
         .. note ::
 
@@ -414,16 +438,34 @@ class Greenplum(JDBCMixin, DBConnection):
             ``error`` and ``ignore`` modes are not supported.
         """
 
-    host: str
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintNone,
+        SupportHWMExpressionStr,
+        DBConnection.Dialect,
+    ):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"cast('{result}' as timestamp)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"cast('{result}' as date)"
+
+    host: Host
     database: str
     port: int = 5432
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
-    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.3"
-    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
-    package_spark_3_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.3"
+    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
+    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
+    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.4"
 
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
@@ -441,26 +483,28 @@ class Greenplum(JDBCMixin, DBConnection):
         }
         extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
 
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-        if params_str:
-            params_str = f"?{params_str}"
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
-
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
+        self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on executor):")
-        query = get_sql_query(table=table, columns=columns, hint=hint, where=where)
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
+        query = get_sql_query(table=source, columns=columns, where=where)
+        log_lines(query)
 
-        df = self.spark.read.format("greenplum").options(**self._connector_params(table), **read_options).load()
+        df = self.spark.read.format("greenplum").options(**self._connector_params(source), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
 
         if where:
@@ -469,85 +513,107 @@ class Greenplum(JDBCMixin, DBConnection):
         if columns:
             df = df.selectExpr(*columns)
 
-        if hint:
-            df = df.hint(hint)
-
         log.info("|Spark| DataFrame successfully created from SQL statement ")
-
         return df
 
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
+        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
 
         self._check_expected_jobs_number(df, action="write")
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
         df.write.format("greenplum").options(
-            **self._connector_params(table),
+            **self._connector_params(target),
             **options_dict,
         ).mode(write_options.mode).save()
 
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully written")
+        log.info("|%s| Table %r is successfully written", self.__class__.__name__, target)
 
-    def get_schema(
+    def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> StructType:
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
+        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
-        query = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, jdbc_options)
-        log.info(f"|{self.__class__.__name__}| Schema fetched")
+        log.info("|%s| Schema fetched", self.__class__.__name__)
 
         return df.schema
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
 
         query = get_sql_query(
-            table=table,
+            table=source,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
+                    "min",
+                ),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
+                    "max",
+                ),
             ],
             where=where,
-            hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(query)
 
         df = self._query_on_driver(query, jdbc_options)
+        row = df.collect()[0]
+        min_value = row["min"]
+        max_value = row["max"]
 
-        min_value, max_value = df.collect()[0]
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%r) = %r", column, min_value)
+        log_with_indent("MAX(%r) = %r", column, max_value)
 
         return min_value, max_value
+
+    def _check_driver_imported(self):
+        gateway = self.spark._sc._gateway  # type: ignore
+        class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
+        missing_class = getattr(gateway.jvm, class_name)
+
+        try:
+            gateway.help(missing_class, display=False)
+        except Exception:
+            spark_version = "_".join(self.spark.version.split(".")[:2])
+            log.error(
+                MISSING_JVM_CLASS_MSG,
+                class_name,
+                f"{self.__class__.__name__}.package_spark_{spark_version}",
+                exc_info=False,
+            )
+
+            raise
 
     def _connector_params(
         self,
@@ -566,7 +632,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCMixin.JDBCOptions):  # noqa: WPS437
+    def _options_to_connection_properties(self, options: JDBCMixin.JDBCOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only
@@ -582,14 +648,15 @@ class Greenplum(JDBCMixin, DBConnection):
                 FROM   pg_settings
                 WHERE  name = '{name}'
                 """
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):")
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
 
         log.debug(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
+            len(result),
         )
         if result:
             return result[0][0]
@@ -602,14 +669,15 @@ class Greenplum(JDBCMixin, DBConnection):
                 SELECT SUM(numbackends)
                 FROM pg_stat_database
                 """
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):")
+        log_lines(query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, self.JDBCOptions())
         result = df.collect()
 
         log.debug(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {len(result)} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
+            len(result),
         )
         return int(result[0][0])
 
@@ -685,16 +753,8 @@ class Greenplum(JDBCMixin, DBConnection):
         if max_jobs >= self.CONNECTIONS_EXCEPTION_LIMIT:
             raise TooManyParallelJobsError(message)
 
-        log_with_indent(f"|{self.__class__.__name__}| {message}", level=logging.WARNING)
+        log_lines(message, level=logging.WARNING)
 
     def _log_parameters(self):
         super()._log_parameters()
-        log_with_indent(f"jdbc_url = {self.jdbc_url!r}")
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"cast('{result}' as timestamp)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"cast('{result}' as date)"
+        log_with_indent("jdbc_url = %r", self.jdbc_url)

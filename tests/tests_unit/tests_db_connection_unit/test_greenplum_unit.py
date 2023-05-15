@@ -1,26 +1,20 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Greenplum
 from onetl.connection.db_connection.greenplum import GreenplumWriteMode
 
-spark = Mock(spec=SparkSession)
-spark.sparkContext = Mock()
-spark.sparkContext.appName = "abc"
+pytestmark = pytest.mark.greenplum
 
 
 def test_greenplum_class_attributes():
     assert Greenplum.driver == "org.postgresql.Driver"
-    assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.3"
-    assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.3"
-    assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.3"
-    assert Greenplum.package_spark_3_3 == "io.pivotal:greenplum-spark_2.12:2.1.3"
+    assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.4"
+    assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.4"
+    assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.4"
 
 
-def test_greenplum():
-    conn = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_greenplum(spark_mock):
+    conn = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5432
@@ -31,9 +25,12 @@ def test_greenplum():
 
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
-def test_greenplum_with_port():
-    conn = Greenplum(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+
+def test_greenplum_with_port(spark_mock):
+    conn = Greenplum(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -45,12 +42,12 @@ def test_greenplum_with_port():
     assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true"
 
 
-def test_greenplum_without_database_error():
+def test_greenplum_without_database_error(spark_mock):
     with pytest.raises(ValueError, match="field required"):
-        Greenplum(host="some_host", port=5000, user="user", password="passwd", spark=spark)
+        Greenplum(host="some_host", port=5000, user="user", password="passwd", spark=spark_mock)
 
 
-def test_greenplum_with_extra():
+def test_greenplum_with_extra(spark_mock):
     conn = Greenplum(
         host="some_host",
         user="user",
@@ -63,30 +60,30 @@ def test_greenplum_with_extra():
             "server.port": 8000,
             "pool.maxSize": 40,
         },
-        spark=spark,
+        spark=spark_mock,
     )
 
     # `server.*` and `pool.*` options are ignored while generating jdbc_url
-    # they are used only in `read_table` and `save_df`
+    # they are used only in `read_df` and `write_df`
     assert conn.jdbc_url == (
         "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&tcpKeepAlive=false"
     )
 
 
-def test_greenplum_without_mandatory_args():
+def test_greenplum_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         Greenplum()
 
     with pytest.raises(ValueError, match="field required"):
         Greenplum(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Greenplum(
             host="some_host",
             database="database",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -94,7 +91,7 @@ def test_greenplum_without_mandatory_args():
             host="some_host",
             database="database",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -102,7 +99,7 @@ def test_greenplum_without_mandatory_args():
             host="some_host",
             database="database",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )
 
 
@@ -114,15 +111,15 @@ def test_greenplum_write_options_default():
 
 
 def test_greenplum_read_write_options_populated_by_connection_class():
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a ReadOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(dbschema="myschema", dbtable="mytable")
 
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a WriteOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(dbschema="myschema", dbtable="mytable")
 
-    error_msg = "Options 'dbschema', 'dbtable' are not allowed to use in a Extra"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a Extra"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.Extra(dbschema="myschema", dbtable="mytable")
 
@@ -147,7 +144,7 @@ def test_greenplum_read_write_options_populated_by_connection_class():
     ],
 )
 def test_greenplum_read_write_options_prohibited(arg, value, options_class):
-    with pytest.raises(ValueError, match=f"Option '{arg}' is not allowed to use in a {options_class.__name__}"):
+    with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
         options_class(**{arg: value})
 
 
@@ -163,7 +160,7 @@ def test_greenplum_read_write_options_prohibited(arg, value, options_class):
     ],
 )
 def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
-    error_msg = f"Option '{arg}' is not allowed to use in a ReadOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(**{arg: value})
 
@@ -179,7 +176,7 @@ def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
     ],
 )
 def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
-    error_msg = f"Option '{arg}' is not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(**{arg: value})
 

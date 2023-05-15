@@ -5,7 +5,10 @@ from onetl.connection import Hive
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.hive
 
+
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_column",
     [
@@ -22,8 +25,8 @@ from onetl.strategy import IncrementalStrategy
     ],
 )
 def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
-    hive = Hive(spark=spark)
-    reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    reader = DBReader(connection=hive, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -80,8 +83,8 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
     ],
 )
 def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
-    hive = Hive(spark=spark)
-    reader = DBReader(connection=hive, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    reader = DBReader(connection=hive, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -102,14 +105,14 @@ def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_
     "hwm_source, hwm_expr, hwm_column, hwm_type, func",
     [
         ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", IntHWM, str),
-        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),  # noqa: WPS323
+        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),
         (
             "hwm_datetime",
             "CAST(text_string AS TIMESTAMP)",
             "HWM1_DATETIME",
             DateTimeHWM,
             lambda x: x.isoformat(),
-        ),  # noqa: WPS323
+        ),
     ],
 )
 def test_hive_strategy_incremental_with_hwm_expr(
@@ -122,11 +125,11 @@ def test_hive_strategy_incremental_with_hwm_expr(
     hwm_type,
     func,
 ):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader = DBReader(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
 

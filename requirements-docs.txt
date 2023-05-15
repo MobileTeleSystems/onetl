@@ -1,5 +1,0 @@
-autodoc_pydantic
-numpydoc
-setuptools-git-versioning
-sphinx
-sphinx_rtd_theme

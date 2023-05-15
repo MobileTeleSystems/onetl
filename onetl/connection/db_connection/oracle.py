@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ from pydantic import root_validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.log import BASE_LOG_INDENT, log_with_indent
+from onetl.log import BASE_LOG_INDENT, log_lines
+
+# do not import PySpark here, as we allow user to use `Oracle.package` for creating Spark session
+
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -59,14 +62,34 @@ class ErrorPosition:
 
 
 class Oracle(JDBCConnection):
-    """Class for Oracle JDBC connection.
+    """Oracle JDBC connection.
 
-    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:21.6.0.0.1``
-    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_)
+    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
+    (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported Oracle Server versions: 21c, 19c, 18c, and 12.2
+        * Oracle Server versions: 23c, 21c, 19c, 18c, and 12.2
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
+
+    .. warning::
+
+        To use Oracle connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -144,12 +167,12 @@ class Oracle(JDBCConnection):
     service_name: Optional[str] = None
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:21.6.0.0.1"
+    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
 
     @root_validator
-    def only_one_of_sid_or_service_name(cls, values):  # noqa: N805
+    def only_one_of_sid_or_service_name(cls, values):
         sid = values.get("sid")
         service_name = values.get("service_name")
 
@@ -160,6 +183,17 @@ class Oracle(JDBCConnection):
             raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
 
         return values
+
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.strftime("%Y-%m-%d %H:%M:%S")
+            return f"TO_DATE('{result}', 'YYYY-MM-DD HH24:MI:SS')"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.strftime("%Y-%m-%d")
+            return f"TO_DATE('{result}', 'YYYY-MM-DD')"
 
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
@@ -174,15 +208,13 @@ class Oracle(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(self.extra.dict(by_alias=True).items()))
-
-        if params_str:
-            params_str = f"?{params_str}"
+        extra = self.extra.dict(by_alias=True)
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
 
         if self.sid:
-            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}{params_str}"
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}?{parameters}".rstrip("?")
 
-        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}{params_str}"
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}?{parameters}".rstrip("?")
 
     @property
     def instance_url(self) -> str:
@@ -196,22 +228,24 @@ class Oracle(JDBCConnection):
         statement: str,
         options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
-
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
+        log_lines(statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
-        self._handle_compile_errors(statement.lower().strip(), call_options)
+        self._handle_compile_errors(statement.strip(), call_options)
 
-        message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
             rows_count = df.count()
-            message += f", resulting dataframe contains {rows_count} rows"
-
-        log.info(message)
+            log.info(
+                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
+                self.__class__.__name__,
+                rows_count,
+            )
+        else:
+            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
@@ -340,16 +374,7 @@ class Oracle(JDBCConnection):
         fail = any(error.level == logging.ERROR for error in aggregated_errors)
 
         message = self._build_error_message(aggregated_errors)
-
-        log_with_indent(message, level=logging.ERROR if fail else logging.WARNING)
+        log_lines(message, level=logging.ERROR if fail else logging.WARNING)
 
         if fail:
             raise ValueError(message)
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S")
-        return f"TO_DATE('{result}', 'YYYY-MM-DD HH24:MI:SS')"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.strftime("%Y-%m-%d")
-        return f"TO_DATE('{result}', 'YYYY-MM-DD')"

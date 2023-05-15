@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,17 +19,40 @@ from typing import ClassVar
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `MSSQL.package` for creating Spark session
+
 
 class MSSQL(JDBCConnection):
-    """Class for MSSQL JDBC connection.
+    """MSSQL JDBC connection.
 
-    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8``
+    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8``
     (`official MSSQL JDBC driver
-    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_)
+    <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported SQL Server versions: >= 2012
+        * SQL Server versions: 2014 - 2022
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
+        and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.
+
+    .. warning::
+
+        To use MSSQL connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -155,8 +178,19 @@ class MSSQL(JDBCConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
+    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
     _check_query: ClassVar[str] = "SELECT 1 AS field"
+
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS datetime2)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS date)"
 
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
@@ -181,11 +215,3 @@ class MSSQL(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS datetime2)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS date)"

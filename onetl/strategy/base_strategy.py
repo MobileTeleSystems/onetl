@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ log = logging.getLogger(__name__)
 
 class BaseStrategy(BaseModel):
     def __enter__(self):
-
         # hack to avoid circular imports
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug(f"|{self.__class__.__name__}| Entered stack at level {StrategyManager.get_current_level()}")
+        log.debug("|%s| Entered stack at level %d", self.__class__.__name__, StrategyManager.get_current_level())
         StrategyManager.push(self)
 
         self._log_parameters()
@@ -39,37 +38,37 @@ class BaseStrategy(BaseModel):
     def __exit__(self, exc_type, _exc_value, _traceback):
         from onetl.strategy.strategy_manager import StrategyManager
 
-        log.debug(f"|{self.__class__.__name__}| Exiting stack at level {StrategyManager.get_current_level()-1}")
+        log.debug("|%s| Exiting stack at level %d", self.__class__.__name__, StrategyManager.get_current_level() - 1)
         strategy = StrategyManager.pop()
 
         failed = bool(exc_type)
         if failed:
-            log.warning(f"|onETL| Exiting {self.__class__.__name__} because of {exc_type.__name__}")
+            log.warning("|onETL| Exiting %s because of %s", self.__class__.__name__, exc_type.__name__)
         else:
-            log.info(f"|onETL| Exiting {self.__class__.__name__}")
+            log.info("|onETL| Exiting %s", self.__class__.__name__)
 
         strategy.exit_hook(failed=failed)
         return False
 
-    @property  # noqa: WPS324
+    @property
     def current_value(self) -> Any:
-        return None  # noqa: WPS324
+        pass
 
-    @property  # noqa: WPS324
+    @property
     def next_value(self) -> Any:
-        return None  # noqa: WPS324
+        pass
 
     def enter_hook(self) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def exit_hook(self, failed: bool = False) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def _log_parameters(self) -> None:
-        log.info(f"|onETL| Using {self.__class__.__name__} as a strategy")
+        log.info("|onETL| Using %s as a strategy", self.__class__.__name__)
         parameters = self.dict(by_alias=True, exclude_none=True, exclude=self._log_exclude_fields())
         for attr, value in sorted(parameters.items()):
-            log_with_indent(f"{attr} = {value!r}")
+            log_with_indent("%s = %r", attr, value)
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

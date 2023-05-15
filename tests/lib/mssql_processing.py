@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import os
 from datetime import datetime
 from logging import getLogger
-from typing import Dict, List, Optional
 
-import pandas as pd
+import pandas
 import pymssql
 from pandas.io import sql as psql
 
@@ -13,7 +14,6 @@ logger = getLogger(__name__)
 
 
 class MSSQLProcessing(BaseProcessing):
-
     _column_types_and_names_matching = {
         "id_int": "INT",
         "text_string": "VARCHAR(50)",
@@ -33,27 +33,27 @@ class MSSQLProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.getenv("ONETL_MSSQL_CONN_USER")
+        return os.environ["ONETL_MSSQL_USER"]
 
     @property
     def password(self) -> str:
-        return os.getenv("ONETL_MSSQL_CONN_PASSWORD")
+        return os.environ["ONETL_MSSQL_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.getenv("ONETL_MSSQL_CONN_HOST")
+        return os.environ["ONETL_MSSQL_HOST"]
 
     @property
     def database(self) -> str:
-        return os.getenv("ONETL_MSSQL_CONN_DATABASE")
+        return os.environ["ONETL_MSSQL_DATABASE"]
 
     @property
     def port(self) -> int:
-        return int(os.getenv("ONETL_MSSQL_CONN_PORT"))
+        return int(os.environ["ONETL_MSSQL_PORT"])
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_MSSQL_CONN_SCHEMA", "onetl")
+        return os.getenv("ONETL_MSSQL_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:
@@ -68,7 +68,7 @@ class MSSQLProcessing(BaseProcessing):
             database=self.database,
         )
 
-    @staticmethod  # noqa: WPS605
+    @staticmethod
     def current_datetime() -> datetime:
         # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
         return datetime.now().replace(microsecond=0)
@@ -94,7 +94,7 @@ class MSSQLProcessing(BaseProcessing):
     def create_table(
         self,
         table: str,
-        fields: Dict[str, str],
+        fields: dict[str, str],
         schema: str,
     ) -> None:
         with self.connection.cursor() as cursor:
@@ -122,9 +122,8 @@ class MSSQLProcessing(BaseProcessing):
         self,
         schema: str,
         table: str,
-        values: "pandas.core.frame.DataFrame",
+        values: pandas.DataFrame,
     ) -> None:
-
         # <con> parameter is SQLAlchemy connectable or str
         # A database URI could be provided as as str.
         psql.to_sql(
@@ -134,12 +133,16 @@ class MSSQLProcessing(BaseProcessing):
             index=False,
             schema=schema,
             if_exists="append",
+            method="multi",
         )
 
     def get_expected_dataframe(
         self,
         schema: str,
         table: str,
-        order_by: Optional[List[str]] = None,
-    ) -> "pandas.core.frame.DataFrame":
-        return pd.read_sql_query(self.get_expected_dataframe_ddl(schema, table, order_by) + ";", con=self.connection)
+        order_by: str | None = None,
+    ) -> pandas.DataFrame:
+        return pandas.read_sql_query(
+            self.get_expected_dataframe_ddl(schema, table, order_by) + ";",
+            con=self.url,
+        )

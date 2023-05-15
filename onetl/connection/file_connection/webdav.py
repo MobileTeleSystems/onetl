@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,23 +18,56 @@ import datetime
 import io
 import os
 import stat
+import textwrap
 from logging import getLogger
 from ssl import SSLContext
 from typing import Any, Optional, Union
 
+try:
+    from webdav3.client import Client
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "webdav3".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[webdav]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
+from etl_entities.instance import Host
 from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
 from typing_extensions import Literal
-from webdav3.client import Client
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 log = getLogger(__name__)
-DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"  # noqa: WPS323
+DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
 class WebDAV(FileConnection):
-    """Class for WebDAV file connection.
+    """WebDAV file connection.
+
+    Based on `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use WebDAV connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[webdav]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
@@ -78,7 +111,7 @@ class WebDAV(FileConnection):
 
     """
 
-    host: str
+    host: Host
     user: str
     password: SecretStr
     port: Optional[int] = None
@@ -86,7 +119,7 @@ class WebDAV(FileConnection):
     protocol: Union[Literal["http"], Literal["https"]] = "https"
 
     @root_validator
-    def check_port(cls, values):  # noqa: N805
+    def check_port(cls, values):
         if values["port"] is not None:
             return values
 
@@ -96,6 +129,10 @@ class WebDAV(FileConnection):
             values["port"] = 80
 
         return values
+
+    @property
+    def instance_url(self) -> str:
+        return f"webdav://{self.host}:{self.port}"
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.check(os.fspath(path))
@@ -113,10 +150,10 @@ class WebDAV(FileConnection):
         return client
 
     def _is_client_closed(self) -> bool:
-        pass  # noqa: WPS420
+        pass
 
     def _close_client(self) -> None:
-        pass  # noqa: WPS420
+        pass
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         self.client.download_sync(

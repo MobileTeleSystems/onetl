@@ -2,12 +2,19 @@ import secrets
 from contextlib import suppress
 from datetime import timedelta
 
-import pandas as pd
 import pytest
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
 from onetl.strategy import IncrementalStrategy
+
+pytestmark = pytest.mark.postgres
 
 
 @pytest.mark.parametrize(
@@ -34,7 +41,7 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, table=load_table_data.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=load_table_data.full_name, hwm_column=hwm_column)
 
     with IncrementalStrategy():
         reader.run()
@@ -96,7 +103,7 @@ def test_postgres_strategy_incremental_unknown_hwm_column(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column="unknown_column",  # there is no such column in a table
     )
 
@@ -121,7 +128,7 @@ def test_postgres_strategy_incremental_duplicated_hwm_column(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
         hwm_column="hwm_int",
     )
@@ -145,7 +152,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
     # not like this: "id < 1000 OR id = 1000 AND hwm_int > 100"
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         where="id_int < 1000 OR id_int = 1000",
         hwm_column="hwm_int",
     )
@@ -221,7 +228,7 @@ def test_postgres_strategy_incremental_offset(
     )
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         columns=["*", hwm_column],
         hwm_column=hwm_column,
     )
@@ -261,7 +268,7 @@ def test_postgres_strategy_incremental_offset(
     with IncrementalStrategy(offset=offset):
         next_df = reader.run()
 
-    total_span = pd.concat([second_span, first_span], ignore_index=True)
+    total_span = pandas.concat([second_span, first_span], ignore_index=True)
     processing.assert_equal_df(df=next_df, other_frame=total_span)
 
 
@@ -276,7 +283,7 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     )
 
     hwm_column = "hwm_int"
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     span_gap = 10
     span_length = 50
@@ -320,7 +327,7 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
 
     # and then process is retried
     with IncrementalStrategy():
-        reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+        reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
         second_df = reader.run()
 

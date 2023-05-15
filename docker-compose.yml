@@ -1,113 +1,168 @@
-version: '3.5'
+version: '3.9'
 
-# NOTE: Только для разработки и локального/CI тестирования
+# NOTE: local development only
 services:
+  onetl:
+    image: mtsrus/onetl:develop
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: base
+      args:
+        SPARK_VERSION: 3.4.0
+    env_file: .env.docker
+    volumes:
+    - ./:/app/
+    networks:
+    - onetl
+    - default
+    ulimits:
+      # https://stackoverflow.com/a/56895801
+      nofile:
+        soft: 10000
+        hard: 10000
+    # no dependencies from other containers to allow running limited set of tests instead of all
 
-  minio:
-    image: minio/minio
-    env_file: onetl_local.default.env
-    command: server /data --console-address ":9001"
-    networks: [onetl]
+
+  mongodb:
+    image: ${MONGODB_IMAGE:-mongo:latest}
+    restart: unless-stopped
+    ports:
+    - 27017:27017
+    env_file: .env.dependencies
+    networks:
+    - onetl
+
+  s3:
+    image: ${S3_IMAGE:-bitnami/minio:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 9010:9000
     - 9011:9001
+    networks:
+    - onetl
 
   postgres:
-    # TODO: fix later
-    build:
-      dockerfile: ./docker/postgres/Dockerfile
-      context: .
-    env_file: onetl_local.default.env
-    restart: always
-    networks: [onetl]
+    image: ${POSTGRES_IMAGE:-postgres:15.2}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 5432:5432
+    networks:
+    - onetl
 
   greenplum:
-    image: datagrip/greenplum:6.8
-    env_file: onetl_local.default.env
-    restart: always
-    networks: [default, onetl]
+    image: ${GREENPLUM_IMAGE:-datagrip/greenplum:6.8}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 5433:5432
+    networks:
+    - onetl
 
-  hive2:
-    # TODO: fix later
-    build:
-      dockerfile: ./docker/hive2/Dockerfile
-      context: .
-    env_file: onetl_local.default.env
-    hostname: hive2
-    networks: [onetl]
-    depends_on:
-    - postgres
+  hdfs:
+    image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
+    hostname: hdfs
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
-    - 50010:50010
-    - 50020:50020
-    - 50070:50070
-    - 50075:50075
-    - 10000:10000
-    - 10020:10020
-    - 19888:19888
-    - 9000:9000
-    - 8030:8030
-    - 8031:8031
-    - 8032:8032
-    - 8033:8033
-    - 8040:8040
-    - 8042:8042
-    - 8088:8088
+    - 9820:9820  # HDFS IPC
+    - 9870:9870  # WebHDFS
+    - 9864:9864  # Datanode UI
+    volumes:
+    - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
+    networks:
+    - onetl
 
   oracle:
-    build:
-      dockerfile: ./docker/oracle/Dockerfile
-      context: .
-    restart: always
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-xe:21.3.0-faststart}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 1522:1521
-    - 5501:5500
-    networks: [onetl]
+    networks:
+    - onetl
+
+  ftp:
+    image: ${FTP_IMAGE:-chonjay21/ftps:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    environment:
+    - USE_SSL=false
+    - PASSV_MIN_PORT=30000
+    - PASSV_MAX_PORT=30010
+    ports:
+    - 2121:21
+    - 30000-30010:30000-30010
+    volumes:
+    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
+    networks:
+    - onetl
+
+  ftps:
+    image: ${FTPS_IMAGE:-chonjay21/ftps:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    environment:
+    - USE_SSL=true
+    - PASSV_MIN_PORT=30020
+    - PASSV_MAX_PORT=30030
+    ports:
+    - 2122:21
+    - 30020-30030:30020-30030
+    volumes:
+    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
+    networks:
+    - onetl
 
   webdav:
-    build:
-      dockerfile: ./docker/webdav/Dockerfile
-      context: .
-    container_name: webdav
+    image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
-    - 80:80
-    - 443:443
-    env_file: onetl_local.default.env
-    restart: always
+    - 8000:80
+    volumes:
+    # Remove after https://github.com/chonjay21/docker-webdav/pull/3
+    - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
     - onetl
 
   clickhouse:
-    image: yandex/clickhouse-server
-    env_file: onetl_local.default.env
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest}
+    restart: unless-stopped
     ports:
     - 8123:8123
     - 9001:9000
-    networks: [onetl]
+    networks:
+    - onetl
 
   mysql:
-    image: mysql
-    env_file: onetl_local.default.env
+    image: ${MYSQL_IMAGE:-mysql:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 3306:3306
-    networks: [onetl]
+    networks:
+    - onetl
 
   mssql:
-    image: mcmoe/mssqldocker
-    env_file: onetl_local.default.env
+    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
     ports:
     - 1433:1433
-    networks: [onetl]
+    networks:
+    - onetl
 
-# Для Postgres можно прокинуть postgres в /var/lib/postgresql/data,
-#  тогда содержимое БД будет сохраняться между подъемами docker-compose.
-volumes:
-  tmp:
+  sftp:
+    image: ${SFTP_IMAGE:-linuxserver/openssh-server}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    ports:
+    - 2222:2222
+    networks:
+    - onetl
 
 networks:
   onetl:
-    name: onetl

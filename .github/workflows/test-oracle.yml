@@ -1,0 +1,109 @@
+name: Tests for Oracle
+on:
+  workflow_call:
+    inputs:
+      oracle-version:
+        required: true
+        type: string
+      spark-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  test-oracle:
+    name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    services:
+      oracle:
+        image: gvenzl/oracle-xe:${{ inputs.oracle-version }}
+        env:
+          TZ: UTC
+          ORACLE_PASSWORD: maaxohmiGe9eep5x
+          APP_USER: onetl
+          APP_USER_PASSWORD: Yoequ2Hoeceit4ch
+        ports:
+        - 1522:1521
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-oracle-
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-oracle-
+
+    - name: Set up Oracle instantclient
+      if: runner.os == 'Linux'
+      run: |
+        mkdir ./tmp
+        wget -P ./tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
+        mkdir -p ./oracle
+        unzip ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip -d ./oracle
+        rm -rf ./tmp/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I \
+          -r requirements/core.txt \
+          -r requirements/tests/base.txt \
+          -r requirements/tests/oracle.txt \
+          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+
+    - name: Wait for Oracle to be ready
+      run: |
+        ./docker/wait-for-it.sh -h localhost -p 1522 -t 60
+
+    - name: Run tests
+      run: |
+        export ONETL_ORA_CLIENT_PATH=./oracle/instantclient_21_10
+        export LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH}
+        export PATH=${ONETL_ORA_CLIENT_PATH}:${PATH}
+
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m oracle
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: oracle-${{ inputs.oracle-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*

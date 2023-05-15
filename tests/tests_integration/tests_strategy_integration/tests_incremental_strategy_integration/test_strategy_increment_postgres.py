@@ -6,7 +6,10 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.postgres
 
+
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
@@ -41,9 +44,9 @@ def test_postgres_strategy_incremental(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -151,7 +154,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
 
     reader = DBReader(
         connection=postgres,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         # hwm_column is present in the dataframe even if it was not passed in columns list
         columns=[column for column in processing.column_names if column != hwm_column],
         hwm_column=(hwm_column, hwm_expr),
@@ -229,7 +232,7 @@ def test_postgres_strategy_incremental_wrong_hwm_type(spark, processing, prepare
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 

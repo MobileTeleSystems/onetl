@@ -93,13 +93,13 @@ Recommendations
   Filtering by non-indexed rows requires sequential scan for all rows in a table, with complexity ``O(n)``,
   which can take *a lot* of time on large tables, especially if RDBMS is not distributed.
 
-  Filtering by row index has complexity ``O(n * log n)`` (for B-tree), which is very effective.
+  Filtering by row index has complexity ``O(log n)`` (for B-tree), which is very effective.
 
-  .. note ::
+  .. note::
 
     Filtering performance depends on the index implementation and internal RDBMS optimization engine.
 
-  .. note ::
+  .. note::
 
     Use indexes which support ``<`` and ``>`` operations.
     Hash-based indexes, which support only ``=`` and ``IN`` operations, cannot be used

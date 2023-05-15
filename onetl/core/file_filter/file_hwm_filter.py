@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ class FileHWMFilter(BaseFileFilter, FrozenModel):
         return not self.hwm.covers(path)
 
     def log_options(self, indent: int = 0):
-        log_with_indent(f"hwm_type = {self.hwm.__class__.__name__}", indent=indent)
-        log_with_indent(f"qualified_name = {self.hwm.qualified_name!r}", indent=indent)
+        log_with_indent("hwm_type = %s", self.hwm.__class__.__name__, indent=indent)
+        log_with_indent("qualified_name = %r", self.hwm.qualified_name, indent=indent)
 
     def __str__(self):
         return self.hwm.qualified_name

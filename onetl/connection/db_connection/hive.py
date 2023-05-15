@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,22 +20,35 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from deprecated import deprecated
+from etl_entities.instance import Cluster
 from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintStr,
+    SupportHWMExpressionStr,
+    SupportWhereStr,
+)
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
+from onetl.hooks import slot, support_hooks
+from onetl.hwm import Statement
 from onetl.impl import GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 log = logging.getLogger(__name__)
 
 
-class HiveWriteMode(str, Enum):  # noqa: WPS600
+class HiveWriteMode(str, Enum):
     APPEND = "append"
     OVERWRITE_TABLE = "overwrite_table"
     OVERWRITE_PARTITIONS = "overwrite_partitions"
@@ -44,7 +57,7 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
         return str(self.value)
 
     @classmethod  # noqa: WPS120
-    def _missing_(cls, value: object):
+    def _missing_(cls, value: object):  # noqa: WPS120
         if str(value) == "overwrite":
             log.warning(
                 "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, "
@@ -54,12 +67,57 @@ class HiveWriteMode(str, Enum):  # noqa: WPS600
 
 
 class Hive(DBConnection):
-    """Class for Hive spark connection.
+    """Spark connection with Hive MetaStore support. |support_hooks|
+
+    You don't need a Hive server to use this connector.
+
+    .. dropdown:: Version compatibility
+
+        * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+    .. warning::
+
+        To use Hive connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
+
+    .. warning::
+
+        This connector requires some additional configuration files to be present (``hive-site.xml`` and so on),
+        as well as .jar files with Hive MetaStore client.
+
+        See `Spark Hive Tables documentation <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_
+        and `this guide <https://dataedo.com/docs/apache-spark-hive-metastore>`_ for more details.
+
+    .. note::
+
+        Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
+        before starting Spark session to generate Kerberos ticket. See :ref:`kerberos-install`.
+
+        In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
+        to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
+        See `Spark security documentation <https://spark.apache.org/docs/latest/security.html#kerberos>`_
+        for more details.
 
     Parameters
     ----------
+    cluster : str
+        Cluster name. Used for HWM and lineage.
+
     spark : :obj:`pyspark.sql.SparkSession`
-        Spark session that required for connection to hive.
+        Spark session with Hive metastore support enabled
 
     Examples
     --------
@@ -73,11 +131,32 @@ class Hive(DBConnection):
 
         spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
+
+    Hive connection initialization with Kerberos support
+
+    .. code:: python
+
+        from onetl.connection import Hive
+        from pyspark.sql import SparkSession
+
+        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+        # and "spark.yarn.keytab" for Spark 2
+
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
+            .option("spark.kerberos.principal", "user")
+            .option("spark.kerberos.keytab", "/path/to/keytab")
+            .enableHiveSupport()
+            .getOrCreate()
+        )
+
+        hive = Hive(cluster="rnd-dwh", spark=spark)
     """
 
     class WriteOptions(GenericOptions):
-        """Class for writing options, related to Hive source.
+        """Hive source writing options.
 
         You can pass here key-value items which then will be converted to calls
         of :obj:`pyspark.sql.readwriter.DataFrameWriter` methods.
@@ -283,7 +362,7 @@ class Hive(DBConnection):
         """
 
         @validator("sort_by")
-        def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):  # noqa: N805
+        def sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
             options = values.copy()
             bucket_by = options.pop("bucket_by", None)
             if sort_by and not bucket_by:
@@ -292,7 +371,7 @@ class Hive(DBConnection):
             return sort_by
 
         @root_validator
-        def partition_overwrite_mode_is_not_allowed(cls, values):  # noqa: N805
+        def partition_overwrite_mode_is_not_allowed(cls, values):
             if values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode"):
                 raise ValueError(
                     "`partitionOverwriteMode` option should be replaced "
@@ -313,12 +392,202 @@ class Hive(DBConnection):
         action="always",
     )
     class Options(WriteOptions):
-        pass  # noqa: WPS420, WPS604
+        pass
 
-    # TODO (@msmarty5): Replace with active_namenode function from mtspark
+    @support_hooks
+    class slots:  # noqa: N801
+        """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins."""
+
+        @slot
+        @staticmethod
+        def normalize_cluster_name(cluster: str) -> str | None:
+            """
+            Normalize cluster name passed into Hive constructor. |support_hooks|
+
+            If hooks didn't return anything, cluster name is left intact.
+
+            Parameters
+            ----------
+            cluster : :obj:`str`
+                Cluster name (raw)
+
+            Returns
+            -------
+            str | None
+                Normalized cluster name.
+
+                If hook cannot be applied to a specific cluster, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.normalize_cluster_name.bind
+                @hook
+                def normalize_cluster_name(cluster: str) -> str:
+                    return cluster.lower()
+            """
+
+        @slot
+        @staticmethod
+        def get_known_clusters() -> set[str] | None:
+            """
+            Return collection of known clusters. |support_hooks|
+
+            Cluster passed into Hive constructor should be present in this list.
+            If hooks didn't return anything, no validation will be performed.
+
+            Returns
+            -------
+            set[str] | None
+                Collection of cluster names (normalized).
+
+                If hook cannot be applied, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.get_known_clusters.bind
+                @hook
+                def get_known_clusters() -> str[str]:
+                    return {"rnd-dwh", "rnd-prod"}
+            """
+
+        @slot
+        @staticmethod
+        def get_current_cluster() -> str | None:
+            """
+            Get current cluster name. |support_hooks|
+
+            Used in :obj:`~check` method to verify that connection is created only from the same cluster.
+            If hooks didn't return anything, no validation will be performed.
+
+            Returns
+            -------
+            str | None
+                Current cluster name (normalized).
+
+                If hook cannot be applied, it should return ``None``.
+
+            Examples
+            --------
+
+            .. code:: python
+
+                from onetl.connection import Hive
+                from onetl.hooks import hook
+
+
+                @Hive.slots.get_current_cluster.bind
+                @hook
+                def get_current_cluster() -> str:
+                    # some magic here
+                    return "rnd-dwh"
+            """
+
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHintStr,
+        SupportHWMExpressionStr,
+        DBConnection.Dialect,
+    ):
+        pass
+
+    cluster: Cluster
+
+    @validator("cluster")
+    def validate_cluster_name(cls, cluster):
+        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+        if validated_cluster != cluster:
+            log.debug("|%s|   Got %r", cls.__name__)
+
+        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        known_clusters = cls.slots.get_known_clusters()
+        if known_clusters and validated_cluster not in known_clusters:
+            raise ValueError(
+                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
+            )
+
+        return validated_cluster
+
+    @classmethod
+    def get_current(cls, spark: SparkSession):
+        """
+        Create connection for current cluster.
+
+        .. note::
+
+            Can be used only if there are some hooks bound :obj:`~slots.get_current_cluster` slot.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Hive
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+
+            # injecting current cluster name via hooks mechanism
+            hive = Hive.get_current(spark=spark)
+        """
+
+        log.info("|%s| Detecting current cluster...", cls.__name__)
+        current_cluster = cls.slots.get_current_cluster()
+        if not current_cluster:
+            raise RuntimeError(
+                f"{cls.__name__}.get_current() can be used only if there are "
+                f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
+            )
+
+        log.info("|%s| Got %r", cls.__name__, current_cluster)
+        return cls(cluster=current_cluster, spark=spark)
+
     @property
     def instance_url(self) -> str:
-        return "rnd-dwh"
+        return self.cluster
+
+    def check(self):
+        log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
+        current_cluster = self.slots.get_current_cluster()
+        if current_cluster and self.cluster != current_cluster:
+            raise ValueError("You can connect to a Hive cluster only from the same cluster")
+
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(self._check_query, level=logging.DEBUG)
+
+        try:
+            self._execute_sql(self._check_query)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     def sql(
         self,
@@ -352,15 +621,15 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
             df = connection.sql("SELECT * FROM mytable")
         """
 
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query:")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(query)
 
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
@@ -401,7 +670,7 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
             connection.execute(
                 "CREATE TABLE mytable (id NUMBER, data VARCHAR) PARTITIONED BY (date DATE)"
@@ -411,69 +680,57 @@ class Hive(DBConnection):
 
         .. code:: python
 
-            connection = Hive(spark=spark)
+            connection = Hive(cluster="rnd-dwh", spark=spark)
 
-            connection.execute("ALTER TABLE mytable DROP PARTITION(date='2022-02-01')")
+            connection.execute("ALTER TABLE mytable DROP PARTITION(date='2023-02-01')")
         """
 
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement:")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement:", self.__class__.__name__)
+        log_lines(statement)
 
         self._execute_sql(statement).collect()
-        log.info(f"|{self.__class__.__name__}| Call succeeded")
+        log.info("|%s| Call succeeded", self.__class__.__name__)
 
-    def check(self):
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        self._log_parameters()
-
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query:")
-        log_with_indent(self._check_query, level=logging.DEBUG)
-
-        try:
-            self._execute_sql(self._check_query)
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
-        except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
-            raise RuntimeError("Connection is unavailable") from e
-
-        return self
-
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
         try:
-            self.get_schema(table)
+            self.get_df_schema(target)
             table_exists = True
 
-            log.info(f"|{self.__class__.__name__}| Table {table!r} already exists")
+            log.info("|%s| Table %r already exists", self.__class__.__name__, target)
         except Exception:
             table_exists = False
 
         if table_exists and write_options.mode != HiveWriteMode.OVERWRITE_TABLE:
             # using saveAsTable on existing table does not handle
             # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
-            self._insert_into(df, table, options)
+            self._insert_into(df, target, options)
         else:
             # if someone needs to recreate the entire table using new set of options, like partitionBy or bucketBy,
             # mode="overwrite_table" should be used
-            self._save_as_table(df, table, options)
+            self._save_as_table(df, target, options)
 
-    def read_table(
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
+        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         sql_text = get_sql_query(
-            table=table,
+            table=source,
             columns=columns,
             where=where,
             hint=hint,
@@ -481,50 +738,58 @@ class Hive(DBConnection):
 
         return self.sql(sql_text)
 
-    def get_schema(
+    def get_df_schema(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        query_schema = get_sql_query(table, columns=columns, where="1=0", compact=True)
+        log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, source)
+        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
 
-        log.info(f"|{self.__class__.__name__}| Fetching schema of table {table!r}")
-        log.debug(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(query_schema, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(query, level=logging.DEBUG)
 
-        df = self._execute_sql(query_schema)
+        df = self._execute_sql(query)
+        log.info("|%s| Schema fetched", self.__class__.__name__)
         return df.schema
 
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
     ) -> Tuple[Any, Any]:
-        log.info(f"|Spark| Getting min and max values for column {column!r}")
+        log.info("|Spark| Getting min and max values for column %r", column)
 
         sql_text = get_sql_query(
-            table=table,
+            table=source,
             columns=[
-                self.expression_with_alias(self._get_min_value_sql(expression or column), f"min_{column}"),
-                self.expression_with_alias(self._get_max_value_sql(expression or column), f"max_{column}"),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_min_value_sql(expression or column),
+                    "min",
+                ),
+                self.Dialect._expression_with_alias(
+                    self.Dialect._get_max_value_sql(expression or column),
+                    "max",
+                ),
             ],
             where=where,
             hint=hint,
         )
 
-        log.info(f"|{self.__class__.__name__}| SQL statement:")
-        log_with_indent(sql_text)
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(sql_text, level=logging.DEBUG)
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
-        min_value, max_value = row[f"min_{column}"], row[f"max_{column}"]
+        min_value = row["min"]
+        max_value = row["max"]
 
         log.info("|Spark| Received values:")
-        log_with_indent(f"MIN({column}) = {min_value!r}")
-        log_with_indent(f"MAX({column}) = {max_value!r}")
+        log_with_indent("MIN(%s) = %r", column, min_value)
+        log_with_indent("MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -539,25 +804,25 @@ class Hive(DBConnection):
         table_columns = self.spark.table(table).columns
 
         # But names could have different cases, this should not cause errors
-        table_columns_lower = [column.lower() for column in table_columns]
-        df_columns_lower = [column.lower() for column in df_columns]
+        table_columns_normalized = [column.casefold() for column in table_columns]
+        df_columns_normalized = [column.casefold() for column in df_columns]
 
-        missing_columns_df = [column for column in df_columns_lower if column not in table_columns_lower]
-        missing_columns_table = [column for column in table_columns_lower if column not in df_columns_lower]
+        missing_columns_df = [column for column in df_columns_normalized if column not in table_columns_normalized]
+        missing_columns_table = [column for column in table_columns_normalized if column not in df_columns_normalized]
 
         if missing_columns_df or missing_columns_table:
             missing_columns_df_message = ""
             if missing_columns_df:
                 missing_columns_df_message = f"""
                     These columns present only in dataframe:
-                        {', '.join(missing_columns_df)}
+                        {missing_columns_df!r}
                     """
 
             missing_columns_table_message = ""
             if missing_columns_table:
                 missing_columns_table_message = f"""
                     These columns present only in table:
-                        {', '.join(missing_columns_table)}
+                        {missing_columns_table!r}
                     """
 
             raise ValueError(
@@ -566,16 +831,16 @@ class Hive(DBConnection):
                     Inconsistent columns between a table and the dataframe!
 
                     Table {table!r} has columns:
-                        {', '.join(table_columns)}
+                        {table_columns!r}
 
                     Dataframe has columns:
-                        {', '.join(df_columns)}
+                        {df_columns!r}
                     {missing_columns_df_message}{missing_columns_table_message}
                     """,
                 ).strip(),
             )
 
-        return sorted(df_columns, key=lambda column: table_columns_lower.index(column.lower()))
+        return sorted(df_columns, key=lambda column: table_columns_normalized.index(column.casefold()))
 
     def _insert_into(
         self,
@@ -585,12 +850,14 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        log.info(f"|{self.__class__.__name__}| Inserting data into existing table {table!r}")
+        log.info("|%s| Inserting data into existing table %r", self.__class__.__name__, table)
 
-        for key, value in write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"}).items():
+        unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"mode"})
+        if unsupported_options:
             log.warning(
-                f"|{self.__class__.__name__}| Option {key}={value!r} is not supported "
-                "while inserting into existing table, ignoring",
+                "|%s| Options %r are not supported while inserting into existing table, ignoring",
+                self.__class__.__name__,
+                unsupported_options,
             )
 
         # Hive is inserting data to table by column position, not by name
@@ -621,7 +888,7 @@ class Hive(DBConnection):
             if original_partition_overwrite_mode:
                 self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, original_partition_overwrite_mode)
 
-        log.info(f"|{self.__class__.__name__}| Data is successfully inserted into table {table!r}")
+        log.info("|%s| Data is successfully inserted into table %r", self.__class__.__name__, table)
 
     def _save_as_table(
         self,
@@ -631,7 +898,7 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        log.info(f"|{self.__class__.__name__}| Saving data to a table {table!r}")
+        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
 
         writer = df.write
         for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"}).items():
@@ -648,4 +915,4 @@ class Hive(DBConnection):
         overwrite = write_options.mode != HiveWriteMode.APPEND
         writer.mode("overwrite" if overwrite else "append").saveAsTable(table)
 
-        log.info(f"|{self.__class__.__name__}| Table {table!r} successfully created")
+        log.info("|%s| Table %r is successfully created", self.__class__.__name__, table)

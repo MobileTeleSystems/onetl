@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ T = TypeVar("T", bound=PathProtocol)
 INDENT = " " * 4
 
 
-class FileSet(OrderedSet[T], Generic[T]):  # noqa: WPS600
+class FileSet(OrderedSet[T], Generic[T]):
     """
     Ordered set of pathlib-like objects.
 

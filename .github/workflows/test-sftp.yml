@@ -1,0 +1,74 @@
+name: Tests for SFTP
+on:
+  workflow_call:
+    inputs:
+      openssh-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  test-sftp:
+    name: Run SFTP tests (server=${{ inputs.openssh-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    services:
+      sftp:
+        image: linuxserver/openssh-server:${{ inputs.openssh-version }}
+        env:
+          TZ: UTC
+          USER_NAME: onetl
+          PASSWORD_ACCESS: 'true'
+          USER_PASSWORD: AesujeifohgoaCu0Boosiet5aimeitho
+        ports:
+        - 2222:2222
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-sftp-${{ hashFiles('requirements/core.txt', 'requirements/sftp.txt', 'requirements/tests/base.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-sftp-${{ hashFiles('requirements/core.txt', 'requirements/sftp.txt', 'requirements/tests/base.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-sftp-
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I \
+          -r requirements/core.txt \
+          -r requirements/sftp.txt \
+          -r requirements/tests/base.txt
+
+    - name: Wait for SFTP to be ready
+      run: |
+        ./docker/wait-for-it.sh -h localhost -p 2222 -t 60
+
+    - name: Run tests
+      run: |
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m sftp
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: sftp-${{ inputs.openssh-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*

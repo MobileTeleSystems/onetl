@@ -1,0 +1,6 @@
+coverage
+omegaconf
+pytest
+pytest-lazy-fixture
+pytest-mock
+pytest-rerunfailures

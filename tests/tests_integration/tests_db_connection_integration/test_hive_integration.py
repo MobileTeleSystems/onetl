@@ -1,13 +1,20 @@
 import logging
 
-import pandas
 import pytest
+
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
 
 from onetl.connection import Hive
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_check(spark, caplog):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     with caplog.at_level(logging.INFO):
         assert hive.check() == hive
 
@@ -19,7 +26,13 @@ def test_hive_check(spark, caplog):
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_sql(spark, processing, load_table_data, suffix):
-    hive = Hive(spark=spark)
+    if spark.version[0] == "2":
+        database_table_column = "databaseName"
+        database_name_column = "database"
+    else:
+        database_table_column = database_name_column = "namespace"
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     schema = load_table_data.schema
     table = load_table_data.full_name
 
@@ -29,23 +42,21 @@ def test_hive_connection_sql(spark, processing, load_table_data, suffix):
         table=load_table_data.table,
         order_by="id_int",
     )
-
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
+
     df = hive.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
-
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
-    df = hive.sql("SHOW DATABASES")
 
-    result_df = pandas.DataFrame([["default"], [schema]], columns=["databaseName"])
+    df = hive.sql("SHOW DATABASES")
+    result_df = pandas.DataFrame([["default"], [schema]], columns=[database_table_column])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
     df = hive.sql(f"SHOW TABLES IN {schema}")
     result_df = pandas.DataFrame(
         [[schema, load_table_data.table, False]],
-        columns=["database", "tableName", "isTemporary"],
+        columns=[database_name_column, "tableName", "isTemporary"],
     )
-
     processing.assert_equal_df(df=df, other_frame=result_df)
     # wrong syntax
     with pytest.raises(Exception):
@@ -54,7 +65,7 @@ def test_hive_connection_sql(spark, processing, load_table_data, suffix):
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_execute_ddl(spark, processing, get_schema_table, suffix):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     table_name, schema, table = get_schema_table
     fields = {
         column_name: processing.get_column_type(column_name)
@@ -96,7 +107,7 @@ def test_hive_connection_execute_ddl(spark, processing, get_schema_table, suffix
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_execute_dml(request, spark, processing, load_table_data, suffix):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     table_name, schema, table = load_table_data
     temp_name = f"{table}_temp"
     temp_table = f"{schema}.{temp_name}"

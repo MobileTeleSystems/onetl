@@ -6,21 +6,23 @@ import pytest
 from onetl.connection import Hive
 from onetl.core import DBWriter
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_writer(spark, processing, get_schema_table, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,  # new table
+        target=get_schema_table.full_name,  # new table
     )
 
     with caplog.at_level(logging.INFO):
         writer.run(df)
 
         assert f"|Hive| Saving data to a table '{get_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Table '{get_schema_table.full_name}' successfully created" in caplog.text
+        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created" in caplog.text
 
     processing.assert_equal_df(
         schema=get_schema_table.schema,
@@ -31,11 +33,11 @@ def test_hive_writer(spark, processing, get_schema_table, caplog):
 
 def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options={"compression": "snappy"},
     )
     writer.run(df)
@@ -43,16 +45,19 @@ def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    assert "`compression` 'snappy'" in response
+    if spark.version[0] == "2":
+        assert "`compression` 'snappy'" in response
+    else:
+        assert "'compression' = 'snappy'" in response
 
 
 def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(compression="snappy"),
     )
     writer.run(df)
@@ -60,7 +65,10 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    assert "`compression` 'snappy'" in response
+    if spark.version[0] == "2":
+        assert "`compression` 'snappy'" in response
+    else:
+        assert "'compression' = 'snappy'" in response
 
 
 @pytest.mark.parametrize(
@@ -73,11 +81,11 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
 )
 def test_hive_writer_with_format(spark, processing, get_schema_table, options, fmt):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=options,
     )
     writer.run(df)
@@ -104,11 +112,11 @@ def test_hive_writer_with_bucket_by(
     bucket_columns,
 ):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(bucketBy=(bucket_number, bucket_columns)),
     )
     writer.run(df)
@@ -136,10 +144,10 @@ def test_hive_writer_with_bucket_by_and_sort_by(
     sort_by,
 ):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(bucketBy=(10, "id_int"), sortBy=sort_by),
     )
     writer.run(df)
@@ -158,11 +166,11 @@ def test_hive_writer_with_bucket_by_and_sort_by(
 
 def test_hive_writer_default_not_bucketed(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
     )
     writer.run(df)
 
@@ -184,11 +192,11 @@ def test_hive_writer_default_not_bucketed(spark, processing, get_schema_table):
 )
 def test_hive_writer_with_partition_by(spark, processing, get_schema_table, partition_by):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy=partition_by),
     )
     writer.run(df)
@@ -204,11 +212,11 @@ def test_hive_writer_with_partition_by(spark, processing, get_schema_table, part
 
 def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
     )
     writer.run(df)
 
@@ -231,10 +239,10 @@ def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table
 def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table, options, caplog):
     df = processing.create_spark_df(spark=spark)
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=options,
     )
 
@@ -252,11 +260,11 @@ def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table,
 
 def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,  # table already exist
+        target=prepare_schema_table.full_name,  # table already exist
     )
 
     with caplog.at_level(logging.INFO):
@@ -275,24 +283,27 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
 @pytest.mark.parametrize(
     "options, option_kv",
     [
-        (Hive.WriteOptions(partitionBy="str"), "partitionBy='str'"),
-        (Hive.WriteOptions(bucketBy=(10, "id_int")), "bucketBy=(10, 'id_int')"),
-        (Hive.WriteOptions(bucketBy=(5, "id_int"), sortBy="hwm_int"), "sortBy='hwm_int'"),
-        (Hive.WriteOptions(compression="snappy"), "compression='snappy'"),
-        (Hive.WriteOptions(format="orc"), "format='orc'"),
+        (Hive.WriteOptions(partitionBy="str"), "{'partitionBy': 'str'}"),
+        (Hive.WriteOptions(bucketBy=(10, "id_int")), "{'bucketBy': (10, 'id_int')}"),
+        (
+            Hive.WriteOptions(bucketBy=(5, "id_int"), sortBy="hwm_int"),
+            "{'bucketBy': (5, 'id_int'), 'sortBy': 'hwm_int'}",
+        ),
+        (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
+        (Hive.WriteOptions(format="orc"), "{'format': 'orc'}"),
     ],
 )
 def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_table, options, option_kv, caplog):
     df = processing.create_spark_df(spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,  # table already exist
+        target=prepare_schema_table.full_name,  # table already exist
         options=options,
     )
 
-    error_msg = f"|Hive| Option {option_kv} is not supported while inserting into existing table, ignoring"
+    error_msg = f"|Hive| Options {option_kv} are not supported while inserting into existing table, ignoring"
     with caplog.at_level(logging.WARNING):
         writer.run(df)
 
@@ -321,10 +332,10 @@ def test_hive_writer_insert_into_with_mode_append(spark, processing, prepare_sch
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=options,
     )
 
@@ -356,10 +367,10 @@ def test_hive_writer_insert_into_with_mode_overwrite_table(spark, processing, pr
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_table", partitionBy="id_int"),
     )
 
@@ -385,10 +396,10 @@ def test_hive_writer_insert_into_with_mode_overwrite_partitions(spark, processin
     df2 = df[df.id_int > 50]
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="id_int"),
     )
 
@@ -422,11 +433,11 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_append(
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -435,7 +446,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_append(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="append"),
     )
     df13 = df1.union(df3)
@@ -468,11 +479,11 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -481,7 +492,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_table", partitionBy="hwm_int"),
     )
 
@@ -515,11 +526,11 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
     df2 = df.where("id_int > 25 AND id_int <= 50")
     df3 = df[df.id_int > 50]
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
@@ -528,7 +539,7 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
 
     writer = DBWriter(
         connection=hive,
-        table=get_schema_table.full_name,
+        target=get_schema_table.full_name,
         options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="hwm_int"),
     )
 
@@ -554,32 +565,32 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partition
 @pytest.mark.parametrize("mode", ["append", "overwrite_partitions"])
 def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema_table, mode):
     df = processing.create_spark_df(spark=spark)
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Hive.WriteOptions(mode=mode),
     )
 
-    prefix = f"""
+    prefix = rf"""
         Inconsistent columns between a table and the dataframe!
 
         Table '{prepare_schema_table.full_name}' has columns:
-            id_int, text_string, hwm_int, hwm_date, hwm_datetime, float_value
+            \['id_int', 'text_string', 'hwm_int', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """.strip()
 
     # new column
     df2 = df.withColumn("unknown", df.id_int)
     error_msg2 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, text_string, hwm_int, hwm_date, hwm_datetime, float_value, unknown
+            \['id_int', 'text_string', 'hwm_int', 'hwm_date', 'hwm_datetime', 'float_value', 'unknown'\]
 
         These columns present only in dataframe:
-            unknown
+            \['unknown'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg2):
@@ -588,14 +599,14 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     # too less columns
     df3 = df.select(df.id_int, df.hwm_int)
     error_msg3 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, hwm_int
+            \['id_int', 'hwm_int'\]
 
         These columns present only in table:
-            text_string, hwm_date, hwm_datetime, float_value
+            \['text_string', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg3):
@@ -604,17 +615,17 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     # too much columns
     df4 = df.withColumn("unknown", df.id_int).select(df.id_int, df.hwm_int, "unknown")
     error_msg3 = textwrap.dedent(
-        f"""
+        rf"""
         {prefix}
 
         Dataframe has columns:
-            id_int, hwm_int, unknown
+            \['id_int', 'hwm_int', 'unknown'\]
 
         These columns present only in dataframe:
-            unknown
+            \['unknown'\]
 
         These columns present only in table:
-            text_string, hwm_date, hwm_datetime, float_value
+            \['text_string', 'hwm_date', 'hwm_datetime', 'float_value'\]
         """,
     ).strip()
     with pytest.raises(ValueError, match=error_msg3):

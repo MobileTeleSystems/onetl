@@ -1,9 +1,16 @@
 import logging
 
-import pandas
 import pytest
 
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
+
 from onetl.connection import MSSQL
+
+pytestmark = pytest.mark.mssql
 
 
 def test_mssql_connection_check(spark, processing, caplog):
@@ -23,12 +30,11 @@ def test_mssql_connection_check(spark, processing, caplog):
     assert "type = MSSQL" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
-    assert f"user = '{processing.user}'" in caplog.text
     assert f"database = '{processing.database}'" in caplog.text
+    assert f"user = '{processing.user}'" in caplog.text
+    assert "password = SecretStr('**********')" in caplog.text
+    assert processing.password not in caplog.text
     assert "extra = {'trustServerCertificate': 'true'}" in caplog.text
-
-    if processing.password:
-        assert processing.password not in caplog.text
 
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
@@ -36,7 +42,7 @@ def test_mssql_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_mssql_wrong_connection_check(spark):
+def test_mssql_connection_check_fail(spark):
     mssql = MSSQL(
         host="host",
         user="some_user",

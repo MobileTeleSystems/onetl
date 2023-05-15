@@ -1,20 +1,17 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Teradata
 
-spark = Mock(spec=SparkSession)
+pytestmark = pytest.mark.teradata
 
 
 def test_teradata_class_attributes():
     assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-    assert Teradata.package == "com.teradata.jdbc:terajdbc4:17.20.00.08"
+    assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
 
 
-def test_teradata():
-    conn = Teradata(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_teradata(spark_mock):
+    conn = Teradata(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 1025
@@ -28,9 +25,12 @@ def test_teradata():
         "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
     )
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
-def test_teradata_with_port():
-    conn = Teradata(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+
+def test_teradata_with_port(spark_mock):
+    conn = Teradata(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -45,8 +45,8 @@ def test_teradata_with_port():
     )
 
 
-def test_teradata_without_database():
-    conn = Teradata(host="some_host", user="user", password="passwd", spark=spark)
+def test_teradata_without_database(spark_mock):
+    conn = Teradata(host="some_host", user="user", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 1025
@@ -61,14 +61,14 @@ def test_teradata_without_database():
     )
 
 
-def test_teradata_with_extra():
+def test_teradata_with_extra(spark_mock):
     conn = Teradata(
         host="some_host",
         user="user",
         password="passwd",
         database="database",
         extra={"TMODE": "TERA", "LOGMECH": "LDAP"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert conn.jdbc_url == (
@@ -82,7 +82,7 @@ def test_teradata_with_extra():
         password="passwd",
         database="database",
         extra={"FLATTEN": "OFF", "STRICT_NAMES": "ON", "COLUMN_NAME": "OFF", "MAYBENULL": "OFF", "CHARSET": "CP-1251"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert conn.jdbc_url == (
@@ -91,43 +91,43 @@ def test_teradata_with_extra():
     )
 
 
-def test_teradata_with_extra_prohibited():
-    with pytest.raises(ValueError, match="Options 'DATABASE', 'DBS_PORT' are not allowed to use in a Extra"):
+def test_teradata_with_extra_prohibited(spark_mock):
+    with pytest.raises(ValueError, match=r"Options \['DATABASE', 'DBS_PORT'\] are not allowed to use in a Extra"):
         Teradata(
             host="some_host",
             user="user",
             password="passwd",
             database="database",
             extra={"DATABASE": "SOME", "DBS_PORT": "123"},
-            spark=spark,
+            spark=spark_mock,
         )
 
 
-def test_teradata_without_mandatory_args():
+def test_teradata_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         Teradata()
 
     with pytest.raises(ValueError, match="field required"):
         Teradata(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Teradata(
             host="some_host",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Teradata(
             host="some_host",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         Teradata(
             host="some_host",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )

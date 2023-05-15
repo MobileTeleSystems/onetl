@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -58,16 +58,16 @@ class MemoryHWMStore(BaseHWMStore):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with MemoryHWMStore():
             with IncrementalStrategy():

@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, Type
 from pydantic import Field, SecretStr
 
 from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
+from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.impl import FrozenModel, GenericOptions
-from onetl.log import log_with_indent
+from onetl.log import log_lines
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
@@ -62,9 +63,10 @@ class JDBCMixin(FrozenModel):
     user: str
     password: SecretStr
     driver: ClassVar[str]
+    _check_query: ClassVar[str]
 
     class JDBCOptions(GenericOptions):
-        """Class for generic options, specific for a specific JDBC driver.
+        """Generic options, related to specific JDBC driver.
 
         .. note ::
 
@@ -133,7 +135,7 @@ class JDBCMixin(FrozenModel):
     def __enter__(self):
         return self
 
-    def __exit__(self, _exc_type, _exc_value, _traceback):
+    def __exit__(self, _exc_type, _exc_value, _traceback):  # noqa: U101
         self.close()
 
     def __del__(self):  # noqa: WPS603
@@ -141,17 +143,18 @@ class JDBCMixin(FrozenModel):
         self.close()
 
     def check(self):
-        log.info(f"|{self.__class__.__name__}| Checking connection availability...")
-        self._log_parameters()
+        self._check_driver_imported()
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
 
-        log.debug(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(self._check_query, level=logging.DEBUG)
+        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(self._check_query, level=logging.DEBUG)
 
         try:
-            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))
-            log.info(f"|{self.__class__.__name__}| Connection is available.")
+            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))  # type: ignore
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
-            log.exception(f"|{self.__class__.__name__}| Connection is unavailable")
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
 
         return self
@@ -171,7 +174,7 @@ class JDBCMixin(FrozenModel):
             This function should **NOT** be used to return dataframe with large number of rows/columns,
             like ``SELECT * FROM table`` (without any filtering).
 
-            Use it **ONLY** to execute queries with **only one or just a few returning rows/columns**,
+            Use it **ONLY** to execute queries with **one or just a few returning rows/columns**,
             like ``SELECT COUNT(*) FROM table`` or ``SELECT * FROM table WHERE id = ...``.
 
             This is because all the data is fetched through master host, not in a distributed way
@@ -239,15 +242,18 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
+        self._check_driver_imported()
         query = clear_statement(query)
 
-        log.info(f"|{self.__class__.__name__}| Executing SQL query (on driver):")
-        log_with_indent(query)
+        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log_lines(query)
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
         log.info(
-            f"|{self.__class__.__name__}| Query succeeded, resulting in-memory dataframe contains {df.count()} rows",
+            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
+            self.__class__.__name__,
+            df.count(),
         )
         return df
 
@@ -350,23 +356,40 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
+        self._check_driver_imported()
         statement = clear_statement(statement)
 
-        log.info(f"|{self.__class__.__name__}| Executing statement (on driver):")
-        log_with_indent(statement)
+        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
+        log_lines(statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
 
-        message = f"|{self.__class__.__name__}| Execution succeeded"
         if df is not None:
             rows_count = df.count()
-            message += f", resulting in-memory dataframe contains {rows_count} rows"
+            log.info(
+                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
+                self.__class__.__name__,
+                rows_count,
+            )
         else:
-            message += ", nothing returned"
-
-        log.info(message)
+            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
+
+    def _check_driver_imported(self):
+        gateway = self.spark._sc._gateway  # type: ignore
+        driver_class = getattr(gateway.jvm, self.driver)
+
+        try:
+            gateway.help(driver_class, display=False)
+        except Exception:
+            log.error(
+                MISSING_JVM_CLASS_MSG,
+                self.driver,
+                f"{self.__class__.__name__}.package",
+                exc_info=False,
+            )
+            raise
 
     def _query_on_driver(
         self,
@@ -440,12 +463,12 @@ class JDBCMixin(FrozenModel):
 
         jdbc_properties = self._get_jdbc_properties(options, exclude_unset=True)
 
-        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc
+        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_options = jdbc_utils_package.JDBCOptions(
             self.jdbc_url,
             # JDBCOptions class requires `table` argument to be passed, but it is not used in asConnectionProperties
             "table",
-            self.spark._jvm.PythonUtils.toScalaMap(jdbc_properties),
+            self.spark._jvm.PythonUtils.toScalaMap(jdbc_properties),  # type: ignore
         )
         return jdbc_options.asConnectionProperties()
 
@@ -459,10 +482,10 @@ class JDBCMixin(FrozenModel):
             last_connection.close()
 
         connection_properties = self._options_to_connection_properties(options)
-        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager
+        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
-        self._last_connection_and_options = (new_connection, options)  # noqa: WPS601
+        self._last_connection_and_options = (new_connection, options)
         return new_connection
 
     def _close_connections(self):
@@ -470,12 +493,12 @@ class JDBCMixin(FrozenModel):
             last_connection, _ = self._last_connection_and_options
             last_connection.close()
 
-        self._last_connection_and_options = None  # noqa: WPS601
+        self._last_connection_and_options = None
 
     def _get_statement_args(self) -> tuple[int, ...]:
-        ResultSet = self.spark._jvm.java.sql.ResultSet
+        resultset = self.spark._jvm.java.sql.ResultSet  # type: ignore
 
-        return ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
+        return resultset.TYPE_FORWARD_ONLY, resultset.CONCUR_READ_ONLY
 
     def _execute_on_driver(
         self,
@@ -493,7 +516,7 @@ class JDBCMixin(FrozenModel):
         """
 
         jdbc_connection = self._get_jdbc_connection(options)
-        jdbc_connection.setReadOnly(read_only)
+        jdbc_connection.setReadOnly(read_only)  # type: ignore
 
         statement_args = self._get_statement_args()
         jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
@@ -520,10 +543,10 @@ class JDBCMixin(FrozenModel):
         def jvm_is_instance(obj, klass):  # noqa: WPS430
             import py4j
 
-            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)
+            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)  # type: ignore
 
-        PreparedStatement = self.spark._jvm.java.sql.PreparedStatement
-        CallableStatement = self.spark._jvm.java.sql.CallableStatement
+        prepared_statement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
+        callable_statement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
 
         with closing(jdbc_statement):
             if options.fetchsize is not None:
@@ -533,7 +556,9 @@ class JDBCMixin(FrozenModel):
                 jdbc_statement.setQueryTimeout(options.query_timeout)
 
             # Java SQL classes are not consistent..
-            if jvm_is_instance(jdbc_statement, PreparedStatement) or jvm_is_instance(jdbc_statement, CallableStatement):
+            if jvm_is_instance(jdbc_statement, prepared_statement):
+                jdbc_statement.execute()
+            elif jvm_is_instance(jdbc_statement, callable_statement):
                 jdbc_statement.execute()
             elif read_only:
                 jdbc_statement.executeQuery(statement)
@@ -605,18 +630,23 @@ class JDBCMixin(FrozenModel):
 
         from pyspark.sql import DataFrame  # noqa: WPS442
 
-        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
+        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc  # type: ignore
         jdbc_dialect = jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
 
-        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc
+        jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_utils = jdbc_utils_package.JdbcUtils
 
-        java_converters = self.spark._jvm.scala.collection.JavaConverters
+        java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
+        if self.spark.version[:3] >= "3.4":
+            # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
+            result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
+        else:
+            result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
+
         result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema)
         result_list = java_converters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
-        jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)
+        jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)  # type: ignore
 
         # DataFrame constructor in Spark 2.3 and 2.4 required second argument to be a SQLContext class
         # E.g. spark._wrapped = SQLContext(spark).
@@ -624,4 +654,4 @@ class JDBCMixin(FrozenModel):
         # attribute was removed from SparkSession
         spark_context = getattr(self.spark, "_wrapped", self.spark)
 
-        return DataFrame(jdf, spark_context)
+        return DataFrame(jdf, spark_context)  # type: ignore

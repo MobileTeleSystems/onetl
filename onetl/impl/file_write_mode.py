@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 from enum import Enum
 
 
-class FileWriteMode(str, Enum):  # noqa: WPS600
+class FileWriteMode(str, Enum):
     ERROR = "error"
     IGNORE = "ignore"
     OVERWRITE = "overwrite"

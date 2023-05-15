@@ -3,13 +3,15 @@ import pytest
 from onetl.connection import Hive
 from onetl.core import DBReader
 
+pytestmark = pytest.mark.hive
+
 
 def test_hive_reader(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     df = reader.run()
 
@@ -21,11 +23,11 @@ def test_hive_reader(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
     )
     table_df = reader1.run()
 
@@ -40,7 +42,7 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
 
     reader2 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=columns,
     )
     table_df_with_columns = reader2.run()
@@ -53,7 +55,7 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
 
     reader3 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*) as abc"],
     )
     count_df = reader3.run()
@@ -64,11 +66,11 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 1000",
     )
     table_df = reader1.run()
@@ -82,7 +84,7 @@ def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
 
     reader2 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int = 50",
     )
     one_df = reader2.run()
@@ -90,7 +92,7 @@ def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
 
     reader3 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int > 1000",
     )
     empty_df = reader3.run()
@@ -99,18 +101,18 @@ def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
 
 
 def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_table_data):
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
 
     reader1 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         where="id_int < 80 AND id_int > 10",
     )
     table_df = reader1.run()
 
     reader2 = DBReader(
         connection=hive,
-        table=load_table_data.full_name,
+        source=load_table_data.full_name,
         columns=["count(*)"],
         where="id_int < 80 AND id_int > 10",
     )
@@ -122,10 +124,10 @@ def test_hive_reader_snapshot_with_columns_and_where(spark, processing, load_tab
 def test_hive_reader_non_existing_table(spark, get_schema_table):
     from pyspark.sql.utils import AnalysisException
 
-    hive = Hive(spark=spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
     reader = DBReader(
         connection=hive,
-        table=get_schema_table.full_name,
+        source=get_schema_table.full_name,
     )
 
     with pytest.raises(AnalysisException) as excinfo:

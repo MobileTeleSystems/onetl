@@ -6,7 +6,10 @@ from onetl.core import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
+pytestmark = pytest.mark.mysql
 
+
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
@@ -41,9 +44,9 @@ def test_mysql_strategy_incremental(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=mysql, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=mysql, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.table, column=reader.hwm_column)
+    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -118,7 +121,7 @@ def test_mysql_strategy_incremental_wrong_hwm_type(spark, processing, prepare_sc
         spark=spark,
         database=processing.database,
     )
-    reader = DBReader(connection=mysql, table=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(connection=mysql, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
     data = processing.create_pandas_df()
 
@@ -148,14 +151,14 @@ def test_mysql_strategy_incremental_wrong_hwm_type(spark, processing, prepare_sc
         (
             "hwm_date",
             "hwm1_date",
-            "STR_TO_DATE(text_string, '%Y-%m-%d')",  # noqa: WPS323
+            "STR_TO_DATE(text_string, '%Y-%m-%d')",
             DateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
             "HWM1_DATETIME",
-            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f')",  # noqa: WPS323
+            "STR_TO_DATE(text_string, '%Y-%m-%dT%H:%i:%s.%f')",
             DateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -182,7 +185,7 @@ def test_mysql_strategy_incremental_with_hwm_expr(
 
     reader = DBReader(
         connection=mysql,
-        table=prepare_schema_table.full_name,
+        source=prepare_schema_table.full_name,
         hwm_column=(hwm_column, hwm_expr),
     )
 

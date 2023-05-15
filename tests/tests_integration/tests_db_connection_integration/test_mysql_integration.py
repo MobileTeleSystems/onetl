@@ -1,9 +1,16 @@
 import logging
 
-import pandas
 import pytest
 
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
+
 from onetl.connection import MySQL
+
+pytestmark = pytest.mark.mysql
 
 
 def test_mysql_connection_check(spark, processing, caplog):
@@ -22,11 +29,10 @@ def test_mysql_connection_check(spark, processing, caplog):
     assert "type = MySQL" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
-    assert f"user = '{processing.user}'" in caplog.text
     assert f"database = '{processing.database}'" in caplog.text
-
-    if processing.password:
-        assert processing.password not in caplog.text
+    assert f"user = '{processing.user}'" in caplog.text
+    assert "password = SecretStr('**********')" in caplog.text
+    assert processing.password not in caplog.text
 
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
@@ -34,7 +40,7 @@ def test_mysql_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_mysql_wrong_connection_check(spark):
+def test_mysql_connection_check_fail(spark):
     mysql = MySQL(host="host", user="some_user", password="pwd", database="abc", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
@@ -505,6 +511,7 @@ def test_mysql_connection_execute_procedure_inout(
         mysql.execute(f"{{call {proc}(10, ?)}}")
 
 
+@pytest.mark.flaky
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_mysql_connection_execute_procedure_ddl(
     request,

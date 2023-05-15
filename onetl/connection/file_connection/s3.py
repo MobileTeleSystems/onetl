@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,11 +16,29 @@ from __future__ import annotations
 
 import io
 import os
+import textwrap
 from logging import getLogger
 from typing import Any, Optional, Union
 
-from minio import Minio, commonconfig
-from minio.datatypes import Object
+try:
+    from minio import Minio, commonconfig
+    from minio.datatypes import Object
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "minio".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[s3]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
+from etl_entities.instance import Host
 from pydantic import SecretStr, root_validator
 from typing_extensions import Literal
 
@@ -31,7 +49,22 @@ log = getLogger(__name__)
 
 
 class S3(FileConnection):
-    """Class for S3 file connection.
+    """S3 file connection.
+
+    Based on `minio-py client <https://pypi.org/project/minio/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use S3 connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[s3]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
@@ -41,14 +74,14 @@ class S3(FileConnection):
     port : int, optional
         Port of S3 source
 
+    bucket : str
+        Bucket name in the S3 file source
+
     access_key : str
         Access key (aka user ID) of an account in the S3 service
 
     secret_key : str
         Secret key (aka password) of an account in the S3 service
-
-    bucket : str
-        Bucket name in the S3 file source
 
     protocol : str, default : ``https``
         Connection protocol. Allowed values: ``https`` or ``http``
@@ -77,47 +110,51 @@ class S3(FileConnection):
 
     """
 
-    host: str
+    host: Host
     port: Optional[int] = None
+    bucket: str
     access_key: str
     secret_key: SecretStr
-    bucket: str
     protocol: Union[Literal["http"], Literal["https"]] = "https"
-    session_token: Optional[str] = None
+    session_token: Optional[SecretStr] = None
     region: Optional[str] = None
 
     @root_validator
-    def check_port(cls, values):  # noqa: N805
+    def validate_port(cls, values):
         if values["port"] is not None:
             return values
-        values["port"] = 443 if values["protocol"] == "https" else 80
 
+        values["port"] = 443 if values["protocol"] == "https" else 80
         return values
+
+    @property
+    def instance_url(self) -> str:
+        return f"s3://{self.host}:{self.port}"
 
     def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
         # and the method must return the created directory
 
-        log.debug(f"|{self.__class__.__name__}| Creating directory '{path}'")
+        log.debug("|%s| Creating directory '%s'", self.__class__.__name__, path)
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
             return self.get_directory(remote_directory)
 
         self._mkdir(remote_directory)
-        log.info(f"|{self.__class__.__name__}| Successfully created directory '{remote_directory}'")
+        log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(os.fspath(path))
-
-        remote_path = self._delete_absolute_path_slash(remote_path)
-
-        if remote_path == RemotePath("."):
+        if self._is_root(remote_path):
             return True
 
-        for component in self.client.list_objects(self.bucket, prefix=os.fspath(remote_path)):
-            if RemotePath(component.object_name) == remote_path:
+        remote_path_str = self._delete_absolute_path_slash(remote_path)
+        for component in self.client.list_objects(self.bucket, prefix=remote_path_str):
+            component_path = RemotePath(component.object_name)
+            component_path_str = self._delete_absolute_path_slash(component_path)
+            if component_path_str == remote_path_str:
                 return True
 
         return False
@@ -128,26 +165,39 @@ class S3(FileConnection):
             access_key=self.access_key,
             secret_key=self.secret_key.get_secret_value(),
             secure=self.protocol == "https",
-            session_token=self.session_token,
+            session_token=self.session_token.get_secret_value() if self.session_token else None,
             region=self.region,
         )
 
     def _is_client_closed(self) -> bool:
-        pass  # noqa: WPS420
+        return True
 
     def _close_client(self) -> None:
-        pass  # noqa: WPS420
+        pass
+
+    @staticmethod
+    def _is_root(path: RemotePath) -> bool:
+        return path.name == ""
+
+    @classmethod
+    def _delete_absolute_path_slash(cls, path: RemotePath) -> str:
+        if cls._is_root(path):
+            return ""
+
+        if path.is_absolute():
+            path = path.relative_to("/")
+
+        return os.fspath(path)
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
-        remote_file_path = self._delete_absolute_path_slash(remote_file_path)
-
-        self.client.fget_object(self.bucket, os.fspath(remote_file_path), os.fspath(local_file_path))
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.fget_object(self.bucket, path_str, os.fspath(local_file_path))
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
-        path = self._delete_absolute_path_slash(path)
+        path_str = self._delete_absolute_path_slash(path)
 
         try:
-            stat = self.client.stat_object(self.bucket, os.fspath(path))
+            stat = self.client.stat_object(self.bucket, path_str)
             return RemotePathStat(
                 st_size=stat.size or 0,
                 st_mtime=stat.last_modified.timestamp() if stat.last_modified else None,
@@ -158,36 +208,34 @@ class S3(FileConnection):
             return RemotePathStat()
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
-        self.client.remove_object(self.bucket, os.fspath(remote_file_path))
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.remove_object(self.bucket, path_str)
 
     def _mkdir(self, path: RemotePath) -> None:
         # in s3 dirs do not exist
-        pass  # noqa: WPS420
-
-    @staticmethod
-    def _delete_absolute_path_slash(path: RemotePath) -> RemotePath:
-        if path.is_absolute():
-            return path.relative_to("/")
-
-        return path
+        pass
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
-        remote_file_path = self._delete_absolute_path_slash(remote_file_path)
-        self.client.fput_object(self.bucket, os.fspath(remote_file_path), os.fspath(local_file_path))
+        path_str = self._delete_absolute_path_slash(remote_file_path)
+        self.client.fput_object(self.bucket, path_str, os.fspath(local_file_path))
 
     def _rename(self, source: RemotePath, target: RemotePath) -> None:
-        source_str = os.fspath(self._delete_absolute_path_slash(source))
-        target_str = os.fspath(self._delete_absolute_path_slash(target))
+        source_str = self._delete_absolute_path_slash(source)
+        target_str = self._delete_absolute_path_slash(target)
         self.client.copy_object(
             bucket_name=self.bucket,
             object_name=target_str,
             source=commonconfig.CopySource(self.bucket, source_str),
         )
 
-        self._remove_file(source_str)
+        self._remove_file(source)
 
     def _scan_entries(self, path: RemotePath) -> list[Object]:
-        return self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")
+        if self._is_root(path):
+            self.client.list_objects(self.bucket)
+
+        path_str = self._delete_absolute_path_slash(path)
+        return self.client.list_objects(self.bucket, prefix=path_str + "/")
 
     def _extract_name_from_entry(self, entry: Object) -> str:
         return RemotePath(entry.object_name).name
@@ -207,23 +255,20 @@ class S3(FileConnection):
 
     def _rmdir(self, path: RemotePath) -> None:
         # Empty. S3 does not have directories.
-        pass  # noqa: WPS420
+        pass
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
-        path = self._delete_absolute_path_slash(path)
-
+        path_str = self._delete_absolute_path_slash(path)
         file_handler = self.client.get_object(
             self.bucket,
-            os.fspath(path),
+            path_str,
             **kwargs,
         )
         return file_handler.read().decode(encoding)
 
     def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
-        path = self._delete_absolute_path_slash(path)
-
-        file_handler = self.client.get_object(self.bucket, os.fspath(path), **kwargs)
-
+        path_str = self._delete_absolute_path_slash(path)
+        file_handler = self.client.get_object(self.bucket, path_str, **kwargs)
         return file_handler.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
@@ -232,7 +277,7 @@ class S3(FileConnection):
         self.client.put_object(
             self.bucket,
             data=stream,
-            object_name=os.fspath(self._delete_absolute_path_slash(path)),
+            object_name=self._delete_absolute_path_slash(path),
             length=len(content_bytes),
             **kwargs,
         )
@@ -242,25 +287,23 @@ class S3(FileConnection):
         self.client.put_object(
             self.bucket,
             data=stream,
-            object_name=os.fspath(path),
+            object_name=self._delete_absolute_path_slash(path),
             length=len(content),
             **kwargs,
         )
 
     def _is_dir(self, path: RemotePath) -> bool:
-        if RemotePath(path).name == "":
-            # For the root directory
+        if self._is_root(path):
             return True
 
-        path = self._delete_absolute_path_slash(path)
-
-        return bool(list(self.client.list_objects(self.bucket, prefix=os.fspath(path) + "/")))
+        path_str = self._delete_absolute_path_slash(path)
+        return bool(list(self.client.list_objects(self.bucket, prefix=path_str + "/")))
 
     def _is_file(self, path: RemotePath) -> bool:
-        path = self._delete_absolute_path_slash(path)
+        path_str = self._delete_absolute_path_slash(path)
 
         try:
-            self.client.stat_object(self.bucket, os.fspath(path))
+            self.client.stat_object(self.bucket, path_str)
             return True
         except Exception:  # noqa: B001, E722
             return False

@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -37,25 +37,31 @@ class BatchHWMStrategy(HWMStrategy):
     MAX_ITERATIONS: ClassVar[int] = 100
 
     @validator("step", always=True)
-    def step_is_not_none(cls, step):  # noqa: N805
+    def step_is_not_none(cls, step):
         if not step:
             raise ValueError(f"'step' argument of {cls.__name__} cannot be empty!")
 
         return step
 
     def __iter__(self):
-        self._iteration = -1  # noqa: WPS601
+        self._iteration = -1
         return self
 
     def __next__(self):
-        self._iteration += 1  # noqa: WPS601
+        self._iteration += 1
 
         if self.is_finished:
-            log.info(f"|{self.__class__.__name__}| Reached max HWM value, exiting after {self._iteration} iteration(s)")
+            log.info(
+                "|%s| Reached max HWM value, exiting after %s iteration(s)",
+                self.__class__.__name__,
+                self._iteration,
+            )
             raise StopIteration
 
-        iteration_name = "First" if self.is_first_run else "Next"
-        log.info(f"|{self.__class__.__name__}| {iteration_name} iteration")
+        if self.is_first_run:
+            log.info("|%s| First iteration", self.__class__.__name__)
+        else:
+            log.info("|%s| Next iteration", self.__class__.__name__)
 
         return self.current_value
 

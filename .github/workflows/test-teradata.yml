@@ -1,0 +1,78 @@
+name: Tests for Teradata
+on:
+  workflow_call:
+    inputs:
+      spark-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  test-teradata:
+    name: Run Teradata tests (spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-teradata-
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I \
+          -r requirements/core.txt \
+          -r requirements/tests/base.txt \
+          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+
+    - name: Run tests
+      run: |
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m teradata
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: teradata-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*

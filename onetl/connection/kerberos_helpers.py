@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ def check_keytab_file(path: str | os.PathLike) -> Path:
     path = Path(os.path.expandvars(path)).expanduser().resolve()
 
     if not path.exists():
-        raise FileNotFoundError(f"|Kerberos| File '{path}' does not exist")
+        raise FileNotFoundError(f"File '{path}' does not exist")
 
     if not path.is_file():
-        raise NotAFileError(f"|Kerberos| {path_repr(path)} is not a file")
+        raise NotAFileError(f"{path_repr(path)} is not a file")
 
     if not os.access(path, os.R_OK):
-        raise OSError(f"|Kerberos| No access to keytab file {path_repr(path)}")
+        raise OSError(f"No access to keytab file {path_repr(path)}")
 
     return path
 
@@ -44,13 +44,13 @@ def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
     path = check_keytab_file(keytab)
 
     cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
-    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+    log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
     subprocess.check_call(cmd)
 
 
 def kinit_password(user: str, password: str) -> None:
     cmd = ["kinit", user]
-    log.info(f"|onETL| Executing kerberos auth command: {' '.join(cmd)}")
+    log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
 
     proc = subprocess.Popen(
         cmd,

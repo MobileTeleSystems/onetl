@@ -1,9 +1,16 @@
 import logging
 
-import pandas
 import pytest
 
+try:
+    import pandas
+except ImportError:
+    # pandas can be missing if someone runs tests for file connections only
+    pass
+
 from onetl.connection import Greenplum
+
+pytestmark = pytest.mark.greenplum
 
 
 def test_greenplum_connection_check(spark, processing, caplog):
@@ -35,7 +42,7 @@ def test_greenplum_connection_check(spark, processing, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_greenplum_wrong_connection_check(spark):
+def test_greenplum_connection_check_fail(spark):
     greenplum = Greenplum(host="host", database="db", user="some_user", password="pwd", spark=spark)
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):

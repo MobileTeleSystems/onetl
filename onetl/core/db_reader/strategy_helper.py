@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING, NoReturn, Optional
+from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
 
 from etl_entities import HWM, Column, ColumnHWM
 from pydantic import Field, root_validator, validator
+from typing_extensions import Protocol
 
 from onetl.core.db_reader.db_reader import DBReader
+from onetl.hwm import Statement
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import FrozenModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
@@ -28,7 +30,6 @@ from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.strategy_manager import StrategyManager
 
 log = getLogger(__name__)
-# TODO:(@mivasil6) implement logging
 
 if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
@@ -38,23 +39,25 @@ if TYPE_CHECKING:
 # small hack to bypass this exception
 class MockColumnHWM(ColumnHWM):
     def serialize_value(self):
-        pass  # noqa: WPS420
+        """Fake implementation of ColumnHWM.serialize_value"""
 
 
-class StrategyHelper(FrozenModel):
-    @property
-    def where(self) -> str | None:  # noqa: WPS463
-        pass  # noqa: WPS420
-
+class StrategyHelper(Protocol):
     def save(self, df: DataFrame) -> DataFrame:
-        pass  # noqa: WPS420
+        """Saves HWM value to HWMStore"""
+
+    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:
+        """Returns ``(min_boundary, max_boundary)`` for applying HWM to source"""
 
 
-class NonHWMStrategyHelper(StrategyHelper):
+class NonHWMStrategyHelper(FrozenModel):
     reader: DBReader
 
+    def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
+        return None, None
+
     @root_validator(pre=True)
-    def validate_current_strategy(cls, values):  # noqa: N805
+    def validate_current_strategy(cls, values):
         reader = values.get("reader")
         strategy = StrategyManager.get_current()
 
@@ -66,15 +69,11 @@ class NonHWMStrategyHelper(StrategyHelper):
 
         return values
 
-    @property
-    def where(self) -> str | None:
-        return self.reader.where
-
     def save(self, df: DataFrame) -> DataFrame:
         return df
 
 
-class HWMStrategyHelper(StrategyHelper):
+class HWMStrategyHelper(FrozenModel):
     reader: DBReader
     hwm_column: Column
     hwm_expression: Optional[str] = None
@@ -84,7 +83,7 @@ class HWMStrategyHelper(StrategyHelper):
         validate_all = True
 
     @validator("strategy", always=True, pre=True)
-    def validate_strategy_is_hwm(cls, strategy, values):  # noqa: N805
+    def validate_strategy_is_hwm(cls, strategy, values):
         reader = values.get("reader")
 
         if not isinstance(strategy, HWMStrategy):
@@ -96,7 +95,7 @@ class HWMStrategyHelper(StrategyHelper):
         return strategy
 
     @validator("strategy", always=True)
-    def validate_strategy_matching_reader(cls, strategy, values):  # noqa: N805
+    def validate_strategy_matching_reader(cls, strategy, values):
         if strategy.hwm is None:
             return strategy
 
@@ -106,10 +105,10 @@ class HWMStrategyHelper(StrategyHelper):
         if not isinstance(strategy.hwm, ColumnHWM):
             cls.raise_wrong_hwm_type(reader, type(strategy.hwm))
 
-        if strategy.hwm.source != reader.table or strategy.hwm.column != hwm_column:
+        if strategy.hwm.source != reader.source or strategy.hwm.column != hwm_column:
             raise ValueError(
                 f"{reader.__class__.__name__} was created "
-                f"with `hwm_column={reader.hwm_column}` and `table={reader.table}` "
+                f"with `hwm_column={reader.hwm_column}` and `source={reader.source}` "
                 f"but current HWM is created for ",
                 f"`column={strategy.hwm.column}` and `source={strategy.hwm.source}` ",
             )
@@ -117,13 +116,13 @@ class HWMStrategyHelper(StrategyHelper):
         return strategy
 
     @validator("strategy", always=True)
-    def init_hwm(cls, strategy, values):  # noqa: N805
+    def init_hwm(cls, strategy, values):
         reader = values.get("reader")
         hwm_column = values.get("hwm_column")
 
         if strategy.hwm is None:
             # Small hack used only to generate qualified_name
-            strategy.hwm = MockColumnHWM(source=reader.table, column=hwm_column)
+            strategy.hwm = MockColumnHWM(source=reader.source, column=hwm_column)
 
         if not strategy.hwm:
             strategy.fetch_hwm()
@@ -147,11 +146,11 @@ class HWMStrategyHelper(StrategyHelper):
         if hwm_type == MockColumnHWM or not issubclass(hwm_type, ColumnHWM):
             cls.raise_wrong_hwm_type(reader, hwm_type)
 
-        strategy.hwm = hwm_type(source=reader.table, column=hwm_column, value=strategy.hwm.value)
+        strategy.hwm = hwm_type(source=reader.source, column=hwm_column, value=strategy.hwm.value)
         return strategy
 
     @validator("strategy", always=True)
-    def detect_hwm_column_boundaries(cls, strategy, values):  # noqa: N805
+    def detect_hwm_column_boundaries(cls, strategy, values):
         if not isinstance(strategy, BatchHWMStrategy):
             return strategy
 
@@ -167,7 +166,7 @@ class HWMStrategyHelper(StrategyHelper):
         if min_hwm_value is None or max_hwm_value is None:
             raise ValueError(
                 "Unable to determine max and min values. ",
-                f"Table '{reader.table}' column '{hwm_column}' cannot be used as `hwm_column`",
+                f"Table '{reader.source}' column '{hwm_column}' cannot be used as `hwm_column`",
             )
 
         if not strategy.has_lower_limit and not strategy.hwm:
@@ -186,42 +185,40 @@ class HWMStrategyHelper(StrategyHelper):
 
     @staticmethod
     def detect_hwm_column_type(reader: DBReader, hwm_column: Column) -> type[HWM]:
-        schema = {field.name.lower(): field for field in reader.get_schema()}
-        column = hwm_column.name.lower()
+        schema = {field.name.casefold(): field for field in reader.get_df_schema()}
+        column = hwm_column.name.casefold()
         hwm_column_type = schema[column].dataType.typeName()
         return HWMClassRegistry.get(hwm_column_type)
 
     def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812
 
-        log.info(f"|DBReader| Calculating max value for column {self.hwm_column.name!r} in the dataframe...")
+        log.info("|DBReader| Calculating max value for column %r in the dataframe...", self.hwm_column.name)
         max_df = df.select(F.max(self.hwm_column.name).alias("max_value"))
         row = max_df.collect()[0]
         max_hwm_value = row["max_value"]
-        log.info(f"|DBReader| Max value is: {max_hwm_value!r}")
+        log.info("|DBReader| Max value is: %r", max_hwm_value)
 
         self.strategy.update_hwm(max_hwm_value)
         return df
 
-    @property
-    def where(self) -> str:
-        result = [self.reader.where]
+    def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
+        start_from: Optional[Statement] = None
+        end_at: Optional[Statement] = None
 
         # `self.strategy.hwm is not None` is need only to handle mypy warnings
         if self.strategy.current_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.get_compare_statement(
-                self.strategy.current_value_comparator,
-                self.hwm_expression or self.strategy.hwm.name,
-                self.strategy.current_value,
+            start_from = Statement(
+                expression=self.hwm_expression or self.strategy.hwm.name,
+                operator=self.strategy.current_value_comparator,
+                value=self.strategy.current_value,
             )
-            result.append(compare)
 
         if self.strategy.next_value is not None and self.strategy.hwm is not None:
-            compare = self.reader.get_compare_statement(
-                self.strategy.next_value_comparator,
-                self.hwm_expression or self.strategy.hwm.name,
-                self.strategy.next_value,
+            end_at = Statement(
+                expression=self.hwm_expression or self.strategy.hwm.name,
+                operator=self.strategy.next_value_comparator,
+                value=self.strategy.next_value,
             )
-            result.append(compare)
 
-        return " AND ".join(f"({where})" for where in result if where)
+        return start_from, end_at

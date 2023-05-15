@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from onetl.connection import SFTP
+pytestmark = [pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection]
 
 
 def test_sftp_check(sftp_connection, caplog):
@@ -17,15 +17,16 @@ def test_sftp_check(sftp_connection, caplog):
     assert "host_key_check = False" in caplog.text
     assert "compress = True" in caplog.text
     assert "key_file" not in caplog.text
-
-    if sftp_connection.password:
-        assert sftp_connection.password.get_secret_value() not in caplog.text
+    assert "password = SecretStr('**********')" in caplog.text
+    assert sftp_connection.password.get_secret_value() not in caplog.text
 
     assert "Connection is available" in caplog.text
 
 
-def test_sftp_wrong_source_check():
-    sftp = SFTP(user="some_user", password="pwd", host="host", port=123)
+def test_sftp_wrong_source_check(sftp_server):
+    from onetl.connection import SFTP
+
+    sftp = SFTP(host=sftp_server.host, port=sftp_server.port, user="unknown", password="unknown")
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         sftp.check()

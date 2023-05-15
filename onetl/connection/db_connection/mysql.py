@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,16 +19,38 @@ from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `MySQL.package` for creating Spark session
+
 
 class MySQL(JDBCConnection):
-    """Class for MySQL JDBC connection.
+    """MySQL JDBC connection.
 
-    Based on Maven package ``mysql:mysql-connector-java:8.0.30``
-    (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_)
+    Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
+    (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported MySQL server versions: >= 5.6
+        * MySQL server versions: 5.7, 8.0
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
+
+    .. warning::
+
+        To use MySQL connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -97,8 +119,8 @@ class MySQL(JDBCConnection):
     database: Optional[str] = None
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.mysql.jdbc.Driver"
-    package: ClassVar[str] = "mysql:mysql-connector-java:8.0.30"
+    driver: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
+    package: ClassVar[str] = "com.mysql:mysql-connector-j:8.0.33"
 
     @property
     def jdbc_url(self):
@@ -110,6 +132,17 @@ class MySQL(JDBCConnection):
 
         return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+            return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.strftime("%Y-%m-%d")
+            return f"STR_TO_DATE('{result}', '%Y-%m-%d')"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
@@ -120,11 +153,3 @@ class MySQL(JDBCConnection):
             return f"MOD({partition_column}, {num_partitions})"
 
     ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"  # noqa: WPS323
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.strftime("%Y-%m-%d")
-        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"  # noqa: WPS323

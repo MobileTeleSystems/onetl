@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,12 +19,38 @@ from typing import ClassVar, Optional
 
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
+# do not import PySpark here, as we allow user to use `Teradata.package` for creating Spark session
+
 
 class Teradata(JDBCConnection):
-    """Class for Teradata JDBC connection.
+    """Teradata JDBC connection.
 
-    Based on package ``com.teradata.jdbc:terajdbc4:17.20.00.08``
-    (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_)
+    Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
+    (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
+
+    .. dropdown:: Version compatibility
+
+        * Teradata server versions: 16.10 - 20.0
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html>`_.
+
+    .. warning::
+
+        To use Teradata connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -116,7 +142,7 @@ class Teradata(JDBCConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc4:17.20.00.08"
+    package: ClassVar[str] = "com.teradata.jdbc:terajdbc:17.20.00.15"
 
     _check_query: ClassVar[str] = "SELECT 1 AS check_result"
 
@@ -132,6 +158,17 @@ class Teradata(JDBCConnection):
         conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
         return f"jdbc:teradata://{self.host}/{conn}"
 
+    class Dialect(JDBCConnection.Dialect):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS TIMESTAMP)"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"CAST('{result}' AS DATE)"
+
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
         @classmethod
@@ -143,11 +180,3 @@ class Teradata(JDBCConnection):
             return f"{partition_column} mod {num_partitions}"
 
     ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS TIMESTAMP)"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"CAST('{result}' AS DATE)"

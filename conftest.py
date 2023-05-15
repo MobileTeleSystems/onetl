@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import logging
 import os
 import secrets
 import shutil
 from collections import namedtuple
 from datetime import date, datetime, timedelta
+from importlib import import_module
 from pathlib import Path, PurePosixPath
-from time import sleep
-from typing import Dict
+from typing import TYPE_CHECKING
+from unittest.mock import Mock
 
 import pytest
 from etl_entities import (
@@ -18,34 +21,16 @@ from etl_entities import (
     RemoteFolder,
     Table,
 )
-from pyspark.sql import SparkSession
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.connection import (
-    FTP,
-    FTPS,
-    HDFS,
-    MSSQL,
-    S3,
-    SFTP,
-    Clickhouse,
-    Greenplum,
-    MySQL,
-    Oracle,
-    Postgres,
-    Teradata,
-    WebDAV,
-)
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
+
+# disable failing plugin import
+os.environ["ONETL_PLUGINS_BLACKLIST"] = "failing-plugin"
+
 from onetl.hwm.store import MemoryHWMStore
-from tests.lib.clickhouse_processing import ClickhouseProcessing
 from tests.lib.common import upload_files
-from tests.lib.greenplum_processing import GreenplumProcessing
-from tests.lib.hive_processing import HiveProcessing
-from tests.lib.mock_file_servers import TestFTPServer, TestSFTPServer
-from tests.lib.mssql_processing import MSSQLProcessing
-from tests.lib.mysql_processing import MySQLProcessing
-from tests.lib.oracle_processing import OracleProcessing
-from tests.lib.postgres_processing import PostgresProcessing
 
 log = logging.getLogger(__name__)
 
@@ -53,90 +38,234 @@ PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
 @pytest.fixture(scope="session")
-def ftp_server(tmp_path_factory):
-    server = TestFTPServer(tmp_path_factory.mktemp("FTP"))
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
+def ftp_server():
+    FTPServer = namedtuple("FTPServer", ["host", "port", "user", "password"])
 
-
-@pytest.fixture(scope="function")
-def ftp_connection(ftp_server):
-    return FTP(host=ftp_server.host, port=ftp_server.port, user=ftp_server.user, password=ftp_server.password)
-
-
-@pytest.fixture(scope="session")
-def ftps_server(tmp_path_factory):
-    server = TestFTPServer(tmp_path_factory.mktemp("FTPS"), is_ftps=True)
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
-
-
-@pytest.fixture(scope="function")
-def ftps_connection(ftps_server):
-    return FTPS(host=ftps_server.host, port=ftps_server.port, user=ftps_server.user, password=ftps_server.password)
-
-
-@pytest.fixture(scope="session")
-def s3():
-    s3 = S3(
-        host=os.getenv("ONETL_MINIO_HOST"),
-        port=os.getenv("ONETL_MINIO_PORT"),
-        access_key=os.getenv("MINIO_ROOT_USER"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-        bucket=os.getenv("ONETL_MINIO_BUCKET"),
-        protocol="http",
+    return FTPServer(
+        host=os.getenv("ONETL_FTP_HOST"),
+        port=os.getenv("ONETL_FTP_PORT"),
+        user=os.getenv("ONETL_FTP_USER"),
+        password=os.getenv("ONETL_FTP_PASSWORD"),
     )
 
-    if not s3.client.bucket_exists("testbucket"):
-        s3.client.make_bucket("testbucket")
 
-    yield s3
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            "real",
+            marks=[pytest.mark.ftp, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def ftp_data(ftp_server):
+    from onetl.connection import FTP
+
+    ftp = FTP(
+        host=ftp_server.host,
+        port=ftp_server.port,
+        user=ftp_server.user,
+        password=ftp_server.password,
+    )
+
+    return ftp, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def ftp_connection(ftp_data):
+    return ftp_data[0]
 
 
 @pytest.fixture(scope="session")
-def sftp_server(tmp_path_factory):
-    server = TestSFTPServer(tmp_path_factory.mktemp("SFTP"))
-    server.start()
-    sleep(5)
-    yield server
-    server.stop()
+def ftps_server():
+    FTPSServer = namedtuple("FTPSServer", ["host", "port", "user", "password"])
+
+    return FTPSServer(
+        host=os.getenv("ONETL_FTPS_HOST"),
+        port=os.getenv("ONETL_FTPS_PORT"),
+        user=os.getenv("ONETL_FTPS_USER"),
+        password=os.getenv("ONETL_FTPS_PASSWORD"),
+    )
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            "real",
+            marks=[pytest.mark.ftps, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def ftps_data(ftps_server):
+    from onetl.connection import FTPS
+
+    ftps = FTPS(
+        host=ftps_server.host,
+        port=ftps_server.port,
+        user=ftps_server.user,
+        password=ftps_server.password,
+    )
+
+    return ftps, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def ftps_connection(ftps_data):
+    return ftps_data[0]
 
 
 @pytest.fixture(scope="session")
-def webdav_connection():
-    wd = WebDAV(
+def s3_server():
+    S3Server = namedtuple("S3Server", ["host", "port", "bucket", "access_key", "secret_key", "protocol"])
+
+    return S3Server(
+        host=os.getenv("ONETL_S3_HOST"),
+        port=os.getenv("ONETL_S3_PORT"),
+        bucket=os.getenv("ONETL_S3_BUCKET"),
+        access_key=os.getenv("ONETL_S3_ACCESS_KEY"),
+        secret_key=os.getenv("ONETL_S3_SECRET_KEY"),
+        protocol=os.getenv("ONETL_S3_PROTOCOL", "http").lower(),
+    )
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param("real", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
+    ],
+)
+def s3_data(s3_server):
+    from onetl.connection import S3
+
+    s3 = S3(
+        host=s3_server.host,
+        port=s3_server.port,
+        bucket=s3_server.bucket,
+        access_key=s3_server.access_key,
+        secret_key=s3_server.secret_key,
+        protocol=s3_server.protocol,
+    )
+
+    if not s3.client.bucket_exists(s3_server.bucket):
+        s3.client.make_bucket(s3_server.bucket)
+
+    return s3, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def s3_connection(s3_data):
+    return s3_data[0]
+
+
+@pytest.fixture(scope="session")
+def sftp_server():
+    SFTPServer = namedtuple("SFTPServer", ["host", "port", "user", "password"])
+
+    return SFTPServer(
+        host=os.getenv("ONETL_SFTP_HOST"),
+        port=os.getenv("ONETL_SFTP_PORT"),
+        user=os.getenv("ONETL_SFTP_USER"),
+        password=os.getenv("ONETL_SFTP_PASSWORD"),
+    )
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param(
+            "real",
+            marks=[pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def sftp_data(sftp_server):
+    from onetl.connection import SFTP
+
+    sftp = SFTP(
+        host=sftp_server.host,
+        port=sftp_server.port,
+        user=sftp_server.user,
+        password=sftp_server.password,
+    )
+
+    return sftp, PurePosixPath("/app/news_parse")
+
+
+@pytest.fixture()
+def sftp_connection(sftp_data):
+    return sftp_data[0]
+
+
+@pytest.fixture(scope="session")
+def webdav_server():
+    WebDAVServer = namedtuple("WebDAVServer", ["host", "port", "user", "password", "ssl_verify", "protocol"])
+
+    return WebDAVServer(
         host=os.getenv("ONETL_WEBDAV_HOST"),
+        port=os.getenv("ONETL_WEBDAV_PORT"),
         user=os.getenv("ONETL_WEBDAV_USER"),
         password=os.getenv("ONETL_WEBDAV_PASSWORD"),
-        ssl_verify=False,
-        protocol="http",
+        ssl_verify=os.getenv("ONETL_WEBDAV_SSL_VERIFY", "false").lower() != "true",
+        protocol=os.getenv("ONETL_WEBDAV_PROTOCOL", "http").lower(),
     )
 
-    yield wd
+
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param(
+            "real",
+            marks=[pytest.mark.webdav, pytest.mark.file_connection, pytest.mark.connection],
+        ),
+    ],
+)
+def webdav_data(webdav_server):
+    from onetl.connection import WebDAV
+
+    webdav = WebDAV(
+        host=webdav_server.host,
+        port=webdav_server.port,
+        user=webdav_server.user,
+        password=webdav_server.password,
+        ssl_verify=webdav_server.ssl_verify,
+        protocol=webdav_server.protocol,
+    )
+
+    return webdav, PurePosixPath("/export/news_parse")
 
 
-@pytest.fixture(scope="function")
-def sftp_connection(sftp_server):
-    return SFTP(host=sftp_server.host, port=sftp_server.port, user=sftp_server.user, password=sftp_server.password)
+@pytest.fixture()
+def webdav_connection(webdav_data):
+    return webdav_data[0]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param("real", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
+    ],
+)
 def hdfs_server():
     HDFSServer = namedtuple("HDFSServer", ["host", "port"])
 
     return HDFSServer(
-        os.getenv("ONETL_HDFS_CONN_HOST", "hive2"),
-        int(os.getenv("ONETL_HDFS_CONN_PORT", "50070")),
+        host=os.getenv("ONETL_HDFS_HOST"),
+        port=os.getenv("ONETL_HDFS_PORT"),
     )
 
 
 @pytest.fixture(scope="function")
-def hdfs_connection(hdfs_server):
-    return HDFS(host=hdfs_server.host, port=hdfs_server.port)
+def hdfs_data(hdfs_server):
+    from onetl.connection import HDFS
+
+    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port)
+    return hdfs, PurePosixPath("/export/news_parse")
+
+
+@pytest.fixture()
+def hdfs_connection(hdfs_data):
+    return hdfs_data[0]
 
 
 @pytest.fixture(scope="function")
@@ -173,35 +302,108 @@ def upload_files_with_encoding(file_all_connections, source_path):
     }
 
 
-@pytest.fixture(scope="session", name="spark")
-def get_spark_session(request):
+@pytest.fixture(scope="session")
+def warehouse_dir(tmp_path_factory):
+    # https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html
+    path = tmp_path_factory.mktemp("spark-warehouse")
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def spark_metastore_dir(tmp_path_factory):
+    # https://stackoverflow.com/a/44048667
+    path = tmp_path_factory.mktemp("metastore_db")
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def ivysettings_path():
+    return Path(__file__).parent / "tests" / "ivysettings.xml"
+
+
+@pytest.fixture(scope="session")
+def spark_packages():
+    import pyspark
+
+    from onetl.connection import (
+        MSSQL,
+        Clickhouse,
+        Greenplum,
+        MongoDB,
+        MySQL,
+        Oracle,
+        Postgres,
+        Teradata,
+    )
+
+    packages = [
+        Clickhouse.package,
+        MSSQL.package,
+        MySQL.package,
+        Oracle.package,
+        Postgres.package,
+        Teradata.package,
+    ]
+
+    with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
+
+    pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
+
+    if pyspark_version == "2.4":
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_2_4])
+        return packages
+
+    if pyspark_version == "3.2":
+        packages.extend([MongoDB.package_spark_3_2])
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_3_2])
+        return packages
+
+    if pyspark_version == "3.3":
+        packages.extend([MongoDB.package_spark_3_3])
+        if not with_greenplum:
+            return packages
+
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+
+    if pyspark_version == "3.4":
+        packages.extend([MongoDB.package_spark_3_4])
+        if not with_greenplum:
+            return packages
+
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+
+    raise ValueError(f"Unsupported Spark version: {pyspark.__version__}")
+
+
+@pytest.fixture(
+    scope="session",
+    name="spark",
+    params=[
+        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
+def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spark_packages):
+    from pyspark.sql import SparkSession
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
-        .config(
-            "spark.jars.packages",
-            ",".join(
-                [
-                    Oracle.package,
-                    Clickhouse.package,
-                    Postgres.package,
-                    Greenplum.package_spark_2_4,
-                    MySQL.package,
-                    MSSQL.package,
-                    Teradata.package,
-                ],
-            ),
-        )
+        .config("spark.jars.packages", ",".join(spark_packages))
+        .config("spark.jars.ivySettings", os.fspath(ivysettings_path))
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
         .config("spark.executor.memory", "1g")
+        .config("spark.executor.allowSparkContext", "true")  # Greenplum uses SparkContext on executor if master==local
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
-        .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true")
-        .config("spark.jars.ivySettings", os.fspath(Path(__file__).parent / "tests" / "ivysettings.xml"))
+        .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
+        .config("spark.sql.warehouse.dir", warehouse_dir)
         .enableHiveSupport()
         .getOrCreate()
     )
@@ -211,26 +413,41 @@ def get_spark_session(request):
     spark.stop()
 
 
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param("mock", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
+def spark_mock() -> SparkSession:
+    from pyspark.sql import SparkSession
+
+    spark = Mock(spec=SparkSession)
+    spark.sparkContext = Mock()
+    spark.sparkContext.appName = "abc"
+    return spark
+
+
 @pytest.fixture()
 def processing(request, spark):
-    storage_matching: Dict = {
-        "greenplum": GreenplumProcessing,
-        "postgres": PostgresProcessing,
-        "hive": HiveProcessing,
-        "oracle": OracleProcessing,
-        "clickhouse": ClickhouseProcessing,
-        "mysql": MySQLProcessing,
-        "mssql": MSSQLProcessing,
+    processing_classes = {
+        "clickhouse": ("tests.lib.clickhouse_processing", "ClickhouseProcessing"),
+        "greenplum": ("tests.lib.greenplum_processing", "GreenplumProcessing"),
+        "hive": ("tests.lib.hive_processing", "HiveProcessing"),
+        "mongodb": ("tests.lib.mongodb_processing", "MongoDBProcessing"),
+        "mssql": ("tests.lib.mssql_processing", "MSSQLProcessing"),
+        "mysql": ("tests.lib.mysql_processing", "MySQLProcessing"),
+        "oracle": ("tests.lib.oracle_processing", "OracleProcessing"),
+        "postgres": ("tests.lib.postgres_processing", "PostgresProcessing"),
     }
 
-    test_function = request.function
+    db_storage_name = request.function.__name__.split("_")[1]
+    if db_storage_name not in processing_classes:
+        raise ValueError(f"Wrong name. Please use one of: {list(processing_classes.keys())}")
 
-    db_storage_name = test_function.__name__.split("_")[1]
-
-    if db_storage_name not in storage_matching:
-        raise ValueError(f"Wrong name. Please use {list(storage_matching.keys())}")
-
-    db_processing = storage_matching[db_storage_name]
+    module_name, class_name = processing_classes[db_storage_name]
+    module = import_module(module_name)
+    db_processing = getattr(module, class_name)
 
     if db_storage_name == "hive":
         yield db_processing(spark)
@@ -281,8 +498,8 @@ def load_table_data(prepare_schema_table, processing):
     return prepare_schema_table
 
 
-@pytest.fixture(scope="function", autouse=True)  # noqa: WPS325
-def use_memory_hwm_store(request):
+@pytest.fixture(scope="function", autouse=True)
+def use_memory_hwm_store(request):  # noqa: WPS325
     test_function = request.function
     entities = test_function.__name__.split("_")
 
@@ -295,73 +512,36 @@ def use_memory_hwm_store(request):
 
 
 @pytest.fixture(
-    scope="function",
     params=[
-        pytest.param(lazy_fixture("ftp_connection"), marks=pytest.mark.FTP),
-        pytest.param(lazy_fixture("ftps_connection"), marks=pytest.mark.FTPS),
-        pytest.param(lazy_fixture("sftp_connection"), marks=pytest.mark.SFTP),
-        pytest.param(lazy_fixture("hdfs_connection"), marks=pytest.mark.HDFS),
-        pytest.param(lazy_fixture("webdav_connection"), marks=pytest.mark.WebDAV),
+        lazy_fixture("ftp_data"),
+        lazy_fixture("ftps_data"),
+        lazy_fixture("hdfs_data"),
+        lazy_fixture("s3_data"),
+        lazy_fixture("sftp_data"),
+        lazy_fixture("webdav_data"),
     ],
 )
-def file_connection_without_s3(request):
+def file_connections_data(request):
     return request.param
 
 
-@pytest.fixture(
-    scope="function",
-    params=[
-        pytest.param(lazy_fixture("s3"), marks=pytest.mark.S3),
-        lazy_fixture("file_connection_without_s3"),
-    ],
-)
-def file_all_connections(request):
-    return request.param
+@pytest.fixture()
+def file_all_connections(file_connections_data):
+    return file_connections_data[0]
 
 
 @pytest.fixture(scope="function")
-def source_path(file_all_connections):
-    source_path = PurePosixPath("/export/news_parse")
-
-    file_all_connections.rmdir(source_path, recursive=True)
-    file_all_connections.mkdir(source_path)
-    yield source_path
-    file_all_connections.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def source_path_s3(s3):
-    source_path = PurePosixPath("/export/news_parse")
-
-    s3.rmdir(source_path, recursive=True)
-    s3.mkdir(source_path)
-    yield source_path
-    s3.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def source_path_without_s3(file_connection_without_s3):
-    source_path = PurePosixPath("/export/news_parse")
-
-    file_connection_without_s3.rmdir(source_path, recursive=True)
-    file_connection_without_s3.mkdir(source_path)
-    yield source_path
-    file_connection_without_s3.rmdir(source_path, recursive=True)
-
-
-@pytest.fixture(scope="function")
-def upload_test_files_without_s3(file_connection_without_s3, resource_path, source_path_without_s3):
-    return upload_files(resource_path, source_path_without_s3, file_connection_without_s3)
+def source_path(file_connections_data):
+    connection, path = file_connections_data
+    connection.rmdir(path, recursive=True)
+    connection.mkdir(path)
+    yield path
+    connection.rmdir(path, recursive=True)
 
 
 @pytest.fixture(scope="function")
 def upload_test_files(file_all_connections, resource_path, source_path):
     return upload_files(resource_path, source_path, file_all_connections)
-
-
-@pytest.fixture(scope="function")
-def upload_test_files_s3(s3, resource_path, source_path_s3):
-    return upload_files(resource_path, source_path_s3, s3)
 
 
 @pytest.fixture(
@@ -378,7 +558,7 @@ def upload_test_files_s3(s3, resource_path, source_path_s3):
             DateHWM(
                 source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
                 column=Column(name=secrets.token_hex(5)),
-                value=date(year=2022, month=8, day=15),
+                value=date(year=2023, month=8, day=15),
             ),
             timedelta(days=31),
         ),
@@ -386,7 +566,7 @@ def upload_test_files_s3(s3, resource_path, source_path_s3):
             DateTimeHWM(
                 source=Table(name=secrets.token_hex(5), db=secrets.token_hex(5), instance="proto://domain.com"),
                 column=Column(name=secrets.token_hex(5)),
-                value=datetime(year=2022, month=8, day=15, hour=11, minute=22, second=33),
+                value=datetime(year=2023, month=8, day=15, hour=11, minute=22, second=33),
             ),
             timedelta(seconds=50),
         ),

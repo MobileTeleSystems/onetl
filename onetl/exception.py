@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,7 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import textwrap
+
 from evacuator import NeedEvacuation
+
+MISSING_JVM_CLASS_MSG = textwrap.dedent(
+    """
+    |Spark| Cannot import Java class %r.
+
+        It looks like you've created Spark session without this option:
+            SparkSession.builder.config("spark.jars.packages", %s)
+
+        Please call `spark.stop()`, restart the interpreter,
+        and then create new SparkSession with proper options.
+    """,
+).lstrip()
 
 
 class DirectoryNotFoundError(OSError):
@@ -89,4 +103,10 @@ class SparkError(RuntimeError):
 class TooManyParallelJobsError(SparkError):
     """
     Raised when number parallel jobs is too high
+    """
+
+
+class SignatureError(TypeError):
+    """
+    Raised when hook signature is not consistent with slot
     """

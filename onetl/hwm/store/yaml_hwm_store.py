@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 @default_hwm_store_class
 @register_hwm_store_class("yaml", "yml")
 class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML local store for HWM values
+    r"""YAML local store for HWM values. Used as default HWM store.
 
     Parameters
     ----------
@@ -82,16 +82,16 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with YAMLHWMStore():
             with IncrementalStrategy():
@@ -122,7 +122,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         - column:
             name: id
             partition: {}
-          modified_time: '2022-02-11T17:10:49.659019'
+          modified_time: '2023-02-11T17:10:49.659019'
           process:
               dag: ''
               host: myhostname
@@ -137,7 +137,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         - column:
               name: id
               partition: {}
-          modified_time: '2022-02-11T16:00:31.962150'
+          modified_time: '2023-02-11T16:00:31.962150'
           process:
               dag: ''
               host: myhostname
@@ -161,7 +161,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
     @validator("path", pre=True, always=True)
-    def validate_path(cls, path):  # noqa: N805
+    def validate_path(cls, path):
         path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
         return path

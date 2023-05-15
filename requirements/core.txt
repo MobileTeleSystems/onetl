@@ -1,0 +1,14 @@
+deprecated
+etl-entities>=1.3,<1.4
+evacuator>=1.0,<1.1
+frozendict
+humanize
+# 3.5.0 fails with "entry_points() got an unexpected keyword argument 'group'"
+importlib_metadata>=3.6.0
+ordered-set
+platformdirs
+# https://github.com/pydantic/pydantic/issues/4092
+# https://github.com/pydantic/pydantic/issues/4498
+pydantic>=1.9.2,!=1.10.2,<2
+pyyaml
+typing_extensions

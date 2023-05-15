@@ -1,20 +1,17 @@
-from unittest.mock import Mock
-
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import MSSQL
 
-spark = Mock(spec=SparkSession)
+pytestmark = pytest.mark.mssql
 
 
 def test_mssql_class_attributes():
     assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8"
+    assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
 
 
-def test_mssql():
-    conn = MSSQL(host="some_host", user="user", database="database", password="passwd", spark=spark)
+def test_mssql(spark_mock):
+    conn = MSSQL(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 1433
@@ -25,9 +22,12 @@ def test_mssql():
 
     assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433;databaseName=database"
 
+    assert "password='passwd'" not in str(conn)
+    assert "password='passwd'" not in repr(conn)
 
-def test_mssql_with_port():
-    conn = MSSQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark)
+
+def test_mssql_with_port(spark_mock):
+    conn = MSSQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
     assert conn.port == 5000
@@ -39,19 +39,25 @@ def test_mssql_with_port():
     assert conn.jdbc_url == "jdbc:sqlserver://some_host:5000;databaseName=database"
 
 
-def test_mssql_without_database_error():
+def test_mssql_without_database_error(spark_mock):
     with pytest.raises(ValueError, match="field required"):
-        MSSQL(host="some_host", user="user", password="passwd", spark=spark, extra={"trustServerCertificate": "true"})
+        MSSQL(
+            host="some_host",
+            user="user",
+            password="passwd",
+            spark=spark_mock,
+            extra={"trustServerCertificate": "true"},
+        )
 
 
-def test_mssql_with_extra():
+def test_mssql_with_extra(spark_mock):
     conn = MSSQL(
         host="some_host",
         user="user",
         password="passwd",
         database="database",
         extra={"characterEncoding": "UTF-8", "trustServerCertificate": "true"},
-        spark=spark,
+        spark=spark_mock,
     )
 
     assert (
@@ -60,32 +66,32 @@ def test_mssql_with_extra():
     )
 
 
-def test_mssql_with_extra_prohibited():
-    with pytest.raises(ValueError, match="Option 'databaseName' is not allowed to use in a Extra"):
+def test_mssql_with_extra_prohibited(spark_mock):
+    with pytest.raises(ValueError, match=r"Options \['databaseName'\] are not allowed to use in a Extra"):
         MSSQL(
             host="some_host",
             user="user",
             password="passwd",
             database="database",
             extra={"databaseName": "abc"},
-            spark=spark,
+            spark=spark_mock,
         )
 
 
-def test_mssql_without_mandatory_args():
+def test_mssql_without_mandatory_args(spark_mock):
     with pytest.raises(ValueError, match="field required"):
         MSSQL()
 
     with pytest.raises(ValueError, match="field required"):
         MSSQL(
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
         MSSQL(
             host="some_host",
             database="database",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -93,7 +99,7 @@ def test_mssql_without_mandatory_args():
             host="some_host",
             database="database",
             user="user",
-            spark=spark,
+            spark=spark_mock,
         )
 
     with pytest.raises(ValueError, match="field required"):
@@ -101,5 +107,5 @@ def test_mssql_without_mandatory_args():
             host="some_host",
             database="database",
             password="passwd",
-            spark=spark,
+            spark=spark_mock,
         )

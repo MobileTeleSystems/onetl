@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
+from etl_entities import Table
+
 from onetl.base.base_connection import BaseConnection
+from onetl.hwm import Statement
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -28,6 +31,110 @@ class BaseDBConnection(BaseConnection):
     """
     Implements generic methods for reading data from and writing data to a database
     """
+
+    class Dialect(ABC):
+        """
+        Collection of methods used for validating input values before passing them to read_df/write_df
+        """
+
+        @classmethod
+        @abstractmethod
+        def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
+            """Check if ``source`` or ``target`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
+            """Check if ``columns`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
+            """Check if ``df_schema`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
+            """Check if ``where`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
+            """Check if ``hint`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+            """Check if ``hwm_expression`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def _merge_conditions(cls, conditions: list[Any]) -> Any:
+            """
+            Convert multiple WHERE conditions to one
+            """
+
+        @classmethod
+        @abstractmethod
+        def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
+            """
+            Return "expression AS alias" statement
+            """
+
+        @classmethod
+        @abstractmethod
+        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
+            """
+            Return "arg1 COMPARATOR arg2" statement
+            """
 
     @property
     @abstractmethod
@@ -60,58 +167,41 @@ class BaseDBConnection(BaseConnection):
         """
 
     @abstractmethod
-    def get_schema(
+    # Some heirs may have a different number of parameters.
+    # For example, the 'options' parameter may be present. This is fine.
+    def read_df(
         self,
-        table: str,
+        source: str,
         columns: list[str] | None = None,
-    ) -> StructType:
-        """
-        Get table schema
-        """
-
-    @abstractmethod
-    def read_table(
-        self,
-        table: str,
-        columns: list[str] | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         """
-        Reads the table to dataframe
+        Reads the source to dataframe.
         """
 
     @abstractmethod
-    def save_df(
+    def write_df(
         self,
         df: DataFrame,
-        table: str,
+        target: str,
     ) -> None:
         """
-        Saves dataframe to a specific table
+        Saves dataframe to a specific target
         """
 
     @abstractmethod
     def get_min_max_bounds(
         self,
-        table: str,
+        source: str,
         column: str,
         expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
-        Get MIN and MAX values for the column
-        """
-
-    @abstractmethod
-    def expression_with_alias(self, expression: str, alias: str) -> str:
-        """
-        Return "expression AS alias" statement
-        """
-
-    @abstractmethod
-    def get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> str:
-        """
-        Return "arg1 COMPARATOR arg2" statement
+        Get MIN and MAX values for the column in the source
         """

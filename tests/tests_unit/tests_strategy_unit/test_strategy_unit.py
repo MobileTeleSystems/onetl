@@ -1,9 +1,8 @@
 import secrets
 from datetime import timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
-from pyspark.sql import SparkSession
 
 from onetl.connection import Postgres
 from onetl.core import DBReader
@@ -12,8 +11,6 @@ from onetl.strategy import (
     IncrementalStrategy,
     SnapshotBatchStrategy,
 )
-
-spark = Mock(spec=SparkSession)
 
 
 @pytest.mark.parametrize(
@@ -42,12 +39,18 @@ def test_strategy_batch_step_is_empty(step, strategy):
         (SnapshotBatchStrategy, {"step": 1}),
     ],
 )
-def test_strategy_hwm_column_not_set(check, strategy, kwargs):
+def test_strategy_hwm_column_not_set(check, strategy, kwargs, spark_mock):
     check.return_value = None
 
     with strategy(**kwargs):
         reader = DBReader(
-            connection=Postgres(spark=spark, host="some_host", user="valid_user", database="default", password="pwd"),
+            connection=Postgres(
+                spark=spark_mock,
+                host="some_host",
+                user="valid_user",
+                database="default",
+                password="pwd",
+            ),
             table=f"{secrets.token_hex()}.{secrets.token_hex()}",
         )
 

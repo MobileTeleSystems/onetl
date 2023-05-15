@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,18 +17,51 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import ClassVar
 
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.dialect_mixins import (
+    SupportColumnsList,
+    SupportDfSchemaNone,
+    SupportHintNone,
+    SupportHWMExpressionStr,
+    SupportWhereStr,
+)
+from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
+    SupportTableWithDBSchema,
+)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+
+# do not import PySpark here, as we allow user to use `Postgres.package` for creating Spark session
 
 
 class Postgres(JDBCConnection):
-    """Class for PostgreSQL JDBC connection.
+    """PostgreSQL JDBC connection.
 
-    Based on Maven package ``org.postgresql:postgresql:42.4.0``
-    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_)
+    Based on Maven package ``org.postgresql:postgresql:42.6.0``
+    (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
-    .. note::
+    .. dropdown:: Version compatibility
 
-        Supported PostgreSQL server versions: >= 8.2
+        * PostgreSQL server versions: 8.2 or higher
+        * Spark versions: 2.3.x - 3.4.x
+        * Java versions: 8 - 17
+
+        See `official documentation <https://jdbc.postgresql.org/download/>`_.
+
+    .. warning::
+
+        To use Postgres connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     Parameters
     ----------
@@ -93,7 +126,26 @@ class Postgres(JDBCConnection):
     port: int = 5432
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.4.0"
+    package: ClassVar[str] = "org.postgresql:postgresql:42.6.0"
+
+    class Dialect(  # noqa: WPS215
+        SupportTableWithDBSchema,
+        SupportColumnsList,
+        SupportDfSchemaNone,
+        SupportWhereStr,
+        SupportHWMExpressionStr,
+        SupportHintNone,
+        DBConnection.Dialect,
+    ):
+        @classmethod
+        def _get_datetime_value_sql(cls, value: datetime) -> str:
+            result = value.isoformat()
+            return f"'{result}'::timestamp"
+
+        @classmethod
+        def _get_date_value_sql(cls, value: date) -> str:
+            result = value.isoformat()
+            return f"'{result}'::date"
 
     class ReadOptions(JDBCConnection.ReadOptions):
         # https://stackoverflow.com/a/9812029
@@ -112,12 +164,8 @@ class Postgres(JDBCConnection):
         extra = self.extra.dict(by_alias=True)
         extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
 
-        params_str = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
-        if params_str:
-            params_str = f"?{params_str}"
-
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}{params_str}"
+        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
     @property
     def instance_url(self) -> str:
@@ -132,11 +180,3 @@ class Postgres(JDBCConnection):
             options = options.copy(update={"readOnlyMode": "always"})
 
         return super()._options_to_connection_properties(options)
-
-    def _get_datetime_value_sql(self, value: datetime) -> str:
-        result = value.isoformat()
-        return f"'{result}'::timestamp"
-
-    def _get_date_value_sql(self, value: date) -> str:
-        result = value.isoformat()
-        return f"'{result}'::date"

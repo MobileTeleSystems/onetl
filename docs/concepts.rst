@@ -12,7 +12,7 @@ Basics
 
 onETL is used to pull and push data into other systems, and so it has a first-class ``Connection`` concept for storing credentials that are used to communicate with external systems.
 
-A ``Connection`` is essentially a set of parameters - such as username, password, hostname.
+A ``Connection`` is essentially a set of parameters, such as username, password, hostname.
 
 To create a connection to a specific storage type, you must use a class that matches the storage type. The class name is the same as the storage type name (``Oracle``, ``MSSQL``, ``SFTP``, etc):
 
@@ -98,10 +98,10 @@ As we said above, onETL is used to extract data from and load data into remote s
 
 onETL provides several classes for this:
 
-    * ``DBReader``
-    * ``DBWriter``
-    * ``FileDownloader``
-    * ``FileUploader``
+    * :ref:`DBReader <db-reader>`
+    * :ref:`DBWriter <db-writer>`
+    * :ref:`FileUploader <file-uploader>`
+    * :ref:`FileDownloader <db-reader>`
 
 All of these classes have a method ``run()`` that starts extracting/loading the data:
 
@@ -111,7 +111,7 @@ All of these classes have a method ``run()`` that starts extracting/loading the 
 
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         columns=["column_1", "column_2"],
     )
 
@@ -120,7 +120,7 @@ All of these classes have a method ``run()`` that starts extracting/loading the 
 
     writer = DBWriter(
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
     )
 
     # Load df to hive table
@@ -131,26 +131,26 @@ Extract data
 
 To extract data you can use classes:
 
-+------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+-------------------------------------------+------------------------------------------------------------------+
-|                                                | Use case                                                                                                                                                                             | Connection              | ``run()`` gets                            | ``run()`` returns                                                |
-+================================================+======================================================================================================================================================================================+=========================+===========================================+==================================================================+
-| `DBReader <core/db_reader.html>`_              | Reading data from a database and saving it as a `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | Any ``DBConnection``    | \-                                        | Spark DataFrame                                                  |
-+------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+-------------------------------------------+------------------------------------------------------------------+
-| `FileDownloader <core/file_downloader.html>`_  | Download files from remote FS to local FS                                                                                                                                            | Any ``FileConnection``  | No input, or List[File path on remote FS] | :obj:`onetl.core.file_downloader.download_result.DownloadResult` |
-+------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+-------------------------------------------+------------------------------------------------------------------+
++-----------------------------------+-----------------------------------------------------------+-----------------------------------------------+-------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+|                                   | Use case                                                  | Connection                                    | ``run()`` gets                            | ``run()`` returns                                                                                                                    |
++===================================+===========================================================+===============================================+===========================================+======================================================================================================================================+
+| :ref:`DBReader <db-reader>`       | Reading data from a database and saving it as a DataFrame | Any :ref:`DBConnection <db-connections>`      | \-                                        | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
++-----------------------------------+-----------------------------------------------------------+-----------------------------------------------+-------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| :ref:`FileDownloader <db-reader>` | Download files from remote FS to local FS                 | Any :ref:`FileConnection <file-connections>`  | No input, or List[File path on remote FS] | :ref:`DownloadResult <download-result>`                                                                                              |
++-----------------------------------+-----------------------------------------------------------+-----------------------------------------------+-------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 Load data
 ---------
 
 To load data you can use classes:
 
-+----------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------+-------------------------------+------------------------------------------------------------+
-|                                              | Use case                                                                                                                                                                | Connection               | ``run()`` gets                | ``run()`` returns                                          |
-+==============================================+=========================================================================================================================================================================+==========================+===============================+============================================================+
-| `DBWriter <core/db_writer.html>`_            | Writing data from a `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_ to a database   | Any ``DBConnection``     | Spark DataFrame               | None                                                       |
-+----------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------+-------------------------------+------------------------------------------------------------+
-| `FileUploader <core/file_downloader.html>`_  | Uploading files from a local FS to remote FS                                                                                                                            | Any ``FileConnection``   | List[File path on local FS]   | :obj:`onetl.core.file_uploader.upload_result.UploadResult` |
-+----------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------+-------------------------------+------------------------------------------------------------+
++-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
+|                                     | Use case                                     | Connection                                    | ``run()`` gets                                                                                                                       | ``run()`` returns                   |
++=====================================+==============================================+===============================================+======================================================================================================================================+=====================================+
+| :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`      | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
++-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
+| :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>`  | List[File path on local FS]                                                                                                          | :ref:`UploadResult <upload-result>` |
++-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
 
 Options
 -------
@@ -165,7 +165,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
     reader = DBReader(
         # WHAT do we extract:
         connection=mssql,
-        table="dbo.demo_table",  # some table from MSSQL
+        source="dbo.demo_table",  # some table from MSSQL
         columns=["column_1", "column_2"],  # but only specific set of columns
         where="column_2 > 1000",  # only rows matching the clause
         # HOW do we extract:
@@ -180,7 +180,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
     writer = DBWriter(
         # WHERE do we load - to some table in Hive
         connection=hive,
-        table="dl_sb.demo_table",
+        target="dl_sb.demo_table",
         # HOW do we load - overwrite all the data in existing table
         options=Hive.WriteOptions(mode="overwrite_all"),
     )
@@ -234,7 +234,7 @@ For example, an incremental strategy allows you to get only new data from the ta
 
     reader = DBReader(
         connection=mssql,
-        table="dbo.demo_table",
+        source="dbo.demo_table",
         hwm_column="id",  # detect new data based on value of "id" column
     )
 

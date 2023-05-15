@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ class BaseFileConnection(BaseConnection):
         self,
         local_file_path: os.PathLike | str,
         remote_file_path: os.PathLike | str,
+        replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
         Uploads local file to path on remote filesystem

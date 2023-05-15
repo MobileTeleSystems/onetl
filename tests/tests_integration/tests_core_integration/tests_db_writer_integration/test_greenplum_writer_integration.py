@@ -1,5 +1,9 @@
+import pytest
+
 from onetl.connection import Greenplum
 from onetl.core import DBWriter
+
+pytestmark = pytest.mark.greenplum
 
 
 def test_greenplum_writer_snapshot(spark, processing, prepare_schema_table):
@@ -17,7 +21,7 @@ def test_greenplum_writer_snapshot(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=greenplum,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
     )
 
     writer.run(df)
@@ -47,7 +51,7 @@ def test_greenplum_writer_mode_append(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=greenplum,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Greenplum.WriteOptions(mode="append"),
     )
 
@@ -79,7 +83,7 @@ def test_greenplum_writer_mode(spark, processing, prepare_schema_table):
 
     writer = DBWriter(
         connection=greenplum,
-        table=prepare_schema_table.full_name,
+        target=prepare_schema_table.full_name,
         options=Greenplum.WriteOptions(mode="overwrite"),
     )
 

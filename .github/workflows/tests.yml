@@ -1,0 +1,437 @@
+name: Tests
+on:
+  push:
+    branches:
+    - develop
+  pull_request:
+    branches:
+    - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-core:
+    name: Run core tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-core.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-clickhouse:
+    name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - clickhouse-image: clickhouse/clickhouse-server
+          clickhouse-version: 23.2.6-alpine
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - clickhouse-image: clickhouse/clickhouse-server
+          clickhouse-version: 23.2.6-alpine
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-clickhouse.yml
+    with:
+      clickhouse-image: ${{ matrix.clickhouse-image }}
+      clickhouse-version: ${{ matrix.clickhouse-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-greenplum:
+    name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - greenplum-version: 6.8
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - greenplum-version: 6.8
+          spark-version: 3.2.3  # Greenplum connector currently does not support Spark 3.3+
+          java-version: 11
+          python-version: '3.10'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-greenplum.yml
+    with:
+      greenplum-version: ${{ matrix.greenplum-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+    secrets:
+      GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
+      GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
+
+  tests-hive:
+    name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-hive.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-mongodb:
+    name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - mongodb-version: 5.0.16
+          spark-version: 3.2.3  # MongoDB connector does not support Spark 2.x
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - mongodb-version: 5.0.16
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-mongodb.yml
+    with:
+      mongodb-version: ${{ matrix.mongodb-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-mysql:
+    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - mysql-version: 8.0.33
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - mysql-version: 8.0.33
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-mysql.yml
+    with:
+      mysql-version: ${{ matrix.mysql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-mssql:
+    name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - mssql-version: latest
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - mssql-version: latest
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-mssql.yml
+    with:
+      mssql-version: ${{ matrix.mssql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-oracle:
+    name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - oracle-version: 21.3.0-faststart
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - oracle-version: 21.3.0-faststart
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-oracle.yml
+    with:
+      oracle-version: ${{ matrix.oracle-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-postgres:
+    name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - postgres-version: 15.2
+          spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - postgres-version: 15.2
+          spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-postgres.yml
+    with:
+      postgres-version: ${{ matrix.postgres-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-teradata:
+    name: Run Teradata tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - spark-version: 2.4.8
+          java-version: 8
+          python-version: '3.7'
+          os: ubuntu-latest
+        - spark-version: 3.4.0
+          java-version: 17
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-teradata.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-ftp:
+    name: Run FTP tests (server=${{ matrix.ftp-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ftp-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - ftp-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-ftp.yml
+    with:
+      ftp-version: ${{ matrix.ftp-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-ftps:
+    name: Run FTPS tests (server=${{ matrix.ftps-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ftps-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - ftps-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-ftps.yml
+    with:
+      ftps-version: ${{ matrix.ftps-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-hdfs:
+    name: Run HDFS tests (server=${{ matrix.hadoop-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - hadoop-version: hadoop2-hdfs
+          python-version: '3.7'
+          os: ubuntu-latest
+        - hadoop-version: hadoop3-hdfs
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-hdfs.yml
+    with:
+      hadoop-version: ${{ matrix.hadoop-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-s3:
+    name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - minio-version: 2023.4.20
+          python-version: '3.7'
+          os: ubuntu-latest
+        - minio-version: 2023.4.20
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-s3.yml
+    with:
+      minio-version: ${{ matrix.minio-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-sftp:
+    name: Run SFTP tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - openssh-version: 9.1_p1-r2-ls111
+          python-version: '3.7'
+          os: ubuntu-latest
+        - openssh-version: 9.1_p1-r2-ls111
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-sftp.yml
+    with:
+      openssh-version: ${{ matrix.openssh-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-webdav:
+    name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - webdav-version: latest
+          python-version: '3.7'
+          os: ubuntu-latest
+        - webdav-version: latest
+          python-version: '3.11'
+          os: ubuntu-latest
+
+    uses: ./.github/workflows/test-webdav.yml
+    with:
+      webdav-version: ${{ matrix.webdav-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  all_done:
+    name: Tests done
+    runs-on: ubuntu-latest
+    needs:
+    - tests-core
+    - tests-clickhouse
+    - tests-hive
+    - tests-mongodb
+    - tests-mysql
+    - tests-mssql
+    - tests-oracle
+    - tests-postgres
+    - tests-teradata
+    - tests-ftp
+    - tests-ftps
+    - tests-hdfs
+    - tests-s3
+    - tests-sftp
+    - tests-webdav
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-3.11-coverage
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: pip install -I coverage pytest
+
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v3
+      with:
+        path: reports
+
+    - name: Move coverage data to the root folder
+      run: find reports -type f -exec mv '{}' reports \;
+
+    - name: Generate coverate reports
+      run: ./combine_coverage.sh
+
+    - name: Check coverage
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        directory: ./reports
+        fail_ci_if_error: true
+
+    - name: All done
+      run: echo 1

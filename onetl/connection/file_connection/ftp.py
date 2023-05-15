@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,11 +16,29 @@ from __future__ import annotations
 
 import ftplib  # noqa: S402
 import os
+import textwrap
 from logging import getLogger
 from typing import Optional
 
-from ftputil import FTPHost
-from ftputil import session as ftp_session
+try:
+    from ftputil import FTPHost
+    from ftputil import session as ftp_session
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "ftputil".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[ftp]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
+from etl_entities.instance import Host
 from pydantic import SecretStr
 
 from onetl.base import PathStatProtocol
@@ -32,7 +50,22 @@ log = getLogger(__name__)
 
 
 class FTP(FileConnection):
-    """Class for FTP file connection.
+    """FTP file connection.
+
+    Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use FTP connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[ftp]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
@@ -42,11 +75,15 @@ class FTP(FileConnection):
     port : int, default: ``21``
         Port of FTP source
 
-    user : str
-        User, which have access to the file source. For example: ``someuser``
+    user : str, default: ``None``
+        User, which have access to the file source. For example: ``someuser``.
+
+        ``None`` means that the user is anonymous.
 
     password : str, default: ``None``
-        Password for file source connection
+        Password for file source connection.
+
+        ``None`` means that the user is anonymous.
 
     Examples
     --------
@@ -64,10 +101,14 @@ class FTP(FileConnection):
         )
     """
 
-    host: str
+    host: Host
     port: int = 21
     user: Optional[str] = None
     password: Optional[SecretStr] = None
+
+    @property
+    def instance_url(self) -> str:
+        return f"ftp://{self.host}:{self.port}"
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.path.exists(os.fspath(path))
@@ -86,8 +127,8 @@ class FTP(FileConnection):
 
         return FTPHost(
             self.host,
-            self.user or "",
-            self.password.get_secret_value() if self.password else "None",
+            self.user,
+            self.password.get_secret_value() if self.password else None,
             session_factory=session_factory,
         )
 

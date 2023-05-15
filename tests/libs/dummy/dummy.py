@@ -4,4 +4,4 @@ from onetl.hwm.store.base_hwm_store import BaseHWMStore
 
 @register_hwm_store_class("dummy")
 class DummyHWMStore(BaseHWMStore):
-    pass  # noqa: WPS420, WPS604
+    pass

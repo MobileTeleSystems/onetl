@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class SnapshotStrategy(BaseStrategy):
 
         .. code:: python
 
-            download_result = DownloadResult(
+            assert download_result == DownloadResult(
                 successful=[
                     "/path/my/file1",
                     "/path/my/file2",
@@ -86,12 +86,12 @@ class SnapshotStrategy(BaseStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with SnapshotStrategy():
             df = reader.run()
@@ -154,7 +154,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. note::
 
         This strategy uses HWM column value to filter data for each batch,
-        but **does not** save it into HWM Store.
+        but **does not** save it into :ref:`hwm-store`.
         So every run starts from the beginning, not from the previous HWM value.
 
     .. note::
@@ -248,16 +248,16 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             spark=spark,
         )
 
-        hive = Hive(spark=spark)
+        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["id", "data"],
             hwm_column="id",
         )
 
-        writer = DBWriter(connection=hive, table="newtable")
+        writer = DBWriter(connection=hive, target="newtable")
 
         with SnapshotBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -377,7 +377,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         reader = DBReader(
             connection=postgres,
-            table="public.mydata",
+            source="public.mydata",
             columns=["business_dt", "data"],
             hwm_column="business_dt",
         )
@@ -417,7 +417,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     """
 
     def fetch_hwm(self) -> None:
-        pass  # noqa: WPS420,WPS604
+        pass
 
     def save_hwm(self) -> None:
-        pass  # noqa: WPS420,WPS604
+        pass

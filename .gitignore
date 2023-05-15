@@ -53,6 +53,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+/reports/
 
 # Translations
 *.mo
@@ -150,17 +151,4 @@ dmypy.json
 
 # Local stuff
 docker-compose*override*
-test_conf*
-onetl_local*
-
-!test_conf.default.yaml
-!onetl_local.default.env
 !docker-compose.override.sample.yml
-
-/docker/hive2/Dockerfile.remote
-/docker/oracle/Dockerfile.remote
-/docker/postgres/Dockerfile.remote
-/docker-compose-remote.yml
-# Spark folders
-spark-warehouse
-metastore_db

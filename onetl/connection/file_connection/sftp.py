@@ -1,4 +1,4 @@
-#  Copyright 2022 MTS (Mobile Telesystems)
+#  Copyright 2023 MTS (Mobile Telesystems)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,13 +16,32 @@ from __future__ import annotations
 
 import contextlib
 import os
+import textwrap
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
 from typing import Optional
 
-from paramiko import AutoAddPolicy, ProxyCommand, SSHClient, SSHConfig
-from paramiko.sftp_attr import SFTPAttributes
-from paramiko.sftp_client import SFTPClient
+try:
+    from paramiko import ProxyCommand, SSHClient, SSHConfig, WarningPolicy
+    from paramiko.sftp_attr import SFTPAttributes
+    from paramiko.sftp_client import SFTPClient
+    from paramiko.ssh_exception import ConfigParseError
+except (ImportError, NameError) as e:
+    raise ImportError(
+        textwrap.dedent(
+            """
+            Cannot import module "paramiko".
+
+            Since onETL v0.7.0 you should install package as follows:
+                pip install onetl[sftp]
+
+            or
+                pip install onetl[files]
+            """,
+        ).strip(),
+    ) from e
+
+from etl_entities.instance import Host
 from pydantic import FilePath, SecretStr
 
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -34,7 +53,22 @@ log = getLogger(__name__)
 
 
 class SFTP(FileConnection):
-    """Class for SFTP file connection.
+    """SFTP file connection.
+
+    Based on `Paramiko library <https://pypi.org/project/paramiko/>`_.
+
+    .. warning::
+
+        Since onETL v0.7.0 to use SFTP connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[s3]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`files-install` instruction for more details.
 
     Parameters
     ----------
@@ -78,7 +112,7 @@ class SFTP(FileConnection):
         )
     """
 
-    host: str
+    host: Host
     port: int = 22
     user: Optional[str] = None
     password: Optional[SecretStr] = None
@@ -86,6 +120,10 @@ class SFTP(FileConnection):
     timeout: int = 10
     host_key_check: bool = False
     compress: bool = True
+
+    @property
+    def instance_url(self) -> str:
+        return f"sftp://{self.host}:{self.port}"
 
     def path_exists(self, path: os.PathLike | str) -> bool:
         try:
@@ -101,7 +139,7 @@ class SFTP(FileConnection):
         client.load_system_host_keys()
         if not self.host_key_check:
             # Default is RejectPolicy
-            client.set_missing_host_key_policy(AutoAddPolicy())
+            client.set_missing_host_key_policy(WarningPolicy())
 
         client.connect(
             hostname=self.host,
@@ -124,10 +162,12 @@ class SFTP(FileConnection):
 
     def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None
-
         key_file = os.fspath(self.key_file) if self.key_file else None
 
-        if SSH_CONFIG_PATH.exists() and SSH_CONFIG_PATH.is_file():
+        if not SSH_CONFIG_PATH.exists() or not SSH_CONFIG_PATH.is_file():
+            return host_proxy, key_file
+
+        try:
             ssh_conf = SSHConfig()
             ssh_conf.parse(SSH_CONFIG_PATH.read_text())
             host_info = ssh_conf.lookup(self.host) or {}
@@ -136,6 +176,8 @@ class SFTP(FileConnection):
 
             if not (self.password or key_file) and host_info.get("identityfile"):
                 key_file = host_info.get("identityfile")[0]
+        except ConfigParseError:
+            log.exception("Failed to parse SSH config")
 
         return host_proxy, key_file
 
@@ -208,13 +250,9 @@ class SFTP(FileConnection):
             return file.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
-        if not isinstance(content, str):
-            raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content.encode(encoding))
 
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
-        if not isinstance(content, bytes):
-            raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
         with self.client.open(os.fspath(path), mode="w", **kwargs) as file:
             file.write(content)
