@@ -197,7 +197,7 @@ Each client can be installed explicitly by passing connector name (in lowercase)
 .. code:: bash
 
     pip install onetl[ftp]  # specific connector
-    pip install onetl[ftp, ftps, sftp, hdfs, s3, webdav]  # multiple connectors
+    pip install onetl[ftp,ftps,sftp,hdfs,s3,webdav]  # multiple connectors
 
 To install all file connectors at once you can pass ``files`` to ``extras``:
 
@@ -256,7 +256,7 @@ To install all connectors and dependencies, you can pass ``all`` into ``extras``
     pip install onetl[all]
 
     # this is just the same as
-    pip install onetl[spark, files, kerberos]
+    pip install onetl[spark,files,kerberos]
 
 .. warning::
 
