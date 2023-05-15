@@ -76,7 +76,7 @@ setup(
         "Typing :: Typed",
     ],
     project_urls={
-        "Documentation": "https://onetl.readthedocs.io/en/stable/",
+        "Documentation": "https://onetl.readthedocs.io/",
         "Source": "https://github.com/MobileTeleSystems/onetl",
         "CI/CD": "https://github.com/MobileTeleSystems/onetl/actions",
         "Tracker": "https://github.com/MobileTeleSystems/onetl/issues",
