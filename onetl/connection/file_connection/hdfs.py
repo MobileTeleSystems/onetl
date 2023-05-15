@@ -488,7 +488,7 @@ class HDFS(FileConnection):
                         Cannot import module "hdfs.ext.kerberos".
 
                         Since onETL v0.7.0 you should install package as follows:
-                            pip install onetl[hdfs, kerberos]
+                            pip install onetl[hdfs,kerberos]
 
                         or
                             pip install onetl[all]
