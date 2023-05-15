@@ -22,7 +22,7 @@ matrix:
     clickhouse-version: 23.2.6-alpine
     <<: *max
   full:
-  # the lowest supported Clickhouse version by JDBC driver
+  # The lowest supported Clickhouse version by JDBC driver
   - clickhouse-image: yandex/clickhouse-server
     clickhouse-version: '20.7'
     <<: *min
