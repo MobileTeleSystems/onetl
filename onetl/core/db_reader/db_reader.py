@@ -393,7 +393,7 @@ class DBReader(FrozenModel):
                 "Otherwise DBReader cannot determine HWM type for this column",
             )
 
-        values["hwm_column"] = Column(name=hwm_column)
+        values["hwm_column"] = Column(name=hwm_column)  # type: ignore
         values["hwm_expression"] = hwm_expression
 
         return values

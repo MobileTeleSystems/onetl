@@ -202,21 +202,24 @@ class HWMStrategyHelper(FrozenModel):
         self.strategy.update_hwm(max_hwm_value)
         return df
 
-    def get_boundaries(self) -> Tuple[Optional[Statement], Optional[Statement]]:
-        start_from: Optional[Statement] = None
-        end_at: Optional[Statement] = None
+    def get_boundaries(self) -> tuple[Statement | None, Statement | None]:
+        start_from: Statement | None = None
+        end_at: Statement | None = None
+        hwm: ColumnHWM | None = self.strategy.hwm  # type: ignore
 
-        # `self.strategy.hwm is not None` is need only to handle mypy warnings
-        if self.strategy.current_value is not None and self.strategy.hwm is not None:
+        if hwm is None:
+            return None, None
+
+        if self.strategy.current_value is not None:
             start_from = Statement(
-                expression=self.hwm_expression or self.strategy.hwm.name,
+                expression=self.hwm_expression or hwm.name,
                 operator=self.strategy.current_value_comparator,
                 value=self.strategy.current_value,
             )
 
-        if self.strategy.next_value is not None and self.strategy.hwm is not None:
+        if self.strategy.next_value is not None:
             end_at = Statement(
-                expression=self.hwm_expression or self.strategy.hwm.name,
+                expression=self.hwm_expression or hwm.name,
                 operator=self.strategy.next_value_comparator,
                 value=self.strategy.next_value,
             )
