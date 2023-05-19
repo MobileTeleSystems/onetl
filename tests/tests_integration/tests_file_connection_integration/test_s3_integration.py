@@ -52,7 +52,7 @@ def test_s3_connection_list_dir(path_prefix, s3_connection):
     )
 
     def dir_content(path):
-        return [os.fspath(file) for file in s3_connection.listdir(path)]
+        return [os.fspath(file) for file in s3_connection.list_dir(path)]
 
     assert dir_content(f"{path_prefix}export/resources/src/exclude_dir") == ["file_4.txt", "file_5.txt"]
     assert dir_content(f"{path_prefix}export/resources/src") == ["exclude_dir"]

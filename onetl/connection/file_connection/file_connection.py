@@ -70,15 +70,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         .. code:: python
 
-            content = connection.listdir("/mydir")
+            content = connection.list_dir("/mydir")
             assert content
             connection.close()
 
             # or
 
             with connection:
-                content = connection.listdir("/mydir")
-                content = connection.listdir("/mydir/abc")
+                content = connection.list_dir("/mydir")
+                content = connection.list_dir("/mydir/abc")
 
         """
 
@@ -98,7 +98,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         self._log_parameters()
 
         try:
-            self.listdir("/")
+            self.list_dir("/")
             log.info("|%s| Connection is available", self.__class__.__name__)
         except (RuntimeError, ValueError):
             # left validation errors intact
@@ -131,7 +131,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self._get_stat(remote_path)
 
-    def get_directory(self, path: os.PathLike | str) -> RemoteDirectory:
+    def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
 
@@ -142,7 +142,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return RemoteDirectory(path=path, stats=stat)
 
-    def get_file(self, path: os.PathLike | str) -> RemoteFile:
+    def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
         stat = self.get_stat(path)
         remote_path = RemoteFile(path=path, stats=stat)
@@ -161,13 +161,13 @@ class FileConnection(BaseFileConnection, FrozenModel):
             path,
         )
 
-        remote_path = self.get_file(path)
+        remote_path = self.resolve_file(path)
         return self._read_text(remote_path, encoding=encoding, **kwargs)
 
     def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
         log.debug("|%s| Reading bytes with options %r from '%s'", self.__class__.__name__, kwargs, path)
 
-        remote_path = self.get_file(path)
+        remote_path = self.resolve_file(path)
         return self._read_bytes(remote_path, **kwargs)
 
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
@@ -184,10 +184,10 @@ class FileConnection(BaseFileConnection, FrozenModel):
         )
 
         remote_path = RemotePath(path)
-        self.mkdir(remote_path.parent)
+        self.create_dir(remote_path.parent)
 
         if self.path_exists(remote_path):
-            file = self.get_file(remote_path)
+            file = self.resolve_file(remote_path)
             log.warning(
                 "|%s| File %s already exists and will be overwritten",
                 self.__class__.__name__,
@@ -196,7 +196,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         self._write_text(remote_path, content=content, encoding=encoding, **kwargs)
 
-        return self.get_file(remote_path)
+        return self.resolve_file(remote_path)
 
     def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> RemoteFile:
         if not isinstance(content, bytes):
@@ -211,10 +211,10 @@ class FileConnection(BaseFileConnection, FrozenModel):
         )
 
         remote_path = RemotePath(path)
-        self.mkdir(remote_path.parent)
+        self.create_dir(remote_path.parent)
 
         if self.path_exists(remote_path):
-            file = self.get_file(remote_path)
+            file = self.resolve_file(remote_path)
             log.warning(
                 "|%s| File %s already exists and will be overwritten",
                 self.__class__.__name__,
@@ -223,7 +223,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         self._write_bytes(remote_path, content=content, **kwargs)
 
-        return self.get_file(remote_path)
+        return self.resolve_file(remote_path)
 
     def download_file(
         self,
@@ -238,7 +238,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             local_file_path,
         )
 
-        remote_file = self.get_file(remote_file_path)
+        remote_file = self.resolve_file(remote_file_path)
         local_file = LocalPath(local_file_path)
 
         if local_file.exists():
@@ -271,22 +271,22 @@ class FileConnection(BaseFileConnection, FrozenModel):
             log.debug("|%s| File '%s' does not exist, nothing to remove", self.__class__.__name__, remote_file_path)
             return
 
-        file = self.get_file(remote_file_path)
+        file = self.resolve_file(remote_file_path)
         log.debug("|%s| File to remove: %s", self.__class__.__name__, path_repr(file))
 
         self._remove_file(file)
         log.info("|%s| Successfully removed file '%s'", self.__class__.__name__, file)
 
-    def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
+    def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         log.debug("|%s| Creating directory '%s'", self.__class__.__name__, path)
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
-            return self.get_directory(remote_directory)
+            return self.resolve_dir(remote_directory)
 
-        self._mkdir(remote_directory)
+        self._create_dir(remote_directory)
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
-        return self.get_directory(remote_directory)
+        return self.resolve_dir(remote_directory)
 
     def upload_file(
         self,
@@ -305,17 +305,17 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         remote_file = RemotePath(remote_file_path)
         if self.path_exists(remote_file):
-            file = self.get_file(remote_file_path)
+            file = self.resolve_file(remote_file_path)
             if not replace:
                 raise FileExistsError(f"File {path_repr(file)} already exists")
 
             log.warning("|%s| File %s already exists, overwriting", self.__class__.__name__, path_repr(file))
             self._remove_file(remote_file)
 
-        self.mkdir(remote_file.parent)
+        self.create_dir(remote_file.parent)
 
         self._upload_file(local_file, remote_file)
-        result = self.get_file(remote_file)
+        result = self.resolve_file(remote_file)
 
         if result.stat().st_size != local_file.stat().st_size:
             raise RuntimeError(
@@ -334,24 +334,24 @@ class FileConnection(BaseFileConnection, FrozenModel):
     ) -> RemoteFile:
         log.debug("|%s| Renaming file '%s' to '%s'", self.__class__.__name__, source_file_path, target_file_path)
 
-        source_file = self.get_file(source_file_path)
+        source_file = self.resolve_file(source_file_path)
         target_file = RemotePath(target_file_path)
 
         if self.path_exists(target_file):
-            file = self.get_file(target_file)
+            file = self.resolve_file(target_file)
             if not replace:
                 raise FileExistsError(f"File {path_repr(file)} already exists")
 
             log.warning("|%s| File %s already exists, overwriting", self.__class__.__name__, path_repr(file))
             self._remove_file(target_file)
 
-        self.mkdir(target_file.parent)
-        self._rename(source_file, target_file)
+        self.create_dir(target_file.parent)
+        self._rename_file(source_file, target_file)
         log.info("|%s| Successfully renamed file '%s' to '%s'", self.__class__.__name__, source_file, target_file)
 
-        return self.get_file(target_file)
+        return self.resolve_file(target_file)
 
-    def listdir(
+    def list_dir(
         self,
         directory: os.PathLike | str,
         filters: Iterable[BaseFileFilter] | None = None,
@@ -365,7 +365,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         for limit in limits:
             limit.reset()
 
-        remote_directory = self.get_directory(directory)
+        remote_directory = self.resolve_dir(directory)
         result = []
 
         for entry in self._scan_entries(remote_directory):
@@ -400,7 +400,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         yield from self._walk(top, topdown=topdown, filters=filters, limits=limits)
 
-    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         description = "RECURSIVELY" if recursive else "NON-recursively"
         log.debug("|%s| %s removing directory '%s'", self.__class__.__name__, description, path)
         remote_directory = RemotePath(path)
@@ -413,8 +413,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
             )
             return
 
-        directory_info = path_repr(self.get_directory(remote_directory))
-        if self.listdir(remote_directory) and not recursive:
+        directory_info = path_repr(self.resolve_dir(remote_directory))
+        if self.list_dir(remote_directory) and not recursive:
             raise DirectoryNotEmptyError(
                 "|%s| Cannot delete non-empty directory %s",
                 self.__class__.__name__,
@@ -423,9 +423,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
         if recursive:
-            self._rmdir_recursive(remote_directory)
+            self._remove_dir_recursive(remote_directory)
         else:
-            self._rmdir(remote_directory)
+            self._remove_dir(remote_directory)
 
         log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_directory)
 
@@ -442,7 +442,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 return
 
         log.debug("|%s| Walking through directory '%s'", self.__class__.__name__, top)
-        root = self.get_directory(top)
+        root = self.resolve_dir(top)
         dirs, files = [], []
 
         for entry in self._scan_entries(root):
@@ -481,7 +481,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         )
         yield root, dirs, files
 
-    def _rmdir_recursive(self, root: RemotePath) -> None:
+    def _remove_dir_recursive(self, root: RemotePath) -> None:
         for entry in self._scan_entries(root):
             name = self._extract_name_from_entry(entry)
             stat = self._extract_stat_from_entry(root, entry)
@@ -489,7 +489,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             if self._is_dir_entry(root, entry):
                 path = RemoteDirectory(path=root / name, stats=stat)
                 log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(path))
-                self._rmdir_recursive(path)
+                self._remove_dir_recursive(path)
                 log.debug("|%s| Successfully removed directory '%s'", self.__class__.__name__, path)
             else:
                 path = RemoteFile(path=root / name, stats=stat)
@@ -497,7 +497,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 self._remove_file(path)
                 log.debug("|%s| Successfully removed file '%s'", self.__class__.__name__, path)
 
-        self._rmdir(root)
+        self._remove_dir(root)
 
     @abstractmethod
     def _scan_entries(self, path: RemotePath) -> list:
@@ -713,7 +713,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """"""
 
     @abstractmethod
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         """"""
 
     @abstractmethod
@@ -721,27 +721,27 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """"""
 
     @abstractmethod
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         """"""
 
     @abstractmethod
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         """"""
 
     @abstractmethod
-    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
+    def _read_text(self, path: RemotePath, encoding: str) -> str:
         """"""
 
     @abstractmethod
-    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
+    def _read_bytes(self, path: RemotePath) -> bytes:
         """"""
 
     @abstractmethod
-    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
+    def _write_text(self, path: RemotePath, content: str, encoding: str) -> None:
         """"""
 
     @abstractmethod
-    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, path: RemotePath, content: bytes) -> None:
         """"""
 
     @abstractmethod

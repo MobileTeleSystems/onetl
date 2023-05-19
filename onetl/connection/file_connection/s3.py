@@ -131,7 +131,7 @@ class S3(FileConnection):
     def instance_url(self) -> str:
         return f"s3://{self.host}:{self.port}"
 
-    def mkdir(self, path: os.PathLike | str) -> RemoteDirectory:
+    def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
         # and the method must return the created directory
 
@@ -139,9 +139,9 @@ class S3(FileConnection):
         remote_directory = RemotePath(path)
 
         if self.path_exists(remote_directory):
-            return self.get_directory(remote_directory)
+            return self.resolve_dir(remote_directory)
 
-        self._mkdir(remote_directory)
+        self._create_dir(remote_directory)
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
@@ -211,7 +211,7 @@ class S3(FileConnection):
         path_str = self._delete_absolute_path_slash(remote_file_path)
         self.client.remove_object(self.bucket, path_str)
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         # in s3 dirs do not exist
         pass
 
@@ -219,7 +219,7 @@ class S3(FileConnection):
         path_str = self._delete_absolute_path_slash(remote_file_path)
         self.client.fput_object(self.bucket, path_str, os.fspath(local_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         source_str = self._delete_absolute_path_slash(source)
         target_str = self._delete_absolute_path_slash(target)
         self.client.copy_object(
@@ -253,7 +253,7 @@ class S3(FileConnection):
             st_uid=entry.owner_name or entry.owner_id,
         )
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         # Empty. S3 does not have directories.
         pass
 

@@ -700,16 +700,16 @@ class HDFS(FileConnection):
         # Underlying client does not support closing
         pass
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.delete(os.fspath(path), recursive=False)
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         self.client.makedirs(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         self.client.upload(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:

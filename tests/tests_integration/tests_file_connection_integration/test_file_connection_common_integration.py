@@ -15,41 +15,41 @@ def test_file_connection_rm_dir_recursive(
     source_path,
     path_type,
 ):
-    file_all_connections.rmdir(path_type(os.fspath(source_path)), recursive=True)
+    file_all_connections.remove_dir(path_type(os.fspath(source_path)), recursive=True)
 
     assert not file_all_connections.path_exists(source_path)
 
     if file_all_connections.path_exists(source_path.parent):
         # S3 does not support creating directories
-        parent_paths = [os.fspath(path) for path in file_all_connections.listdir(source_path.parent)]
+        parent_paths = [os.fspath(path) for path in file_all_connections.list_dir(source_path.parent)]
         assert source_path.name not in parent_paths
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rmdir_non_empty(file_all_connections, source_path, upload_test_files, path_type):
+def test_file_connection_remove_dir_non_empty(file_all_connections, source_path, upload_test_files, path_type):
     with pytest.raises(Exception):
-        file_all_connections.rmdir(path_type(os.fspath(source_path)))
+        file_all_connections.remove_dir(path_type(os.fspath(source_path)))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_rmdir_fake_dir(file_all_connections, upload_test_files, path_type):
+def test_file_connection_remove_dir_fake_dir(file_all_connections, upload_test_files, path_type):
     # Does not raise Exception
-    file_all_connections.rmdir(path_type("/some/fake/dir"))
+    file_all_connections.remove_dir(path_type("/some/fake/dir"))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_mkdir(file_all_connections, source_path, path_type):
+def test_file_connection_create_dir(file_all_connections, source_path, path_type):
     path = source_path / "some_dir"
 
     file_all_connections.close()
-    file_all_connections.mkdir(path_type(os.fspath(path)))
+    file_all_connections.create_dir(path_type(os.fspath(path)))
     file_all_connections.close()
     # `close` called twice is not an error
     file_all_connections.close()
 
     if file_all_connections.path_exists(path):
         # S3 does not support creating directories
-        assert RemotePath("some_dir") in file_all_connections.listdir(path.parent)
+        assert RemotePath("some_dir") in file_all_connections.list_dir(path.parent)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -60,7 +60,7 @@ def test_file_connection_rename_file(file_all_connections, source_path, upload_t
             target_file_path=path_type(os.fspath(source_path / "exclude_dir/file_55.txt")),
         )
 
-    list_dir = file_all_connections.listdir(source_path / "exclude_dir/")
+    list_dir = file_all_connections.list_dir(source_path / "exclude_dir/")
 
     assert RemotePath("file_55.txt") in list_dir
     assert RemotePath("file_5.txt") not in list_dir
@@ -207,7 +207,7 @@ def test_file_connection_download_file(
     )
 
     assert download_result.exists()
-    assert download_result.stat().st_size == file_all_connections.get_file(remote_file_path).stat().st_size
+    assert download_result.stat().st_size == file_all_connections.resolve_file(remote_file_path).stat().st_size
     assert download_result.read_text() == file_all_connections.read_text(remote_file_path)
 
 
@@ -313,7 +313,7 @@ def test_file_connection_download_replace_target(
     )
 
     assert download_result.exists()
-    assert download_result.stat().st_size == file_all_connections.get_file(remote_file_path).stat().st_size
+    assert download_result.stat().st_size == file_all_connections.resolve_file(remote_file_path).stat().st_size
     assert download_result.read_text() == "тестовый текст в  тестовом файле\n"
 
 
