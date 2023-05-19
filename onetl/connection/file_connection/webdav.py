@@ -176,7 +176,7 @@ class WebDAV(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.clean(os.fspath(remote_file_path))
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         for directory in reversed(path.parents):  # from root to nested directory
             if not self.path_exists(directory):
                 self.client.mkdir(os.fspath(directory))
@@ -188,14 +188,14 @@ class WebDAV(FileConnection):
             remote_path=os.fspath(remote_file_path),
         )
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         res = self.client.resource(os.fspath(source))
         res.move(os.fspath(target))
 
     def _scan_entries(self, path: RemotePath) -> list[dict]:
         return self.client.list(os.fspath(path), get_info=True)
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.clean(os.fspath(path))
 
     def _read_text(self, path: RemotePath, encoding: str) -> str:

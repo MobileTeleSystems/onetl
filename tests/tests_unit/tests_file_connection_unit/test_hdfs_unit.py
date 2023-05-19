@@ -245,7 +245,7 @@ def test_hdfs_get_webhdfs_port_hook(request):
 def test_hdfs_known_get_current(request, mocker):
     from onetl.connection import HDFS
 
-    mocker.patch.object(HDFS, "listdir", return_value=None)
+    mocker.patch.object(HDFS, "list_dir", return_value=None)
 
     # no hooks bound to HDFS.slots.get_current_cluster
     error_msg = re.escape(

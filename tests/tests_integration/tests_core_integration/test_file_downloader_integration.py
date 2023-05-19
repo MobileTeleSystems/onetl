@@ -85,7 +85,7 @@ def test_downloader_run(
         assert not local_file.is_dir()
 
         remote_file_path = source_path / local_file.relative_to(local_path)
-        remote_file = file_all_connections.get_file(remote_file_path)
+        remote_file = file_all_connections.resolve_file(remote_file_path)
 
         # file size is same as expected
         assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
@@ -296,7 +296,7 @@ def test_downloader_run_with_files_absolute(
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_all_connections.get_file(remote_file_path)
+        remote_file = file_all_connections.resolve_file(remote_file_path)
 
         # file size is same as expected
         assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
@@ -337,7 +337,7 @@ def test_downloader_run_with_files_relative_and_source_path(
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_all_connections.get_file(remote_file_path)
+        remote_file = file_all_connections.resolve_file(remote_file_path)
 
         # file size is same as expected
         assert local_file.stat().st_size == file_all_connections.get_stat(remote_file).st_size
@@ -389,12 +389,12 @@ def test_downloader_run_with_empty_files_input(
 def test_downloader_run_with_empty_source_path(request, file_all_connections, tmp_path_factory):
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    file_all_connections.mkdir(source_path)
+    file_all_connections.create_dir(source_path)
     if file_all_connections.path_exists(source_path):
         # S3 does not support creating directories
 
         def finalizer():
-            file_all_connections.rmdir(source_path, recursive=True)
+            file_all_connections.remove_dir(source_path, recursive=True)
 
         request.addfinalizer(finalizer)
 
@@ -593,7 +593,7 @@ def test_downloader_mode_overwrite(file_all_connections, source_path, upload_tes
         assert local_file.is_file()
         assert not local_file.is_dir()
 
-        remote_file = file_all_connections.get_file(remote_file_path)
+        remote_file = file_all_connections.resolve_file(remote_file_path)
 
         # file size was changed
         assert local_file.stat().st_size != local_files_stat[local_file].st_size
@@ -648,12 +648,12 @@ def test_downloader_run_missing_file(request, file_all_connections, upload_test_
     local_path = tmp_path_factory.mktemp("local_path")
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    file_all_connections.mkdir(target_path)
+    file_all_connections.create_dir(target_path)
     if file_all_connections.path_exists(target_path):
         # S3 does not support creating directories
 
         def finalizer():
-            file_all_connections.rmdir(target_path, recursive=True)
+            file_all_connections.remove_dir(target_path, recursive=True)
 
         request.addfinalizer(finalizer)
 
@@ -719,10 +719,10 @@ def test_downloader_source_path_not_a_directory(request, file_all_connections, t
 
 def test_downloader_local_path_not_a_directory(request, file_all_connections):
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    file_all_connections.mkdir(source_path)
+    file_all_connections.create_dir(source_path)
 
     def finalizer():
-        file_all_connections.rmdir(source_path)
+        file_all_connections.remove_dir(source_path)
 
     request.addfinalizer(finalizer)
 
@@ -743,13 +743,13 @@ def test_downloader_run_input_is_not_file(request, file_all_connections, tmp_pat
     source_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     not_a_file = source_path / "not_a_file"
 
-    file_all_connections.mkdir(not_a_file)
+    file_all_connections.create_dir(not_a_file)
 
     if file_all_connections.path_exists(not_a_file):
         # S3 does not support creating directories
 
         def finalizer():
-            file_all_connections.rmdir(source_path, recursive=True)
+            file_all_connections.remove_dir(source_path, recursive=True)
 
         request.addfinalizer(finalizer)
 

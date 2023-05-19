@@ -80,7 +80,7 @@ Read data from MSSQL, transform & write to Hive.
 SFTP → HDFS
 -----------
 
-Download files from FTP & upload them to HDFS.
+Download files from SFTP & upload them to HDFS.
 
 .. code:: python
 

@@ -181,7 +181,7 @@ class SFTP(FileConnection):
 
         return host_proxy, key_file
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         try:
             self.client.stat(os.fspath(path))
         except Exception:
@@ -196,7 +196,7 @@ class SFTP(FileConnection):
     def _upload_file(self, local_file_path: RemotePath, remote_file_path: RemotePath) -> None:
         self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         with contextlib.suppress(OSError):
             self.client.posix_rename(os.fspath(source), os.fspath(target))
             return
@@ -208,7 +208,7 @@ class SFTP(FileConnection):
     def _download_file(self, remote_file_path: RemotePath, local_file_path: RemotePath) -> None:
         self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:

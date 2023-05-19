@@ -138,13 +138,13 @@ class FTP(FileConnection):
     def _close_client(self) -> None:
         self._client.close()
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         self.client.upload(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
@@ -153,7 +153,7 @@ class FTP(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.remove(os.fspath(remote_file_path))
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         self.client.makedirs(os.fspath(path), exist_ok=True)
 
     def _scan_entries(self, path: RemotePath) -> list[str]:

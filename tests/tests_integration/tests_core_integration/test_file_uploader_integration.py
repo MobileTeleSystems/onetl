@@ -44,7 +44,7 @@ def test_uploader_run_with_files(request, file_all_connections, test_files, run_
     target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -86,7 +86,7 @@ def test_uploader_run_with_local_path(request, file_all_connections, resource_pa
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -134,7 +134,7 @@ def test_uploader_run_missing_file(request, file_all_connections, test_files, ca
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -170,7 +170,7 @@ def test_uploader_run_delete_local(request, resource_path, test_files, file_all_
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -247,7 +247,7 @@ def test_uploader_run_mode_error(request, file_all_connections, test_files, opti
         remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -297,7 +297,7 @@ def test_uploader_run_mode_ignore(request, file_all_connections, test_files, cap
         remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -348,7 +348,7 @@ def test_uploader_run_mode_overwrite(request, file_all_connections, test_files, 
         remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -410,7 +410,7 @@ def test_uploader_run_mode_delete_all(
         file_all_connections.write_text(new_remote_file, "abc")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -517,7 +517,7 @@ def test_uploader_run_with_empty_local_path(request, file_all_connections, tmp_p
     local_path = tmp_path_factory.mktemp("local_path")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -548,7 +548,7 @@ def test_uploader_run_with_relative_files_and_local_path(request, file_all_conne
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
@@ -595,7 +595,7 @@ def test_uploader_run_with_absolute_files_and_local_path(request, file_all_conne
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.rmdir(target_path, recursive=True)
+        file_all_connections.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 

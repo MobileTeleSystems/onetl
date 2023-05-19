@@ -248,7 +248,7 @@ class FileUploader(FrozenModel):
         self.connection.check()
         log_with_indent("")
 
-        self.connection.mkdir(self.target_path)
+        self.connection.create_dir(self.target_path)
 
         if files is None:
             log.info("|%s| File list is not passed to `run` method", self.__class__.__name__)
@@ -266,11 +266,11 @@ class FileUploader(FrozenModel):
 
         # remove folder only after everything is checked
         if self.options.mode == FileWriteMode.DELETE_ALL:
-            self.connection.rmdir(self.target_path, recursive=True)
-            self.connection.mkdir(self.target_path)
+            self.connection.remove_dir(self.target_path, recursive=True)
+            self.connection.create_dir(self.target_path)
 
         if current_temp_dir:
-            current_temp_dir = self.connection.mkdir(current_temp_dir)
+            current_temp_dir = self.connection.create_dir(current_temp_dir)
 
         result = self._upload_files(to_upload)
 
@@ -446,7 +446,7 @@ class FileUploader(FrozenModel):
         try:
             replace = False
             if self.connection.path_exists(target_file):
-                file = self.connection.get_file(target_file)
+                file = self.connection.resolve_file(target_file)
                 if self.options.mode == FileWriteMode.ERROR:
                     raise FileExistsError(f"File {path_repr(file)} already exists")
 
@@ -479,7 +479,7 @@ class FileUploader(FrozenModel):
 
     def _remove_temp_dir(self, temp_dir: RemotePath) -> None:
         try:
-            self.connection.rmdir(temp_dir, recursive=True)
+            self.connection.remove_dir(temp_dir, recursive=True)
         except Exception:
             log.exception("|%s| Error while removing temp directory", self.__class__.__name__)
 

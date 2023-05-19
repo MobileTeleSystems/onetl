@@ -581,14 +581,14 @@ class FileDownloader(FrozenModel):
                     raise ValueError(f"File path '{remote_file}' does not match source_path '{self.source_path}'")
 
             if self.connection.path_exists(remote_file):
-                self.connection.get_file(remote_file)
+                self.connection.resolve_file(remote_file)
 
             result.add((remote_file, local_file, tmp_file))
 
         return result
 
     def _check_source_path(self):
-        self.connection.get_directory(self.source_path)
+        self.connection.resolve_dir(self.source_path)
 
     def _check_local_path(self):
         if self.local_path.exists() and not self.local_path.is_dir():
@@ -638,7 +638,7 @@ class FileDownloader(FrozenModel):
             return
 
         try:
-            remote_file = self.connection.get_file(source_file)
+            remote_file = self.connection.resolve_file(source_file)
 
             replace = False
             if local_file.exists():

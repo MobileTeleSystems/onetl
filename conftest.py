@@ -538,10 +538,10 @@ def file_all_connections(file_connections_data):
 @pytest.fixture(scope="function")
 def source_path(file_connections_data):
     connection, path = file_connections_data
-    connection.rmdir(path, recursive=True)
-    connection.mkdir(path)
+    connection.remove_dir(path, recursive=True)
+    connection.create_dir(path)
     yield path
-    connection.rmdir(path, recursive=True)
+    connection.remove_dir(path, recursive=True)
 
 
 @pytest.fixture(scope="function")

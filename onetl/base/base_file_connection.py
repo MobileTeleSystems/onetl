@@ -47,7 +47,7 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def mkdir(self, path: os.PathLike | str) -> PathProtocol:
+    def create_dir(self, path: os.PathLike | str) -> PathProtocol:
         """
         Creates directory tree on remote filesystem
         """
@@ -81,7 +81,7 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def listdir(
+    def list_dir(
         self,
         directory: os.PathLike | str,
         filters: Iterable[BaseFileFilter] | None = None,
@@ -103,7 +103,7 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def rmdir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> None:
         """
         Remove directory or directory tree on remote filesystem
         """
@@ -127,25 +127,25 @@ class BaseFileConnection(BaseConnection):
         """
 
     @abstractmethod
-    def get_directory(self, path: os.PathLike | str) -> PathWithStatsProtocol:
+    def resolve_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
+        """
+        Returns directory with stats for a specific path on remote filesystem
+        """
+
+    @abstractmethod
+    def resolve_file(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
         Returns file with stats for a specific path on remote filesystem
         """
 
     @abstractmethod
-    def get_file(self, path: os.PathLike | str) -> PathWithStatsProtocol:
-        """
-        Returns file with stats for a specific path on remote filesystem
-        """
-
-    @abstractmethod
-    def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
+    def read_text(self, path: os.PathLike | str, encoding: str = "utf-8") -> str:
         """
         Returns string content of a file at specific path on remote filesystem
         """
 
     @abstractmethod
-    def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
+    def read_bytes(self, path: os.PathLike | str) -> bytes:
         """
         Returns binary content of a file at specific path on remote filesystem
         """
@@ -156,14 +156,13 @@ class BaseFileConnection(BaseConnection):
         path: os.PathLike | str,
         content: str,
         encoding: str = "utf-8",
-        **kwargs,
     ) -> PathWithStatsProtocol:
         """
         Writes string to a specific path on remote filesystem
         """
 
     @abstractmethod
-    def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> PathWithStatsProtocol:
+    def write_bytes(self, path: os.PathLike | str, content: bytes) -> PathWithStatsProtocol:
         """
         Writes bytes to a specific path on remote filesystem
         """
