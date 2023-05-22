@@ -20,6 +20,15 @@ import textwrap
 from logging import getLogger
 from typing import Optional
 
+from etl_entities.instance import Host
+from pydantic import SecretStr
+
+from onetl.base import PathStatProtocol
+from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.impl import LocalPath, RemotePath
+from onetl.impl.remote_path_stat import RemotePathStat
+
 try:
     from ftputil import FTPHost
     from ftputil import session as ftp_session
@@ -38,18 +47,10 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
-from etl_entities.instance import Host
-from pydantic import SecretStr
-
-from onetl.base import PathStatProtocol
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemotePath
-from onetl.impl.remote_path_stat import RemotePathStat
-
 log = getLogger(__name__)
 
 
-class FTP(FileConnection):
+class FTP(FileConnection, RenameDirMixin):
     """FTP file connection.
 
     Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
@@ -146,6 +147,8 @@ class FTP(FileConnection):
 
     def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
+
+    _rename_dir = _rename_file
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))

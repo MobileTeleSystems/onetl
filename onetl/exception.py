@@ -46,6 +46,12 @@ class NotAFileError(OSError):
     """
 
 
+class DirectoryExistsError(OSError):
+    """
+    Like ``FileExistsError``, but for directories.
+    """
+
+
 class DirectoryNotEmptyError(OSError):
     """
     Raised when trying to remove directory contains some files or other directories

@@ -5,7 +5,8 @@ from pathlib import PurePosixPath
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.exception import DirectoryNotFoundError, NotAFileError
+from onetl.base import SupportsRenameDir
+from onetl.exception import DirectoryExistsError, DirectoryNotFoundError, NotAFileError
 from onetl.impl import RemotePath
 
 
@@ -64,6 +65,100 @@ def test_file_connection_rename_file(file_all_connections, source_path, upload_t
 
     assert RemotePath("file_55.txt") in list_dir
     assert RemotePath("file_5.txt") not in list_dir
+
+
+@pytest.mark.parametrize("path_type", [str, PurePosixPath])
+def test_file_connection_rename_dir(file_all_connections, source_path, upload_test_files, path_type):
+    if not isinstance(file_all_connections, SupportsRenameDir):
+        # S3 does not have directories
+        return
+
+    def stringify(items):
+        return list(map(os.fspath, items))
+
+    old_dir = source_path / "exclude_dir"
+    new_dir = source_path / "exclude_dir1"
+    files_before = list(file_all_connections.walk(old_dir))
+
+    file_all_connections.rename_dir(
+        source_dir_path=path_type(os.fspath(old_dir)),
+        target_dir_path=path_type(os.fspath(new_dir)),
+    )
+
+    list_dir = file_all_connections.list_dir(source_path)
+    assert RemotePath("exclude_dir") not in list_dir
+    assert RemotePath("exclude_dir1") in list_dir
+
+    # root has different name, but all directories content is the same
+    files_after = [
+        (os.fspath(root), stringify(dirs), stringify(files)) for root, dirs, files in file_all_connections.walk(new_dir)
+    ]
+    assert files_after == [
+        (os.fspath(new_dir / root.relative_to(old_dir)), stringify(dirs), stringify(files))
+        for root, dirs, files in files_before
+    ]
+
+
+def test_file_connection_rename_dir_already_exists(request, file_all_connections, source_path, upload_test_files):
+    if not isinstance(file_all_connections, SupportsRenameDir):
+        # S3 does not have directories
+        return
+
+    old_dir = source_path / "exclude_dir"
+    new_dir = source_path / "exclude_dir1"
+
+    def finalizer():
+        file_all_connections.remove_dir(new_dir)
+
+    request.addfinalizer(finalizer)
+
+    file_all_connections.create_dir(new_dir)
+
+    with pytest.raises(DirectoryExistsError):
+        file_all_connections.rename_dir(
+            source_dir_path=old_dir,
+            target_dir_path=new_dir,
+        )
+
+
+def test_file_connection_rename_dir_replace(request, file_all_connections, source_path, upload_test_files):
+    if not isinstance(file_all_connections, SupportsRenameDir):
+        # S3 does not have directories
+        return
+
+    def stringify(items):
+        return list(map(os.fspath, items))
+
+    old_dir = source_path / "exclude_dir"
+    new_dir = source_path / "exclude_dir1"
+
+    def finalizer():
+        file_all_connections.remove_dir(new_dir, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    file_all_connections.create_dir(new_dir)
+
+    files_before = list(file_all_connections.walk(old_dir))
+
+    file_all_connections.rename_dir(
+        source_dir_path=old_dir,
+        target_dir_path=new_dir,
+        replace=True,
+    )
+
+    list_dir = file_all_connections.list_dir(source_path)
+    assert RemotePath("exclude_dir") not in list_dir
+    assert RemotePath("exclude_dir1") in list_dir
+
+    # root has different name, but all directories content is the same
+    files_after = [
+        (os.fspath(root), stringify(dirs), stringify(files)) for root, dirs, files in file_all_connections.walk(new_dir)
+    ]
+    assert files_after == [
+        (os.fspath(new_dir / root.relative_to(old_dir)), stringify(dirs), stringify(files))
+        for root, dirs, files in files_before
+    ]
 
 
 def test_file_connection_read_text(file_all_connections, upload_files_with_encoding):
