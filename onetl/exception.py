@@ -46,6 +46,12 @@ class NotAFileError(OSError):
     """
 
 
+class FileSizeMismatchError(OSError):
+    """
+    File size mismatch
+    """
+
+
 class DirectoryNotEmptyError(OSError):
     """
     Raised when trying to remove directory contains some files or other directories
