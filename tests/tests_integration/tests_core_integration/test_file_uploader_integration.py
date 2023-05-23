@@ -404,10 +404,10 @@ def test_uploader_run_mode_delete_all(
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # make copy of files to upload in the target_path
-    new_remote_file = target_path / secrets.token_hex(5)
+    temp_file = target_path / secrets.token_hex(5)
 
     if remote_dir_exist:
-        file_all_connections.write_text(new_remote_file, "abc")
+        file_all_connections.write_text(temp_file, "abc")
 
     def finalizer():
         file_all_connections.remove_dir(target_path, recursive=True)
@@ -435,7 +435,7 @@ def test_uploader_run_mode_delete_all(
 
     # target path contains only downloaded files
     assert sorted(target_path_content) == sorted(upload_result.successful)
-    assert not file_all_connections.path_exists(new_remote_file)
+    assert not file_all_connections.path_exists(temp_file)
 
 
 def test_uploader_run_local_path_does_not_exist(file_all_connections, tmp_path_factory):
@@ -540,7 +540,7 @@ def test_uploader_without_files_and_without_local_path(file_all_connections):
 
     uploader = FileUploader(connection=file_all_connections, target_path=target_path)
 
-    with pytest.raises(ValueError, match="Neither file list nor ``local_path`` are passed"):
+    with pytest.raises(ValueError, match="Neither file list nor `local_path` are passed"):
         uploader.run()
 
 
@@ -567,7 +567,7 @@ def test_uploader_run_with_relative_files_and_local_path(request, file_all_conne
 
     with caplog.at_level(logging.WARNING):
         upload_result = uploader.run(local_files_list)
-        assert ("Passed both ``local_path`` and files list at the same time. Using explicit files list") in caplog.text
+        assert ("Passed both `local_path` and files list at the same time. Using explicit files list") in caplog.text
 
     assert not upload_result.failed
     assert not upload_result.missing
@@ -613,7 +613,7 @@ def test_uploader_run_with_absolute_files_and_local_path(request, file_all_conne
 
     with caplog.at_level(logging.WARNING):
         upload_result = uploader.run(local_files_list)
-        assert ("Passed both ``local_path`` and files list at the same time. Using explicit files list") in caplog.text
+        assert ("Passed both `local_path` and files list at the same time. Using explicit files list") in caplog.text
 
     assert not upload_result.failed
     assert not upload_result.missing
@@ -651,7 +651,7 @@ def test_uploader_run_relative_paths_without_local_path(file_all_connections):
 
     uploader = FileUploader(connection=file_all_connections, target_path=target_path)
 
-    with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``local_path``"):
+    with pytest.raises(ValueError, match="Cannot pass relative file path with empty `local_path`"):
         uploader.run(["some/path/1", "some/path/2"])
 
 

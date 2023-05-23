@@ -17,12 +17,12 @@ from __future__ import annotations
 from pydantic import Field
 
 from onetl.core.file_result import FileResult, FileSet
-from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePath
+from onetl.impl import FailedRemoteFile, RemoteFile, RemotePath
 
 
-class DownloadResult(FileResult):
+class MoveResult(FileResult):
     """
-    Representation of file download result.
+    Representation of file move result.
 
     Container for file paths, divided into certain categories:
 
@@ -34,29 +34,29 @@ class DownloadResult(FileResult):
     Examples
     --------
 
-    Download files
+    Move files
 
     .. code:: python
 
-        from onetl.impl import LocalPath, RemoteFile, FailedLocalFile
-        from onetl.core import FileDownloader, DownloadResult
+        from onetl.impl import RemotePath, RemoteFile, FailedLocalFile
+        from onetl.core import FileMover, MoveResult
 
-        downloader = FileDownloader(local_path="/local", ...)
+        mover = FileMover(local_path="/local", ...)
 
-        downloaded_files = downloader.run(
+        moved_files = mover.run(
             [
-                "/remote/file1",
-                "/remote/file2",
+                "/source/file1",
+                "/source/file2",
                 "/failed/file",
                 "/existing/file",
                 "/missing/file",
             ]
         )
 
-        assert downloaded_files == DownloadResult(
+        assert moved_files == MoveResult(
             successful={
-                LocalPath("/local/file1"),
-                LocalPath("/local/file2"),
+                RemoteFile("/target/file1"),
+                RemoteFile("/target/file2"),
             },
             failed={FailedLocalFile("/failed/file")},
             skipped={RemoteFile("/existing/file")},
@@ -64,11 +64,11 @@ class DownloadResult(FileResult):
         )
     """
 
-    successful: FileSet[LocalPath] = Field(default_factory=FileSet)
-    "File paths (local) which were downloaded successfully"
+    successful: FileSet[RemoteFile] = Field(default_factory=FileSet)
+    "File paths (local) which were moved successfully"
 
     failed: FileSet[FailedRemoteFile] = Field(default_factory=FileSet)
-    "File paths (remote) which were not downloaded because of some failure"
+    "File paths (remote) which were not moved because of some failure"
 
     skipped: FileSet[RemoteFile] = Field(default_factory=FileSet)
     "File paths (remote) which were skipped because of some reason"

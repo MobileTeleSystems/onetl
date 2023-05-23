@@ -137,14 +137,16 @@ def test_downloader_run_delete_source(
         assert local_file.stat().st_size == original_file.stat().st_size
         assert local_file.read_bytes() == original_file.read_bytes()
 
-    if file_all_connections.path_exists(source_path):
+    if not file_all_connections.path_exists(source_path):
         # S3 does not support creating directories
-        remote_files = FileSet()
-        for root, _dirs, files in file_all_connections.walk(source_path):
-            for file in files:
-                remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
+        return
 
-        assert not remote_files
+    remote_files = FileSet()
+    for root, _dirs, files in file_all_connections.walk(source_path):
+        for file in files:
+            remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
+
+    assert not remote_files
 
 
 @pytest.mark.parametrize("path_type", [str, Path])
@@ -270,7 +272,7 @@ def test_downloader_run_with_files_absolute(
 
         if source_path_value:
             assert (
-                "Passed both ``source_path`` and files list at the same time. Using explicit files list"
+                "Passed both `source_path` and files list at the same time. Using explicit files list"
             ) in caplog.text
 
     assert not download_result.failed
@@ -354,7 +356,7 @@ def test_downloader_run_without_files_and_source_path(file_all_connections, tmp_
         connection=file_all_connections,
         local_path=local_path,
     )
-    with pytest.raises(ValueError, match="Neither file list nor ``source_path`` are passed"):
+    with pytest.raises(ValueError, match="Neither file list nor `source_path` are passed"):
         downloader.run()
 
 
@@ -422,7 +424,7 @@ def test_downloader_run_relative_path_without_source_path(file_all_connections, 
         local_path=local_path,
     )
 
-    with pytest.raises(ValueError, match="Cannot pass relative file path with empty ``source_path``"):
+    with pytest.raises(ValueError, match="Cannot pass relative file path with empty `source_path`"):
         downloader.run(["some/relative/path/file.txt"])
 
 
@@ -453,14 +455,12 @@ def test_downloader_mode_error(file_all_connections, source_path, upload_test_fi
     local_path = tmp_path_factory.mktemp("local_path")
 
     # make copy of files to download in the local_path
-    local_files = []
     local_files_stat = {}
     for test_file in upload_test_files:
         local_file = local_path / test_file.relative_to(source_path)
 
         local_file.parent.mkdir(parents=True, exist_ok=True)
         local_file.write_text("unchanged")
-        local_files.append(local_file)
         local_files_stat[local_file] = local_file.stat()
 
     downloader = FileDownloader(
@@ -619,9 +619,9 @@ def test_downloader_mode_delete_all(
     else:
         local_path = Path(tempfile.gettempdir()) / secrets.token_hex()
 
-    new_local_file = local_path / secrets.token_hex(5)
+    temp_file = local_path / secrets.token_hex(5)
     if local_dir_exist:
-        new_local_file.touch()
+        temp_file.touch()
 
     downloader = FileDownloader(
         connection=file_all_connections,
@@ -641,7 +641,7 @@ def test_downloader_mode_delete_all(
 
     # folder contains only downloaded files
     assert sorted(item for item in local_path.glob("**/*") if item.is_file()) == sorted(download_result.successful)
-    assert not new_local_file.exists()
+    assert not temp_file.exists()
 
 
 def test_downloader_run_missing_file(request, file_all_connections, upload_test_files, tmp_path_factory, caplog):
@@ -745,21 +745,22 @@ def test_downloader_run_input_is_not_file(request, file_all_connections, tmp_pat
 
     file_all_connections.create_dir(not_a_file)
 
-    if file_all_connections.path_exists(not_a_file):
+    if not file_all_connections.path_exists(not_a_file):
         # S3 does not support creating directories
+        return
 
-        def finalizer():
-            file_all_connections.remove_dir(source_path, recursive=True)
+    def finalizer():
+        file_all_connections.remove_dir(source_path, recursive=True)
 
-        request.addfinalizer(finalizer)
+    request.addfinalizer(finalizer)
 
-        downloader = FileDownloader(
-            connection=file_all_connections,
-            local_path=local_path,
-        )
+    downloader = FileDownloader(
+        connection=file_all_connections,
+        local_path=local_path,
+    )
 
-        with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
-            downloader.run([not_a_file])
+    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
+        downloader.run([not_a_file])
 
 
 def test_downloader_file_limit_custom(file_all_connections, source_path, upload_test_files, tmp_path_factory, caplog):
