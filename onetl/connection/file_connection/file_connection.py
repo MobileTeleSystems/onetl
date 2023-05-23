@@ -248,7 +248,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             if not replace:
                 raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
-            log.warning("|LocalFS| File %s already exists, overwriting", path_repr(local_file))
+            log.warning("|Local FS| File %s already exists, overwriting", path_repr(local_file))
             local_file.unlink()
 
         log.debug("|Local FS| Creating target directory '%s'", local_file.parent)

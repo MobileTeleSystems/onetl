@@ -8,5 +8,6 @@
     db_writer
     file_downloader/index
     file_uploader/index
+    file_mover/index
     file_filter
     file_limit
