@@ -33,7 +33,7 @@ root_log = logging.getLogger()
 
 HALF_SCREEN_SIZE = 45
 BASE_LOG_INDENT = 8
-LOG_FORMAT = "%(asctime)s [%(levelname:8s)s] %(message)s"
+LOG_FORMAT = "%(asctime)s [%(levelname)-8s] %(message)s"
 CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
 
 DISABLED = 9999  # CRITICAL is 50, we need even higher to disable all logs
