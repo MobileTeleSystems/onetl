@@ -46,6 +46,12 @@ class NotAFileError(OSError):
     """
 
 
+class FileSizeMismatchError(OSError):
+    """
+    File size mismatch
+    """
+
+
 class DirectoryExistsError(OSError):
     """
     Like ``FileExistsError``, but for directories.

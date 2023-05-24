@@ -32,6 +32,7 @@ from onetl.core.file_limit import limits_reached
 from onetl.exception import (
     DirectoryNotEmptyError,
     DirectoryNotFoundError,
+    FileSizeMismatchError,
     NotAFileError,
 )
 from onetl.impl import (
@@ -128,7 +129,6 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         remote_path = RemotePath(path)
-
         return self._get_stat(remote_path)
 
     def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
@@ -256,7 +256,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         self._download_file(remote_file, local_file)
 
         if local_file.stat().st_size != remote_file.stat().st_size:
-            raise RuntimeError(
+            raise FileSizeMismatchError(
                 f"The size of the downloaded file ({naturalsize(local_file.stat().st_size)}) does not match "
                 f"the size of the file on the source ({naturalsize(remote_file.stat().st_size)})",
             )
@@ -264,29 +264,30 @@ class FileConnection(BaseFileConnection, FrozenModel):
         log.info("|Local FS| Successfully downloaded file '%s'", local_file)
         return local_file
 
-    def remove_file(self, remote_file_path: os.PathLike | str) -> None:
-        log.debug("|%s| Removing file '%s'", self.__class__.__name__, remote_file_path)
+    def remove_file(self, path: os.PathLike | str) -> bool:
+        log.debug("|%s| Removing file '%s'", self.__class__.__name__, path)
 
-        if not self.path_exists(remote_file_path):
-            log.debug("|%s| File '%s' does not exist, nothing to remove", self.__class__.__name__, remote_file_path)
-            return
+        if not self.path_exists(path):
+            log.debug("|%s| File '%s' does not exist, nothing to remove", self.__class__.__name__, path)
+            return False
 
-        file = self.resolve_file(remote_file_path)
+        file = self.resolve_file(path)
         log.debug("|%s| File to remove: %s", self.__class__.__name__, path_repr(file))
 
         self._remove_file(file)
         log.info("|%s| Successfully removed file '%s'", self.__class__.__name__, file)
+        return True
 
     def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         log.debug("|%s| Creating directory '%s'", self.__class__.__name__, path)
-        remote_directory = RemotePath(path)
+        remote_dir = RemotePath(path)
 
-        if self.path_exists(remote_directory):
-            return self.resolve_dir(remote_directory)
+        if self.path_exists(remote_dir):
+            return self.resolve_dir(remote_dir)
 
-        self._create_dir(remote_directory)
-        log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
-        return self.resolve_dir(remote_directory)
+        self._create_dir(remote_dir)
+        log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_dir)
+        return self.resolve_dir(remote_dir)
 
     def upload_file(
         self,
@@ -318,7 +319,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         result = self.resolve_file(remote_file)
 
         if result.stat().st_size != local_file.stat().st_size:
-            raise RuntimeError(
+            raise FileSizeMismatchError(
                 f"The size of the uploaded file ({naturalsize(result.stat().st_size)}) does not match "
                 f"the size of the file on the source ({naturalsize(local_file.stat().st_size)})",
             )
@@ -353,11 +354,13 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def list_dir(
         self,
-        directory: os.PathLike | str,
+        path: os.PathLike | str,
         filters: Iterable[BaseFileFilter] | None = None,
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> list[RemoteDirectory | RemoteFile]:
-        log.debug("|%s| Listing directory '%s'", self.__class__.__name__, directory)
+        log.debug("|%s| Listing directory '%s'", self.__class__.__name__, path)
+        remote_dir = self.resolve_dir(path)
+        result: list[RemoteDirectory | RemoteFile] = []
 
         filters = filters or []
         limits = limits or []
@@ -365,14 +368,11 @@ class FileConnection(BaseFileConnection, FrozenModel):
         for limit in limits:
             limit.reset()
 
-        remote_directory = self.resolve_dir(directory)
-        result = []
-
-        for entry in self._scan_entries(remote_directory):
+        for entry in self._scan_entries(remote_dir):
             name = self._extract_name_from_entry(entry)
-            stat = self._extract_stat_from_entry(remote_directory, entry)
+            stat = self._extract_stat_from_entry(remote_dir, entry)
 
-            if self._is_dir_entry(remote_directory, entry):
+            if self._is_dir_entry(remote_dir, entry):
                 path = RemoteDirectory(path=name, stats=stat)
             else:
                 path = RemoteFile(path=name, stats=stat)
@@ -387,34 +387,36 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def walk(
         self,
-        top: os.PathLike | str,
+        root: os.PathLike | str,
         topdown: bool = True,
         filters: Iterable[BaseFileFilter] | None = None,
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
+        root_dir = self.resolve_dir(root)
+
         filters = filters or []
         limits = limits or []
 
         for limit in limits:
             limit.reset()
 
-        yield from self._walk(top, topdown=topdown, filters=filters, limits=limits)
+        yield from self._walk(root_dir, topdown=topdown, filters=filters, limits=limits)
 
-    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> None:
+    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:
         description = "RECURSIVELY" if recursive else "NON-recursively"
         log.debug("|%s| %s removing directory '%s'", self.__class__.__name__, description, path)
-        remote_directory = RemotePath(path)
+        remote_dir = RemotePath(path)
 
-        if not self.path_exists(remote_directory):
+        if not self.path_exists(remote_dir):
             log.debug(
                 "|%s| Directory '%s' does not exist, nothing to remove",
                 self.__class__.__name__,
-                remote_directory,
+                remote_dir,
             )
-            return
+            return False
 
-        directory_info = path_repr(self.resolve_dir(remote_directory))
-        if self.list_dir(remote_directory) and not recursive:
+        directory_info = path_repr(self.resolve_dir(remote_dir))
+        if self.list_dir(remote_dir) and not recursive:
             raise DirectoryNotEmptyError(
                 "|%s| Cannot delete non-empty directory %s",
                 self.__class__.__name__,
@@ -423,15 +425,16 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
         if recursive:
-            self._remove_dir_recursive(remote_directory)
+            self._remove_dir_recursive(remote_dir)
         else:
-            self._remove_dir(remote_directory)
+            self._remove_dir(remote_dir)
 
-        log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_directory)
+        log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_dir)
+        return True
 
     def _walk(  # noqa: WPS231
         self,
-        top: os.PathLike | str,
+        root: RemoteDirectory,
         topdown: bool,
         filters: Iterable[BaseFileFilter],
         limits: Iterable[BaseFileLimit],
@@ -441,8 +444,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             if limit.is_reached:
                 return
 
-        log.debug("|%s| Walking through directory '%s'", self.__class__.__name__, top)
-        root = self.resolve_dir(top)
+        log.debug("|%s| Walking through directory '%s'", self.__class__.__name__, root)
         dirs, files = [], []
 
         for entry in self._scan_entries(root):
@@ -451,7 +453,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
             if self._is_dir_entry(root, entry):
                 if not topdown:
-                    yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
+                    yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 
                 path = RemoteDirectory(path=root / name, stats=stat)
                 if match_all_filters(filters, path):
@@ -470,7 +472,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         if topdown:
             for name in dirs:
-                yield from self._walk(top=root / name, topdown=topdown, filters=filters, limits=limits)
+                yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 
         log.debug(
             "|%s| Directory '%s' contains %d nested directories and %d files",
