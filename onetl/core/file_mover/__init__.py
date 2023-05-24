@@ -12,11 +12,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.core.db_reader import *
-from onetl.core.db_writer import *
-from onetl.core.file_downloader import *
-from onetl.core.file_filter import *
-from onetl.core.file_limit import *
-from onetl.core.file_mover import *
-from onetl.core.file_result import *
-from onetl.core.file_uploader import *
+from onetl.core.file_mover.file_mover import FileMover
+from onetl.core.file_mover.move_result import MoveResult

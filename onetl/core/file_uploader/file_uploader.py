@@ -14,8 +14,8 @@
 
 from __future__ import annotations
 
+import logging
 import os
-from logging import getLogger
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
@@ -37,7 +37,7 @@ from onetl.impl import (
 )
 from onetl.log import entity_boundary_log, log_lines, log_options, log_with_indent
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # source, target, temp
 UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]]]
@@ -54,10 +54,14 @@ class FileUploader(FrozenModel):
         It does NOT support direct file transfer between filesystems, like ``FTP -> SFTP``.
         You should use :ref:`file-downloader` + FileUploader to implement ``FTP -> local dir -> SFTP``.
 
+    .. warning::
+
+        This class does **not** support read strategies.
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
-        Class which contains File system connection properties. See in FileConnection section.
+        Class which contains File system connection properties. See :ref:`file-connections` section.
 
     target_path : os.PathLike or str
         Remote path where want you upload files to
@@ -125,7 +129,7 @@ class FileUploader(FrozenModel):
     """
 
     class Options(GenericOptions):
-        """File uploader options"""
+        """File uploading options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
         """
@@ -180,13 +184,13 @@ class FileUploader(FrozenModel):
 
         Returns
         -------
-        uploaded_files : :obj:`onetl.core.file_uploader.upload_result.UploadResult`
+        uploaded_files : :obj:`UploadResult <onetl.core.file_uploader.upload_result.UploadResult>`
 
             Upload result object
 
         Raises
         -------
-        DirectoryNotFoundError
+        :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``local_path`` does not found
 
@@ -201,7 +205,29 @@ class FileUploader(FrozenModel):
         Examples
         --------
 
-        Upload files and get result
+        Upload files from ``local_path`` to ``target_path``
+
+        .. code:: python
+
+            from onetl.impl import (
+                RemoteFile,
+                LocalPath,
+            )
+            from onetl.core import FileUploader
+
+            uploader = FileUploader(local_path="/local", target_path="/remote", ...)
+            uploaded_files = uploader.run()
+
+            assert uploaded_files.successful == {
+                RemoteFile("/remote/file1"),
+                RemoteFile("/remote/file2"),
+                RemoteFile("/remote/nested/path/file3"),  # directory structure is preserved
+            }
+            assert uploaded_files.failed == {FailedLocalFile("/local/failed.file")}
+            assert uploaded_files.skipped == {LocalPath("/local/already.exists")}
+            assert uploaded_files.missing == {LocalPath("/local/missing.file")}
+
+        Upload only certain files from ``local_path``
 
         .. code:: python
 
@@ -213,31 +239,55 @@ class FileUploader(FrozenModel):
 
             uploader = FileUploader(local_path="/local", target_path="/remote", ...)
 
+            # paths could be relative or absolute, but all should be in "/local"
             uploaded_files = uploader.run(
                 [
                     "/local/file1",
-                    "/local/file2",
-                    "/failed/file",
-                    "/existing/file",
-                    "/missing/file",
+                    "/local/nested/path/file3",
+                    # excluding "/local/file2",
                 ]
             )
 
-            # or without the list of files
+            assert uploaded_files.successful == {
+                RemoteFile("/remote/file1"),
+                RemoteFile("/remote/nested/path/file3"),  # directory structure is preserved
+            }
+            assert not uploaded_files.failed
+            assert not uploaded_files.skipped
+            assert not uploaded_files.missing
 
-            uploaded_files = uploader.run()
+        Upload only certain files from any folder
+
+        .. code:: python
+
+            from onetl.impl import (
+                RemoteFile,
+                LocalPath,
+            )
+            from onetl.core import FileUploader
+
+            uploader = FileUploader(target_path="/remote", ...)  # no local_path set
+
+            # only absolute paths
+            uploaded_files = uploader.run(
+                [
+                    "/local/file1.txt",
+                    "/any/nested/path/file3.txt",
+                ]
+            )
 
             assert uploaded_files.successful == {
                 RemoteFile("/remote/file1"),
-                RemoteFile("/remote/file2"),
+                RemoteFile("/remote/file3"),
+                # directory structure is NOT preserved without local_path
             }
-            assert uploaded_files.failed == {FailedLocalFile("/failed/file")}
-            assert uploaded_files.skipped == {LocalPath("/existing/file")}
-            assert uploaded_files.missing == {LocalPath("/missing/file")}
+            assert not uploaded_files.failed
+            assert not uploaded_files.skipped
+            assert not uploaded_files.missing
         """
 
         if files is None and not self.local_path:
-            raise ValueError("Neither file list nor ``local_path`` are passed")
+            raise ValueError("Neither file list nor `local_path` are passed")
 
         self._log_options(files)
 
@@ -282,11 +332,11 @@ class FileUploader(FrozenModel):
 
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file list in the ``local_path``
+        Get file list in the ``local_path``.
 
         Raises
         -------
-        DirectoryNotFoundError
+        :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``local_path`` does not found
 
@@ -309,14 +359,14 @@ class FileUploader(FrozenModel):
             from onetl.impl import LocalPath
             from onetl.core import FileUploader
 
-            uploader = FileUploader(local_path="/local/path", ...)
+            uploader = FileUploader(local_path="/local", ...)
 
             view_files = uploader.view_files()
 
             assert view_files == {
-                LocalPath("/local/path/file1.txt"),
-                LocalPath("/local/path/file3.txt"),
-                LocalPath("/local/path/nested/file3.txt"),
+                LocalPath("/local/file1.txt"),
+                LocalPath("/local/file3.txt"),
+                LocalPath("/local/nested/path/file3.txt"),
             }
         """
 
@@ -354,7 +404,7 @@ class FileUploader(FrozenModel):
 
         if files and self.local_path:
             log.warning(
-                "|%s| Passed both ``local_path`` and files list at the same time. Using explicit files list",
+                "|%s| Passed both `local_path` and files list at the same time. Using explicit files list",
                 self.__class__.__name__,
             )
 
@@ -373,7 +423,7 @@ class FileUploader(FrozenModel):
             if not self.local_path:
                 # Upload into a flat structure
                 if not local_file_path.is_absolute():
-                    raise ValueError("Cannot pass relative file path with empty ``local_path``")
+                    raise ValueError("Cannot pass relative file path with empty `local_path`")
 
                 filename = local_file_path.name
                 target_file = self.target_path / filename
@@ -469,12 +519,16 @@ class FileUploader(FrozenModel):
 
             if self.options.delete_local:
                 local_file.unlink()
-                log.warning("|LocalFS| Successfully removed file %s", local_file)
+                log.warning("|Local FS| Successfully removed file %s", local_file)
 
             result.successful.add(uploaded_file)
 
         except Exception as e:
-            log.exception("|%s| Couldn't upload file to target dir: %s", self.__class__.__name__, e, exc_info=False)
+            if log.isEnabledFor(logging.DEBUG):
+                log.exception("|%s| Couldn't upload file to target dir", self.__class__.__name__, exc_info=e)
+            else:
+                log.exception("|%s| Couldn't upload file to target dir: %s", self.__class__.__name__, e, exc_info=False)
+
             result.failed.add(FailedLocalFile(path=local_file, exception=e))
 
     def _remove_temp_dir(self, temp_dir: RemotePath) -> None:

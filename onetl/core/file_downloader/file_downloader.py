@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
-from logging import getLogger
 from typing import Iterable, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
@@ -46,7 +46,7 @@ from onetl.strategy import StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # source, target, temp
 DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath]]]
@@ -70,7 +70,7 @@ class FileDownloader(FrozenModel):
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
-        Class which contains File system connection properties. See in FileConnection section.
+        Class which contains File system connection properties. See :ref:`file-connections` section.
 
     local_path : os.PathLike or str
         Local path where you download files
@@ -100,10 +100,10 @@ class FileDownloader(FrozenModel):
             which is NOT atomic operation.
 
     filter : BaseFileFilter
-        Options of the file filtering. See :obj:`onetl.core.file_filter.file_filter.FileFilter`
+        Options of the file filtering. See :obj:`FileFilter <onetl.core.file_filter.file_filter.FileFilter>`
 
     limit : BaseFileLimit
-        Options of the file  limiting. See :obj:`onetl.core.file_limit.file_limit.FileLimit`
+        Options of the file  limiting. See :obj:`FileLimit <onetl.core.file_limit.file_limit.FileLimit>`
         Default file count limit is 100
 
     options : :obj:`~FileDownloader.Options`  | dict | None, default: ``None``
@@ -187,7 +187,7 @@ class FileDownloader(FrozenModel):
     """
 
     class Options(GenericOptions):
-        """File downloader options"""
+        """File downloading options"""
 
         mode: FileWriteMode = FileWriteMode.ERROR
         """
@@ -261,21 +261,21 @@ class FileDownloader(FrozenModel):
         files : Iterable[str | os.PathLike] | None, default ``None``
             File list to download.
 
-            If empty, download files from ``source_path``,
+            If empty, download files from ``source_path`` to ``local_path``,
             applying ``filter``, ``limit`` and ``hwm_type`` to each one (if set).
 
-            If not, download **all** input files, **without**
+            If not, download to ``local_path`` **all** input files, **without**
             any filtering, limiting and excluding files covered by :ref:`file-hwm`
 
         Returns
         -------
-        downloaded_files : :obj:`onetl.core.file_downloader.download_result.DownloadResult`
+        downloaded_files : :obj:`DownloadResult <onetl.core.file_downloader.download_result.DownloadResult>`
 
             Download result object
 
         Raises
         -------
-        DirectoryNotFoundError
+        :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
 
@@ -286,7 +286,7 @@ class FileDownloader(FrozenModel):
         Examples
         --------
 
-        Download files from ``source_path``
+        Download files from ``source_path`` to ``local_path``
 
         .. code:: python
 
@@ -297,13 +297,13 @@ class FileDownloader(FrozenModel):
             downloaded_files = downloader.run()
 
             assert downloaded_files.successful == {
-                LocalPath("/local/path/file1.txt"),
-                LocalPath("/local/path/file2.txt"),
-                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/file1.txt"),
+                LocalPath("/local/file2.txt"),
+                LocalPath("/local/nested/path/file3.txt"),  # directory structure is preserved
             }
-            assert downloaded_files.failed == {FailedRemoteFile("/failed/file")}
-            assert downloaded_files.skipped == {RemoteFile("/existing/file")}
-            assert downloaded_files.missing == {RemotePath("/missing/file")}
+            assert downloaded_files.failed == {FailedRemoteFile("/remote/failed.file")}
+            assert downloaded_files.skipped == {RemoteFile("/remote/already.exists")}
+            assert downloaded_files.missing == {RemotePath("/remote/missing.file")}
 
         Download only certain files from ``source_path``
 
@@ -314,17 +314,18 @@ class FileDownloader(FrozenModel):
 
             downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
 
+            # paths could be relative or absolute, but all should be in "/remote"
             downloaded_files = downloader.run(
                 [
-                    "/remote/path/file1.txt",
-                    "/remote/path/nested/file3.txt",
-                    # excluding "/remote/path/file2.txt"
+                    "/remote/file1.txt",
+                    "/remote/nested/path/file3.txt",
+                    # excluding "/remote/file2.txt"
                 ]
             )
 
             assert downloaded_files.successful == {
-                LocalPath("/local/path/file1.txt"),
-                LocalPath("/local/path/nested/file3.txt"),  # directory structure is preserved
+                LocalPath("/local/file1.txt"),
+                LocalPath("/local/nested/path/file3.txt"),  # directory structure is preserved
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -339,16 +340,18 @@ class FileDownloader(FrozenModel):
 
             downloader = FileDownloader(local_path="/local", ...)  # no source_path set
 
+            # only absolute paths
             downloaded_files = downloader.run(
                 [
-                    "/remote/path/file1.txt",
-                    "/remote/path/nested/file3.txt",
+                    "/remote/file1.txt",
+                    "/any/nested/path/file2.txt",
                 ]
             )
 
             assert downloaded_files.successful == {
-                LocalPath("/local/path/file1.txt"),
-                LocalPath("/local/path/file3.txt"),  # directory structure is not preserved
+                LocalPath("/local/file1.txt"),
+                LocalPath("/local/file2.txt"),
+                # directory structure is NOT preserved without source_path
             }
             assert not downloaded_files.failed
             assert not downloaded_files.skipped
@@ -358,7 +361,7 @@ class FileDownloader(FrozenModel):
         self._check_strategy()
 
         if files is None and not self.source_path:
-            raise ValueError("Neither file list nor ``source_path`` are passed")
+            raise ValueError("Neither file list nor `source_path` are passed")
 
         self._log_options(files)
 
@@ -405,7 +408,7 @@ class FileDownloader(FrozenModel):
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the ``source_path``,
-        after ``filter``, ``limit`` and ``hwm`` applied (if any)
+        after ``filter``, ``limit`` and ``hwm`` applied (if any).
 
         .. note::
 
@@ -413,7 +416,7 @@ class FileDownloader(FrozenModel):
 
         Raises
         -------
-        DirectoryNotFoundError
+        :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
 
@@ -436,14 +439,14 @@ class FileDownloader(FrozenModel):
             from onetl.impl import RemoteFile
             from onetl.core import FileDownloader
 
-            downloader = FileDownloader(source_path="/remote/path", ...)
+            downloader = FileDownloader(source_path="/remote", ...)
 
             view_files = downloader.view_files()
 
             assert view_files == {
-                RemoteFile("/remote/path/file1.txt"),
-                RemoteFile("/remote/path/file3.txt"),
-                RemoteFile("/remote/path/nested/file3.txt"),
+                RemoteFile("/remote/file1.txt"),
+                RemoteFile("/remote/file3.txt"),
+                RemoteFile("/remote/nested/file3.txt"),
             }
         """
 
@@ -537,7 +540,7 @@ class FileDownloader(FrozenModel):
 
         if files and self.source_path:
             log.warning(
-                "|%s| Passed both ``source_path`` and files list at the same time. Using explicit files list",
+                "|%s| Passed both `source_path` and files list at the same time. Using explicit files list",
                 self.__class__.__name__,
             )
 
@@ -556,7 +559,7 @@ class FileDownloader(FrozenModel):
             if not self.source_path:
                 # Download into a flat structure
                 if not remote_file_path.is_absolute():
-                    raise ValueError("Cannot pass relative file path with empty ``source_path``")
+                    raise ValueError("Cannot pass relative file path with empty `source_path`")
 
                 filename = remote_file_path.name
                 local_file = self.local_path / filename
@@ -581,7 +584,7 @@ class FileDownloader(FrozenModel):
                     raise ValueError(f"File path '{remote_file}' does not match source_path '{self.source_path}'")
 
             if self.connection.path_exists(remote_file):
-                self.connection.resolve_file(remote_file)
+                remote_file = self.connection.resolve_file(remote_file)
 
             result.add((remote_file, local_file, tmp_file))
 
@@ -646,7 +649,7 @@ class FileDownloader(FrozenModel):
                     raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
                 if self.options.mode == FileWriteMode.IGNORE:
-                    log.warning("|LocalFS| File %s already exists, skipping", path_repr(local_file))
+                    log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
                     result.skipped.add(remote_file)
                     return
 
@@ -661,7 +664,7 @@ class FileDownloader(FrozenModel):
                 # remove existing file only after new file is downloaded
                 # to avoid issues then there is no free space to download new file, but existing one is already gone
                 if replace and local_file.exists():
-                    log.warning("|LocalFS| File %s already exists, overwriting", path_repr(local_file))
+                    log.warning("|Local FS| File %s already exists, overwriting", path_repr(local_file))
                     local_file.unlink()
 
                 local_file.parent.mkdir(parents=True, exist_ok=True)
@@ -682,12 +685,19 @@ class FileDownloader(FrozenModel):
             result.successful.add(local_file)
 
         except Exception as e:
-            log.exception(
-                "|%s| Couldn't download file from source dir: %s",
-                self.__class__.__name__,
-                e,
-                exc_info=False,
-            )
+            if log.isEnabledFor(logging.DEBUG):
+                log.exception(
+                    "|%s| Couldn't download file from source dir",
+                    self.__class__.__name__,
+                    exc_info=e,
+                )
+            else:
+                log.exception(
+                    "|%s| Couldn't download file from source dir: %s",
+                    self.__class__.__name__,
+                    e,
+                    exc_info=False,
+                )
             result.failed.add(FailedRemoteFile(path=remote_file.path, stats=remote_file.stats, exception=e))
 
     def _remove_temp_dir(self, temp_dir: LocalPath) -> None:

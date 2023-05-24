@@ -143,13 +143,13 @@ class FileSet(OrderedSet[T], Generic[T]):
 
         .. code:: python
 
-            from onetl.impl import LocalFile
+            from onetl.impl import LocalPath
             from onet.core import FileSet
 
             path_set1 = FileSet(
                 [
-                    LocalFile("/local/file"),
-                    LocalFile("/local/another.file"),
+                    LocalPath("/local/file"),
+                    LocalPath("/local/another.file"),
                 ]
             )
 
@@ -175,13 +175,13 @@ class FileSet(OrderedSet[T], Generic[T]):
 
         .. code:: python
 
-            from onetl.impl import LocalFile
+            from onetl.impl import LocalPath
             from onet.core import FileSet
 
             path_set1 = FileSet(
                 [
-                    LocalFile("/local/file"),
-                    LocalFile("/local/another.file"),
+                    LocalPath("/local/file"),
+                    LocalPath("/local/another.file"),
                 ]
             )
 
