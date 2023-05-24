@@ -12,12 +12,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.base.base_connection import BaseConnection
-from onetl.base.base_db_connection import BaseDBConnection
-from onetl.base.base_file_connection import BaseFileConnection
-from onetl.base.base_file_filter import BaseFileFilter
-from onetl.base.base_file_limit import BaseFileLimit
-from onetl.base.contains_exception import ContainsException
-from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
-from onetl.base.path_stat_protocol import PathStatProtocol
-from onetl.base.supports_rename_dir import SupportsRenameDir
+from __future__ import annotations
+
+import os
+
+from typing_extensions import Protocol, runtime_checkable
+
+from onetl.base.path_protocol import PathWithStatsProtocol
+
+
+@runtime_checkable
+class SupportsRenameDir(Protocol):
+    """
+    Protocol for objects containing ``rename_dir`` method
+    """
+
+    def rename_dir(
+        self,
+        source_dir_path: str | os.PathLike,
+        target_dir_path: str | os.PathLike,
+        replace: bool = False,
+    ) -> PathWithStatsProtocol:
+        ...
