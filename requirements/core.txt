@@ -12,5 +12,4 @@ platformdirs
 pydantic>=1.9.2,!=1.10.2,<2
 pyyaml
 # https://github.com/python/typing_extensions/pull/188
-typing_extensions<4.6.0; python_version == "3.7"
-typing_extensions; python_version > "3.7"
+typing_extensions<4.6.0
