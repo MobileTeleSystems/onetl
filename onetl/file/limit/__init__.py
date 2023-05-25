@@ -12,4 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.core.file_limit.file_limit import FileLimit
+
+from onetl.file.limit.limits_reached import limits_reached
+from onetl.file.limit.limits_stop_at import limits_stop_at
+from onetl.file.limit.max_files_count import MaxFilesCount
+from onetl.file.limit.reset_limits import reset_limits

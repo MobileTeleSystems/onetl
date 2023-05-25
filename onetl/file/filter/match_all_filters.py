@@ -55,15 +55,14 @@ def match_all_filters(path: PathProtocol, filters: Iterable[BaseFileFilter]) -> 
         assert not match_all_filters(LocalPath("/excluded/path/file.csv"), filters)
     """
 
-    tested = False
+    empty = True
     not_match = []
     for file_filter in filters:
-        tested = True
+        empty = False
         if not file_filter.match(path):
             not_match.append(file_filter)
 
-    if not tested:
-        # no filters
+    if empty:
         return True
 
     if not_match:

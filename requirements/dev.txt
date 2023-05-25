@@ -1,5 +1,5 @@
 black
-mypy==1.1.1
+mypy
 pre-commit
 types-Deprecated
 types-PyYAML

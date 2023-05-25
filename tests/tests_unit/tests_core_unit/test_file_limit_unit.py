@@ -1,9 +1,31 @@
+import re
+import textwrap
+
+import pytest
+
 from onetl.core import FileLimit
 from onetl.impl import RemoteDirectory, RemoteFile, RemotePathStat
 
 
 def test_file_limit():
-    file_limit = FileLimit(count_limit=3)
+    warning_msg = textwrap.dedent(
+        """
+        Using FileLimit is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+        Please replace:
+            from onetl.core import FileLimit
+
+            limit=FileLimit(count_limit=3)
+
+        With:
+            from onetl.file.limit import MaxFilesCount
+
+            limits=[MaxFilesCount(3)]
+        """,
+    ).strip()
+    with pytest.warns(UserWarning, match=re.escape(warning_msg)):
+        file_limit = FileLimit(count_limit=3)
+
     assert not file_limit.is_reached
 
     directory = RemoteDirectory("some")

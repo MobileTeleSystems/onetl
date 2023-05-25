@@ -765,17 +765,12 @@ def test_mover_file_limit_custom(file_all_connections, source_path, upload_test_
         limit=FileLimit(count_limit=limit),
     )
 
-    with caplog.at_level(logging.DEBUG):
-        files = mover.view_files()
-
-        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
-
+    files = mover.view_files()
     assert len(files) == limit
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         move_result = mover.run()
         assert "    count_limit = 2" in caplog.text
-        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
 
     assert len(move_result.successful) == limit
 
@@ -790,19 +785,14 @@ def test_mover_no_file_limit(file_all_connections, source_path, upload_test_file
         limit=None,
     )
 
-    with caplog.at_level(logging.DEBUG):
-        files = mover.view_files()
-
-        assert "are reached" not in caplog.text
-
+    files = mover.view_files()
     assert len(files) == len(upload_test_files)
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         move_result = mover.run()
 
         assert "limit = None" in caplog.text
         assert "count_limit = 2" not in caplog.text
-        assert "are reached" not in caplog.text
 
     assert sorted(move_result.successful) == sorted(
         target_path / file.relative_to(source_path) for file in upload_test_files

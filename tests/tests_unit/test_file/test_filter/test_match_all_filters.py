@@ -38,9 +38,9 @@ def test_match_all_filters(failed_filters, path, caplog):
 
         if failed_filters:
             filters_list_str = re.escape(repr(failed_filters))
-            message = f"Path '{path}'.* does NOT MATCH filters {filters_list_str}"
+            message = f"'{path}'.* does NOT MATCH filters {filters_list_str}"
         else:
-            message = f"Path '{path}'.* does match all filters"
+            message = f"'{path}'.* does match all filters"
 
         assert re.search(message, caplog.text)
 
