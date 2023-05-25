@@ -156,7 +156,6 @@ def test_downloader_file_filter_exclude_dir(
     upload_test_files,
     path_type,
     tmp_path_factory,
-    caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -172,8 +171,7 @@ def test_downloader_file_filter_exclude_dir(
         source_path / "exclude_dir/file_5.txt",
     ]
 
-    with caplog.at_level(logging.DEBUG):
-        download_result = downloader.run()
+    download_result = downloader.run()
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -203,8 +201,7 @@ def test_downloader_file_filter_glob(file_all_connections, source_path, upload_t
         source_path / "news_parse_zp/exclude_dir/file_3.txt",
     ]
 
-    with caplog.at_level(logging.DEBUG):
-        download_result = downloader.run()
+    download_result = downloader.run()
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -767,17 +764,12 @@ def test_downloader_file_limit_custom(file_all_connections, source_path, upload_
         limit=FileLimit(count_limit=limit),
     )
 
-    with caplog.at_level(logging.DEBUG):
-        files = downloader.view_files()
-
-        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
-
+    files = downloader.view_files()
     assert len(files) == limit
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         download_result = downloader.run()
         assert "    count_limit = 2" in caplog.text
-        assert f"Limits [FileLimit(count_limit={limit})] are reached" in caplog.text
 
     assert len(download_result.successful) == limit
 
@@ -792,19 +784,14 @@ def test_downloader_no_file_limit(file_all_connections, source_path, upload_test
         limit=None,
     )
 
-    with caplog.at_level(logging.DEBUG):
-        files = downloader.view_files()
-
-        assert "are reached" not in caplog.text
-
+    files = downloader.view_files()
     assert len(files) == len(upload_test_files)
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         download_result = downloader.run()
 
         assert "limit = None" in caplog.text
         assert "count_limit = 2" not in caplog.text
-        assert "are reached" not in caplog.text
 
     assert sorted(download_result.successful) == sorted(
         local_path / file.relative_to(source_path) for file in upload_test_files
@@ -872,7 +859,6 @@ def test_downloader_detect_hwm_type_snap_batch_strategy(
     source_path,
     upload_test_files,
     tmp_path_factory,
-    caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -893,7 +879,6 @@ def test_downloader_detect_hwm_type_inc_batch_strategy(
     source_path,
     upload_test_files,
     tmp_path_factory,
-    caplog,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -967,7 +952,6 @@ def test_downloader_file_hwm_strategy(
     source_path,
     upload_test_files,
     tmp_path_factory,
-    caplog,
     hwm_type,
 ):
     local_path = tmp_path_factory.mktemp("local_path")

@@ -37,6 +37,11 @@ from onetl.log import log_with_indent
 class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 
+    .. deprecated:: 0.8.0
+
+        Use :obj:`Glob <onetl.file.filter.glob.Glob>`, :obj:`Regexp <onetl.file.filter.regexp.Regexp>`
+        or :obj:`ExcludeDir <onetl.file.filter.exclude_dir.ExcludeDir>` instead.
+
     Parameters
     ----------
 

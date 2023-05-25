@@ -27,7 +27,6 @@ from onetl.base import (
     BaseFileLimit,
     PathStatProtocol,
 )
-from onetl.core.file_limit import limits_reached
 from onetl.exception import (
     DirectoryNotEmptyError,
     DirectoryNotFoundError,
@@ -35,6 +34,7 @@ from onetl.exception import (
     NotAFileError,
 )
 from onetl.file.filter import match_all_filters
+from onetl.file.limit import limits_reached, limits_stop_at, reset_limits
 from onetl.impl import (
     FrozenModel,
     LocalPath,
@@ -363,10 +363,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         result: list[RemoteDirectory | RemoteFile] = []
 
         filters = filters or []
-        limits = limits or []
-
-        for limit in limits:
-            limit.reset()
+        limits = reset_limits(limits or [])
 
         for entry in self._scan_entries(remote_dir):
             name = self._extract_name_from_entry(entry)
@@ -380,7 +377,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             if match_all_filters(path, filters):
                 result.append(path)
 
-            if limits_reached(limits, path):
+            if limits_stop_at(path, limits):
                 break
 
         return result
@@ -395,11 +392,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         root_dir = self.resolve_dir(root)
 
         filters = filters or []
-        limits = limits or []
-
-        for limit in limits:
-            limit.reset()
-
+        limits = reset_limits(limits or [])
         yield from self._walk(root_dir, topdown=topdown, filters=filters, limits=limits)
 
     def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:
@@ -440,9 +433,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
         limits: Iterable[BaseFileLimit],
     ) -> Iterator[tuple[RemoteDirectory, list[RemoteDirectory], list[RemoteFile]]]:
         # no need to check nested directories if limit is already reached
-        for limit in limits:
-            if limit.is_reached:
-                return
+        if limits_reached(limits):
+            return
 
         log.debug("|%s| Walking through directory '%s'", self.__class__.__name__, root)
         dirs, files = [], []
@@ -459,7 +451,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 if match_all_filters(path, filters):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
 
-                    if limits_reached(limits, path):
+                    if limits_stop_at(path, limits):
                         break
             else:
                 path = RemoteFile(path=root / name, stats=stat)
@@ -467,7 +459,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 if match_all_filters(path, filters):
                     files.append(RemoteFile(path=name, stats=stat))
 
-                    if limits_reached(limits, path):
+                    if limits_stop_at(path, limits):
                         break
 
         if topdown:

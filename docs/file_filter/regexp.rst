@@ -1,7 +1,7 @@
 .. _regexp-filter:
 
 Regexp
-=====
+======
 
 .. currentmodule:: onetl.file.filter.regexp
 

@@ -41,6 +41,7 @@
     :hidden:
 
     file_filter/index
+    file_limit/index
 
 .. toctree::
     :maxdepth: 2
