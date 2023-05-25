@@ -16,13 +16,15 @@ from __future__ import annotations
 
 import os
 from dataclasses import astuple, dataclass
-from typing import Generic, TypeVar
+from typing import Generic, Sequence, TypeVar
 
-GenericPath = TypeVar("GenericPath", bound=os.PathLike)
+from onetl.base import PurePathProtocol
+
+PurePath = TypeVar("PurePath", bound=PurePathProtocol)
 
 
 @dataclass(eq=False, frozen=True)
-class PathContainer(Generic[GenericPath]):
+class PathContainer(Generic[PurePath]):
     """
     Read-only container for ``pathlib.PurePath``-like classes with some custom logic.
 
@@ -33,7 +35,7 @@ class PathContainer(Generic[GenericPath]):
     so every method or operator returns new object of the same class as ``path`` field, without any magic.
     """
 
-    path: GenericPath
+    path: PurePath
 
     def __str__(self) -> str:
         return str(self.path)
@@ -44,13 +46,10 @@ class PathContainer(Generic[GenericPath]):
     def __fspath__(self) -> str:
         return os.fspath(self.path)
 
-    def __getattr__(self, attr: str):
-        return getattr(self.path, attr)
-
-    def __truediv__(self, other) -> GenericPath:
+    def __truediv__(self, other) -> PurePath:
         return self.path / other
 
-    def __rtruediv__(self, other) -> GenericPath:
+    def __rtruediv__(self, other) -> PurePath:
         return other / self.path
 
     def __hash__(self):
@@ -85,6 +84,36 @@ class PathContainer(Generic[GenericPath]):
             return self.path >= other
 
         return self.path >= other.path
+
+    # typing_extensions 4.6+ implementation of `isinstance`` does not use __getattr__ anymore,
+    # so we need to create methods explicitly
+    @property
+    def name(self) -> str:
+        return self.path.name
+
+    @property
+    def parent(self) -> PurePathProtocol | PurePath:
+        return self.path.parent
+
+    @property
+    def parents(self) -> Sequence[PurePathProtocol | PurePath]:
+        return self.path.parents
+
+    @property
+    def parts(self) -> Sequence[str]:
+        return self.path.parts
+
+    def is_absolute(self) -> bool:
+        return self.path.is_absolute()
+
+    def match(self, path_pattern) -> bool:
+        return self.path.match(path_pattern)
+
+    def relative_to(self, *other) -> PurePathProtocol | PurePath:
+        return self.path.relative_to(*other)
+
+    def joinpath(self, *args) -> PurePathProtocol | PurePath:
+        return self.path.joinpath(*args)
 
     def _compare_tuple(self, args) -> tuple:
         return tuple(args)

@@ -59,5 +59,4 @@ def __getattr__(name: str):
     """
 
     warnings.warn(textwrap.dedent(message).strip(), category=UserWarning, stacklevel=2)
-
     return getattr(import_module("onetl.hwm.store"), name)

@@ -33,6 +33,14 @@
     :hidden:
 
     core/index
+    file/index
+
+.. toctree::
+    :maxdepth: 3
+    :caption: File classes
+    :hidden:
+
+    file_filter/index
 
 .. toctree::
     :maxdepth: 2

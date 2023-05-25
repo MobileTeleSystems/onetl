@@ -12,5 +12,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.core.file_result.file_result import FileResult, GenericPath
+from onetl.core.file_result.file_result import FileResult
 from onetl.core.file_result.file_set import FileSet

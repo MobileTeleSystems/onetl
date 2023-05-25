@@ -12,13 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.base.base_connection import BaseConnection
-from onetl.base.base_db_connection import BaseDBConnection
-from onetl.base.base_file_connection import BaseFileConnection
-from onetl.base.base_file_filter import BaseFileFilter
-from onetl.base.base_file_limit import BaseFileLimit
-from onetl.base.contains_exception import ContainsException
-from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
-from onetl.base.path_stat_protocol import PathStatProtocol
-from onetl.base.pure_path_protocol import PurePathProtocol
-from onetl.base.supports_rename_dir import SupportsRenameDir
+
+from onetl.file.filter.exclude_dir import ExcludeDir
+from onetl.file.filter.file_hwm import FileHWMFilter
+from onetl.file.filter.glob import Glob
+from onetl.file.filter.match_all_filters import match_all_filters
+from onetl.file.filter.regexp import Regexp

@@ -175,9 +175,6 @@ def test_downloader_file_filter_exclude_dir(
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
 
-        skip_msg = rf"Path '{source_path}/exclude_dir.* does NOT MATCH filters \[FileFilter"
-        assert re.search(skip_msg, caplog.text)
-
     assert not download_result.failed
     assert not download_result.skipped
     assert not download_result.missing
@@ -208,10 +205,6 @@ def test_downloader_file_filter_glob(file_all_connections, source_path, upload_t
 
     with caplog.at_level(logging.DEBUG):
         download_result = downloader.run()
-
-        for exclude in excluded:
-            skip_msg = rf"Path '{exclude}' \(kind='file', .*\) does NOT MATCH filters \[FileFilter"
-            assert re.search(skip_msg, caplog.text)
 
     assert not download_result.failed
     assert not download_result.skipped

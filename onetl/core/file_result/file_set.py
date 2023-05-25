@@ -19,11 +19,11 @@ from typing import Generic, TypeVar
 from humanize import naturalsize
 from ordered_set import OrderedSet
 
-from onetl.base import PathProtocol, PathWithStatsProtocol
+from onetl.base import PathProtocol, PathWithStatsProtocol, PurePathProtocol
 from onetl.exception import EmptyFilesError, ZeroFileSizeError
 from onetl.impl import path_repr
 
-T = TypeVar("T", bound=PathProtocol)
+T = TypeVar("T", bound=PurePathProtocol)
 INDENT = " " * 4
 
 
@@ -119,7 +119,10 @@ class FileSet(OrderedSet[T], Generic[T]):
 
         lines = []
         for file in self:
-            if not file.exists() or file.stat().st_size > 0:
+            if isinstance(file, PathProtocol) and not file.exists():
+                continue
+
+            if isinstance(file, PathWithStatsProtocol) and file.stat().st_size > 0:
                 continue
 
             lines.append(repr(os.fspath(file)))
