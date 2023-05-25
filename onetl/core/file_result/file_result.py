@@ -15,11 +15,12 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, TypeVar
+from typing import Iterable
 
 from humanize import naturalsize
 from pydantic import Field, validator
 
+from onetl.base import PurePathProtocol
 from onetl.core.file_result.file_set import FileSet
 from onetl.exception import (
     EmptyFilesError,
@@ -29,7 +30,6 @@ from onetl.exception import (
 )
 from onetl.impl import BaseModel
 
-GenericPath = TypeVar("GenericPath", bound=os.PathLike)
 INDENT = " " * 4
 
 
@@ -45,20 +45,20 @@ class FileResult(BaseModel):
     * :obj`missing`
     """
 
-    successful: FileSet[GenericPath] = Field(default_factory=FileSet)
+    successful: FileSet[PurePathProtocol] = Field(default_factory=FileSet)
     "Successfully handled files"
 
-    failed: FileSet[GenericPath] = Field(default_factory=FileSet)
+    failed: FileSet[PurePathProtocol] = Field(default_factory=FileSet)
     "File paths which were handled with some failures"
 
-    skipped: FileSet[GenericPath] = Field(default_factory=FileSet)
+    skipped: FileSet[PurePathProtocol] = Field(default_factory=FileSet)
     "File paths which were skipped because of some reason"
 
-    missing: FileSet[GenericPath] = Field(default_factory=FileSet)
+    missing: FileSet[PurePathProtocol] = Field(default_factory=FileSet)
     "Unknown paths which cannot be handled"
 
     @validator("successful", "failed", "skipped", "missing")
-    def validate_container(cls, value: Iterable[GenericPath]) -> FileSet[GenericPath]:
+    def validate_container(cls, value: Iterable[PurePathProtocol]) -> FileSet[PurePathProtocol]:
         return FileSet(value)
 
     @property

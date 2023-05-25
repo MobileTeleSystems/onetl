@@ -18,18 +18,21 @@ from etl_entities import FileHWM
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel
-from onetl.log import log_with_indent
 
 
 class FileHWMFilter(BaseFileFilter, FrozenModel):
-    """Filter files which are not covered by FileHWM
+    """Filter files which are not covered by FileHWM.
+
+    .. warning::
+
+        Only for onETL internal use.
 
     Parameters
     ----------
 
-    hwm : FileHWM
+    hwm : :obj:`etl_entities.FileHWM`
 
-        :obj:`etl_entities.FileHWM` instance
+        File HWM instance
     """
 
     class Config:
@@ -42,10 +45,6 @@ class FileHWMFilter(BaseFileFilter, FrozenModel):
             return True
 
         return not self.hwm.covers(path)
-
-    def log_options(self, indent: int = 0):
-        log_with_indent("hwm_type = %s", self.hwm.__class__.__name__, indent=indent)
-        log_with_indent("qualified_name = %r", self.hwm.qualified_name, indent=indent)
 
     def __str__(self):
         return self.hwm.qualified_name

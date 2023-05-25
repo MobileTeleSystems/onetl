@@ -27,7 +27,6 @@ from onetl.base import (
     BaseFileLimit,
     PathStatProtocol,
 )
-from onetl.core.file_filter import match_all_filters
 from onetl.core.file_limit import limits_reached
 from onetl.exception import (
     DirectoryNotEmptyError,
@@ -35,6 +34,7 @@ from onetl.exception import (
     FileSizeMismatchError,
     NotAFileError,
 )
+from onetl.file.filter import match_all_filters
 from onetl.impl import (
     FrozenModel,
     LocalPath,
@@ -377,7 +377,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             else:
                 path = RemoteFile(path=name, stats=stat)
 
-            if match_all_filters(filters, path):
+            if match_all_filters(path, filters):
                 result.append(path)
 
             if limits_reached(limits, path):
@@ -456,7 +456,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                     yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 
                 path = RemoteDirectory(path=root / name, stats=stat)
-                if match_all_filters(filters, path):
+                if match_all_filters(path, filters):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
 
                     if limits_reached(limits, path):
@@ -464,7 +464,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
             else:
                 path = RemoteFile(path=root / name, stats=stat)
 
-                if match_all_filters(filters, path):
+                if match_all_filters(path, filters):
                     files.append(RemoteFile(path=name, stats=stat))
 
                     if limits_reached(limits, path):

@@ -27,9 +27,9 @@ from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.core.file_downloader.download_result import DownloadResult
-from onetl.core.file_filter import FileHWMFilter
 from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
+from onetl.file.filter.file_hwm import FileHWMFilter
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,

@@ -1,4 +1,5 @@
 import re
+import textwrap
 
 import pytest
 
@@ -32,7 +33,23 @@ def test_file_filter_both_glob_and_regexp():
     ],
 )
 def test_file_filter_glob(matched, path):
-    file_filter = FileFilter(glob="*.csv")
+    warning_msg = textwrap.dedent(
+        """
+        Using FileFilter is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+        Please replace:
+            from onetl.core import FileFilter
+
+            filter=FileFilter(glob='*.csv')
+
+        With:
+            from onetl.file.filter import Glob
+
+            filters=[Glob('*.csv')]
+        """,
+    ).strip()
+    with pytest.warns(UserWarning, match=re.escape(warning_msg)):
+        file_filter = FileFilter(glob="*.csv")
 
     assert file_filter.match(path) == matched
 
@@ -52,7 +69,23 @@ def test_file_filter_glob(matched, path):
     ],
 )
 def test_file_filter_exclude_dirs_relative(matched, path):
-    file_filter = FileFilter(exclude_dirs=["exclude1", "exclude2"])
+    warning_msg = textwrap.dedent(
+        """
+        Using FileFilter is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+        Please replace:
+            from onetl.core import FileFilter
+
+            filter=FileFilter(exclude_dirs=['exclude1', 'exclude2'])
+
+        With:
+            from onetl.file.filter import ExcludeDir
+
+            filters=[ExcludeDir('exclude1'), ExcludeDir('exclude2')]
+        """,
+    ).strip()
+    with pytest.warns(UserWarning, match=re.escape(warning_msg)):
+        file_filter = FileFilter(exclude_dirs=["exclude1", "exclude2"])
 
     assert file_filter.match(path) == matched
 
@@ -95,7 +128,23 @@ def test_file_filter_exclude_dirs_absolute(matched, path):
     ],
 )
 def test_file_filter_regexp_str(matched, path):
-    file_filter = FileFilter(regexp=r"e\d+\.csv")
+    warning_msg = textwrap.dedent(
+        """
+        Using FileFilter is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+        Please replace:
+            from onetl.core import FileFilter
+
+            filter=FileFilter(regexp='e\\\\d+\\\\.csv')
+
+        With:
+            from onetl.file.filter import Regexp
+
+            filters=[Regexp('e\\\\d+\\\\.csv')]
+        """,
+    ).strip()
+    with pytest.warns(UserWarning, match=re.escape(warning_msg)):
+        file_filter = FileFilter(regexp=r"e\d+\.csv")
 
     assert file_filter.match(path) == matched
 

@@ -117,9 +117,6 @@ def test_mover_file_filter_exclude_dir(
     with caplog.at_level(logging.DEBUG):
         move_result = mover.run()
 
-        skip_msg = rf"Path '{source_path}/exclude_dir.* does NOT MATCH filters \[FileFilter"
-        assert re.search(skip_msg, caplog.text)
-
     assert not move_result.failed
     assert not move_result.skipped
     assert not move_result.missing
@@ -155,10 +152,6 @@ def test_mover_file_filter_glob(request, file_all_connections, source_path, uplo
 
     with caplog.at_level(logging.DEBUG):
         move_result = mover.run()
-
-        for exclude in excluded:
-            skip_msg = rf"Path '{exclude}' \(kind='file', .*\) does NOT MATCH filters \[FileFilter"
-            assert re.search(skip_msg, caplog.text)
 
     assert not move_result.failed
     assert not move_result.skipped
