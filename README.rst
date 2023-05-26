@@ -118,7 +118,7 @@ Minimal installation
 Base ``onetl`` package contains:
 
 * ``DBReader``, ``DBWriter`` and related classes
-* ``FileDownloader``, ``FileUploader``, ``FileMover``, ``FileFilter``, ``FileLimit`` and related classes
+* ``FileDownloader``, ``FileUploader``, ``FileMover`` and related classes, like file filters & limits
 * Read Strategies & HWM classes
 * Plugins support
 

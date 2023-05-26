@@ -366,11 +366,12 @@ class BaseFileConnection(BaseConnection):
         path : str or :obj:`os.PathLike`
             Directory path to list contents.
 
-        filters : list of :obj:`onetl.base.BaseFileFilter`, optional
-            Return only files/directories matching these filters.
+        filters : list of :obj:`BaseFileFilter <onetl.base.base_file_filter.BaseFileFilter>`, optional
+            Return only files/directories matching these filters. See :ref:`file-filters`
 
-        limits : list of :obj:`onetl.base.BaseFileLimit`, optional
+        limits : list of :obj:`BaseFileLimit <onetl.base.base_file_limit.BaseFileLimit>`, optional
             Apply limits to the list of files/directories, and stop if one of the limits is reached.
+            See :ref:`file-limits`
 
         Returns
         -------
@@ -415,11 +416,12 @@ class BaseFileConnection(BaseConnection):
         topdown : bool, default ``True``
             If ``True``, walk in top-down order, otherwise walk in bottom-up order.
 
-        filters : list of :obj:`onetl.base.BaseFileFilter`, optional
-            Return only files/directories matching these filters.
+        filters : list of :obj:`BaseFileFilter <onetl.base.base_file_filter.BaseFileFilter>`, optional
+            Return only files/directories matching these filters. See :ref:`file-filters`
 
-        limits : list of :obj:`onetl.base.BaseFileLimit`, optional
+        limits : list of :obj:`BaseFileLimit <onetl.base.base_file_limit.BaseFileLimit>`, optional
             Apply limits to the list of files/directories, and stop if one of the limits is reached.
+            See :ref:`file-limits`
 
         Returns
         -------

@@ -201,8 +201,8 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         # WHAT do we extract - files from some dir in SFTP
         connection=sftp,
         source_path="/source",
-        filter=FileFilter(glob="*.csv"),  # only CSV files
-        limit=FileLimit(count_limit=1000),  # 1000 files max
+        filters=[Glob("*.csv")],  # only CSV files
+        limits=[MaxFilesCount(1000)],  # 1000 files max
         # WHERE do we extract to - a specific dir on local FS
         local_path="/some",
         # HOW do we extract

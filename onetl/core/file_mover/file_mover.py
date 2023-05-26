@@ -16,14 +16,13 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import validator
+from pydantic import Field, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
-from onetl.core.file_limit import FileLimit
 from onetl.core.file_mover.move_result import MoveResult
 from onetl.core.file_result import FileSet
 from onetl.impl import (
@@ -35,7 +34,13 @@ from onetl.impl import (
     RemotePath,
     path_repr,
 )
-from onetl.log import entity_boundary_log, log_lines, log_options, log_with_indent
+from onetl.log import (
+    entity_boundary_log,
+    log_collection,
+    log_lines,
+    log_options,
+    log_with_indent,
+)
 
 log = logging.getLogger(__name__)
 
@@ -63,21 +68,21 @@ class FileMover(FrozenModel):
     connection : :obj:`onetl.connection.FileConnection`
         Class which contains File system connection properties. See :ref:`file-connections` section.
 
-    target_path : os.PathLike or str
-        Local path where you move files
+    target_path : :obj:`os.PathLike` or :obj:`str`
+        Remote path to move files to
 
-    source_path : os.PathLike or str, optional, default: ``None``
+    source_path : :obj:`os.PathLike` or :obj:`str`, optional, default: ``None``
         Remote path to move files from.
 
         Could be ``None``, but only if you pass absolute file paths directly to
         :obj:`~run` method
 
-    filter : BaseFileFilter
-        Options of the file filtering. See :obj:`FileFilter <onetl.core.file_filter.file_filter.FileFilter>`
+    filters : list of :obj:`BaseFileFilter <onetl.base.base_file_filter.BaseFileFilter>`
+        Return only files/directories matching these filters. See :ref:`file-filters`
 
-    limit : BaseFileLimit
-        Options of the file  limiting. See :obj:`FileLimit <onetl.core.file_limit.file_limit.FileLimit>`
-        Default file count limit is 100
+    limits : list of :obj:`BaseFileLimit <onetl.base.base_file_limit.BaseFileLimit>`
+        Apply limits to the list of files/directories, and stop if one of the limits is reached.
+        See :ref:`file-limits`
 
     options : :obj:`~FileMover.Options`  | dict | None, default: ``None``
         File moving options. See :obj:`~FileMover.Options`
@@ -108,7 +113,9 @@ class FileMover(FrozenModel):
     .. code:: python
 
         from onetl.connection import SFTP
-        from onetl.core import FileMover, FileFilter, FileLimit
+        from onetl.core import FileMover
+        from onetl.file.filter import Glob, ExcludeDir
+        from onetl.file.limit import MaxFilesCount
 
         sftp = SFTP(...)
 
@@ -117,15 +124,18 @@ class FileMover(FrozenModel):
             connection=sftp,
             source_path="/path/to/source/dir",
             target_path="/path/to/target/dir",
-            filter=FileFilter(
-                glob="*.txt",
-                exclude_dirs=["/path/to/source/dir/exclude"],
-            ),
-            limit=FileLimit(count_limit=10),
+            filters=[
+                Glob("*.txt"),
+                ExcludeDir("/path/to/source/dir/exclude"),
+            ],
+            limits=[MaxFilesCount(100)],
             options=FileMover.Options(mode="overwrite"),
         )
 
-        # move files from "/path/to/source/dir" to "/path/to/target/dir"
+        # move files from "/path/to/source/dir" to "/path/to/target/dir",
+        # but only *.txt files
+        # excluding files from "/path/to/source/dir/exclude" directory
+        # and stop before downloading 101 file
         mover.run()
 
     """
@@ -149,18 +159,10 @@ class FileMover(FrozenModel):
     target_path: RemotePath
     source_path: Optional[RemotePath] = None
 
-    filter: Optional[BaseFileFilter] = None
-    limit: Optional[BaseFileLimit] = FileLimit()
+    filters: List[BaseFileFilter] = Field(default_factory=list)
+    limits: List[BaseFileLimit] = Field(default_factory=list)
 
     options: Options = Options()
-
-    @validator("target_path", pre=True, always=True)
-    def resolve_target_path(cls, target_path):
-        return RemotePath(target_path)
-
-    @validator("source_path", pre=True, always=True)
-    def check_source_path(cls, source_path):
-        return RemotePath(source_path) if source_path else None
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231
         """
@@ -348,16 +350,8 @@ class FileMover(FrozenModel):
         self._check_source_path()
         result = FileSet()
 
-        filters = []
-        if self.filter:
-            filters.append(self.filter)
-
-        limits = []
-        if self.limit:
-            limits.append(self.limit)
-
         try:
-            for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=limits):
+            for root, _dirs, files in self.connection.walk(self.source_path, filters=self.filters, limits=self.limits):
                 for file in files:
                     result.append(RemoteFile(path=root / file, stats=file.stats))
 
@@ -376,17 +370,15 @@ class FileMover(FrozenModel):
         log_with_indent("source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
         log_with_indent("target_path = '%s'", self.target_path)
 
-        if self.filter is not None:
-            log_with_indent("filter:")
-            self.filter.log_options(indent=4)
+        if self.filters:
+            log_collection("filters", self.filters)
         else:
-            log_with_indent("filter = None")
+            log_with_indent("filters = []")
 
-        if self.limit is not None:
-            log_with_indent("limit:")
-            self.limit.log_options(indent=4)
+        if self.limits:
+            log_collection("limits", self.limits)
         else:
-            log_with_indent("limit = None")
+            log_with_indent("limits = []")
 
         log_options(self.options.dict(by_alias=True))
 
@@ -436,6 +428,14 @@ class FileMover(FrozenModel):
             result.add((old_file, new_file))
 
         return result
+
+    @validator("target_path", pre=True, always=True)
+    def _resolve_target_path(cls, target_path):
+        return RemotePath(target_path)
+
+    @validator("source_path", pre=True, always=True)
+    def _validate_source_path(cls, source_path):
+        return RemotePath(source_path) if source_path else None
 
     def _check_source_path(self):
         self.connection.resolve_dir(self.source_path)

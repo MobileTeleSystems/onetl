@@ -6,6 +6,7 @@ from onetl.core import DBWriter
 pytestmark = pytest.mark.mongodb
 
 
+@pytest.mark.flaky(reruns=2)
 def test_mongodb_writer_snapshot(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
 

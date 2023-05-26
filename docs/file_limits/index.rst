@@ -1,4 +1,4 @@
-.. _limit-root:
+.. _file-limits:
 
 File Limits
 ===========
@@ -8,6 +8,12 @@ File Limits
     :caption: File limits
 
     max_files_count
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Legacy
+
+    file_limit
 
 .. toctree::
     :maxdepth: 1

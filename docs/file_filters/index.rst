@@ -1,4 +1,4 @@
-.. _filter-root:
+.. _file-filters:
 
 File Filters
 ===============
@@ -10,6 +10,12 @@ File Filters
     glob
     regexp
     exclude_dir
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Legacy
+
+    file_filter
 
 .. toctree::
     :maxdepth: 1

@@ -158,18 +158,6 @@ class FileUploader(FrozenModel):
 
     options: Options = Options()
 
-    @validator("local_path", pre=True, always=True)
-    def resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve() if local_path else None
-
-    @validator("target_path", pre=True, always=True)
-    def check_target_path(cls, target_path):
-        return RemotePath(target_path)
-
-    @validator("temp_path", pre=True, always=True)
-    def check_temp_path(cls, temp_path):
-        return RemotePath(temp_path) if temp_path else None
-
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
         Method for uploading files to remote host.
@@ -385,6 +373,18 @@ class FileUploader(FrozenModel):
             ) from e
 
         return result
+
+    @validator("local_path", pre=True, always=True)
+    def _resolve_local_path(cls, local_path):
+        return LocalPath(local_path).resolve() if local_path else None
+
+    @validator("target_path", pre=True, always=True)
+    def _validate_target_path(cls, target_path):
+        return RemotePath(target_path)
+
+    @validator("temp_path", pre=True, always=True)
+    def _validate_temp_path(cls, temp_path):
+        return RemotePath(temp_path) if temp_path else None
 
     def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
         entity_boundary_log(msg="FileUploader starts")
