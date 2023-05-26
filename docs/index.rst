@@ -40,8 +40,8 @@
     :caption: File classes
     :hidden:
 
-    file_filter/index
-    file_limit/index
+    file_filters/index
+    file_limits/index
 
 .. toctree::
     :maxdepth: 2

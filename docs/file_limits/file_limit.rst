@@ -1,9 +1,9 @@
 .. _file-limit:
 
-File Limit
-==============
+File Limit (legacy)
+===================
 
 .. currentmodule:: onetl.core.file_limit.file_limit
 
 .. autoclass:: FileLimit
-    :members: __init__
+    :members: reset, stops_at, is_reached

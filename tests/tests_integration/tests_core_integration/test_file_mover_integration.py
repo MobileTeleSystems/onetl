@@ -7,8 +7,10 @@ from pathlib import Path, PurePosixPath
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.core import FileFilter, FileLimit, FileMover
+from onetl.core import FileMover
 from onetl.exception import DirectoryNotFoundError, NotAFileError
+from onetl.file.filter import ExcludeDir, Glob
+from onetl.file.limit import MaxFilesCount
 from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile, RemotePath
 
 
@@ -106,7 +108,7 @@ def test_mover_file_filter_exclude_dir(
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        filter=FileFilter(exclude_dirs=[path_type(source_path / "exclude_dir")]),
+        filters=[ExcludeDir(path_type(source_path / "exclude_dir"))],
     )
 
     excluded = [
@@ -114,8 +116,11 @@ def test_mover_file_filter_exclude_dir(
         source_path / "exclude_dir/file_5.txt",
     ]
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert f"        ExcludeDir('{source_path}/exclude_dir')," in caplog.text
+        assert "    ]" in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped
@@ -139,7 +144,7 @@ def test_mover_file_filter_glob(request, file_all_connections, source_path, uplo
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        filter=FileFilter(glob="*.csv"),
+        filters=[Glob("*.csv")],
     )
 
     excluded = [
@@ -150,8 +155,11 @@ def test_mover_file_filter_glob(request, file_all_connections, source_path, uplo
         source_path / "news_parse_zp/exclude_dir/file_3.txt",
     ]
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        Glob('*.csv')," in caplog.text
+        assert "    ]" in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped
@@ -180,7 +188,7 @@ def test_mover_file_filter_is_ignored_by_user_input(
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        filter=FileFilter(glob="*.csv"),
+        filters=[Glob("*.csv")],
     )
 
     move_result = mover.run(upload_test_files)
@@ -762,7 +770,7 @@ def test_mover_file_limit_custom(file_all_connections, source_path, upload_test_
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        limit=FileLimit(count_limit=limit),
+        limits=[MaxFilesCount(2)],
     )
 
     files = mover.view_files()
@@ -770,33 +778,11 @@ def test_mover_file_limit_custom(file_all_connections, source_path, upload_test_
 
     with caplog.at_level(logging.INFO):
         move_result = mover.run()
-        assert "    count_limit = 2" in caplog.text
+        assert "    limits = [" in caplog.text
+        assert "        MaxFilesCount(2)," in caplog.text
+        assert "    ]" in caplog.text
 
     assert len(move_result.successful) == limit
-
-
-def test_mover_no_file_limit(file_all_connections, source_path, upload_test_files, caplog):
-    target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
-
-    mover = FileMover(
-        connection=file_all_connections,
-        source_path=source_path,
-        target_path=target_path,
-        limit=None,
-    )
-
-    files = mover.view_files()
-    assert len(files) == len(upload_test_files)
-
-    with caplog.at_level(logging.INFO):
-        move_result = mover.run()
-
-        assert "limit = None" in caplog.text
-        assert "count_limit = 2" not in caplog.text
-
-    assert sorted(move_result.successful) == sorted(
-        target_path / file.relative_to(source_path) for file in upload_test_files
-    )
 
 
 def test_mover_file_limit_is_ignored_by_user_input(
@@ -810,7 +796,7 @@ def test_mover_file_limit_is_ignored_by_user_input(
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        limit=FileLimit(count_limit=2),
+        limits=[MaxFilesCount(2)],
     )
 
     move_result = mover.run(upload_test_files)
@@ -826,8 +812,8 @@ def test_mover_limit_applied_after_filter(file_all_connections, source_path, upl
         connection=file_all_connections,
         source_path=source_path,
         target_path=target_path,
-        filter=FileFilter(glob="*.csv"),
-        limit=FileLimit(count_limit=1),
+        filters=[Glob("*.csv")],
+        limits=[MaxFilesCount(1)],
     )
 
     excluded = [

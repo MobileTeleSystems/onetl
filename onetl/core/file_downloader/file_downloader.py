@@ -17,17 +17,17 @@ from __future__ import annotations
 import logging
 import os
 import shutil
-from typing import Iterable, Optional, Tuple, Type
+import warnings
+from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import validator
+from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.core.file_downloader.download_result import DownloadResult
-from onetl.core.file_limit import FileLimit
 from onetl.core.file_result import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
 from onetl.hwm.store import HWMClassRegistry
@@ -41,7 +41,13 @@ from onetl.impl import (
     RemotePath,
     path_repr,
 )
-from onetl.log import entity_boundary_log, log_lines, log_options, log_with_indent
+from onetl.log import (
+    entity_boundary_log,
+    log_collection,
+    log_lines,
+    log_options,
+    log_with_indent,
+)
 from onetl.strategy import StrategyManager
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -72,16 +78,16 @@ class FileDownloader(FrozenModel):
     connection : :obj:`onetl.connection.FileConnection`
         Class which contains File system connection properties. See :ref:`file-connections` section.
 
-    local_path : os.PathLike or str
+    local_path : :obj:`os.PathLike` or :obj:`str`
         Local path where you download files
 
-    source_path : os.PathLike or str, optional, default: ``None``
+    source_path : :obj:`os.PathLike` or :obj:`str`, optional, default: ``None``
         Remote path to download files from.
 
         Could be ``None``, but only if you pass absolute file paths directly to
         :obj:`~run` method
 
-    temp_path : os.PathLike or str, optional, default: ``None``
+    temp_path : :obj:`os.PathLike` or :obj:`str`, optional, default: ``None``
         If set, this path will be used for downloading a file, and then renaming it to the target file path.
         If ``None`` is passed, files are downloaded directly to ``target_path``.
 
@@ -99,12 +105,12 @@ class FileDownloader(FrozenModel):
             Otherwise instead of ``rename``, remote OS will move file between filesystems,
             which is NOT atomic operation.
 
-    filter : BaseFileFilter
-        Options of the file filtering. See :obj:`FileFilter <onetl.core.file_filter.file_filter.FileFilter>`
+    filters : list of :obj:`BaseFileFilter <onetl.base.base_file_filter.BaseFileFilter>`
+        Return only files/directories matching these filters. See :ref:`file-filters`
 
-    limit : BaseFileLimit
-        Options of the file  limiting. See :obj:`FileLimit <onetl.core.file_limit.file_limit.FileLimit>`
-        Default file count limit is 100
+    limits : list of :obj:`BaseFileLimit <onetl.base.base_file_limit.BaseFileLimit>`
+        Apply limits to the list of files/directories, and stop if one of the limits is reached.
+        See :ref:`file-limits`
 
     options : :obj:`~FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options. See :obj:`~FileDownloader.Options`
@@ -141,7 +147,9 @@ class FileDownloader(FrozenModel):
     .. code:: python
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader, FileFilter, FileLimit
+        from onetl.core import FileDownloader
+        from onetl.file.filter import Glob, ExcludeDir
+        from onetl.file.limit import MaxFilesCount
 
         sftp = SFTP(...)
 
@@ -151,15 +159,18 @@ class FileDownloader(FrozenModel):
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
             temp_path="/tmp",
-            filter=FileFilter(
-                glob="*.txt",
-                exclude_dirs=["/path/to/remote/source/exclude_dir"],
-            ),
-            limit=FileLimit(count_limit=10),
+            filters=[
+                Glob("*.txt"),
+                ExcludeDir("/path/to/remote/source/exclude_dir"),
+            ],
+            limits=[MaxFilesCount(100)],
             options=FileDownloader.Options(delete_source=True, mode="overwrite"),
         )
 
-        # download files to "/path/to/local"
+        # download files to "/path/to/local",
+        # but only *.txt,
+        # excluding files from "/path/to/remote/source/exclude_dir" directory
+        # and stop before downloading 101 file
         downloader.run()
 
     Incremental download:
@@ -213,39 +224,12 @@ class FileDownloader(FrozenModel):
     source_path: Optional[RemotePath] = None
     temp_path: Optional[LocalPath] = None
 
-    filter: Optional[BaseFileFilter] = None
-    limit: Optional[BaseFileLimit] = FileLimit()
+    filters: List[BaseFileFilter] = Field(default_factory=list, alias="filter")
+    limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
     hwm_type: Optional[Type[FileHWM]] = None
 
     options: Options = Options()
-
-    @validator("local_path", pre=True, always=True)
-    def resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve()
-
-    @validator("source_path", pre=True, always=True)
-    def check_source_path(cls, source_path):
-        return RemotePath(source_path) if source_path else None
-
-    @validator("temp_path", pre=True, always=True)
-    def check_temp_path(cls, temp_path):
-        return LocalPath(temp_path).resolve() if temp_path else None
-
-    @validator("hwm_type", pre=True, always=True)
-    def check_hwm_type(cls, hwm_type, values):
-        source_path = values.get("source_path")
-
-        if hwm_type:
-            if not source_path:
-                raise ValueError("If `hwm_type` is passed, `source_path` must be specified")
-
-            if isinstance(hwm_type, str):
-                hwm_type = HWMClassRegistry.get(hwm_type)
-
-            cls._check_hwm_type(hwm_type)
-
-        return hwm_type
 
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
@@ -455,18 +439,12 @@ class FileDownloader(FrozenModel):
         self._check_source_path()
         result = FileSet()
 
-        filters = []
-        if self.filter:
-            filters.append(self.filter)
+        filters = self.filters.copy()
         if self.hwm_type:
             filters.append(FileHWMFilter(hwm=self._init_hwm()))
 
-        limits = []
-        if self.limit:
-            limits.append(self.limit)
-
         try:
-            for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=limits):
+            for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
                 for file in files:
                     result.append(RemoteFile(path=root / file, stats=file.stats))
 
@@ -476,6 +454,73 @@ class FileDownloader(FrozenModel):
             ) from e
 
         return result
+
+    @validator("local_path", pre=True, always=True)
+    def _resolve_local_path(cls, local_path):
+        return LocalPath(local_path).resolve()
+
+    @validator("source_path", pre=True, always=True)
+    def _validate_source_path(cls, source_path):
+        return RemotePath(source_path) if source_path else None
+
+    @validator("temp_path", pre=True, always=True)
+    def _validate_temp_path(cls, temp_path):
+        return LocalPath(temp_path).resolve() if temp_path else None
+
+    @validator("hwm_type", pre=True, always=True)
+    def _validate_hwm_type(cls, hwm_type, values):
+        source_path = values.get("source_path")
+
+        if hwm_type:
+            if not source_path:
+                raise ValueError("If `hwm_type` is passed, `source_path` must be specified")
+
+            if isinstance(hwm_type, str):
+                hwm_type = HWMClassRegistry.get(hwm_type)
+
+            cls._check_hwm_type(hwm_type)
+
+        return hwm_type
+
+    @validator("filters", pre=True)
+    def _validate_filters(cls, filters):
+        if filters is None:
+            warnings.warn(
+                "filter=None is deprecated in v0.8.0, use filters=[] instead",
+                UserWarning,
+                stacklevel=3,
+            )
+            return []
+
+        if not isinstance(filters, list):
+            warnings.warn(
+                "filter=... is deprecated in v0.8.0, use filters=[...] instead",
+                UserWarning,
+                stacklevel=3,
+            )
+            filters = [filters]
+
+        return filters
+
+    @validator("limits", pre=True)
+    def _validate_limits(cls, limits):
+        if limits is None:
+            warnings.warn(
+                "limit=None is deprecated in v0.8.0, use limits=[] instead",
+                UserWarning,
+                stacklevel=3,
+            )
+            return []
+
+        if not isinstance(limits, list):
+            warnings.warn(
+                "limit=... is deprecated in v0.8.0, use limits=[...] instead",
+                UserWarning,
+                stacklevel=3,
+            )
+            limits = [limits]
+
+        return limits
 
     def _check_strategy(self):
         strategy = StrategyManager.get_current()
@@ -518,17 +563,15 @@ class FileDownloader(FrozenModel):
         log_with_indent("local_path = '%s'", self.local_path)
         log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
 
-        if self.filter is not None:
-            log_with_indent("filter:")
-            self.filter.log_options(indent=4)
+        if self.filters:
+            log_collection("filters", self.filters)
         else:
-            log_with_indent("filter = None")
+            log_with_indent("filters = []")
 
-        if self.limit is not None:
-            log_with_indent("limit:")
-            self.limit.log_options(indent=4)
+        if self.limits:
+            log_collection("limits", self.limits)
         else:
-            log_with_indent("limit = None")
+            log_with_indent("limits = []")
 
         log_options(self.options.dict(by_alias=True))
 
