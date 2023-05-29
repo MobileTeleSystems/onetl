@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from onetl.connection import Postgres
-from onetl.core import DBReader
+from onetl.db import DBReader
 from onetl.strategy import (
     IncrementalBatchStrategy,
     IncrementalStrategy,

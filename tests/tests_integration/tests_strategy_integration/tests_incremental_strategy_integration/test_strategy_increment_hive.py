@@ -2,7 +2,7 @@ import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Hive
-from onetl.core import DBReader
+from onetl.db import DBReader
 from onetl.strategy import IncrementalStrategy
 
 pytestmark = pytest.mark.hive

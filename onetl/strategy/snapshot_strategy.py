@@ -65,7 +65,7 @@ class SnapshotStrategy(BaseStrategy):
     .. code:: python
 
         from onetl.connection import Postgres
-        from onetl.core import DBReader
+        from onetl.db import DBReader
         from onetl.strategy import SnapshotStrategy
 
         from pyspark.sql import SparkSession
@@ -106,7 +106,7 @@ class SnapshotStrategy(BaseStrategy):
     .. code:: python
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader
+        from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
 
         sftp = SFTP(
@@ -229,7 +229,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres, Hive
-        from onetl.core import DBReader
+        from onetl.db import DBReader
         from onetl.strategy import SnapshotBatchStrategy
 
         from pyspark.sql import SparkSession

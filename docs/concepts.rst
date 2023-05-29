@@ -108,7 +108,7 @@ All of these classes have a method ``run()`` that starts extracting/loading the 
 
 .. code:: python
 
-    from onetl.core import DBReader, DBWriter
+    from onetl.db import DBReader, DBWriter
 
     reader = DBReader(
         connection=mssql,

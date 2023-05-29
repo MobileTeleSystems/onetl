@@ -75,17 +75,23 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
     .. code:: python
 
+        from onetl.core import FileFilter
+
         file_filter = FileFilter(exclude_dirs=["/export/news_parse/exclude_dir"])
 
     Create glob filter:
 
     .. code:: python
 
+        from onetl.core import FileFilter
+
         file_filter = FileFilter(glob="*.csv")
 
     Create regexp filter:
 
     .. code:: python
+
+        from onetl.core import FileFilter
 
         file_filter = FileFilter(regexp=r"\d+\.csv")
 
@@ -98,6 +104,8 @@ class FileFilter(BaseFileFilter, FrozenModel):
     Not allowed:
 
     .. code:: python
+
+        from onetl.core import FileFilter
 
         FileFilter()  # will raise ValueError, at least one argument should be passed
     """

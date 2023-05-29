@@ -151,8 +151,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             When FileDownloader **will** update HWM in HWM Store, because:
 
-            * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.core.file_downloader.file_downloader.FileDownloader.Options.mode>`.
-            * It can remove files from the source if :obj:`delete_source <onetl.core.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
+            * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode>`.
+            * It can remove files from the source if :obj:`delete_source <onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
 
     Parameters
     ----------
@@ -218,7 +218,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres
-        from onetl.core import DBReader
+        from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
 
         from pyspark.sql import SparkSession
@@ -309,7 +309,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     .. code:: python
 
         from onetl.connection import SFTP
-        from onetl.core import FileDownloader
+        from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
 
         sftp = SFTP(
@@ -474,7 +474,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. code:: python
 
         from onetl.connection import Postgres, Hive
-        from onetl.core import DBReader
+        from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
 
         from pyspark.sql import SparkSession

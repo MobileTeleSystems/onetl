@@ -29,19 +29,17 @@
 
 .. toctree::
     :maxdepth: 3
-    :caption: Core classes
+    :caption: DB classes
     :hidden:
 
-    core/index
-    file/index
+    db/index
 
 .. toctree::
     :maxdepth: 3
     :caption: File classes
     :hidden:
 
-    file_filters/index
-    file_limits/index
+    file/index
 
 .. toctree::
     :maxdepth: 2

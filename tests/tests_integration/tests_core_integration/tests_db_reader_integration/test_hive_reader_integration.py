@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import Hive
-from onetl.core import DBReader
+from onetl.db import DBReader
 
 pytestmark = pytest.mark.hive
 

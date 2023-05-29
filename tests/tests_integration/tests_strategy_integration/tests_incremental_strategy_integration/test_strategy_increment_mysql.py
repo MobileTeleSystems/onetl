@@ -2,7 +2,7 @@ import pytest
 from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import MySQL
-from onetl.core import DBReader
+from onetl.db import DBReader
 from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
