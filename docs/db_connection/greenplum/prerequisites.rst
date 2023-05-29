@@ -97,8 +97,8 @@ Same as above, but can be used even if there is no network access to public repo
 Example
 ^^^^^^^
 
-.. code:: xml
-    :name: ivysettings.xml
+.. code-block:: xml
+    :caption: ivysettings.xml
 
     <ivysettings>
         <settings defaultResolver="main"/>
@@ -119,8 +119,8 @@ Example
     </ivysettings>
 
 
-.. code:: python
-    :name: script.py
+.. code-block:: python
+    :caption: script.py
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
