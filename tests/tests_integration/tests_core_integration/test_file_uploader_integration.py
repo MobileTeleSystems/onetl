@@ -7,8 +7,8 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from onetl.core import FileUploader
 from onetl.exception import DirectoryNotFoundError, NotAFileError
+from onetl.file import FileUploader
 from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
 
 

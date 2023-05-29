@@ -4,7 +4,7 @@ import secrets
 from etl_entities import FileListHWM, RemoteFolder
 from etl_entities.instance import RelativePath
 
-from onetl.core import FileDownloader
+from onetl.file import FileDownloader
 from onetl.hwm.store import YAMLHWMStore
 from onetl.strategy import IncrementalStrategy
 

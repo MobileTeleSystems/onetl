@@ -10,8 +10,9 @@ import pytest
 from etl_entities import FileListHWM
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.core import FileDownloader, FileSet
 from onetl.exception import DirectoryNotFoundError, NotAFileError
+from onetl.file import FileDownloader
+from onetl.file.file_set import FileSet
 from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import (

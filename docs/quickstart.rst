@@ -18,7 +18,7 @@ Read data from MSSQL, transform & write to Hive.
     from onetl.connection import MSSQL, Hive
 
     # Import onETL classes to read & write data
-    from onetl.core import DBReader, DBWriter
+    from onetl.db import DBReader, DBWriter
 
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
@@ -91,7 +91,7 @@ Download files from SFTP & upload them to HDFS.
     from onetl.connection import SFTP, HDFS
 
     # Import onETL classes to download & upload files
-    from onetl.core import FileDownloader, FileUploader
+    from onetl.file import FileDownloader, FileUploader
 
     # import filter & limit classes
     from onetl.file.filter import Glob, ExcludeDir

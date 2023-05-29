@@ -181,7 +181,7 @@ class JDBCMixin(FrozenModel):
             (even on clustered instances).
             Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
 
-            Use :obj:`onetl.core.db_reader.db_reader.DBReader` for reading
+            Use :obj:`onetl.db.db_reader.db_reader.DBReader` for reading
             data from table via Spark executors, or for handling different :ref:`strategy`.
 
         .. note::
@@ -282,7 +282,7 @@ class JDBCMixin(FrozenModel):
 
             Please **DO NOT** use this method to execute queries
             like ``INSERT INTO ... VALUES(a, lot, of, values)``,
-            use :obj:`onetl.core.db_writer.db_writer.DBWriter` instead
+            use :obj:`onetl.db.db_writer.db_writer.DBWriter` instead
 
         .. note::
 

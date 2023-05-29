@@ -7,8 +7,8 @@ from pathlib import Path, PurePosixPath
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from onetl.core import FileMover
 from onetl.exception import DirectoryNotFoundError, NotAFileError
+from onetl.file import FileMover
 from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile, RemotePath

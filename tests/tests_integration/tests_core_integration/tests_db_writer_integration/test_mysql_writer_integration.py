@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import MySQL
-from onetl.core import DBWriter
+from onetl.db import DBWriter
 
 pytestmark = pytest.mark.mysql
 

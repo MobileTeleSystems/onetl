@@ -38,7 +38,7 @@ class MemoryHWMStore(BaseHWMStore):
     .. code:: python
 
         from onetl.connection import Hive, Postgres
-        from onetl.core import DBReader
+        from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
         from onetl.hwm.store import MemoryHWMStore
 
