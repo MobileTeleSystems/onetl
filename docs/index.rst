@@ -70,6 +70,7 @@
     :caption: Development
     :hidden:
 
+    changelog
     develop
     security
     contributing

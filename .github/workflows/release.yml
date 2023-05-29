@@ -5,11 +5,16 @@ on:
     tags:
     - '[0-9]+.[0-9]+.[0-9]+'
 
+env:
+  DEFAULT_PYTHON: '3.11'
+
 jobs:
   release:
     name: Release package
     runs-on: ubuntu-latest
     if: github.repository == 'MobileTeleSystems/onetl'  # prevent running on forks
+    permissions:
+      contents: write # to make release
 
     steps:
     - name: Checkout code
@@ -17,13 +22,27 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.11
+    - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+      id: python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: ${{ env.DEFAULT_PYTHON }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-release-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-release-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
+          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-release-
 
     - name: Upgrade pip
       run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I  -r requirements/core.txt -r requirements/docs.txt
 
     - name: Build package
       run: python setup.py sdist bdist_wheel
@@ -32,3 +51,27 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Generate changelog
+      run: |
+        towncrier build --draft > release_notes.rst
+
+    - name: Convert changelog to markdown
+      uses: docker://pandoc/core:2.9
+      with:
+        args: >-
+          --output=release_notes.md
+          --from=rst
+          --to=markdown
+          release_notes.rst
+
+    - name: Create Github release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        draft: false
+        prerelease: false
+        body_path: release_notes.md
+        files: |
+          dist/*
