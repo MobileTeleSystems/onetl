@@ -1,4 +1,0 @@
-Add ``onetl.file.FileMover`` class.
-
-It allows to move files between directories of remote file system.
-Signature is almost the same as in ``FileDownloader``, but without HWM support.

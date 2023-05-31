@@ -1,1 +1,0 @@
-Add new exception type ``DirectoryExistsError`` - it is raised if target directory already exists.

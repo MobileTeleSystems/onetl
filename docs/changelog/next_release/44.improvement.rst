@@ -1,3 +1,0 @@
-Improved file limits documentation section.
-
-Document interface class ``onetl.base.BaseFileLimit`` and functions ``limits_stop_at`` / ``limits_reached`` / ``reset_limits``.

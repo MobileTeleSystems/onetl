@@ -1,5 +1,0 @@
-Updated documentation of ``FileUploader``.
-
-* Class does not support read strategies, added note to documentation.
-* Added examples of using ``run`` method with explicit files list passing, both absolute and relative paths.
-* Fix outdated imports and class names in examples.

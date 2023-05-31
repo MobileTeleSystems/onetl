@@ -1,4 +1,0 @@
-Improved ``FileDownloader`` / ``FileUploader`` exception logging.
-
-If ``DEBUG`` logging is enabled, print exception with stacktrace instead of
-printing only exception message.

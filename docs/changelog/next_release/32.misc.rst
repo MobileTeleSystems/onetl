@@ -1,8 +1,0 @@
-Improved CI workflow for tests.
-
-* If developer haven't changed source core of a specific connector or its dependencies,
-  run tests only against maximum supported versions of Spark, Python, Java and db/file server.
-* If developed made some changes in a specific connector, or in core classes, or in dependencies,
-  run tests for both minimal and maximum versions.
-* Once a week run all aganst for minimal and latest versions to detect breaking changes in dependencies
-* Minimal tested Spark version is 2.3.1 instead on 2.4.8.

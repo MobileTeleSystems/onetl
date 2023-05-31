@@ -1,4 +1,0 @@
-Add new exception type ``FileSizeMismatchError``.
-
-Methods ``connection.download_file`` and ``connection.upload_file`` now raise new exception type instead of ``RuntimeError``,
-if target file after download/upload has different size than source.

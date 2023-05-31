@@ -1,1 +1,0 @@
-Removed default value for ``FileDownloader.limits``, user should pass limits list explicitly.

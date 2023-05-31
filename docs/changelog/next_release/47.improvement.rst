@@ -1,3 +1,0 @@
-Added changelog.
-
-Changelog is generated from separated news files using `towncrier <https://pypi.org/project/towncrier/>`_.
