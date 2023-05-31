@@ -87,7 +87,7 @@ jobs:
       run: |
         # Release name looks like: 0.7.0 (2023-05-15)
         echo -n name= > "$GITHUB_OUTPUT"
-        cat changelog.md | head -1 | sed -E "s/#*\s*//g" >> "$GITHUB_OUTPUT"
+        cat changelog.md | head -1 | sed -E "s/#+\s*//g" >> "$GITHUB_OUTPUT"
 
     - name: Fix headers
       run: |
