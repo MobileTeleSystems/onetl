@@ -1,0 +1,3 @@
+Deprecate ``onetl.core.FileLimit`` class, replace it with new class ``onetl.file.limit.MaxFilesCount``.
+
+Old class will be removed in v1.0.0.

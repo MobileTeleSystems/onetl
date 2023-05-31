@@ -1,0 +1,9 @@
+Rename methods of ``FileConnection`` classes:
+
+* ``get_directory`` → ``resolve_dir``
+* ``get_file`` → ``resolve_file``
+* ``listdir`` → ``list_dir``
+* ``mkdir`` → ``create_dir``
+* ``rmdir`` → ``remove_dir``
+
+They were undocumented in previous versions, but someone could use these methods, so this is a breaking change.

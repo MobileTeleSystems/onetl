@@ -1,0 +1,13 @@
+Add ``rename_dir`` method.
+
+Method was added to following connections:
+
+* ``FTP``
+* ``FTPS``
+* ``HDFS``
+* ``SFTP``
+* ``WebDAV``
+
+It allows to rename/move directory to new path with all its content.
+
+``S3`` does not have directories, so there is no such method in that class.

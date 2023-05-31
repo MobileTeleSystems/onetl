@@ -1,0 +1,23 @@
+Replaced ``FileDownloader.filter`` and ``.limit`` with new options ``.filters`` and ``.limits``:
+
+.. code-block:: python
+    :caption: onETL < 0.8.0
+
+    FileDownloader(
+        ...,
+        filter=FileFilter(glob="*.txt", exclude_dir="/path"),
+        limit=FileLimit(count_limit=10),
+    )
+
+.. code-block:: python
+    :caption: onETL >= 0.8.0
+
+    FileDownloader(
+        ...,
+        filters=[Glob("*.txt"), ExcludeDir("/path")],
+        limits=[MaxFilesCount(10)],
+    )
+
+This allows to developers to implement their own filter and limit classes, and combine them with existing ones.
+
+Old behavior still supported, but it will be removed in v1.0.0.

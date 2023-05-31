@@ -1,0 +1,16 @@
+Document all public methods in ``FileConnection`` classes:
+
+* ``download_file``
+* ``resolve_dir``
+* ``resolve_file``
+* ``get_stat``
+* ``is_dir``
+* ``is_file``
+* ``list_dir``
+* ``create_dir``
+* ``path_exists``
+* ``remove_file``
+* ``rename_file``
+* ``remove_dir``
+* ``upload_file``
+* ``walk``

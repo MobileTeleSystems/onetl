@@ -1,0 +1,3 @@
+Improved file filters documentation section.
+
+Document interface class ``onetl.base.BaseFileFilter`` and function ``match_all_filters``.

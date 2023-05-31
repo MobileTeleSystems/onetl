@@ -1,0 +1,4 @@
+Change behavior of ``BaseFileLimit.reset`` method.
+
+This method should now return ``self`` instead of ``None``.
+Return value could be the same limit object or a copy, this is an implementation detail.

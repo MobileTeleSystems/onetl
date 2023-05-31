@@ -14,7 +14,7 @@ package = "onetl"
 filename = "docs/changelog/NEXT_RELEASE.rst"
 directory = "docs/changelog/next_release/"
 title_format = "{version} ({project_date})"
-issue_format = "`#{issue} <https://github.com/MobileTeleSystems/onetl/issues/{issue}>`_"
+issue_format = ":github:pull:`{issue}`"
 
 [[tool.towncrier.type]]
 directory = "breaking"

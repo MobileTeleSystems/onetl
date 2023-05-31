@@ -52,18 +52,47 @@ jobs:
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
-    - name: Generate changelog
+    - name: Get changelog
       run: |
-        towncrier build --draft > release_notes.rst
+        cat docs/changelog/${{ github.ref_name }}.rst > changelog.rst
+
+    - name: Fix Github links
+      run: |
+        # Replace Github links from Sphinx syntax with Markdown
+        sed -i -E "s/:github:issue:`(.*)`/#\1/g" changelog.rst
+        sed -i -E "s/:github:pull:`(.*)`/#\1/g" changelog.rst
+        sed -i -E "s/:github:user:`(.*)`/@\1/g" changelog.rst
+        sed -i -E "s/:github:org:`(.*)`/@\1/g" changelog.rst
 
     - name: Convert changelog to markdown
       uses: docker://pandoc/core:2.9
       with:
         args: >-
-          --output=release_notes.md
+          --output=changelog.md
           --from=rst
-          --to=markdown
-          release_notes.rst
+          --to=gfm
+          --wrap=none
+          changelog.rst
+
+    - name: Fix Github code blocks
+      run: |
+        # Replace ``` {.python caption="abc"} with ```python caption="abc"
+        sed -i -E "s/``` \{\.(.*)\}/```\1/g" changelog.md
+
+        # Replace ``` python with ```python
+        sed -i -E "s/``` (\w+)/```\1/g" changelog.md
+
+    - name: Get release name
+      id: release-name
+      run: |
+        # Release name looks like: 0.7.0 (2023-05-15)
+        echo -n name= > "$GITHUB_OUTPUT"
+        cat changelog.md | head -1 | sed -E "s/#*\s*//g" >> "$GITHUB_OUTPUT"
+
+    - name: Fix headers
+      run: |
+        # Remove header with release name
+        sed -i -e "1,2d" changelog.md
 
     - name: Create Github release
       id: create_release
@@ -72,6 +101,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         draft: false
         prerelease: false
-        body_path: release_notes.md
+        name: ${{ steps.release-name.outputs.name }}
+        body_path: changelog.md
         files: |
           dist/*
