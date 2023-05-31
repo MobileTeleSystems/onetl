@@ -1,0 +1,1 @@
+Update documentation of ``check`` method of all connections - add usage example and document result type.

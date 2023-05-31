@@ -1,0 +1,7 @@
+Deprecate ``onetl.core.FileFilter`` class, replace it with new classes:
+
+* ``onetl.file.filter.Glob``
+* ``onetl.file.filter.Regexp``
+* ``onetl.file.filter.ExcludeDir``
+
+Old class will be removed in v1.0.0.

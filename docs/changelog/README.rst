@@ -70,18 +70,18 @@ Examples for adding changelog entries to your Pull Requests
 .. code-block:: rst
     :caption: docs/changelog/next_release/1234.doc.1.rst
 
-    Added a ``:user:`` role to Sphinx config -- by :user:`someuser`
+    Added a ``:github:user:`` role to Sphinx config -- by :github:user:`someuser`
 
 .. code-block:: rst
     :caption: docs/changelog/next_release/2345.bugfix.rst
 
-    Fixed behavior of ``WebDAV`` connector -- by :user:`someuser`
+    Fixed behavior of ``WebDAV`` connector -- by :github:user:`someuser`
 
 .. code-block:: rst
     :caption: docs/changelog/next_release/3456.feature.rst
 
     Added support of ``timeout`` in ``S3`` connector
-    -- by :user:`someuser`, :user:`anotheruser` and :user:`otheruser`
+    -- by :github:user:`someuser`, :github:user:`anotheruser` and :github:user:`otheruser`
 
 .. tip::
 

@@ -1,0 +1,246 @@
+0.7.0 (2023-05-15)
+--------------------------
+
+🎉 onETL is now open source 🎉
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+That was long road, but we finally did it!
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+
+* Changed installation method.
+
+  **TL;DR What should I change to restore previous behavior**
+
+  Simple way:
+
+  +-------------------+-----------------------------------+
+  | onETL < 0.7.0     | onETL >= 0.7.0                    |
+  +===================+===================================+
+  | pip install onetl | pip install onetl[files,kerberos] |
+  +-------------------+-----------------------------------+
+
+  Right way - enumerate connectors should be installed:
+
+  .. code-block:: bash
+
+      pip install onetl[hdfs,ftp,kerberos]  # except DB connections
+
+  **Details**
+
+  In onetl<0.7 the package installation looks like:
+
+  .. code-block:: bash
+      :caption: before
+
+      pip install onetl
+
+  But this includes all dependencies for all connectors, even if user does not use them.
+  This caused some issues, for example user had to install Kerberos libraries to be able to install onETL, even if user uses only S3 (without Kerberos support).
+
+  Since 0.7.0 installation process was changed:
+
+  .. code-block:: bash
+      :caption: after
+
+      pip install onetl  # minimal installation, only onETL core
+      # there is no extras for DB connections because they are using Java packages which are installed in runtime
+
+      pip install onetl[ftp,ftps,hdfs,sftp,s3,webdav]  # install dependencies for specified file connections
+      pip install onetl[files]  # install dependencies for all file connections
+
+      pip install onetl[kerberos]  # Kerberos auth support
+      pip install onetl[spark]  # install PySpark to use DB connections
+
+      pip install onetl[spark,kerberos,files]  # all file connections + Kerberos + PySpark
+      pip install onetl[all]  # alias for previous case
+
+  There are corresponding documentation items for each extras.
+
+  Also onETL checks that some requirements are missing, and raises exception with recommendation how to install them:
+
+  .. code-block:: text
+      :caption: exception while import Clickhouse connection
+
+      Cannot import module "pyspark".
+
+      Since onETL v0.7.0 you should install package as follows:
+          pip install onetl[spark]
+
+      or inject PySpark to sys.path in some other way BEFORE creating MongoDB instance.
+
+  .. code-block:: text
+      :caption: exception while import FTP connection
+
+      Cannot import module "ftputil".
+
+      Since onETL v0.7.0 you should install package as follows:
+          pip install onetl[ftp]
+
+      or
+          pip install onetl[files]
+
+* Added new ``cluster`` argument to ``Hive`` and ``HDFS`` connections.
+
+  ``Hive`` qualified name (used in HWM) contains cluster name. But in onETL<0.7.0 cluster name had hard coded value ``rnd-dwh`` which was not OK for some users.
+
+  ``HDFS`` connection qualified name contains host (active namenode of Hadoop cluster), but its value can change over time, leading to creating of new HWM.
+
+  Since onETL 0.7.0 both ``Hive`` and ``HDFS`` connections have ``cluster`` attribute which can be set to a specific cluster name.
+  For ``Hive`` it is mandatory, for ``HDFS`` it can be omitted (using host as a fallback).
+
+  But passing cluster name every time could lead to errors.
+
+  Now ``Hive`` and ``HDFS`` have nested class named ``slots`` with methods:
+
+  * ``normalize_cluster_name``
+  * ``get_known_clusters``
+  * ``get_current_cluster``
+  * ``normalize_namenode_host`` (only ``HDFS``)
+  * ``get_cluster_namenodes`` (only ``HDFS``)
+  * ``get_webhdfs_port`` (only ``HDFS``)
+  * ``is_namenode_active`` (only ``HDFS``)
+
+  And new method ``HDFS.get_current`` / ``Hive.get_current``.
+
+  Developers can implement hooks validating user input or substituting values for automatic cluster detection.
+  This should improve user experience while using these connectors.
+
+  See slots documentation.
+
+* Update JDBC connection drivers.
+
+  * Greenplum ``2.1.3`` → ``2.1.4``.
+  * MSSQL ``10.2.1.jre8`` → ``12.2.0.jre8``. Minimal supported version of MSSQL is now 2014 instead 2021.
+  * MySQL ``8.0.30`` → ``8.0.33``:
+  * * Package was renamed ``mysql:mysql-connector-java`` → ``com.mysql:mysql-connector-j``.
+  * * Driver class was renamed ``com.mysql.jdbc.Driver`` → ``com.mysql.cj.jdbc.Driver``.
+  * Oracle ``21.6.0.0.1`` → ``23.2.0.0``.
+  * Postgres ``42.4.0`` → ``42.6.0``.
+  * Teradata ``17.20.00.08`` → ``17.20.00.15``:
+  * * Package was renamed ``com.teradata.jdbc:terajdbc4`` → ``com.teradata.jdbc:terajdbc``.
+  * * Teradata driver is now published to Maven.
+
+  See :github:pull:`31`.
+
+Features
+^^^^^^^^
+
+* Added MongoDB connection.
+
+  Using official `MongoDB connector for Spark v10 <https://www.mongodb.com/docs/spark-connector/current/>`_. Only Spark 3.2+ is supported.
+
+  There are some differences between MongoDB and other database sources:
+
+  * Instead of ``mongodb.sql`` method there is ``mongodb.pipeline``.
+  * No methods ``mongodb.fetch`` and ``mongodb.execute``.
+  * ``DBReader.hint`` and ``DBReader.where`` have different types than in SQL databases:
+
+  .. code-block:: python
+
+      where = {
+          "col1": {
+              "$eq": 10,
+          },
+      }
+
+      hint = {
+          "col1": 1,
+      }
+
+  * Because MongoDB does not have schemas of collections, but Spark cannot create dataframe with dynamic schema, new option ``DBReader.df_schema`` was introduced.
+    It is mandatory for MongoDB, but optional for other sources.
+  * Currently DBReader cannot be used with MongoDB and hwm expression, e.g. ``hwm_column=("mycolumn", {"$cast": {"col1": "date"}})``
+
+  Because there are no tables in MongoDB, some options were renamed in core classes:
+
+  * ``DBReader(table=...)`` → ``DBReader(source=...)``
+  * ``DBWriter(table=...)`` → ``DBWriter(target=...)``
+
+  Old names can be used too, they are not deprecated (:github:pull:`30`).
+
+* Added option for disabling some plugins during import.
+
+  Previously if some plugin were failing during the import, the only way to import onETL would be to disable all plugins
+  using environment variable.
+
+  Now there are several variables with different behavior:
+
+  * ``ONETL_PLUGINS_ENABLED=false`` - disable all plugins autoimport. Previously it was named ``ONETL_ENABLE_PLUGINS``.
+  * ``ONETL_PLUGINS_BLACKLIST=plugin-name,another-plugin`` - set list of plugins which should NOT be imported automatically.
+  * ``ONETL_PLUGINS_WHITELIST=plugin-name,another-plugin`` - set list of plugins which should ONLY be imported automatically.
+
+  Also we improved exception message with recommendation how to disable a failing plugin:
+
+  .. code-block:: text
+      :caption: exception message example
+
+      Error while importing plugin 'mtspark' from package 'mtspark' v4.0.0.
+
+      Statement:
+          import mtspark.onetl
+
+      Check if plugin is compatible with current onETL version 0.7.0.
+
+      You can disable loading this plugin by setting environment variable:
+          ONETL_PLUGINS_BLACKLIST='mtspark,failing-plugin'
+
+      You can also define a whitelist of packages which can be loaded by onETL:
+          ONETL_PLUGINS_WHITELIST='not-failing-plugin1,not-failing-plugin2'
+
+      Please take into account that plugin name may differ from package or module name.
+      See package metadata for more details
+
+Improvements
+^^^^^^^^^^^^
+
+* Added compatibility with Python 3.11 and PySpark 3.4.0.
+
+  File connections were OK, but ``jdbc.fetch`` and ``jdbc.execute`` were failing. Fixed in :github:pull:`28`.
+
+* Added check for missing Java packages.
+
+  Previously if DB connection tried to use some Java class which were not loaded into Spark version, it raised an exception
+  with long Java stacktrace. Most users failed to interpret this trace.
+
+  Now onETL shows the following error message:
+
+  .. code-block:: text
+      :caption: exception message example
+
+      |Spark| Cannot import Java class 'com.mongodb.spark.sql.connector.MongoTableProvider'.
+
+      It looks like you've created Spark session without this option:
+          SparkSession.builder.config("spark.jars.packages", MongoDB.package_spark_3_2)
+
+      Please call `spark.stop()`, restart the interpreter,
+      and then create new SparkSession with proper options.
+
+* Documentation improvements.
+
+  * Changed documentation site theme - using `furo <https://github.com/pradyunsg/furo>`_
+    instead of default `ReadTheDocs <https://github.com/readthedocs/sphinx_rtd_theme>`_.
+
+    New theme supports wide screens and dark mode.
+    See :github:pull:`10`.
+
+  * Now each connection class have compatibility table for Spark + Java + Python.
+  * Added global compatibility table for Spark + Java + Python + Scala.
+
+Bug Fixes
+^^^^^^^^^^^^
+
+* Fixed several SFTP issues.
+
+  * If SSH config file ``~/.ssh/config`` contains some options not recognized by Paramiko (unknown syntax, unknown option name),
+    previous versions were raising exception until fixing or removing this file. Since 0.7.0 exception is replaced with warning.
+
+  * If user passed ``host_key_check=False`` but server changed SSH keys, previous versions raised exception until new key is accepted.
+    Since 0.7.0 exception is replaced with warning if option value is ``False``.
+
+    Fixed in :github:pull:`19`.
+
+* Fixed several S3 issues.
+
+  There was a bug in S3 connection which prevented handling files in the root of a bucket - they were invisible for the connector. Fixed in :github:pull:`29`.

@@ -50,6 +50,7 @@ extensions = [
     "sphinx_substitution_extensions",
     "sphinx_tabs.tabs",
     "sphinx_toolbox.more_autodoc.autoprotocol",
+    "sphinx_toolbox.github",
     "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -66,9 +67,12 @@ autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_field_list_validators = False
 sphinx_tabs_disable_tab_closing = True
 
-towncrier_draft_autoversion_mode = "draft"  # or: 'sphinx-version', 'sphinx-release'
+towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
 towncrier_draft_working_directory = PROJECT_ROOT_DIR
+
+github_username = "MobileTeleSystems"
+github_repository = "onetl"
 
 rst_prolog = f"""
 .. |support_hooks| image:: https://img.shields.io/badge/%20-support%20hooks-blue
