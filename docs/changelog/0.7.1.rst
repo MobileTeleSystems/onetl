@@ -1,0 +1,43 @@
+
+0.7.1 (2023-05-23)
+--------------------------
+
+Bug Fixes
+^^^^^^^^^^^^
+
+* Fixed ``setup_logging`` function.
+
+  In onETL==0.7.0 calling ``onetl.log.setup_logging()`` broke the logging:
+
+  .. code-block:: text
+      :caption: exception message
+
+      Traceback (most recent call last):
+      File "/opt/anaconda/envs/py39/lib/python3.9/logging/__init__.py", line 434, in format
+          return self._format(record)
+      File "/opt/anaconda/envs/py39/lib/python3.9/logging/__init__.py", line 430, in _format
+          return self._fmt % record.dict
+      KeyError: 'levelname:8s'
+
+* Fixed installation examples.
+
+  In onETL==0.7.0 there are examples of installing onETL with extras:
+
+  .. code-block:: bash
+      :caption: before
+
+      pip install onetl[files, kerberos, spark]
+
+  But pip fails to install such package:
+
+  .. code-block:: text
+      :caption: exception
+
+      ERROR: Invalid requirement: 'onet[files,'
+
+  This is because of spaces in extras clause. Fixed:
+
+  .. code-block:: bash
+      :caption: after
+
+      pip install onetl[files,kerberos,spark]

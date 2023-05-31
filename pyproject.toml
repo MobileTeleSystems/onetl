@@ -4,21 +4,54 @@ multi_line_output = 3
 
 [tool.black]
 line-length = 120
-target-version = ['py37', 'py38'] # указываем версии python, с которыми должна сохраняться совместимость
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
-exclude = '''
+exclude = '''(\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|buck-out|build|dist)'''
 
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-  )/
-)
-'''
+[tool.towncrier]
+name = "onETL"
+package = "onetl"
+filename = "docs/changelog/NEXT_RELEASE.rst"
+directory = "docs/changelog/next_release/"
+title_format = "{version} ({project_date})"
+issue_format = ":github:pull:`{issue}`"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "significant"
+name = "Significant Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "improvement"
+name = "Improvements"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "dependency"
+name = "Dependencies"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Doc only Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = true

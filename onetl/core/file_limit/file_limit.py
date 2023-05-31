@@ -15,6 +15,10 @@
 from __future__ import annotations
 
 import logging
+import textwrap
+import warnings
+
+from pydantic import validator
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
@@ -24,7 +28,11 @@ log = logging.getLogger(__name__)
 
 
 class FileLimit(BaseFileLimit, FrozenModel):
-    """Limits the number of uploaded files
+    """Limits the number of downloaded files.
+
+    .. deprecated:: 0.8.0
+
+        Use :obj:`MaxFilesCount <onetl.file.limit.max_files_count.MaxFilesCount>` instead.
 
     Parameters
     ----------
@@ -40,9 +48,11 @@ class FileLimit(BaseFileLimit, FrozenModel):
 
     .. code:: python
 
+        from onetl.core import FileLimit
+
         limit = FileLimit(count_limit=1500)
 
-    If you create a :obj:`onetl.core.file_downloader.file_downloader.FileDownloader` object without
+    If you create a :obj:`onetl.file.file_downloader.file_downloader.FileDownloader` object without
     specifying the limit option, it will download with a limit of 100 files.
     """
 
@@ -52,6 +62,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
 
     def reset(self):
         self._counter = 0
+        return self
 
     def stops_at(self, path: PathProtocol) -> bool:
         if self.is_reached:
@@ -71,3 +82,26 @@ class FileLimit(BaseFileLimit, FrozenModel):
     def log_options(self, indent: int = 0):
         for key, value in self.dict(by_alias=True).items():  # noqa: WPS528
             log_with_indent("%s = %r", key, value, indent=indent)
+
+    @validator("count_limit")
+    def log_deprecated(cls, value):
+        message = f"""
+            Using FileLimit is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+            Please replace:
+                from onetl.core import FileLimit
+
+                limit=FileLimit(count_limit={value})
+
+            With:
+                from onetl.file.limit import MaxFilesCount
+
+                limits=[MaxFilesCount({value})]
+        """
+
+        warnings.warn(
+            textwrap.dedent(message).strip(),
+            category=UserWarning,
+            stacklevel=3,  # 1 is current method, 2 is BaseModel internals, 3 is user code
+        )
+        return value

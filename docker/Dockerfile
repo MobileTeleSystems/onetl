@@ -62,7 +62,6 @@ RUN pip install \
     -r /app/requirements/docs.txt \
     -r /app/requirements/tests/base.txt \
     -r /app/requirements/tests/clickhouse.txt \
-    -r /app/requirements/tests/ftp.txt \
     -r /app/requirements/tests/mongodb.txt \
     -r /app/requirements/tests/mssql.txt \
     -r /app/requirements/tests/mysql.txt \

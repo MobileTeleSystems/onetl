@@ -21,6 +21,13 @@ from logging import getLogger
 from stat import S_ISDIR, S_ISREG
 from typing import Optional
 
+from etl_entities.instance import Host
+from pydantic import FilePath, SecretStr
+
+from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.impl import LocalPath, RemotePath
+
 try:
     from paramiko import ProxyCommand, SSHClient, SSHConfig, WarningPolicy
     from paramiko.sftp_attr import SFTPAttributes
@@ -41,18 +48,12 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
-from etl_entities.instance import Host
-from pydantic import FilePath, SecretStr
-
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemotePath
-
 SSH_CONFIG_PATH = LocalPath("~/.ssh/config").expanduser().resolve()
 
 log = getLogger(__name__)
 
 
-class SFTP(FileConnection):
+class SFTP(FileConnection, RenameDirMixin):
     """SFTP file connection.
 
     Based on `Paramiko library <https://pypi.org/project/paramiko/>`_.
@@ -181,7 +182,7 @@ class SFTP(FileConnection):
 
         return host_proxy, key_file
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         try:
             self.client.stat(os.fspath(path))
         except Exception:
@@ -196,7 +197,7 @@ class SFTP(FileConnection):
     def _upload_file(self, local_file_path: RemotePath, remote_file_path: RemotePath) -> None:
         self.client.put(os.fspath(local_file_path), os.fspath(remote_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         with contextlib.suppress(OSError):
             self.client.posix_rename(os.fspath(source), os.fspath(target))
             return
@@ -205,10 +206,12 @@ class SFTP(FileConnection):
         # if OSError was caused by permissions error, client.rename will raise this exception again
         self.client.rename(os.fspath(source), os.fspath(target))
 
+    _rename_dir = _rename_file
+
     def _download_file(self, remote_file_path: RemotePath, local_file_path: RemotePath) -> None:
         self.client.get(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:

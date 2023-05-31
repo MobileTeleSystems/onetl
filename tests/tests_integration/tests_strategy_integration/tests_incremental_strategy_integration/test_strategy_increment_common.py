@@ -11,7 +11,7 @@ except ImportError:
     pass
 
 from onetl.connection import Postgres
-from onetl.core import DBReader
+from onetl.db import DBReader
 from onetl.strategy import IncrementalStrategy
 
 pytestmark = pytest.mark.postgres

@@ -15,9 +15,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-postgres:
@@ -51,6 +54,7 @@ jobs:
 
     - name: Cache Ivy
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.ivy2
         key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-${{ hashFiles('onetl/connection/db_connection/*.py') }}
@@ -60,6 +64,7 @@ jobs:
 
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt') }}
@@ -72,11 +77,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/tests/base.txt \
-          -r requirements/tests/postgres.txt \
-          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Wait for Postgres to be ready
       run: |

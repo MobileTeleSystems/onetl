@@ -4,8 +4,8 @@ on:
     branches:
     - develop
   pull_request:
-    branches:
-    - develop
+    branches-ignore:
+    - master
   workflow_dispatch:
 
 concurrency:
@@ -13,20 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get-matrix:
+    name: Get version matrix based on changes in PR/commit
+    uses: ./.github/workflows/get-matrix.yml
+
   tests-core:
     name: Run core tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-core) }}
 
     uses: ./.github/workflows/test-core.yml
     with:
@@ -37,22 +34,11 @@ jobs:
 
   tests-clickhouse:
     name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - clickhouse-image: clickhouse/clickhouse-server
-          clickhouse-version: 23.2.6-alpine
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - clickhouse-image: clickhouse/clickhouse-server
-          clickhouse-version: 23.2.6-alpine
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-clickhouse) }}
 
     uses: ./.github/workflows/test-clickhouse.yml
     with:
@@ -65,20 +51,11 @@ jobs:
 
   tests-greenplum:
     name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - greenplum-version: 6.8
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - greenplum-version: 6.8
-          spark-version: 3.2.3  # Greenplum connector currently does not support Spark 3.3+
-          java-version: 11
-          python-version: '3.10'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-greenplum) }}
 
     uses: ./.github/workflows/test-greenplum.yml
     with:
@@ -93,18 +70,11 @@ jobs:
 
   tests-hive:
     name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-hive) }}
 
     uses: ./.github/workflows/test-hive.yml
     with:
@@ -115,20 +85,11 @@ jobs:
 
   tests-mongodb:
     name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - mongodb-version: 5.0.16
-          spark-version: 3.2.3  # MongoDB connector does not support Spark 2.x
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - mongodb-version: 5.0.16
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mongodb) }}
 
     uses: ./.github/workflows/test-mongodb.yml
     with:
@@ -140,20 +101,11 @@ jobs:
 
   tests-mysql:
     name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - mysql-version: 8.0.33
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - mysql-version: 8.0.33
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mysql) }}
 
     uses: ./.github/workflows/test-mysql.yml
     with:
@@ -165,20 +117,11 @@ jobs:
 
   tests-mssql:
     name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - mssql-version: latest
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - mssql-version: latest
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mssql) }}
 
     uses: ./.github/workflows/test-mssql.yml
     with:
@@ -190,24 +133,16 @@ jobs:
 
   tests-oracle:
     name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - oracle-version: 21.3.0-faststart
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - oracle-version: 21.3.0-faststart
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-oracle) }}
 
     uses: ./.github/workflows/test-oracle.yml
     with:
       oracle-version: ${{ matrix.oracle-version }}
+      db-name: ${{ matrix.db-name }}
       spark-version: ${{ matrix.spark-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
@@ -215,20 +150,11 @@ jobs:
 
   tests-postgres:
     name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - postgres-version: 15.2
-          spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - postgres-version: 15.2
-          spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-postgres) }}
 
     uses: ./.github/workflows/test-postgres.yml
     with:
@@ -240,18 +166,11 @@ jobs:
 
   tests-teradata:
     name: Run Teradata tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - spark-version: 2.4.8
-          java-version: 8
-          python-version: '3.7'
-          os: ubuntu-latest
-        - spark-version: 3.4.0
-          java-version: 17
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-teradata) }}
 
     uses: ./.github/workflows/test-teradata.yml
     with:
@@ -262,16 +181,11 @@ jobs:
 
   tests-ftp:
     name: Run FTP tests (server=${{ matrix.ftp-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - ftp-version: latest
-          python-version: '3.7'
-          os: ubuntu-latest
-        - ftp-version: latest
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-ftp) }}
 
     uses: ./.github/workflows/test-ftp.yml
     with:
@@ -281,16 +195,11 @@ jobs:
 
   tests-ftps:
     name: Run FTPS tests (server=${{ matrix.ftps-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - ftps-version: latest
-          python-version: '3.7'
-          os: ubuntu-latest
-        - ftps-version: latest
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-ftps) }}
 
     uses: ./.github/workflows/test-ftps.yml
     with:
@@ -300,16 +209,11 @@ jobs:
 
   tests-hdfs:
     name: Run HDFS tests (server=${{ matrix.hadoop-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - hadoop-version: hadoop2-hdfs
-          python-version: '3.7'
-          os: ubuntu-latest
-        - hadoop-version: hadoop3-hdfs
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-hdfs) }}
 
     uses: ./.github/workflows/test-hdfs.yml
     with:
@@ -319,16 +223,11 @@ jobs:
 
   tests-s3:
     name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - minio-version: 2023.4.20
-          python-version: '3.7'
-          os: ubuntu-latest
-        - minio-version: 2023.4.20
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-s3) }}
 
     uses: ./.github/workflows/test-s3.yml
     with:
@@ -338,16 +237,11 @@ jobs:
 
   tests-sftp:
     name: Run SFTP tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - openssh-version: 9.1_p1-r2-ls111
-          python-version: '3.7'
-          os: ubuntu-latest
-        - openssh-version: 9.1_p1-r2-ls111
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-sftp) }}
 
     uses: ./.github/workflows/test-sftp.yml
     with:
@@ -357,16 +251,11 @@ jobs:
 
   tests-webdav:
     name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - webdav-version: latest
-          python-version: '3.7'
-          os: ubuntu-latest
-        - webdav-version: latest
-          python-version: '3.11'
-          os: ubuntu-latest
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-webdav) }}
 
     uses: ./.github/workflows/test-webdav.yml
     with:

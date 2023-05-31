@@ -20,3 +20,5 @@ from onetl.base.base_file_limit import BaseFileLimit
 from onetl.base.contains_exception import ContainsException
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.path_stat_protocol import PathStatProtocol
+from onetl.base.pure_path_protocol import PurePathProtocol
+from onetl.base.supports_rename_dir import SupportsRenameDir

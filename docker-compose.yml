@@ -76,7 +76,7 @@ services:
     - onetl
 
   oracle:
-    image: ${ORACLE_IMAGE:-gvenzl/oracle-xe:21.3.0-faststart}
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-xe:21.3.0-slim-faststart}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

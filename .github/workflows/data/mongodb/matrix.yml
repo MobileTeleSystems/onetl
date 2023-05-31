@@ -1,0 +1,33 @@
+min: &min
+  # MongoDB connector does not support Spark 2
+  spark-version: 3.2.3
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.0
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - mongodb-version: 6.0.5
+    <<: *max
+  full:
+  - mongodb-version: 4.0.0
+    <<: *min
+  - mongodb-version: 6.0.5
+    <<: *max
+  nightly:
+  - mongodb-version: 4.0.0
+    <<: *min
+  - mongodb-version: latest
+    <<: *latest

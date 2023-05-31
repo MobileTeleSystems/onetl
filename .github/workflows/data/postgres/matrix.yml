@@ -1,0 +1,33 @@
+min: &min
+  spark-version: 2.3.1
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.0
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - postgres-version: 15.2-alpine
+    <<: *max
+  full:
+  # Min supported version by JDBC driver is 8.4, but it is too ancient to be used by anyone in real life
+  - postgres-version: 9.4.26-alpine
+    <<: *min
+  - postgres-version: 15.2-alpine
+    <<: *max
+  nightly:
+  - postgres-version: 9.4.26-alpine
+    <<: *min
+  - postgres-version: alpine
+    <<: *latest

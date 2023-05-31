@@ -98,9 +98,16 @@ repos:
     language: system
     types: [python]
     pass_filenames: false
+  - id: towncrier
+    name: towncrier
+    entry: towncrier build --draft
+    language: system
+    types: [rst]
+    pass_filenames: false
 
 ci:
   skip:
   - flake8  # checked with Github Actions
   - mypy  # checked with Github Actions
+  - towncrier  # checked with Github Actions
   - docker-compose-check  # cannot run on pre-commit.ci

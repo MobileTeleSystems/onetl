@@ -102,12 +102,13 @@ onETL provides several classes for this:
     * :ref:`DBWriter <db-writer>`
     * :ref:`FileUploader <file-uploader>`
     * :ref:`FileDownloader <db-reader>`
+    * :ref:`FileMover <db-reader>`
 
 All of these classes have a method ``run()`` that starts extracting/loading the data:
 
 .. code:: python
 
-    from onetl.core import DBReader, DBWriter
+    from onetl.db import DBReader, DBWriter
 
     reader = DBReader(
         connection=mssql,
@@ -144,20 +145,31 @@ Load data
 
 To load data you can use classes:
 
-+-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-|                                     | Use case                                     | Connection                                    | ``run()`` gets                                                                                                                       | ``run()`` returns                   |
-+=====================================+==============================================+===============================================+======================================================================================================================================+=====================================+
-| :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`      | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
-+-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-| :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>`  | List[File path on local FS]                                                                                                          | :ref:`UploadResult <upload-result>` |
-+-------------------------------------+----------------------------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
++-------------------------------------+----------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
+|                                     | Use case                                     | Connection                                   | ``run()`` gets                                                                                                                       | ``run()`` returns                   |
++=====================================+==============================================+==============================================+======================================================================================================================================+=====================================+
+| :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`     | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
++-------------------------------------+----------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
+| :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>` | List[File path on local FS]                                                                                                          | :ref:`UploadResult <upload-result>` |
++-------------------------------------+----------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
+
+Manipulate data
+---------------
+
+To manipulate data you can use classes:
+
++-------------------------------+---------------------------------------------+----------------------------------------------+------------------------------+---------------------------------+
+|                               | Use case                                    | Connection                                   | ``run()`` gets               | ``run()`` returns               |
++===============================+=============================================+==============================================+==============================+=================================+
+| :ref:`FileMover <file-mover>` | Move files between directories in remote FS | Any :ref:`FileConnection <file-connections>` | List[File path on remote FS] | :ref:`MoveResult <move-result>` |
++-------------------------------+---------------------------------------------+----------------------------------------------+------------------------------+---------------------------------+
 
 Options
 -------
 
 Extract and load classes have a ``options`` parameter, which has a special meaning:
 
-    * all other parameters - *WHAT* we extract from / *WHERE* we load to
+    * all other parameters - *WHAT* we extract / *WHERE* we load to
     * ``options`` parameter - *HOW* we extract/load data
 
 .. code:: python
@@ -181,17 +193,17 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         # WHERE do we load - to some table in Hive
         connection=hive,
         target="dl_sb.demo_table",
-        # HOW do we load - overwrite all the data in existing table
+        # HOW do we load - overwrite all the data in the existing table
         options=Hive.WriteOptions(mode="overwrite_all"),
     )
 
     downloader = FileDownloader(
-        # WHAT do we extract from
+        # WHAT do we extract - files from some dir in SFTP
         connection=sftp,
-        source_path="/source",  # files some path from SFTP
-        filter=FileFilter(glob="*.csv"),  # only CSV files
-        limit=FileLimit(count_limit=1000),  # 1000 files max
-        # WHERE do we extract to - a specific path on local FS
+        source_path="/source",
+        filters=[Glob("*.csv")],  # only CSV files
+        limits=[MaxFilesCount(1000)],  # 1000 files max
+        # WHERE do we extract to - a specific dir on local FS
         local_path="/some",
         # HOW do we extract
         options=FileDownloader.Options(
@@ -201,20 +213,32 @@ Extract and load classes have a ``options`` parameter, which has a special meani
     )
 
     uploader = FileUploader(
-        # WHAT do we load from - files from some local path
+        # WHAT do we load - files from some local dir
         local_path="/source",
         # WHERE do we load to
         connection=hdfs,
-        target_path="/some",  # save to a specific remote path on HDFS
+        target_path="/some",  # save to a specific remote dir in HDFS
         # HOW do we load
         options=FileUploader.Options(
             delete_local=True,  # not only upload files, but remove them from local FS
-            mode="append",  # overwrite existing files in the target_path
+            mode="overwrite",  # overwrite existing files in the target_path
+        ),
+    )
+
+    mover = FileMover(
+        # WHAT do we move - files in some remote dir in HDFS
+        source_path="/source",
+        connection=hdfs,
+        # WHERE do we move files to
+        target_path="/some",  # a specific remote dir within the same HDFS connection
+        # HOW do we load
+        options=FileMover.Options(
+            mode="overwrite",  # overwrite existing files in the target_path
         ),
     )
 
 More information about ``options`` could be found on `DB connection <db_connection/clickhouse.html>`_. and
-:ref:`file-downloader` / :ref:`file-uploader` documentation
+:ref:`file-downloader` / :ref:`file-uploader` / :ref:`file-mover` documentation
 
 Read Strategies
 ---------------

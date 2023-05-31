@@ -1,0 +1,33 @@
+min: &min
+  spark-version: 2.3.1
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.0
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - mssql-version: v2017.CU24.0
+    <<: *max
+  full:
+  - mssql-version: v2017.CU24.0
+    <<: *min
+  # v2019.CU4.0 is not very stable
+  - mssql-version: v2017.CU24.0
+    <<: *max
+  nightly:
+  - mssql-version: v2017.CU24.0
+    <<: *min
+  - mssql-version: v2017.CU24.0
+    <<: *latest

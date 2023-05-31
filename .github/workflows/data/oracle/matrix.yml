@@ -1,0 +1,37 @@
+min: &min
+  spark-version: 2.3.1
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.0
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - oracle-version: 21.3.0-slim-faststart
+    db-name: XEPDB1
+    <<: *max
+  full:
+  - oracle-version: 11.2.0.2-slim-faststart
+    db-name: XE
+    <<: *min
+  - oracle-version: 21.3.0-slim-faststart
+    db-name: XEPDB1
+    <<: *max
+  nightly:
+  - oracle-version: 11.2.0.2-slim-faststart
+    db-name: XEPDB1
+    <<: *min
+  - oracle-version: latest-faststart
+    db-name: XEPDB1
+    <<: *latest

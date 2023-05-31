@@ -351,6 +351,11 @@ def spark_packages():
 
     pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
 
+    if pyspark_version == "2.3":
+        if with_greenplum:
+            packages.extend([Greenplum.package_spark_2_3])
+        return packages
+
     if pyspark_version == "2.4":
         if with_greenplum:
             packages.extend([Greenplum.package_spark_2_4])
@@ -533,10 +538,10 @@ def file_all_connections(file_connections_data):
 @pytest.fixture(scope="function")
 def source_path(file_connections_data):
     connection, path = file_connections_data
-    connection.rmdir(path, recursive=True)
-    connection.mkdir(path)
+    connection.remove_dir(path, recursive=True)
+    connection.create_dir(path)
     yield path
-    connection.rmdir(path, recursive=True)
+    connection.remove_dir(path, recursive=True)
 
 
 @pytest.fixture(scope="function")

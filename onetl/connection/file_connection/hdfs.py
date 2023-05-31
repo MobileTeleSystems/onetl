@@ -20,6 +20,16 @@ import textwrap
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional, Tuple
 
+from etl_entities.instance import Cluster, Host
+from pydantic import Field, FilePath, SecretStr, root_validator, validator
+
+from onetl.base import PathStatProtocol
+from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.connection.kerberos_helpers import kinit
+from onetl.hooks import slot, support_hooks
+from onetl.impl import LocalPath, RemotePath, RemotePathStat
+
 try:
     from hdfs import InsecureClient
 
@@ -40,20 +50,11 @@ except (ImportError, NameError) as err:
         ).strip(),
     ) from err
 
-from etl_entities.instance import Cluster, Host
-from pydantic import Field, FilePath, SecretStr, root_validator, validator
-
-from onetl.base import PathStatProtocol
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.connection.kerberos_helpers import kinit
-from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
-
 log = getLogger(__name__)
 ENTRY_TYPE = Tuple[str, dict]
 
 
-class HDFS(FileConnection):
+class HDFS(FileConnection, RenameDirMixin):
     """HDFS file connection.
 
     Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_.
@@ -700,17 +701,19 @@ class HDFS(FileConnection):
         # Underlying client does not support closing
         pass
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.delete(os.fspath(path), recursive=False)
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         self.client.makedirs(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         self.client.upload(os.fspath(remote_file_path), os.fspath(local_file_path))
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))
+
+    _rename_dir = _rename_file
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         self.client.download(os.fspath(remote_file_path), os.fspath(local_file_path))

@@ -1,0 +1,19 @@
+min: &min
+  python-version: '3.7'
+  os: ubuntu-latest
+
+max: &max
+  python-version: '3.11'
+  os: ubuntu-latest
+
+matrix:
+  small:
+  # chonjay21/ftps image has only latest tag
+  - ftp-version: latest
+    <<: *max
+  full: &full
+  - ftp-version: latest
+    <<: *min
+  - ftp-version: latest
+    <<: *max
+  nightly: *full

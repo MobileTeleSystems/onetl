@@ -23,6 +23,14 @@ from logging import getLogger
 from ssl import SSLContext
 from typing import Any, Optional, Union
 
+from etl_entities.instance import Host
+from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
+from typing_extensions import Literal
+
+from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.impl import LocalPath, RemotePath, RemotePathStat
+
 try:
     from webdav3.client import Client
 except (ImportError, NameError) as e:
@@ -40,18 +48,11 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
-from etl_entities.instance import Host
-from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
-from typing_extensions import Literal
-
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
-
 log = getLogger(__name__)
 DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
-class WebDAV(FileConnection):
+class WebDAV(FileConnection, RenameDirMixin):
     """WebDAV file connection.
 
     Based on `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_.
@@ -176,7 +177,7 @@ class WebDAV(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.clean(os.fspath(remote_file_path))
 
-    def _mkdir(self, path: RemotePath) -> None:
+    def _create_dir(self, path: RemotePath) -> None:
         for directory in reversed(path.parents):  # from root to nested directory
             if not self.path_exists(directory):
                 self.client.mkdir(os.fspath(directory))
@@ -188,14 +189,16 @@ class WebDAV(FileConnection):
             remote_path=os.fspath(remote_file_path),
         )
 
-    def _rename(self, source: RemotePath, target: RemotePath) -> None:
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         res = self.client.resource(os.fspath(source))
         res.move(os.fspath(target))
+
+    _rename_dir = _rename_file
 
     def _scan_entries(self, path: RemotePath) -> list[dict]:
         return self.client.list(os.fspath(path), get_info=True)
 
-    def _rmdir(self, path: RemotePath) -> None:
+    def _remove_dir(self, path: RemotePath) -> None:
         self.client.clean(os.fspath(path))
 
     def _read_text(self, path: RemotePath, encoding: str) -> str:

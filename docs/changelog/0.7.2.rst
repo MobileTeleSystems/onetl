@@ -1,0 +1,39 @@
+0.7.2 (2023-05-24)
+--------------------------
+
+Dependencies
+^^^^^^^^^^^^
+
+* Limited ``typing-extensions`` version.
+
+  ``typing-extensions==4.6.0`` release contains some breaking changes causing errors like:
+
+  .. code-block:: text
+      :caption: typing-extensions 4.6.0
+
+      Traceback (most recent call last):
+      File "/Users/project/lib/python3.9/typing.py", line 852, in __subclasscheck__
+          return issubclass(cls, self.__origin__)
+      TypeError: issubclass() arg 1 must be a class
+
+  ``typing-extensions==4.6.1`` was causing another error:
+
+  .. code-block:: text
+      :caption: typing-extensions 4.6.1
+
+      Traceback (most recent call last):
+      File "/home/maxim/Repo/typing_extensions/1.py", line 33, in <module>
+          isinstance(file, ContainsException)
+      File "/home/maxim/Repo/typing_extensions/src/typing_extensions.py", line 599, in __instancecheck__
+          if super().__instancecheck__(instance):
+      File "/home/maxim/.pyenv/versions/3.7.8/lib/python3.7/abc.py", line 139, in __instancecheck__
+          return _abc_instancecheck(cls, instance)
+      File "/home/maxim/Repo/typing_extensions/src/typing_extensions.py", line 583, in __subclasscheck__
+          return super().__subclasscheck__(other)
+      File "/home/maxim/.pyenv/versions/3.7.8/lib/python3.7/abc.py", line 143, in __subclasscheck__
+          return _abc_subclasscheck(cls, subclass)
+      File "/home/maxim/Repo/typing_extensions/src/typing_extensions.py", line 661, in _proto_hook
+          and other._is_protocol
+      AttributeError: type object 'PathWithFailure' has no attribute '_is_protocol'
+
+  We updated requirements with ``typing-extensions<4.6`` until fixing compatibility issues.

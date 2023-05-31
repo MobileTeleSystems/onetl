@@ -142,31 +142,6 @@ class BaseDBConnection(BaseConnection):
         """Instance URL"""
 
     @abstractmethod
-    def check(self):
-        """
-        Check if database is accessible.
-
-        If not, an exception will be raised.
-
-        Executes some simple query, like ``SELECT 1``, in the database.
-
-        Examples
-        --------
-
-        Database is online:
-
-        .. code:: python
-
-            connection.check()
-
-        Database is offline or not accessible:
-
-        .. code:: python
-
-            connection.check()  # raises RuntimeError exception
-        """
-
-    @abstractmethod
     # Some heirs may have a different number of parameters.
     # For example, the 'options' parameter may be present. This is fine.
     def read_df(

@@ -18,7 +18,7 @@ Read data from MSSQL, transform & write to Hive.
     from onetl.connection import MSSQL, Hive
 
     # Import onETL classes to read & write data
-    from onetl.core import DBReader, DBWriter
+    from onetl.db import DBReader, DBWriter
 
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
@@ -80,7 +80,7 @@ Read data from MSSQL, transform & write to Hive.
 SFTP → HDFS
 -----------
 
-Download files from FTP & upload them to HDFS.
+Download files from SFTP & upload them to HDFS.
 
 .. code:: python
 
@@ -91,7 +91,11 @@ Download files from FTP & upload them to HDFS.
     from onetl.connection import SFTP, HDFS
 
     # Import onETL classes to download & upload files
-    from onetl.core import FileDownloader, FileUploader, FileFilter, FileLimit
+    from onetl.file import FileDownloader, FileUploader
+
+    # import filter & limit classes
+    from onetl.file.filter import Glob, ExcludeDir
+    from onetl.file.limit import MaxFilesCount
 
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
@@ -110,15 +114,15 @@ Download files from FTP & upload them to HDFS.
         connection=sftp,
         source_path="/remote/tests/Report",  # path on SFTP
         local_path="/local/onetl/Report",  # local fs path
-        filter=FileFilter(
-            glob="*.json",  # download only files matching the glob
-            exclude_dirs=[  # exclude files from those directories
-                "/remote/tests/Report/exclude_dir/",
-            ],
-        ),
-        limit=FileLimit(
-            count_limit=1000,  # download max 1000 files per run
-        ),
+        filters=[
+            Glob("*.csv"),  # download only files matching the glob
+            ExcludeDir(
+                "/remote/tests/Report/exclude_dir/"
+            ),  # exclude files from this directory
+        ],
+        limits=[
+            MaxFilesCount(1000),  # download max 1000 files per run
+        ],
         options=FileDownloader.Options(
             delete_source=True,  # delete files from SFTP after successful download
             mode="error",  # mark file as failed if it already exist in local_path
@@ -133,7 +137,10 @@ Download files from FTP & upload them to HDFS.
     download_result
 
     #  DownloadResult(
-    #      successful=[LocalPath('/local/onetl/Report/file_1.json'), LocalPath('/local/onetl/Report/file_2.json')],
+    #      successful=[
+    #          LocalPath('/local/onetl/Report/file_1.json'),
+    #          LocalPath('/local/onetl/Report/file_2.json'),
+    #      ],
     #      failed=[FailedRemoteFile('/remote/onetl/Report/file_3.json')],
     #      ignored=[RemoteFile('/remote/onetl/Report/file_4.json')],
     #      missing=[],
@@ -146,7 +153,10 @@ Download files from FTP & upload them to HDFS.
     renamed_files = my_rename_function(download_result.success)
 
     # function removed "_" from file names
-    # [LocalPath('/home/onetl/Report/file1.json'), LocalPath('/home/onetl/Report/file2.json')]
+    # [
+    #    LocalPath('/home/onetl/Report/file1.json'),
+    #    LocalPath('/home/onetl/Report/file2.json'),
+    # ]
 
     # Initiate HDFS connection
     hdfs = HDFS(

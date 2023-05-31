@@ -12,9 +12,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-teradata:
@@ -38,6 +41,7 @@ jobs:
 
     - name: Cache Ivy
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.ivy2
         key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py') }}
@@ -59,10 +63,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/tests/base.txt \
-          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Run tests
       run: |

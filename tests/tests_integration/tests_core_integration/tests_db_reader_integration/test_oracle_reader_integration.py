@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import Oracle
 from onetl.connection.db_connection.jdbc_connection import PartitioningMode
-from onetl.core import DBReader
+from onetl.db import DBReader
 
 pytestmark = pytest.mark.oracle
 

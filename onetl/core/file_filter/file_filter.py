@@ -17,8 +17,11 @@ from __future__ import annotations
 import glob
 import os
 import re
+import textwrap
+import warnings
 from typing import List, Optional, Union
 
+from deprecated import deprecated
 from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
@@ -26,8 +29,18 @@ from onetl.impl import FrozenModel, RemotePath
 from onetl.log import log_with_indent
 
 
+@deprecated(
+    version="0.8.0",
+    reason="Use Glob, Regexp or ExcludeDir instead. Will be removed in 1.0.0",
+    action="ignore",
+)
 class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
+
+    .. deprecated:: 0.8.0
+
+        Use :obj:`Glob <onetl.file.filter.glob.Glob>`, :obj:`Regexp <onetl.file.filter.regexp.Regexp>`
+        or :obj:`ExcludeDir <onetl.file.filter.exclude_dir.ExcludeDir>` instead.
 
     Parameters
     ----------
@@ -62,17 +75,23 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
     .. code:: python
 
+        from onetl.core import FileFilter
+
         file_filter = FileFilter(exclude_dirs=["/export/news_parse/exclude_dir"])
 
     Create glob filter:
 
     .. code:: python
 
+        from onetl.core import FileFilter
+
         file_filter = FileFilter(glob="*.csv")
 
     Create regexp filter:
 
     .. code:: python
+
+        from onetl.core import FileFilter
 
         file_filter = FileFilter(regexp=r"\d+\.csv")
 
@@ -85,6 +104,8 @@ class FileFilter(BaseFileFilter, FrozenModel):
     Not allowed:
 
     .. code:: python
+
+        from onetl.core import FileFilter
 
         FileFilter()  # will raise ValueError, at least one argument should be passed
     """
@@ -128,13 +149,62 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
         return value
 
+    @root_validator
+    def log_deprecated(cls, value: dict) -> dict:
+        imports = []
+        old_filters = []
+        new_filters = []
+        glob = value.get("glob")  # noqa: WPS442
+        if glob is not None:
+            imports.append("Glob")
+            old_filters.append(f"glob={glob!r}")
+            new_filters.append(f"Glob({glob!r})")
+
+        regexp = value.get("regexp")
+        if regexp is not None:
+            imports.append("Regexp")
+            old_filters.append(f"regexp={regexp.pattern!r}")
+            new_filters.append(f"Regexp({regexp.pattern!r})")
+
+        exclude_dirs = value.get("exclude_dirs")
+        if exclude_dirs:
+            imports.append("ExcludeDir")
+            exclude_dirs_str = [repr(os.fspath(exclude_dir)) for exclude_dir in exclude_dirs]
+            old_filters.append(f"exclude_dirs=[{', '.join(exclude_dirs_str)}]")
+            new_filters.extend(f"ExcludeDir({item})" for item in exclude_dirs_str)
+
+        if not imports:
+            return value
+
+        message = f"""
+            Using FileFilter is deprecated since v0.8.0 and will be removed in v1.0.0.
+
+            Please replace:
+                from onetl.core import FileFilter
+
+                filter=FileFilter({', '.join(old_filters)})
+
+            With:
+                from onetl.file.filter import {', '.join(imports)}
+
+                filters=[{', '.join(new_filters)}]
+        """
+
+        warnings.warn(
+            textwrap.dedent(message).strip(),
+            category=UserWarning,
+            stacklevel=3,  # 1 is current method, 2 is BaseModel internals, 3 is user code
+        )
+        return value
+
     def match(self, path: PathProtocol) -> bool:
         """False means it does not match the template by which you want to receive files"""
 
         if self.exclude_dirs:
-            path = path if path.is_dir() else path.parent
             for exclude_dir in self.exclude_dirs:
-                if exclude_dir in path.parents or exclude_dir == path:
+                if path.is_dir() and exclude_dir == path:
+                    return False
+                if exclude_dir in path.parents:
                     return False
 
         if self.glob and path.is_file():

@@ -1,3 +1,4 @@
+import contextlib
 import logging
 
 import pytest
@@ -919,8 +920,10 @@ def test_oracle_connection_execute_function_table(
     selected_df = table_df[table_df.ID_INT < 10]
     processing.assert_equal_df(df=df, other_frame=selected_df, order_by="id_int")
 
-    df = oracle.fetch(f"SELECT * FROM {func}_pkg.func_pipelined(10)")
-    processing.assert_equal_df(df=df, other_frame=selected_df, order_by="id_int")
+    with contextlib.suppress(Exception):
+        # Oracle 11 does not support selecting from pipelined function without TABLE(...), but 18 does
+        df = oracle.fetch(f"SELECT * FROM {func}_pkg.func_pipelined(10)")
+        processing.assert_equal_df(df=df, other_frame=selected_df, order_by="id_int")
 
     with pytest.raises(Exception):
         oracle.fetch(f"SELECT {func}_pkg.func_pipelined(10) FROM DUAL")

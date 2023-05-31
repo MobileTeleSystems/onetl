@@ -15,9 +15,12 @@ on:
         required: true
         type: string
       os:
-        required: false
+        required: true
         type: string
-        default: ubuntu-latest
+      with-cache:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test-mssql:
@@ -53,6 +56,7 @@ jobs:
 
     - name: Cache Ivy
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.ivy2
         key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-${{ hashFiles('onetl/connection/db_connection/*.py') }}
@@ -62,6 +66,7 @@ jobs:
 
     - name: Cache pip
       uses: actions/cache@v3
+      if: inputs.with-cache
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/mssql.txt', 'requirements/tests/spark-*.txt') }}
@@ -74,11 +79,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/tests/base.txt \
-          -r requirements/tests/mssql.txt \
-          -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/mssql.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Wait for MSSQL to be ready
       run: |

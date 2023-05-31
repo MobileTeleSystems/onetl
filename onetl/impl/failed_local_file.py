@@ -36,6 +36,18 @@ class FailedLocalFile(PathContainer[LocalPath]):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({os.fspath(self.path)!r}, {self.exception!r})"
 
+    def exists(self) -> bool:
+        return self.path.exists()
+
+    def is_file(self) -> bool:
+        return self.path.is_file()
+
+    def is_dir(self) -> bool:
+        return self.path.is_dir()
+
+    def stat(self) -> os.stat_result:
+        return self.path.stat()
+
     # exceptions are not allowed to compare, another small hack
     def _compare_tuple(self, args) -> tuple:
         return tuple(str(arg) if isinstance(arg, Exception) else arg for arg in args)
