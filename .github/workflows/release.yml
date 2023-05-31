@@ -59,10 +59,10 @@ jobs:
     - name: Fix Github links
       run: |
         # Replace Github links from Sphinx syntax with Markdown
-        sed -i -E "s/:github:issue:`(.*)`/#\1/g" changelog.rst
-        sed -i -E "s/:github:pull:`(.*)`/#\1/g" changelog.rst
-        sed -i -E "s/:github:user:`(.*)`/@\1/g" changelog.rst
-        sed -i -E "s/:github:org:`(.*)`/@\1/g" changelog.rst
+        sed -i -E 's/:github:issue:`(.*)`/#\1/g' changelog.rst
+        sed -i -E 's/:github:pull:`(.*)`/#\1/g' changelog.rst
+        sed -i -E 's/:github:user:`(.*)`/@\1/g' changelog.rst
+        sed -i -E 's/:github:org:`(.*)`/@\1/g' changelog.rst
 
     - name: Convert changelog to markdown
       uses: docker://pandoc/core:2.9
@@ -77,10 +77,10 @@ jobs:
     - name: Fix Github code blocks
       run: |
         # Replace ``` {.python caption="abc"} with ```python caption="abc"
-        sed -i -E "s/``` \{\.(.*)\}/```\1/g" changelog.md
+        sed -i -E 's/``` \{\.(.*)\}/```\1/g' changelog.md
 
         # Replace ``` python with ```python
-        sed -i -E "s/``` (\w+)/```\1/g" changelog.md
+        sed -i -E 's/``` (\w+)/```\1/g' changelog.md
 
     - name: Get release name
       id: release-name
@@ -92,7 +92,7 @@ jobs:
     - name: Fix headers
       run: |
         # Remove header with release name
-        sed -i -e "1,2d" changelog.md
+        sed -i -e '1,2d' changelog.md
 
     - name: Create Github release
       id: create_release
