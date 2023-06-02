@@ -58,7 +58,6 @@ def clear_statement(statement: str) -> str:
 
     if statement.lower().strip().endswith("end"):
         statement += ";"
-
     return statement
 
 

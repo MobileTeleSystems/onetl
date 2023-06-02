@@ -165,7 +165,6 @@ class FileSet(OrderedSet[T], Generic[T]):
             return "No files"
 
         file_number_str = f"{len(self)} files" if len(self) > 1 else "1 file"
-
         return f"{file_number_str} (size='{naturalsize(self.total_size)}')"
 
     @property
