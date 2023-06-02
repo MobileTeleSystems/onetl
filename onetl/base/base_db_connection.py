@@ -155,7 +155,7 @@ class BaseDBConnection(BaseConnection):
         end_at: Statement | None = None,
     ) -> DataFrame:
         """
-        Reads the source to dataframe.
+        Reads the source to dataframe. |support_hooks|
         """
 
     @abstractmethod
@@ -165,7 +165,7 @@ class BaseDBConnection(BaseConnection):
         target: str,
     ) -> None:
         """
-        Saves dataframe to a specific target
+        Saves dataframe to a specific target. |support_hooks|
         """
 
     @abstractmethod
@@ -178,5 +178,5 @@ class BaseDBConnection(BaseConnection):
         where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
-        Get MIN and MAX values for the column in the source
+        Get MIN and MAX values for the column in the source. |support_hooks|
         """

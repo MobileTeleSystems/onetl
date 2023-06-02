@@ -1,0 +1,1 @@
+Add documentation for HWM store ``.get`` and ``.save`` methods.

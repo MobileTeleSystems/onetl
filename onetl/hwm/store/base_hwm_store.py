@@ -29,6 +29,19 @@ log = logging.getLogger(__name__)
 
 class BaseHWMStore(BaseModel, ABC):
     def __enter__(self):
+        """
+        HWM store context manager.
+
+        Enter this context to use this HWM store instance as current one (instead default).
+
+        Examples
+        --------
+
+        .. code:: python
+
+            with hwm_store:
+                db_reader.run()
+        """
         # hack to avoid circular imports
         from onetl.hwm.store import HWMStoreManager
 
@@ -45,16 +58,56 @@ class BaseHWMStore(BaseModel, ABC):
         HWMStoreManager.pop()
         return False
 
-    def __str__(self):
-        return self.__class__.__name__
-
     @abstractmethod
     def get(self, name: str) -> HWM | None:
-        ...
+        """
+        Get HWM by qualified name from HWM store. |support_hooks|
+
+        Parameters
+        ----------
+        name : str
+            HWM qualified name
+
+        Returns
+        -------
+        HWM object, if it exists in HWM store, or None
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from etl_entities import IntHWM
+
+            # just to generate qualified name using HWM parts
+            empty_hwm = IntHWM(column=..., table=..., process=...)
+            real_hwm = hwm_store.get(empty_hwm.qualified_name)
+        """
 
     @abstractmethod
     def save(self, hwm: HWM) -> Any:
-        ...
+        """
+        Save HWM object to HWM Store. |support_hooks|
+
+        Parameters
+        ----------
+        hwm : :obj:`etl_entities.hwm.HWM`
+            HWM object
+
+        Returns
+        -------
+        HWM location, like URL of file path.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from etl_entities import IntHWM
+
+            hwm = IntHWM(value=..., column=..., table=..., process=...)
+            hwm_location = hwm_store.save(hwm)
+        """
 
     def _log_parameters(self) -> None:
         log.info("|onETL| Using %s as HWM Store", self.__class__.__name__)

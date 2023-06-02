@@ -26,6 +26,7 @@ from pydantic import SecretStr
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath, RemotePath
 from onetl.impl.remote_path_stat import RemotePathStat
 
@@ -50,8 +51,9 @@ except (ImportError, NameError) as e:
 log = getLogger(__name__)
 
 
+@support_hooks
 class FTP(FileConnection, RenameDirMixin):
-    """FTP file connection.
+    """FTP file connection. |support_hooks|
 
     Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
 
@@ -111,6 +113,7 @@ class FTP(FileConnection, RenameDirMixin):
     def instance_url(self) -> str:
         return f"ftp://{self.host}:{self.port}"
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.path.exists(os.fspath(path))
 

@@ -29,6 +29,7 @@ from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 try:
@@ -52,8 +53,9 @@ log = getLogger(__name__)
 DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
+@support_hooks
 class WebDAV(FileConnection, RenameDirMixin):
-    """WebDAV file connection.
+    """WebDAV file connection. |support_hooks|
 
     Based on `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_.
 
@@ -135,6 +137,7 @@ class WebDAV(FileConnection, RenameDirMixin):
     def instance_url(self) -> str:
         return f"webdav://{self.host}:{self.port}"
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.check(os.fspath(path))
 

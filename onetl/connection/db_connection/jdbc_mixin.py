@@ -24,6 +24,7 @@ from pydantic import Field, SecretStr
 
 from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
 from onetl.exception import MISSING_JVM_CLASS_MSG
+from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import log_lines
 
@@ -51,6 +52,7 @@ class StatementType(Enum):
     CALL = auto()
 
 
+@support_hooks
 class JDBCMixin(FrozenModel):
     """
     Compatibility layer between Python and Java SQL Module.
@@ -107,9 +109,10 @@ class JDBCMixin(FrozenModel):
     def jdbc_url(self) -> str:
         """JDBC Connection URL"""
 
+    @slot
     def close(self):
         """
-        Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods.
+        Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods. |support_hooks|
 
         Examples
         --------
@@ -142,6 +145,7 @@ class JDBCMixin(FrozenModel):
         # If current object is collected by GC, close all opened connections
         self.close()
 
+    @slot
     def check(self):
         self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
@@ -159,13 +163,14 @@ class JDBCMixin(FrozenModel):
 
         return self
 
+    @slot
     def fetch(
         self,
         query: str,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> DataFrame:
         """
-        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame.
+        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. |support_hooks|
 
         Works almost the same like :obj:`~sql`, but calls JDBC driver directly.
 
@@ -257,13 +262,14 @@ class JDBCMixin(FrozenModel):
         )
         return df
 
+    @slot
     def execute(
         self,
         statement: str,
         options: JDBCMixin.JDBCOptions | dict | None = None,
     ) -> DataFrame | None:
         """
-        **Immediately** execute DDL, DML or procedure/function **on Spark driver**.
+        **Immediately** execute DDL, DML or procedure/function **on Spark driver**. |support_hooks|
 
         Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
         In other cases returns ``None``.

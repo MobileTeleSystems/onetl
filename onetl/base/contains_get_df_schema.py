@@ -34,6 +34,6 @@ class ContainsGetDFSchemaMethod(Protocol):
         columns: list[str] | None = None,
     ) -> StructType:
         """
-        Description of the dataframe schema.
+        Description of the dataframe schema. |support_hooks|
         """
         ...

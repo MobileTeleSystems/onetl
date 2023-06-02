@@ -19,13 +19,15 @@ from typing import Dict
 from etl_entities import HWM
 from pydantic import PrivateAttr
 
+from onetl.hooks import slot, support_hooks
 from onetl.hwm.store.base_hwm_store import BaseHWMStore
 from onetl.hwm.store.hwm_store_class_registry import register_hwm_store_class
 
 
 @register_hwm_store_class("memory", "in-memory")
+@support_hooks
 class MemoryHWMStore(BaseHWMStore):
-    """In-memory local store for HWM values
+    """In-memory local store for HWM values. |support_hooks|
 
     .. note::
 
@@ -81,11 +83,17 @@ class MemoryHWMStore(BaseHWMStore):
 
     _data: Dict[str, HWM] = PrivateAttr(default_factory=dict)
 
+    @slot
     def get(self, name: str) -> HWM | None:
         return self._data.get(name, None)
 
+    @slot
     def save(self, hwm: HWM) -> None:
         self._data[hwm.qualified_name] = hwm
 
+    @slot
     def clear(self) -> None:
+        """
+        Clears all stored HWM values. |support_hooks|
+        """
         self._data.clear()

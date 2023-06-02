@@ -21,6 +21,7 @@ from etl_entities import Table
 from pydantic import Field, validator
 
 from onetl.base import BaseDBConnection
+from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
@@ -35,8 +36,9 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
+@support_hooks
 class DBWriter(FrozenModel):
-    """Class specifies schema and table where you can write your dataframe.
+    """Class specifies schema and table where you can write your dataframe. |support_hooks|
 
     Parameters
     ----------
@@ -174,9 +176,10 @@ class DBWriter(FrozenModel):
 
         return None
 
+    @slot
     def run(self, df: DataFrame):
         """
-        Method for writing your df to specified target.
+        Method for writing your df to specified target. |support_hooks|
 
         Parameters
         ----------
