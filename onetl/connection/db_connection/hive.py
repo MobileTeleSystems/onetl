@@ -66,6 +66,7 @@ class HiveWriteMode(str, Enum):
             return cls.OVERWRITE_PARTITIONS
 
 
+@support_hooks
 class Hive(DBConnection):
     """Spark connection with Hive MetaStore support. |support_hooks|
 
@@ -525,10 +526,11 @@ class Hive(DBConnection):
 
         return validated_cluster
 
+    @slot
     @classmethod
     def get_current(cls, spark: SparkSession):
         """
-        Create connection for current cluster.
+        Create connection for current cluster. |support_hooks|
 
         .. note::
 
@@ -568,6 +570,7 @@ class Hive(DBConnection):
     def instance_url(self) -> str:
         return self.cluster
 
+    @slot
     def check(self):
         log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
         current_cluster = self.slots.get_current_cluster()
@@ -589,12 +592,13 @@ class Hive(DBConnection):
 
         return self
 
+    @slot
     def sql(
         self,
         query: str,
     ) -> DataFrame:
         """
-        Lazily execute SELECT statement and return DataFrame.
+        Lazily execute SELECT statement and return DataFrame. |support_hooks|
 
         Same as ``spark.sql(query)``.
 
@@ -635,12 +639,13 @@ class Hive(DBConnection):
         log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
+    @slot
     def execute(
         self,
         statement: str,
     ) -> None:
         """
-        Execute DDL or DML statement.
+        Execute DDL or DML statement. |support_hooks|
 
         Parameters
         ----------
@@ -693,6 +698,7 @@ class Hive(DBConnection):
         self._execute_sql(statement).collect()
         log.info("|%s| Call succeeded", self.__class__.__name__)
 
+    @slot
     def write_df(
         self,
         df: DataFrame,
@@ -718,6 +724,7 @@ class Hive(DBConnection):
             # mode="overwrite_table" should be used
             self._save_as_table(df, target, options)
 
+    @slot
     def read_df(
         self,
         source: str,
@@ -738,6 +745,7 @@ class Hive(DBConnection):
 
         return self.sql(sql_text)
 
+    @slot
     def get_df_schema(
         self,
         source: str,
@@ -753,6 +761,7 @@ class Hive(DBConnection):
         log.info("|%s| Schema fetched", self.__class__.__name__)
         return df.schema
 
+    @slot
     def get_min_max_bounds(
         self,
         source: str,

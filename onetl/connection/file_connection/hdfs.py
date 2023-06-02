@@ -54,8 +54,9 @@ log = getLogger(__name__)
 ENTRY_TYPE = Tuple[str, dict]
 
 
+@support_hooks
 class HDFS(FileConnection, RenameDirMixin):
-    """HDFS file connection.
+    """HDFS file connection. |support_hooks|
 
     Powered by `HDFS Python client <https://pypi.org/project/hdfs/>`_.
 
@@ -573,10 +574,11 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return values
 
+    @slot
     @classmethod
     def get_current(cls, **kwargs):
         """
-        Create connection for current cluster.
+        Create connection for current cluster. |support_hooks|
 
         Automatically sets up current cluster name as ``cluster``.
 
@@ -621,6 +623,7 @@ class HDFS(FileConnection, RenameDirMixin):
             return self.cluster
         return f"hdfs://{self.host}:{self.webhdfs_port}"
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
 

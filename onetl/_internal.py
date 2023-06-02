@@ -55,7 +55,6 @@ def clear_statement(statement: str) -> str:
     """
 
     statement = statement.rstrip().lstrip("\n\r").rstrip(";")
-
     if statement.lower().strip().endswith("end"):
         statement += ";"
     return statement

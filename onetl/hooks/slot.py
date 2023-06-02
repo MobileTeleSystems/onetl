@@ -6,7 +6,6 @@ import textwrap
 from collections import defaultdict
 from contextlib import ExitStack, suppress
 from functools import partial, wraps
-from types import FunctionType
 from typing import Any, Callable, ContextManager, TypeVar
 
 from typing_extensions import Protocol
@@ -31,7 +30,7 @@ def _unwrap_method(method: Callable) -> Callable:
 def get_hooks(cls: type, method_name: str) -> HookCollection:
     """Return all hooks registered for a specific method"""
 
-    method = _unwrap_method(cls.__dict__[method_name])
+    method = _unwrap_method(cls.__dict__.get(method_name, None))
     return getattr(method, "__hooks__", HookCollection())
 
 
@@ -446,7 +445,8 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
 
 def _is_method(method: Callable) -> bool:
     """Checks whether class method is callable"""
-    return isinstance(method, (FunctionType, classmethod, staticmethod))
+    method = _unwrap_method(method)
+    return callable(method)
 
 
 def _is_private(method: Callable) -> bool:

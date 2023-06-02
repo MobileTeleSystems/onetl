@@ -35,6 +35,7 @@ from onetl.exception import (
 )
 from onetl.file.filter import match_all_filters
 from onetl.file.limit import limits_reached, limits_stop_at, reset_limits
+from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FrozenModel,
     LocalPath,
@@ -48,6 +49,7 @@ from onetl.log import log_with_indent
 log = getLogger(__name__)
 
 
+@support_hooks
 class FileConnection(BaseFileConnection, FrozenModel):
     _client: Any = None
 
@@ -60,6 +62,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         self._client = client
         return client
 
+    @slot
     def close(self):
         """
         Close all connections, opened by other methods call.
@@ -94,6 +97,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
     def __exit__(self, _exc_type, _exc_value, _traceback):
         self.close()
 
+    @slot
     def check(self):
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
@@ -111,6 +115,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self
 
+    @slot
     def is_file(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(path)
 
@@ -119,6 +124,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self._is_file(remote_path)
 
+    @slot
     def is_dir(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(path)
 
@@ -127,10 +133,12 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self._is_dir(remote_path)
 
+    @slot
     def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         remote_path = RemotePath(path)
         return self._get_stat(remote_path)
 
+    @slot
     def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
@@ -142,6 +150,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return RemoteDirectory(path=path, stats=stat)
 
+    @slot
     def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
         stat = self.get_stat(path)
@@ -152,6 +161,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return remote_path
 
+    @slot
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
         log.debug(
             "|%s| Reading string with encoding %r and options %r from '%s'",
@@ -164,12 +174,14 @@ class FileConnection(BaseFileConnection, FrozenModel):
         remote_path = self.resolve_file(path)
         return self._read_text(remote_path, encoding=encoding, **kwargs)
 
+    @slot
     def read_bytes(self, path: os.PathLike | str, **kwargs) -> bytes:
         log.debug("|%s| Reading bytes with options %r from '%s'", self.__class__.__name__, kwargs, path)
 
         remote_path = self.resolve_file(path)
         return self._read_bytes(remote_path, **kwargs)
 
+    @slot
     def write_text(self, path: os.PathLike | str, content: str, encoding: str = "utf-8", **kwargs) -> RemoteFile:
         if not isinstance(content, str):
             raise TypeError(f"content must be str, not '{content.__class__.__name__}'")
@@ -198,6 +210,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self.resolve_file(remote_path)
 
+    @slot
     def write_bytes(self, path: os.PathLike | str, content: bytes, **kwargs) -> RemoteFile:
         if not isinstance(content, bytes):
             raise TypeError(f"content must be bytes, not '{content.__class__.__name__}'")
@@ -225,6 +238,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self.resolve_file(remote_path)
 
+    @slot
     def download_file(
         self,
         remote_file_path: os.PathLike | str,
@@ -264,6 +278,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         log.info("|Local FS| Successfully downloaded file '%s'", local_file)
         return local_file
 
+    @slot
     def remove_file(self, path: os.PathLike | str) -> bool:
         log.debug("|%s| Removing file '%s'", self.__class__.__name__, path)
 
@@ -278,6 +293,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         log.info("|%s| Successfully removed file '%s'", self.__class__.__name__, file)
         return True
 
+    @slot
     def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         log.debug("|%s| Creating directory '%s'", self.__class__.__name__, path)
         remote_dir = RemotePath(path)
@@ -289,6 +305,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_dir)
         return self.resolve_dir(remote_dir)
 
+    @slot
     def upload_file(
         self,
         local_file_path: os.PathLike | str,
@@ -327,6 +344,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         log.info("|%s| Successfully uploaded file '%s'", self.__class__.__name__, remote_file)
         return result
 
+    @slot
     def rename_file(
         self,
         source_file_path: os.PathLike | str,
@@ -352,6 +370,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return self.resolve_file(target_file)
 
+    @slot
     def list_dir(
         self,
         path: os.PathLike | str,
@@ -382,6 +401,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         return result
 
+    @slot
     def walk(
         self,
         root: os.PathLike | str,
@@ -395,6 +415,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         limits = reset_limits(limits or [])
         yield from self._walk(root_dir, topdown=topdown, filters=filters, limits=limits)
 
+    @slot
     def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:
         description = "RECURSIVELY" if recursive else "NON-recursively"
         log.debug("|%s| %s removing directory '%s'", self.__class__.__name__, description, path)

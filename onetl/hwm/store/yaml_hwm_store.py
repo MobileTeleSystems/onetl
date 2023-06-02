@@ -23,6 +23,7 @@ from etl_entities import HWM, HWMTypeRegistry
 from platformdirs import user_data_dir
 from pydantic import validator
 
+from onetl.hooks import slot, support_hooks
 from onetl.hwm.store.base_hwm_store import BaseHWMStore
 from onetl.hwm.store.hwm_store_class_registry import (
     default_hwm_store_class,
@@ -35,8 +36,9 @@ DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
 @default_hwm_store_class
 @register_hwm_store_class("yaml", "yml")
+@support_hooks
 class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML local store for HWM values. Used as default HWM store.
+    r"""YAML local store for HWM values. Used as default HWM store. |support_hooks|
 
     Parameters
     ----------
@@ -166,6 +168,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    @slot
     def get(self, name: str) -> HWM | None:
         data = self._load(name)
 
@@ -175,6 +178,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
         return HWMTypeRegistry.parse(latest)
 
+    @slot
     def save(self, hwm: HWM) -> LocalPath:
         data = self._load(hwm.qualified_name)
         self._dump(hwm.qualified_name, [hwm.serialize()] + data)

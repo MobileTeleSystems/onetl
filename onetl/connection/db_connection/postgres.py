@@ -34,7 +34,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class Postgres(JDBCConnection):
-    """PostgreSQL JDBC connection.
+    """PostgreSQL JDBC connection. |support_hooks|
 
     Based on Maven package ``org.postgresql:postgresql:42.6.0``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
