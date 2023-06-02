@@ -1,0 +1,6 @@
+Improve Contributing guide:
+
+* Move ``Develop`` section from Readme
+* Move ``docs/changelog/README.rst`` content
+* Add ``Limitations`` section
+* Add instruction of creating a fork and building documentation
