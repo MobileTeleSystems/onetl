@@ -46,13 +46,11 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
 def test_db_options_warn_for_unknown(options_class, options_class_name, known_options, caplog):
     with caplog.at_level(logging.WARNING):
         options_class(some_unknown_option="value", **known_options)
-
         assert (
             f"Options ['some_unknown_option'] are not known by {options_class_name}, are you sure they are valid?"
         ) in caplog.text
 
         options_class(option1="value1", option2=None, **known_options)
-
         assert (
             f"Options ['option1', 'option2'] are not known by {options_class_name}, are you sure they are valid?"
         ) in caplog.text

@@ -60,7 +60,7 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
     return result
 
 
-def bind_hook(method: Hook, inp=None):
+def bind_hook(method: Callable, inp=None):
     """
     Bind a hook to the slot.
 
@@ -110,7 +110,7 @@ def bind_hook(method: Hook, inp=None):
         logger.debug(
             "|onETL| Registered hook '%s.%s' for '%s' (enabled=%r, priority=%s)",
             hook.__module__,
-            hook.__qualname__,
+            hook.__qualname__,  # type: ignore[attr-defined]
             method.__qualname__,
             hook.enabled,
             hook.priority,
@@ -326,7 +326,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                     "|Hooks| %sCalling hook '%s.%s' (%d of %d)",
                     " " * indent,
                     hook.__module__,
-                    hook.__qualname__,
+                    hook.__qualname__,  # type: ignore[attr-defined]
                     i + 1,
                     hooks_count,
                 )
@@ -394,7 +394,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                     " " * indent,
                     call_result,
                     before_hook.__module__,
-                    before_hook.__qualname__,
+                    before_hook.__qualname__,  # type: ignore[attr-defined]
                 )
                 result = before_result
 
@@ -405,7 +405,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                         "|Hooks| %sPassing result to 'process_result' method of context manager '%s.%s'",
                         " " * indent,
                         hook.__module__,
-                        hook.__qualname__,
+                        hook.__qualname__,  # type: ignore[attr-defined]
                     )
                     context_result = _handle_context_result(
                         result=result,
