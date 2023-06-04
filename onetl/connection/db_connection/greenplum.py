@@ -43,6 +43,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
+from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_lines, log_with_indent
@@ -121,8 +122,9 @@ class ConnectionLimits:
         ).strip()
 
 
+@support_hooks
 class Greenplum(JDBCMixin, DBConnection):
-    """Greenplum connection.
+    """Greenplum connection. |support_hooks|
 
     Based on package ``io.pivotal:greenplum-spark:2.1.4``
     (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1287433/file_groups/13260>`_).
@@ -486,6 +488,7 @@ class Greenplum(JDBCMixin, DBConnection):
         parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
+    @slot
     def read_df(
         self,
         source: str,
@@ -516,6 +519,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
+    @slot
     def write_df(
         self,
         df: DataFrame,
@@ -536,6 +540,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         log.info("|%s| Table %r is successfully written", self.__class__.__name__, target)
 
+    @slot
     def get_df_schema(
         self,
         source: str,
@@ -555,6 +560,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return df.schema
 
+    @slot
     def get_min_max_bounds(
         self,
         source: str,

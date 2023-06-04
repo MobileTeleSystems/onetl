@@ -54,7 +54,7 @@ class TLSfix(ftplib.FTP_TLS):  # noqa: N801
 
 
 class FTPS(FTP):
-    """FTPS file connection.
+    """FTPS file connection. |support_hooks|
 
     Based on `FTPUtil library <https://pypi.org/project/ftputil/>`_.
 

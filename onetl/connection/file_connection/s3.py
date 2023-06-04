@@ -20,6 +20,8 @@ import textwrap
 from logging import getLogger
 from typing import Any, Optional, Union
 
+from onetl.hooks import slot, support_hooks
+
 try:
     from minio import Minio, commonconfig
     from minio.datatypes import Object
@@ -48,8 +50,9 @@ from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
 log = getLogger(__name__)
 
 
+@support_hooks
 class S3(FileConnection):
-    """S3 file connection.
+    """S3 file connection. |support_hooks|
 
     Based on `minio-py client <https://pypi.org/project/minio/>`_.
 
@@ -131,6 +134,7 @@ class S3(FileConnection):
     def instance_url(self) -> str:
         return f"s3://{self.host}:{self.port}"
 
+    @slot
     def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
         # and the method must return the created directory
@@ -145,6 +149,7 @@ class S3(FileConnection):
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(os.fspath(path))
         if self._is_root(remote_path):

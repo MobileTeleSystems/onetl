@@ -23,7 +23,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class MySQL(JDBCConnection):
-    """MySQL JDBC connection.
+    """MySQL JDBC connection. |support_hooks|
 
     Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).

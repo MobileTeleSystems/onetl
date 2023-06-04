@@ -36,6 +36,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
     SupportTableWithDBSchema,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
+from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.impl.generic_options import GenericOptions
 from onetl.log import log_lines, log_with_indent
@@ -134,7 +135,8 @@ class PartitioningMode(str, Enum):
         return str(self.value)
 
 
-class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS338
+@support_hooks
+class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
     class Extra(GenericOptions):
         class Config:
             extra = "allow"
@@ -549,23 +551,14 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
-    def _query_on_executor(
-        self,
-        query: str,
-        options: ReadOptions,
-    ) -> DataFrame:
-        jdbc_params = self.options_to_jdbc_params(options)
-        jdbc_params.pop("mode", None)
-
-        return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
-
+    @slot
     def sql(
         self,
         query: str,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
         """
-        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame.
+        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. |support_hooks|
 
         Same as ``spark.read.jdbc(query)``.
 
@@ -636,6 +629,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
+    @slot
     def read_df(
         self,
         source: str,
@@ -683,6 +677,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
         return result
 
+    @slot
     def write_df(
         self,
         df: DataFrame,
@@ -695,6 +690,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         df.write.jdbc(table=target, **write_options)
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
+    @slot
     def get_df_schema(
         self,
         source: str,
@@ -746,6 +742,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
 
         return result
 
+    @slot
     def get_min_max_bounds(
         self,
         source: str,
@@ -788,6 +785,16 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):  # noqa: WPS
         log_with_indent("MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
+
+    def _query_on_executor(
+        self,
+        query: str,
+        options: ReadOptions,
+    ) -> DataFrame:
+        jdbc_params = self.options_to_jdbc_params(options)
+        jdbc_params.pop("mode", None)
+
+        return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
 
     def _exclude_partition_options(
         self,

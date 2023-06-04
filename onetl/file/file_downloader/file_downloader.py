@@ -30,6 +30,7 @@ from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_downloader.download_result import DownloadResult
 from onetl.file.file_set import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
+from onetl.hooks import slot, support_hooks
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
@@ -58,9 +59,10 @@ log = logging.getLogger(__name__)
 DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath]]]
 
 
+@support_hooks
 class FileDownloader(FrozenModel):
     """Allows you to download files from a remote source with specified file connection
-    and parameters, and return an object with download result summary.
+    and parameters, and return an object with download result summary. |support_hooks|
 
     .. note::
 
@@ -231,9 +233,10 @@ class FileDownloader(FrozenModel):
 
     options: Options = Options()
 
+    @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
-        Method for downloading files from source to local directory.
+        Method for downloading files from source to local directory. |support_hooks|
 
         .. note::
 
@@ -389,10 +392,11 @@ class FileDownloader(FrozenModel):
         self._log_result(result)
         return result
 
+    @slot
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the ``source_path``,
-        after ``filter``, ``limit`` and ``hwm`` applied (if any).
+        after ``filter``, ``limit`` and ``hwm`` applied (if any). |support_hooks|
 
         .. note::
 

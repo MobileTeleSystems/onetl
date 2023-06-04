@@ -23,7 +23,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class MSSQL(JDBCConnection):
-    """MSSQL JDBC connection.
+    """MSSQL JDBC connection. |support_hooks|
 
     Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8``
     (`official MSSQL JDBC driver

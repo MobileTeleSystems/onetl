@@ -25,6 +25,7 @@ from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_mover.move_result import MoveResult
 from onetl.file.file_set import FileSet
+from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
     FileWriteMode,
@@ -48,9 +49,10 @@ log = logging.getLogger(__name__)
 MOVE_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, RemotePath]]
 
 
+@support_hooks
 class FileMover(FrozenModel):
     """Allows you to move files between different directories in a filesystem,
-    and return an object with move result summary.
+    and return an object with move result summary. |support_hooks|
 
     .. note::
 
@@ -164,9 +166,10 @@ class FileMover(FrozenModel):
 
     options: Options = Options()
 
+    @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231
         """
-        Method for moving files from source to target directory.
+        Method for moving files from source to target directory. |support_hooks|
 
         Parameters
         ----------
@@ -304,10 +307,11 @@ class FileMover(FrozenModel):
         self._log_result(result)
         return result
 
+    @slot
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the ``source_path``,
-        after ``filter`` and ``limit`` applied (if any).
+        after ``filter`` and ``limit`` applied (if any). |support_hooks|
 
         Raises
         -------

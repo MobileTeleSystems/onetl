@@ -6,4 +6,4 @@ In-memory HWM Store (ephemeral)
 .. currentmodule:: onetl.hwm.store.memory_hwm_store
 
 .. autoclass:: MemoryHWMStore
-    :members: __init__
+    :members: get, save, clear, __enter__

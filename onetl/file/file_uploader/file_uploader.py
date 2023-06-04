@@ -26,6 +26,7 @@ from onetl.base import BaseFileConnection
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file.file_set import FileSet
 from onetl.file.file_uploader.upload_result import UploadResult
+from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedLocalFile,
     FileWriteMode,
@@ -43,9 +44,10 @@ log = logging.getLogger(__name__)
 UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]]]
 
 
+@support_hooks
 class FileUploader(FrozenModel):
     """Allows you to upload files to a remote source with specified file connection
-    and parameters, and return an object with upload result summary.
+    and parameters, and return an object with upload result summary. |support_hooks|
 
     .. note::
 
@@ -158,9 +160,10 @@ class FileUploader(FrozenModel):
 
     options: Options = Options()
 
+    @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
-        Method for uploading files to remote host.
+        Method for uploading files to remote host. |support_hooks|
 
         Parameters
         ----------
@@ -318,9 +321,10 @@ class FileUploader(FrozenModel):
         self._log_result(result)
         return result
 
+    @slot
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file list in the ``local_path``.
+        Get file list in the ``local_path``. |support_hooks|
 
         Raises
         -------

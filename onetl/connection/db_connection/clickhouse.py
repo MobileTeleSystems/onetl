@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class Clickhouse(JDBCConnection):
-    """Clickhouse JDBC connection.
+    """Clickhouse JDBC connection. |support_hooks|
 
     Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
