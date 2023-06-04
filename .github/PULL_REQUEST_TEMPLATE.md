@@ -20,5 +20,5 @@
 * [ ] Tests pass on CI and coverage does not decrease
 * [ ] Documentation reflects the changes where applicable
 * [ ] `docs/changelog/next_release/<pull request or issue id>.<change type>.rst` file added describing change
-  (see [docs/changelog/README.rst](https://github.com/MobileTeleSystems/onetl/blob/develop/docs/changelog/README.rst) for details.)
+  (see [CONTRIBUTING.rst](https://github.com/MobileTeleSystems/onetl/blob/develop/CONTRIBUTING.rst) for details.)
 * [ ] My PR is ready to review.

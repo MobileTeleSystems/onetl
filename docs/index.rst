@@ -71,6 +71,5 @@
     :hidden:
 
     changelog
-    develop
-    security
     contributing
+    security
