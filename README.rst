@@ -45,7 +45,7 @@ Non-goals
 ---------
 
 * onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and simplifies UX for end users.
-* onETL is not a framework, as it does not have requirements to project structure, naming, the way of running ETL/ELT processes, configuration, etc. All of that is out of scope, and should be implemented separately.
+* onETL is not a framework, as it does not have requirements to project structure, naming, the way of running ETL/ELT processes, configuration, etc. All of that should be implemented in some other tool.
 * onETL is deliberately developed without any integration with scheduling software like Apache Airflow. All integrations should be implemented as separated tools.
 
 Requirements
