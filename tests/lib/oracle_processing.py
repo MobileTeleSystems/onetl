@@ -172,6 +172,6 @@ class OracleProcessing(BaseProcessing):
                 # I'm not sure why, but something does not support reading milliseconds from Oracle.
                 # It's probably Oracle JDBC Dialect, but I'm not sure.
                 # Just cut them off.
-                df[column] = pandas.to_datetime(df[column], format="ISO8601").dt.floor("S")
+                df[column] = df[column].astype("datetime64[ns]").dt.floor("S")
 
         return df
