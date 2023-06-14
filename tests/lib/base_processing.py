@@ -190,10 +190,10 @@ class BaseProcessing(ABC):
 
             if "datetime" in column_name:
                 # See fix_pyspark_df
-                df[column] = df[column].astype("datetime64[ns]")
+                df[column] = pandas.to_datetime(df[column], format="ISO8601")
             elif "date" in column_name:
                 # See fix_pyspark_df
-                df[column] = df[column].astype("datetime64[ns]").dt.date
+                df[column] = pandas.to_datetime(df[column], format="ISO8601").dt.date
 
         return df
 
