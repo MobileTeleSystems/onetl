@@ -28,7 +28,7 @@ repos:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.4
+  rev: v2.2.5
   hooks:
   - id: codespell
     args: [-w]
@@ -59,7 +59,7 @@ repos:
   - id: rst-inline-touching-normal
   - id: text-unicode-replacement-char
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.6.0
+  rev: v3.7.0
   hooks:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
@@ -69,7 +69,7 @@ repos:
   - id: black
     language_version: python3
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.13.0
+  rev: 1.14.0
   hooks:
   - id: blacken-docs
 - repo: meta
