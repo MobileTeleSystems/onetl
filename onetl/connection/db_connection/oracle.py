@@ -359,7 +359,7 @@ class Oracle(JDBCConnection):
         So this method is fetching errors from the system views:
         1. ``SELECT * FROM ALL_ERRORS``
         2. Parse resulting dataframe into list of compilation errors
-        3. Generage error message from errors list
+        3. Generate error message from errors list
         4. If there are records with ``ERROR`` level, method throws ValueError, otherwise prints warning to log
         """
 
