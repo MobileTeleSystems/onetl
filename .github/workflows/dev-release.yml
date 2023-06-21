@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'MobileTeleSystems/onetl'  # prevent running on forks
 
+    environment:
+      name: test-pypi
+      url: https://test.pypi.org/p/onetl
     permissions:
       id-token: write
 
