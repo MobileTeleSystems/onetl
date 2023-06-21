@@ -25,7 +25,7 @@ jobs:
       name: test-pypi
       url: https://test.pypi.org/p/onetl
     permissions:
-      id-token: write
+      id-token: write # to auth in Test PyPI
 
     steps:
     - name: Checkout code
