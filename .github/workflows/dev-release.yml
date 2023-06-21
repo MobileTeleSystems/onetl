@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'MobileTeleSystems/onetl'  # prevent running on forks
 
+    permissions:
+      id-token: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
