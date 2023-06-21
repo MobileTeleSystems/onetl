@@ -13,8 +13,13 @@ jobs:
     name: Release package
     runs-on: ubuntu-latest
     if: github.repository == 'MobileTeleSystems/onetl'  # prevent running on forks
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/onetl
     permissions:
-      contents: write # to make release
+      id-token: write # to auth in PyPI
+      contents: write # to create Github release
 
     steps:
     - name: Checkout code
