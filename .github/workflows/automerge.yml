@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: alexwilson/enable-github-automerge-action@1.0.0
       with:
-        github-token: ${{ secrets.PERSONAL_TOKEN }}
+        github-token: ${{ secrets.AUTOMERGE_TOKEN }}
         merge-method: REBASE
 
   autoapprove:
@@ -24,4 +24,4 @@ jobs:
     steps:
     - uses: hmarr/auto-approve-action@v3
       with:
-        github-token: ${{ secrets.PERSONAL_TOKEN }}
+        github-token: ${{ secrets.AUTOMERGE_TOKEN }}
