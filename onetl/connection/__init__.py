@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from onetl.connection.db_connection.oracle import Oracle
     from onetl.connection.db_connection.postgres import Postgres
     from onetl.connection.db_connection.teradata import Teradata
+    from onetl.connection.db_connection.kafka import Kafka
     from onetl.connection.file_connection.ftp import FTP
     from onetl.connection.file_connection.ftps import FTPS
     from onetl.connection.file_connection.hdfs import HDFS
@@ -46,6 +47,7 @@ db_connection_modules = {
     "Oracle": "oracle",
     "Postgres": "postgres",
     "Teradata": "teradata",
+    "Kafka": "kafka",
 }
 
 file_connections_modules = {
