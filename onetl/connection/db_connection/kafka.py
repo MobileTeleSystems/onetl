@@ -16,14 +16,14 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
 from pydantic import SecretStr, root_validator, validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.hwm import Statement
-from onetl.impl import LocalPath
+from onetl.impl import LocalPath, path_repr
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -37,16 +37,20 @@ class Kafka(DBConnection):
     """
     This connector is designed to read and write from Kafka in batch mode.
 
+    Based on Maven package ``spark-sql-kafka-0-10_2.11-2.3.0.jar``
+    (`official Kafka 0.10+ Source For Structured Streaming
+    driver <https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.11/2.3.0/spark-sql-kafka-0-10_2.11-2.3.0.jar>`_).
+
     .. dropdown:: Version compatibility
 
         * Apache Kafka versions: 0.10 or higher
-        * Spark versions: 2.0.x - 3.3.x
+        * Spark versions: 2.3.x - 3.4.x
 
     Parameters
     ----------
 
     addresses : list[str]
-        A list of broker addresses, for example [192.168.1.10:9092, 192.168.1.11:9092].
+        A list of broker addresses, for example ``[192.168.1.10:9092, 192.168.1.11:9092]``.
         The list cannot be empty.
 
     cluster : Cluster
@@ -63,10 +67,16 @@ class Kafka(DBConnection):
         are derived from the Kerberos password. You can use this file to log on to Kerberos without being prompted for
         a password.
 
+    .. warning::
+
+        When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
+        these parameters for anonymous connection are not specified at all.
+
     Examples
     --------
 
     .. code:: python
+
         kafka = Kafka(
             addresses=["mybroker:9020", "anotherbroker:9020"],
             cluster="mycluster",
@@ -76,6 +86,7 @@ class Kafka(DBConnection):
         )
 
     .. code:: python
+
         kafka = Kafka(
             addresses=["mybroker:9020", "anotherbroker:9020"],
             cluster="mycluster",
@@ -86,45 +97,20 @@ class Kafka(DBConnection):
 
     """
 
-    package_spark_2_0_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.0.2"  # noqa: WPS114
-    package_spark_2_1_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.0"  # noqa: WPS114
-    package_spark_2_1_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1"  # noqa: WPS114
-    package_spark_2_1_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.2"  # noqa: WPS114
-    package_spark_2_1_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.3"  # noqa: WPS114
-    package_spark_2_2_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0"  # noqa: WPS114
-    package_spark_2_2_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.1"  # noqa: WPS114
-    package_spark_2_2_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.2"  # noqa: WPS114
-    package_spark_2_2_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.3"  # noqa: WPS114
-    package_spark_2_3_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.0"  # noqa: WPS114
-    package_spark_2_3_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1"  # noqa: WPS114
-    package_spark_2_3_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.2"  # noqa: WPS114
-    package_spark_2_3_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.3"  # noqa: WPS114
-    package_spark_2_3_4: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.4"  # noqa: WPS114
-    package_spark_2_4_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0"  # noqa: WPS114
-    package_spark_2_4_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1"  # noqa: WPS114
-    package_spark_2_4_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.2"  # noqa: WPS114
-    package_spark_2_4_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3"  # noqa: WPS114
-    package_spark_2_4_4: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.4"  # noqa: WPS114
-    package_spark_2_4_5: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5"  # noqa: WPS114
-    package_spark_2_4_6: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.6"  # noqa: WPS114
-    package_spark_2_4_7: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.7"  # noqa: WPS114
-    package_spark_3_0_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0"  # noqa: WPS114
-    package_spark_3_0_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.1"  # noqa: WPS114
-    package_spark_3_0_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.2"  # noqa: WPS114
-    package_spark_3_0_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.3"  # noqa: WPS114
-    package_spark_3_1_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.0"  # noqa: WPS114
-    package_spark_3_1_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1"  # noqa: WPS114
-    package_spark_3_1_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2"  # noqa: WPS114
-    package_spark_3_1_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.3"  # noqa: WPS114
-    package_spark_3_2_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0"  # noqa: WPS114
-    package_spark_3_2_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.1"  # noqa: WPS114
-    package_spark_3_2_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.2"  # noqa: WPS114
-    package_spark_3_2_3: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.3"  # noqa: WPS114
-    package_spark_3_2_4: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.4"  # noqa: WPS114
-    package_spark_3_3_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"  # noqa: WPS114
-    package_spark_3_3_1: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.1"  # noqa: WPS114
-    package_spark_3_3_2: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.2"  # noqa: WPS114
-    package_spark_3_4_0: ClassVar[str] = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0"  # noqa: WPS114
+    def read_df(
+        self,
+        source: str,
+        columns: list[str] | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
+    ) -> DataFrame:
+        pass
+
+    def write_df(self, df: DataFrame, target: str) -> None:
+        pass
 
     addresses: List[str]
     cluster: Cluster
@@ -132,12 +118,32 @@ class Kafka(DBConnection):
     password: Optional[SecretStr] = None
     keytab: Optional[LocalPath] = None
 
+    @classmethod
+    def get_package_spark(
+        cls,
+        spark_version: str,
+        scala_version: str | None = None,
+    ) -> str:
+        if not scala_version:
+            scala_version = "2.11" if spark_version.startswith("2") else "2.12"
+        return f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"
+
     @validator("keytab")
     def validate_keytab(cls, value):  # noqa: N805, U100
-        if os.path.exists(value) and os.access(value, os.R_OK):
-            log.info("The file exists and the user has read permissions")
-        else:
-            raise ValueError("The file does not exist or the user does not have read permissions")
+        if not os.path.exists(value):
+            raise ValueError(
+                f"The file does not exists. File  properties:  {path_repr(value)} ",
+            )
+
+        if not os.access(value, os.R_OK):
+            raise ValueError(
+                f"Keytab file permission denied. File properties: {path_repr(value)}",
+            )
+
+        log.info(
+            "The keytab file exists and the user has read permissions",
+        )
+
         return value
 
     @validator("addresses")
@@ -146,23 +152,43 @@ class Kafka(DBConnection):
             raise ValueError("Passed empty parameter 'addresses'")
         return value
 
-    @root_validator()
-    def validate_auth(cls, values: dict) -> dict:  # noqa: N805, U100
+    @root_validator()  # noqa: WPS231
+    def validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805, U100
         user = values.get("user", None)
         password = values.get("password", None)
         keytab = values.get("keytab", None)
+
+        if user is None and password is None and keytab is None:
+            return values
 
         passed_pass_and_user = user is not None and password is not None
         passed_user_pass_keytab = keytab is not None and passed_pass_and_user
         passed_keytab_and_user = keytab is not None and user is not None
 
-        if passed_pass_and_user and passed_user_pass_keytab:
-            raise ValueError("Authorization parameters passed at the same time, only two must be specified")
+        if passed_user_pass_keytab:
+            raise ValueError(
+                "If you passed the `user` parameter please provide either `keytab` or `password` for auth, "
+                "not both. Or do not specify `user`, "
+                "`keytab` and `password` parameters for anonymous authorization.",
+            )
 
         if passed_pass_and_user or passed_keytab_and_user:
             return values
 
-        raise ValueError("Invalid parameters user, password or keytab passed.")
+        if user is None and password is not None and keytab is not None:
+            raise ValueError(
+                "`user` parameter not passed. Passed `password` and `keytab` parameters. Passing either `password` or "
+                "`keytab` is allowed.",
+            )
+
+        if password is not None and user is None:
+            raise ValueError("Passed `password` without `user` parameter.")
+
+        if keytab is not None and user is None:
+            raise ValueError("Passed `keytab` without `user` parameter.")
+
+        if user is not None and password is None and keytab is None:
+            raise ValueError("Passed only `user` parameter without `password` or `keytab`.")
 
     @property
     def instance_url(self):

@@ -531,6 +531,14 @@ def file_connections_data(request):
 
 
 @pytest.fixture()
+def load_keytab(tmp_path_factory):
+    path = Path(tmp_path_factory.mktemp("data") / "keytab")
+    path.write_text("content")
+
+    return path
+
+
+@pytest.fixture()
 def file_all_connections(file_connections_data):
     return file_connections_data[0]
 
