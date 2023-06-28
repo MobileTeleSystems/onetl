@@ -39,7 +39,7 @@ class Kafka(DBConnection):
 
     Based on Maven package ``spark-sql-kafka-0-10_2.11-2.3.0.jar``
     (`official Kafka 0.10+ Source For Structured Streaming
-    driver <https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.11/2.3.0/spark-sql-kafka-0-10_2.11-2.3.0.jar>`_).
+    driver <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_).
 
     .. dropdown:: Version compatibility
 
@@ -61,6 +61,11 @@ class Kafka(DBConnection):
 
     password : SecretStr, default  ``None``
         Password for Kafka connection.
+
+    .. warning::
+
+        When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
+        these parameters for anonymous connection are not specified at all.
 
     keytab : LocalPath, default  ``None``
         A path to the keytab file. A keytab is a file containing pairs of Kerberos principals and encrypted keys that
@@ -123,72 +128,10 @@ class Kafka(DBConnection):
         cls,
         spark_version: str,
         scala_version: str | None = None,
-    ) -> str:
+    ) -> list[str]:
         if not scala_version:
             scala_version = "2.11" if spark_version.startswith("2") else "2.12"
-        return f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"
-
-    @validator("keytab")
-    def validate_keytab(cls, value):  # noqa: N805, U100
-        if not os.path.exists(value):
-            raise ValueError(
-                f"The file does not exists. File  properties:  {path_repr(value)} ",
-            )
-
-        if not os.access(value, os.R_OK):
-            raise ValueError(
-                f"Keytab file permission denied. File properties: {path_repr(value)}",
-            )
-
-        log.info(
-            "The keytab file exists and the user has read permissions",
-        )
-
-        return value
-
-    @validator("addresses")
-    def validate_addresses(cls, value):  # noqa: N805, U100
-        if not value:
-            raise ValueError("Passed empty parameter 'addresses'")
-        return value
-
-    @root_validator()  # noqa: WPS231
-    def validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805, U100
-        user = values.get("user", None)
-        password = values.get("password", None)
-        keytab = values.get("keytab", None)
-
-        if user is None and password is None and keytab is None:
-            return values
-
-        passed_pass_and_user = user is not None and password is not None
-        passed_user_pass_keytab = keytab is not None and passed_pass_and_user
-        passed_keytab_and_user = keytab is not None and user is not None
-
-        if passed_user_pass_keytab:
-            raise ValueError(
-                "If you passed the `user` parameter please provide either `keytab` or `password` for auth, "
-                "not both. Or do not specify `user`, "
-                "`keytab` and `password` parameters for anonymous authorization.",
-            )
-
-        if passed_pass_and_user or passed_keytab_and_user:
-            return values
-
-        if user is None and password is not None and keytab is not None:
-            raise ValueError(
-                "`user` parameter not passed. Passed `password` and `keytab` parameters. Passing either `password` or "
-                "`keytab` is allowed.",
-            )
-
-        if password is not None and user is None:
-            raise ValueError("Passed `password` without `user` parameter.")
-
-        if keytab is not None and user is None:
-            raise ValueError("Passed `keytab` without `user` parameter.")
-
-        if user is not None and password is None and keytab is None:
-            raise ValueError("Passed only `user` parameter without `password` or `keytab`.")
+        return [f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"]
 
     @property
     def instance_url(self):
@@ -221,3 +164,48 @@ class Kafka(DBConnection):
         where: Any | None = None,  # noqa: U100
     ) -> tuple[Any, Any]:
         ...
+
+    @validator("keytab")
+    def _validate_keytab(cls, value):  # noqa: N805, U100
+        if not os.path.exists(value):
+            raise ValueError(
+                f"File '{os.fspath(value)}' is missing",
+            )
+
+        if not os.access(value, os.R_OK):
+            raise ValueError(
+                f"No access to file {path_repr(value)}",
+            )
+
+        return value
+
+    @validator("addresses")
+    def _validate_addresses(cls, value):  # noqa: N805, U100
+        if not value:
+            raise ValueError("Passed empty parameter 'addresses'")
+        return value
+
+    @root_validator()  # noqa: WPS231
+    def _validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805, U100
+        user = values.get("user", None)
+        password = values.get("password", None)
+        keytab = values.get("keytab", None)
+
+        passed_user_and_keytab = user and keytab
+
+        if not user and not password and not keytab:
+            # anonymous access
+            return values
+
+        if passed_user_and_keytab and not password:
+            # valid credentials
+            return values
+
+        if passed_user_and_keytab and not keytab:
+            # valid credentials
+            return values
+
+        raise ValueError(
+            "Please provide either `keytab` and `user`, or `password` and "
+            "`user` for Kerberos auth, or none of parameters for anonymous auth",
+        )

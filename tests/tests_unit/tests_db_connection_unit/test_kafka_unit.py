@@ -45,13 +45,10 @@ pytestmark = pytest.mark.kafka
     ],
 )
 def test_kafka_jars(spark_version, scala_version):
-    assert (
-        Kafka.get_package_spark(
-            spark_version=spark_version,
-            scala_version=scala_version,
-        )
-        == f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"
-    )
+    assert Kafka.get_package_spark(
+        spark_version=spark_version,
+        scala_version=scala_version,
+    ) == [f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"]
 
 
 def test_kafka_auth(spark_mock):
@@ -125,9 +122,13 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, load_keytab):
     os.chmod(load_keytab, 0o000)  # noqa: S103, WPS339
 
     # Assert
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape("Keytab file permission denied. File properties:"),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
@@ -140,9 +141,13 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, load_keytab):
 
 def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
     # Assert
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape("The file does not exists. File  properties:  "),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
@@ -156,9 +161,8 @@ def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
 def test_kafka_passed_user_pass_keytab_error(spark_mock, load_keytab):
     # Assert
     msg = (
-        "If you passed the `user` parameter please provide either `keytab` or `password` for auth, "
-        "not both. Or do not specify `user`, "
-        "`keytab` and `password` parameters for anonymous authorization."
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
     )
     with pytest.raises(
         ValueError,
@@ -176,12 +180,13 @@ def test_kafka_passed_user_pass_keytab_error(spark_mock, load_keytab):
 
 def test_passed_keytab_pass_error(spark_mock, load_keytab):
     # Assert
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "`user` parameter not passed. Passed `password` and `keytab` parameters. Passing either `password` or "
-            "`keytab` is allowed.",
-        ),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
@@ -194,9 +199,13 @@ def test_passed_keytab_pass_error(spark_mock, load_keytab):
 
 def test_passed_only_keytab_error(spark_mock, load_keytab):
     # Assert
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape("Passed `keytab` without `user` parameter."),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
@@ -207,9 +216,13 @@ def test_passed_only_keytab_error(spark_mock, load_keytab):
 
 
 def test_passed_only_pass_error(spark_mock):
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape("Passed `password` without `user` parameter."),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
@@ -220,9 +233,13 @@ def test_passed_only_pass_error(spark_mock):
 
 
 def test_passed_only_user_errror(spark_mock):
+    msg = (
+        "Please provide either `keytab` and `user`, or `password` and "
+        "`user` for Kerberos auth, or none of parameters for anonymous auth"
+    )
     with pytest.raises(
         ValueError,
-        match=re.escape("Passed only `user` parameter without `password` or `keytab`."),
+        match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
