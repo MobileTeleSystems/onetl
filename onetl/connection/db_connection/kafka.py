@@ -40,6 +40,10 @@ class Kafka(DBConnection):
     Based on `official Kafka 0.10+ Source For Spark
     <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
+    .. note::
+
+        This connector is for batch download from kafka and not streaming.
+
     .. dropdown:: Version compatibility
 
         * Apache Kafka versions: 0.10 or higher
