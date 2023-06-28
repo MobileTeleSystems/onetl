@@ -9,24 +9,21 @@ pytestmark = pytest.mark.kafka
 
 
 @pytest.mark.parametrize(
-    "scala_version,spark_version",
+    "spark_version,scala_version_input,scala_version_real",
     [
-        ("2.11", "2.3.0"),
-        (None, "2.3.0"),
-        ("2.12", "3.3.0"),
-        (None, "3.3.0"),
+        ("2.3.0", None, "2.11"),
+        ("2.3.0", "2.11", "2.11"),
+        ("2.3.0", "2.12", "2.12"),
+        ("3.3.0", None, "2.12"),
+        ("3.3.0", "2.12", "2.12"),
+        ("3.3.0", "2.13", "2.13"),
     ],
 )
-def test_kafka_jars(spark_version, scala_version):
-    # Arrange
-    scala_version_real = (
-        scala_version if scala_version else "2.11" if spark_version.startswith("2") else "2.12"  # noqa: WPS509
-    )
-
+def test_kafka_jars(spark_version, scala_version_input, scala_version_real):
     # Assert
     assert Kafka.get_package_spark(
         spark_version=spark_version,
-        scala_version=scala_version,
+        scala_version=scala_version_input,
     ) == [f"org.apache.spark:spark-sql-kafka-0-10_{scala_version_real}:{spark_version}"]
 
 
