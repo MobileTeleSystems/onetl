@@ -192,6 +192,7 @@ class Kafka(DBConnection):
         keytab = values.get("keytab", None)
 
         passed_user_and_keytab = user and keytab
+        passed_user_and_pass = user and password
 
         if not user and not password and not keytab:
             # anonymous access
@@ -201,7 +202,7 @@ class Kafka(DBConnection):
             # valid credentials
             return values
 
-        if passed_user_and_keytab and not keytab:
+        if passed_user_and_pass and not keytab:
             # valid credentials
             return values
 
