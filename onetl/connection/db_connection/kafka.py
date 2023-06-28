@@ -37,9 +37,8 @@ class Kafka(DBConnection):
     """
     This connector is designed to read and write from Kafka in batch mode.
 
-    Based on Maven package ``spark-sql-kafka-0-10_2.11-2.3.0.jar``
-    (`official Kafka 0.10+ Source For Structured Streaming
-    driver <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_).
+    Based on `official Kafka 0.10+ Source For Spark
+    <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
     .. dropdown:: Version compatibility
 
