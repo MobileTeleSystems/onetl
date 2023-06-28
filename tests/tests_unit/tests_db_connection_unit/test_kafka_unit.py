@@ -66,11 +66,11 @@ def test_kafka_anon_auth(spark_mock):
     assert conn.instance_url == "kafka://some_cluster"
 
 
-def test_kafka_auth_keytab(spark_mock, load_keytab):
+def test_kafka_auth_keytab(spark_mock, create_keytab):
     # Act
     conn = Kafka(
         spark=spark_mock,
-        keytab=load_keytab,
+        keytab=create_keytab,
         user="user",
         cluster="some_cluster",
         addresses=["192.168.1.1"],
@@ -96,9 +96,9 @@ def test_kafka_empty_addresses(spark_mock):
         )
 
 
-def test_kafka_weak_permissons_keytab_error(spark_mock, load_keytab):
+def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
     # Arrange
-    os.chmod(load_keytab, 0o000)  # noqa: S103, WPS339
+    os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339
 
     # Assert
     msg = (
@@ -111,7 +111,7 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, load_keytab):
     ):
         Kafka(
             spark=spark_mock,
-            keytab=load_keytab,
+            keytab=create_keytab,
             user="user",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
@@ -137,7 +137,7 @@ def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
         )
 
 
-def test_kafka_passed_user_pass_keytab_error(spark_mock, load_keytab):
+def test_kafka_passed_user_pass_keytab_error(spark_mock, create_keytab):
     # Assert
     msg = (
         "Please provide either `keytab` and `user`, or `password` and "
@@ -153,11 +153,11 @@ def test_kafka_passed_user_pass_keytab_error(spark_mock, load_keytab):
             user="user",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
-            keytab=load_keytab,
+            keytab=create_keytab,
         )
 
 
-def test_passed_keytab_pass_error(spark_mock, load_keytab):
+def test_passed_keytab_pass_error(spark_mock, create_keytab):
     # Assert
     msg = (
         "Please provide either `keytab` and `user`, or `password` and "
@@ -172,11 +172,11 @@ def test_passed_keytab_pass_error(spark_mock, load_keytab):
             password="passwd",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
-            keytab=load_keytab,
+            keytab=create_keytab,
         )
 
 
-def test_passed_only_keytab_error(spark_mock, load_keytab):
+def test_passed_only_keytab_error(spark_mock, create_keytab):
     # Assert
     msg = (
         "Please provide either `keytab` and `user`, or `password` and "
@@ -190,7 +190,7 @@ def test_passed_only_keytab_error(spark_mock, load_keytab):
             spark=spark_mock,
             cluster="some_cluster",
             addresses=["192.168.1.1"],
-            keytab=load_keytab,
+            keytab=create_keytab,
         )
 
 
