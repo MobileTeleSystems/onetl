@@ -104,7 +104,7 @@ class Kafka(DBConnection):
 
     """
 
-    def read_df(
+    def read_df(  # type: ignore
         self,
         source: str,
         columns: list[str] | None = None,
