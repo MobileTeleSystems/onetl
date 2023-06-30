@@ -23,13 +23,13 @@ if TYPE_CHECKING:
     from onetl.connection.db_connection.clickhouse import Clickhouse
     from onetl.connection.db_connection.greenplum import Greenplum
     from onetl.connection.db_connection.hive import Hive
+    from onetl.connection.db_connection.kafka import Kafka
     from onetl.connection.db_connection.mongodb import MongoDB
     from onetl.connection.db_connection.mssql import MSSQL
     from onetl.connection.db_connection.mysql import MySQL
     from onetl.connection.db_connection.oracle import Oracle
     from onetl.connection.db_connection.postgres import Postgres
     from onetl.connection.db_connection.teradata import Teradata
-    from onetl.connection.db_connection.kafka import Kafka
     from onetl.connection.file_connection.ftp import FTP
     from onetl.connection.file_connection.ftps import FTPS
     from onetl.connection.file_connection.hdfs import HDFS
