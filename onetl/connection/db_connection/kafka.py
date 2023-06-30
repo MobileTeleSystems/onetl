@@ -188,7 +188,7 @@ class Kafka(DBConnection):
         return value
 
     @root_validator()
-    def _validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805
+    def _validate_auth(cls, values: dict) -> dict:  # noqa: N805
         user = values.get("user", None)
         password = values.get("password", None)
         keytab = values.get("keytab", None)
