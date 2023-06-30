@@ -144,31 +144,31 @@ class Kafka(DBConnection):
 
     def read_table(  # type: ignore
         self,
-        table: str,  # noqa: U100
-        columns: list[str] | None = None,  # noqa: U100
-        hint: Any | None = None,  # noqa: U100
-        where: Any | None = None,  # noqa: U100
-        df_schema: StructType | None = None,  # noqa: U100
-        start_from: Statement | None = None,  # noqa: U100
-        end_at: Statement | None = None,  # noqa: U100
+        table: str,
+        columns: list[str] | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
+        df_schema: StructType | None = None,
+        start_from: Statement | None = None,
+        end_at: Statement | None = None,
     ) -> DataFrame:
         ...
 
-    def save_df(self, df: DataFrame, table: str) -> None:  # noqa: U100
+    def save_df(self, df: DataFrame, table: str) -> None:
         ...
 
     def get_min_max_bounds(  # type: ignore
         self,
-        table: str,  # noqa: U100
-        column: str,  # noqa: U100
-        expression: str | None = None,  # noqa: U100
-        hint: Any | None = None,  # noqa: U100
-        where: Any | None = None,  # noqa: U100
+        table: str,
+        column: str,
+        expression: str | None = None,
+        hint: Any | None = None,
+        where: Any | None = None,
     ) -> tuple[Any, Any]:
         ...
 
     @validator("keytab")
-    def _validate_keytab(cls, value):  # noqa: N805, U100
+    def _validate_keytab(cls, value):  # noqa: N805
         if not os.path.exists(value):
             raise ValueError(
                 f"File '{os.fspath(value)}' is missing",
@@ -182,13 +182,13 @@ class Kafka(DBConnection):
         return value
 
     @validator("addresses")
-    def _validate_addresses(cls, value):  # noqa: N805, U100
+    def _validate_addresses(cls, value):  # noqa: N805
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value
 
-    @root_validator()  # noqa: WPS231
-    def _validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805, U100
+    @root_validator()
+    def _validate_auth(cls, values: dict) -> dict:  # type: ignore # noqa: N805
         user = values.get("user", None)
         password = values.get("password", None)
         keytab = values.get("keytab", None)
