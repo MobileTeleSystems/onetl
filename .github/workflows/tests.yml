@@ -253,7 +253,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-webdav:
-    name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run WebDAV tests (server=${{ matrix.webdav-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false

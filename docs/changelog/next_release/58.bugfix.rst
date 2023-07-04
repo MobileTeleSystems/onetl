@@ -1,0 +1,1 @@
+Fix S3.list_dir('/') returns empty list on latest Minio version.
