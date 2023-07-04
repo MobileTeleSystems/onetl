@@ -173,12 +173,6 @@ Without docker-compose
     * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
     * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
 
-Build image for running tests:
-
-.. code:: bash
-
-    docker-compose build
-
 Start all containers with dependencies:
 
 .. code:: bash

@@ -1,0 +1,3 @@
+Add ``workers`` field to ``FileDownloader`` / ``FileUploader`` / ``FileMover``.``Options`` classes.
+
+This allows to speed up all file operations using parallel threads.

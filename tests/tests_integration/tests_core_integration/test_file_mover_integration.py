@@ -35,12 +35,14 @@ def test_mover_view_file(file_all_connections, source_path, upload_test_files):
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type PurePosixPath"])
+@pytest.mark.parametrize("workers", [1, 3])
 def test_mover_run(
     request,
     file_all_connections,
     source_path,
     upload_test_files,
     path_type,
+    workers,
 ):
     target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
 
@@ -53,6 +55,9 @@ def test_mover_run(
         connection=file_all_connections,
         source_path=path_type(source_path),
         target_path=path_type(target_path),
+        options=FileMover.Options(
+            workers=workers,
+        ),
     )
 
     # record files content and size before move

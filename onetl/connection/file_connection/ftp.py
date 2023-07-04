@@ -136,11 +136,11 @@ class FTP(FileConnection, RenameDirMixin):
             session_factory=session_factory,
         )
 
-    def _is_client_closed(self) -> bool:
-        return self._client.closed
+    def _is_client_closed(self, client: FTPHost) -> bool:
+        return client.closed
 
-    def _close_client(self) -> None:
-        self._client.close()
+    def _close_client(self, client: FTPHost) -> None:
+        client.close()
 
     def _remove_dir(self, path: RemotePath) -> None:
         self.client.rmdir(os.fspath(path))

@@ -1,0 +1,1 @@
+Remove duplicated checks for source file existence in ``FileDownloader`` / ``FileMover``.

@@ -18,6 +18,8 @@ import logging
 import os
 import shutil
 import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
@@ -26,7 +28,8 @@ from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
-from onetl.base.path_protocol import PathProtocol
+from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
+from onetl.base.pure_path_protocol import PurePathProtocol
 from onetl.file.file_downloader.download_result import DownloadResult
 from onetl.file.file_set import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
@@ -57,6 +60,13 @@ log = logging.getLogger(__name__)
 
 # source, target, temp
 DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath]]]
+
+
+class FileDownloadStatus(Enum):
+    SUCCESSFUL = 0
+    FAILED = 1
+    SKIPPED = 2
+    MISSING = -1
 
 
 @support_hooks
@@ -218,6 +228,16 @@ class FileDownloader(FrozenModel):
         If ``True``, remove source file after successful download.
 
         If download failed, file will left intact.
+        """
+
+        workers: int = Field(default=1, ge=1)
+        """
+        Number of workers to create for parallel file download.
+
+        1 (default) means files will me downloaded sequentially.
+        2 or more means files will be downloaded in parallel workers.
+
+        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
 
     connection: BaseFileConnection
@@ -596,7 +616,7 @@ class FileDownloader(FrozenModel):
         remote_files: Iterable[os.PathLike | str],
         current_temp_dir: LocalPath | None,
     ) -> DOWNLOAD_ITEMS_TYPE:
-        result = OrderedSet()
+        result: DOWNLOAD_ITEMS_TYPE = OrderedSet()
 
         for file in remote_files:
             remote_file_path = file if isinstance(file, PathProtocol) else RemotePath(file)
@@ -630,7 +650,7 @@ class FileDownloader(FrozenModel):
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{remote_file}' does not match source_path '{self.source_path}'")
 
-            if self.connection.path_exists(remote_file):
+            if not isinstance(remote_file, PathProtocol) and self.connection.path_exists(remote_file):
                 remote_file = self.connection.resolve_file(remote_file)
 
             result.add((remote_file, local_file, tmp_file))
@@ -650,28 +670,68 @@ class FileDownloader(FrozenModel):
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
     ) -> DownloadResult:
-        total_files = len(to_download)
         files = FileSet(item[0] for item in to_download)
-
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
         log_lines(str(files))
         log_with_indent("")
         log.info("|%s| Starting the download process", self.__class__.__name__)
 
-        result = DownloadResult()
-        for i, (source_file, local_file, tmp_file) in enumerate(to_download):
-            log.info("|%s| Downloading file %d of %d", self.__class__.__name__, i + 1, total_files)
-            log_with_indent("from = '%s'", source_file)
-            if tmp_file:
-                log_with_indent("temp = '%s'", tmp_file)
-            log_with_indent("to = '%s'", local_file)
+        self._create_dirs(to_download)
 
-            self._download_file(
-                source_file,
-                local_file,
-                tmp_file,
-                result,
-            )
+        result = DownloadResult()
+        for status, file in self._bulk_download(to_download):
+            if status == FileDownloadStatus.SUCCESSFUL:
+                result.successful.add(file)
+            elif status == FileDownloadStatus.FAILED:
+                result.failed.add(file)
+            elif status == FileDownloadStatus.SKIPPED:
+                result.skipped.add(file)
+            elif status == FileDownloadStatus.MISSING:
+                result.missing.add(file)
+
+        return result
+
+    def _create_dirs(
+        self,
+        to_download: DOWNLOAD_ITEMS_TYPE,
+    ) -> None:
+        """
+        Create all parent paths before downloading files
+        This is required to avoid errors then multiple threads create the same dir
+        """
+        parent_paths = OrderedSet()
+        for _, target_file, tmp_file in to_download:
+            parent_paths.add(target_file.parent)
+            if tmp_file:
+                parent_paths.add(tmp_file.parent)
+
+        for parent_path in parent_paths:
+            parent_path.mkdir(parents=True, exist_ok=True)
+
+    def _bulk_download(
+        self,
+        to_download: DOWNLOAD_ITEMS_TYPE,
+    ) -> list[tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]]:
+        workers = self.options.workers
+        result = []
+
+        if workers > 1:
+            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+                futures = [
+                    executor.submit(self._download_file, source_file, target_file, tmp_file)
+                    for source_file, target_file, tmp_file in to_download
+                ]
+                for future in as_completed(futures):
+                    result.append(future.result())
+        else:
+            for source_file, target_file, tmp_file in to_download:
+                result.append(
+                    self._download_file(
+                        source_file,
+                        target_file,
+                        tmp_file,
+                    ),
+                )
 
         return result
 
@@ -680,12 +740,21 @@ class FileDownloader(FrozenModel):
         source_file: RemotePath,
         local_file: LocalPath,
         tmp_file: LocalPath | None,
-        result: DownloadResult,
-    ) -> None:
+    ) -> tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]:
+        if tmp_file:
+            log.info(
+                "|%s| Downloading file '%s' to '%s' (via tmp '%s')",
+                self.__class__.__name__,
+                source_file,
+                local_file,
+                tmp_file,
+            )
+        else:
+            log.info("|%s| Downloading file '%s' to '%s'", self.__class__.__name__, source_file, local_file)
+
         if not self.connection.path_exists(source_file):
             log.warning("|%s| Missing file '%s', skipping", self.__class__.__name__, source_file)
-            result.missing.add(source_file)
-            return
+            return FileDownloadStatus.MISSING, source_file
 
         try:
             remote_file = self.connection.resolve_file(source_file)
@@ -697,8 +766,7 @@ class FileDownloader(FrozenModel):
 
                 if self.options.mode == FileWriteMode.IGNORE:
                     log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
-                    result.skipped.add(remote_file)
-                    return
+                    return FileDownloadStatus.SKIPPED, remote_file
 
                 replace = True
 
@@ -729,7 +797,7 @@ class FileDownloader(FrozenModel):
             if self.options.delete_source:
                 self.connection.remove_file(remote_file)
 
-            result.successful.add(local_file)
+            return FileDownloadStatus.SUCCESSFUL, local_file
 
         except Exception as e:
             if log.isEnabledFor(logging.DEBUG):
@@ -745,7 +813,11 @@ class FileDownloader(FrozenModel):
                     e,
                     exc_info=False,
                 )
-            result.failed.add(FailedRemoteFile(path=remote_file.path, stats=remote_file.stats, exception=e))
+            return FileDownloadStatus.FAILED, FailedRemoteFile(
+                path=remote_file.path,
+                stats=remote_file.stats,
+                exception=e,
+            )
 
     def _remove_temp_dir(self, temp_dir: LocalPath) -> None:
         log.info("|Local FS| Removing temp directory '%s'", temp_dir)
