@@ -15,6 +15,8 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-greenplum }}
       matrix-hive:
         value: ${{ jobs.get-matrix.outputs.matrix-hive }}
+      matrix-kafka:
+        value: ${{ jobs.get-matrix.outputs.matrix-kafka }}
       matrix-mongodb:
         value: ${{ jobs.get-matrix.outputs.matrix-mongodb }}
       matrix-mssql:
@@ -49,6 +51,7 @@ jobs:
       matrix-clickhouse: ${{ toJson(fromJson(steps.matrix-clickhouse.outputs.result)[steps.key-clickhouse.outputs.key]) }}
       matrix-greenplum: ${{ toJson(fromJson(steps.matrix-greenplum.outputs.result)[steps.key-greenplum.outputs.key]) }}
       matrix-hive: ${{ toJson(fromJson(steps.matrix-hive.outputs.result)[steps.key-hive.outputs.key]) }}
+      matrix-kafka: ${{ toJson(fromJson(steps.matrix-kafka.outputs.result)[steps.key-kafka.outputs.key]) }}
       matrix-mongodb: ${{ toJson(fromJson(steps.matrix-mongodb.outputs.result)[steps.key-mongodb.outputs.key]) }}
       matrix-mssql: ${{ toJson(fromJson(steps.matrix-mssql.outputs.result)[steps.key-mssql.outputs.key]) }}
       matrix-mysql: ${{ toJson(fromJson(steps.matrix-mysql.outputs.result)[steps.key-mysql.outputs.key]) }}
@@ -202,6 +205,36 @@ jobs:
       uses: mikefarah/yq@v4.33.3
       with:
         cmd: yq -o=json '.matrix' .github/workflows/data/hive/matrix.yml
+
+    - name: Check if Kafka files are changed
+      id: changed-kafka
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/kafka/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/kafka/ignored.txt
+
+    - name: Print Kafka files changed
+      run: |
+        echo '${{ steps.changed-kafka.outputs.all_changed_files }}'
+
+    - name: Calculate Kafka matrix key
+      id: key-kafka
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-kafka.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Kafka matrix
+      id: matrix-kafka
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/kafka/matrix.yml
 
     - name: Check if MongoDB files are changed
       id: changed-mongodb

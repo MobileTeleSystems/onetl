@@ -64,12 +64,12 @@ Create virtualenv and install dependencies:
         -r requirements/docs.txt \
         -r requirements/tests/base.txt \
         -r requirements/tests/clickhouse.txt \
-        -r requirements/tests/postgres.txt \
+        -r requirements/tests/kafka.txt \
         -r requirements/tests/mongodb.txt \
         -r requirements/tests/mssql.txt \
         -r requirements/tests/mysql.txt \
-        -r requirements/tests/oracle.txt \
         -r requirements/tests/postgres.txt \
+        -r requirements/tests/oracle.txt \
         -r requirements/tests/spark-3.4.0.txt
 
 Enable pre-commit hooks
