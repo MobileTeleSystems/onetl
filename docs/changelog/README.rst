@@ -90,3 +90,8 @@ Examples for adding changelog entries to your Pull Requests
 
 .. _Towncrier philosophy:
     https://towncrier.readthedocs.io/en/stable/#philosophy
+
+How to skip change notes check?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Just add ``ci:skip-changelog`` label to pull request.
