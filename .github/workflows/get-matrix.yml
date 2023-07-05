@@ -42,6 +42,9 @@ on:
       matrix-webdav:
         value: ${{ jobs.get-matrix.outputs.matrix-webdav }}
 
+env:
+  DEFAULT_PYTHON: '3.11'
+
 jobs:
   get-matrix:
     name: Get version matrix based on changes in PR/commit
@@ -85,6 +88,28 @@ jobs:
     - name: Print base files changed
       run: |
         echo '${{ steps.changed-base.outputs.all_changed_files }}'
+
+    - name: Check if db-related files are changed
+      id: changed-db
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/db/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/db/ignored.txt
+
+    - name: Print db-related files changed
+      run: |
+        echo '${{ steps.changed-db.outputs.all_changed_files }}'
+
+    - name: Check if file-related files are changed
+      id: changed-file
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/file/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/file/ignored.txt
+
+    - name: Print file-related files changed
+      run: |
+        echo '${{ steps.changed-file.outputs.all_changed_files }}'
 
     - name: Check if core files are changed
       id: changed-core
@@ -132,7 +157,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-clickhouse.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-clickhouse.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -162,7 +187,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-greenplum.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-greenplum.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -192,7 +217,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-hive.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-hive.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -222,7 +247,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-kafka.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-kafka.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -252,7 +277,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mongodb.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-mongodb.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -282,7 +307,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mssql.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-mssql.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -312,7 +337,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-mysql.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-mysql.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -342,7 +367,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-oracle.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-oracle.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -372,7 +397,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-postgres.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-postgres.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -402,7 +427,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-teradata.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-teradata.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -432,7 +457,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-ftp.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-ftp.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -462,7 +487,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-ftps.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-ftps.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -492,7 +517,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-hdfs.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-hdfs.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -522,7 +547,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-s3.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-s3.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -552,7 +577,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-sftp.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-sftp.outputs.any_changed }}; then
           key=full
         else
           key=small
@@ -582,7 +607,7 @@ jobs:
       run: |
         if ${{ inputs.nightly }}; then
           key=nightly
-        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-webdav.outputs.any_changed }}; then
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-webdav.outputs.any_changed }}; then
           key=full
         else
           key=small

@@ -48,7 +48,7 @@ class MySQL(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
