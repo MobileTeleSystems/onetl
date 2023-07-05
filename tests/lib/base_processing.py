@@ -181,6 +181,21 @@ class BaseProcessing(ABC):
 
         return df
 
+    def parse_datetime(
+        self,
+        value: pandas.Series,
+    ) -> pandas.Series:
+        try:
+            return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S")
+
+    def parse_date(
+        self,
+        value: pandas.Series,
+    ) -> pandas.Series:
+        return pandas.to_datetime(value, format="%Y-%m-%d", exact=False)
+
     def fix_pandas_df(
         self,
         df: pandas.DataFrame,
@@ -190,10 +205,10 @@ class BaseProcessing(ABC):
 
             if "datetime" in column_name:
                 # See fix_pyspark_df
-                df[column] = df[column].astype("datetime64[ns]")
+                df[column] = self.parse_datetime(df[column])
             elif "date" in column_name:
                 # See fix_pyspark_df
-                df[column] = df[column].astype("datetime64[ns]").dt.date
+                df[column] = self.parse_date(df[column]).dt.date
 
         return df
 
