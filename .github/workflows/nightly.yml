@@ -89,6 +89,23 @@ jobs:
       os: ${{ matrix.os }}
       with-cache: false
 
+  tests-kafka:
+    name: Run Kafka tests (server=${{ matrix.kafka-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-kafka) }}
+
+    uses: ./.github/workflows/test-kafka.yml
+    with:
+      kafka-version: ${{ matrix.kafka-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
   tests-mongodb:
     name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -106,23 +123,6 @@ jobs:
       os: ${{ matrix.os }}
       with-cache: false
 
-  tests-mysql:
-    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
-    needs: [get-matrix]
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mysql) }}
-
-    uses: ./.github/workflows/test-mysql.yml
-    with:
-      mysql-version: ${{ matrix.mysql-version }}
-      spark-version: ${{ matrix.spark-version }}
-      java-version: ${{ matrix.java-version }}
-      python-version: ${{ matrix.python-version }}
-      os: ${{ matrix.os }}
-      with-cache: false
-
   tests-mssql:
     name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -134,6 +134,23 @@ jobs:
     uses: ./.github/workflows/test-mssql.yml
     with:
       mssql-version: ${{ matrix.mssql-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
+  tests-mysql:
+    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-mysql) }}
+
+    uses: ./.github/workflows/test-mysql.yml
+    with:
+      mysql-version: ${{ matrix.mysql-version }}
       spark-version: ${{ matrix.spark-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
@@ -288,9 +305,10 @@ jobs:
     - tests-core
     - tests-clickhouse
     - tests-hive
+    - tests-kafka
     - tests-mongodb
-    - tests-mysql
     - tests-mssql
+    - tests-mysql
     - tests-oracle
     - tests-postgres
     - tests-teradata

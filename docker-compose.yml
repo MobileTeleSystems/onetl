@@ -23,6 +23,43 @@ services:
         hard: 10000
     # no dependencies from other containers to allow running limited set of tests instead of all
 
+  greenplum:
+    image: ${GREENPLUM_IMAGE:-datagrip/greenplum:6.8}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    ports:
+    - 5433:5432
+    networks:
+    - onetl
+
+  clickhouse:
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest}
+    restart: unless-stopped
+    ports:
+    - 8123:8123
+    - 9001:9000
+    networks:
+    - onetl
+
+  zookeeper:
+    image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
+    ports:
+    - 2181:2181
+    networks:
+    - onetl
+    environment:
+    - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: ${KAFKA_IMAGE:-bitnami/kafka:latest}
+    restart: unless-stopped
+    ports:
+    - 9092:9092
+    env_file: .env.dependencies
+    networks:
+    - onetl
+    depends_on:
+    - zookeeper
 
   mongodb:
     image: ${MONGODB_IMAGE:-mongo:latest}
@@ -33,13 +70,21 @@ services:
     networks:
     - onetl
 
-  s3:
-    image: ${S3_IMAGE:-bitnami/minio:latest}
+  mssql:
+    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 9010:9000
-    - 9011:9001
+    - 1433:1433
+    networks:
+    - onetl
+
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    ports:
+    - 3306:3306
     networks:
     - onetl
 
@@ -49,15 +94,6 @@ services:
     env_file: .env.dependencies
     ports:
     - 5432:5432
-    networks:
-    - onetl
-
-  greenplum:
-    image: ${GREENPLUM_IMAGE:-datagrip/greenplum:6.8}
-    restart: unless-stopped
-    env_file: .env.dependencies
-    ports:
-    - 5433:5432
     networks:
     - onetl
 
@@ -116,42 +152,13 @@ services:
     networks:
     - onetl
 
-  webdav:
-    image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
+  s3:
+    image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 8000:80
-    volumes:
-    # Remove after https://github.com/chonjay21/docker-webdav/pull/3
-    - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
-    networks:
-    - onetl
-
-  clickhouse:
-    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest}
-    restart: unless-stopped
-    ports:
-    - 8123:8123
-    - 9001:9000
-    networks:
-    - onetl
-
-  mysql:
-    image: ${MYSQL_IMAGE:-mysql:latest}
-    restart: unless-stopped
-    env_file: .env.dependencies
-    ports:
-    - 3306:3306
-    networks:
-    - onetl
-
-  mssql:
-    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
-    restart: unless-stopped
-    env_file: .env.dependencies
-    ports:
-    - 1433:1433
+    - 9010:9000
+    - 9011:9001
     networks:
     - onetl
 
@@ -161,6 +168,18 @@ services:
     env_file: .env.dependencies
     ports:
     - 2222:2222
+    networks:
+    - onetl
+
+  webdav:
+    image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
+    restart: unless-stopped
+    env_file: .env.dependencies
+    ports:
+    - 8000:80
+    volumes:
+    # Remove after https://github.com/chonjay21/docker-webdav/pull/3
+    - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
     - onetl
 

@@ -1,0 +1,111 @@
+name: Tests for Kafka
+on:
+  workflow_call:
+    inputs:
+      kafka-version:
+        required: true
+        type: string
+      spark-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+      with-cache:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  test-kafka:
+    name: Run Kafka tests (server=${{ inputs.kafka-version }}, spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    services:
+      kafka:
+        image: bitnami/kafka:${{ inputs.kafka-version }}
+        env:
+          TZ: UTC
+          ALLOW_PLAINTEXT_LISTENER: 'yes'
+          KAFKA_ENABLE_KRAFT: 'no'
+          KAFKA_CLIENT_USERS: onetl
+          KAFKA_CLIENT_PASSWORDS: uufoFae9sahSoidoo0eagaidaoreif6z
+          KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+          KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+          # old config names for <1.1.1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_LISTENERS: PLAINTEXT://:9092
+        ports:
+        - 9092:9092
+      zookeeper:
+        image: bitnami/zookeeper:3.8
+        env:
+          TZ: UTC
+          ALLOW_ANONYMOUS_LOGIN: 'yes'
+        ports:
+        - 2181:2181
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      if: inputs.with-cache
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      if: inputs.with-cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-kafka-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/kafka.txt', 'requirements/tests/spark-*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-kafka-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/kafka.txt', 'requirements/tests/spark-*.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-kafka-
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip setuptools wheel
+
+    - name: Install dependencies
+      run: |
+        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/kafka.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+
+    - name: Wait for Kafka to be ready
+      run: |
+        ./docker/wait-for-it.sh -h localhost -p 9092 -t 60
+
+    - name: Run tests
+      run: |
+        mkdir reports/ || echo "Directory exists"
+        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+        source ./env
+        ./pytest_runner.sh -m kafka
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: kafka-${{ inputs.kafka-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        path: reports/*
