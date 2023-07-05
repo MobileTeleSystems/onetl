@@ -18,7 +18,7 @@ import io
 import os
 import textwrap
 from logging import getLogger
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from onetl.hooks import slot, support_hooks
 
@@ -164,7 +164,7 @@ class S3(FileConnection):
 
         return False
 
-    def _get_client(self) -> Any:
+    def _get_client(self) -> Minio:
         return Minio(
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,
@@ -174,10 +174,10 @@ class S3(FileConnection):
             region=self.region,
         )
 
-    def _is_client_closed(self) -> bool:
-        return True
+    def _is_client_closed(self, client: Minio):
+        return False
 
-    def _close_client(self) -> None:
+    def _close_client(self, client: Minio) -> None:  # NOSONAR
         pass
 
     @staticmethod

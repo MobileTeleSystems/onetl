@@ -53,6 +53,7 @@ def test_downloader_view_file(file_all_connections, source_path, upload_test_fil
     [str, Path],
     ids=["run_path_type str", "run_path_type Path"],
 )
+@pytest.mark.parametrize("workers", [1, 3])
 def test_downloader_run(
     file_all_connections,
     source_path,
@@ -60,6 +61,7 @@ def test_downloader_run(
     path_type,
     run_path_type,
     tmp_path_factory,
+    workers,
 ):
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -67,6 +69,9 @@ def test_downloader_run(
         connection=file_all_connections,
         source_path=path_type(source_path),
         local_path=run_path_type(local_path),
+        options=FileDownloader.Options(
+            workers=workers,
+        ),
     )
 
     download_result = downloader.run()

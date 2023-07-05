@@ -31,7 +31,7 @@ from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 try:
-    from hdfs import InsecureClient
+    from hdfs import Client, InsecureClient
 
     if TYPE_CHECKING:
         from hdfs.ext.kerberos import KerberosClient
@@ -676,12 +676,12 @@ class HDFS(FileConnection, RenameDirMixin):
 
         raise RuntimeError(f"Host {self.host!r} is not an active namenode")
 
-    def _get_client(self) -> KerberosClient | InsecureClient:
+    def _get_client(self) -> Client:
         host = self._get_host()
         conn_str = f"http://{host}:{self.webhdfs_port}"  # NOSONAR
 
         if self.user and (self.keytab or self.password):
-            from hdfs.ext.kerberos import KerberosClient
+            from hdfs.ext.kerberos import KerberosClient  # noqa: F811
 
             kinit(
                 self.user,
@@ -690,18 +690,16 @@ class HDFS(FileConnection, RenameDirMixin):
             )
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
-            from hdfs import InsecureClient  # noqa: F401, WPS442
+            from hdfs import InsecureClient  # noqa: F401, WPS442, F811
 
             client = InsecureClient(conn_str, user=self.user)
 
         return client
 
-    def _is_client_closed(self) -> bool:
-        # Underlying client does not support closing
+    def _is_client_closed(self, client: Client):
         return False
 
-    def _close_client(self) -> None:  # NOSONAR
-        # Underlying client does not support closing
+    def _close_client(self, client: Client) -> None:  # NOSONAR
         pass
 
     def _remove_dir(self, path: RemotePath) -> None:

@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from abc import abstractmethod
 from logging import getLogger
 from typing import Any, Iterable, Iterator
@@ -51,16 +52,28 @@ log = getLogger(__name__)
 
 @support_hooks
 class FileConnection(BaseFileConnection, FrozenModel):
-    _client: Any = None
+    _clients_cache: Any = None
 
     @property
     def client(self):
-        if self._client and not self._is_client_closed():
-            return self._client
+        """
+        Return underlying client object.
 
-        client = self._get_client()
-        self._client = client
-        return client
+        Client object is cached (for performance reasons).
+        Each thread receives its own client instance.
+
+        If client is closed, new client is created.
+        """
+        if self._clients_cache is None:
+            self._clients_cache = threading.local()
+
+        try:
+            client = self._clients_cache.client
+            if client and not self._is_client_closed(client):
+                return client
+        except AttributeError:
+            self._clients_cache.client = self._get_client()
+            return self._clients_cache.client
 
     @slot
     def close(self):
@@ -86,10 +99,13 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         """
 
-        if self._client:
-            self._close_client()
+        try:
+            client = self._clients_cache.client
+        except AttributeError:
+            return
 
-        self._client = None
+        self._close_client(client)
+        del self._clients_cache.client
 
     def __enter__(self):
         return self
@@ -705,15 +721,24 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     @abstractmethod
     def _get_client(self) -> Any:
-        """"""
+        """
+        Create and return underlying client.
+        """
 
     @abstractmethod
-    def _is_client_closed(self) -> bool:
-        """"""
+    def _is_client_closed(self, client: Any) -> bool:
+        """
+        Check if client is closed.
+
+        Returns ``False`` if client does not support closing,
+        or bool indicating if client is closed or not.
+        """
 
     @abstractmethod
-    def _close_client(self) -> None:
-        """"""
+    def _close_client(self, client: Any) -> None:
+        """
+        Close client if it is supported.
+        """
 
     @abstractmethod
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:

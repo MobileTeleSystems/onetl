@@ -21,7 +21,7 @@ import stat
 import textwrap
 from logging import getLogger
 from ssl import SSLContext
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from etl_entities.instance import Host
 from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
@@ -141,7 +141,7 @@ class WebDAV(FileConnection, RenameDirMixin):
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.check(os.fspath(path))
 
-    def _get_client(self) -> Any:
+    def _get_client(self) -> Client:
         options = {
             "webdav_hostname": f"{self.protocol}://{self.host}:{self.port}",
             "webdav_login": self.user,
@@ -153,10 +153,10 @@ class WebDAV(FileConnection, RenameDirMixin):
 
         return client
 
-    def _is_client_closed(self) -> bool:
-        pass
+    def _is_client_closed(self, client: Client):
+        return False
 
-    def _close_client(self) -> None:
+    def _close_client(self, client: Client) -> None:  # NOSONAR
         pass
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:

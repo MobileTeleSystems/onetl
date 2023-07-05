@@ -16,5 +16,5 @@ File Downloader
 .. currentmodule:: onetl.file.file_downloader.file_downloader.FileDownloader
 
 .. autopydantic_model:: Options
-    :members: mode, delete_source
+    :members: mode, delete_source, workers
     :member-order: bysource
