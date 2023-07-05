@@ -8,13 +8,13 @@ max: &max
 
 matrix:
   small:
-  - minio-version: 2023.4.28
+  - minio-version: 2023.6.23
     <<: *max
   full:
   # prior image versions returns empty content of bucket root, some kind of bug
   - minio-version: 2021.3.17
     <<: *min
-  - minio-version: 2023.4.28
+  - minio-version: 2023.6.23
     <<: *max
   nightly:
   - minio-version: 2021.3.17
