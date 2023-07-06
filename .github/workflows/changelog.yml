@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, unlabeled, reopened]
     branches-ignore:
-    - dependabot/**
-    - pre-commit-ci-update-config
     - master
 
 env:
@@ -19,6 +17,7 @@ jobs:
     name: Changelog Entry Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: "!contains(github.event.pull_request.labels.*.name, 'ci:skip-changelog') && github.event.pull_request.user.login != 'pre-commit-ci[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'"
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
