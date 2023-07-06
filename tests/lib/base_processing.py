@@ -188,7 +188,9 @@ class BaseProcessing(ABC):
         try:
             return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S.%f")
         except ValueError:
-            return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S")
+            logger.exception("Unable to parse datetime")
+
+        return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S", exact=False)
 
     def parse_date(
         self,
