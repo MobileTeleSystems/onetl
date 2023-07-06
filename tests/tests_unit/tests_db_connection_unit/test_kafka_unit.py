@@ -238,3 +238,79 @@ def test_kafka_empty_cluster(spark_mock):
             user="user",
             addresses=["192.168.1.1"],
         )
+
+
+def test_kafka_connection_get_jaas_conf_password(spark_mock):
+    # Arrange
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        user="user",
+        password="password",
+    )
+
+    # Act
+    conf = kafka._get_jaas_conf()
+
+    # Assert
+    assert conf == (
+        "org.apache.kafka.common.security.plain.PlainLoginModule required\n"
+        'serviceName="a3d4d08729f94e64acfa5b5ef6caa3b1"\n'
+        'username="user"\n'
+        'password="**********";'
+    )
+
+
+def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_keytab):
+    # Arrange
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        user="user",
+        cluster="cluster",
+        keytab=create_keytab,
+        deploy_keytab=False,
+    )
+
+    # Act
+    conf = kafka._get_jaas_conf()
+
+    # Assert
+    assert conf == (
+        "com.sun.security.auth.module.Krb5LoginModule required\n"
+        f'keyTab="{create_keytab}"\n'
+        'principal="user"\n'
+        'serviceName="3a4df6708d55e431d32237f3cf8e8a63"\n'
+        "renewTicket=true\n"
+        "storeKey=true\n"
+        "useKeyTab=true\n"
+        "useTicketCache=false;"
+    )
+
+
+def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_keytab):
+    # Arrange
+    # deploy_keytab=True by default
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        user="user",
+        cluster="cluster",
+        keytab=create_keytab,
+    )
+
+    # Act
+    conf = kafka._get_jaas_conf()
+
+    # Assert
+    assert conf == (
+        "com.sun.security.auth.module.Krb5LoginModule required\n"
+        'keyTab="keytab"\n'
+        'principal="user"\n'
+        'serviceName="3a4df6708d55e431d32237f3cf8e8a63"\n'
+        "renewTicket=true\n"
+        "storeKey=true\n"
+        "useKeyTab=true\n"
+        "useTicketCache=false;"
+    )
