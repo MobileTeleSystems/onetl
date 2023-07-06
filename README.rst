@@ -61,7 +61,7 @@ Supported storages
 +------------+------------+----------------------------------------------------------------------------------------------------------+
 | Type       | Storage    | Powered by                                                                                               |
 +============+============+==========================================================================================================+
-| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/3.4.0/sql-data-sources-jdbc.html>`_        |
+| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-jdbc.html>`_        |
 +            +------------+                                                                                                          +
 |            | MSSQL      |                                                                                                          |
 +            +------------+                                                                                                          +
@@ -73,7 +73,7 @@ Supported storages
 +            +------------+                                                                                                          +
 |            | Teradata   |                                                                                                          |
 +            +------------+----------------------------------------------------------------------------------------------------------+
-|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/3.4.0/sql-data-sources-hive-tables.html>`_ |
+|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/3.4.1/sql-data-sources-hive-tables.html>`_ |
 +            +------------+----------------------------------------------------------------------------------------------------------+
 |            | Greenplum  | Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
 +            +------------+----------------------------------------------------------------------------------------------------------+
@@ -161,7 +161,7 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.0/#downloading>`_  | 3.7 - 3.11  | 8u362 - 17  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
@@ -174,7 +174,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.4.0  # install a specific PySpark version
+    pip install onetl pyspark==3.4.1  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise class import will fail.**
