@@ -234,17 +234,17 @@ class Kafka(DBConnection):
         hash_object.update(value.encode("utf-8"))
         return hash_object.hexdigest()
 
-    def _get_jaas_conf(self):
+    def _get_jaas_conf(self) -> Optional[str]:
         service_name = self._calculate_hash(
             f"{self.addresses}{self.user}{self.cluster}",
         )
         if self.password is not None:
             return self._password_jaas(service_name, self.password)
 
-        if self.keytab is None:
-            raise ValueError("keytab path is None")
+        if self.keytab is not None:
+            return self._prepare_jaas_for_keytab(service_name, self.keytab)
 
-        return self._prepare_jaas_for_keytab(service_name, self.keytab)
+        return None
 
     def _prepare_jaas_for_keytab(self, service_name, keytab: LocalPath) -> str:
         if self.deploy_keytab:
