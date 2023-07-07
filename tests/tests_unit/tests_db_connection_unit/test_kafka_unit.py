@@ -256,9 +256,9 @@ def test_kafka_connection_get_jaas_conf_password(spark_mock):
     # Assert
     assert conf == (
         "org.apache.kafka.common.security.plain.PlainLoginModule required\n"
-        'serviceName="a3d4d08729f94e64acfa5b5ef6caa3b1"\n'
+        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
         'username="user"\n'
-        'password="**********";'
+        'password="password";'
     )
 
 
@@ -281,7 +281,7 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
         "com.sun.security.auth.module.Krb5LoginModule required\n"
         f'keyTab="{create_keytab}"\n'
         'principal="user"\n'
-        'serviceName="3a4df6708d55e431d32237f3cf8e8a63"\n'
+        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
         "renewTicket=true\n"
         "storeKey=true\n"
         "useKeyTab=true\n"
@@ -308,7 +308,7 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
         "com.sun.security.auth.module.Krb5LoginModule required\n"
         f'keyTab="{create_keytab.name}"\n'
         'principal="user"\n'
-        'serviceName="3a4df6708d55e431d32237f3cf8e8a63"\n'
+        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
         "renewTicket=true\n"
         "storeKey=true\n"
         "useKeyTab=true\n"

@@ -235,45 +235,50 @@ class Kafka(DBConnection):
         return hash_object.hexdigest()
 
     def _get_jaas_conf(self):
-        service_name = self._calculate_hash(  # noqa: WPS437
+        service_name = self._calculate_hash(
             f"{self.addresses}{self.user}{self.cluster}",
         )
         if self.password is not None:
-            return self._password_jaas(service_name)
+            return self._password_jaas(service_name, self.password)
 
-        return self._prepare_jaas_for_keytab(service_name)
-
-    def _prepare_jaas_for_keytab(self, service_name) -> str:  # noqa: WPS473
         if self.keytab is None:
             raise ValueError("keytab path is None")
 
+        return self._prepare_jaas_for_keytab(service_name, self.keytab)
+
+    def _prepare_jaas_for_keytab(self, service_name, keytab: LocalPath) -> str:
         if self.deploy_keytab:
-            keytab = self._move_keytab()
+            processed_keytab = self._move_keytab(keytab)
             self.spark.sparkContext.addFile(os.fspath(keytab))
         else:
-            keytab = self.keytab
+            processed_keytab = keytab
 
         return textwrap.dedent(
-            "com.sun.security.auth.module.Krb5LoginModule required"
-            f'keyTab="{keytab}"'
-            f'principal="{self.user}"'
-            f'serviceName="{service_name}"'
-            "renewTicket=true"
-            "storeKey=true"
-            "useKeyTab=true"
-            "useTicketCache=false;",
-        )
+            f"""
+            com.sun.security.auth.module.Krb5LoginModule required
+            keyTab="{processed_keytab}"
+            principal="{self.user}"
+            serviceName="{service_name}"
+            renewTicket=true
+            storeKey=true
+            useKeyTab=true
+            useTicketCache=false;
+            """,
+        ).strip()  # removes a carriage return at the beginning and end
 
-    def _password_jaas(self, service_name) -> str:  # noqa: WPS473
+    def _password_jaas(self, service_name: str, password: SecretStr) -> str:
         return textwrap.dedent(
-            "org.apache.kafka.common.security.plain.PlainLoginModule required"
-            f'serviceName="{service_name}"'
-            f'username="{self.user}"'
-            f'password="{self.password}";',
-        )
+            f"""
+            org.apache.kafka.common.security.plain.PlainLoginModule required
+            serviceName="{service_name}"
+            username="{self.user}"
+            password="{password.get_secret_value()}";
+            """,
+        ).strip()  # removes a carriage return at the beginning and end
 
-    def _move_keytab(self) -> LocalPath:
+    @staticmethod
+    def _move_keytab(keytab: LocalPath) -> LocalPath:
         cwd = LocalPath(os.getcwd())
-        copy_path = LocalPath(shutil.copy2(self.keytab, cwd))  # type: ignore
+        copy_path = LocalPath(shutil.copy2(keytab, cwd))
 
         return copy_path.relative_to(cwd)
