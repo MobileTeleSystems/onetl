@@ -18,6 +18,7 @@ import hashlib
 import logging
 import os
 import shutil
+import textwrap
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
@@ -77,9 +78,10 @@ class Kafka(DBConnection):
         a password.
 
     deploy_keytab : bool, default ``True``
-        If True Spark sends a keytab file to all executors. It is located in the root directory where the code is run.
-        Otherwise, the user is obliged to do this operation himself. On the Spark driver and executors,
-        the configs must be located in the same path.
+        If ``True``, connector deploys a keytab file to all executors.
+        It is stored in the current directory of both driver and executor.
+        Otherwise, keytab file path should exist on driver and all the executors.
+        The configs must be located in the same path.
 
     .. warning::
 
@@ -228,46 +230,46 @@ class Kafka(DBConnection):
 
     @staticmethod
     def _calculate_hash(value: str):
-        hash_object = hashlib.md5()  # noqa: S303
+        hash_object = hashlib.md5()  # noqa: S303, S324
         hash_object.update(value.encode("utf-8"))
         return hash_object.hexdigest()
 
     def _get_jaas_conf(self):
-        service_name = Kafka._calculate_hash(  # noqa: WPS437
-            f"{self.addresses}{self.user}{self.password}{self.cluster}",
+        service_name = self._calculate_hash(  # noqa: WPS437
+            f"{self.addresses}{self.user}{self.cluster}",
         )
         if self.password is not None:
             return self._password_jaas(service_name)
 
-        return self._keytab_jaas(service_name)
+        return self._prepare_jaas_for_keytab(service_name)
 
-    def _keytab_jaas(self, service_name) -> str:
+    def _prepare_jaas_for_keytab(self, service_name) -> str:  # noqa: WPS473
         if self.keytab is None:
             raise ValueError("keytab path is None")
 
         if self.deploy_keytab:
             keytab = self._move_keytab()
-            self.spark.sparkContext.addFile(str(keytab))
+            self.spark.sparkContext.addFile(os.fspath(keytab))
         else:
             keytab = self.keytab
 
-        return (
-            "com.sun.security.auth.module.Krb5LoginModule required\n"
-            f'keyTab="{keytab}"\n'
-            f'principal="{self.user}"\n'
-            f'serviceName="{service_name}"\n'
-            "renewTicket=true\n"
-            "storeKey=true\n"
-            "useKeyTab=true\n"
-            "useTicketCache=false;"
+        return textwrap.dedent(
+            "com.sun.security.auth.module.Krb5LoginModule required"
+            f'keyTab="{keytab}"'
+            f'principal="{self.user}"'
+            f'serviceName="{service_name}"'
+            "renewTicket=true"
+            "storeKey=true"
+            "useKeyTab=true"
+            "useTicketCache=false;",
         )
 
-    def _password_jaas(self, service_name) -> str:
-        return (
-            "org.apache.kafka.common.security.plain.PlainLoginModule required\n"
-            f'serviceName="{service_name}"\n'
-            f'username="{self.user}"\n'
-            f'password="{self.password}";'
+    def _password_jaas(self, service_name) -> str:  # noqa: WPS473
+        return textwrap.dedent(
+            "org.apache.kafka.common.security.plain.PlainLoginModule required"
+            f'serviceName="{service_name}"'
+            f'username="{self.user}"'
+            f'password="{self.password}";',
         )
 
     def _move_keytab(self) -> LocalPath:

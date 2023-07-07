@@ -306,7 +306,7 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     # Assert
     assert conf == (
         "com.sun.security.auth.module.Krb5LoginModule required\n"
-        'keyTab="keytab"\n'
+        f'keyTab="{create_keytab.name}"\n'
         'principal="user"\n'
         'serviceName="3a4df6708d55e431d32237f3cf8e8a63"\n'
         "renewTicket=true\n"
