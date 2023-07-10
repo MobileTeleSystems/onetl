@@ -1,4 +1,5 @@
 black
+importlib-resources<6
 mypy
 pre-commit
 types-Deprecated
