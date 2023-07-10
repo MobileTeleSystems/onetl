@@ -86,7 +86,7 @@ class RenameDirMixin(BaseFileConnection):
 
         self.create_dir(target_dir.parent)
         self._rename_dir(source_dir, target_dir)
-        log.info("|%s| Successfully renamed file '%s' to '%s'", self.__class__.__name__, source_dir, target_dir)
+        log.info("|%s| Successfully renamed directory '%s' to '%s'", self.__class__.__name__, source_dir, target_dir)
 
         return self.resolve_dir(target_dir)
 

@@ -149,7 +149,6 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
         "`insertInto` option was removed in onETL 0.4.0, "
         "now df.write.insertInto or df.write.saveAsTable is selected based on table existence"
     )
-
     with pytest.raises(ValueError, match=error_msg):
         Hive.WriteOptions(insert_into=insert_into)
 

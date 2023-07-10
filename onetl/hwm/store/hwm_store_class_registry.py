@@ -21,7 +21,7 @@ from onetl.hwm.store.base_hwm_store import BaseHWMStore
 
 
 class HWMStoreClassRegistry:
-    """Registry class of different HWM stores
+    """Registry class of different HWM stores.
 
     Examples
     --------
@@ -80,12 +80,12 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
         from onetl.hwm.store import (
             HWMStoreClassRegistry,
             default_hwm_store_class,
-            BaseStore,
+            BaseHWMStore,
         )
 
 
         @default_hwm_store_class
-        class MyClass(BaseStore):
+        class MyClass(BaseHWMStore):
             ...
 
 
@@ -108,12 +108,12 @@ def register_hwm_store_class(*type_names: str):
         from onetl.hwm.store import (
             HWMStoreClassRegistry,
             register_hwm_store_class,
-            BaseStore,
+            BaseHWMStore,
         )
 
 
         @register_hwm_store_class("somename")
-        class MyClass(BaseStore):
+        class MyClass(BaseHWMStore):
             ...
 
 
@@ -238,11 +238,15 @@ def detect_hwm_store(key: str) -> Callable:
 
     .. code:: python
 
+        import hydra
+        from omegaconf import DictConfig
+        from onetl.hwm.store import detect_hwm_store
+
+
+        # key=... is a path to config item, delimited by dot ``.``
         @hydra.main(config="../conf")
-        @detect_hwm_store(
-            key="myetl.env.hwm_store"
-        )  # path to config item, delimited by dot ``.``
-        def main(config: OmniConf):
+        @detect_hwm_store(key="myetl.env.hwm_store")
+        def main(config: DictConfig):
             pass
 
     """

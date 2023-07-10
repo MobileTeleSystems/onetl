@@ -130,9 +130,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
             """
             Generate `MAX(value)` clause for given value
             """
-
             result = cls._serialize_datetime_value(value)
-
             return f"MAX({result})"
 
         @classmethod
@@ -140,9 +138,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
             """
             Generate `MIN(value)` clause for given value
             """
-
             result = cls._serialize_datetime_value(value)
-
             return f"MIN({result})"
 
     @classmethod

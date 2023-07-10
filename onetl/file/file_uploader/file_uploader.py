@@ -16,16 +16,21 @@ from __future__ import annotations
 
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import validator
+from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path  # noqa: WPS436
 from onetl.base import BaseFileConnection
+from onetl.base.path_protocol import PathWithStatsProtocol
+from onetl.base.pure_path_protocol import PurePathProtocol
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file.file_set import FileSet
 from onetl.file.file_uploader.upload_result import UploadResult
+from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedLocalFile,
     FileWriteMode,
@@ -43,9 +48,17 @@ log = logging.getLogger(__name__)
 UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]]]
 
 
+class FileUploadStatus(Enum):
+    SUCCESSFUL = 0
+    FAILED = 1
+    SKIPPED = 2
+    MISSING = -1
+
+
+@support_hooks
 class FileUploader(FrozenModel):
     """Allows you to upload files to a remote source with specified file connection
-    and parameters, and return an object with upload result summary.
+    and parameters, and return an object with upload result summary. |support_hooks|
 
     .. note::
 
@@ -149,6 +162,16 @@ class FileUploader(FrozenModel):
         If download failed, file will left intact.
         """
 
+        workers: int = Field(default=1, ge=1)
+        """
+        Number of workers to create for parallel file upload.
+
+        1 (default) means files will me uploaded sequentially.
+        2 or more means files will be uploaded in parallel workers.
+
+        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
+        """
+
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -158,9 +181,10 @@ class FileUploader(FrozenModel):
 
     options: Options = Options()
 
+    @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
-        Method for uploading files to remote host.
+        Method for uploading files to remote host. |support_hooks|
 
         Parameters
         ----------
@@ -318,9 +342,10 @@ class FileUploader(FrozenModel):
         self._log_result(result)
         return result
 
+    @slot
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file list in the ``local_path``.
+        Get file list in the ``local_path``. |support_hooks|
 
         Raises
         -------
@@ -461,23 +486,68 @@ class FileUploader(FrozenModel):
             raise NotADirectoryError(f"{path_repr(self.local_path)} is not a directory")
 
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
-        total_files = len(to_upload)
         files = FileSet(item[0] for item in to_upload)
-
         log.info("|%s| Files to be uploaded:", self.__class__.__name__)
         log_lines(str(files))
         log_with_indent("")
         log.info("|%s| Starting the upload process", self.__class__.__name__)
 
-        result = UploadResult()
-        for i, (local_file, target_file, tmp_file) in enumerate(to_upload):
-            log.info("|%s| Uploading file %d of %d", self.__class__.__name__, i + 1, total_files)
-            log_with_indent("from = '%s'", local_file)
-            if tmp_file:
-                log_with_indent("temp = '%s'", tmp_file)
-            log_with_indent("to = '%s'", target_file)
+        self._create_dirs(to_upload)
 
-            self._upload_file(local_file, target_file, tmp_file, result)
+        result = UploadResult()
+        for status, file in self._bulk_upload(to_upload):
+            if status == FileUploadStatus.SUCCESSFUL:
+                result.successful.add(file)
+            elif status == FileUploadStatus.FAILED:
+                result.failed.add(file)
+            elif status == FileUploadStatus.SKIPPED:
+                result.skipped.add(file)
+            elif status == FileUploadStatus.MISSING:
+                result.missing.add(file)
+
+        return result
+
+    def _create_dirs(
+        self,
+        to_upload: UPLOAD_ITEMS_TYPE,
+    ) -> None:
+        """
+        Create all parent paths before uploading files
+        This is required to avoid errors then multiple threads create the same dir
+        """
+        parent_paths = OrderedSet()
+        for _, target_file, tmp_file in to_upload:
+            parent_paths.add(target_file.parent)
+            if tmp_file:
+                parent_paths.add(tmp_file.parent)
+
+        for parent_path in parent_paths:
+            self.connection.create_dir(parent_path)
+
+    def _bulk_upload(
+        self,
+        to_upload: UPLOAD_ITEMS_TYPE,
+    ) -> list[tuple[FileUploadStatus, PurePathProtocol | PathWithStatsProtocol]]:
+        workers = self.options.workers
+        result = []
+
+        if workers > 1:
+            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+                futures = [
+                    executor.submit(self._upload_file, local_file, target_file, tmp_file)
+                    for local_file, target_file, tmp_file in to_upload
+                ]
+                for future in as_completed(futures):
+                    result.append(future.result())
+        else:
+            for local_file, target_file, tmp_file in to_upload:
+                result.append(
+                    self._upload_file(
+                        local_file,
+                        target_file,
+                        tmp_file,
+                    ),
+                )
 
         return result
 
@@ -486,12 +556,21 @@ class FileUploader(FrozenModel):
         local_file: LocalPath,
         target_file: RemotePath,
         tmp_file: RemotePath | None,
-        result: UploadResult,
-    ) -> None:
+    ) -> tuple[FileUploadStatus, PurePathProtocol | PathWithStatsProtocol]:
+        if tmp_file:
+            log.info(
+                "|%s| Uploading file '%s' to '%s' (via tmp '%s')",
+                self.__class__.__name__,
+                local_file,
+                target_file,
+                tmp_file,
+            )
+        else:
+            log.info("|%s| Uploading file '%s' to '%s'", self.__class__.__name__, local_file, target_file)
+
         if not local_file.exists():
             log.warning("|%s| Missing file '%s', skipping", self.__class__.__name__, local_file)
-            result.missing.add(local_file)
-            return
+            return FileUploadStatus.MISSING, local_file
 
         try:
             replace = False
@@ -502,8 +581,7 @@ class FileUploader(FrozenModel):
 
                 if self.options.mode == FileWriteMode.IGNORE:
                     log.warning("|%s| File %s already exists, skipping", self.__class__.__name__, path_repr(file))
-                    result.skipped.add(local_file)
-                    return
+                    return FileUploadStatus.SKIPPED, local_file
 
                 replace = True
 
@@ -521,7 +599,7 @@ class FileUploader(FrozenModel):
                 local_file.unlink()
                 log.warning("|Local FS| Successfully removed file %s", local_file)
 
-            result.successful.add(uploaded_file)
+            return FileUploadStatus.SUCCESSFUL, uploaded_file
 
         except Exception as e:
             if log.isEnabledFor(logging.DEBUG):
@@ -529,7 +607,7 @@ class FileUploader(FrozenModel):
             else:
                 log.exception("|%s| Couldn't upload file to target dir: %s", self.__class__.__name__, e, exc_info=False)
 
-            result.failed.add(FailedLocalFile(path=local_file, exception=e))
+            return FileUploadStatus.FAILED, FailedLocalFile(path=local_file, exception=e)
 
     def _remove_temp_dir(self, temp_dir: RemotePath) -> None:
         try:

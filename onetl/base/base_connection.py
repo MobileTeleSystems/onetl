@@ -22,7 +22,7 @@ class BaseConnection(ABC):
 
     @abstractmethod
     def check(self):
-        """Check source availability.
+        """Check source availability. |support_hooks|
 
         If not, an exception will be raised.
 

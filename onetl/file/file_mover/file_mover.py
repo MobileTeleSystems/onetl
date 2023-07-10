@@ -16,15 +16,19 @@ from __future__ import annotations
 
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
 from pydantic import Field, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
-from onetl.base.path_protocol import PathProtocol
+from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
+from onetl.base.pure_path_protocol import PurePathProtocol
 from onetl.file.file_mover.move_result import MoveResult
 from onetl.file.file_set import FileSet
+from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
     FileWriteMode,
@@ -48,9 +52,17 @@ log = logging.getLogger(__name__)
 MOVE_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, RemotePath]]
 
 
+class FileMoveStatus(Enum):
+    SUCCESSFUL = 0
+    FAILED = 1
+    SKIPPED = 2
+    MISSING = -1
+
+
+@support_hooks
 class FileMover(FrozenModel):
     """Allows you to move files between different directories in a filesystem,
-    and return an object with move result summary.
+    and return an object with move result summary. |support_hooks|
 
     .. note::
 
@@ -154,6 +166,16 @@ class FileMover(FrozenModel):
             * ``delete_all`` - delete directory content before moving files
         """
 
+        workers: int = Field(default=1, ge=1)
+        """
+        Number of workers to create for parallel file moving.
+
+        1 (default) means files will me moved sequentially.
+        2 or more means files will be moved in parallel workers.
+
+        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
+        """
+
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -164,9 +186,10 @@ class FileMover(FrozenModel):
 
     options: Options = Options()
 
+    @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231
         """
-        Method for moving files from source to target directory.
+        Method for moving files from source to target directory. |support_hooks|
 
         Parameters
         ----------
@@ -304,10 +327,11 @@ class FileMover(FrozenModel):
         self._log_result(result)
         return result
 
+    @slot
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the ``source_path``,
-        after ``filter`` and ``limit`` applied (if any).
+        after ``filter`` and ``limit`` applied (if any). |support_hooks|
 
         Raises
         -------
@@ -422,7 +446,7 @@ class FileMover(FrozenModel):
                     # Wrong path (not relative path and source path not in the path to the file)
                     raise ValueError(f"File path '{old_file}' does not match source_path '{self.source_path}'")
 
-            if self.connection.path_exists(old_file):
+            if not isinstance(old_file, PathProtocol) and self.connection.path_exists(old_file):
                 old_file = self.connection.resolve_file(old_file)
 
             result.add((old_file, new_file))
@@ -447,25 +471,61 @@ class FileMover(FrozenModel):
         self,
         to_move: MOVE_ITEMS_TYPE,
     ) -> MoveResult:
-        total_files = len(to_move)
         files = FileSet(item[0] for item in to_move)
-
         log.info("|%s| Files to be moved:", self.__class__.__name__)
         log_lines(str(files))
         log_with_indent("")
         log.info("|%s| Starting the move process", self.__class__.__name__)
 
-        result = MoveResult()
-        for i, (source_file, target_file) in enumerate(to_move):
-            log.info("|%s| Moving file %d of %d", self.__class__.__name__, i + 1, total_files)
-            log_with_indent("from = '%s'", source_file)
-            log_with_indent("to = '%s'", target_file)
+        self._create_dirs(to_move)
 
-            self._move_file(
-                source_file,
-                target_file,
-                result,
-            )
+        result = MoveResult()
+        for status, file in self._bulk_move(to_move):
+            if status == FileMoveStatus.SUCCESSFUL:
+                result.successful.add(file)
+            elif status == FileMoveStatus.FAILED:
+                result.failed.add(file)
+            elif status == FileMoveStatus.SKIPPED:
+                result.skipped.add(file)
+            elif status == FileMoveStatus.MISSING:
+                result.missing.add(file)
+
+        return result
+
+    def _create_dirs(
+        self,
+        to_move: MOVE_ITEMS_TYPE,
+    ) -> None:
+        """
+        Create all parent paths before moving files
+        This is required to avoid errors then multiple threads create the same dir
+        """
+        parent_paths = OrderedSet(target_file.parent for _, target_file in to_move)
+        for parent_path in parent_paths:
+            self.connection.create_dir(parent_path)
+
+    def _bulk_move(
+        self,
+        to_move: MOVE_ITEMS_TYPE,
+    ) -> list[tuple[FileMoveStatus, PurePathProtocol | PathWithStatsProtocol]]:
+        workers = self.options.workers
+        result = []
+
+        if workers > 1:
+            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+                futures = [
+                    executor.submit(self._move_file, source_file, target_file) for source_file, target_file in to_move
+                ]
+                for future in as_completed(futures):
+                    result.append(future.result())
+        else:
+            for source_file, target_file in to_move:
+                result.append(
+                    self._move_file(
+                        source_file,
+                        target_file,
+                    ),
+                )
 
         return result
 
@@ -473,12 +533,12 @@ class FileMover(FrozenModel):
         self,
         source_file: RemotePath,
         target_file: RemotePath,
-        result: MoveResult,
-    ) -> None:
+    ) -> tuple[FileMoveStatus, PurePathProtocol | PathWithStatsProtocol]:
+        log.info("|%s| Moving file '%s' to '%s'", self.__class__.__name__, source_file, target_file)
+
         if not self.connection.path_exists(source_file):
             log.warning("|%s| Missing file '%s', skipping", self.__class__.__name__, source_file)
-            result.missing.add(source_file)
-            return
+            return FileMoveStatus.MISSING, source_file
 
         try:
             replace = False
@@ -494,13 +554,12 @@ class FileMover(FrozenModel):
                         self.connection.__class__.__name__,
                         path_repr(new_file),
                     )
-                    result.skipped.add(source_file)
-                    return
+                    return FileMoveStatus.SKIPPED, source_file
 
                 replace = True
 
             new_file = self.connection.rename_file(source_file, target_file, replace=replace)
-            result.successful.add(new_file)
+            return FileMoveStatus.SUCCESSFUL, new_file
 
         except Exception as e:
             if log.isEnabledFor(logging.DEBUG):
@@ -516,7 +575,7 @@ class FileMover(FrozenModel):
                     e,
                     exc_info=False,
                 )
-            result.failed.add(FailedRemoteFile(path=source_file.path, stats=source_file.stats, exception=e))
+            return FileMoveStatus.FAILED, FailedRemoteFile(path=source_file.path, stats=source_file.stats, exception=e)
 
     def _log_result(self, result: MoveResult) -> None:
         log_with_indent("")

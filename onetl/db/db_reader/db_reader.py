@@ -11,6 +11,7 @@ from pydantic import Field, root_validator, validator
 from onetl._internal import uniq_ignore_case  # noqa: WPS436
 from onetl.base import BaseDBConnection
 from onetl.base.contains_get_df_schema import ContainsGetDFSchemaMethod
+from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
@@ -28,9 +29,10 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
+@support_hooks
 class DBReader(FrozenModel):
     """Allows you to read data from a table with specified database connection
-    and parameters, and return its content as Spark dataframe
+    and parameters, and return its content as Spark dataframe. |support_hooks|
 
     .. note::
 
@@ -487,9 +489,10 @@ class DBReader(FrozenModel):
             **self._get_read_kwargs(),
         )
 
+    @slot
     def run(self) -> DataFrame:
         """
-        Reads data from source table and saves as Spark dataframe.
+        Reads data from source table and saves as Spark dataframe. |support_hooks|
 
         .. note::
 

@@ -23,7 +23,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class Teradata(JDBCConnection):
-    """Teradata JDBC connection.
+    """Teradata JDBC connection. |support_hooks|
 
     Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
@@ -48,7 +48,7 @@ class Teradata(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

@@ -1,0 +1,43 @@
+0.8.1 (2023-07-10)
+==================
+
+Features
+--------
+
+- Add ``@slot`` decorator to public methods of:
+
+  * ``DBConnection``
+  * ``FileConnection``
+  * ``DBReader``
+  * ``DBWriter``
+  * ``FileDownloader``
+  * ``FileUploader``
+  * ``FileMover`` (:github:pull:`49`)
+- Add ``workers`` field to ``FileDownloader`` / ``FileUploader`` / ``FileMover``. ``Options`` classes.
+
+  This allows to speed up all file operations using parallel threads. (:github:pull:`57`)
+
+
+Improvements
+------------
+
+- Add documentation for HWM store ``.get`` and ``.save`` methods. (:github:pull:`49`)
+- Improve Readme:
+
+  * Move ``Quick start`` section from documentation
+  * Add ``Non-goals`` section
+  * Fix code blocks indentation (:github:pull:`50`)
+- Improve Contributing guide:
+
+  * Move ``Develop`` section from Readme
+  * Move ``docs/changelog/README.rst`` content
+  * Add ``Limitations`` section
+  * Add instruction of creating a fork and building documentation (:github:pull:`50`)
+- Remove duplicated checks for source file existence in ``FileDownloader`` / ``FileMover``. (:github:pull:`57`)
+- Update default logging format to include thread name. (:github:pull:`57`)
+
+
+Bug Fixes
+---------
+
+- Fix ``S3.list_dir('/')`` returns empty list on latest Minio version. (:github:pull:`58`)

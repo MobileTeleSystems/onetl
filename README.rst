@@ -30,13 +30,23 @@ onETL
 What is onETL?
 --------------
 
-Python ETL/ELT framework powered by `Apache Spark <https://spark.apache.org/>`_ & other open-source tools.
+Python ETL/ELT library powered by `Apache Spark <https://spark.apache.org/>`_ & other open-source tools.
 
-* Provides unified classes to extract data from (**E**) & load data to (**L**) various stores.
-* Relies on `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*.
-* Provides direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines.
-* Supports different `read strategies <https://onetl.readthedocs.io/en/stable/strategy/index.html>`_ for incremental and batch data fetching.
-* Provides hooks & plugins mechanism for altering behavior of internal classes.
+Goals
+-----
+
+* Provide unified classes to extract data from (**E**) & load data to (**L**) various stores.
+* Provides `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*.
+* Provide direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines.
+* Support different `read strategies <https://onetl.readthedocs.io/en/stable/strategy/index.html>`_ for incremental and batch data fetching.
+* Provide `hooks <https://onetl.readthedocs.io/en/stable/hooks/index.html>`_ & `plugins <https://onetl.readthedocs.io/en/stable/plugins.html>`_ mechanism for altering behavior of internal classes.
+
+Non-goals
+---------
+
+* onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and simplifies UX for end users.
+* onETL is not a framework, as it does not have requirements to project structure, naming, the way of running ETL/ELT processes, configuration, etc. All of that should be implemented in some other tool.
+* onETL is deliberately developed without any integration with scheduling software like Apache Airflow. All integrations should be implemented as separated tools.
 
 Requirements
 ------------
@@ -51,7 +61,7 @@ Supported storages
 +------------+------------+----------------------------------------------------------------------------------------------------------+
 | Type       | Storage    | Powered by                                                                                               |
 +============+============+==========================================================================================================+
-| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/3.4.0/sql-data-sources-jdbc.html>`_        |
+| Database   | Clickhouse | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-jdbc.html>`_        |
 +            +------------+                                                                                                          +
 |            | MSSQL      |                                                                                                          |
 +            +------------+                                                                                                          +
@@ -63,7 +73,7 @@ Supported storages
 +            +------------+                                                                                                          +
 |            | Teradata   |                                                                                                          |
 +            +------------+----------------------------------------------------------------------------------------------------------+
-|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/3.4.0/sql-data-sources-hive-tables.html>`_ |
+|            | Hive       | Apache Spark `Hive integration <https://spark.apache.org/docs/3.4.1/sql-data-sources-hive-tables.html>`_ |
 +            +------------+----------------------------------------------------------------------------------------------------------+
 |            | Greenplum  | Pivotal `Greenplum Spark connector <https://network.tanzu.vmware.com/products/vmware-tanzu-greenplum>`_  |
 +            +------------+----------------------------------------------------------------------------------------------------------+
@@ -89,21 +99,6 @@ Documentation
 -------------
 
 See https://onetl.readthedocs.io/
-
-.. contribution
-
-Contribution guide
--------------------
-
-See `<CONTRIBUTING.rst>`__
-
-.. security
-
-Security
--------------------
-
-See `<SECURITY.rst>`__
-
 
 .. install
 
@@ -166,7 +161,7 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.3.x <https://spark.apache.org/docs/3.3.2/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.0/#downloading>`_  | 3.7 - 3.11  | 8u362 - 17  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 Then you should install PySpark via passing ``spark`` to ``extras``:
@@ -179,7 +174,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.4.0  # install a specific PySpark version
+    pip install onetl pyspark==3.4.1  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise class import will fail.**
@@ -217,18 +212,18 @@ Most of Hadoop instances set up with Kerberos support,
 so some connections require additional setup to work properly.
 
 * ``HDFS``
-    Uses `requests-kerberos <https://pypi.org/project/requests-kerberos/>`_ and
-    `GSSApi <https://pypi.org/project/gssapi/>`_ for authentication in WebHDFS.
-    It also uses ``kinit`` executable to generate Kerberos ticket.
+  Uses `requests-kerberos <https://pypi.org/project/requests-kerberos/>`_ and
+  `GSSApi <https://pypi.org/project/gssapi/>`_ for authentication in WebHDFS.
+  It also uses ``kinit`` executable to generate Kerberos ticket.
 
 * ``Hive``
-    Requires Kerberos ticket to exist before creating Spark session.
+  Requires Kerberos ticket to exist before creating Spark session.
 
 So you need to install OS packages with:
 
-    * ``krb5`` libs
-    * Headers for ``krb5``
-    * ``gcc`` or other compiler for C sources
+* ``krb5`` libs
+* Headers for ``krb5``
+* ``gcc`` or other compiler for C sources
 
 The exact installation instruction depends on your OS, here are some examples:
 
@@ -262,191 +257,194 @@ To install all connectors and dependencies, you can pass ``all`` into ``extras``
 
     This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.
 
-.. develops
+.. quick-start
 
-Develop
--------
+Quick start
+------------
 
-Clone repo
-~~~~~~~~~~
+MSSQL → Hive
+~~~~~~~~~~~~
 
-Clone repo:
+Read data from MSSQL, transform & write to Hive.
 
-.. code:: bash
+.. code:: python
 
-    git clone git@github.com:MobileTeleSystems/onetl.git -b develop
+    # Import pyspark to initialize the SparkSession
+    from pyspark.sql import SparkSession
 
-    cd onetl
+    # import function to setup onETL logging
+    from onetl.log import setup_logging
 
-Setup environment
-~~~~~~~~~~~~~~~~~
+    # Import required connections
+    from onetl.connection import MSSQL, Hive
 
-Create virtualenv and install dependencies:
+    # Import onETL classes to read & write data
+    from onetl.db import DBReader, DBWriter
 
-.. code:: bash
+    # change logging level to INFO, and set up default logging format and handler
+    setup_logging()
 
-    python -m venv venv
-    source venv/bin/activate
-    pip install -U wheel
-    pip install -U pip setuptools
-    pip install -U \
-        -r requirements/core.txt \
-        -r requirements/ftp.txt \
-        -r requirements/hdfs.txt \
-        -r requirements/kerberos.txt \
-        -r requirements/s3.txt \
-        -r requirements/sftp.txt \
-        -r requirements/webdav.txt \
-        -r requirements/dev.txt \
-        -r requirements/docs.txt \
-        -r requirements/tests/base.txt \
-        -r requirements/tests/clickhouse.txt \
-        -r requirements/tests/postgres.txt \
-        -r requirements/tests/mongodb.txt \
-        -r requirements/tests/mssql.txt \
-        -r requirements/tests/mysql.txt \
-        -r requirements/tests/oracle.txt \
-        -r requirements/tests/postgres.txt \
-        -r requirements/tests/spark-3.4.0.txt
-
-Enable pre-commit hooks
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Install pre-commit hooks:
-
-.. code:: bash
-
-    pre-commit install --install-hooks
-
-Test pre-commit hooks run:
-
-.. code:: bash
-
-    pre-commit run
-
-.. tests
-
-Tests
-~~~~~
-
-Using docker-compose
-^^^^^^^^^^^^^^^^^^^^
-
-Build image for running tests:
-
-.. code:: bash
-
-    docker-compose build
-
-Start all containers with dependencies:
-
-.. code:: bash
-
-    docker-compose up -d
-
-You can run limited set of dependencies:
-
-.. code:: bash
-
-    docker-compose up -d mongodb
-
-Run tests:
-
-.. code:: bash
-
-    docker-compose run --rm onetl ./run_tests.sh
-
-You can pass additional arguments, they will be passed to pytest:
-
-.. code:: bash
-
-    docker-compose run --rm onetl ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
-
-You can run interactive bash session and use it:
-
-.. code:: bash
-
-    docker-compose run --rm onetl bash
-
-    ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
-
-See logs of test container:
-
-.. code:: bash
-
-    docker-compose logs -f onetl
-
-Stop all containers and remove created volumes:
-
-.. code:: bash
-
-    docker-compose down -v
-
-Run tests locally
-^^^^^^^^^^^^^^^^^
-
-.. warning::
-
-    To run HDFS tests locally you should add the following line to your ``/etc/hosts`` (file path depends on OS):
-
-    .. code::
-
-        127.0.0.1 hdfs
-
-.. note::
-
-    To run Oracle tests you need to install `Oracle instantclient <https://www.oracle.com/database/technologies/instant-client.html>`__,
-    and pass its path to ``ONETL_ORA_CLIENT_PATH`` and ``LD_LIBRARY_PATH`` environment variables,
-    e.g. ``ONETL_ORA_CLIENT_PATH=/path/to/client64/lib``.
-
-    It may also require to add the same path into ``LD_LIBRARY_PATH`` environment variable
-
-.. note::
-
-    To run Greenplum tests, you should:
-
-    * Download `Pivotal connector for Spark <https://onetl.org.readthedocs.build/en/latest/db_connection/greenplum/prerequisites.html>`_
-    * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
-    * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
-
-Build image for running tests:
-
-.. code:: bash
-
-    docker-compose build
-
-Start all containers with dependencies:
-
-.. code:: bash
-
-    docker-compose up -d
-
-You can run limited set of dependencies:
-
-.. code:: bash
-
-    docker-compose up -d mongodb
-
-Load environment variables with connection properties:
-
-.. code:: bash
-
-    source .env.local
-
-Run tests:
-
-.. code:: bash
-
-    ./run_tests.sh
-
-You can pass additional arguments, they will be passed to pytest:
-
-.. code:: bash
-
-    ./run_tests.sh -m mongodb -lsx -vvvv --log-cli-level=INFO
-
-Stop all containers and remove created volumes:
-
-.. code:: bash
-
-    docker-compose down -v
+    # Initiate new SparkSession
+    spark = (
+        SparkSession.builder.appName("spark_app_onetl_demo")
+        .config("spark.jars.packages", MSSQL.package)
+        .enableHiveSupport()
+        .getOrCreate()
+    )
+
+    # Initiate MSSQL connection and check it
+    mssql = MSSQL(
+        host="mssqldb.demo.com",
+        user="onetl",
+        password="onetl",
+        database="Telecom",
+        spark=spark,
+        extra={"ApplicationIntent": "ReadOnly"},
+    ).check()
+
+    # >>> INFO:|MSSQL| Connection is available.
+
+    # Initiate reader
+    reader = DBReader(
+        connection=mssql,
+        source="dbo.demo_table",
+        columns=["on", "etl"],
+        # Set some MSSQL read options:
+        options=MSSQL.ReadOptions(fetchsize=10000),
+    )
+
+    # Read data to DataFrame
+    df = reader.run()
+
+    # Apply any PySpark transformations
+    from pyspark.sql.functions import lit
+
+    df_to_write = df.withColumn("engine", lit("onetl"))
+
+
+    # Initiate Hive connection
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+
+    # Initiate writer
+    writer = DBWriter(
+        connection=hive,
+        target="dl_sb.demo_table",
+        # Set some Hive write options:
+        options=Hive.WriteOptions(mode="overwrite"),
+    )
+
+    # Write data from DataFrame to Hive
+    writer.run(df_to_write)
+
+    # Success!
+
+SFTP → HDFS
+~~~~~~~~~~~
+
+Download files from SFTP & upload them to HDFS.
+
+.. code:: python
+
+    # import function to setup onETL logging
+    from onetl.log import setup_logging
+
+    # Import required connections
+    from onetl.connection import SFTP, HDFS
+
+    # Import onETL classes to download & upload files
+    from onetl.file import FileDownloader, FileUploader
+
+    # import filter & limit classes
+    from onetl.file.filter import Glob, ExcludeDir
+    from onetl.file.limit import MaxFilesCount
+
+    # change logging level to INFO, and set up default logging format and handler
+    setup_logging()
+
+    # Initiate SFTP connection and check it
+    sftp = SFTP(
+        host="sftp.test.com",
+        user="onetl",
+        password="onetl",
+    ).check()
+
+    # >>> INFO:|SFTP| Connection is available.
+
+    # Initiate downloader
+    downloader = FileDownloader(
+        connection=sftp,
+        source_path="/remote/tests/Report",  # path on SFTP
+        local_path="/local/onetl/Report",  # local fs path
+        filters=[
+            Glob("*.csv"),  # download only files matching the glob
+            ExcludeDir(
+                "/remote/tests/Report/exclude_dir/"
+            ),  # exclude files from this directory
+        ],
+        limits=[
+            MaxFilesCount(1000),  # download max 1000 files per run
+        ],
+        options=FileDownloader.Options(
+            delete_source=True,  # delete files from SFTP after successful download
+            mode="error",  # mark file as failed if it already exist in local_path
+        ),
+    )
+
+    # Download files to local filesystem
+    download_result = downloader.run()
+
+    # Method run returns a DownloadResult object,
+    # which contains collection of downloaded files, divided to 4 categories
+    download_result
+
+    #  DownloadResult(
+    #      successful=[
+    #          LocalPath('/local/onetl/Report/file_1.json'),
+    #          LocalPath('/local/onetl/Report/file_2.json'),
+    #      ],
+    #      failed=[FailedRemoteFile('/remote/onetl/Report/file_3.json')],
+    #      ignored=[RemoteFile('/remote/onetl/Report/file_4.json')],
+    #      missing=[],
+    #  )
+
+    # Raise exception if there are failed files, or there were no files in the remote filesystem
+    download_result.raise_if_failed() or download_result.raise_if_empty()
+
+    # Do any kind of magic with files: rename files, remove header for csv files, ...
+    renamed_files = my_rename_function(download_result.success)
+
+    # function removed "_" from file names
+    # [
+    #    LocalPath('/home/onetl/Report/file1.json'),
+    #    LocalPath('/home/onetl/Report/file2.json'),
+    # ]
+
+    # Initiate HDFS connection
+    hdfs = HDFS(
+        host="my.name.node",
+        user="onetl",
+        password="onetl",  # or keytab
+    )
+
+    # Initiate uploader
+    uploader = FileUploader(
+        connection=hdfs,
+        target_path="/user/onetl/Report/",  # hdfs path
+    )
+
+    # Upload files from local fs to HDFS
+    upload_result = uploader.run(renamed_files)
+
+    # Method run returns a UploadResult object,
+    # which contains collection of uploaded files, divided to 4 categories
+    upload_result
+
+    #  UploadResult(
+    #      successful=[RemoteFile('/user/onetl/Report/file1.json')],
+    #      failed=[FailedRemoteFile('/local/onetl/Report/file2.json')],
+    #      ignored=[],
+    #      missing=[],
+    #  )
+
+    # Raise exception if there are failed files, or there were no files in the local filesystem, or some input file is missing
+    upload_result.raise_if_failed() or upload_result.raise_if_empty() or upload_result.raise_if_missing()

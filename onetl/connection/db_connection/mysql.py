@@ -23,7 +23,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class MySQL(JDBCConnection):
-    """MySQL JDBC connection.
+    """MySQL JDBC connection. |support_hooks|
 
     Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
@@ -48,7 +48,7 @@ class MySQL(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 

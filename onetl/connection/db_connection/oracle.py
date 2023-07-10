@@ -27,6 +27,7 @@ from pydantic import root_validator
 
 from onetl._internal import clear_statement  # noqa: WPS436
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.hooks import slot, support_hooks
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.package` for creating Spark session
@@ -61,8 +62,9 @@ class ErrorPosition:
         return 100 - self.level, self.line, self.position
 
 
+@support_hooks
 class Oracle(JDBCConnection):
-    """Oracle JDBC connection.
+    """Oracle JDBC connection. |support_hooks|
 
     Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
@@ -87,7 +89,7 @@ class Oracle(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
@@ -223,6 +225,7 @@ class Oracle(JDBCConnection):
 
         return f"{super().instance_url}/{self.service_name}"
 
+    @slot
     def execute(
         self,
         statement: str,
@@ -356,7 +359,7 @@ class Oracle(JDBCConnection):
         So this method is fetching errors from the system views:
         1. ``SELECT * FROM ALL_ERRORS``
         2. Parse resulting dataframe into list of compilation errors
-        3. Generage error message from errors list
+        3. Generate error message from errors list
         4. If there are records with ``ERROR`` level, method throws ValueError, otherwise prints warning to log
         """
 

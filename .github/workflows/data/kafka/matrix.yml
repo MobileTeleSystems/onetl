@@ -1,0 +1,32 @@
+min: &min
+  spark-version: 2.3.1
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
+max: &max
+  spark-version: 3.4.1
+  python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 20
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - kafka-version: 3.5.0
+    <<: *max
+  full:
+  - kafka-version: 0.10.2-1-r3
+    <<: *min
+  - kafka-version: 3.5.0
+    <<: *max
+  nightly:
+  - kafka-version: 0.10.2-1-r3
+    <<: *min
+  - kafka-version: latest
+    <<: *latest

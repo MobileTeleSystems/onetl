@@ -33,7 +33,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def path_exists(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path exists on remote filesystem.
+        Check if specified path exists on remote filesystem. |support_hooks|
 
         Parameters
         ----------
@@ -57,7 +57,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def is_file(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path is a file.
+        Check if specified path is a file. |support_hooks|
 
         Parameters
         ----------
@@ -85,7 +85,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def is_dir(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path is a directory.
+        Check if specified path is a directory. |support_hooks|
 
         Parameters
         ----------
@@ -113,7 +113,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         """
-        Returns stats for a specific path.
+        Returns stats for a specific path. |support_hooks|
 
         Parameters
         ----------
@@ -141,7 +141,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def resolve_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Returns directory at specific path, with stats.
+        Returns directory at specific path, with stats. |support_hooks|
 
         Parameters
         ----------
@@ -173,7 +173,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def resolve_file(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Returns file at specific path, with stats.
+        Returns file at specific path, with stats. |support_hooks|
 
         Parameters
         ----------
@@ -205,7 +205,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def create_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Creates directory tree on remote filesystem.
+        Creates directory tree on remote filesystem. |support_hooks|
 
         Parameters
         ----------
@@ -232,7 +232,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def remove_file(self, path: os.PathLike | str) -> bool:
         """
-        Removes file on remote filesystem.
+        Removes file on remote filesystem. |support_hooks|
 
         If file does not exist, no exception is raised.
 
@@ -268,7 +268,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:
         """
-        Remove directory or directory tree.
+        Remove directory or directory tree. |support_hooks|
 
         If directory does not exist, no exception is raised.
 
@@ -309,7 +309,7 @@ class BaseFileConnection(BaseConnection):
         replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
-        Rename or move file on remote filesystem.
+        Rename or move file on remote filesystem. |support_hooks|
 
         .. warning::
 
@@ -359,7 +359,7 @@ class BaseFileConnection(BaseConnection):
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> list[PathWithStatsProtocol]:
         """
-        Return list of child files/directories in a specific directory.
+        Return list of child files/directories in a specific directory. |support_hooks|
 
         Parameters
         ----------
@@ -404,7 +404,7 @@ class BaseFileConnection(BaseConnection):
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> Iterable[tuple[PathWithStatsProtocol, list[PathWithStatsProtocol], list[PathWithStatsProtocol]]]:
         """
-        Walk into directory tree, and iterate over its content in all nesting levels.
+        Walk into directory tree, and iterate over its content in all nesting levels. |support_hooks|
 
         Just like :obj:`os.walk`, but with additional filter/limit logic.
 
@@ -457,7 +457,7 @@ class BaseFileConnection(BaseConnection):
         replace: bool = True,
     ) -> PathWithStatsProtocol:
         """
-        Downloads file from the remote filesystem to a local path.
+        Downloads file from the remote filesystem to a local path. |support_hooks|
 
         .. warning::
 
@@ -513,7 +513,7 @@ class BaseFileConnection(BaseConnection):
         replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
-        Uploads local file to a remote filesystem.
+        Uploads local file to a remote filesystem. |support_hooks|
 
         .. warning::
 
@@ -564,7 +564,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8") -> str:
         r"""
-        Returns string content of a file at specific path.
+        Returns string content of a file at specific path. |support_hooks|
 
         Parameters
         ----------
@@ -598,7 +598,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def read_bytes(self, path: os.PathLike | str) -> bytes:
         """
-        Returns binary content of a file at specific path.
+        Returns binary content of a file at specific path. |support_hooks|
 
         Parameters
         ----------
@@ -634,7 +634,7 @@ class BaseFileConnection(BaseConnection):
         encoding: str = "utf-8",
     ) -> PathWithStatsProtocol:
         r"""
-        Writes string content to a file at specific path.
+        Writes string content to a file at specific path. |support_hooks|
 
         .. warning::
 
@@ -675,7 +675,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def write_bytes(self, path: os.PathLike | str, content: bytes) -> PathWithStatsProtocol:
         """
-        Writes bytes content to a file at specific path.
+        Writes bytes content to a file at specific path. |support_hooks|
 
         .. warning::
 

@@ -1,5 +1,6 @@
 autodoc_pydantic
 furo
+importlib-resources<6
 numpydoc
 sphinx
 sphinx-copybutton

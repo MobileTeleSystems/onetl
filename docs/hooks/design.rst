@@ -289,11 +289,11 @@ Generator function
     @hook
     def callback(obj, arg):
         print(obj.data, arg)
-        # this is called while entering the context
+        # this is called before original method body
 
         yield  # method is called here
 
-        # this is called while exiting the context
+        # this is called after original method body
 
 It is converted to a context manager, in the same manner as
 `contextlib.contextmanager <https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager>`_.
@@ -307,13 +307,13 @@ Generator body can be wrapped with ``try..except..finally`` to catch exceptions:
         print(obj.data, arg)
 
         try:
-            # this is called while entering the context
+            # this is called before original method body
 
             yield  # method is called here
         except Exception as e:
             process_exception(a)
         finally:
-            # this is called while exiting the context
+            # this is called after original method body
             finalizer()
 
 There is also a special syntax which allows generator to access and modify/replace method call result:
@@ -333,29 +333,29 @@ Calling hooks in details
 
 * The callback will be called with the same arguments as the original method.
 
-    * If slot is a regular method:
+  * If slot is a regular method:
 
-        .. code:: python
+    .. code:: python
 
-            callback_result = callback(self, *args, **kwargs)
+        callback_result = callback(self, *args, **kwargs)
 
-        Here ``self`` is a class instance (``obj``).
+    Here ``self`` is a class instance (``obj``).
 
-    * If slot is a class method:
+  * If slot is a class method:
 
-        .. code:: python
+    .. code:: python
 
-            callback_result = callback(cls, *args, **kwargs)
+        callback_result = callback(cls, *args, **kwargs)
 
-        Here ``cls`` is the class itself (``MyClass``).
+    Here ``cls`` is the class itself (``MyClass``).
 
-    * If slot is a static method:
+  * If slot is a static method:
 
-        .. code:: python
+    .. code:: python
 
-            callback_result = callback(*args, **kwargs)
+        callback_result = callback(*args, **kwargs)
 
-        Neither object not class are passed to the callback in this case.
+    Neither object not class are passed to the callback in this case.
 
 * If ``callback_result`` is a context manager, enter the context. Context manager can catch all the exceptions raised.
 
@@ -363,35 +363,35 @@ Calling hooks in details
 
 * Then call the original method wrapped by ``@slot``:
 
-    .. code:: python
+  .. code:: python
 
-        original_result = method(*args, **kwargs)
+      original_result = method(*args, **kwargs)
 
 * Process ``original_result``:
 
-    * If ``callback_result`` object has method ``process_result``, or is a generator wrapped with ``@hook``, call it:
-
-        .. code:: python
-
-            new_result = callback_result.process_result(original_result)
-
-    * Otherwise set ``new_result = callback_result``.
-
-    * If there are multiple hooks bound the the method, pass ``new_result`` through the chain:
-
-        .. code:: python
-
-            new_result = callback1_result.process_result(original_result)
-            new_result = callback2_result.process_result(new_result or original_result)
-            new_result = callback3_result.process_result(new_result or original_result)
-
-* Finally return:
+  * If ``callback_result`` object has method ``process_result``, or is a generator wrapped with ``@hook``, call it:
 
     .. code:: python
 
-        return new_result or original_result
+        new_result = callback_result.process_result(original_result)
 
-    All ``None`` values are ignored on every step above.
+  * Otherwise set ``new_result = callback_result``.
+
+  * If there are multiple hooks bound the the method, pass ``new_result`` through the chain:
+
+    .. code:: python
+
+        new_result = callback1_result.process_result(original_result)
+        new_result = callback2_result.process_result(new_result or original_result)
+        new_result = callback3_result.process_result(new_result or original_result)
+
+* Finally return:
+
+  .. code:: python
+
+      return new_result or original_result
+
+  All ``None`` values are ignored on every step above.
 
 * Exit all the context managers entered during the slot call.
 
@@ -476,42 +476,42 @@ Can be used for catching and handling some exceptions, or to determine that ther
 
 .. tabs::
 
-    .. code-tab:: py Generator syntax
+  .. code-tab:: py Generator syntax
 
-        # This is just the same as using @contextlib.contextmanager
+      # This is just the same as using @contextlib.contextmanager
 
-        @hook
-        def context_generator(obj, arg):
-            try:
-                yield  # original method is called here
-                print(obj, arg)  # <-- this line will not be called if method raised an exception
-            except SomeException as e:
-                magic(e)
-            finally:
-                finalizer()
+      @hook
+      def context_generator(obj, arg):
+          try:
+              yield  # original method is called here
+              print(obj, arg)  # <-- this line will not be called if method raised an exception
+          except SomeException as e:
+              magic(e)
+          finally:
+              finalizer()
 
-    .. code-tab:: py Context manager syntax
+  .. code-tab:: py Context manager syntax
 
-        @hook
-        class ContextManager:
-            def __init__(self, obj, args):
-                self.obj = obj
-                self.args = args
+      @hook
+      class ContextManager:
+          def __init__(self, obj, args):
+              self.obj = obj
+              self.args = args
 
-            def __enter__(self):
-                return self
+          def __enter__(self):
+              return self
 
-            # original method is called between __enter__ and __exit__
+          # original method is called between __enter__ and __exit__
 
-            def __exit__(self, exc_type, exc_value, traceback):
-                result = False
-                if exc_type is not None and isinstance(exc_value, SomeException):
-                    magic(exc_value)
-                    result = True  # suppress exception
-                else:
-                    print(self.obj, self.arg)
-                finalizer()
-                return result
+          def __exit__(self, exc_type, exc_value, traceback):
+              result = False
+              if exc_type is not None and isinstance(exc_value, SomeException):
+                  magic(exc_value)
+                  result = True  # suppress exception
+              else:
+                  print(self.obj, self.arg)
+              finalizer()
+              return result
 
 .. note::
 

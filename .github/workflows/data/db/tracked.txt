@@ -1,0 +1,5 @@
+.github/workflows/data/db/**
+onetl/db_connection/db_connection.py
+onetl/db_connection/jdbc*.py
+onetl/db_connection/dialect_mixins/*
+onetl/db/**

@@ -583,7 +583,6 @@ class FileResult(BaseModel):
             file_result2 = FileResult()
             assert file_result1.summary == "No files"
         '''
-
         return self._total_message
 
     def __str__(self):

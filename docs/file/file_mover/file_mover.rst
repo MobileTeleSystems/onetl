@@ -19,4 +19,5 @@ File Mover
 .. currentmodule:: onetl.file.file_mover.file_mover.FileMover
 
 .. autopydantic_model:: Options
-    :members: mode
+    :members: mode, workers
+    :member-order: bysource

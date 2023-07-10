@@ -36,6 +36,7 @@ from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschem
     SupportTableWithoutDBSchema,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
+from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
@@ -157,8 +158,9 @@ KNOWN_WRITE_OPTIONS = frozenset(
 )
 
 
+@support_hooks
 class MongoDB(DBConnection):
-    """MongoDB connection.
+    """MongoDB connection. |support_hooks|
 
     Based on package ``org.mongodb.spark:mongo-spark-connector``
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
@@ -183,7 +185,7 @@ class MongoDB(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
@@ -528,6 +530,7 @@ class MongoDB(DBConnection):
                         "field. You cannot use aggregations or 'groupBy' clauses in 'where'",
                     )
 
+    @slot
     def pipeline(
         self,
         collection: str,
@@ -536,7 +539,7 @@ class MongoDB(DBConnection):
         options: PipelineOptions | dict | None = None,
     ):
         """
-        Execute a pipeline for a specific collection, and return DataFrame.
+        Execute a pipeline for a specific collection, and return DataFrame. |support_hooks|
 
         Almost like `Aggregation pipeline syntax <https://www.mongodb.com/docs/manual/core/aggregation-pipeline/>`_
         in MongoDB:
@@ -671,6 +674,7 @@ class MongoDB(DBConnection):
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
+    @slot
     def check(self):
         self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
@@ -687,6 +691,7 @@ class MongoDB(DBConnection):
 
         return self
 
+    @slot
     def get_min_max_bounds(
         self,
         source: str,
@@ -732,6 +737,7 @@ class MongoDB(DBConnection):
 
         return min_value, max_value
 
+    @slot
     def read_df(
         self,
         source: str,
@@ -779,6 +785,7 @@ class MongoDB(DBConnection):
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
 
+    @slot
     def write_df(
         self,
         df: DataFrame,

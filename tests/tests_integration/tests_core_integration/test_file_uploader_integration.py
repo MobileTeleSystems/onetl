@@ -40,7 +40,8 @@ def test_uploader_view_files(file_all_connections, resource_path):
     [str, Path],
     ids=["run_path_type str", "run_path_type Path"],
 )
-def test_uploader_run_with_files(request, file_all_connections, test_files, run_path_type, path_type):
+@pytest.mark.parametrize("workers", [1, 3])
+def test_uploader_run_with_files(request, file_all_connections, test_files, run_path_type, path_type, workers):
     target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
@@ -52,6 +53,9 @@ def test_uploader_run_with_files(request, file_all_connections, test_files, run_
     uploader = FileUploader(
         connection=file_all_connections,
         target_path=target_path,
+        options=FileUploader.Options(
+            workers=workers,
+        ),
     )
 
     upload_result = uploader.run(run_path_type(file) for file in test_files)

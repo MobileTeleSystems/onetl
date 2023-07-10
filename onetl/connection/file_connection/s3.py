@@ -18,7 +18,9 @@ import io
 import os
 import textwrap
 from logging import getLogger
-from typing import Any, Optional, Union
+from typing import Optional, Union
+
+from onetl.hooks import slot, support_hooks
 
 try:
     from minio import Minio, commonconfig
@@ -48,8 +50,9 @@ from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
 log = getLogger(__name__)
 
 
+@support_hooks
 class S3(FileConnection):
-    """S3 file connection.
+    """S3 file connection. |support_hooks|
 
     Based on `minio-py client <https://pypi.org/project/minio/>`_.
 
@@ -131,6 +134,7 @@ class S3(FileConnection):
     def instance_url(self) -> str:
         return f"s3://{self.host}:{self.port}"
 
+    @slot
     def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         # the method is overridden because S3 does not create a directory
         # and the method must return the created directory
@@ -145,6 +149,7 @@ class S3(FileConnection):
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(os.fspath(path))
         if self._is_root(remote_path):
@@ -159,7 +164,7 @@ class S3(FileConnection):
 
         return False
 
-    def _get_client(self) -> Any:
+    def _get_client(self) -> Minio:
         return Minio(
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,
@@ -169,10 +174,10 @@ class S3(FileConnection):
             region=self.region,
         )
 
-    def _is_client_closed(self) -> bool:
-        return True
+    def _is_client_closed(self, client: Minio):
+        return False
 
-    def _close_client(self) -> None:
+    def _close_client(self, client: Minio) -> None:  # NOSONAR
         pass
 
     @staticmethod
@@ -232,7 +237,7 @@ class S3(FileConnection):
 
     def _scan_entries(self, path: RemotePath) -> list[Object]:
         if self._is_root(path):
-            self.client.list_objects(self.bucket)
+            return self.client.list_objects(self.bucket)
 
         path_str = self._delete_absolute_path_slash(path)
         return self.client.list_objects(self.bucket, prefix=path_str + "/")

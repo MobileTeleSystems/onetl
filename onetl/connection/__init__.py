@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from __future__ import annotations
 
 from importlib import import_module
 from typing import TYPE_CHECKING
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from onetl.connection.db_connection.clickhouse import Clickhouse
     from onetl.connection.db_connection.greenplum import Greenplum
     from onetl.connection.db_connection.hive import Hive
+    from onetl.connection.db_connection.kafka import Kafka
     from onetl.connection.db_connection.mongodb import MongoDB
     from onetl.connection.db_connection.mssql import MSSQL
     from onetl.connection.db_connection.mysql import MySQL
@@ -45,6 +47,7 @@ db_connection_modules = {
     "Oracle": "oracle",
     "Postgres": "postgres",
     "Teradata": "teradata",
+    "Kafka": "kafka",
 }
 
 file_connections_modules = {

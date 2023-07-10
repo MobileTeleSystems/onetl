@@ -26,6 +26,7 @@ from pydantic import FilePath, SecretStr
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
+from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath, RemotePath
 
 try:
@@ -53,8 +54,9 @@ SSH_CONFIG_PATH = LocalPath("~/.ssh/config").expanduser().resolve()
 log = getLogger(__name__)
 
 
+@support_hooks
 class SFTP(FileConnection, RenameDirMixin):
-    """SFTP file connection.
+    """SFTP file connection. |support_hooks|
 
     Based on `Paramiko library <https://pypi.org/project/paramiko/>`_.
 
@@ -126,6 +128,7 @@ class SFTP(FileConnection, RenameDirMixin):
     def instance_url(self) -> str:
         return f"sftp://{self.host}:{self.port}"
 
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         try:
             self.client.stat(os.fspath(path))
@@ -155,11 +158,11 @@ class SFTP(FileConnection, RenameDirMixin):
 
         return client.open_sftp()
 
-    def _is_client_closed(self) -> bool:
-        return not self._client.sock or self._client.sock.closed
+    def _is_client_closed(self, client: SFTPClient) -> bool:
+        return not client.sock or client.sock.closed
 
-    def _close_client(self) -> None:
-        self._client.close()
+    def _close_client(self, client: SFTPClient) -> None:
+        client.close()
 
     def _parse_user_ssh_config(self) -> tuple[str | None, str | None]:
         host_proxy = None

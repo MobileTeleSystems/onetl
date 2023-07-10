@@ -34,7 +34,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 
 
 class Postgres(JDBCConnection):
-    """PostgreSQL JDBC connection.
+    """PostgreSQL JDBC connection. |support_hooks|
 
     Based on Maven package ``org.postgresql:postgresql:42.6.0``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
@@ -59,7 +59,7 @@ class Postgres(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.0  # pass specific PySpark version
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
         See :ref:`spark-install` instruction for more details.
 
