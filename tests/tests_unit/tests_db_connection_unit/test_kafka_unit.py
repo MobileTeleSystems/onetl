@@ -317,3 +317,18 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     )
 
     Path("./keytab").unlink()
+
+
+def test_kafka_connection_get_jaas_conf_anonim_auth(spark_mock):
+    # Arrange
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+    )
+
+    # Act
+    conf = kafka._get_jaas_conf()
+
+    # Assert
+    assert conf is None
