@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 
 import pytest
 
@@ -314,3 +315,5 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
         "useKeyTab=true\n"
         "useTicketCache=false;"
     )
+
+    Path("./keytab").unlink()
