@@ -1,9 +1,0 @@
-Add ``@slot`` decorator to public methods of:
-
-* ``DBConnection``
-* ``FileConnection``
-* ``DBReader``
-* ``DBWriter``
-* ``FileDownloader``
-* ``FileUploader``
-* ``FileMover``

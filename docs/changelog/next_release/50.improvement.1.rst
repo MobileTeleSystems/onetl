@@ -1,5 +1,0 @@
-Improve Readme:
-
-* Move ``Quick start`` section from documentation
-* Add ``Non-goals`` section
-* Fix code blocks indentation
