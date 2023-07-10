@@ -14,8 +14,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
+import shutil
+import textwrap
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
@@ -74,6 +77,17 @@ class Kafka(DBConnection):
         are derived from the Kerberos password. You can use this file to log on to Kerberos without being prompted for
         a password.
 
+    deploy_keytab : bool, default ``True``
+        If ``True``, connector deploys a keytab file to all executors.
+        It is stored in the current directory of both driver and executor.
+        Otherwise, keytab file path should exist on driver and all the executors.
+        The configs must be located in the same path.
+
+    .. warning::
+
+        If there is no file on the driver, then Spark will not be able to build a query execution plan,
+        if there is no file on the executors, then they will not be able to read the data.
+
     .. warning::
 
         When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
@@ -124,6 +138,7 @@ class Kafka(DBConnection):
     user: Optional[str] = None
     password: Optional[SecretStr] = None
     keytab: Optional[LocalPath] = None
+    deploy_keytab: bool = True
 
     @classmethod
     def get_package_spark(
@@ -212,3 +227,58 @@ class Kafka(DBConnection):
             "Please provide either `keytab` and `user`, or `password` and "
             "`user` for Kerberos auth, or none of parameters for anonymous auth",
         )
+
+    @staticmethod
+    def _calculate_hash(value: str):
+        hash_object = hashlib.md5()  # noqa: S303, S324
+        hash_object.update(value.encode("utf-8"))
+        return hash_object.hexdigest()
+
+    def _get_jaas_conf(self) -> Optional[str]:
+        service_name = self._calculate_hash(
+            f"{self.addresses}{self.user}{self.cluster}",
+        )
+        if self.password is not None:
+            return self._password_jaas(service_name, self.password)
+
+        if self.keytab is not None:
+            return self._prepare_jaas_for_keytab(service_name, self.keytab)
+
+        return None
+
+    def _prepare_jaas_for_keytab(self, service_name, keytab: LocalPath) -> str:
+        if self.deploy_keytab:
+            processed_keytab = self._move_keytab(keytab)
+            self.spark.sparkContext.addFile(os.fspath(keytab))
+        else:
+            processed_keytab = keytab
+
+        return textwrap.dedent(
+            f"""
+            com.sun.security.auth.module.Krb5LoginModule required
+            keyTab="{processed_keytab}"
+            principal="{self.user}"
+            serviceName="{service_name}"
+            renewTicket=true
+            storeKey=true
+            useKeyTab=true
+            useTicketCache=false;
+            """,
+        ).strip()  # removes a carriage return at the beginning and end
+
+    def _password_jaas(self, service_name: str, password: SecretStr) -> str:
+        return textwrap.dedent(
+            f"""
+            org.apache.kafka.common.security.plain.PlainLoginModule required
+            serviceName="{service_name}"
+            username="{self.user}"
+            password="{password.get_secret_value()}";
+            """,
+        ).strip()  # removes a carriage return at the beginning and end
+
+    @staticmethod
+    def _move_keytab(keytab: LocalPath) -> LocalPath:
+        cwd = LocalPath(os.getcwd())
+        copy_path = LocalPath(shutil.copy2(keytab, cwd))
+
+        return copy_path.relative_to(cwd)

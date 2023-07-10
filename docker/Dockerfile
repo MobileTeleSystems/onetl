@@ -14,7 +14,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget \
         procps \
-        openjdk-11-jdk \
+        openjdk-17-jdk \
         libsasl2-modules \
         libsasl2-dev \
         libaio1 \
