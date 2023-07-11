@@ -489,7 +489,7 @@ class Greenplum(JDBCMixin, DBConnection):
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
     @slot
-    def read_df(
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
@@ -520,7 +520,7 @@ class Greenplum(JDBCMixin, DBConnection):
         return df
 
     @slot
-    def write_df(
+    def write_df_to_target(
         self,
         df: DataFrame,
         target: str,

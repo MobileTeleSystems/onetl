@@ -118,7 +118,7 @@ class Kafka(DBConnection):
 
     """
 
-    def read_df(  # type: ignore
+    def read_source_as_df(  # type: ignore
         self,
         source: str,
         columns: list[str] | None = None,
@@ -130,7 +130,7 @@ class Kafka(DBConnection):
     ) -> DataFrame:
         pass
 
-    def write_df(self, df: DataFrame, target: str) -> None:
+    def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
 
     addresses: List[str]

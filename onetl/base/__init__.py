@@ -15,7 +15,9 @@
 from onetl.base.base_connection import BaseConnection
 from onetl.base.base_db_connection import BaseDBConnection
 from onetl.base.base_file_connection import BaseFileConnection
+from onetl.base.base_file_df_connection import BaseFileDFConnection
 from onetl.base.base_file_filter import BaseFileFilter
+from onetl.base.base_file_format import BaseFileFormat
 from onetl.base.base_file_limit import BaseFileLimit
 from onetl.base.contains_exception import ContainsException
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
