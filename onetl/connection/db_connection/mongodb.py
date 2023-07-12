@@ -795,12 +795,12 @@ class MongoDB(DBConnection):
         self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
-        write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
-        write_options["connection.uri"] = self.connection_url
-        write_options["collection"] = target
+        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
+        write_options_dict["connection.uri"] = self.connection_url
+        write_options_dict["collection"] = target
 
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
-        df.write.format("mongodb").mode(mode).options(**write_options).save()
+        df.write.format("mongodb").mode(mode).options(**write_options_dict).save()
         log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
 
     @property

@@ -9,3 +9,4 @@
     file_mover/index
     file_filters/index
     file_limits/index
+    file_formats/index
