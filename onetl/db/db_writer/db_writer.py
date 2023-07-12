@@ -201,7 +201,7 @@ class DBWriter(FrozenModel):
         self._log_parameters()
         log_dataframe_schema(df)
         self.connection.check()
-        self.connection.write_df(
+        self.connection.write_df_to_target(
             df=df,
             target=str(self.target),
             **self._get_write_kwargs(),

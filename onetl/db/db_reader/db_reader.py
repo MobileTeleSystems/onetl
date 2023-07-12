@@ -540,7 +540,7 @@ class DBReader(FrozenModel):
 
         start_from, end_at = helper.get_boundaries()
 
-        df = self.connection.read_df(
+        df = self.connection.read_source_as_df(
             source=str(self.source),
             columns=self._resolve_all_columns(),
             hint=self.hint,

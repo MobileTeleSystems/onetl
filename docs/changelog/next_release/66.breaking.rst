@@ -1,0 +1,4 @@
+Rename methods:
+
+* ``DBConnection.read_df`` -> ``DBConnection.read_source_as_df``
+* ``DBConnection.write_df`` -> ``DBConnection.write_df_to_target``

@@ -699,7 +699,7 @@ class Hive(DBConnection):
         log.info("|%s| Call succeeded", self.__class__.__name__)
 
     @slot
-    def write_df(
+    def write_df_to_target(
         self,
         df: DataFrame,
         target: str,
@@ -725,7 +725,7 @@ class Hive(DBConnection):
             self._save_as_table(df, target, options)
 
     @slot
-    def read_df(
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
