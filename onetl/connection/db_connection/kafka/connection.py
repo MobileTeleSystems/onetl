@@ -26,13 +26,63 @@ from pydantic import SecretStr, root_validator, validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.hwm import Statement
-from onetl.impl import LocalPath, path_repr
+from onetl.impl import GenericOptions, LocalPath, path_repr
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
+
+
+PROHIBITED_OPTIONS = frozenset(
+    (
+        "assign",
+        "subscribe",
+        "subscribePattern",
+        "startingOffsets",
+        "startingOffsetsByTimestamp",
+        "startingTimestamp",
+        "endingOffsets",
+        "endingOffsetsByTimestamp",
+        "endingOffsets",
+        "startingOffsetsByTimestampStrategy",
+        "kafka.bootstrap.servers",
+        "kafka.group.id",
+        "topic",
+    ),
+)
+
+KNOWN_READ_OPTIONS = frozenset(
+    (
+        "assign",
+        "subscribe",
+        "subscribePattern",
+        "kafka.bootstrap.servers",
+        "startingTimestamp",
+        "startingOffsetsByTimestamp",
+        "startingOffsets",
+        "endingTimestamp",
+        "endingOffsetsByTimestamp",
+        "endingOffsets",
+        "failOnDataLoss",
+        "kafkaConsumer.pollTimeoutMs",
+        "fetchOffset.numRetries",
+        "fetchOffset.retryIntervalMs",
+        "maxOffsetsPerTrigger",
+        "minOffsetsPerTrigger",
+        "maxTriggerDelay",
+        "minPartitions",
+        "groupIdPrefix",
+        "kafka.group.id",
+        "includeHeaders",
+        "startingOffsetsByTimestampStrategy",
+    ),
+)
+
+KNOWN_WRITE_OPTIONS = frozenset(
+    ("includeHeaders",),
+)
 
 
 class Kafka(DBConnection):
@@ -117,6 +167,76 @@ class Kafka(DBConnection):
         )
 
     """
+
+    class ReadOptions(GenericOptions):
+        """Reading options for Kafka connector.
+
+        .. note ::
+
+            You can pass any value
+            `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
+            even if it is not mentioned in this documentation.
+
+            The set of supported options depends on connector version.
+
+        .. warning::
+
+            Options ``kafka.*``, ``assign``, ``subscribe``, ``subscribePattern``, ``startingOffsets``,
+            ``startingOffsetsByTimestamp``, ``startingTimestamp``, ``endingOffsets``, ``endingOffsetsByTimestamp``,
+            ``endingOffsets``, ``startingOffsetsByTimestampStrategy``, ``topic`` are populated from connection
+            attributes, and cannot be set in ``KafkaReadOptions`` class.
+
+        Examples
+        --------
+
+        Read options initialization
+
+        .. code:: python
+
+            Kafka.ReadOptions(
+                maxOffsetsPerTrigger=10000,
+            )
+        """
+
+        class Config:
+            prohibited_options = PROHIBITED_OPTIONS
+            known_options = KNOWN_READ_OPTIONS
+            extra = "allow"
+
+    class WriteOptions(GenericOptions):
+        """Writing options for Kafka connector.
+
+        .. note ::
+
+            You can pass any value
+            `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
+            even if it is not mentioned in this documentation.
+
+            The set of supported options depends on connector version.
+
+        .. warning::
+
+            Options ``kafka.*``, ``assign``, ``subscribe``, ``subscribePattern``, ``startingOffsets``,
+            ``startingOffsetsByTimestamp``, ``startingTimestamp``, ``endingOffsets``, ``endingOffsetsByTimestamp``,
+            ``endingOffsets``, ``startingOffsetsByTimestampStrategy``, ``topic`` are populated from connection
+            attributes, and cannot be set in ``KafkaReadOptions`` class.
+
+        Examples
+        --------
+
+        Write options initialization
+
+        .. code:: python
+
+            options = Kafka.WriteOptions(
+                includeHeaders=False,
+            )
+        """
+
+        class Config:
+            prohibited_options = PROHIBITED_OPTIONS
+            known_options = KNOWN_WRITE_OPTIONS
+            extra = "allow"
 
     def read_source_as_df(  # type: ignore
         self,
