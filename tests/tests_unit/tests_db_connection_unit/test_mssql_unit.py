@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import MSSQL
 
-pytestmark = pytest.mark.mssql
+pytestmark = [pytest.mark.mssql, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_mssql_class_attributes():

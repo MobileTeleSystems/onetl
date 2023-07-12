@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import Oracle
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_oracle_class_attributes():

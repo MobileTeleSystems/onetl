@@ -384,10 +384,10 @@ class JDBCMixin(FrozenModel):
 
     def _check_driver_imported(self):
         gateway = self.spark._sc._gateway  # type: ignore
-        driver_class = getattr(gateway.jvm, self.driver)
+        driver_class = getattr(gateway.jvm, self.driver)  # type: ignore
 
         try:
-            gateway.help(driver_class, display=False)
+            gateway.help(driver_class, display=False)  # type: ignore
         except Exception:
             log.error(
                 MISSING_JVM_CLASS_MSG,

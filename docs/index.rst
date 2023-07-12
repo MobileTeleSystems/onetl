@@ -19,13 +19,11 @@
     concepts
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     :caption: Connection
-    :glob:
     :hidden:
 
-    db_connection/index
-    file_connection/index
+    connection/index
 
 .. toctree::
     :maxdepth: 3

@@ -433,6 +433,24 @@ def spark_mock() -> SparkSession:
     return spark
 
 
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param("yarn", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("k8s", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+    ],
+)
+def spark_cluster_mock(request) -> SparkSession:
+    from pyspark.sql import SparkSession
+
+    spark = Mock(spec=SparkSession)
+    spark.sparkContext = Mock()
+    spark.sparkContext.appName = "abc"
+    spark.conf = Mock()
+    spark.conf.get = Mock(return_value=request.param)
+    return spark
+
+
 @pytest.fixture()
 def processing(request, spark):
     processing_classes = {

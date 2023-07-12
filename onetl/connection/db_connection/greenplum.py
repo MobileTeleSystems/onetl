@@ -500,7 +500,6 @@ class Greenplum(JDBCMixin, DBConnection):
         end_at: Statement | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
-        self._check_driver_imported()
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
@@ -526,7 +525,6 @@ class Greenplum(JDBCMixin, DBConnection):
         target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
-        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
 
@@ -606,10 +604,10 @@ class Greenplum(JDBCMixin, DBConnection):
     def _check_driver_imported(self):
         gateway = self.spark._sc._gateway  # type: ignore
         class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
-        missing_class = getattr(gateway.jvm, class_name)
+        missing_class = getattr(gateway.jvm, class_name)  # type: ignore
 
         try:
-            gateway.help(missing_class, display=False)
+            gateway.help(missing_class, display=False)  # type: ignore
         except Exception:
             spark_version = "_".join(self.spark.version.split(".")[:2])
             log.error(

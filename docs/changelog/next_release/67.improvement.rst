@@ -1,0 +1,1 @@
+Remove redundant checks for driver availability in Greenplum and MongoDB connections.
