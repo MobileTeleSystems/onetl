@@ -47,10 +47,10 @@ def test_kafka_jars(spark_version, scala_version_input, scala_version_real):
     ],
 )
 def test_kafka_prohibited_options_error(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Kafka.ReadOptions(**{arg: value})
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Kafka.WriteOptions(**{arg: value})
 
