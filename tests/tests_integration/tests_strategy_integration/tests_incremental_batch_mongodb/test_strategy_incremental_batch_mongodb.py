@@ -11,7 +11,7 @@ from onetl.strategy import IncrementalBatchStrategy
 pytestmark = pytest.mark.mongodb
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def df_schema():
     from pyspark.sql.types import (
         DoubleType,

@@ -6,26 +6,27 @@ import pytest
 pytestmark = [pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]
 
 
-def test_s3_connection_check(caplog, s3_connection):
+def test_s3_file_connection_check_success(caplog, s3_file_connection):
+    s3 = s3_file_connection
     with caplog.at_level(logging.INFO):
-        assert s3_connection.check() == s3_connection
+        assert s3.check() == s3
 
     assert "type = S3" in caplog.text
-    assert f"host = '{s3_connection.host}'" in caplog.text
-    assert f"port = {s3_connection.port}" in caplog.text
-    assert f"bucket = '{s3_connection.bucket}'" in caplog.text
-    assert f"access_key = '{s3_connection.access_key}'" in caplog.text
+    assert f"host = '{s3.host}'" in caplog.text
+    assert f"port = {s3.port}" in caplog.text
+    assert f"bucket = '{s3.bucket}'" in caplog.text
+    assert f"access_key = '{s3.access_key}'" in caplog.text
     assert "secret_key = SecretStr('**********')" in caplog.text
-    assert s3_connection.secret_key.get_secret_value() not in caplog.text
+    assert s3.secret_key.get_secret_value() not in caplog.text
     assert "session_token =" not in caplog.text
 
     assert "Connection is available" in caplog.text
 
 
-def test_s3_wrong_source_check(s3_server):
+def test_s3_file_connection_check_failed(s3_server):
     from onetl.connection import S3
 
-    anonymous_connection = S3(
+    anonymous = S3(
         host=s3_server.host,
         port=s3_server.port,
         bucket=s3_server.bucket,
@@ -35,24 +36,25 @@ def test_s3_wrong_source_check(s3_server):
     )
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
-        anonymous_connection.check()
+        anonymous.check()
 
 
 @pytest.mark.parametrize("path_prefix", ["/", ""])
-def test_s3_connection_list_dir(path_prefix, s3_connection):
-    s3_connection.client.fput_object(
-        s3_connection.bucket,
+def test_s3_file_connection_list_dir(path_prefix, s3_file_connection):
+    s3 = s3_file_connection
+    s3.client.fput_object(
+        s3.bucket,
         "export/resources/src/exclude_dir/file_4.txt",
         "tests/resources/src/exclude_dir/file_4.txt",
     )
-    s3_connection.client.fput_object(
-        s3_connection.bucket,
+    s3.client.fput_object(
+        s3.bucket,
         "export/resources/src/exclude_dir/file_5.txt",
         "tests/resources/src/exclude_dir/file_5.txt",
     )
 
     def dir_content(path):
-        return [os.fspath(file) for file in s3_connection.list_dir(path)]
+        return [os.fspath(file) for file in s3.list_dir(path)]
 
     assert dir_content(f"{path_prefix}export/resources/src/exclude_dir") == ["file_4.txt", "file_5.txt"]
     assert dir_content(f"{path_prefix}export/resources/src") == ["exclude_dir"]

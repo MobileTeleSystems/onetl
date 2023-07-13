@@ -10,7 +10,7 @@ from urllib import parse as parser
 import pandas
 from pymongo import MongoClient
 
-from tests.lib.base_processing import BaseProcessing
+from tests.fixtures.processing.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
