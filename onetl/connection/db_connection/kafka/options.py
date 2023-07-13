@@ -3,33 +3,34 @@ from onetl.impl import GenericOptions
 PROHIBITED_OPTIONS = frozenset(
     (
         "assign",
-        "subscribe",
-        "subscribePattern",
-        "startingOffsets",
-        "startingOffsetsByTimestamp",
-        "startingTimestamp",
+        "endingOffsets",
         "endingOffsets",
         "endingOffsetsByTimestamp",
-        "endingOffsets",
-        "startingOffsetsByTimestampStrategy",
         "kafka.*",
+        "startingOffsets",
+        "startingOffsets",
+        "startingOffsetsByTimestamp",
+        "startingOffsetsByTimestampStrategy",
+        "startingTimestamp",
+        "subscribe",
+        "subscribePattern",
         "topic",
     ),
 )
 
 KNOWN_READ_OPTIONS = frozenset(
     (
-        "maxTriggerDelay",
-        "minOffsetsPerTrigger",
-        "maxOffsetsPerTrigger",
-        "kafkaConsumer.pollTimeoutMs",
-        "fetchOffset.numRetries",
-        "minPartitions",
+        "endingTimestamp",
         "failOnDataLoss",
-        "includeHeaders",
+        "fetchOffset.numRetries",
         "fetchOffset.retryIntervalMs",
         "groupIdPrefix",
-        "endingTimestamp",
+        "includeHeaders",
+        "kafkaConsumer.pollTimeoutMs",
+        "maxOffsetsPerTrigger",
+        "maxTriggerDelay",
+        "minOffsetsPerTrigger",
+        "minPartitions",
     ),
 )
 
@@ -51,10 +52,11 @@ class KafkaReadOptions(GenericOptions):
 
     .. warning::
 
-        Options ``kafka.*``, ``assign``, ``subscribe``, ``subscribePattern``, ``startingOffsets``,
-        ``startingOffsetsByTimestamp``, ``startingTimestamp``, ``endingOffsets``, ``endingOffsetsByTimestamp``,
-        ``endingOffsets``, ``startingOffsetsByTimestampStrategy``, ``topic`` are populated from connection
-        attributes, and cannot be set in ``KafkaReadOptions`` class.
+        Options ``["assign", "endingOffsets", "endingOffsets", "endingOffsetsByTimestamp", "kafka.*",
+        "startingOffsets", "startingOffsets", "startingOffsetsByTimestamp", "startingOffsetsByTimestampStrategy",
+        "startingTimestamp", "subscribe", "subscribePattern", "topic"]`` are populated from connection
+        attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden by the user to avoid
+        duplicating them in the documentation.
 
     Examples
     --------
@@ -87,10 +89,11 @@ class KafkaWriteOptions(GenericOptions):
 
     .. warning::
 
-        Options ``kafka.*``, ``assign``, ``subscribe``, ``subscribePattern``, ``startingOffsets``,
-        ``startingOffsetsByTimestamp``, ``startingTimestamp``, ``endingOffsets``, ``endingOffsetsByTimestamp``,
-        ``endingOffsets``, ``startingOffsetsByTimestampStrategy``, ``topic`` are populated from connection
-        attributes, and cannot be set in ``KafkaWriteOptions`` class.
+        Options ``["assign", "endingOffsets", "endingOffsets", "endingOffsetsByTimestamp", "kafka.*",
+        "startingOffsets", "startingOffsets", "startingOffsetsByTimestamp", "startingOffsetsByTimestampStrategy",
+        "startingTimestamp", "subscribe", "subscribePattern", "topic"]`` are populated from connection
+        attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden by the user to avoid
+        duplicating them in the documentation.
 
     Examples
     --------
