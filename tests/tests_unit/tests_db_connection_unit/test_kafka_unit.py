@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from onetl.connection import Kafka
 
@@ -26,6 +27,67 @@ def test_kafka_jars(spark_version, scala_version_input, scala_version_real):
         spark_version=spark_version,
         scala_version=scala_version_input,
     ) == [f"org.apache.spark:spark-sql-kafka-0-10_{scala_version_real}:{spark_version}"]
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("assign", "assign_value"),
+        ("subscribe", "subscribe_value"),
+        ("subscribePattern", "subscribePattern_value"),
+        ("startingOffsets", "startingOffsets_value"),
+        ("startingOffsetsByTimestamp", "startingOffsetsByTimestamp_value"),
+        ("startingTimestamp", "startingTimestamp_value"),
+        ("endingOffsets", "endingOffsets_value"),
+        ("endingOffsetsByTimestamp", "endingOffsetsByTimestamp_value"),
+        ("startingOffsetsByTimestampStrategy", "startingOffsetsByTimestampStrategy_value"),
+        ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
+        ("kafka.group.id", "kafka.group.id_value"),
+        ("topic", "topic_value"),
+    ],
+)
+def test_kafka_prohibited_options_error(arg, value):
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaReadOptions"
+    with pytest.raises(ValueError, match=error_msg):
+        Kafka.ReadOptions(**{arg: value})
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaWriteOptions"
+    with pytest.raises(ValueError, match=error_msg):
+        Kafka.WriteOptions(**{arg: value})
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("failOnDataLoss", "false"),
+        ("kafkaConsumer.pollTimeoutMs", "30000"),
+        ("fetchOffset.numRetries", "3"),
+        ("fetchOffset.retryIntervalMs", "1000"),
+        ("maxOffsetsPerTrigger", "1000"),
+        ("minOffsetsPerTrigger", "500"),
+        ("maxTriggerDelay", "2000"),
+        ("minPartitions", "2"),
+        ("groupIdPrefix", "testPrefix"),
+        ("includeHeaders", "true"),
+    ],
+)
+def test_kafka_allowed_read_options_no_error(arg, value):
+    try:
+        Kafka.ReadOptions(**{arg: value})
+    except ValidationError:
+        pytest.fail("ValidationError for ReadOptions raised unexpectedly!")
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("includeHeaders", "true"),
+    ],
+)
+def test_kafka_allowed_write_options_no_error(arg, value):
+    try:
+        Kafka.WriteOptions(**{arg: value})
+    except ValidationError:
+        pytest.fail("ValidationError for Write options raised unexpectedly!")
 
 
 def test_kafka_auth(spark_mock):
