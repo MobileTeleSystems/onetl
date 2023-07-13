@@ -1,6 +1,6 @@
 import os
 
-from tests.lib.postgres_processing import PostgresProcessing
+from tests.fixtures.processing.postgres import PostgresProcessing
 
 
 class GreenplumProcessing(PostgresProcessing):
