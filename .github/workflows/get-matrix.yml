@@ -17,6 +17,8 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-hive }}
       matrix-kafka:
         value: ${{ jobs.get-matrix.outputs.matrix-kafka }}
+      matrix-local-fs:
+        value: ${{ jobs.get-matrix.outputs.matrix-local-fs }}
       matrix-mongodb:
         value: ${{ jobs.get-matrix.outputs.matrix-mongodb }}
       matrix-mssql:
@@ -55,6 +57,7 @@ jobs:
       matrix-greenplum: ${{ toJson(fromJson(steps.matrix-greenplum.outputs.result)[steps.key-greenplum.outputs.key]) }}
       matrix-hive: ${{ toJson(fromJson(steps.matrix-hive.outputs.result)[steps.key-hive.outputs.key]) }}
       matrix-kafka: ${{ toJson(fromJson(steps.matrix-kafka.outputs.result)[steps.key-kafka.outputs.key]) }}
+      matrix-local-fs: ${{ toJson(fromJson(steps.matrix-local-fs.outputs.result)[steps.key-local-fs.outputs.key]) }}
       matrix-mongodb: ${{ toJson(fromJson(steps.matrix-mongodb.outputs.result)[steps.key-mongodb.outputs.key]) }}
       matrix-mssql: ${{ toJson(fromJson(steps.matrix-mssql.outputs.result)[steps.key-mssql.outputs.key]) }}
       matrix-mysql: ${{ toJson(fromJson(steps.matrix-mysql.outputs.result)[steps.key-mysql.outputs.key]) }}
@@ -110,6 +113,17 @@ jobs:
     - name: Print file-related files changed
       run: |
         echo '${{ steps.changed-file.outputs.all_changed_files }}'
+
+    - name: Check if file-df-related files are changed
+      id: changed-file-df
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/file-df/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/file-df/ignored.txt
+
+    - name: Print file-df-related files changed
+      run: |
+        echo '${{ steps.changed-file-df.outputs.all_changed_files }}'
 
     - name: Check if core files are changed
       id: changed-core
@@ -260,6 +274,36 @@ jobs:
       uses: mikefarah/yq@v4.33.3
       with:
         cmd: yq -o=json '.matrix' .github/workflows/data/kafka/matrix.yml
+
+    - name: Check if LocalFS files are changed
+      id: changed-local-fs
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/local-fs/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/local-fs/ignored.txt
+
+    - name: Print LocalFS files changed
+      run: |
+        echo '${{ steps.changed-local-fs.outputs.all_changed_files }}'
+
+    - name: Calculate LocalFS matrix key
+      id: key-local-fs
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file-df.outputs.any_changed }} || ${{ steps.changed-local-fs.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get LocalFS matrix
+      id: matrix-local-fs
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/local-fs/matrix.yml
 
     - name: Check if MongoDB files are changed
       id: changed-mongodb

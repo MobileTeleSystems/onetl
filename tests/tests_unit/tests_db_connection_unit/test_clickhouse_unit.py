@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import Clickhouse
 
-pytestmark = pytest.mark.clickhouse
+pytestmark = [pytest.mark.clickhouse, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_clickhouse_class_attributes():

@@ -5,6 +5,8 @@ import pytest
 
 from onetl.connection import Greenplum, Hive, Oracle, Postgres
 
+pytestmark = [pytest.mark.db_connection, pytest.mark.connection]
+
 
 @pytest.mark.parametrize(
     "options_class",

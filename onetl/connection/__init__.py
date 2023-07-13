@@ -18,6 +18,9 @@ from typing import TYPE_CHECKING
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_df_connection.spark_file_df_connection import (
+    SparkFileDFConnection,
+)
 
 if TYPE_CHECKING:
     from onetl.connection.db_connection.clickhouse import Clickhouse
@@ -36,6 +39,7 @@ if TYPE_CHECKING:
     from onetl.connection.file_connection.s3 import S3
     from onetl.connection.file_connection.sftp import SFTP
     from onetl.connection.file_connection.webdav import WebDAV
+    from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
 
 db_connection_modules = {
     "Clickhouse": "clickhouse",
@@ -59,6 +63,10 @@ file_connections_modules = {
     "WebDAV": "webdav",
 }
 
+file_df_connections_modules = {
+    "SparkLocalFS": "spark_local_fs",
+}
+
 
 def __getattr__(name: str):
     if name in db_connection_modules:
@@ -68,5 +76,9 @@ def __getattr__(name: str):
     if name in file_connections_modules:
         submodule = file_connections_modules[name]
         return getattr(import_module(f"onetl.connection.file_connection.{submodule}"), name)
+
+    if name in file_df_connections_modules:
+        submodule = file_df_connections_modules[name]
+        return getattr(import_module(f"onetl.connection.file_df_connection.{submodule}"), name)
 
     raise ImportError(f"cannot import name {name!r} from {__name__!r}")

@@ -13,6 +13,9 @@
 #  limitations under the License.
 
 from abc import ABC, abstractmethod
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 class BaseConnection(ABC):
@@ -21,7 +24,7 @@ class BaseConnection(ABC):
     """
 
     @abstractmethod
-    def check(self):
+    def check(self: T) -> T:
         """Check source availability. |support_hooks|
 
         If not, an exception will be raised.

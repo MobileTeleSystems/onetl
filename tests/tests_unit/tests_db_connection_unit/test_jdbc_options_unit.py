@@ -4,6 +4,8 @@ from onetl._internal import to_camel  # noqa: WPS436
 from onetl.connection import Oracle, Postgres
 from onetl.connection.db_connection.jdbc_connection import JDBCWriteMode
 
+pytestmark = [pytest.mark.db_connection, pytest.mark.connection]
+
 
 def test_jdbc_read_options_default():
     options = Oracle.ReadOptions()

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from onetl.connection import Kafka
 
-pytestmark = pytest.mark.kafka
+pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
 
 
 @pytest.mark.parametrize(

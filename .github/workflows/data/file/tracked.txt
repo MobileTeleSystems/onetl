@@ -1,3 +1,10 @@
 .github/workflows/data/file/**
 onetl/file_connection/file_connection.py
-onetl/file/**
+onetl/file/file_downloader/**
+onetl/file/file_mover/**
+onetl/file/file_uploader/**
+onetl/file/filter/**
+onetl/file/limit/**
+onetl/file/file_result.py
+onetl/file/file_set.py
+onetl/file/__init__.py

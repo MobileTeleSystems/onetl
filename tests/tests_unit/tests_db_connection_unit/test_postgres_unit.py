@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import Postgres
 
-pytestmark = pytest.mark.postgres
+pytestmark = [pytest.mark.postgres, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_postgres_class_attributes():

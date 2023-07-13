@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import MySQL
 
-pytestmark = pytest.mark.mysql
+pytestmark = [pytest.mark.mysql, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_mysql_class_attributes():

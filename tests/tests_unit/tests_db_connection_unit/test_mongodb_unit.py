@@ -4,7 +4,7 @@ import pytest
 
 from onetl.connection import MongoDB
 
-pytestmark = pytest.mark.mongodb
+pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_mongodb(spark_mock):

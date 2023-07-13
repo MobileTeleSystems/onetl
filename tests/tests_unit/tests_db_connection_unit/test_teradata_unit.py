@@ -2,7 +2,7 @@ import pytest
 
 from onetl.connection import Teradata
 
-pytestmark = pytest.mark.teradata
+pytestmark = [pytest.mark.teradata, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_teradata_class_attributes():
