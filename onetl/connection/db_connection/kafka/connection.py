@@ -57,7 +57,6 @@ KNOWN_READ_OPTIONS = frozenset(
         "assign",
         "subscribe",
         "subscribePattern",
-        "kafka.bootstrap.servers",
         "startingTimestamp",
         "startingOffsetsByTimestamp",
         "startingOffsets",
