@@ -4,10 +4,8 @@ PROHIBITED_OPTIONS = frozenset(
     (
         "assign",
         "endingOffsets",
-        "endingOffsets",
         "endingOffsetsByTimestamp",
         "kafka.*",
-        "startingOffsets",
         "startingOffsets",
         "startingOffsetsByTimestamp",
         "startingOffsetsByTimestampStrategy",
@@ -52,11 +50,21 @@ class KafkaReadOptions(GenericOptions):
 
     .. warning::
 
-        Options ``["assign", "endingOffsets", "endingOffsets", "endingOffsetsByTimestamp", "kafka.*",
-        "startingOffsets", "startingOffsets", "startingOffsetsByTimestamp", "startingOffsetsByTimestampStrategy",
-        "startingTimestamp", "subscribe", "subscribePattern", "topic"]`` are populated from connection
-        attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden by the user to avoid
-        duplicating them in the documentation.
+        Options:
+            * ``assign``
+            * ``endingOffsets``
+            * ``endingOffsetsByTimestamp``
+            * ``kafka.*``
+            * ``startingOffsets``
+            * ``startingOffsetsByTimestamp``
+            * ``startingOffsetsByTimestampStrategy``
+            * ``startingTimestamp``
+            * ``subscribe``
+            * ``subscribePattern``
+            * ``topic``
+
+        populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
+        by the user to avoid issues.
 
     Examples
     --------
@@ -89,11 +97,21 @@ class KafkaWriteOptions(GenericOptions):
 
     .. warning::
 
-        Options ``["assign", "endingOffsets", "endingOffsets", "endingOffsetsByTimestamp", "kafka.*",
-        "startingOffsets", "startingOffsets", "startingOffsetsByTimestamp", "startingOffsetsByTimestampStrategy",
-        "startingTimestamp", "subscribe", "subscribePattern", "topic"]`` are populated from connection
-        attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden by the user to avoid
-        duplicating them in the documentation.
+        Options:
+            * ``assign``
+            * ``endingOffsets``
+            * ``endingOffsetsByTimestamp``
+            * ``kafka.*``
+            * ``startingOffsets``
+            * ``startingOffsetsByTimestamp``
+            * ``startingOffsetsByTimestampStrategy``
+            * ``startingTimestamp``
+            * ``subscribe``
+            * ``subscribePattern``
+            * ``topic``
+
+        populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
+        by the user to avoid issues.
 
     Examples
     --------
