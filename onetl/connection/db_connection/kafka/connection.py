@@ -47,8 +47,7 @@ PROHIBITED_OPTIONS = frozenset(
         "endingOffsetsByTimestamp",
         "endingOffsets",
         "startingOffsetsByTimestampStrategy",
-        "kafka.bootstrap.servers",
-        "kafka.group.id",
+        "kafka.*",
         "topic",
     ),
 )
