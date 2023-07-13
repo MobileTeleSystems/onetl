@@ -28,14 +28,14 @@ class BaseFileFormat(ABC):
 
     @classmethod
     @abstractmethod
-    def check_if_available(cls, spark: SparkSession) -> None:
+    def check_if_supported(cls, spark: SparkSession) -> None:
         """
-        Check if file format is available. |support_hooks|
+        Check if Spark session does support this file format. |support_hooks|
 
         Raises
         -------
         RuntimeError
-            If file format is not available.
+            If file format is not supported.
         """
 
     @abstractmethod

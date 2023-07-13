@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import logging
 from fnmatch import fnmatch
-from typing import Iterable
+from typing import Iterable, TypeVar
 
 from pydantic import root_validator
 
 from onetl.impl.frozen_model import FrozenModel
 
 log = logging.getLogger(__name__)
+T = TypeVar("T", bound="GenericOptions")
 
 
 class GenericOptions(FrozenModel):
@@ -32,9 +33,9 @@ class GenericOptions(FrozenModel):
 
     @classmethod
     def parse(
-        cls,
+        cls: type[T],
         options: GenericOptions | dict | None,
-    ):
+    ) -> T:
         """
         If a parameter inherited from the ReadOptions class was passed, then it will be returned unchanged.
         If a Dict object was passed it will be converted to ReadOptions.
@@ -56,7 +57,7 @@ class GenericOptions(FrozenModel):
         return options
 
     @root_validator
-    def check_options_not_prohibited(
+    def check_options_allowed(
         cls,
         values,
     ) -> None:
