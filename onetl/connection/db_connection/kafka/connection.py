@@ -162,7 +162,7 @@ class Kafka(DBConnection):
         return "kafka://" + self.cluster
 
     def check(self):
-        ...
+        return self
 
     def read_table(  # type: ignore
         self,

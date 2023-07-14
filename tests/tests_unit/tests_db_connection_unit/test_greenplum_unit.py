@@ -3,7 +3,7 @@ import pytest
 from onetl.connection import Greenplum
 from onetl.connection.db_connection.greenplum import GreenplumWriteMode
 
-pytestmark = pytest.mark.greenplum
+pytestmark = [pytest.mark.greenplum, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_greenplum_class_attributes():

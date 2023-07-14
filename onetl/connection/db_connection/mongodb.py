@@ -701,8 +701,6 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         options: ReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        self._check_driver_imported()
-
         log.info("|Spark| Getting min and max values for column %r", column)
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -749,8 +747,6 @@ class MongoDB(DBConnection):
         end_at: Statement | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
-        self._check_driver_imported()
-
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         final_where = self.Dialect._condition_assembler(
             condition=where,
@@ -792,7 +788,6 @@ class MongoDB(DBConnection):
         target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
-        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
         mode = write_options.mode
         write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
@@ -816,10 +811,10 @@ class MongoDB(DBConnection):
 
         gateway = self.spark._sc._gateway  # type: ignore
         class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
-        missing_class = getattr(gateway.jvm, class_name)
+        missing_class = getattr(gateway.jvm, class_name)  # type: ignore
 
         try:
-            gateway.help(missing_class, display=False)
+            gateway.help(missing_class, display=False)  # type: ignore
         except Exception as e:
             log.error(
                 MISSING_JVM_CLASS_MSG,

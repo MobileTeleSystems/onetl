@@ -106,6 +106,22 @@ jobs:
       os: ${{ matrix.os }}
       with-cache: false
 
+  tests-local-fs:
+    name: Run LocalFS tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-local-fs) }}
+
+    uses: ./.github/workflows/test-local-fs.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
   tests-mongodb:
     name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -306,6 +322,7 @@ jobs:
     - tests-clickhouse
     - tests-hive
     - tests-kafka
+    - tests-local-fs
     - tests-mongodb
     - tests-mssql
     - tests-mysql
