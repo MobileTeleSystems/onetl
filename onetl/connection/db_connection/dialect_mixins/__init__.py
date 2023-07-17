@@ -22,6 +22,12 @@ from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_none i
 from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_str import (
     SupportHWMExpressionStr,
 )
+from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
+    SupportTableWithoutDBSchema,
+)
+from onetl.connection.db_connection.dialect_mixins.support_where_none import (
+    SupportWhereNone,
+)
 from onetl.connection.db_connection.dialect_mixins.support_where_str import (
     SupportWhereStr,
 )

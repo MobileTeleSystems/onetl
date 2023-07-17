@@ -25,6 +25,7 @@ from etl_entities.instance import Cluster
 from pydantic import SecretStr, root_validator, validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
@@ -124,6 +125,8 @@ class Kafka(DBConnection):
 
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
+
+    Dialect = KafkaDialect
 
     def read_source_as_df(  # type: ignore
         self,
