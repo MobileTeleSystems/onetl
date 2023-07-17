@@ -9,7 +9,7 @@ from onetl.strategy import IncrementalStrategy
 pytestmark = pytest.mark.mongodb
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def df_schema():
     from pyspark.sql.types import (
         DoubleType,

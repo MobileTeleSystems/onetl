@@ -12,12 +12,12 @@ from onetl.file import FileUploader
 from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
 
 
-def test_uploader_view_files(file_all_connections, resource_path):
+def test_file_uploader_view_files(file_connection, resource_path):
     target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=resource_path,
     )
@@ -41,17 +41,17 @@ def test_uploader_view_files(file_all_connections, resource_path):
     ids=["run_path_type str", "run_path_type Path"],
 )
 @pytest.mark.parametrize("workers", [1, 3])
-def test_uploader_run_with_files(request, file_all_connections, test_files, run_path_type, path_type, workers):
+def test_file_uploader_run_with_files(request, file_connection, test_files, run_path_type, path_type, workers):
     target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=FileUploader.Options(
             workers=workers,
@@ -78,25 +78,25 @@ def test_uploader_run_with_files(request, file_all_connections, test_files, run_
         local_file = next(file for file in test_files if file.name == remote_file.name)
 
         # file size is same as expected
-        assert file_all_connections.get_stat(remote_file).st_size == local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content is same as expected
-        assert file_all_connections.read_bytes(remote_file) == local_file.read_bytes()
+        assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
-def test_uploader_run_with_local_path(request, file_all_connections, resource_path, path_type):
+def test_file_uploader_run_with_local_path(request, file_connection, resource_path, path_type):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=path_type(resource_path),
     )
@@ -127,24 +127,24 @@ def test_uploader_run_with_local_path(request, file_all_connections, resource_pa
         local_file = next(file for file in local_files_list if file.name == remote_file.name)
 
         # file size is same as expected
-        assert file_all_connections.get_stat(remote_file).st_size == local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content is same as expected
-        assert file_all_connections.read_bytes(remote_file) == local_file.read_bytes()
+        assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_uploader_run_missing_file(request, file_all_connections, test_files, caplog):
+def test_file_uploader_run_missing_file(request, file_connection, test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
     )
 
@@ -170,16 +170,16 @@ def test_uploader_run_missing_file(request, file_all_connections, test_files, ca
         assert not missing_file.exists()
 
 
-def test_uploader_run_delete_local(request, resource_path, test_files, file_all_connections, caplog):
+def test_file_uploader_run_delete_local(request, resource_path, test_files, file_connection, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=FileUploader.Options(delete_local=True),
     )
@@ -223,11 +223,11 @@ def test_uploader_run_delete_local(request, resource_path, test_files, file_all_
         local_file = next(file for file in test_files if file.name == remote_file.name)
 
         # file size is same as expected
-        assert file_all_connections.get_stat(remote_file).st_size == local_files_stat[local_file].st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_files_stat[local_file].st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content is same as expected
-        assert file_all_connections.read_bytes(remote_file) == local_files_bytes[local_file]
+        assert file_connection.read_bytes(remote_file) == local_files_bytes[local_file]
 
         # uploaded file is removed
         assert local_file not in existing_files
@@ -241,23 +241,23 @@ def test_uploader_run_delete_local(request, resource_path, test_files, file_all_
     "options",
     [{"mode": "error"}, FileUploader.Options(mode="error"), FileUploader.Options(mode=FileWriteMode.ERROR)],
 )
-def test_uploader_run_mode_error(request, file_all_connections, test_files, options):
+def test_file_uploader_run_mode_error(request, file_connection, test_files, options):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # make copy of files to upload in the target_path
     remote_files = []
     for test_file in test_files:
         remote_file = target_path / test_file.name
-        remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
+        remote_files.append(file_connection.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload changed files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=options,
     )
@@ -284,30 +284,30 @@ def test_uploader_run_mode_error(request, file_all_connections, test_files, opti
         assert re.search(rf"File '{remote_file}' \(kind='file', .*\) already exists", str(local_file.exception))
 
         # file size wasn't changed
-        assert file_all_connections.get_stat(remote_file).st_size != local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size != local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content wasn't changed
-        assert file_all_connections.read_text(remote_file) == "unchanged"
+        assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_uploader_run_mode_ignore(request, file_all_connections, test_files, caplog):
+def test_file_uploader_run_mode_ignore(request, file_connection, test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # make copy of files to upload in the target_path
     remote_files = []
     for test_file in test_files:
         remote_file = target_path / test_file.name
-        remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
+        remote_files.append(file_connection.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload changed files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=FileUploader.Options(mode=FileWriteMode.IGNORE),
     )
@@ -335,30 +335,30 @@ def test_uploader_run_mode_ignore(request, file_all_connections, test_files, cap
         remote_file = remote_files[remote_files.index(target_path / local_file.name)]
 
         # file size wasn't changed
-        assert file_all_connections.get_stat(remote_file).st_size != local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size != local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content wasn't changed
-        assert file_all_connections.read_text(remote_file) == "unchanged"
+        assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_uploader_run_mode_overwrite(request, file_all_connections, test_files, caplog):
+def test_file_uploader_run_mode_overwrite(request, file_connection, test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # make copy of files to upload in the target_path
     remote_files = []
     for test_file in test_files:
         remote_file = target_path / test_file.name
-        remote_files.append(file_all_connections.write_text(remote_file, "unchanged"))
+        remote_files.append(file_connection.write_text(remote_file, "unchanged"))
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload changed files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=FileUploader.Options(mode=FileWriteMode.OVERWRITE),
     )
@@ -387,20 +387,20 @@ def test_uploader_run_mode_overwrite(request, file_all_connections, test_files, 
         local_file = next(file for file in test_files if file.name == remote_file.name)
 
         # file size was changed
-        assert file_all_connections.get_stat(remote_file).st_size != old_remote_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size != old_remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content was changed
-        assert file_all_connections.read_text(remote_file) != "unchanged"
-        assert file_all_connections.read_bytes(remote_file) == local_file.read_bytes()
+        assert file_connection.read_text(remote_file) != "unchanged"
+        assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
 @pytest.mark.parametrize("remote_dir_exist", [True, False])
-def test_uploader_run_mode_delete_all(
+def test_file_uploader_run_mode_delete_all(
     request,
     resource_path,
-    file_all_connections,
+    file_connection,
     test_files,
     remote_dir_exist,
     caplog,
@@ -411,15 +411,15 @@ def test_uploader_run_mode_delete_all(
     temp_file = target_path / secrets.token_hex(5)
 
     if remote_dir_exist:
-        file_all_connections.write_text(temp_file, "abc")
+        file_connection.write_text(temp_file, "abc")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         options=FileUploader.Options(mode=FileWriteMode.DELETE_ALL),
     )
@@ -434,57 +434,57 @@ def test_uploader_run_mode_delete_all(
     assert upload_result.successful
 
     target_path_content = []
-    for root, _dirs, files in file_all_connections.walk(target_path):
+    for root, _dirs, files in file_connection.walk(target_path):
         target_path_content.extend(root / file for file in files)
 
     # target path contains only downloaded files
     assert sorted(target_path_content) == sorted(upload_result.successful)
-    assert not file_all_connections.path_exists(temp_file)
+    assert not file_connection.path_exists(temp_file)
 
 
-def test_uploader_run_local_path_does_not_exist(file_all_connections, tmp_path_factory):
+def test_file_uploader_run_local_path_does_not_exist(file_connection, tmp_path_factory):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     local_path_parent = tmp_path_factory.mktemp("local_path")
     local_path = local_path_parent / "abc"
 
-    uploader = FileUploader(connection=file_all_connections, target_path=target_path, local_path=local_path)
+    uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=local_path)
 
     with pytest.raises(DirectoryNotFoundError, match=f"'{local_path}' does not exist"):
         uploader.run()
 
 
-def test_uploader_run_local_path_not_a_directory(file_all_connections):
+def test_file_uploader_run_local_path_not_a_directory(file_connection):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     with tempfile.NamedTemporaryFile() as file:
-        uploader = FileUploader(connection=file_all_connections, target_path=target_path, local_path=file.name)
+        uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
 
         with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
             uploader.run()
 
 
-def test_uploader_run_target_path_not_a_directory(request, file_all_connections, resource_path):
+def test_file_uploader_run_target_path_not_a_directory(request, file_connection, resource_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
-    file_all_connections.write_text(target_path, "abc")
+    file_connection.write_text(target_path, "abc")
 
     def finalizer():
-        file_all_connections.remove_file(target_path)
+        file_connection.remove_file(target_path)
 
     request.addfinalizer(finalizer)
 
-    uploader = FileUploader(connection=file_all_connections, target_path=target_path, local_path=resource_path)
+    uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=resource_path)
 
     with pytest.raises(NotADirectoryError, match=rf"'{target_path}' \(kind='file', .*\) is not a directory"):
         uploader.run()
 
 
-def test_uploader_run_input_is_not_file(file_all_connections, test_files):
+def test_file_uploader_run_input_is_not_file(file_connection, test_files):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
     )
 
@@ -498,12 +498,12 @@ def test_uploader_run_input_is_not_file(file_all_connections, test_files):
     [False, True],
     ids=["Without local_path", "With local_path"],
 )
-def test_uploader_run_with_empty_files(file_all_connections, pass_local_path, tmp_path_factory):
+def test_file_uploader_run_with_empty_files(file_connection, pass_local_path, tmp_path_factory):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=local_path if pass_local_path else None,
     )
@@ -516,17 +516,17 @@ def test_uploader_run_with_empty_files(file_all_connections, pass_local_path, tm
     assert not download_result.successful
 
 
-def test_uploader_run_with_empty_local_path(request, file_all_connections, tmp_path_factory):
+def test_file_uploader_run_with_empty_local_path(request, file_connection, tmp_path_factory):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     local_path = tmp_path_factory.mktemp("local_path")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     downloader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=local_path,
     )
@@ -539,26 +539,26 @@ def test_uploader_run_with_empty_local_path(request, file_all_connections, tmp_p
     assert not download_result.successful
 
 
-def test_uploader_without_files_and_without_local_path(file_all_connections):
+def test_file_uploader_without_files_and_without_local_path(file_connection):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    uploader = FileUploader(connection=file_all_connections, target_path=target_path)
+    uploader = FileUploader(connection=file_connection, target_path=target_path)
 
     with pytest.raises(ValueError, match="Neither file list nor `local_path` are passed"):
         uploader.run()
 
 
-def test_uploader_run_with_relative_files_and_local_path(request, file_all_connections, resource_path, caplog):
+def test_file_uploader_run_with_relative_files_and_local_path(request, file_connection, resource_path, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=resource_path,
     )
@@ -588,24 +588,24 @@ def test_uploader_run_with_relative_files_and_local_path(request, file_all_conne
         local_file = resource_path / remote_file.relative_to(target_path)
 
         # file size is same as expected
-        assert file_all_connections.get_stat(remote_file).st_size == local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content is same as expected
-        assert file_all_connections.read_bytes(remote_file) == local_file.read_bytes()
+        assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_uploader_run_with_absolute_files_and_local_path(request, file_all_connections, resource_path, caplog):
+def test_file_uploader_run_with_absolute_files_and_local_path(request, file_connection, resource_path, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     def finalizer():
-        file_all_connections.remove_dir(target_path, recursive=True)
+        file_connection.remove_dir(target_path, recursive=True)
 
     request.addfinalizer(finalizer)
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         local_path=resource_path,
     )
@@ -634,26 +634,26 @@ def test_uploader_run_with_absolute_files_and_local_path(request, file_all_conne
         local_file = resource_path / remote_file.relative_to(target_path)
 
         # file size is same as expected
-        assert file_all_connections.get_stat(remote_file).st_size == local_file.stat().st_size
-        assert file_all_connections.get_stat(remote_file).st_size == remote_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == local_file.stat().st_size
+        assert file_connection.get_stat(remote_file).st_size == remote_file.stat().st_size
 
         # file content is same as expected
-        assert file_all_connections.read_bytes(remote_file) == local_file.read_bytes()
+        assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_uploader_run_absolute_path_not_match_local_path(file_all_connections, resource_path):
+def test_file_uploader_run_absolute_path_not_match_local_path(file_connection, resource_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    uploader = FileUploader(connection=file_all_connections, target_path=target_path, local_path=resource_path)
+    uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=resource_path)
 
     with pytest.raises(ValueError, match=f"File path '/some/path/1' does not match source_path '{resource_path}'"):
         uploader.run(["/some/path/1", "/some/path/2"])
 
 
-def test_uploader_run_relative_paths_without_local_path(file_all_connections):
+def test_file_uploader_run_relative_paths_without_local_path(file_connection):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
-    uploader = FileUploader(connection=file_all_connections, target_path=target_path)
+    uploader = FileUploader(connection=file_connection, target_path=target_path)
 
     with pytest.raises(ValueError, match="Cannot pass relative file path with empty `local_path`"):
         uploader.run(["some/path/1", "some/path/2"])
@@ -668,12 +668,12 @@ def test_uploader_run_relative_paths_without_local_path(file_all_connections):
     ],
     ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
 )
-def test_uploader_run_with_temp_path(file_all_connections, test_files, temp_path):
+def test_file_uploader_run_with_temp_path(file_connection, test_files, temp_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # upload files
     uploader = FileUploader(
-        connection=file_all_connections,
+        connection=file_connection,
         target_path=target_path,
         temp_path=temp_path,
     )
@@ -687,7 +687,7 @@ def test_uploader_run_with_temp_path(file_all_connections, test_files, temp_path
 
     assert sorted(upload_result.successful) == sorted(target_path / file.name for file in test_files)
 
-    if temp_path and file_all_connections.path_exists(temp_path):
+    if temp_path and file_connection.path_exists(temp_path):
         # temp_path is not removed after upload is finished,
         # because this may conflict with processes running in parallel
-        file_all_connections.is_dir(temp_path)
+        file_connection.is_dir(temp_path)

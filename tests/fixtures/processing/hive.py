@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pandas
 
-from tests.lib.base_processing import BaseProcessing
+from tests.fixtures.processing.base_processing import BaseProcessing
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
