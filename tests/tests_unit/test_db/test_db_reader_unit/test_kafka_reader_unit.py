@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from onetl.connection import Kafka
 from onetl.db import DBReader
@@ -45,14 +44,16 @@ def test_kafka_reader_invalid_table(spark_mock):
             table="schema.table",  # Includes schema. Required format: table="table"
         )
     with pytest.raises(
-        ValidationError,
+        ValueError,
+        match="Table name should be passed in `schema.name` format",
     ):
         DBReader(
             connection=kafka,
             table="schema.table.subtable",  # Includes subtable. Required format: table="table"
         )
     with pytest.raises(
-        ValidationError,
+        ValueError,
+        match="string does not match regex",
     ):
         DBReader(
             connection=kafka,
@@ -92,17 +93,6 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
     ):
         DBReader(
             connection=kafka,
-            table="table",
-            df_schema=df_schema,
-        )
-    with pytest.raises(
-        ValueError,
-        match="parameter is not supported by Kafka ",
-    ):
-        DBReader(
-            connection=kafka,
-            where={"col1": 1},
-            hint={"col1": 1},
             table="table",
             df_schema=df_schema,
         )
