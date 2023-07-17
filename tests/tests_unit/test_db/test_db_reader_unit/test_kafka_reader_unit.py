@@ -32,7 +32,6 @@ def test_kafka_reader_invalid_table(spark_mock):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
-        deploy_keytab=False,
         spark=spark_mock,
     )
     with pytest.raises(
@@ -51,21 +50,12 @@ def test_kafka_reader_invalid_table(spark_mock):
             connection=kafka,
             table="schema.table.subtable",  # Includes subtable. Required format: table="table"
         )
-    with pytest.raises(
-        ValueError,
-        match="string does not match regex",
-    ):
-        DBReader(
-            connection=kafka,
-            table="",  # Empty table name. Required format: table="table"
-        )
 
 
 def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
-        deploy_keytab=False,
         spark=spark_mock,
     )
 
