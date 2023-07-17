@@ -9,7 +9,7 @@ from random import randint
 import clickhouse_driver
 import pandas
 
-from tests.lib.base_processing import BaseProcessing
+from tests.fixtures.processing.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 

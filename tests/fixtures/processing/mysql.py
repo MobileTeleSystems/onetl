@@ -1,25 +1,24 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
 from logging import getLogger
 
 import pandas
-import pymssql
+import pymysql
 from pandas.io import sql as psql
 
-from tests.lib.base_processing import BaseProcessing
+from tests.fixtures.processing.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
 
-class MSSQLProcessing(BaseProcessing):
+class MySQLProcessing(BaseProcessing):
     _column_types_and_names_matching = {
-        "id_int": "INT",
+        "id_int": "INT NOT NULL",
         "text_string": "VARCHAR(50)",
         "hwm_int": "INT",
         "hwm_date": "DATE",
-        "hwm_datetime": "DATETIME",
+        "hwm_datetime": "DATETIME(6)",
         "float_value": "FLOAT",
     }
 
@@ -33,56 +32,47 @@ class MSSQLProcessing(BaseProcessing):
 
     @property
     def user(self) -> str:
-        return os.environ["ONETL_MSSQL_USER"]
+        return os.environ["ONETL_MYSQL_USER"]
 
     @property
     def password(self) -> str:
-        return os.environ["ONETL_MSSQL_PASSWORD"]
+        return os.environ["ONETL_MYSQL_PASSWORD"]
 
     @property
     def host(self) -> str:
-        return os.environ["ONETL_MSSQL_HOST"]
+        return os.environ["ONETL_MYSQL_HOST"]
 
     @property
     def database(self) -> str:
-        return os.environ["ONETL_MSSQL_DATABASE"]
+        return os.environ["ONETL_MYSQL_DATABASE"]
 
     @property
     def port(self) -> int:
-        return int(os.environ["ONETL_MSSQL_PORT"])
+        return int(os.environ["ONETL_MYSQL_PORT"])
 
     @property
     def schema(self) -> str:
-        return os.getenv("ONETL_MSSQL_SCHEMA", "onetl")
+        return os.getenv("ONETL_MYSQL_SCHEMA", "onetl")
 
     @property
     def url(self) -> str:
-        return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
     def get_conn(self):
-        return pymssql.connect(
+        return pymysql.connect(
             host=self.host,
             port=self.port,
             user=self.user,
             password=self.password,
             database=self.database,
+            cursorclass=pymysql.cursors.DictCursor,
         )
-
-    @staticmethod
-    def current_datetime() -> datetime:
-        # MSSQL DATETIME format has time range: 00:00:00 through 23:59:59.997
-        return datetime.now().replace(microsecond=0)
 
     def create_schema_ddl(
         self,
         schema: str,
     ) -> str:
-        return f"""
-            IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{schema}'))
-            BEGIN
-                EXEC ('CREATE SCHEMA [{schema}]')
-            END
-        """
+        return f"CREATE SCHEMA IF NOT EXISTS {schema}"
 
     def create_schema(
         self,
@@ -90,6 +80,16 @@ class MSSQLProcessing(BaseProcessing):
     ) -> None:
         with self.connection.cursor() as cursor:
             cursor.execute(self.create_schema_ddl(schema))
+            self.connection.commit()
+
+    def create_table_ddl(
+        self,
+        table: str,
+        fields: dict[str, str],
+        schema: str,
+    ) -> str:
+        str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
+        return f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields})"
 
     def create_table(
         self,

@@ -12,13 +12,14 @@ from onetl.hooks import hook
 pytestmark = [pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]
 
 
-def test_hdfs_check_anonymous(hdfs_connection, caplog):
+def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
+    hdfs = hdfs_file_connection
     with caplog.at_level(logging.INFO):
-        assert hdfs_connection.check() == hdfs_connection
+        assert hdfs.check() == hdfs
 
     assert "type = HDFS" in caplog.text
-    assert f"host = '{hdfs_connection.host}'" in caplog.text
-    assert f"port = {hdfs_connection.webhdfs_port}" in caplog.text
+    assert f"host = '{hdfs.host}'" in caplog.text
+    assert f"port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
     assert "user = " not in caplog.text
     assert "keytab =" not in caplog.text
@@ -27,7 +28,7 @@ def test_hdfs_check_anonymous(hdfs_connection, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_hdfs_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
+def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
     from onetl.connection import HDFS
     from onetl.connection.file_connection import hdfs
 
@@ -60,7 +61,7 @@ def test_hdfs_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_f
     assert "Connection is available" in caplog.text
 
 
-def test_hdfs_check_with_password(mocker, hdfs_server, caplog):
+def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     from onetl.connection import HDFS
     from onetl.connection.file_connection import hdfs
 
@@ -83,14 +84,14 @@ def test_hdfs_check_with_password(mocker, hdfs_server, caplog):
     assert "Connection is available" in caplog.text
 
 
-def test_hdfs_wrong_source_check_error():
+def test_hdfs_file_connection_check_failed():
     from onetl.connection import HDFS
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
         HDFS(host="hive1", port=1234).check()
 
 
-def test_hdfs_check_with_hooks(request, hdfs_server):
+def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
     from onetl.connection import HDFS
 
     @HDFS.slots.is_namenode_active.bind

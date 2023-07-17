@@ -7,7 +7,7 @@ import cx_Oracle
 import pandas
 from pandas.io import sql as psql
 
-from tests.lib.base_processing import BaseProcessing
+from tests.fixtures.processing.base_processing import BaseProcessing
 
 logger = getLogger(__name__)
 
