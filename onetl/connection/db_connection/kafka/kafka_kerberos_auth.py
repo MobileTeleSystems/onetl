@@ -78,11 +78,7 @@ class KafkaKerberosAuth(IKafkaAuth, GenericOptions):
 
     def get_options(self, kafka: Kafka) -> dict:
         keytab_processed = self._move_keytab_if_deploy(kafka)
-
-        if keytab_processed is None:
-            keytab_path = self.keytab
-        else:
-            keytab_path = keytab_processed
+        keytab_path = self.keytab if keytab_processed is None else keytab_processed
 
         return {
             "kafka.sasl.mechanism": "GSSAPI",
