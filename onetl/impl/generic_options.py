@@ -47,7 +47,7 @@ class GenericOptions(FrozenModel):
             return cls()
 
         if isinstance(options, dict):
-            options = cls.parse_obj(options)
+            return cls.parse_obj(options)
 
         if not isinstance(options, cls):
             raise TypeError(

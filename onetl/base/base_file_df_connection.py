@@ -14,7 +14,8 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+import os
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from onetl.base.base_connection import BaseConnection
@@ -22,8 +23,24 @@ from onetl.base.base_file_format import BaseFileFormat
 from onetl.base.pure_path_protocol import PurePathProtocol
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, DataFrameReader
     from pyspark.sql.types import StructType
+
+
+class FileDFReadOptions(ABC):
+    """
+    Protocol for objects supporting altering Spark DataFrameReader options
+    """
+
+    @abstractmethod
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+        """
+        Apply provided format to :obj:`pyspark.sql.DataFrameReader`.
+
+        Returns
+        -------
+        :obj:`pyspark.sql.DataFrameReader` with options applied
+        """
 
 
 class BaseFileDFConnection(BaseConnection):
@@ -31,9 +48,8 @@ class BaseFileDFConnection(BaseConnection):
     Implements generic methods for reading  and writing dataframe as files
     """
 
-    @classmethod
     @abstractmethod
-    def check_if_format_supported(cls, format: BaseFileFormat) -> None:  # noqa: WPS125
+    def check_if_format_supported(self, format: BaseFileFormat) -> None:  # noqa: WPS125
         """
         Validate if specific file format is supported. |support_hooks|
 
@@ -42,19 +58,25 @@ class BaseFileDFConnection(BaseConnection):
         RuntimeError
             If file format is not supported.
         """
-        ...
+
+    @abstractmethod
+    def path_from_string(self, path: os.PathLike | str) -> PurePathProtocol:
+        """
+        Convert path from string to object. |support_hooks|
+        """
 
     @abstractmethod
     def read_files_as_df(
         self,
-        path: PurePathProtocol,
+        paths: list[PurePathProtocol],
         format: BaseFileFormat,  # noqa: WPS125
+        root: PurePathProtocol | None = None,
         df_schema: StructType | None = None,
+        options: FileDFReadOptions | None = None,
     ) -> DataFrame:
         """
         Read files in some paths list as dataframe. |support_hooks|
         """
-        ...
 
     @abstractmethod
     def write_df_as_files(

@@ -21,7 +21,12 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from onetl.base import BaseFileDFConnection, BaseFileFormat, PurePathProtocol
+from onetl.base import (
+    BaseFileDFConnection,
+    BaseFileFormat,
+    FileDFReadOptions,
+    PurePathProtocol,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel
 from onetl.log import log_with_indent
@@ -55,18 +60,28 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
             raise RuntimeError("Connection is unavailable") from e
         return self
 
+    def check_if_format_supported(self, format: BaseFileFormat) -> None:  # noqa: WPS125
+        format.check_if_supported(self.spark)
+
     @slot
     def read_files_as_df(
         self,
-        path: PurePathProtocol,
+        paths: list[PurePathProtocol],
         format: BaseFileFormat,  # noqa: WPS125
+        root: PurePathProtocol | None = None,
         df_schema: StructType | None = None,
+        options: FileDFReadOptions | None = None,
     ) -> DataFrame:
         reader = format.apply_to_reader(self.spark.read)
+        if root:
+            reader = reader.option("basePath", self._convert_to_url(root))
         if df_schema:
             reader = reader.schema(df_schema)
-        url = self._convert_to_url(path)
-        return reader.load(url)
+        if options:
+            reader = options.apply_to_reader(reader)
+
+        urls = [self._convert_to_url(path) for path in paths]
+        return reader.load(urls)
 
     @slot
     def write_df_as_files(

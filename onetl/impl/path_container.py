@@ -112,6 +112,9 @@ class PathContainer(Generic[PurePath]):
     def relative_to(self, *other) -> PurePathProtocol | PurePath:
         return self.path.relative_to(*other)
 
+    def as_posix(self) -> str:
+        return self.path.as_posix()
+
     def joinpath(self, *args) -> PurePathProtocol | PurePath:
         return self.path.joinpath(*args)
 
