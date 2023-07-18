@@ -22,7 +22,7 @@ from pydantic import validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
-from onetl.connection.db_connection.kafka.i_kafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
 from onetl.connection.db_connection.kafka.options import (
@@ -57,16 +57,16 @@ class Kafka(DBConnection):
     Parameters
     ----------
 
-    auth : IKafkaAuth, default: ``None``
-        An attribute that contains a class that generates a Kafka connection configuration.
-        It depends on the type of connection to Kafka.
-
     addresses : list[str]
         A list of broker addresses, for example ``[192.168.1.10:9092, 192.168.1.11:9092]``.
         The list cannot be empty.
 
     cluster : Cluster
         Cluster name. Used for HWM and lineage. A cluster field cannot be empty.
+
+    auth : IKafkaAuth, default: ``None``
+        An attribute that contains a class that generates a Kafka connection configuration.
+        It depends on the type of connection to Kafka.
 
     .. warning::
 
@@ -118,16 +118,12 @@ class Kafka(DBConnection):
 
     BasicAuth = KafkaBasicAuth
     KerberosAuth = KafkaKerberosAuth
-
-    auth: Optional[IKafkaAuth] = None
-
-    addresses: List[str]
-    cluster: Cluster
-
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
-
     Dialect = KafkaDialect
+    addresses: List[str]
+    cluster: Cluster
+    auth: Optional[IKafkaAuth] = None
 
     def read_source_as_df(  # type: ignore
         self,
@@ -160,9 +156,6 @@ class Kafka(DBConnection):
 
     def check(self):
         return self
-
-    def save_df(self, df: DataFrame, table: str) -> None:
-        ...
 
     def get_min_max_bounds(  # type: ignore
         self,

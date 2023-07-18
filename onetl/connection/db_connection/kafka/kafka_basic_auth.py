@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
-from onetl.connection.db_connection.kafka.i_kafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
 from onetl.impl import GenericOptions
 
 if TYPE_CHECKING:
@@ -34,9 +34,6 @@ class KafkaBasicAuth(IKafkaAuth, GenericOptions):
 
     user: str = Field(alias="username")
     password: SecretStr
-
-    class Config:
-        allow_extra = True
 
     def get_jaas_conf(self) -> str:
         return dedent(

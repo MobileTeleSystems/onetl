@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, validator
 
 from onetl._internal import to_camel  # noqa: WPS436
-from onetl.connection.db_connection.kafka.i_kafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
 if TYPE_CHECKING:
