@@ -103,11 +103,12 @@ def test_file_downloader_run(
 
 def test_file_downloader_run_delete_source(
     file_connection_with_path_and_files,
-    resource_path,
+    file_connection_resource_path,
     tmp_path_factory,
     caplog,
 ):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    resource_path = file_connection_resource_path
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -169,18 +170,18 @@ def test_file_downloader_file_filter_exclude_dir(
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        filters=[ExcludeDir(path_type(remote_path / "raw/exclude_dir"))],
+        filters=[ExcludeDir(path_type(remote_path / "exclude_dir"))],
     )
 
     excluded = [
-        remote_path / "raw/exclude_dir/excluded1.txt",
-        remote_path / "raw/exclude_dir/nested/excluded2.txt",
+        remote_path / "exclude_dir/excluded1.txt",
+        remote_path / "exclude_dir/nested/excluded2.txt",
     ]
 
     with caplog.at_level(logging.INFO):
         download_result = downloader.run()
         assert "    filters = [" in caplog.text
-        assert f"        ExcludeDir('{remote_path}/raw/exclude_dir')," in caplog.text
+        assert f"        ExcludeDir('{remote_path}/exclude_dir')," in caplog.text
         assert "    ]" in caplog.text
 
     assert not download_result.failed
@@ -194,10 +195,9 @@ def test_file_downloader_file_filter_exclude_dir(
 
 
 def test_file_downloader_file_filter_glob(file_connection_with_path_and_files, tmp_path_factory, caplog):
-    file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
-    source_path = remote_path / "raw"
     downloader = FileDownloader(
         connection=file_connection,
         source_path=source_path,
@@ -225,9 +225,7 @@ def test_file_downloader_file_filter_glob(file_connection_with_path_and_files, t
     assert download_result.successful
 
     assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path)
-        for file in uploaded_files
-        if file not in excluded and source_path in file.parents
+        local_path / file.relative_to(source_path) for file in uploaded_files if file not in excluded
     )
 
 
@@ -815,10 +813,9 @@ def test_file_downloader_file_limit_is_ignored_by_user_input(
 
 
 def test_file_downloader_limit_applied_after_filter(file_connection_with_path_and_files, tmp_path_factory):
-    file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
-    source_path = remote_path / "raw"
     downloader = FileDownloader(
         connection=file_connection,
         source_path=source_path,
@@ -843,9 +840,7 @@ def test_file_downloader_limit_applied_after_filter(file_connection_with_path_an
     assert download_result.successful
 
     filtered = {
-        local_path / file.relative_to(source_path)
-        for file in uploaded_files
-        if os.fspath(file) not in excluded and source_path in file.parents
+        local_path / file.relative_to(source_path) for file in uploaded_files if os.fspath(file) not in excluded
     }
 
     # limit should be applied to files which satisfy the filter, not to all files in the source_path

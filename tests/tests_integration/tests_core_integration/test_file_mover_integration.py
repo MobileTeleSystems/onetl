@@ -111,18 +111,18 @@ def test_file_mover_file_filter_exclude_dir(
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        filters=[ExcludeDir(path_type(source_path / "raw/exclude_dir"))],
+        filters=[ExcludeDir(path_type(source_path / "exclude_dir"))],
     )
 
     excluded = [
-        source_path / "raw/exclude_dir/excluded1.txt",
-        source_path / "raw/exclude_dir/nested/excluded2.txt",
+        source_path / "exclude_dir/excluded1.txt",
+        source_path / "exclude_dir/nested/excluded2.txt",
     ]
 
     with caplog.at_level(logging.INFO):
         move_result = mover.run()
         assert "    filters = [" in caplog.text
-        assert f"        ExcludeDir('{source_path}/raw/exclude_dir')," in caplog.text
+        assert f"        ExcludeDir('{source_path}/exclude_dir')," in caplog.text
         assert "    ]" in caplog.text
 
     assert not move_result.failed
@@ -136,7 +136,7 @@ def test_file_mover_file_filter_exclude_dir(
 
 
 def test_file_mover_file_filter_glob(request, file_connection_with_path_and_files, caplog):
-    file_connection, data_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 
     def finalizer():
@@ -144,7 +144,6 @@ def test_file_mover_file_filter_glob(request, file_connection_with_path_and_file
 
     request.addfinalizer(finalizer)
 
-    source_path = data_path / "raw"
     mover = FileMover(
         connection=file_connection,
         source_path=source_path,
@@ -812,10 +811,9 @@ def test_file_mover_file_limit_is_ignored_by_user_input(
 
 
 def test_file_mover_limit_applied_after_filter(file_connection_with_path_and_files):
-    file_connection, data_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 
-    source_path = data_path / "raw"
     mover = FileMover(
         connection=file_connection,
         source_path=source_path,
@@ -840,9 +838,7 @@ def test_file_mover_limit_applied_after_filter(file_connection_with_path_and_fil
     assert move_result.successful
 
     filtered = {
-        target_path / file.relative_to(source_path)
-        for file in uploaded_files
-        if os.fspath(file) not in excluded and source_path in file.parents
+        target_path / file.relative_to(source_path) for file in uploaded_files if os.fspath(file) not in excluded
     }
 
     # limit should be applied to files which satisfy the filter, not to all files in the source_path

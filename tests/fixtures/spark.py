@@ -93,7 +93,7 @@ def spark_packages():
     scope="session",
     name="spark",
     params=[
-        pytest.param("real", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("real-spark", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
 def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spark_packages):
