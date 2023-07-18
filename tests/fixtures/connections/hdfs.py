@@ -10,7 +10,7 @@ from tests.fixtures.connections.util import upload_files
 @pytest.fixture(
     scope="session",
     params=[
-        pytest.param("real", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
+        pytest.param("real-hdfs", marks=[pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connection]),
     ],
 )
 def hdfs_server():
@@ -31,7 +31,7 @@ def hdfs_file_connection(hdfs_server):
 @pytest.fixture()
 def hdfs_file_connection_with_path(request, hdfs_file_connection):
     connection = hdfs_file_connection
-    root = PurePosixPath("/data/")
+    root = PurePosixPath("/data")
 
     def finalizer():
         connection.remove_dir(root, recursive=True)
@@ -45,8 +45,8 @@ def hdfs_file_connection_with_path(request, hdfs_file_connection):
 
 
 @pytest.fixture()
-def hdfs_file_connection_with_path_and_files(resource_path_original, hdfs_file_connection_with_path):
+def hdfs_file_connection_with_path_and_files(resource_path, hdfs_file_connection_with_path):
     connection, upload_to = hdfs_file_connection_with_path
-    upload_from = resource_path_original
+    upload_from = resource_path / "file_connection"
     files = upload_files(upload_from, upload_to, connection)
     return connection, upload_to, files

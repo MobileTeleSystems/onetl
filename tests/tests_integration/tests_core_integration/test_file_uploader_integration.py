@@ -12,8 +12,9 @@ from onetl.file import FileUploader
 from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
 
 
-def test_file_uploader_view_files(file_connection, resource_path):
+def test_file_uploader_view_files(file_connection, file_connection_resource_path):
     target_path = f"/tmp/test_upload_{secrets.token_hex(5)}"
+    resource_path = file_connection_resource_path
 
     # upload files
     uploader = FileUploader(
@@ -41,8 +42,16 @@ def test_file_uploader_view_files(file_connection, resource_path):
     ids=["run_path_type str", "run_path_type Path"],
 )
 @pytest.mark.parametrize("workers", [1, 3])
-def test_file_uploader_run_with_files(request, file_connection, test_files, run_path_type, path_type, workers):
+def test_file_uploader_run_with_files(
+    request,
+    file_connection,
+    file_connection_test_files,
+    run_path_type,
+    path_type,
+    workers,
+):
     target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -86,8 +95,9 @@ def test_file_uploader_run_with_files(request, file_connection, test_files, run_
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type Path"])
-def test_file_uploader_run_with_local_path(request, file_connection, resource_path, path_type):
+def test_file_uploader_run_with_local_path(request, file_connection, file_connection_resource_path, path_type):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -134,8 +144,9 @@ def test_file_uploader_run_with_local_path(request, file_connection, resource_pa
         assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_file_uploader_run_missing_file(request, file_connection, test_files, caplog):
+def test_file_uploader_run_missing_file(request, file_connection, file_connection_test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -170,8 +181,16 @@ def test_file_uploader_run_missing_file(request, file_connection, test_files, ca
         assert not missing_file.exists()
 
 
-def test_file_uploader_run_delete_local(request, resource_path, test_files, file_connection, caplog):
+def test_file_uploader_run_delete_local(
+    request,
+    file_connection,
+    file_connection_resource_path,
+    file_connection_test_files,
+    caplog,
+):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
+    test_files = file_connection_test_files
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -241,8 +260,9 @@ def test_file_uploader_run_delete_local(request, resource_path, test_files, file
     "options",
     [{"mode": "error"}, FileUploader.Options(mode="error"), FileUploader.Options(mode=FileWriteMode.ERROR)],
 )
-def test_file_uploader_run_mode_error(request, file_connection, test_files, options):
+def test_file_uploader_run_mode_error(request, file_connection, file_connection_test_files, options):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     # make copy of files to upload in the target_path
     remote_files = []
@@ -291,8 +311,9 @@ def test_file_uploader_run_mode_error(request, file_connection, test_files, opti
         assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_file_uploader_run_mode_ignore(request, file_connection, test_files, caplog):
+def test_file_uploader_run_mode_ignore(request, file_connection, file_connection_test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     # make copy of files to upload in the target_path
     remote_files = []
@@ -342,8 +363,9 @@ def test_file_uploader_run_mode_ignore(request, file_connection, test_files, cap
         assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_file_uploader_run_mode_overwrite(request, file_connection, test_files, caplog):
+def test_file_uploader_run_mode_overwrite(request, file_connection, file_connection_test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     # make copy of files to upload in the target_path
     remote_files = []
@@ -399,13 +421,13 @@ def test_file_uploader_run_mode_overwrite(request, file_connection, test_files, 
 @pytest.mark.parametrize("remote_dir_exist", [True, False])
 def test_file_uploader_run_mode_delete_all(
     request,
-    resource_path,
     file_connection,
-    test_files,
+    file_connection_test_files,
     remote_dir_exist,
     caplog,
 ):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     # make copy of files to upload in the target_path
     temp_file = target_path / secrets.token_hex(5)
@@ -464,8 +486,9 @@ def test_file_uploader_run_local_path_not_a_directory(file_connection):
             uploader.run()
 
 
-def test_file_uploader_run_target_path_not_a_directory(request, file_connection, resource_path):
+def test_file_uploader_run_target_path_not_a_directory(request, file_connection, file_connection_resource_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
     file_connection.write_text(target_path, "abc")
 
     def finalizer():
@@ -479,7 +502,7 @@ def test_file_uploader_run_target_path_not_a_directory(request, file_connection,
         uploader.run()
 
 
-def test_file_uploader_run_input_is_not_file(file_connection, test_files):
+def test_file_uploader_run_input_is_not_file(file_connection):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
 
     # upload files
@@ -548,8 +571,14 @@ def test_file_uploader_without_files_and_without_local_path(file_connection):
         uploader.run()
 
 
-def test_file_uploader_run_with_relative_files_and_local_path(request, file_connection, resource_path, caplog):
+def test_file_uploader_run_with_relative_files_and_local_path(
+    request,
+    file_connection,
+    file_connection_resource_path,
+    caplog,
+):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -595,8 +624,14 @@ def test_file_uploader_run_with_relative_files_and_local_path(request, file_conn
         assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_file_uploader_run_with_absolute_files_and_local_path(request, file_connection, resource_path, caplog):
+def test_file_uploader_run_with_absolute_files_and_local_path(
+    request,
+    file_connection,
+    file_connection_resource_path,
+    caplog,
+):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
 
     def finalizer():
         file_connection.remove_dir(target_path, recursive=True)
@@ -641,8 +676,9 @@ def test_file_uploader_run_with_absolute_files_and_local_path(request, file_conn
         assert file_connection.read_bytes(remote_file) == local_file.read_bytes()
 
 
-def test_file_uploader_run_absolute_path_not_match_local_path(file_connection, resource_path):
+def test_file_uploader_run_absolute_path_not_match_local_path(file_connection, file_connection_resource_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    resource_path = file_connection_resource_path
 
     uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=resource_path)
 
@@ -668,8 +704,9 @@ def test_file_uploader_run_relative_paths_without_local_path(file_connection):
     ],
     ids=["no temp", "temp_path str", "temp_path PurePosixPath"],
 )
-def test_file_uploader_run_with_temp_path(file_connection, test_files, temp_path):
+def test_file_uploader_run_with_temp_path(file_connection, file_connection_test_files, temp_path):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
+    test_files = file_connection_test_files
 
     # upload files
     uploader = FileUploader(

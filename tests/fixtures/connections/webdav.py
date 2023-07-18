@@ -11,7 +11,7 @@ from tests.fixtures.connections.util import upload_files
     scope="session",
     params=[
         pytest.param(
-            "real",
+            "real-webdav",
             marks=[pytest.mark.webdav, pytest.mark.file_connection, pytest.mark.connection],
         ),
     ],
@@ -46,7 +46,7 @@ def webdav_file_connection(webdav_server):
 @pytest.fixture()
 def webdav_file_connection_with_path(request, webdav_file_connection):
     connection = webdav_file_connection
-    root = PurePosixPath("/data/")
+    root = PurePosixPath("/data")
 
     def finalizer():
         connection.remove_dir(root, recursive=True)
@@ -60,8 +60,8 @@ def webdav_file_connection_with_path(request, webdav_file_connection):
 
 
 @pytest.fixture()
-def webdav_file_connection_with_path_and_files(resource_path_original, webdav_file_connection_with_path):
+def webdav_file_connection_with_path_and_files(resource_path, webdav_file_connection_with_path):
     connection, upload_to = webdav_file_connection_with_path
-    upload_from = resource_path_original
+    upload_from = resource_path / "file_connection"
     files = upload_files(upload_from, upload_to, connection)
     return connection, upload_to, files

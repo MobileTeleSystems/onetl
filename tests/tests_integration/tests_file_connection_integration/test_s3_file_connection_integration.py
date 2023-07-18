@@ -46,7 +46,6 @@ def test_s3_file_connection_list_dir(path_prefix, s3_file_connection_with_path_a
     def dir_content(path):
         return sorted(os.fspath(file) for file in s3.list_dir(path))
 
-    assert dir_content(f"{path_prefix}data/raw/exclude_dir") == ["excluded1.txt", "nested"]
-    assert dir_content(f"{path_prefix}data/raw") == ["ascii.txt", "exclude_dir", "nested", "some.csv", "utf-8.txt"]
-    assert dir_content(f"{path_prefix}data") == ["raw"]
+    assert dir_content(f"{path_prefix}data/exclude_dir") == ["excluded1.txt", "nested"]
+    assert dir_content(f"{path_prefix}data") == ["ascii.txt", "exclude_dir", "nested", "some.csv", "utf-8.txt"]
     assert "data" in dir_content(path_prefix)  # "tmp" could present

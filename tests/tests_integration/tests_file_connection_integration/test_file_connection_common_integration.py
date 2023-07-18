@@ -59,11 +59,11 @@ def test_file_connection_rename_file(file_connection_with_path_and_files, path_t
     file_connection, remote_path, _ = file_connection_with_path_and_files
     with file_connection as connection:
         connection.rename_file(
-            source_file_path=path_type(os.fspath(remote_path / "raw/ascii.txt")),
-            target_file_path=path_type(os.fspath(remote_path / "raw/new.txt")),
+            source_file_path=path_type(os.fspath(remote_path / "ascii.txt")),
+            target_file_path=path_type(os.fspath(remote_path / "new.txt")),
         )
 
-    list_dir = file_connection.list_dir(remote_path / "raw/")
+    list_dir = file_connection.list_dir(remote_path)
 
     assert RemotePath("new.txt") in list_dir
     assert RemotePath("ascii.txt") not in list_dir
@@ -79,8 +79,8 @@ def test_file_connection_rename_dir(file_connection_with_path_and_files, path_ty
     def stringify(items):
         return list(map(os.fspath, items))
 
-    old_dir = remote_path / "raw/exclude_dir"
-    new_dir = remote_path / "raw/exclude_dir1"
+    old_dir = remote_path / "exclude_dir"
+    new_dir = remote_path / "exclude_dir1"
     files_before = list(file_connection.walk(old_dir))
 
     file_connection.rename_dir(
@@ -88,7 +88,7 @@ def test_file_connection_rename_dir(file_connection_with_path_and_files, path_ty
         target_dir_path=path_type(os.fspath(new_dir)),
     )
 
-    list_dir = file_connection.list_dir(remote_path / "raw")
+    list_dir = file_connection.list_dir(remote_path)
     assert RemotePath("exclude_dir") not in list_dir
     assert RemotePath("exclude_dir1") in list_dir
 
@@ -108,8 +108,8 @@ def test_file_connection_rename_dir_already_exists(request, file_connection_with
         # S3 does not have directories
         return
 
-    old_dir = remote_path / "raw/exclude_dir"
-    new_dir = remote_path / "raw/exclude_dir1"
+    old_dir = remote_path / "exclude_dir"
+    new_dir = remote_path / "exclude_dir1"
 
     def finalizer():
         file_connection.remove_dir(new_dir)
@@ -134,8 +134,8 @@ def test_file_connection_rename_dir_replace(request, file_connection_with_path_a
     def stringify(items):
         return list(map(os.fspath, items))
 
-    old_dir = remote_path / "raw/exclude_dir"
-    new_dir = remote_path / "raw/exclude_dir1"
+    old_dir = remote_path / "exclude_dir"
+    new_dir = remote_path / "exclude_dir1"
 
     def finalizer():
         file_connection.remove_dir(new_dir, recursive=True)
@@ -152,7 +152,7 @@ def test_file_connection_rename_dir_replace(request, file_connection_with_path_a
         replace=True,
     )
 
-    list_dir = file_connection.list_dir(remote_path / "raw")
+    list_dir = file_connection.list_dir(remote_path)
     assert RemotePath("exclude_dir") not in list_dir
     assert RemotePath("exclude_dir1") in list_dir
 
@@ -168,7 +168,7 @@ def test_file_connection_rename_dir_replace(request, file_connection_with_path_a
 
 def test_file_connection_read_text(file_connection_with_path_and_files):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    content = file_connection.read_text(path=remote_path / "raw/utf-8.txt")
+    content = file_connection.read_text(path=remote_path / "utf-8.txt")
 
     assert isinstance(content, str)
     assert content == "тестовый текст в  тестовом файле\n"
@@ -176,7 +176,7 @@ def test_file_connection_read_text(file_connection_with_path_and_files):
 
 def test_file_connection_read_bytes(file_connection_with_path_and_files):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    content = file_connection.read_bytes(path=remote_path / "raw/ascii.txt")
+    content = file_connection.read_bytes(path=remote_path / "ascii.txt")
 
     assert isinstance(content, bytes)
     assert content == b"test text in test file\n"
@@ -221,8 +221,8 @@ def test_file_connection_read_bytes_negative(
 )
 def test_file_connection_write_text(file_connection_with_path_and_files, file_name):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    file_connection.write_text(path=remote_path / "raw" / file_name, content="тестовый текст в  utf-8")
-    assert file_connection.read_text(remote_path / "raw" / file_name) == "тестовый текст в  utf-8"
+    file_connection.write_text(path=remote_path / file_name, content="тестовый текст в  utf-8")
+    assert file_connection.read_text(remote_path / file_name) == "тестовый текст в  utf-8"
 
 
 @pytest.mark.parametrize(
@@ -232,31 +232,31 @@ def test_file_connection_write_text(file_connection_with_path_and_files, file_na
 )
 def test_file_connection_write_bytes(file_connection_with_path_and_files, file_name):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    file_connection.write_bytes(path=remote_path / "raw" / file_name, content=b"ascii test text")
-    assert file_connection.read_bytes(remote_path / "raw" / file_name) == b"ascii test text"
+    file_connection.write_bytes(path=remote_path / file_name, content=b"ascii test text")
+    assert file_connection.read_bytes(remote_path / file_name) == b"ascii test text"
 
 
 def test_file_connection_write_text_fail_on_bytes_input(file_connection_with_path):
     file_connection, remote_path = file_connection_with_path
     with pytest.raises(TypeError):
-        file_connection.write_text(path=remote_path / "raw/new.txt", content=b"bytes to text")
+        file_connection.write_text(path=remote_path / "new.txt", content=b"bytes to text")
 
 
 def test_file_connection_write_bytes_fail_on_text_input(file_connection_with_path):
     file_connection, remote_path = file_connection_with_path
     with pytest.raises(TypeError):
-        file_connection.write_bytes(path=remote_path / "raw/new.txt", content="text to bytes")
+        file_connection.write_bytes(path=remote_path / "new.txt", content="text to bytes")
 
 
 def test_file_connection_write_encoding(file_connection_with_path):
     file_connection, remote_path = file_connection_with_path
     file_connection.write_text(
-        path=remote_path / "raw/cp-1251.txt",
+        path=remote_path / "cp-1251.txt",
         content="тестовый текст в  utf-8",
         encoding="cp1251",
     )
 
-    assert file_connection.read_bytes(path=remote_path / "raw/cp-1251.txt") == "тестовый текст в  utf-8".encode(
+    assert file_connection.read_bytes(path=remote_path / "cp-1251.txt") == "тестовый текст в  utf-8".encode(
         "cp1251",
     )
 
@@ -274,16 +274,16 @@ def test_file_connection_read_encoding(file_connection_with_path):
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_path_exists(file_connection_with_path_and_files, path_type):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    assert file_connection.path_exists(path_type(os.fspath(remote_path / "raw/ascii.txt")))
-    assert file_connection.path_exists(path_type(os.fspath(remote_path / "raw")))
+    assert file_connection.path_exists(path_type(os.fspath(remote_path / "ascii.txt")))
+    assert file_connection.path_exists(path_type(os.fspath(remote_path)))
     assert not file_connection.path_exists(path_type(os.fspath(remote_path / "path_not_exist")))
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_is_dir(file_connection_with_path_and_files, path_type):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    assert file_connection.is_dir(path_type(os.fspath(remote_path / "raw")))
-    assert not file_connection.is_dir(path_type(os.fspath(remote_path / "raw/ascii.txt")))
+    assert file_connection.is_dir(path_type(os.fspath(remote_path)))
+    assert not file_connection.is_dir(path_type(os.fspath(remote_path / "ascii.txt")))
 
     with pytest.raises(DirectoryNotFoundError):
         file_connection.is_dir(path_type(os.fspath(remote_path / "path_not_exist")))
@@ -292,8 +292,8 @@ def test_file_connection_is_dir(file_connection_with_path_and_files, path_type):
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_is_file(file_connection_with_path_and_files, path_type):
     file_connection, remote_path, _ = file_connection_with_path_and_files
-    assert file_connection.is_file(path_type(os.fspath(remote_path / "raw/ascii.txt")))
-    assert not file_connection.is_file(path_type(os.fspath(remote_path / "raw")))
+    assert file_connection.is_file(path_type(os.fspath(remote_path / "ascii.txt")))
+    assert not file_connection.is_file(path_type(os.fspath(remote_path)))
 
     with pytest.raises(FileNotFoundError):
         file_connection.is_file(path_type(os.fspath(remote_path / "path_not_exist")))
@@ -307,7 +307,7 @@ def test_file_connection_download_file(
 ):
     file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
-    remote_file_path = remote_path / "raw/some.csv"
+    remote_file_path = remote_path / "some.csv"
 
     download_result = file_connection.download_file(
         remote_file_path=path_type(os.fspath(remote_file_path)),
@@ -320,7 +320,8 @@ def test_file_connection_download_file(
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
-def test_file_connection_upload_file(file_connection, test_files, path_type):
+def test_file_connection_upload_file(file_connection, file_connection_test_files, path_type):
+    test_files = file_connection_test_files
     upload_result = file_connection.upload_file(
         local_file_path=path_type(test_files[0]),
         remote_file_path=path_type(path_type(f"/tmp/test_file_{secrets.token_hex(5)}")),
@@ -334,8 +335,8 @@ def test_file_connection_upload_file(file_connection, test_files, path_type):
 @pytest.mark.parametrize(
     "path,exception",
     [
-        ("raw/exclude_dir/", NotAFileError),
-        ("raw/exclude_dir/file_not_exists", FileNotFoundError),
+        ("exclude_dir/", NotAFileError),
+        ("exclude_dir/file_not_exists", FileNotFoundError),
     ],
     ids=["directory", "file"],
 )
@@ -365,7 +366,7 @@ def test_file_connection_download_file_wrong_target_type(
     local_path = tmp_path_factory.mktemp("local_path")
     with pytest.raises(NotAFileError):
         file_connection.download_file(
-            remote_file_path=remote_path / "raw/ascii.txt",
+            remote_file_path=remote_path / "ascii.txt",
             local_file_path=local_path,
             replace=replace,
         )
@@ -373,10 +374,11 @@ def test_file_connection_download_file_wrong_target_type(
 
 @pytest.mark.parametrize(
     "source,exception",
-    [("raw", NotAFileError), ("missing", FileNotFoundError)],
+    [("exclude_dir", NotAFileError), ("missing", FileNotFoundError)],
     ids=["directory", "missing"],
 )
-def test_file_connection_upload_file_wrong_source(file_connection, resource_path, source, exception):
+def test_file_connection_upload_file_wrong_source(file_connection, file_connection_resource_path, source, exception):
+    resource_path = file_connection_resource_path
     with pytest.raises(exception):
         file_connection.upload_file(
             local_file_path=resource_path / source,
@@ -387,15 +389,16 @@ def test_file_connection_upload_file_wrong_source(file_connection, resource_path
 @pytest.mark.parametrize("replace", [True, False])
 def test_file_connection_upload_file_wrong_target_type(
     file_connection_with_path_and_files,
-    test_files,
+    file_connection_test_files,
     replace,
 ):
     # uploading files only because S3 does not support empty directories
     file_connection, remote_path, _ = file_connection_with_path_and_files
+    test_files = file_connection_test_files
     with pytest.raises(NotAFileError):
         file_connection.upload_file(
             local_file_path=test_files[0],
-            remote_file_path=remote_path / "raw/exclude_dir",
+            remote_file_path=remote_path / "exclude_dir",
             replace=replace,
         )
 
@@ -410,7 +413,7 @@ def test_file_connection_download_replace_target(
     local_path = tmp_path_factory.mktemp("local_path")
     file_path = local_path / "file.txt"
     file_path.write_text("text to replace")
-    remote_file_path = remote_path / "raw/utf-8.txt"
+    remote_file_path = remote_path / "utf-8.txt"
 
     download_result = file_connection.download_file(
         remote_file_path=path_type(remote_file_path),
@@ -431,7 +434,7 @@ def test_file_connection_download_replace_target_negative(
     local_path = tmp_path_factory.mktemp("local_path")
     file_path = local_path / "file.txt"
     file_path.write_text("test file")
-    remote_file_path = remote_path / "raw/utf-8.txt"
+    remote_file_path = remote_path / "utf-8.txt"
 
     with pytest.raises(FileExistsError):
         file_connection.download_file(
@@ -455,7 +458,7 @@ def test_file_connection_upload_replace_target(
 
     upload_result = file_connection.upload_file(
         local_file_path=path_type(file_path),
-        remote_file_path=path_type(os.fspath(remote_path / "raw/new.txt")),
+        remote_file_path=path_type(os.fspath(remote_path / "new.txt")),
         replace=True,
     )
 
@@ -476,8 +479,8 @@ def test_file_connection_upload_replace_target_negative(
     with pytest.raises(FileExistsError):
         file_connection.upload_file(
             local_file_path=file_path,
-            remote_file_path=remote_path / "raw/utf-8.txt",
+            remote_file_path=remote_path / "utf-8.txt",
             replace=False,
         )
 
-    assert file_connection.read_text(remote_path / "raw/utf-8.txt") == "тестовый текст в  тестовом файле\n"
+    assert file_connection.read_text(remote_path / "utf-8.txt") == "тестовый текст в  тестовом файле\n"
