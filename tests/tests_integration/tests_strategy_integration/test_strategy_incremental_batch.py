@@ -7,6 +7,8 @@ from etl_entities import DateHWM, DateTimeHWM, IntHWM
 
 try:
     import pandas
+
+    from tests.util.to_pandas import to_pandas
 except ImportError:
     # pandas can be missing if someone runs tests for file connections only
     pass
@@ -679,14 +681,13 @@ def test_postgres_strategy_incremental_batch_stop(
             else:
                 total_df = total_df.union(next_df)
 
+    total_pandas_df = processing.fix_pandas_df(to_pandas(total_df))
+
     # only a small part of input data has been read
     # so instead of checking the whole dataframe a partial comparison should be performed
-    processing.assert_subset_df(df=total_df, other_frame=span)
+    processing.assert_subset_df(df=total_pandas_df, other_frame=span)
 
     # check that stop clause working as expected
-    total_df = processing.fix_pyspark_df(total_df)
-    total_pandas_df = total_df.toPandas()
-    total_pandas_df = processing.fix_pandas_df(total_pandas_df)
     assert (total_pandas_df[hwm_column] <= stop).all()
 
 

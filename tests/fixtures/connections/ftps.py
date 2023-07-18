@@ -4,7 +4,7 @@ from pathlib import PurePosixPath
 
 import pytest
 
-from tests.fixtures.connections.util import upload_files
+from tests.util.upload_files import upload_files
 
 
 @pytest.fixture(

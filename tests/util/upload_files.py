@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 
-from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection import FileConnection
 from onetl.impl import LocalPath, RemotePath
 
 log = logging.getLogger(__name__)

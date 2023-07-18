@@ -155,10 +155,6 @@ class OracleProcessing(BaseProcessing):
         df: pandas.DataFrame,
     ) -> pandas.DataFrame:
         df = super().fix_pandas_df(df)
-        # Oracle returns column names in UPPERCASE, convert them back to lowercase
-        # Nota: this is only for dataframe comparison purpose
-        rename_columns = {x: x.lower() for x in df.columns}
-        df = df.rename(columns=rename_columns, inplace=False)
 
         for column in df.columns:
             column_name = column.lower()
