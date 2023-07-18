@@ -20,11 +20,11 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from etl_entities.instance import Cluster
 from pydantic import validator
 
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.i_kafka_auth import IKafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
-from onetl.connection.db_connection.db_connection import DBConnection
-from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
