@@ -14,16 +14,15 @@
 
 from __future__ import annotations
 
-import hashlib
 import logging
-import os
-import shutil
-import textwrap
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
-from pydantic import SecretStr, root_validator, validator
+from pydantic import validator
 
+from onetl.connection.db_connection.kafka.i_kafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
+from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.options import (
@@ -31,7 +30,6 @@ from onetl.connection.db_connection.kafka.options import (
     KafkaWriteOptions,
 )
 from onetl.hwm import Statement
-from onetl.impl import LocalPath, path_repr
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -59,6 +57,10 @@ class Kafka(DBConnection):
     Parameters
     ----------
 
+    auth : IKafkaAuth, default: ``None``
+        An attribute that contains a class that generates a Kafka connection configuration.
+        It depends on the type of connection to Kafka.
+
     addresses : list[str]
         A list of broker addresses, for example ``[192.168.1.10:9092, 192.168.1.11:9092]``.
         The list cannot be empty.
@@ -66,27 +68,10 @@ class Kafka(DBConnection):
     cluster : Cluster
         Cluster name. Used for HWM and lineage. A cluster field cannot be empty.
 
-    user : str, default  ``None``
-        User, which have proper access to the Apache Kafka. For example: ``some_user``.
-
-    password : SecretStr, default  ``None``
-        Password for Kafka connection.
-
     .. warning::
 
         When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
         these parameters for anonymous connection are not specified at all.
-
-    keytab : LocalPath, default  ``None``
-        A path to the keytab file. A keytab is a file containing pairs of Kerberos principals and encrypted keys that
-        are derived from the Kerberos password. You can use this file to log on to Kerberos without being prompted for
-        a password.
-
-    deploy_keytab : bool, default ``True``
-        If ``True``, connector deploys a keytab file to all executors.
-        It is stored in the current directory of both driver and executor.
-        Otherwise, keytab file path should exist on driver and all the executors.
-        The configs must be located in the same path.
 
     .. warning::
 
@@ -101,27 +86,43 @@ class Kafka(DBConnection):
     Examples
     --------
 
+    Connect to Kafka as anonynous user (default):
+
+    .. code:: python
+
+        kafka = Kafka(auth=None)
+
+    Connect to Kafka using basic (plain) auth:
+
     .. code:: python
 
         kafka = Kafka(
-            addresses=["mybroker:9020", "anotherbroker:9020"],
-            cluster="mycluster",
-            user="me",
-            keytab="/etc/security/keytabs/me.keytab",
-            spark=spark,
+            auth=Kafka.SimpleAuth(
+                user="me",
+                password="password",
+            ),
         )
 
+    Connect to Kafka using Kerberos auth:
+
     .. code:: python
 
         kafka = Kafka(
-            addresses=["mybroker:9020", "anotherbroker:9020"],
-            cluster="mycluster",
-            user="me",
-            password="pwd",
-            spark=spark,
+            auth=Kafka.KerberosAuth(
+                principal="me@example.com",
+                keytab="/path/to/keytab",
+            ),
         )
 
     """
+
+    BasicAuth = KafkaBasicAuth
+    KerberosAuth = KafkaKerberosAuth
+
+    auth: Optional[IKafkaAuth] = None
+
+    addresses: List[str]
+    cluster: Cluster
 
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
@@ -143,13 +144,6 @@ class Kafka(DBConnection):
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
 
-    addresses: List[str]
-    cluster: Cluster
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
-    keytab: Optional[LocalPath] = None
-    deploy_keytab: bool = True
-
     @classmethod
     def get_package_spark(
         cls,
@@ -167,18 +161,6 @@ class Kafka(DBConnection):
     def check(self):
         return self
 
-    def read_table(  # type: ignore
-        self,
-        table: str,
-        columns: list[str] | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-        df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
-    ) -> DataFrame:
-        ...
-
     def save_df(self, df: DataFrame, table: str) -> None:
         ...
 
@@ -192,103 +174,8 @@ class Kafka(DBConnection):
     ) -> tuple[Any, Any]:
         ...
 
-    @validator("keytab")
-    def _validate_keytab(cls, value):  # noqa: N805
-        if not os.path.exists(value):
-            raise ValueError(
-                f"File '{os.fspath(value)}' is missing",
-            )
-
-        if not os.access(value, os.R_OK):
-            raise ValueError(
-                f"No access to file {path_repr(value)}",
-            )
-
-        return value
-
     @validator("addresses")
     def _validate_addresses(cls, value):  # noqa: N805
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value
-
-    @root_validator()
-    def _validate_auth(cls, values: dict) -> dict:  # noqa: N805
-        user = values.get("user", None)
-        password = values.get("password", None)
-        keytab = values.get("keytab", None)
-
-        passed_user_and_keytab = user and keytab
-        passed_user_and_pass = user and password
-
-        if not user and not password and not keytab:
-            # anonymous access
-            return values
-
-        if passed_user_and_keytab and not password:
-            # valid credentials
-            return values
-
-        if passed_user_and_pass and not keytab:
-            # valid credentials
-            return values
-
-        raise ValueError(
-            "Please provide either `keytab` and `user`, or `password` and "
-            "`user` for Kerberos auth, or none of parameters for anonymous auth",
-        )
-
-    @staticmethod
-    def _calculate_hash(value: str):
-        hash_object = hashlib.md5()  # noqa: S303, S324
-        hash_object.update(value.encode("utf-8"))
-        return hash_object.hexdigest()
-
-    def _get_jaas_conf(self) -> Optional[str]:
-        service_name = self._calculate_hash(
-            f"{self.addresses}{self.user}{self.cluster}",
-        )
-        if self.password is not None:
-            return self._password_jaas(service_name, self.password)
-
-        if self.keytab is not None:
-            return self._prepare_jaas_for_keytab(service_name, self.keytab)
-
-        return None
-
-    def _prepare_jaas_for_keytab(self, service_name, keytab: LocalPath) -> str:
-        if self.deploy_keytab:
-            processed_keytab = self._move_keytab(keytab)
-            self.spark.sparkContext.addFile(os.fspath(keytab))
-        else:
-            processed_keytab = keytab
-
-        return textwrap.dedent(
-            f"""
-            com.sun.security.auth.module.Krb5LoginModule required
-            keyTab="{processed_keytab}"
-            principal="{self.user}"
-            serviceName="{service_name}"
-            renewTicket=true
-            storeKey=true
-            useKeyTab=true
-            useTicketCache=false;
-            """,
-        ).strip()  # removes a carriage return at the beginning and end
-
-    def _password_jaas(self, service_name: str, password: SecretStr) -> str:
-        return textwrap.dedent(
-            f"""
-            org.apache.kafka.common.security.plain.PlainLoginModule required
-            serviceName="{service_name}"
-            username="{self.user}"
-            password="{password.get_secret_value()}";
-            """,
-        ).strip()  # removes a carriage return at the beginning and end
-
-    @staticmethod
-    def _move_keytab(keytab: LocalPath) -> LocalPath:
-        cwd = LocalPath(os.getcwd())
-        copy_path = LocalPath(shutil.copy2(keytab, cwd))
-
-        return copy_path.relative_to(cwd)

@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 from pydantic import ValidationError
@@ -94,17 +95,19 @@ def test_kafka_auth(spark_mock):
     # Act
     conn = Kafka(
         spark=spark_mock,
-        password="passwd",
-        user="user",
         cluster="some_cluster",
         addresses=["192.168.1.1"],
+        auth=Kafka.BasicAuth(
+            user="user",
+            password="passwd",
+        ),
     )
 
     # Assert
-    assert conn.user == "user"
+    assert conn.auth.user == "user"
     assert conn.cluster == "some_cluster"
-    assert conn.password != "passwd"
-    assert conn.password.get_secret_value() == "passwd"
+    assert conn.auth.password != "passwd"
+    assert conn.auth.password.get_secret_value() == "passwd"
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
@@ -119,7 +122,7 @@ def test_kafka_anon_auth(spark_mock):
     )
 
     # Assert
-    assert not conn.user
+    assert not conn.auth
     assert conn.cluster == "some_cluster"
     assert conn.addresses == ["192.168.1.1"]
 
@@ -130,23 +133,49 @@ def test_kafka_auth_keytab(spark_mock, create_keytab):
     # Act
     conn = Kafka(
         spark=spark_mock,
-        keytab=create_keytab,
-        user="user",
         cluster="some_cluster",
         addresses=["192.168.1.1"],
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+        ),
     )
 
     # Assert
-    assert conn.user == "user"
+    assert conn.auth.principal == "user"
     assert conn.cluster == "some_cluster"
-    assert conn.password != "passwd"
+    assert conn.addresses == ["192.168.1.1"]
+
+    assert conn.instance_url == "kafka://some_cluster"
+
+
+def test_kafka_auth_keytab_custom_param(spark_mock, create_keytab):
+    # Act
+    conn = Kafka(
+        spark=spark_mock,
+        cluster="some_cluster",
+        addresses=["192.168.1.1"],
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+            custom_parameter="some_parameter",
+        ),
+    )
+
+    # Assert
+    assert conn.auth.principal == "user"
+    assert conn.auth.custom_parameter == "some_parameter"
+    assert conn.cluster == "some_cluster"
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
 
 
 def test_kafka_empty_addresses(spark_mock):
-    with pytest.raises(ValueError, match=re.escape("Passed empty parameter 'addresses'")):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Passed empty parameter 'addresses'"),
+    ):
         Kafka(
             spark=spark_mock,
             password="passwd",
@@ -161,87 +190,43 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
     os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339
 
     # Assert
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
+    msg = f"No access to file '{create_keytab}'"
     with pytest.raises(
         ValueError,
         match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
-            keytab=create_keytab,
-            user="user",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
+            auth=Kafka.KerberosAuth(
+                principal="user",
+                keytab=create_keytab,
+            ),
         )
 
 
 def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
     # Assert
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
+    msg = "File 'some/path' is missing"
     with pytest.raises(
         ValueError,
         match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
-            keytab="some/path",
-            user="user",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
-        )
-
-
-def test_kafka_passed_user_pass_keytab_error(spark_mock, create_keytab):
-    # Assert
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka(
-            spark=spark_mock,
-            password="passwd",
-            user="user",
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            keytab=create_keytab,
-        )
-
-
-def test_passed_keytab_pass_error(spark_mock, create_keytab):
-    # Assert
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka(
-            spark=spark_mock,
-            password="passwd",
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            keytab=create_keytab,
+            auth=Kafka.KerberosAuth(
+                principal="user",
+                keytab="some/path",
+            ),
         )
 
 
 def test_passed_only_keytab_error(spark_mock, create_keytab):
     # Assert
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
+    msg = "principal\n  field required"
     with pytest.raises(
         ValueError,
         match=re.escape(msg),
@@ -250,41 +235,41 @@ def test_passed_only_keytab_error(spark_mock, create_keytab):
             spark=spark_mock,
             cluster="some_cluster",
             addresses=["192.168.1.1"],
-            keytab=create_keytab,
+            auth=Kafka.KerberosAuth(
+                keytab=create_keytab,
+            ),
         )
 
 
 def test_passed_only_pass_error(spark_mock):
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
+    msg = "username\n  field required"
     with pytest.raises(
         ValueError,
         match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
-            password="passwd",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
+            auth=Kafka.BasicAuth(
+                password="passwd",
+            ),
         )
 
 
-def test_passed_only_user_errror(spark_mock):
-    msg = (
-        "Please provide either `keytab` and `user`, or `password` and "
-        "`user` for Kerberos auth, or none of parameters for anonymous auth"
-    )
+def test_passed_only_user_error(spark_mock):
+    msg = "password\n  field required"
     with pytest.raises(
         ValueError,
         match=re.escape(msg),
     ):
         Kafka(
             spark=spark_mock,
-            user="user",
             cluster="some_cluster",
             addresses=["192.168.1.1"],
+            auth=Kafka.BasicAuth(
+                user="user",
+            ),
         )
 
 
@@ -297,9 +282,11 @@ def test_kafka_empty_cluster(spark_mock):
     ):
         Kafka(
             spark=spark_mock,
-            password="passwd",
-            user="user",
             addresses=["192.168.1.1"],
+            auth=Kafka.BasicAuth(
+                password="passwd",
+                user="user",
+            ),
         )
 
 
@@ -309,20 +296,21 @@ def test_kafka_connection_get_jaas_conf_password(spark_mock):
         spark=spark_mock,
         addresses=["some_address"],
         cluster="cluster",
-        user="user",
-        password="password",
+        auth=Kafka.BasicAuth(username="user", password="password"),
     )
 
     # Act
-    conf = kafka._get_jaas_conf()
-
+    conf = kafka.auth.get_options(kafka)
     # Assert
-    assert conf == (
-        "org.apache.kafka.common.security.plain.PlainLoginModule required\n"
-        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
-        'username="user"\n'
-        'password="password";'
-    )
+    assert conf == {
+        "kafka.sasl.mechanism": "PLAIN",
+        "kafka.sasl.jaas.config": dedent(
+            """\
+            org.apache.kafka.common.security.plain.PlainLoginModule required
+            username="user"
+            password="password";""",
+        ),
+    }
 
 
 def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_keytab):
@@ -330,26 +318,34 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
-        user="user",
         cluster="cluster",
-        keytab=create_keytab,
-        deploy_keytab=False,
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+            deploy_keytab=False,
+        ),
     )
 
     # Act
-    conf = kafka._get_jaas_conf()
-
+    conf = kafka.auth.get_options(kafka)
     # Assert
-    assert conf == (
-        "com.sun.security.auth.module.Krb5LoginModule required\n"
-        f'keyTab="{create_keytab}"\n'
-        'principal="user"\n'
-        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
-        "renewTicket=true\n"
-        "storeKey=true\n"
-        "useKeyTab=true\n"
-        "useTicketCache=false;"
-    )
+    print(conf)
+    assert conf == {
+        "kafka.sasl.mechanism": "GSSAPI",
+        "kafka.sasl.jaas.config": dedent(
+            f"""\
+            keyTab="{create_keytab}"
+            com.sun.security.auth.module.Krb5LoginModule required
+            useTicketCache=false
+            principal="user"
+            serviceName="kafka"
+            renewTicket=true
+            storeKey=true
+            useKeyTab=true
+            debug=false;""",
+        ),
+        "kafka.sasl.kerberos.service.name": "kafka",
+    }
 
 
 def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_keytab):
@@ -358,24 +354,31 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
-        user="user",
         cluster="cluster",
-        keytab=create_keytab,
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+        ),
     )
 
     # Act
-    conf = kafka._get_jaas_conf()
-
+    conf = kafka.auth.get_options(kafka)
     # Assert
-    assert conf == (
-        "com.sun.security.auth.module.Krb5LoginModule required\n"
-        f'keyTab="{create_keytab.name}"\n'
-        'principal="user"\n'
-        'serviceName="e21047b5be0df7652cd99feb4168e887"\n'
-        "renewTicket=true\n"
-        "storeKey=true\n"
-        "useKeyTab=true\n"
-        "useTicketCache=false;"
-    )
+    assert conf == {
+        "kafka.sasl.mechanism": "GSSAPI",
+        "kafka.sasl.jaas.config": dedent(
+            f"""\
+            keyTab="{create_keytab.name}"
+            com.sun.security.auth.module.Krb5LoginModule required
+            useTicketCache=false
+            principal="user"
+            serviceName="kafka"
+            renewTicket=true
+            storeKey=true
+            useKeyTab=true
+            debug=false;""",
+        ),
+        "kafka.sasl.kerberos.service.name": "kafka",
+    }
 
     Path("./keytab").unlink()
