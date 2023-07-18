@@ -73,6 +73,8 @@ class CSV(FileFormat):
 
         You can pass any option to the constructor, even if it is not mentioned in this documentation.
 
+        The set of supported options depends on Spark version.
+
     Examples
     --------
 

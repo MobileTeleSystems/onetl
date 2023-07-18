@@ -40,6 +40,13 @@
     file/index
 
 .. toctree::
+    :maxdepth: 3
+    :caption: File DataFrame classes
+    :hidden:
+
+    file_df/index
+
+.. toctree::
     :maxdepth: 2
     :caption: HWM and incremental reads
     :hidden:

@@ -1,4 +1,4 @@
-.. _file-module:
+.. _file-root:
 
 .. toctree::
     :maxdepth: 1
@@ -9,4 +9,3 @@
     file_mover/index
     file_filters/index
     file_limits/index
-    file_formats/index

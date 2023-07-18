@@ -19,7 +19,7 @@ from pathlib import Path
 
 from pydantic import validator
 
-from onetl.base import BaseFileFormat, PurePathProtocol
+from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (
     SparkFileDFConnection,
 )
@@ -31,7 +31,7 @@ class SparkLocalFS(SparkFileDFConnection):
     """
     Spark connection to local filesystem. |support_hooks|
 
-    Based on `Spark Generic File Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-generic-options.html>`_.
+    Based on `Spark Generic File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_.
 
     .. warning::
 
@@ -68,10 +68,8 @@ class SparkLocalFS(SparkFileDFConnection):
     """
 
     @slot
-    @classmethod
-    def check_if_format_supported(cls, format: BaseFileFormat) -> None:  # noqa: WPS125
-        # any format is supported
-        pass
+    def path_from_string(self, path: os.PathLike | str) -> Path:
+        return Path(os.fspath(path))
 
     @validator("spark")
     def _validate_spark(cls, spark):
@@ -85,7 +83,10 @@ class SparkLocalFS(SparkFileDFConnection):
         return "Please install Spark with Hadoop libraries"
 
     def _convert_to_url(self, path: PurePathProtocol) -> str:
-        return "file://" + os.fspath(path)
+        # "file:///absolute/path" on Unix
+        # "file:///c:/absolute/path" on Windows
+        # relative paths cannot be passed using file:// syntax
+        return "file:///" + path.as_posix().lstrip("/")
 
     def _get_default_path(self):
         return Path(os.getcwd())
