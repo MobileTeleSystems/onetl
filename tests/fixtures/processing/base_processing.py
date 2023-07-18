@@ -9,10 +9,8 @@ from typing import TYPE_CHECKING
 
 import pandas
 
-try:
-    from pandas.testing import assert_frame_equal
-except (ImportError, NameError):
-    from pandas.util.testing import assert_frame_equal
+from tests.util.assert_df import assert_equal_df, assert_subset_df
+from tests.util.to_pandas import to_pandas
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
@@ -163,55 +161,10 @@ class BaseProcessing(ABC):
     ) -> SparkDataFrame:
         return spark.createDataFrame(self.create_pandas_df(min_id=min_id, max_id=max_id))
 
-    def fix_pyspark_df(
-        self,
-        df: SparkDataFrame,
-    ) -> SparkDataFrame:
-        from pyspark.sql.functions import date_format
-
-        # TypeError: Casting to unit-less dtype 'datetime64' is not supported. Pass e.g. 'datetime64[ns]' instead.
-        # So casting datetime to string, and after converting Spark df to Pandas, convert string back to datetime
-        for column in df.columns:
-            column_name = column.lower()
-
-            if "datetime" in column_name:
-                df = df.withColumn(column, df[column].cast("string"))
-            elif "date" in column_name:
-                df = df.withColumn(column, date_format(df[column], "yyyy-MM-dd"))
-
-        return df
-
-    def parse_datetime(
-        self,
-        value: pandas.Series,
-    ) -> pandas.Series:
-        try:
-            return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            logger.exception("Unable to parse datetime")
-
-        return pandas.to_datetime(value, format="%Y-%m-%d %H:%M:%S", exact=False)
-
-    def parse_date(
-        self,
-        value: pandas.Series,
-    ) -> pandas.Series:
-        return pandas.to_datetime(value, format="%Y-%m-%d", exact=False)
-
     def fix_pandas_df(
         self,
         df: pandas.DataFrame,
     ) -> pandas.DataFrame:
-        for column in df.columns:
-            column_name = column.lower()
-
-            if "datetime" in column_name:
-                # See fix_pyspark_df
-                df[column] = self.parse_datetime(df[column])
-            elif "date" in column_name:
-                # See fix_pyspark_df
-                df[column] = self.parse_date(df[column]).dt.date
-
         return df
 
     def assert_equal_df(
@@ -225,38 +178,14 @@ class BaseProcessing(ABC):
     ) -> None:
         """Checks that df and other_frame are equal"""
 
-        df = self.fix_pyspark_df(df)
-
         if other_frame is None:
             if schema is None or table is None:
                 raise TypeError("Cannot use assert_equal_df without schema and table")
-
             other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
 
-        if not isinstance(other_frame, pandas.DataFrame):
-            other_frame = self.fix_pyspark_df(other_frame)
-            other_frame = other_frame.toPandas()
-
-        left_df = self.fix_pandas_df(df.toPandas())
-        right_df = self.fix_pandas_df(other_frame)
-
-        if order_by:
-            left_df = left_df.sort_values(by=order_by)
-            right_df = right_df.sort_values(by=order_by)
-
-            left_df.reset_index(inplace=True, drop=True)
-            right_df.reset_index(inplace=True, drop=True)
-
-        # ignore columns order
-        left_df = left_df.sort_index(axis=1)
-        right_df = right_df.sort_index(axis=1)
-
-        assert_frame_equal(
-            left=left_df,
-            right=right_df,
-            check_dtype=False,
-            **kwargs,
-        )
+        left_df = self.fix_pandas_df(to_pandas(df))
+        right_df = self.fix_pandas_df(to_pandas(other_frame))
+        return assert_equal_df(left_df=left_df, right_df=right_df, order_by=order_by, **kwargs)
 
     def assert_subset_df(
         self,
@@ -264,23 +193,15 @@ class BaseProcessing(ABC):
         schema: str | None = None,
         table: str | None = None,
         other_frame: pandas.DataFrame | SparkDataFrame | None = None,
+        columns: list[str] | None = None,
     ) -> None:
         """Checks that other_frame contains df"""
-
-        df = self.fix_pyspark_df(df)
 
         if other_frame is None:
             if schema is None or table is None:
                 raise TypeError("Cannot use assert_equal_df without schema and table")
-
             other_frame = self.get_expected_dataframe(schema=schema, table=table)
 
-        if not isinstance(other_frame, pandas.DataFrame):
-            other_frame = self.fix_pyspark_df(other_frame)
-            other_frame = other_frame.toPandas()
-
-        df = self.fix_pandas_df(df.toPandas())
-        other_frame = self.fix_pandas_df(other_frame)
-
-        for column in set(df.columns).union(other_frame.columns):  # noqa: WPS528
-            assert df[column].isin(other_frame[column]).all()  # noqa: S101
+        small_df = self.fix_pandas_df(to_pandas(df))
+        large_df = self.fix_pandas_df(to_pandas(other_frame))
+        return assert_subset_df(small_df=small_df, large_df=large_df, columns=columns)

@@ -110,7 +110,7 @@ class HiveProcessing(BaseProcessing):
         df = super().fix_pandas_df(df)
 
         for column in df.columns:
-            if "float" in column.lower():
+            if "float" in column:
                 # Hive returns float32 instead float64
                 df[column] = df[column].astype("float32")
 
