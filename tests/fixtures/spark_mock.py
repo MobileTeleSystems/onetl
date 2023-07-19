@@ -6,13 +6,15 @@ import pytest
 @pytest.fixture(
     scope="function",
     params=[
-        pytest.param("mock", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param("2.3.0", id="Spark 2.3.0"),
+        pytest.param("3.3.0", id="Spark 3.3.0"),
     ],
 )
-def spark_mock():
+def spark_mock(request):
     from pyspark.sql import SparkSession
 
     spark = Mock(spec=SparkSession)
+    spark.version = request.param  # sets the version according to the params
     spark.sparkContext = Mock()
     spark.sparkContext.appName = "abc"
     return spark
