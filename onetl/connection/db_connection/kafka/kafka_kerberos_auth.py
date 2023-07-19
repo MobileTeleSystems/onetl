@@ -50,16 +50,21 @@ class KafkaKerberosAuth(IKafkaAuth, GenericOptions):
         extra = "allow"
         alias_generator = to_camel
 
-    def get_jaas_conf(self) -> str:
+    def get_jaas_conf(self, kafka: Kafka) -> str:
         options = {}
+
+        keytab_processed = self._move_keytab_if_deploy(kafka)
+        keytab_path = self.keytab if keytab_processed is None else keytab_processed
 
         class_options = self.dict(
             by_alias=True,
             exclude_none=True,
-            exclude={"deploy_keytab", "keytab"},
-        ).items()
+            exclude={"deploy_keytab"},
+        )
+        class_options["keyTab"] = keytab_path
+        options_to_parse = class_options.items()
 
-        for class_option, value in class_options:
+        for class_option, value in options_to_parse:
             if isinstance(value, bool):
                 options[class_option] = str(value).lower()
             else:
@@ -67,22 +72,18 @@ class KafkaKerberosAuth(IKafkaAuth, GenericOptions):
         conf = "\n".join(f"{k}={v}" for k, v in options.items())
         return (
             dedent(
-                """\
+                """
                 com.sun.security.auth.module.Krb5LoginModule required
                 useTicketCache=false
                 """,
-            )
-            + conf
-            + ";"
+            ).strip()
+            + f"\n{conf};"
         )
 
     def get_options(self, kafka: Kafka) -> dict:
-        keytab_processed = self._move_keytab_if_deploy(kafka)
-        keytab_path = self.keytab if keytab_processed is None else keytab_processed
-
         return {
             "kafka.sasl.mechanism": "GSSAPI",
-            "kafka.sasl.jaas.config": f'keyTab="{keytab_path}"\n{self.get_jaas_conf()}',
+            "kafka.sasl.jaas.config": self.get_jaas_conf(kafka),
             "kafka.sasl.kerberos.service.name": self.service_name,
         }
 

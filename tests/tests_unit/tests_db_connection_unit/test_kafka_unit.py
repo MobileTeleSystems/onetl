@@ -305,11 +305,11 @@ def test_kafka_connection_get_jaas_conf_password(spark_mock):
     assert conf == {
         "kafka.sasl.mechanism": "PLAIN",
         "kafka.sasl.jaas.config": dedent(
-            """\
+            """
             org.apache.kafka.common.security.plain.PlainLoginModule required
             username="user"
             password="password";""",
-        ),
+        ).strip(),
     }
 
 
@@ -333,17 +333,17 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
     assert conf == {
         "kafka.sasl.mechanism": "GSSAPI",
         "kafka.sasl.jaas.config": dedent(
-            f"""\
-            keyTab="{create_keytab}"
+            f"""
             com.sun.security.auth.module.Krb5LoginModule required
             useTicketCache=false
             principal="user"
+            keyTab="{create_keytab}"
             serviceName="kafka"
             renewTicket=true
             storeKey=true
             useKeyTab=true
             debug=false;""",
-        ),
+        ).strip(),
         "kafka.sasl.kerberos.service.name": "kafka",
     }
 
@@ -367,17 +367,17 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     assert conf == {
         "kafka.sasl.mechanism": "GSSAPI",
         "kafka.sasl.jaas.config": dedent(
-            f"""\
-            keyTab="{create_keytab.name}"
+            f"""
             com.sun.security.auth.module.Krb5LoginModule required
             useTicketCache=false
             principal="user"
+            keyTab="{create_keytab.name}"
             serviceName="kafka"
             renewTicket=true
             storeKey=true
             useKeyTab=true
             debug=false;""",
-        ),
+        ).strip(),
         "kafka.sasl.kerberos.service.name": "kafka",
     }
 

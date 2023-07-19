@@ -26,9 +26,5 @@ class IKafkaAuth(ABC):
     """
 
     @abstractmethod
-    def get_jaas_conf(self) -> str:
-        ...
-
-    @abstractmethod
     def get_options(self, kafka: Kafka) -> dict:
         ...

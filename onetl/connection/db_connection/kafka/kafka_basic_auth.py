@@ -37,11 +37,11 @@ class KafkaBasicAuth(IKafkaAuth, GenericOptions):
 
     def get_jaas_conf(self) -> str:
         return dedent(
-            f"""\
+            f"""
             org.apache.kafka.common.security.plain.PlainLoginModule required
             username="{self.user}"
             password="{self.password.get_secret_value()}";""",
-        )
+        ).strip()
 
     def get_options(self, kafka: Kafka) -> dict:
         return {
