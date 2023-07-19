@@ -62,9 +62,8 @@ class KafkaKerberosAuth(IKafkaAuth, GenericOptions):
             exclude={"deploy_keytab"},
         )
         class_options["keyTab"] = keytab_path
-        options_to_parse = class_options.items()
 
-        for class_option, value in options_to_parse:
+        for class_option, value in class_options.items():
             if isinstance(value, bool):
                 options[class_option] = str(value).lower()
             else:

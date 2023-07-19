@@ -195,14 +195,9 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
         ValueError,
         match=re.escape(msg),
     ):
-        Kafka(
-            spark=spark_mock,
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            auth=Kafka.KerberosAuth(
-                principal="user",
-                keytab=create_keytab,
-            ),
+        Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
         )
 
 
@@ -213,14 +208,9 @@ def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
         ValueError,
         match=re.escape(msg),
     ):
-        Kafka(
-            spark=spark_mock,
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            auth=Kafka.KerberosAuth(
-                principal="user",
-                keytab="some/path",
-            ),
+        Kafka.KerberosAuth(
+            principal="user",
+            keytab="some/path",
         )
 
 
@@ -231,13 +221,8 @@ def test_passed_only_keytab_error(spark_mock, create_keytab):
         ValueError,
         match=re.escape(msg),
     ):
-        Kafka(
-            spark=spark_mock,
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            auth=Kafka.KerberosAuth(
-                keytab=create_keytab,
-            ),
+        Kafka.KerberosAuth(
+            keytab=create_keytab,
         )
 
 
@@ -247,13 +232,8 @@ def test_passed_only_pass_error(spark_mock):
         ValueError,
         match=re.escape(msg),
     ):
-        Kafka(
-            spark=spark_mock,
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            auth=Kafka.BasicAuth(
-                password="passwd",
-            ),
+        Kafka.BasicAuth(
+            password="passwd",
         )
 
 
@@ -263,13 +243,8 @@ def test_passed_only_user_error(spark_mock):
         ValueError,
         match=re.escape(msg),
     ):
-        Kafka(
-            spark=spark_mock,
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            auth=Kafka.BasicAuth(
-                user="user",
-            ),
+        Kafka.BasicAuth(
+            user="user",
         )
 
 
