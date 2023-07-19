@@ -398,6 +398,10 @@ class DBReader(FrozenModel):
         values["hwm_column"] = Column(name=hwm_column)  # type: ignore
         values["hwm_expression"] = hwm_expression
 
+        connection: BaseDBConnection = values["connection"]
+        dialect = connection.Dialect
+        dialect.validate_hwm_column(connection, hwm_column)
+
         return values
 
     @root_validator(pre=True)  # noqa: WPS231

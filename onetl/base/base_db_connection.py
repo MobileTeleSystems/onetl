@@ -17,7 +17,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
-from etl_entities import Table
+from etl_entities import Column, Table
 
 from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Statement
@@ -54,6 +54,23 @@ class BaseDBConnection(BaseConnection):
         @abstractmethod
         def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
             """Check if ``columns`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_hwm_column(
+            cls,
+            connection: BaseDBConnection,
+            hwm_column: str | tuple[str, str] | Column | None,
+        ) -> str | tuple[str, str] | Column | None:
+            """Check if ``hwm_column`` value is valid.
 
             Raises
             ------
