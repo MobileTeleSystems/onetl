@@ -22,6 +22,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintNone,
+    SupportHWMColumnStr,
     SupportHWMExpressionStr,
     SupportWhereStr,
 )
@@ -134,6 +135,7 @@ class Postgres(JDBCConnection):
         SupportDfSchemaNone,
         SupportWhereStr,
         SupportHWMExpressionStr,
+        SupportHWMColumnStr,
         SupportHintNone,
         DBConnection.Dialect,
     ):
