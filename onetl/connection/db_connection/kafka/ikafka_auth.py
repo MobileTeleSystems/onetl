@@ -11,30 +11,20 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-
 from __future__ import annotations
 
-import logging
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from onetl.connection.db_connection.db_connection import DBConnection
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsNone,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportTableWithoutDBSchema,
-    SupportWhereNone,
-)
-
-log = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from onetl.connection import Kafka
 
 
-class KafkaDialect(  # noqa: WPS215
-    SupportColumnsNone,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportWhereNone,
-    SupportTableWithoutDBSchema,
-    DBConnection.Dialect,
-):
-    pass
+class IKafkaAuth(ABC):
+    """
+    Interface for Kafka connection configuration generation classes.
+    """
+
+    @abstractmethod
+    def get_options(self, kafka: Kafka) -> dict:
+        ...
