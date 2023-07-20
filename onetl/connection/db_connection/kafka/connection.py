@@ -74,8 +74,8 @@ class Kafka(DBConnection):
 
     protocol : IKafkaProtocol, default: ``PlaintextProtocol``
         Class containing connection parameters. If the protocol parameter is not specified, then the parameter will be
-        passed `PLAINTEXT`, otherwise the `SASL_PLAINTEXT` parameter will be passed to the `kafka.security.protocol`
-        `option`
+        passed ``PLAINTEXT``, otherwise the ``SASL_PLAINTEXT`` parameter will be passed to the
+        ``kafka.security.protocol`` option
 
     .. warning::
 
@@ -120,11 +120,11 @@ class Kafka(DBConnection):
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
     Dialect = KafkaDialect
-    PlaintextProtocol = KafkaPlaintextProtocol
-    protocol: IKafkaProtocol = PlaintextProtocol()
     addresses: List[str]
     cluster: Cluster
     auth: Optional[IKafkaAuth] = None
+    PlaintextProtocol = KafkaPlaintextProtocol
+    protocol: IKafkaProtocol = PlaintextProtocol()
 
     def read_source_as_df(  # type: ignore
         self,
