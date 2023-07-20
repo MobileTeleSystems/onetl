@@ -30,6 +30,7 @@ from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaStruct,
+    SupportHWMColumnStr,
     SupportHWMExpressionNone,
 )
 from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
@@ -401,11 +402,12 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    class Dialect(
+    class Dialect(  # noqa: WPS215
         SupportTableWithoutDBSchema,
         SupportHWMExpressionNone,
         SupportColumnsNone,
         SupportDfSchemaStruct,
+        SupportHWMColumnStr,
         DBConnection.Dialect,
     ):
         _compare_statements: ClassVar[Dict[Callable, str]] = {

@@ -29,6 +29,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintStr,
+    SupportHWMColumnStr,
     SupportHWMExpressionStr,
     SupportWhereStr,
 )
@@ -504,6 +505,7 @@ class Hive(DBConnection):
         SupportWhereStr,
         SupportHintStr,
         SupportHWMExpressionStr,
+        SupportHWMColumnStr,
         DBConnection.Dialect,
     ):
         pass
