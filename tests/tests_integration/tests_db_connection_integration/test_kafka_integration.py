@@ -13,15 +13,17 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark, create_keytab)
     kafka = Kafka(
         spark=spark,
         addresses=["some_address"],
-        user="user",
         cluster="cluster",
-        keytab=create_keytab,
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+        ),
     )
 
     assert not cloned_keytab.exists()
 
     # Act
-    kafka._get_jaas_conf()
+    kafka.auth.get_options(kafka)
 
     # Assert
     assert cloned_keytab.exists()
@@ -36,7 +38,9 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true_error(spark):
         Kafka(
             spark=spark,
             addresses=["some_address"],
-            user="user",
             cluster="cluster",
-            keytab="/not/a/keytab",
+            auth=Kafka.KerberosAuth(
+                principal="user",
+                keytab="/not/a/keytab",
+            ),
         )
