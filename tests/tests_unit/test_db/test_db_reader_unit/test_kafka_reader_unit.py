@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from etl_entities import Column
 
@@ -96,31 +98,32 @@ def test_kafka_reader_valid_hwm_column(spark_mock):
         spark=spark_mock,
     )
 
-    try:
+    DBReader(
+        connection=kafka,
+        table="table",
+        hwm_column="offset",
+    )
+
+    DBReader(
+        connection=kafka,
+        table="table",
+        hwm_column=Column(name="offset"),
+    )
+
+
+def test_kafka_reader_hwm_column_by_version(spark_mock):
+    kafka = Kafka(
+        addresses=["localhost:9092"],
+        cluster="my_cluster",
+        spark=spark_mock,
+    )
+    with patch.object(spark_mock, "version", new="3.3.0"):
         DBReader(
             connection=kafka,
             table="table",
-            hwm_column="offset",
+            hwm_column="timestamp",
         )
-
-        DBReader(
-            connection=kafka,
-            table="table",
-            hwm_column=Column(name="offset"),
-        )
-    except ValueError:
-        pytest.fail("ValueError for hwm_column raised unexpectedly!")
-
-    if spark_mock.version.startswith("3."):
-        try:
-            DBReader(
-                connection=kafka,
-                table="table",
-                hwm_column="timestamp",
-            )
-        except ValueError:
-            pytest.fail("ValueError for hwm_column raised unexpectedly!")
-    else:
+    with patch.object(spark_mock, "version", new="2.3.0"):
         with pytest.raises(ValueError, match="Spark version must be 3.x"):
             DBReader(
                 connection=kafka,
@@ -129,7 +132,8 @@ def test_kafka_reader_valid_hwm_column(spark_mock):
             )
 
 
-def test_kafka_reader_invalid_hwm_column(spark_mock):
+@pytest.mark.parametrize("hwm_column", ["unknown", '("some", "thing")'])
+def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_column):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
@@ -143,15 +147,5 @@ def test_kafka_reader_invalid_hwm_column(spark_mock):
         DBReader(
             connection=kafka,
             table="table",
-            hwm_column="unknown",
-        )
-
-    with pytest.raises(
-        ValueError,
-        match="is not a valid hwm column",
-    ):
-        DBReader(
-            connection=kafka,
-            table="table",
-            hwm_column=("some", "thing"),
+            hwm_column=hwm_column,
         )
