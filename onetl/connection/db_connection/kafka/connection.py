@@ -23,8 +23,12 @@ from pydantic import validator
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.ikafka_protocol import IKafkaProtocol
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
+from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
+    KafkaPlaintextProtocol,
+)
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
@@ -68,20 +72,15 @@ class Kafka(DBConnection):
         An attribute that contains a class that generates a Kafka connection configuration.
         It depends on the type of connection to Kafka.
 
-    .. warning::
-
-        When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
-        these parameters for anonymous connection are not specified at all.
+    protocol : IKafkaProtocol, default: ``PlaintextProtocol``
+        Class containing connection parameters. If the protocol parameter is not specified, then the parameter will be
+        passed `PLAINTEXT`, otherwise the `SASL_PLAINTEXT` parameter will be passed to the `kafka.security.protocol`
+        `option`
 
     .. warning::
 
         If there is no file on the driver, then Spark will not be able to build a query execution plan,
         if there is no file on the executors, then they will not be able to read the data.
-
-    .. warning::
-
-        When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
-        these parameters for anonymous connection are not specified at all.
 
     Examples
     --------
@@ -121,6 +120,8 @@ class Kafka(DBConnection):
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
     Dialect = KafkaDialect
+    PlaintextProtocol = KafkaPlaintextProtocol
+    protocol: IKafkaProtocol = PlaintextProtocol()
     addresses: List[str]
     cluster: Cluster
     auth: Optional[IKafkaAuth] = None
