@@ -17,8 +17,6 @@ from __future__ import annotations
 
 import logging
 
-from etl_entities import Column
-
 from onetl.connection.db_connection.db_connection import BaseDBConnection, DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
@@ -47,39 +45,28 @@ class KafkaDialect(  # noqa: WPS215
     def validate_hwm_column(
         cls,
         connection: BaseDBConnection,
-        hwm_column: str | tuple[str, str] | Column | None,
-    ) -> str | tuple[str, str] | Column | None:
-        if isinstance(hwm_column, str):
-            cls.validate_single_column(connection, hwm_column)
-        elif isinstance(hwm_column, tuple):
-            cls.validate_tuple_columns(connection, hwm_column)
-        elif isinstance(hwm_column, Column):
-            cls.validate_column_class(connection, hwm_column)
+        hwm_column: str | None,
+    ) -> str | None:
+        if not isinstance(hwm_column, str):
+            raise ValueError(
+                f"{connection.__class__.__name__} requires 'hwm_column' parameter type to be 'str', "
+                f"got {type(hwm_column)}",
+            )
+
+        cls.validate_column(connection, hwm_column)
 
         return hwm_column
-
-    @classmethod
-    def validate_single_column(cls, connection: BaseDBConnection, column: str) -> None:
-        cls.validate_column(connection, column)
-
-    @classmethod
-    def validate_tuple_columns(cls, connection: BaseDBConnection, columns: tuple[str, str]) -> None:
-        for column in columns:
-            cls.validate_column(connection, column)
-
-    @classmethod
-    def validate_column_class(cls, connection: BaseDBConnection, column: Column) -> None:
-        cls.validate_column(connection, column.name)
 
     @classmethod
     def validate_column(cls, connection: BaseDBConnection, column: str) -> None:
         if column not in cls.valid_hwm_columns:
             raise ValueError(f"{column} is not a valid hwm column. Valid options are: {cls.valid_hwm_columns}")
         if column == "timestamp":
-            cls.check_spark_version(connection)
+            # Spark version less 3.x does not support reading from Kafka with the timestamp parameter
+            cls._check_spark_version(connection)
 
     @staticmethod
-    def check_spark_version(connection: BaseDBConnection) -> None:
+    def _check_spark_version(connection: BaseDBConnection) -> None:
         spark_version = connection.spark.version  # type: ignore[attr-defined]
         major_version = int(spark_version.split(".")[0])
 

@@ -373,9 +373,9 @@ class DBReader(FrozenModel):
         hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
         df_schema: StructType | None = values.get("df_schema")
         hwm_expression: str | None = values.get("hwm_expression")
+        connection: BaseDBConnection = values["connection"]
 
         if hwm_column is None or isinstance(hwm_column, Column):
-            # nothing to validate
             return values
 
         if not hwm_expression and not isinstance(hwm_column, str):
@@ -398,9 +398,8 @@ class DBReader(FrozenModel):
         values["hwm_column"] = Column(name=hwm_column)  # type: ignore
         values["hwm_expression"] = hwm_expression
 
-        connection: BaseDBConnection = values["connection"]
         dialect = connection.Dialect
-        dialect.validate_hwm_column(connection, hwm_column)
+        dialect.validate_hwm_column(connection, hwm_column)  # type: ignore
 
         return values
 
