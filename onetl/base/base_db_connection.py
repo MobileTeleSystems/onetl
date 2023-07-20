@@ -68,7 +68,7 @@ class BaseDBConnection(BaseConnection):
         def validate_hwm_column(
             cls,
             connection: BaseDBConnection,
-            hwm_column: str | tuple[str, str] | Column | None,
+            hwm_column: str | None,
         ) -> str | tuple[str, str] | Column | None:
             """Check if ``hwm_column`` value is valid.
 
