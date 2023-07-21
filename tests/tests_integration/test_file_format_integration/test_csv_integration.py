@@ -1,4 +1,4 @@
-"""Tests for CSV file format.
+"""Integration tests for CSV file format.
 
 Test only that options are passed to Spark in both FileReader & FileWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
@@ -6,7 +6,7 @@ Do not test all the possible options and combinations, we are not testing Spark 
 
 import pytest
 
-from onetl.file import FileReader
+from onetl.file import FileReader, FileWriter
 from onetl.file.format import CSV
 
 try:
@@ -76,6 +76,47 @@ def test_csv_reader_with_options(
         format=CSV(**{option: value}),
         df_schema=df.schema,
         source_path=csv_root,
+    )
+    read_df = reader.run()
+
+    assert read_df.count()
+    assert read_df.schema == df.schema
+    assert_equal_df(read_df, df)
+
+
+@pytest.mark.parametrize(
+    "option, value",
+    [
+        ("header", "True"),
+        ("delimiter", ";"),
+        ("compression", "gzip"),
+    ],
+)
+def test_csv_writer_with_options(
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    option,
+    value,
+):
+    """Written files can be read by Spark"""
+    file_df_connection, source_path = local_fs_file_df_connection_with_path
+    df = file_df_dataframe
+    csv_root = source_path / "csv"
+
+    csv = CSV(**{option: value})
+
+    writer = FileWriter(
+        connection=file_df_connection,
+        format=csv,
+        target_path=csv_root,
+    )
+    writer.run(df)
+
+    reader = FileReader(
+        connection=file_df_connection,
+        format=csv,
+        source_path=csv_root,
+        df_schema=df.schema,
     )
     read_df = reader.run()
 

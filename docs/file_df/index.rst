@@ -5,4 +5,5 @@
     :caption: File DataFrame classes
 
     file_reader/index
+    file_writer/index
     file_formats/index

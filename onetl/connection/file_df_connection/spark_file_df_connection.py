@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import textwrap
 from abc import abstractmethod
+from contextlib import AbstractContextManager, ExitStack
 from logging import getLogger
 from typing import TYPE_CHECKING
 
@@ -25,6 +26,7 @@ from onetl.base import (
     BaseFileDFConnection,
     BaseFileFormat,
     FileDFReadOptions,
+    FileDFWriteOptions,
     PurePathProtocol,
 )
 from onetl.hooks import slot, support_hooks
@@ -32,7 +34,7 @@ from onetl.impl import FrozenModel
 from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame, SparkSession
+    from pyspark.sql import DataFrame, DataFrameReader, DataFrameWriter, SparkSession
     from pyspark.sql.types import StructType
 
 log = getLogger(__name__)
@@ -72,16 +74,35 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         df_schema: StructType | None = None,
         options: FileDFReadOptions | None = None,
     ) -> DataFrame:
-        reader = format.apply_to_reader(self.spark.read)
         if root:
-            reader = reader.option("basePath", self._convert_to_url(root))
-        if df_schema:
-            reader = reader.schema(df_schema)
-        if options:
-            reader = options.apply_to_reader(reader)
+            log.info("|%s| Reading data ...", self.__class__.__name__)
+        else:
+            log.info("|%s| Reading data from '%s' ...", self.__class__.__name__, root)
 
-        urls = [self._convert_to_url(path) for path in paths]
-        return reader.load(urls)
+        reader: DataFrameReader = self.spark.read
+        with ExitStack() as stack:
+            format_result = format.apply_to_reader(reader)
+            if isinstance(format_result, AbstractContextManager):
+                reader = stack.enter_context(format_result)
+            else:
+                reader = format_result
+
+            if root:
+                reader = reader.option("basePath", self._convert_to_url(root))
+            if df_schema:
+                reader = reader.schema(df_schema)
+            if options:
+                options_result = options.apply_to_reader(reader)
+                if isinstance(options_result, AbstractContextManager):
+                    reader = stack.enter_context(options_result)
+                else:
+                    reader = options_result
+
+            urls = [self._convert_to_url(path) for path in paths]
+            df = reader.load(urls)
+
+        log.info("|%s| DataFrame successfully created", self.__class__.__name__)
+        return df  # type: ignore
 
     @slot
     def write_df_as_files(
@@ -89,10 +110,31 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         df: DataFrame,
         path: PurePathProtocol,
         format: BaseFileFormat,  # noqa: WPS125
+        options: FileDFWriteOptions | None = None,
     ) -> None:
-        writer = format.apply_to_writer(df.write)
-        url = self._convert_to_url(path)
-        writer.save(url)
+        log.info("|%s| Saving data to '%s' ...", self.__class__.__name__, path)
+
+        writer: DataFrameWriter = df.write
+        with ExitStack() as stack:
+            format_result = format.apply_to_writer(writer)
+
+            if isinstance(format_result, AbstractContextManager):
+                writer = stack.enter_context(format_result)
+            else:
+                writer = format_result
+
+            if options:
+                options_result = options.apply_to_writer(writer)
+
+                if isinstance(options_result, AbstractContextManager):
+                    writer = stack.enter_context(options_result)
+                else:
+                    writer = options_result
+
+            url = self._convert_to_url(path)
+            writer.save(url)
+
+        log.info("|%s| Data is successfully saved to '%s'", self.__class__.__name__, path)
 
     def _check_if_schema_supported(self) -> None:
         """

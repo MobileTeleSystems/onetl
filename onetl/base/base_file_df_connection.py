@@ -16,14 +16,14 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ContextManager
 
 from onetl.base.base_connection import BaseConnection
 from onetl.base.base_file_format import BaseFileFormat
 from onetl.base.pure_path_protocol import PurePathProtocol
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame, DataFrameReader
+    from pyspark.sql import DataFrame, DataFrameReader, DataFrameWriter
     from pyspark.sql.types import StructType
 
 
@@ -33,13 +33,39 @@ class FileDFReadOptions(ABC):
     """
 
     @abstractmethod
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameReader`.
 
         Returns
         -------
-        :obj:`pyspark.sql.DataFrameReader` with options applied
+        :obj:`pyspark.sql.DataFrameReader`
+            DataFrameReader with options applied.
+
+        ``ContextManager[DataFrameReader]``
+            If returned context manager, it will be entered before reading data and exited after creating a DataFrame.
+            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameReader` instance.
+        """
+
+
+class FileDFWriteOptions(ABC):
+    """
+    Protocol for objects supporting altering Spark DataFrameWriter options
+    """
+
+    @abstractmethod
+    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
+        """
+        Apply provided format to :obj:`pyspark.sql.DataFrameWriter`.
+
+        Returns
+        -------
+        :obj:`pyspark.sql.DataFrameWriter`
+            DataFrameWriter with options applied.
+
+        ``ContextManager[DataFrameWriter]``
+            If returned context manager, it will be entered before writing and exited after writing a DataFrame.
+            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameWriter` instance.
         """
 
 
@@ -84,6 +110,7 @@ class BaseFileDFConnection(BaseConnection):
         df: DataFrame,
         path: PurePathProtocol,
         format: BaseFileFormat,  # noqa: WPS125
+        options: FileDFWriteOptions | None = None,
     ) -> None:
         """
         Write dataframe as files in some path. |support_hooks|
