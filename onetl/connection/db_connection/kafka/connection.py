@@ -22,7 +22,7 @@ from pydantic import validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
-from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
@@ -68,7 +68,7 @@ class Kafka(DBConnection):
     cluster : Cluster
         Cluster name. Used for HWM and lineage. A cluster field cannot be empty.
 
-    auth : IKafkaAuth, default: ``None``
+    auth : KafkaAuth, default: ``None``
         An attribute that contains a class that generates a Kafka connection configuration.
         It depends on the type of connection to Kafka.
 
@@ -120,10 +120,10 @@ class Kafka(DBConnection):
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
     Dialect = KafkaDialect
+    PlaintextProtocol = KafkaPlaintextProtocol
     addresses: List[str]
     cluster: Cluster
-    auth: Optional[IKafkaAuth] = None
-    PlaintextProtocol = KafkaPlaintextProtocol
+    auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
 
     def read_source_as_df(  # type: ignore

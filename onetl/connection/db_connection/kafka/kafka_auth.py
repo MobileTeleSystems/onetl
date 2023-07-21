@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from onetl.connection import Kafka
 
 
-class IKafkaAuth(ABC):
+class KafkaAuth(ABC):
     """
     Interface for Kafka connection configuration generation classes.
     """

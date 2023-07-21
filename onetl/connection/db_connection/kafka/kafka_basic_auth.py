@@ -18,14 +18,14 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
-from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 
 if TYPE_CHECKING:
     from onetl.connection import Kafka
 
 
-class KafkaBasicAuth(IKafkaAuth, GenericOptions):
+class KafkaBasicAuth(KafkaAuth, GenericOptions):
     """
     A class designed to generate a connection configuration using a login and password.
 
