@@ -8,3 +8,4 @@ onetl/file/limit/**
 onetl/file/file_result.py
 onetl/file/file_set.py
 onetl/file/__init__.py
+tests/resources/file_connection/**
