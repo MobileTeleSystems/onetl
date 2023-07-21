@@ -18,10 +18,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from onetl.connection import Kafka
 
-from onetl.connection.db_connection.kafka.ikafka_protocol import IKafkaProtocol
+from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 
 
-class KafkaPlaintextProtocol(IKafkaProtocol):
+class KafkaPlaintextProtocol(KafkaProtocol):
     def get_options(self, kafka: Kafka) -> dict:
         # Access to Kafka is needed to select the type of protocol depending on the authentication scheme.
         if kafka.auth:

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from onetl.connection import Kafka
 
 
-class IKafkaProtocol(ABC):
+class KafkaProtocol(ABC):
     @abstractmethod
     def get_options(self, kafka: Kafka) -> dict:
         ...

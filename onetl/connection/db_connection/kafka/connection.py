@@ -23,12 +23,12 @@ from pydantic import validator
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
-from onetl.connection.db_connection.kafka.ikafka_protocol import IKafkaProtocol
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
     KafkaPlaintextProtocol,
 )
+from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
@@ -72,7 +72,7 @@ class Kafka(DBConnection):
         An attribute that contains a class that generates a Kafka connection configuration.
         It depends on the type of connection to Kafka.
 
-    protocol : IKafkaProtocol, default: ``PlaintextProtocol``
+    protocol : KafkaProtocol, default: ``PlaintextProtocol``
         Class containing connection parameters. If the protocol parameter is not specified, then the parameter will be
         passed ``PLAINTEXT``, otherwise the ``SASL_PLAINTEXT`` parameter will be passed to the
         ``kafka.security.protocol`` option
@@ -124,7 +124,7 @@ class Kafka(DBConnection):
     cluster: Cluster
     auth: Optional[IKafkaAuth] = None
     PlaintextProtocol = KafkaPlaintextProtocol
-    protocol: IKafkaProtocol = PlaintextProtocol()
+    protocol: KafkaProtocol = PlaintextProtocol()
 
     def read_source_as_df(  # type: ignore
         self,
