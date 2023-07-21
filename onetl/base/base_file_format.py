@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ContextManager
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrameReader, DataFrameWriter, SparkSession
@@ -39,21 +39,31 @@ class BaseFileFormat(ABC):
         """
 
     @abstractmethod
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameReader`. |support_hooks|
 
         Returns
         -------
-        :obj:`pyspark.sql.DataFrameReader` with options applied
+        :obj:`pyspark.sql.DataFrameReader`
+            DataFrameReader with options applied.
+
+        ``ContextManager[DataFrameReader]``
+            If returned context manager, it will be entered before reading data and exited after creating a DataFrame.
+            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameReader` instance.
         """
 
     @abstractmethod
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
+    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameWriter`. |support_hooks|
 
         Returns
         -------
-        :obj:`pyspark.sql.DataFrameWriter` with options applied
+        :obj:`pyspark.sql.DataFrameWriter`
+            DataFrameWriter with options applied.
+
+        ``ContextManager[DataFrameWriter]``
+            If returned context manager, it will be entered before writing and exited after writing a DataFrame.
+            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameWriter` instance.
         """
