@@ -16,9 +16,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from pydantic import Field
+from typing_extensions import Literal
 
-from onetl.file.format.file_format import ReadWriteFileFormat
+from onetl.file.format.file_format import ReadOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
@@ -26,56 +26,56 @@ if TYPE_CHECKING:
 
 
 READ_WRITE_OPTIONS = {
-    "charToEscapeQuoteEscaping",
     "dateFormat",
-    "emptyValue",
-    "ignoreLeadingWhiteSpace",
-    "ignoreTrailingWhiteSpace",
-    "nullValue",
+    "enableDateTimeParsingFallback",
     "timestampFormat",
     "timestampNTZFormat",
+    "timeZone",
 }
 
 READ_OPTIONS = {
+    "allowBackslashEscapingAnyCharacter",
+    "allowComments",
+    "allowNonNumericNumbers",
+    "allowNumericLeadingZeros",
+    "allowSingleQuotes",
+    "allowUnquotedControlChars",
+    "allowUnquotedFieldNames",
     "columnNameOfCorruptRecord",
-    "comment",
-    "enableDateTimeParsingFallback",
-    "enforceSchema",
-    "inferSchema",
+    "dropFieldIfAllNull",
     "locale",
-    "maxCharsPerColumn",
-    "maxColumns",
     "mode",
-    "multiLine",
-    "nanValue",
-    "negativeInf",
-    "positiveInf",
-    "preferDate",
+    "prefersDecimal",
+    "primitivesAsString",
     "samplingRatio",
-    "unescapedQuoteHandling",
 }
 
 WRITE_OPTIONS = {
     "compression",
-    "escapeQuotes",
-    "quoteAll",
+    "ignoreNullFields",
 }
 
 
 @support_hooks
-class CSV(ReadWriteFileFormat):
+class JSON(ReadOnlyFileFormat):
     """
-    CSV file format. |support_hooks|
+    JSON file format. |support_hooks|
 
-    Based on `Spark CSV Files <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_ file format.
+    Based on `Spark JSON Files <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_ file format.
 
-    Reads/writes files with ``.csv`` extension with content like:
+    Reads files with ``.json`` extension with content like:
 
-    .. code-block:: csv
-        :caption: example.csv
+    .. code-block:: json
+        :caption: example.json
 
-        "some","value"
-        "another","value"
+        [
+            {"key": "value1"},
+            {"key": "value2"}
+        ]
+
+    .. warning::
+
+        Does **NOT** support writing. Use :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>` instead.
 
     .. note ::
 
@@ -86,20 +86,18 @@ class CSV(ReadWriteFileFormat):
     Examples
     --------
 
-    Describe options how to read from/write to CSV file with specific options:
+    Describe options how to read from/write to JSON file with specific options:
 
     .. code:: python
 
-        csv = CSV(sep=",", encoding="utf-8", inferSchema=True, compression="gzip")
+        json = JSON(encoding="utf-8", compression="gzip")
 
     """
 
-    name: ClassVar[str] = "csv"
-    delimiter: str = Field(default=",", alias="sep")
+    name: ClassVar[str] = "json"
+
+    multiLine: Literal[True] = True  # noqa: N815
     encoding: str = "utf-8"
-    quote: str = '"'
-    escape: str = "\\"
-    header: bool = False
     lineSep: str = "\n"  # noqa: N815
 
     class Config:

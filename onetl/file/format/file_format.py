@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, TypeVar
 
-from onetl.base import BaseFileFormat
+from onetl.base import BaseReadableFileFormat, BaseWritableFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -36,7 +36,7 @@ PROHIBITED_OPTIONS = {
 
 
 @support_hooks
-class FileFormat(BaseFileFormat, GenericOptions):
+class ReadOnlyFileFormat(BaseReadableFileFormat, GenericOptions):
     name: ClassVar[str]
 
     class Config:
@@ -47,7 +47,19 @@ class FileFormat(BaseFileFormat, GenericOptions):
         options = self.dict(by_alias=True)
         return reader.format(self.name).options(**options)
 
+
+@support_hooks
+class WriteOnlyFileFormat(BaseWritableFileFormat, GenericOptions):
+    name: ClassVar[str]
+
+    class Config:
+        prohibited_options = PROHIBITED_OPTIONS
+
     @slot
     def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
         options = self.dict(by_alias=True)
         return writer.format(self.name).options(**options)
+
+
+class ReadWriteFileFormat(ReadOnlyFileFormat, WriteOnlyFileFormat):
+    pass

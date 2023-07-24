@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 import gzip
 import io
+import json
+import os
 import shutil
 import sys
 from argparse import ArgumentParser
@@ -180,8 +182,61 @@ def save_as_csv(data: list[dict], path: Path) -> None:
     save_as_csv_partitioned(data, root / "partitioned")
 
 
+def save_as_json_plain(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    path.joinpath("file.json").write_text(json.dumps(data, default=_to_string))
+
+
+def save_as_json_gz(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    buffer = io.StringIO()
+    json.dump(data, buffer, default=_to_string)
+    with open(path / "file.json.gz", "wb") as file:
+        with gzip.GzipFile(fileobj=file, mode="w", mtime=0) as gzfile:
+            gzfile.write(buffer.getvalue().encode("utf-8"))
+
+
+def save_as_json(data: list[dict], path: Path) -> None:
+    root = path / "json"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_json_plain(data, root / "without_compression")
+    save_as_json_gz(data, root / "with_compression")
+
+
+def save_as_jsonline_plain(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    with open(path / "file.jsonl", "w") as file:
+        for row in data:
+            row_str = json.dumps(row, default=_to_string)
+            file.write(row_str + os.linesep)
+
+
+def save_as_jsonline_gz(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+
+    buffer = io.StringIO()
+    for row in data:
+        row_str = json.dumps(row, default=_to_string)
+        buffer.write(row_str + os.linesep)
+
+    with open(path / "file.jsonl.gz", "wb") as file:
+        with gzip.GzipFile(fileobj=file, mode="w", mtime=0) as gzfile:
+            gzfile.write(buffer.getvalue().encode("utf-8"))
+
+
+def save_as_jsonline(data: list[dict], path: Path) -> None:
+    root = path / "jsonline"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_jsonline_plain(data, root / "without_compression")
+    save_as_jsonline_gz(data, root / "with_compression")
+
+
 format_mapping = {
     "csv": save_as_csv,
+    "json": save_as_json,
+    "jsonline": save_as_jsonline,
 }
 
 

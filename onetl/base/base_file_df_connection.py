@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, ContextManager
 
 from onetl.base.base_connection import BaseConnection
-from onetl.base.base_file_format import BaseFileFormat
+from onetl.base.base_file_format import BaseReadableFileFormat, BaseWritableFileFormat
 from onetl.base.pure_path_protocol import PurePathProtocol
 
 if TYPE_CHECKING:
@@ -75,7 +75,10 @@ class BaseFileDFConnection(BaseConnection):
     """
 
     @abstractmethod
-    def check_if_format_supported(self, format: BaseFileFormat) -> None:  # noqa: WPS125
+    def check_if_format_supported(
+        self,
+        format: BaseReadableFileFormat | BaseWritableFileFormat,  # noqa: WPS125
+    ) -> None:
         """
         Validate if specific file format is supported. |support_hooks|
 
@@ -95,7 +98,7 @@ class BaseFileDFConnection(BaseConnection):
     def read_files_as_df(
         self,
         paths: list[PurePathProtocol],
-        format: BaseFileFormat,  # noqa: WPS125
+        format: BaseReadableFileFormat,  # noqa: WPS125
         root: PurePathProtocol | None = None,
         df_schema: StructType | None = None,
         options: FileDFReadOptions | None = None,
@@ -109,7 +112,7 @@ class BaseFileDFConnection(BaseConnection):
         self,
         df: DataFrame,
         path: PurePathProtocol,
-        format: BaseFileFormat,  # noqa: WPS125
+        format: BaseWritableFileFormat,  # noqa: WPS125
         options: FileDFWriteOptions | None = None,
     ) -> None:
         """

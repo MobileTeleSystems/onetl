@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import validator
 
-from onetl.base import BaseFileDFConnection, BaseFileFormat, PurePathProtocol
+from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
 from onetl.file.file_writer.options import FileWriterOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel
@@ -95,7 +95,7 @@ class FileWriter(FrozenModel):
     Options = FileWriterOptions
 
     connection: BaseFileDFConnection
-    format: BaseFileFormat
+    format: BaseWritableFileFormat
     target_path: Optional[PurePathProtocol] = None
     options: FileWriterOptions = FileWriterOptions()
 

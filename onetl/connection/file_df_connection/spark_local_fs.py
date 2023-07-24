@@ -24,6 +24,7 @@ from onetl.connection.file_df_connection.spark_file_df_connection import (
     SparkFileDFConnection,
 )
 from onetl.hooks import slot, support_hooks
+from onetl.impl import LocalPath
 
 
 @support_hooks
@@ -69,7 +70,7 @@ class SparkLocalFS(SparkFileDFConnection):
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> Path:
-        return Path(os.fspath(path))
+        return LocalPath(os.fspath(path))
 
     @validator("spark")
     def _validate_spark(cls, spark):
@@ -89,4 +90,4 @@ class SparkLocalFS(SparkFileDFConnection):
         return "file:///" + path.as_posix().lstrip("/")
 
     def _get_default_path(self):
-        return Path(os.getcwd())
+        return LocalPath(os.getcwd())

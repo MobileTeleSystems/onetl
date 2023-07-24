@@ -1,6 +1,7 @@
 black
 mypy
 pre-commit
+pygments-csv-lexer
 types-Deprecated
 types-PyYAML
 wemake-python-styleguide

@@ -2,6 +2,7 @@ autodoc_pydantic
 furo
 importlib-resources<6
 numpydoc
+pygments-csv-lexer
 sphinx
 sphinx-copybutton
 sphinx-design

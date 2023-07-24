@@ -24,7 +24,8 @@ from pydantic import Field
 
 from onetl.base import (
     BaseFileDFConnection,
-    BaseFileFormat,
+    BaseReadableFileFormat,
+    BaseWritableFileFormat,
     FileDFReadOptions,
     FileDFWriteOptions,
     PurePathProtocol,
@@ -62,14 +63,17 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
             raise RuntimeError("Connection is unavailable") from e
         return self
 
-    def check_if_format_supported(self, format: BaseFileFormat) -> None:  # noqa: WPS125
+    def check_if_format_supported(
+        self,
+        format: BaseReadableFileFormat | BaseWritableFileFormat,  # noqa: WPS125
+    ) -> None:
         format.check_if_supported(self.spark)
 
     @slot
     def read_files_as_df(
         self,
         paths: list[PurePathProtocol],
-        format: BaseFileFormat,  # noqa: WPS125
+        format: BaseReadableFileFormat,  # noqa: WPS125
         root: PurePathProtocol | None = None,
         df_schema: StructType | None = None,
         options: FileDFReadOptions | None = None,
@@ -109,7 +113,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         self,
         df: DataFrame,
         path: PurePathProtocol,
-        format: BaseFileFormat,  # noqa: WPS125
+        format: BaseWritableFileFormat,  # noqa: WPS125
         options: FileDFWriteOptions | None = None,
     ) -> None:
         log.info("|%s| Saving data to '%s' ...", self.__class__.__name__, path)

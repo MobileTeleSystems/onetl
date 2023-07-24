@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Iterable, Optional
 from ordered_set import OrderedSet
 from pydantic import validator
 
-from onetl.base import BaseFileDFConnection, BaseFileFormat, PurePathProtocol
+from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
 from onetl.file.file_reader.options import FileReaderOptions
 from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
@@ -56,7 +56,7 @@ class FileReader(FrozenModel):
     connection : :obj:`BaseFileDFConnection <onetl.base.base_file_df_connection.BaseFileDFConnection>`
         File DataFrame connection. See :ref:`file-df-connections` section.
 
-    format : :obj:`BaseFileFormat <onetl.base.base_file_format.BaseFileFormat>`
+    format : :obj:`BaseReadableFileFormat <onetl.base.base_file_format.BaseReadableFileFormat>`
         File format to read.
 
     source_path : os.PathLike or str, optional, default: ``None``
@@ -111,7 +111,7 @@ class FileReader(FrozenModel):
     Options = FileReaderOptions
 
     connection: BaseFileDFConnection
-    format: BaseFileFormat
+    format: BaseReadableFileFormat
     source_path: Optional[PurePathProtocol] = None
     df_schema: Optional[StructType] = None
     options: FileReaderOptions = FileReaderOptions()
