@@ -8,6 +8,8 @@ File Formats
     :caption: File formats
 
     csv
+    json
+    jsonline
 
 .. toctree::
     :maxdepth: 1

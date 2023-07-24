@@ -14,7 +14,7 @@ repos:
   - id: requirements-txt-fixer
     files: ^(requirements/.*\.txt)$
   - id: end-of-file-fixer
-    exclude: ^.*/VERSION$
+    exclude: ^(.*/VERSION|tests/resources/.*/.*)$
   - id: fix-byte-order-marker
   - id: fix-encoding-pragma
     args: [--remove]

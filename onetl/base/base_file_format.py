@@ -21,9 +21,9 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrameReader, DataFrameWriter, SparkSession
 
 
-class BaseFileFormat(ABC):
+class BaseReadableFileFormat(ABC):
     """
-    Representation of file format
+    Representation of readable file format.
     """
 
     @classmethod
@@ -51,6 +51,24 @@ class BaseFileFormat(ABC):
         ``ContextManager[DataFrameReader]``
             If returned context manager, it will be entered before reading data and exited after creating a DataFrame.
             Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameReader` instance.
+        """
+
+
+class BaseWritableFileFormat(ABC):
+    """
+    Representation of writable file format.
+    """
+
+    @classmethod
+    @abstractmethod
+    def check_if_supported(cls, spark: SparkSession) -> None:
+        """
+        Check if Spark session does support this file format. |support_hooks|
+
+        Raises
+        -------
+        RuntimeError
+            If file format is not supported.
         """
 
     @abstractmethod
