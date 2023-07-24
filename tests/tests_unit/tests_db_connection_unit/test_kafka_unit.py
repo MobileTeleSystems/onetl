@@ -185,6 +185,36 @@ def test_kafka_empty_addresses(spark_mock):
         )
 
 
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("bootstrap.servers", "kafka.bootstrap.servers_value"),
+        ("security.protocol", "ssl"),
+        ("sasl.mechanism*", "PLAIN"),
+        ("kafka.sasl.jaas.config", "GSSAPI"),
+        ("key.key_value", "key_value"),
+        ("value.value", "value"),
+    ],
+)
+def test_kafka_invalid_extras(spark_mock, arg, value):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("are not allowed to use in a Extra"),
+    ):
+        Kafka(spark=spark_mock, cluster="some_cluster", addresses=["192.168.1.1"], extra={arg: value})
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("kafka.group.id", "group_id"),
+        ("group.id", "group_id"),
+    ],
+)
+def test_kafka_valid_extras(spark_mock, arg, value):
+    Kafka(spark=spark_mock, cluster="some_cluster", addresses=["192.168.1.1"], extra={arg: value})
+
+
 def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
     # Arrange
     os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339

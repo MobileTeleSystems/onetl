@@ -22,6 +22,7 @@ from pydantic import validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
+from onetl.connection.db_connection.kafka.extra import Extra
 from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
@@ -67,6 +68,16 @@ class Kafka(DBConnection):
     auth : IKafkaAuth, default: ``None``
         An attribute that contains a class that generates a Kafka connection configuration.
         It depends on the type of connection to Kafka.
+
+    extra: dict, default: ``None``
+        A dictionary of additional properties to be used when connecting to Kafka. These are typically
+        Kafka-specific properties that control behavior of the producer or consumer.
+
+        For example: {"group.id": "group_id"}
+
+        Be aware of options that are populated from connection
+        attributes (like "bootstrap.servers"), they are not allowed and will be overridden by the user to avoid issues.
+
 
     .. warning::
 
@@ -120,6 +131,7 @@ class Kafka(DBConnection):
     KerberosAuth = KafkaKerberosAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
+    extra: Extra = Extra()
     Dialect = KafkaDialect
     addresses: List[str]
     cluster: Cluster
