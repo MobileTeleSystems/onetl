@@ -28,6 +28,7 @@ T = TypeVar("T", bound="GenericOptions")
 
 class GenericOptions(FrozenModel):
     class Config:
+        strip_prefixes: list[str] = []
         known_options: frozenset[str] | None = None
         prohibited_options: frozenset[str] = frozenset()
 
@@ -55,6 +56,23 @@ class GenericOptions(FrozenModel):
             )
 
         return options
+
+    @root_validator(pre=True)
+    def strip_prefixes(cls, values):
+        if not hasattr(cls.Config, "strip_prefixes"):
+            return values
+        for key in list(values.keys()):
+            for prefix in cls.Config.strip_prefixes:
+                if key.startswith(prefix):
+                    stripped_value = key.replace(prefix, "", 1)
+                    values[stripped_value] = values.pop(key)
+                    log.debug(
+                        "Stripped prefix %r from %r, new key is %r",
+                        prefix,
+                        key,
+                        stripped_value,
+                    )
+        return values
 
     @root_validator
     def check_options_allowed(

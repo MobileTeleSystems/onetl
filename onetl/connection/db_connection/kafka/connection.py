@@ -22,6 +22,7 @@ from pydantic import validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
+from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
@@ -76,6 +77,18 @@ class Kafka(DBConnection):
         Class containing connection parameters. If the protocol parameter is not specified, then the parameter will be
         passed ``PLAINTEXT``, otherwise the ``SASL_PLAINTEXT`` parameter will be passed to the
         ``kafka.security.protocol`` option
+    extra: dict, default: ``None``
+        A dictionary of additional properties to be used when connecting to Kafka. These are typically
+        Kafka-specific properties that control behavior of the producer or consumer.
+
+        For example: {"group.id": "myGroup"}
+
+        Be aware of options that populated from connection
+        attributes (like "bootstrap.servers") are not allowed to override.
+
+        See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
+        `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
+        for more details
 
     .. warning::
 
@@ -113,18 +126,26 @@ class Kafka(DBConnection):
             ),
         )
 
+    Connect to Kafka with extra options:
+
+    .. code:: python
+
+        kafka = Kafka(auth=None, extra={"max.request.size": 1000000})
+
     """
 
     BasicAuth = KafkaBasicAuth
     KerberosAuth = KafkaKerberosAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
+    Extra = KafkaExtra
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
     addresses: List[str]
     cluster: Cluster
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
+    extra: Extra = Extra()  # type: ignore
 
     def read_source_as_df(  # type: ignore
         self,

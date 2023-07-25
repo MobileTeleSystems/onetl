@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from onetl.connection import Kafka
+from onetl.connection.db_connection.kafka.extra import KafkaExtra
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -183,6 +184,41 @@ def test_kafka_empty_addresses(spark_mock):
             cluster="some_cluster",
             addresses=[],
         )
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("bootstrap.servers", "kafka.bootstrap.servers_value"),
+        ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
+        ("security.protocol", "ssl"),
+        ("kafka.security.protocol", "ssl"),
+        ("sasl.mechanism", "PLAIN"),
+        ("kafka.sasl.mechanism", "PLAIN"),
+        ("key.key_value", "key_value"),
+        ("kafka.key.key_value", "key_value"),
+        ("value.value", "value"),
+        ("kafka.value.value", "value"),
+    ],
+)
+def test_kafka_invalid_extras(arg, value):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("are not allowed to use in a KafkaExtra"),
+    ):
+        KafkaExtra.parse({arg: value})
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("kafka.group.id", "group_id"),
+        ("group.id", "group_id"),
+    ],
+)
+def test_kafka_valid_extras(arg, value):
+    extra_dict = KafkaExtra.parse({arg: value}).dict()
+    assert extra_dict["group.id"] == value
 
 
 def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
