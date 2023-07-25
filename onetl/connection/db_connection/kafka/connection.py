@@ -104,12 +104,6 @@ class Kafka(DBConnection):
 
         kafka = Kafka(auth=None)
 
-    Connect to Kafka with extra options:
-
-    .. code:: python
-
-        kafka = Kafka(auth=None, extra={"max.request.size": 1000000})
-
     Connect to Kafka using basic (plain) auth:
 
     .. code:: python
@@ -131,6 +125,12 @@ class Kafka(DBConnection):
                 keytab="/path/to/keytab",
             ),
         )
+
+    Connect to Kafka with extra options:
+
+    .. code:: python
+
+        kafka = Kafka(auth=None, extra={"max.request.size": 1000000})
 
     """
 

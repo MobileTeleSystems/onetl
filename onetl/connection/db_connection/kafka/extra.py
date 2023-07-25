@@ -28,6 +28,16 @@ PROHIBITED_OPTIONS = frozenset(
 
 
 class KafkaExtra(GenericOptions):
+    """
+    This class is responsible for validating additional options that are passed from the user
+    to the Kafka connection. These extra options are configurations that can be provided to the
+    Kafka, which aren't part of the core connection options.
+
+    See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
+    `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
+    for more details
+    """
+
     class Config:
         strip_prefixes = ["kafka."]
         prohibited_options = PROHIBITED_OPTIONS
