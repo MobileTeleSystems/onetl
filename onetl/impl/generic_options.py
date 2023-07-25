@@ -61,7 +61,7 @@ class GenericOptions(FrozenModel):
     def strip_prefixes(cls, values):
         if not hasattr(cls.Config, "strip_prefixes"):
             return values
-        for value in values.copy():
+        for key in list(values.keys()):
             for prefix in cls.Config.strip_prefixes:
                 if value.startswith(prefix):
                     stripped_value = value.replace(prefix, "", 1)
