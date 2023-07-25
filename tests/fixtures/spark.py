@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from onetl._util.spark import get_pyspark_version
+
 
 @pytest.fixture(scope="session")
 def warehouse_dir(tmp_path_factory):
@@ -30,8 +32,6 @@ def ivysettings_path():
 
 @pytest.fixture(scope="session")
 def spark_packages():
-    import pyspark
-
     from onetl.connection import (
         MSSQL,
         Clickhouse,
@@ -43,6 +43,7 @@ def spark_packages():
         Teradata,
     )
 
+    pyspark_version = get_pyspark_version()
     packages = [
         Clickhouse.package,
         MSSQL.package,
@@ -54,39 +55,37 @@ def spark_packages():
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
 
-    pyspark_version = ".".join(pyspark.__version__.split(".")[:2])
-
-    if pyspark_version == "2.3":
+    if pyspark_version.digits(2) == (2, 3):
         if with_greenplum:
             packages.extend([Greenplum.package_spark_2_3])
         return packages
 
-    if pyspark_version == "2.4":
+    if pyspark_version.digits(2) == (2, 4):
         if with_greenplum:
             packages.extend([Greenplum.package_spark_2_4])
         return packages
 
-    if pyspark_version == "3.2":
+    if pyspark_version.digits(2) == (3, 2):
         packages.extend([MongoDB.package_spark_3_2])
         if with_greenplum:
             packages.extend([Greenplum.package_spark_3_2])
         return packages
 
-    if pyspark_version == "3.3":
+    if pyspark_version.digits(2) == (3, 3):
         packages.extend([MongoDB.package_spark_3_3])
         if not with_greenplum:
             return packages
 
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
 
-    if pyspark_version == "3.4":
+    if pyspark_version.digits(2) == (3, 4):
         packages.extend([MongoDB.package_spark_3_4])
         if not with_greenplum:
             return packages
 
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark.__version__}")
+        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
 
-    raise ValueError(f"Unsupported Spark version: {pyspark.__version__}")
+    raise ValueError(f"Unsupported Spark version: {pyspark_version}")
 
 
 @pytest.fixture(

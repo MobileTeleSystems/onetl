@@ -26,7 +26,7 @@ from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import Field, validator
 
-from onetl._internal import generate_temp_path  # noqa: WPS436
+from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol

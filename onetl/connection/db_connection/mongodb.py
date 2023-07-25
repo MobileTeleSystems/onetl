@@ -25,6 +25,8 @@ from urllib import parse as parser
 from etl_entities.instance import Host
 from pydantic import SecretStr
 
+from onetl._util.java import try_import_java_class
+from onetl._util.spark import get_spark_version
 from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
@@ -683,7 +685,7 @@ class MongoDB(DBConnection):
         self._log_parameters()
 
         try:
-            jvm = self.spark._sc._gateway.jvm  # type: ignore
+            jvm = self.spark._jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
             log.info("|%s| Connection is available.", self.__class__.__name__)
@@ -809,15 +811,12 @@ class MongoDB(DBConnection):
         return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
 
     def _check_driver_imported(self):
-        spark_version = "_".join(self.spark.version.split(".")[:2])
-
-        gateway = self.spark._sc._gateway  # type: ignore
         class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
-        missing_class = getattr(gateway.jvm, class_name)  # type: ignore
 
         try:
-            gateway.help(missing_class, display=False)  # type: ignore
+            try_import_java_class(self.spark, class_name)
         except Exception as e:
+            spark_version = str(get_spark_version(self.spark).digits(2)).replace(".", "_")
             log.error(
                 MISSING_JVM_CLASS_MSG,
                 class_name,

@@ -5,7 +5,7 @@ from pathlib import PurePath
 import pytest
 from etl_entities import Process
 
-from onetl._internal import generate_temp_path  # noqa: WPS436
+from onetl._internal import generate_temp_path
 
 
 @pytest.mark.flaky(reruns=5)

@@ -23,7 +23,7 @@ from typing import Iterable, Optional, Tuple
 from ordered_set import OrderedSet
 from pydantic import Field, validator
 
-from onetl._internal import generate_temp_path  # noqa: WPS436
+from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection
 from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol

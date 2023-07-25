@@ -20,15 +20,12 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from math import inf
 from typing import TYPE_CHECKING, Any
 
 from etl_entities import ProcessStackManager
 
 if TYPE_CHECKING:
     from pathlib import PurePath
-
-    from pyspark.sql import SparkSession
 
 # e.g. 20230524122150
 DATETIME_FORMAT = "%Y%m%d%H%M%S"
@@ -207,54 +204,3 @@ def get_sql_query(
             where_str,
         ],
     ).strip()
-
-
-def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
-    """
-    Calculate maximum number of cores which can be used by Spark
-
-    Returns
-    -------
-    Tuple
-        First item is an actual number of cores.
-        Second is a dict with config options were used to calculate this value.
-    """
-
-    conf = spark.sparkContext.getConf()
-    config = {}
-
-    master = conf.get("spark.master", "local")
-
-    if "local" in master:
-        # no executors, only driver
-        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # type: ignore # noqa: WPS437
-        config["spark.driver.cores"] = expected_cores
-    else:
-        cores = int(conf.get("spark.executor.cores", "1"))
-        config["spark.executor.cores"] = cores
-
-        dynamic_allocation = conf.get("spark.dynamicAllocation.enabled", "false") == "true"
-        if dynamic_allocation:
-            # https://spark.apache.org/docs/latest/configuration.html#dynamic-allocation
-            # We cannot rely on current executors count because this number depends on
-            # current load - it increases while performing heavy calculations, and decreases if executors are idle.
-            # If user haven't executed anything in current session, number of executors will be 0.
-            #
-            # Yes, scheduler can refuse to provide executors == maxExecutors, because
-            # queue size limit is reached, or other application has higher priority, so executors were preempted.
-            # But cluster health cannot rely on a chance, so pessimistic approach is preferred.
-
-            dynamic_executors = conf.get("spark.dynamicAllocation.maxExecutors", "infinity")
-            executors_ratio = int(conf.get("spark.dynamicAllocation.executorAllocationRatio", "1"))
-            config["spark.dynamicAllocation.maxExecutors"] = dynamic_executors
-            executors = inf if dynamic_executors == "infinity" else int(dynamic_executors * executors_ratio)
-        else:
-            fixed_executors: float = int(conf.get("spark.executor.instances", "0"))
-            config["spark.executor.instances"] = fixed_executors
-            executors = fixed_executors
-
-        expected_cores = executors * cores
-        if include_driver:
-            expected_cores += 1
-
-    return expected_cores, config

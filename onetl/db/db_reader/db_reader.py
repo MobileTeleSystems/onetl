@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import textwrap
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional
 
@@ -8,7 +7,8 @@ import frozendict
 from etl_entities import Column, Table
 from pydantic import Field, root_validator, validator
 
-from onetl._internal import uniq_ignore_case  # noqa: WPS436
+from onetl._internal import uniq_ignore_case
+from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseDBConnection
 from onetl.base.contains_get_df_schema import ContainsGetDFSchemaMethod
 from onetl.hooks import slot, support_hooks
@@ -643,25 +643,11 @@ class DBReader(FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
+        try_import_pyspark()
+        from pyspark.sql.types import StructType  # noqa: WPS442
+
         # avoid importing pyspark unless user called the constructor,
         # as we allow user to use `Connection.package` for creating Spark session
-
         refs = super()._forward_refs()
-        try:
-            from pyspark.sql.types import StructType  # noqa: WPS442
-        except (ImportError, NameError) as e:
-            raise ImportError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import module "pyspark".
-
-                    Since onETL v0.7.0 you should install package as follows:
-                        pip install onetl[spark]
-
-                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
-                    """,
-                ).strip(),
-            ) from e
-
         refs["StructType"] = StructType
         return refs

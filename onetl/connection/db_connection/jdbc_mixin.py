@@ -22,7 +22,9 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, Type
 
 from pydantic import Field, SecretStr
 
-from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
+from onetl._internal import clear_statement, stringify, to_camel
+from onetl._util.java import get_java_gateway, try_import_java_class
+from onetl._util.spark import get_spark_version
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
@@ -383,11 +385,8 @@ class JDBCMixin(FrozenModel):
         return df
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # type: ignore
-        driver_class = getattr(gateway.jvm, self.driver)  # type: ignore
-
         try:
-            gateway.help(driver_class, display=False)  # type: ignore
+            try_import_java_class(self.spark, self.driver)
         except Exception:
             log.error(
                 MISSING_JVM_CLASS_MSG,
@@ -488,7 +487,7 @@ class JDBCMixin(FrozenModel):
             last_connection.close()
 
         connection_properties = self._options_to_connection_properties(options)
-        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager  # type: ignore
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
         self._last_connection_and_options = (new_connection, options)
@@ -545,12 +544,9 @@ class JDBCMixin(FrozenModel):
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JDBCRDD.scala#L298-L301
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L103-L105
         """
+        from py4j.java_gateway import is_instance_of
 
-        def jvm_is_instance(obj, klass):  # noqa: WPS430
-            import py4j
-
-            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)  # type: ignore
-
+        gateway = get_java_gateway(self.spark)
         prepared_statement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
         callable_statement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
 
@@ -562,9 +558,9 @@ class JDBCMixin(FrozenModel):
                 jdbc_statement.setQueryTimeout(options.query_timeout)
 
             # Java SQL classes are not consistent..
-            if jvm_is_instance(jdbc_statement, prepared_statement):
+            if is_instance_of(gateway, jdbc_statement, prepared_statement):
                 jdbc_statement.execute()
-            elif jvm_is_instance(jdbc_statement, callable_statement):
+            elif is_instance_of(gateway, jdbc_statement, callable_statement):
                 jdbc_statement.execute()
             elif read_only:
                 jdbc_statement.executeQuery(statement)
@@ -644,7 +640,7 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if self.spark.version[:3] >= "3.4":
+        if get_spark_version(self.spark) >= (3, 4):
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:
