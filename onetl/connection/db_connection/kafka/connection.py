@@ -20,6 +20,8 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from etl_entities.instance import Cluster
 from pydantic import validator
 
+from onetl._util.scala import get_default_scala_version
+from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
@@ -168,9 +170,9 @@ class Kafka(DBConnection):
         spark_version: str,
         scala_version: str | None = None,
     ) -> list[str]:
-        if not scala_version:
-            scala_version = "2.11" if spark_version.startswith("2") else "2.12"
-        return [f"org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}"]
+        spark_ver = Version.parse(spark_version)
+        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        return [f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 
     @property
     def instance_url(self):
@@ -190,7 +192,7 @@ class Kafka(DBConnection):
         ...
 
     @validator("addresses")
-    def _validate_addresses(cls, value):  # noqa: N805
+    def _validate_addresses(cls, value):
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value

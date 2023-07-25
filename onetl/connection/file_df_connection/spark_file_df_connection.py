@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import textwrap
 from abc import abstractmethod
 from contextlib import AbstractContextManager, ExitStack
 from logging import getLogger
@@ -22,6 +21,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
+from onetl._util.spark import try_import_pyspark
 from onetl.base import (
     BaseFileDFConnection,
     BaseReadableFileFormat,
@@ -178,7 +178,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         Return object of ``org.apache.hadoop.fs.Path`` class for :obj:`~_get_default_path`.
         """
         path = self._convert_to_url(self._get_default_path())
-        jvm = self.spark.sparkContext._jvm
+        jvm = self.spark._jvm  # noqa: WPS437
         return jvm.org.apache.hadoop.fs.Path(path)  # type: ignore
 
     def _get_spark_fs(self):
@@ -191,26 +191,13 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
+        try_import_pyspark()
+
+        from pyspark.sql import SparkSession  # noqa: WPS442
+
         # avoid importing pyspark unless user called the constructor,
         # as we allow user to use `Connection.package` for creating Spark session
-
         refs = super()._forward_refs()
-        try:
-            from pyspark.sql import SparkSession  # noqa: WPS442
-        except (ImportError, NameError) as e:
-            raise ImportError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import module "pyspark".
-
-                    You should install package as follows:
-                        pip install onetl[spark]
-
-                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
-                    """,
-                ).strip(),
-            ) from e
-
         refs["SparkSession"] = SparkSession
         return refs
 

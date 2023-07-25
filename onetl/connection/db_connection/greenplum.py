@@ -25,11 +25,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional
 from etl_entities.instance import Host
 from pydantic import Field
 
-from onetl._internal import (  # noqa: WPS436
-    get_sql_query,
-    spark_max_cores_with_config,
-    to_camel,
-)
+from onetl._internal import get_sql_query, to_camel
+from onetl._util.java import try_import_java_class
+from onetl._util.spark import get_executor_total_cores, get_spark_version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
@@ -604,14 +602,12 @@ class Greenplum(JDBCMixin, DBConnection):
         return min_value, max_value
 
     def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # type: ignore
         class_name = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
-        missing_class = getattr(gateway.jvm, class_name)  # type: ignore
 
         try:
-            gateway.help(missing_class, display=False)  # type: ignore
+            try_import_java_class(self.spark, class_name)
         except Exception:
-            spark_version = "_".join(self.spark.version.split(".")[:2])
+            spark_version = str(get_spark_version(self.spark).digits(2)).replace(".", "_")
             log.error(
                 MISSING_JVM_CLASS_MSG,
                 class_name,
@@ -709,7 +705,7 @@ class Greenplum(JDBCMixin, DBConnection):
         if partitions < self.CONNECTIONS_WARNING_LIMIT:
             return
 
-        expected_cores, config = spark_max_cores_with_config(self.spark)
+        expected_cores, config = get_executor_total_cores(self.spark)
         if expected_cores < self.CONNECTIONS_WARNING_LIMIT:
             return
 

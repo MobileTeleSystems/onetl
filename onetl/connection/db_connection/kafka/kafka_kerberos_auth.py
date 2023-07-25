@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field, validator
 
-from onetl._internal import to_camel  # noqa: WPS436
+from onetl._internal import to_camel
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
@@ -87,7 +87,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         }
 
     @validator("keytab")
-    def _validate_keytab(cls, value):  # noqa: N805
+    def _validate_keytab(cls, value):
         if not os.path.exists(value):
             raise ValueError(
                 f"File '{os.fspath(value)}' is missing",

@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, ClassVar, Optional
 
 from pydantic import root_validator
 
-from onetl._internal import clear_statement  # noqa: WPS436
+from onetl._internal import clear_statement
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.hooks import slot, support_hooks
 from onetl.log import BASE_LOG_INDENT, log_lines

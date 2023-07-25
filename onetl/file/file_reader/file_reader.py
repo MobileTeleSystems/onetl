@@ -16,12 +16,12 @@ from __future__ import annotations
 
 import logging
 import os
-import textwrap
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from ordered_set import OrderedSet
 from pydantic import validator
 
+from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
 from onetl.file.file_reader.options import FileReaderOptions
 from onetl.file.file_set import FileSet
@@ -296,25 +296,11 @@ class FileReader(FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
+        try_import_pyspark()
+        from pyspark.sql.types import StructType  # noqa: WPS442
+
         # avoid importing pyspark unless user called the constructor,
         # as we allow user to use `Connection.package` for creating Spark session
-
         refs = super()._forward_refs()
-        try:
-            from pyspark.sql.types import StructType  # noqa: WPS442
-        except (ImportError, NameError) as e:
-            raise ImportError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import module "pyspark".
-
-                    You should install package as follows:
-                        pip install onetl[spark]
-
-                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
-                    """,
-                ).strip(),
-            ) from e
-
         refs["StructType"] = StructType
         return refs

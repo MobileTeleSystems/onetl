@@ -1,6 +1,6 @@
 import pytest
 
-from onetl._internal import to_camel  # noqa: WPS436
+from onetl._internal import to_camel
 from onetl.connection import Oracle, Postgres
 from onetl.connection.db_connection.jdbc_connection import JDBCWriteMode
 

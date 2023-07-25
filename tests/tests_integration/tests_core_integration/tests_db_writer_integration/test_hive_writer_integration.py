@@ -3,6 +3,7 @@ import textwrap
 
 import pytest
 
+from onetl._util.spark import get_spark_version
 from onetl.connection import Hive
 from onetl.db import DBWriter
 
@@ -45,7 +46,7 @@ def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    if spark.version[0] == "2":
+    if get_spark_version(spark).major < 3:
         assert "`compression` 'snappy'" in response
     else:
         assert "'compression' = 'snappy'" in response
@@ -65,7 +66,7 @@ def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    if spark.version[0] == "2":
+    if get_spark_version(spark).major < 3:
         assert "`compression` 'snappy'" in response
     else:
         assert "'compression' = 'snappy'" in response

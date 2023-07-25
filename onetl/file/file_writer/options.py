@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, ContextManager, Iterable, List, Optional, Unio
 
 from pydantic import Field, root_validator
 
-from onetl._util.spark import inject_spark_param  # noqa: WPS436
+from onetl._util.spark import inject_spark_param
 from onetl.base import FileDFWriteOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions

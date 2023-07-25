@@ -23,7 +23,7 @@ from deprecated import deprecated
 from etl_entities.instance import Host
 from pydantic import PositiveInt, root_validator
 
-from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
+from onetl._internal import clear_statement, get_sql_query, to_camel
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
