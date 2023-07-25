@@ -128,4 +128,4 @@ class GenericOptions(FrozenModel):
         if value.startswith(prefix):
             stripped_value = value.replace(prefix, "", 1)
             values[stripped_value] = values.pop(value)
-            logging.warning(f"Stripped prefix '{prefix}' from '{value}', new value is '{stripped_value}'")
+            log.warning(f"Stripped prefix '{prefix}' from '{value}', new value is '{stripped_value}'")

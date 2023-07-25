@@ -86,12 +86,6 @@ class Kafka(DBConnection):
         Be aware of options that are populated from connection
         attributes (like "bootstrap.servers"), they are not allowed and will be overridden by the user to avoid issues.
 
-
-    .. warning::
-
-        When creating a connector, when specifying `user` parameter, either `password` or `keytab` can be specified. Or
-        these parameters for anonymous connection are not specified at all.
-
     .. warning::
 
         If there is no file on the driver, then Spark will not be able to build a query execution plan,
