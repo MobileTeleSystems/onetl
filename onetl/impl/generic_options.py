@@ -59,10 +59,19 @@ class GenericOptions(FrozenModel):
 
     @root_validator(pre=True)
     def strip_prefixes(cls, values):
-        if hasattr(cls.Config, "strip_prefixes"):
-            for value in values.copy():
-                for prefix in cls.Config.strip_prefixes:
-                    cls._handle_prefix(prefix, value, values)
+        if not hasattr(cls.Config, "strip_prefixes"):
+            return values
+        for value in values.copy():
+            for prefix in cls.Config.strip_prefixes:
+                if value.startswith(prefix):
+                    stripped_value = value.replace(prefix, "", 1)
+                    values[stripped_value] = values.pop(value)
+                    log.debug(
+                        "Stripped prefix %r from %r, new value is %r",
+                        prefix,
+                        value,
+                        stripped_value,
+                    )
         return values
 
     @root_validator
@@ -122,10 +131,3 @@ class GenericOptions(FrozenModel):
                     break
 
         return result
-
-    @classmethod
-    def _handle_prefix(cls, prefix, value, values):
-        if value.startswith(prefix):
-            stripped_value = value.replace(prefix, "", 1)
-            values[stripped_value] = values.pop(value)
-            log.warning(f"Stripped prefix '{prefix}' from '{value}', new value is '{stripped_value}'")

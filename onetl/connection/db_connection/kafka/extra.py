@@ -27,7 +27,7 @@ PROHIBITED_OPTIONS = frozenset(
 )
 
 
-class Extra(GenericOptions):
+class KafkaExtra(GenericOptions):
     class Config:
         strip_prefixes = ["kafka."]
         prohibited_options = PROHIBITED_OPTIONS

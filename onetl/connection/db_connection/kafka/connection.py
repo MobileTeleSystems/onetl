@@ -22,7 +22,7 @@ from pydantic import validator
 
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
-from onetl.connection.db_connection.kafka.extra import Extra
+from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
@@ -128,13 +128,13 @@ class Kafka(DBConnection):
     KerberosAuth = KafkaKerberosAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
-    extra: Extra = Extra()
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
     addresses: List[str]
     cluster: Cluster
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
+    extra: KafkaExtra = KafkaExtra()
 
     def read_source_as_df(  # type: ignore
         self,
