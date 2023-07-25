@@ -130,11 +130,15 @@ def test_hive_options_unsupported_modes(options):
         Hive.WriteOptions(**options)
 
 
-@pytest.mark.parametrize("mode", ["static", "dynamic"])
-def test_hive_write_options_unsupported_partition_overwrite(mode):
-    error_msg = (
-        "`partitionOverwriteMode` option should be replaced with mode='overwrite_partitions' or 'overwrite_table'"
-    )
+@pytest.mark.parametrize(
+    "mode, recommended",
+    [
+        ("dynamic", "overwrite_partitions"),
+        ("static", "overwrite_table"),
+    ],
+)
+def test_hive_write_options_unsupported_partition_overwrite(mode, recommended):
+    error_msg = f"`partitionOverwriteMode` option should be replaced with mode='{recommended}'"
 
     with pytest.raises(ValueError, match=error_msg):
         Hive.WriteOptions(partitionOverwriteMode=mode)

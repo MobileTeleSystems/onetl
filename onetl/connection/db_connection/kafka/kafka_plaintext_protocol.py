@@ -11,9 +11,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from __future__ import annotations
 
-from onetl.file.file_downloader import DownloadResult, FileDownloader
-from onetl.file.file_mover import FileMover, MoveResult
-from onetl.file.file_reader import FileReader
-from onetl.file.file_uploader import FileUploader, UploadResult
-from onetl.file.file_writer import FileWriter
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from onetl.connection import Kafka
+
+from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
+
+
+class KafkaPlaintextProtocol(KafkaProtocol):
+    def get_options(self, kafka: Kafka) -> dict:
+        # Access to Kafka is needed to select the type of protocol depending on the authentication scheme.
+        if kafka.auth:
+            return {"kafka.security.protocol": "SASL_PLAINTEXT"}
+        return {"kafka.security.protocol": "PLAINTEXT"}

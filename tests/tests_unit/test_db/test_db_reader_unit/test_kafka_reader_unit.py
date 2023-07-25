@@ -91,7 +91,8 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
         )
 
 
-def test_kafka_reader_valid_hwm_column(spark_mock):
+@pytest.mark.parametrize("hwm_column", ["offset", Column(name="offset")])
+def test_kafka_reader_valid_hwm_column(spark_mock, hwm_column):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
@@ -101,13 +102,7 @@ def test_kafka_reader_valid_hwm_column(spark_mock):
     DBReader(
         connection=kafka,
         table="table",
-        hwm_column="offset",
-    )
-
-    DBReader(
-        connection=kafka,
-        table="table",
-        hwm_column=Column(name="offset"),
+        hwm_column=hwm_column,
     )
 
 

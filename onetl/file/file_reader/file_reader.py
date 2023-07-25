@@ -17,7 +17,6 @@ from __future__ import annotations
 import logging
 import os
 import textwrap
-from pathlib import PurePath
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from ordered_set import OrderedSet
@@ -220,15 +219,12 @@ class FileReader(FrozenModel):
         self.connection.check()
         log_with_indent("")
 
-        df = self._read_files(paths)
-        log.info("|%s| DataFrame successfully created", self.__class__.__name__)
-        return df
+        return self._read_files(paths)
 
     def _read_files(self, paths: FileSet[PurePathProtocol]) -> DataFrame:
         log.info("|%s| Paths to be read:", self.__class__.__name__)
         log_lines(str(paths))
         log_with_indent("")
-        log.info("|%s| Starting the reading process...", self.__class__.__name__)
 
         return self.connection.read_files_as_df(
             root=self.source_path,
@@ -259,14 +255,14 @@ class FileReader(FrozenModel):
                 self.__class__.__name__,
             )
 
-    @validator("source_path", pre=True, always=True)
+    @validator("source_path", pre=True)
     def _validate_source_path(cls, source_path, values):
         connection: BaseFileDFConnection = values["connection"]
         if source_path is None:
             return None
         return connection.path_from_string(source_path)
 
-    @validator("format", always=True)
+    @validator("format")
     def _validate_format(cls, format, values):  # noqa: WPS125
         connection: BaseFileDFConnection = values["connection"]
         connection.check_if_format_supported(format)
@@ -283,7 +279,7 @@ class FileReader(FrozenModel):
         result: OrderedSet[PurePathProtocol] = OrderedSet()
 
         for file in files:
-            file_path = file if isinstance(file, PurePathProtocol) else PurePath(file)
+            file_path = file if isinstance(file, PurePathProtocol) else self.connection.path_from_string(file)
 
             if not self.source_path:
                 if not file_path.is_absolute():

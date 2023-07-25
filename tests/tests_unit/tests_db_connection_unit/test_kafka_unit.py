@@ -387,3 +387,30 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     }
 
     Path("./keytab").unlink()
+
+
+def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
+    # Arrange
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+        ),
+    )
+    # Assert
+    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "SASL_PLAINTEXT"}
+
+
+def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):
+    # Arrange
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+    )
+
+    # Assert
+    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "PLAINTEXT"}

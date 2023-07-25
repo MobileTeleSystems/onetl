@@ -24,6 +24,7 @@ from etl_entities.instance import Cluster
 from pydantic import root_validator, validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel  # noqa: WPS436
+from onetl._util.spark import inject_spark_param  # noqa: WPS436
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
@@ -374,10 +375,11 @@ class Hive(DBConnection):
 
         @root_validator
         def partition_overwrite_mode_is_not_allowed(cls, values):
-            if values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode"):
+            partition_overwrite_mode = values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode")
+            if partition_overwrite_mode:
+                recommend_mode = "overwrite_table" if partition_overwrite_mode == "static" else "overwrite_partitions"
                 raise ValueError(
-                    "`partitionOverwriteMode` option should be replaced "
-                    "with mode='overwrite_partitions' or 'overwrite_table'",
+                    f"`partitionOverwriteMode` option should be replaced with mode='{recommend_mode}'",
                 )
 
             if values.get("insert_into") is not None or values.get("insertInto") is not None:
@@ -566,7 +568,7 @@ class Hive(DBConnection):
             )
 
         log.info("|%s| Got %r", cls.__name__, current_cluster)
-        return cls(cluster=current_cluster, spark=spark)
+        return cls(cluster=current_cluster, spark=spark)  # type: ignore[arg-type]
 
     @property
     def instance_url(self) -> str:
@@ -887,17 +889,8 @@ class Hive(DBConnection):
 
         # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
         # so using a workaround with patching Spark config and then setting up the previous value
-        original_partition_overwrite_mode = self.spark.conf.get(PARTITION_OVERWRITE_MODE_PARAM, None)
-
-        try:  # noqa: WPS501
-            if overwrite_mode:
-                self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, overwrite_mode)
-
+        with inject_spark_param(self.spark.conf, PARTITION_OVERWRITE_MODE_PARAM, overwrite_mode):
             writer.insertInto(table, overwrite=bool(overwrite_mode))
-        finally:
-            self.spark.conf.unset(PARTITION_OVERWRITE_MODE_PARAM)
-            if original_partition_overwrite_mode:
-                self.spark.conf.set(PARTITION_OVERWRITE_MODE_PARAM, original_partition_overwrite_mode)
 
         log.info("|%s| Data is successfully inserted into table %r", self.__class__.__name__, table)
 

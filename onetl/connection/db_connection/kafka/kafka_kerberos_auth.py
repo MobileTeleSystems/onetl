@@ -21,14 +21,14 @@ from typing import TYPE_CHECKING
 from pydantic import Field, validator
 
 from onetl._internal import to_camel  # noqa: WPS436
-from onetl.connection.db_connection.kafka.ikafka_auth import IKafkaAuth
+from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
 if TYPE_CHECKING:
     from onetl.connection import Kafka
 
 
-class KafkaKerberosAuth(IKafkaAuth, GenericOptions):
+class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     """
     A class designed to generate a Kafka connection configuration using K8S.
 
