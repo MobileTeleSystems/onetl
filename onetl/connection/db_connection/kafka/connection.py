@@ -128,13 +128,14 @@ class Kafka(DBConnection):
     KerberosAuth = KafkaKerberosAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
+    Extra = KafkaExtra
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
     addresses: List[str]
     cluster: Cluster
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
-    extra: KafkaExtra = KafkaExtra()
+    extra: Extra = Extra()  # type: ignore
 
     def read_source_as_df(  # type: ignore
         self,

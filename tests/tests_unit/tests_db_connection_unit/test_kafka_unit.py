@@ -201,12 +201,12 @@ def test_kafka_empty_addresses(spark_mock):
         ("kafka.value.value", "value"),
     ],
 )
-def test_kafka_invalid_extras(spark_mock, arg, value):
+def test_kafka_invalid_extras(arg, value):
     with pytest.raises(
         ValueError,
         match=re.escape("are not allowed to use in a KafkaExtra"),
     ):
-        Kafka(spark=spark_mock, cluster="some_cluster", addresses=["192.168.1.1"], extra={arg: value})
+        KafkaExtra.parse({arg: value}).dict()
 
 
 @pytest.mark.parametrize(
@@ -216,7 +216,7 @@ def test_kafka_invalid_extras(spark_mock, arg, value):
         ("group.id", "group_id"),
     ],
 )
-def test_kafka_valid_extras(spark_mock, arg, value):
+def test_kafka_valid_extras(arg, value):
     extra_dict = KafkaExtra.parse({arg: value}).dict()
     assert extra_dict["group.id"] == value
 
