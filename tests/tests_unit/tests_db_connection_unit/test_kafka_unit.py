@@ -206,7 +206,7 @@ def test_kafka_invalid_extras(arg, value):
         ValueError,
         match=re.escape("are not allowed to use in a KafkaExtra"),
     ):
-        KafkaExtra.parse({arg: value}).dict()
+        KafkaExtra.parse({arg: value})
 
 
 @pytest.mark.parametrize(
