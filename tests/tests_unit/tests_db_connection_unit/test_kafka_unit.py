@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from onetl.connection import Kafka
+from onetl.connection.db_connection.kafka.extra import KafkaExtra
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -216,8 +217,7 @@ def test_kafka_invalid_extras(spark_mock, arg, value):
     ],
 )
 def test_kafka_valid_extras(spark_mock, arg, value):
-    kafka_connection = Kafka(spark=spark_mock, cluster="some_cluster", addresses=["192.168.1.1"], extra={arg: value})
-    extra_dict = kafka_connection.extra.parse({arg: value}).dict()
+    extra_dict = KafkaExtra.parse({arg: value}).dict()
     assert extra_dict["group.id"] == value
 
 

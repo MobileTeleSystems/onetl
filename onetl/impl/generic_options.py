@@ -63,13 +63,13 @@ class GenericOptions(FrozenModel):
             return values
         for key in list(values.keys()):
             for prefix in cls.Config.strip_prefixes:
-                if value.startswith(prefix):
-                    stripped_value = value.replace(prefix, "", 1)
-                    values[stripped_value] = values.pop(value)
+                if key.startswith(prefix):
+                    stripped_value = key.replace(prefix, "", 1)
+                    values[stripped_value] = values.pop(key)
                     log.debug(
                         "Stripped prefix %r from %r, new key is %r",
                         prefix,
-                        value,
+                        key,
                         stripped_value,
                     )
         return values
