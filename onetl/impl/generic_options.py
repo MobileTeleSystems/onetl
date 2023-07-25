@@ -67,7 +67,7 @@ class GenericOptions(FrozenModel):
                     stripped_value = value.replace(prefix, "", 1)
                     values[stripped_value] = values.pop(value)
                     log.debug(
-                        "Stripped prefix %r from %r, new value is %r",
+                        "Stripped prefix %r from %r, new key is %r",
                         prefix,
                         value,
                         stripped_value,
