@@ -81,10 +81,14 @@ class Kafka(DBConnection):
         A dictionary of additional properties to be used when connecting to Kafka. These are typically
         Kafka-specific properties that control behavior of the producer or consumer.
 
-        For example: {"group.id": "group_id"}
+        For example: {"group.id": "myGroup"}
 
-        Be aware of options that are populated from connection
-        attributes (like "bootstrap.servers"), they are not allowed and will be overridden by the user to avoid issues.
+        Be aware of options that populated from connection
+        attributes (like "bootstrap.servers") are not allowed to override.
+
+        See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
+        `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
+        for more details
 
     .. warning::
 
@@ -99,6 +103,12 @@ class Kafka(DBConnection):
     .. code:: python
 
         kafka = Kafka(auth=None)
+
+    Connect to Kafka with extra options:
+
+    .. code:: python
+
+        kafka = Kafka(auth=None, extra={"max.request.size": 1000000})
 
     Connect to Kafka using basic (plain) auth:
 
