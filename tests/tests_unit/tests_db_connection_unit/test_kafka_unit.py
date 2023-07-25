@@ -218,7 +218,7 @@ def test_kafka_invalid_extras(spark_mock, arg, value):
 def test_kafka_valid_extras(spark_mock, arg, value):
     kafka_connection = Kafka(spark=spark_mock, cluster="some_cluster", addresses=["192.168.1.1"], extra={arg: value})
     extra_dict = kafka_connection.extra.parse({arg: value}).dict()
-    assert extra_dict["group.id"] == "group_id"
+    assert extra_dict["group.id"] == value
 
 
 def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
