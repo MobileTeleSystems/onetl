@@ -36,6 +36,7 @@ from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
 )
+from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 
 if TYPE_CHECKING:
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+@support_hooks
 class Kafka(DBConnection):
     """
     This connector is designed to read and write from Kafka in batch mode.
@@ -94,49 +96,83 @@ class Kafka(DBConnection):
 
     .. warning::
 
-        If there is no file on the driver, then Spark will not be able to build a query execution plan,
-        if there is no file on the executors, then they will not be able to read the data.
-
-    .. warning::
-
         At current version Kafka connection doesn't support batch strategies.
 
     Examples
     --------
 
-    Connect to Kafka as anonynous user (default):
+    Connect to Kafka as anonymous user (default):
 
     .. code:: python
 
-        kafka = Kafka(auth=None)
+        from onetl.connection import Kafka
+        from pyspark.sql import SparkSession
+
+        # Create Spark session with Kafka connector loaded
+        maven_packages = Kafka.get_packages(spark_version="3.2.4")
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", ",".join(maven_packages))
+            .getOrCreate()
+        )
+
+        # Create connection
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster=["my-cluster"],
+            spark=spark,
+        )
 
     Connect to Kafka using basic (plain) auth:
 
     .. code:: python
 
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
         kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster=["my-cluster"],
             auth=Kafka.SimpleAuth(
                 user="me",
                 password="password",
             ),
+            spark=spark,
         )
 
     Connect to Kafka using Kerberos auth:
 
     .. code:: python
 
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
         kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster=["my-cluster"],
             auth=Kafka.KerberosAuth(
                 principal="me@example.com",
                 keytab="/path/to/keytab",
             ),
+            spark=spark,
         )
 
     Connect to Kafka with extra options:
 
     .. code:: python
 
-        kafka = Kafka(auth=None, extra={"max.request.size": 1000000})
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster=["my-cluster"],
+            extra={"max.request.size": 1000000},
+            spark=spark,
+        )
 
     """
 
@@ -181,12 +217,39 @@ class Kafka(DBConnection):
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
 
+    @slot
     @classmethod
-    def get_package_spark(
+    def get_packages(
         cls,
         spark_version: str,
         scala_version: str | None = None,
     ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Parameters
+        ----------
+        spark_version : str
+            Spark version in format ``major.minor.patch``.
+
+        scala_version : str, optional
+            Scala version in format ``major.minor``.
+
+            If ``None``, ``spark_version`` is used to determine Scala version.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Kafka
+
+            Kafka.get_packages(spark_version="3.2.4")
+            Kafka.get_packages(spark_version="3.2.4", scala_version="2.13")
+
+        """
+
+        # Connector version is same as Spark, do not perform any additional checks
         spark_ver = Version.parse(spark_version)
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
         return [

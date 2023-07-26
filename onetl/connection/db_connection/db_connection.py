@@ -148,7 +148,7 @@ class DBConnection(BaseDBConnection, FrozenModel):
         from pyspark.sql import SparkSession  # noqa: WPS442
 
         # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.package` for creating Spark session
+        # as we allow user to use `Connection.get_packages()` for creating Spark session
         refs = super()._forward_refs()
         refs["SparkSession"] = SparkSession
         return refs

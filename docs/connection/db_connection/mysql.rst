@@ -13,7 +13,7 @@ MySQL connection
     MySQL.JDBCOptions
 
 .. autoclass:: MySQL
-    :members: check, sql, fetch, execute, close
+    :members: get_packages, check, sql, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.mysql.MySQL
 

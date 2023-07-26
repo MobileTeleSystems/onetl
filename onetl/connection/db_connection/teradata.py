@@ -14,12 +14,15 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
+from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.hooks import slot
 
-# do not import PySpark here, as we allow user to use `Teradata.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `Teradata.get_packages()` for creating Spark session
 
 
 class Teradata(JDBCConnection):
@@ -105,23 +108,24 @@ class Teradata(JDBCConnection):
         from onetl.connection import Teradata
         from pyspark.sql import SparkSession
 
-        extra = {
-            "TMODE": "TERA",  # "TERA" or "ANSI"
-            "LOGMECH": "LDAP",
-            "LOG": "TIMING",  # increase log level
-        }
-
+        # Create Spark session with Teradata driver loaded
+        maven_packages = Teradata.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Teradata.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         teradata = Teradata(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={
+                "TMODE": "TERA",  # "TERA" or "ANSI"
+                "LOGMECH": "LDAP",
+                "LOG": "TIMING",  # increase log level
+            },
             spark=spark,
         )
 
@@ -142,9 +146,33 @@ class Teradata(JDBCConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
-    package: ClassVar[str] = "com.teradata.jdbc:terajdbc:17.20.00.15"
 
     _check_query: ClassVar[str] = "SELECT 1 AS check_result"
+
+    @slot
+    @classmethod
+    def get_packages(cls) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Teradata
+
+            Teradata.get_packages()
+
+        """
+        return ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`Teradata.package` will be removed in 1.0.0, use `Teradata.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "com.teradata.jdbc:terajdbc:17.20.00.15"
 
     @property
     def jdbc_url(self) -> str:

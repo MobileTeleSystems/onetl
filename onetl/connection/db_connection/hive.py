@@ -394,6 +394,7 @@ class Hive(DBConnection):
         version="0.5.0",
         reason="Please use 'WriteOptions' class instead. Will be removed in v1.0.0",
         action="always",
+        category=UserWarning,
     )
     class Options(WriteOptions):
         pass

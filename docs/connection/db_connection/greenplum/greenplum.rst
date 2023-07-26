@@ -25,7 +25,7 @@ Greenplum connector
     In this case data will be read directly from segment nodes in a distributed way
 
 .. autoclass:: Greenplum
-    :members: check, fetch, execute, close
+    :members: get_packages, check, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.greenplum.Greenplum
 

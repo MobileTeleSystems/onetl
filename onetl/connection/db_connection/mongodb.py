@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import operator
+import warnings
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mapping
@@ -25,8 +26,11 @@ from urllib import parse as parser
 from etl_entities.instance import Host
 from pydantic import SecretStr
 
+from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
+from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
@@ -34,8 +38,6 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportDfSchemaStruct,
     SupportHWMColumnStr,
     SupportHWMExpressionNone,
-)
-from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
     SupportTableWithoutDBSchema,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
@@ -231,17 +233,15 @@ class MongoDB(DBConnection):
         from onetl.connection import MongoDB
         from pyspark.sql import SparkSession
 
-        # Package should match your Spark version:
-        # MongoDB.package_spark_3_2
-        # MongoDB.package_spark_3_3
-        # MongoDB.package_spark_3_4
-
+        # Create Spark session with MongoDB connector loaded
+        maven_packages = Greenplum.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MongoDB.package_spark_3_2)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         mongo = MongoDB(
             host="master.host.or.ip",
             user="user",
@@ -261,9 +261,90 @@ class MongoDB(DBConnection):
     password: SecretStr
     port: int = 27017
     extra: Extra = Extra()
-    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    package_spark_3_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @slot
+    @classmethod
+    def get_packages(
+        cls,
+        scala_version: str | None = None,
+        spark_version: str | None = None,
+    ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        .. warning::
+
+            You should pass at least one parameter.
+
+        Parameters
+        ----------
+        scala_version : str, optional
+            Scala version in format ``major.minor``.
+
+            If ``None``, ``spark_version`` is used to determine Scala version.
+
+        spark_version : str, optional
+            Spark version in format ``major.minor``.
+
+            Used only if ``scala_version=None``.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import MongoDB
+
+            MongoDB.get_packages(scala_version="2.11")
+            MongoDB.get_packages(spark_version="3.2")
+
+        """
+
+        # Connector version is fixed, so we can perform checks for Scala/Spark version
+        if scala_version:
+            scala_ver = Version.parse(scala_version)
+        elif spark_version:
+            spark_ver = Version.parse(spark_version)
+            if spark_ver.major < 3:
+                raise ValueError(f"Spark {spark_ver} is not supported by MongoDB connector")
+            scala_ver = get_default_scala_version(spark_ver)
+        else:
+            raise ValueError("You should pass either `scala_version` or `spark_version`")
+
+        if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
+            raise ValueError(f"Scala {scala_ver} is not supported by MongoDB connector")
+
+        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
+
+    @classproperty
+    def package_spark_3_2(cls) -> str:
+        """Get package name to be downloaded by Spark 3.2."""
+        msg = (
+            "`MongoDB.package_spark_3_2` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.2')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @classproperty
+    def package_spark_3_3(cls) -> str:
+        """Get package name to be downloaded by Spark 3.3."""
+        msg = (
+            "`MongoDB.package_spark_3_3` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.3')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @classproperty
+    def package_spark_3_4(cls) -> str:
+        """Get package name to be downloaded by Spark 3.4."""
+        msg = (
+            "`MongoDB.package_spark_3_4` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.4')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.

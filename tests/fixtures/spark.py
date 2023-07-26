@@ -31,7 +31,7 @@ def ivysettings_path():
 
 
 @pytest.fixture(scope="session")
-def spark_packages():
+def maven_packages():
     from onetl.connection import (
         MSSQL,
         Clickhouse,
@@ -45,49 +45,26 @@ def spark_packages():
     )
 
     pyspark_version = get_pyspark_version()
-    packages = [
-        Clickhouse.package,
-        MSSQL.package,
-        MySQL.package,
-        Oracle.package,
-        Postgres.package,
-        Teradata.package,
-        ",".join(Kafka.get_package_spark(spark_version=str(pyspark_version))),
-    ]
+    packages = (
+        Clickhouse.get_packages()
+        + MSSQL.get_packages()
+        + MySQL.get_packages()
+        + Oracle.get_packages()
+        + Postgres.get_packages()
+        + Teradata.get_packages()
+        + Kafka.get_packages(spark_version=pyspark_version)
+    )
+
+    if pyspark_version >= (3, 2):
+        # There is no MongoDB connector for Spark less than 3.2
+        packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
+    if with_greenplum:
+        # Greenplum connector jar is not publicly available,
+        packages.extend(Greenplum.get_packages(spark_version=pyspark_version))
 
-    if pyspark_version.digits(2) == (2, 3):
-        if with_greenplum:
-            packages.extend([Greenplum.package_spark_2_3])
-        return packages
-
-    if pyspark_version.digits(2) == (2, 4):
-        if with_greenplum:
-            packages.extend([Greenplum.package_spark_2_4])
-        return packages
-
-    if pyspark_version.digits(2) == (3, 2):
-        packages.extend([MongoDB.package_spark_3_2])
-        if with_greenplum:
-            packages.extend([Greenplum.package_spark_3_2])
-        return packages
-
-    if pyspark_version.digits(2) == (3, 3):
-        packages.extend([MongoDB.package_spark_3_3])
-        if not with_greenplum:
-            return packages
-
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
-
-    if pyspark_version.digits(2) == (3, 4):
-        packages.extend([MongoDB.package_spark_3_4])
-        if not with_greenplum:
-            return packages
-
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
-
-    raise ValueError(f"Unsupported Spark version: {pyspark_version}")
+    return packages
 
 
 @pytest.fixture(
@@ -97,13 +74,13 @@ def spark_packages():
         pytest.param("real-spark", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
-def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spark_packages):
+def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages):
     from pyspark.sql import SparkSession
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
-        .config("spark.jars.packages", ",".join(spark_packages))
+        .config("spark.jars.packages", ",".join(maven_packages))
         .config("spark.jars.ivySettings", os.fspath(ivysettings_path))
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")

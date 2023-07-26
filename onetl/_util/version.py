@@ -14,10 +14,12 @@
 
 from __future__ import annotations
 
+from functools import total_ordering
 from string import ascii_lowercase
 from typing import Iterator, NamedTuple, Sequence
 
 
+@total_ordering
 class Version(NamedTuple):
     """
     Version representation.
@@ -110,16 +112,8 @@ class Version(NamedTuple):
 
         >>> # Version could be replaced with tuple[int, ...]
         >>> assert Version(5, 6, 7) == (5, 6, 7)
-        >>> assert Version(5, 6, 7) > (5, 6)
-        >>> assert Version(5, 6, 7) < (6, 0)
-
         >>> assert Version(5, 6) == (5, 6)
-        >>> assert Version(5, 6) > (5,)
-        >>> assert Version(5, 6) < (6,)
-
         >>> assert Version(5) == (5,)
-        >>> assert Version(5) > (4,)
-        >>> assert Version(5) < (6,)
 
         """
         if not isinstance(other, tuple):
@@ -127,8 +121,39 @@ class Version(NamedTuple):
 
         return tuple(self) == other
 
+    def __gt__(self, other):
+        """
+        Compare versions.
+
+        Examples
+        --------
+
+        >>> assert Version(5, 6, 7) > Version(5, 6, 6)
+        >>> assert not Version(5, 6, 7) > Version(5, 6, 7)
+
+        >>> # Version could be replaced with tuple[int, ...]
+        >>> assert Version(5, 6, 7) > (5, 6)
+        >>> assert not Version(5, 6, 7) > (5, 7)
+
+        >>> assert Version(5, 6) > (5, 5)
+        >>> assert not Version(5, 6) > (5, 6)
+        >>> assert not Version(5, 6) > (5, 7)
+
+        >>> assert Version(5, 6) > (5,)
+        >>> assert not Version(5, 6) > (6,)
+
+        >>> assert Version(5) > (4,)
+        >>> assert not Version(5) > (5,)
+        >>> assert not Version(5) > (6,)
+
+        """
+        if not isinstance(other, tuple):
+            return NotImplemented
+
+        return tuple(self) > other
+
     @classmethod
-    def parse(cls, version: str | Sequence) -> Version:
+    def parse(cls, version: int | float | str | Sequence) -> Version:
         """
         Parse input as version object.
 
@@ -143,7 +168,12 @@ class Version(NamedTuple):
         >>> assert Version.parse([5, 6]) == Version(5, 6)
         >>> assert Version.parse([5]) == Version(5)
 
+        >>> assert Version.parse(5) == Version(5)
+        >>> assert Version.parse(5.0) == Version(5, 0)
+
         """
+        if isinstance(version, (int, float)):
+            version = str(version)
         if isinstance(version, str):
             version = version.split(".")
         return cls(*map(int, version[:3]))

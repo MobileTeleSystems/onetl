@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 import pytest
@@ -5,6 +6,64 @@ import pytest
 from onetl.connection import MongoDB
 
 pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connection]
+
+
+def test_mongodb_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `MongoDB.get_packages(spark_version=")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+
+def test_mongodb_get_packages_no_input():
+    with pytest.raises(ValueError, match="You should pass either `scala_version` or `spark_version`"):
+        MongoDB.get_packages()
+
+
+@pytest.mark.parametrize(
+    "spark_version",
+    [
+        "2.2",
+        "2.3",
+        "2.4",
+    ],
+)
+def test_mongodb_get_packages_spark_version_not_supported(spark_version):
+    with pytest.raises(ValueError, match=f"Spark {spark_version} is not supported by MongoDB connector"):
+        MongoDB.get_packages(spark_version=spark_version)
+
+
+@pytest.mark.parametrize(
+    "scala_version",
+    [
+        "2.11",
+        "2.14",
+        "3.0",
+    ],
+)
+def test_mongodb_get_packages_scala_version_not_supported(scala_version):
+    with pytest.raises(ValueError, match=f"Scala {scala_version} is not supported by MongoDB connector"):
+        MongoDB.get_packages(scala_version=scala_version)
+
+
+@pytest.mark.parametrize(
+    "spark_version, scala_version, package",
+    [
+        # use Scala version directly
+        (None, "2.12", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        (None, "2.13", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+        # Detect Scala version by Spark version
+        ("3.2", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        ("3.3", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        ("3.4", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        # Override Scala version detected automatically
+        ("3.2", "2.12", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        ("3.4", "2.13", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+    ],
+)
+def test_mongodb_get_packages(spark_version, scala_version, package):
+    assert MongoDB.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
 
 
 def test_mongodb(spark_mock):
@@ -27,12 +86,6 @@ def test_mongodb(spark_mock):
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
-
-
-def test_mongodb_class_attributes():
-    assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
 
 @pytest.mark.parametrize(

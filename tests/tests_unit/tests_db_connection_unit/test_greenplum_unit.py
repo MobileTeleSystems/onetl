@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.connection import Greenplum
@@ -6,11 +8,66 @@ from onetl.connection.db_connection.greenplum import GreenplumWriteMode
 pytestmark = [pytest.mark.greenplum, pytest.mark.db_connection, pytest.mark.connection]
 
 
-def test_greenplum_class_attributes():
+def test_greenplum_driver():
     assert Greenplum.driver == "org.postgresql.Driver"
-    assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.4"
-    assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.4"
-    assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.4"
+
+
+def test_greenplum_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `Greenplum.get_packages(spark_version=")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.1.4"
+        assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.1.4"
+        assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.1.4"
+
+
+def test_greenplum_get_packages_no_input():
+    with pytest.raises(ValueError, match="You should pass either `scala_version` or `spark_version`"):
+        Greenplum.get_packages()
+
+
+@pytest.mark.parametrize(
+    "spark_version",
+    [
+        "2.2",
+        "3.3",
+        "3.4",
+    ],
+)
+def test_greenplum_get_packages_spark_version_not_supported(spark_version):
+    with pytest.raises(ValueError, match=f"Spark {spark_version} is not supported by Greenplum connector"):
+        Greenplum.get_packages(spark_version=spark_version)
+
+
+@pytest.mark.parametrize(
+    "scala_version",
+    [
+        "2.10",
+        "2.13",
+        "3.0",
+    ],
+)
+def test_greenplum_get_packages_scala_version_not_supported(scala_version):
+    with pytest.raises(ValueError, match=f"Scala {scala_version} is not supported by Greenplum connector"):
+        Greenplum.get_packages(scala_version=scala_version)
+
+
+@pytest.mark.parametrize(
+    "spark_version, scala_version, package",
+    [
+        # use Scala version directly
+        (None, "2.11", "io.pivotal:greenplum-spark_2.11:2.1.4"),
+        (None, "2.12", "io.pivotal:greenplum-spark_2.12:2.1.4"),
+        # Detect Scala version by Spark version
+        ("2.3", None, "io.pivotal:greenplum-spark_2.11:2.1.4"),
+        ("2.4", None, "io.pivotal:greenplum-spark_2.11:2.1.4"),
+        ("3.2", None, "io.pivotal:greenplum-spark_2.12:2.1.4"),
+        # Override Scala version detected automatically
+        ("2.3", "2.11", "io.pivotal:greenplum-spark_2.11:2.1.4"),
+        ("2.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.1.4"),
+    ],
+)
+def test_greenplum_get_packages(spark_version, scala_version, package):
+    assert Greenplum.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
 
 
 def test_greenplum(spark_mock):

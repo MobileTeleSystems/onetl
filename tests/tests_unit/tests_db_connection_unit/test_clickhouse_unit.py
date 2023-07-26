@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.connection import Clickhouse
@@ -5,9 +7,18 @@ from onetl.connection import Clickhouse
 pytestmark = [pytest.mark.clickhouse, pytest.mark.db_connection, pytest.mark.connection]
 
 
-def test_clickhouse_class_attributes():
+def test_clickhouse_driver():
     assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
-    assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+
+
+def test_clickhouse_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `Clickhouse.get_packages()` instead")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+
+
+def test_clickhouse_get_packages():
+    assert Clickhouse.get_packages() == ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
 
 
 def test_clickhouse(spark_mock):

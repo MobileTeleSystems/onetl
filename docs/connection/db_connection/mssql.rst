@@ -13,7 +13,7 @@ MSSQL connection
     MSSQL.JDBCOptions
 
 .. autoclass:: MSSQL
-    :members: check, sql, fetch, execute, close
+    :members: get_packages, check, sql, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.mssql.MSSQL
 

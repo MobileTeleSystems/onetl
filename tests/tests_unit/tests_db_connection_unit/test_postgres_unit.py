@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.connection import Postgres
@@ -7,7 +9,16 @@ pytestmark = [pytest.mark.postgres, pytest.mark.db_connection, pytest.mark.conne
 
 def test_postgres_class_attributes():
     assert Postgres.driver == "org.postgresql.Driver"
-    assert Postgres.package == "org.postgresql:postgresql:42.6.0"
+
+
+def test_postgres_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `Postgres.get_packages()` instead")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert Postgres.package == "org.postgresql:postgresql:42.6.0"
+
+
+def test_postgres_get_packages():
+    assert Postgres.get_packages() == ["org.postgresql:postgresql:42.6.0"]
 
 
 def test_postgres(spark_mock):

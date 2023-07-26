@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.connection import Teradata
@@ -7,7 +9,16 @@ pytestmark = [pytest.mark.teradata, pytest.mark.db_connection, pytest.mark.conne
 
 def test_teradata_class_attributes():
     assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-    assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
+
+
+def test_teradata_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `Teradata.get_packages()` instead")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
+
+
+def test_teradata_get_packages():
+    assert Teradata.get_packages() == ["com.teradata.jdbc:terajdbc:17.20.00.15"]
 
 
 def test_teradata(spark_mock):
