@@ -69,7 +69,7 @@ class CSV(ReadWriteFileFormat):
 
     Based on `Spark CSV Files <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_ file format.
 
-    Reads/writes files with ``.csv`` extension with content like:
+    Supports reading/writing files with ``.csv`` extension with content like:
 
     .. code-block:: csv
         :caption: example.csv
@@ -80,8 +80,9 @@ class CSV(ReadWriteFileFormat):
     .. note ::
 
         You can pass any option to the constructor, even if it is not mentioned in this documentation.
+        **Option names should be in** ``camelCase``!
 
-        The set of supported options depends on Spark version.
+        The set of supported options depends on Spark version. See link above.
 
     Examples
     --------

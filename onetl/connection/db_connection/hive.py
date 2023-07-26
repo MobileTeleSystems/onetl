@@ -171,9 +171,9 @@ class Hive(DBConnection):
 
             You can pass any method and its value
             `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
-            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+            even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
-            The set of supported options depends on Spark version used.
+            The set of supported options depends on Spark version used. See link above.
 
         Examples
         --------

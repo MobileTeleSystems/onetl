@@ -236,7 +236,7 @@ class Greenplum(JDBCMixin, DBConnection):
             `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-read_from_gpdb.html>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -372,7 +372,7 @@ class Greenplum(JDBCMixin, DBConnection):
             `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-write_to_gpdb.html>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 

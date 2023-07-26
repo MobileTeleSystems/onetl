@@ -63,7 +63,7 @@ class JSON(ReadOnlyFileFormat):
 
     Based on `Spark JSON Files <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_ file format.
 
-    Reads files with ``.json`` extension with content like:
+    Supports reading (but **NOT** writing) files with ``.json`` extension with content like:
 
     .. code-block:: json
         :caption: example.json
@@ -75,13 +75,14 @@ class JSON(ReadOnlyFileFormat):
 
     .. warning::
 
-        Does **NOT** support writing. Use :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>` instead.
+        For writing prefer using :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>`.
 
     .. note ::
 
         You can pass any option to the constructor, even if it is not mentioned in this documentation.
+        **Option names should be in** ``camelCase``!
 
-        The set of supported options depends on Spark version.
+        The set of supported options depends on Spark version. See link above.
 
     Examples
     --------

@@ -12,7 +12,11 @@ import sys
 from argparse import ArgumentParser
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
+
+if TYPE_CHECKING:
+    from pyarrow import Schema as ArrowSchema
+    from pyarrow import Table as ArrowTable
 
 
 def get_data() -> list[dict]:
@@ -74,6 +78,28 @@ def get_data() -> list[dict]:
             "float_value": 7.89,
         },
     ]
+
+
+def get_pyarrow_schema() -> ArrowSchema:
+    import pyarrow as pa
+
+    return pa.schema(
+        [
+            pa.field("id", pa.int32()),
+            pa.field("str_value", pa.string()),
+            pa.field("int_value", pa.int32()),
+            pa.field("date_value", pa.date32()),
+            pa.field("datetime_value", pa.timestamp("ms")),
+            pa.field("float_value", pa.float64()),
+        ],
+    )
+
+
+def get_pyarrow_table(data: list[dict]) -> ArrowTable:
+    import pyarrow as pa
+
+    schema = get_pyarrow_schema()
+    return pa.Table.from_pylist(data, schema)
 
 
 def _to_string(obj):
@@ -233,10 +259,35 @@ def save_as_jsonline(data: list[dict], path: Path) -> None:
     save_as_jsonline_gz(data, root / "with_compression")
 
 
+def save_as_orc_plain(data: list[dict], path: Path) -> None:
+    from pyarrow import orc
+
+    path.mkdir(parents=True, exist_ok=True)
+    table = get_pyarrow_table(data)
+    orc.write_table(table, path / "file.orc")
+
+
+def save_as_orc_snappy(data: list[dict], path: Path) -> None:
+    from pyarrow import orc
+
+    path.mkdir(parents=True, exist_ok=True)
+    table = get_pyarrow_table(data)
+    orc.write_table(table, path / "file.snappy.orc", compression="snappy")
+
+
+def save_as_orc(data: list[dict], path: Path) -> None:
+    root = path / "orc"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_orc_plain(data, root / "without_compression")
+    save_as_orc_snappy(data, root / "with_compression")
+
+
 format_mapping = {
     "csv": save_as_csv,
     "json": save_as_json,
     "jsonline": save_as_jsonline,
+    "orc": save_as_orc,
 }
 
 

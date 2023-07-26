@@ -53,8 +53,9 @@ class FileWriterOptions(FileDFWriteOptions, GenericOptions):
     .. note::
 
         You can pass any value supported by Spark, even if it is not mentioned in this documentation.
+        **Option names should be in** ``camelCase``!
 
-        The set of supported options depends on Spark version.
+        The set of supported options depends on Spark version. See link above.
 
     Examples
     --------
