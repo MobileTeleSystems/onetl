@@ -61,6 +61,7 @@ def test_csv_reader_with_infer_schema(
         ("delimiter", ";"),
         ("compression", "gzip"),
     ],
+    ids=["with_header", "with_delimiter", "with_compression"],
 )
 def test_csv_reader_with_options(
     local_fs_file_df_connection_with_path_and_files,
@@ -93,6 +94,7 @@ def test_csv_reader_with_options(
         ("delimiter", ";"),
         ("compression", "gzip"),
     ],
+    ids=["with_header", "with_delimiter", "with_compression"],
 )
 def test_csv_writer_with_options(
     local_fs_file_df_connection_with_path,

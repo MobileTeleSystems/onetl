@@ -283,11 +283,38 @@ def save_as_orc(data: list[dict], path: Path) -> None:
     save_as_orc_snappy(data, root / "with_compression")
 
 
+def save_as_parquet_plain(data: list[dict], path: Path) -> None:
+    from pyarrow.parquet import ParquetWriter
+
+    path.mkdir(parents=True, exist_ok=True)
+    table = get_pyarrow_table(data)
+    with ParquetWriter(path / "file.parquet", schema=table.schema, compression="none") as writer:
+        writer.write_table(table)
+
+
+def save_as_parquet_snappy(data: list[dict], path: Path) -> None:
+    from pyarrow.parquet import ParquetWriter
+
+    path.mkdir(parents=True, exist_ok=True)
+    table = get_pyarrow_table(data)
+    with ParquetWriter(path / "file.snappy.parquet", schema=table.schema, compression="snappy") as writer:
+        writer.write_table(table)
+
+
+def save_as_parquet(data: list[dict], path: Path) -> None:
+    root = path / "parquet"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_parquet_plain(data, root / "without_compression")
+    save_as_parquet_snappy(data, root / "with_compression")
+
+
 format_mapping = {
     "csv": save_as_csv,
     "json": save_as_json,
     "jsonline": save_as_jsonline,
     "orc": save_as_orc,
+    "parquet": save_as_parquet,
 }
 
 

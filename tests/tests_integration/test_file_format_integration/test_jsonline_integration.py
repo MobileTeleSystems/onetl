@@ -18,18 +18,28 @@ except ImportError:
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
 
+@pytest.mark.parametrize(
+    "path, options",
+    [
+        ("without_compression", {}),
+        ("with_compression", {"compression": "gzip"}),
+    ],
+    ids=["without_compression", "with_compression"],
+)
 def test_jsonline_reader(
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
+    path,
+    options,
 ):
     """Reading JSONLine files working as expected on any Spark, Python and Java versions"""
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
-    jsonline_root = source_path / "jsonline/without_compression"
+    jsonline_root = source_path / "jsonline" / path
 
     reader = FileReader(
         connection=local_fs,
-        format=JSONLine(),
+        format=JSONLine.parse(options),
         df_schema=df.schema,
         source_path=jsonline_root,
     )
@@ -40,30 +50,18 @@ def test_jsonline_reader(
     assert_equal_df(read_df, df)
 
 
-def test_jsonline_reader_with_compression(
-    local_fs_file_df_connection_with_path_and_files,
-    file_df_dataframe,
-):
-    local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
-    df = file_df_dataframe
-    jsonline_root = source_path / "jsonline/with_compression"
-
-    reader = FileReader(
-        connection=local_fs,
-        format=JSONLine(compression="gzip"),
-        df_schema=df.schema,
-        source_path=jsonline_root,
-    )
-    read_df = reader.run()
-
-    assert read_df.count()
-    assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
-
-
+@pytest.mark.parametrize(
+    "options",
+    [
+        {},
+        {"compression": "gzip"},
+    ],
+    ids=["without_compression", "with_compression"],
+)
 def test_jsonline_writer(
     local_fs_file_df_connection_with_path,
     file_df_dataframe,
+    options,
 ):
     """Written files can be read by Spark"""
     file_df_connection, source_path = local_fs_file_df_connection_with_path
@@ -72,7 +70,7 @@ def test_jsonline_writer(
 
     writer = FileWriter(
         connection=file_df_connection,
-        format=JSONLine(),
+        format=JSONLine.parse(options),
         target_path=jsonline_root,
     )
     writer.run(df)
@@ -80,36 +78,6 @@ def test_jsonline_writer(
     reader = FileReader(
         connection=file_df_connection,
         format=JSONLine(),
-        source_path=jsonline_root,
-        df_schema=df.schema,
-    )
-    read_df = reader.run()
-
-    assert read_df.count()
-    assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
-
-
-def test_jsonline_writer_with_compression(
-    local_fs_file_df_connection_with_path,
-    file_df_dataframe,
-):
-    file_df_connection, source_path = local_fs_file_df_connection_with_path
-    df = file_df_dataframe
-    jsonline_root = source_path / "jsonline"
-
-    jsonline = JSONLine(compression="gzip")
-
-    writer = FileWriter(
-        connection=file_df_connection,
-        format=jsonline,
-        target_path=jsonline_root,
-    )
-    writer.run(df)
-
-    reader = FileReader(
-        connection=file_df_connection,
-        format=jsonline,
         source_path=jsonline_root,
         df_schema=df.schema,
     )

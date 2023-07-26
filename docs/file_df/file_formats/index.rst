@@ -11,6 +11,7 @@ File Formats
     json
     jsonline
     orc
+    parquet
 
 .. toctree::
     :maxdepth: 1

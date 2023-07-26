@@ -18,18 +18,28 @@ except ImportError:
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
 
+@pytest.mark.parametrize(
+    "path, options",
+    [
+        ("without_compression", {}),
+        ("with_compression", {"compression": "snappy"}),
+    ],
+    ids=["without_compression", "with_compression"],
+)
 def test_orc_reader(
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
+    path,
+    options,
 ):
     """Reading ORC files working as expected on any Spark, Python and Java versions"""
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
-    orc_root = source_path / "orc/without_compression"
+    orc_root = source_path / "orc" / path
 
     reader = FileReader(
         connection=local_fs,
-        format=ORC(),
+        format=ORC.parse(options),
         df_schema=df.schema,
         source_path=orc_root,
     )
@@ -40,30 +50,18 @@ def test_orc_reader(
     assert_equal_df(read_df, df)
 
 
-def test_orc_reader_with_compression(
-    local_fs_file_df_connection_with_path_and_files,
-    file_df_dataframe,
-):
-    local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
-    df = file_df_dataframe
-    orc_root = source_path / "orc/with_compression"
-
-    reader = FileReader(
-        connection=local_fs,
-        format=ORC(compression="snappy"),
-        df_schema=df.schema,
-        source_path=orc_root,
-    )
-    read_df = reader.run()
-
-    assert read_df.count()
-    assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
-
-
+@pytest.mark.parametrize(
+    "options",
+    [
+        {},
+        {"compression": "snappy"},
+    ],
+    ids=["without_compression", "with_compression"],
+)
 def test_orc_writer(
     local_fs_file_df_connection_with_path,
     file_df_dataframe,
+    options,
 ):
     """Written files can be read by Spark"""
     file_df_connection, source_path = local_fs_file_df_connection_with_path
@@ -72,7 +70,7 @@ def test_orc_writer(
 
     writer = FileWriter(
         connection=file_df_connection,
-        format=ORC(),
+        format=ORC.parse(options),
         target_path=orc_root,
     )
     writer.run(df)
@@ -80,36 +78,6 @@ def test_orc_writer(
     reader = FileReader(
         connection=file_df_connection,
         format=ORC(),
-        source_path=orc_root,
-        df_schema=df.schema,
-    )
-    read_df = reader.run()
-
-    assert read_df.count()
-    assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
-
-
-def test_orc_writer_with_compression(
-    local_fs_file_df_connection_with_path,
-    file_df_dataframe,
-):
-    file_df_connection, source_path = local_fs_file_df_connection_with_path
-    df = file_df_dataframe
-    orc_root = source_path / "orc"
-
-    orc = ORC(compression="snappy")
-
-    writer = FileWriter(
-        connection=file_df_connection,
-        format=orc,
-        target_path=orc_root,
-    )
-    writer.run(df)
-
-    reader = FileReader(
-        connection=file_df_connection,
-        format=orc,
         source_path=orc_root,
         df_schema=df.schema,
     )
