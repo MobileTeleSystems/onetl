@@ -44,3 +44,36 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true_error(spark):
                 keytab="/not/a/keytab",
             ),
         )
+
+
+from confluent_kafka import Producer
+
+
+def delivery_report(err, msg):
+    # Обработка сообщения после отправки
+    if err is not None:
+        print(f"Сообщение не отправлено: {err}")
+    else:
+        print(f"Сообщение успешно отправлено: {msg}")
+
+
+def send_message(bootstrap_servers, topic, message):
+    # Создание Kafka producer
+    producer = Producer({"bootstrap.servers": bootstrap_servers})
+
+    # Отправка сообщения
+    producer.produce(topic, message.encode("utf-8"), callback=delivery_report)
+
+    # Ожидание завершения отправки всех сообщений
+    producer.flush()
+
+
+def test_kafka_connection_read(spark):
+    # Arrange
+    bootstrap_servers = "onetl-githib-kafka-1:9092"
+    topic = "test-topic"
+    message = "Hello, Kafka 2!"
+
+    send_message(bootstrap_servers, topic, message)
+    # Act
+    # Assert

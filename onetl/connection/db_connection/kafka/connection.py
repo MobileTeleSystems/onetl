@@ -163,7 +163,11 @@ class Kafka(DBConnection):
         start_from: Statement | None = None,
         end_at: Statement | None = None,
     ) -> DataFrame:
-        pass
+        options = self.extra.copy().with_prefix("kafka.")
+        options.update(self.protocol.get_options(self))
+        if self.auth:
+            options.update(self.auth.apply_options(self))
+        return self.spark.read.format("kafka").options(options).load(source)
 
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
