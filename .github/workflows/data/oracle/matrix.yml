@@ -30,7 +30,7 @@ matrix:
     <<: *max
   nightly:
   - oracle-version: 11.2.0.2-slim-faststart
-    db-name: XEPDB1
+    db-name: XE
     <<: *min
   - oracle-version: latest-faststart
     db-name: XEPDB1

@@ -14,9 +14,11 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import date, datetime
 from typing import ClassVar
 
+from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
@@ -30,10 +32,12 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
     SupportTableWithDBSchema,
 )
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.hooks import slot, support_hooks
 
-# do not import PySpark here, as we allow user to use `Postgres.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `Postgres.get_packages()` for creating Spark session
 
 
+@support_hooks
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. |support_hooks|
 
@@ -104,20 +108,21 @@ class Postgres(JDBCConnection):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
-        extra = {"ssl": "false"}
-
+        # Create Spark session with Postgres driver loaded
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         postgres = Postgres(
             host="database.host.or.ip",
             user="user",
             password="*****",
             database="target_database",
-            extra=extra,
+            extra={"ssl": "false"},
             spark=spark,
         )
 
@@ -127,7 +132,31 @@ class Postgres(JDBCConnection):
     port: int = 5432
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package: ClassVar[str] = "org.postgresql:postgresql:42.6.0"
+
+    @slot
+    @classmethod
+    def get_packages(cls) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Postgres
+
+            Postgres.get_packages()
+
+        """
+        return ["org.postgresql:postgresql:42.6.0"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.postgresql:postgresql:42.6.0"
 
     class Dialect(  # noqa: WPS215
         SupportTableWithDBSchema,

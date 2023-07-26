@@ -13,7 +13,7 @@ Postgres connection
     Postgres.JDBCOptions
 
 .. autoclass:: Postgres
-    :members: check, sql, fetch, execute, close
+    :members: get_packages, check, sql, fetch, execute, close
 
 .. currentmodule:: onetl.connection.db_connection.postgres.Postgres
 

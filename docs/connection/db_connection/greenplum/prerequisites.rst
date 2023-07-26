@@ -73,10 +73,11 @@ Example
 
 .. code:: python
 
+    maven_packages = Greenplum.get_packages(spark_version="3.2")
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.repositories", "http://nexus.domain.com/example-repo/")
-        .config("spark.jars.packages", Greenplum.package_spark_3_2)
+        .config("spark.jars.packages", ",".join(maven_packages))
         .getOrCreate()
     )
 
@@ -122,10 +123,11 @@ Example
 .. code-block:: python
     :caption: script.py
 
+    maven_packages = Greenplum.get_packages(spark_version="3.2")
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.ivySettings", "/path/to/ivysettings.xml")
-        .config("spark.jars.packages", Greenplum.package_spark_3_2)
+        .config("spark.jars.packages", ",".join(maven_packages))
         .getOrCreate()
     )
 
@@ -143,9 +145,10 @@ Example
 
 .. code:: python
 
+    maven_packages = Greenplum.get_packages(spark_version="3.2")
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
-        .config("spark.jars.packages", Greenplum.package_spark_3_2)
+        .config("spark.jars.packages", ",".join(maven_packages))
         .getOrCreate()
     )
 

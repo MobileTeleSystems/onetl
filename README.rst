@@ -36,7 +36,7 @@ Goals
 -----
 
 * Provide unified classes to extract data from (**E**) & load data to (**L**) various stores.
-* Provides `Spark DataFrame API <https://spark.apache.org/docs/3.2.0/api/python/reference/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*.
+* Provides `Spark DataFrame API <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.html>`_ for performing transformations (**T**) in terms of *ETL*.
 * Provide direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines.
 * Support different `read strategies <https://onetl.readthedocs.io/en/stable/strategy/index.html>`_ for incremental and batch data fetching.
 * Provide `hooks <https://onetl.readthedocs.io/en/stable/hooks/index.html>`_ & `plugins <https://onetl.readthedocs.io/en/stable/plugins.html>`_ mechanism for altering behavior of internal classes.
@@ -286,15 +286,16 @@ Read data from MSSQL, transform & write to Hive.
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
 
-    # Initiate new SparkSession
+    # Initiate new SparkSession with MSSQL driver loaded
+    maven_packages = MSSQL.get_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
-        .config("spark.jars.packages", MSSQL.package)
+        .config("spark.jars.packages", ",".join(maven_packages))
         .enableHiveSupport()
         .getOrCreate()
     )
 
-    # Initiate MSSQL connection and check it
+    # Initiate MSSQL connection and check if database is accessible
     mssql = MSSQL(
         host="mssqldb.demo.com",
         user="onetl",

@@ -128,7 +128,7 @@ def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
 )
 def test_jdbc_old_options_allowed_but_deprecated(arg, value):
     warning_msg = "Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0"
-    with pytest.deprecated_call(match=warning_msg):
+    with pytest.warns(UserWarning, match=warning_msg):
         options = Postgres.Options(**{arg: value})
 
     assert options.dict(by_alias=True)[to_camel(arg)] == value

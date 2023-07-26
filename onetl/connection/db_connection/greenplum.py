@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import textwrap
+import warnings
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -26,8 +27,11 @@ from etl_entities.instance import Host
 from pydantic import Field
 
 from onetl._internal import get_sql_query, to_camel
+from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
+from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_executor_total_cores, get_spark_version
+from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
@@ -35,10 +39,8 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintNone,
     SupportHWMColumnStr,
     SupportHWMExpressionStr,
-    SupportWhereStr,
-)
-from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
     SupportTableWithDBSchema,
+    SupportWhereStr,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
@@ -47,7 +49,7 @@ from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_lines, log_with_indent
 
-# do not import PySpark here, as we allow user to use `Greenplum.package...` for creating Spark session
+# do not import PySpark here, as we allow user to use `Greenplum.get_packages()` for creating Spark session
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
@@ -180,17 +182,12 @@ class Greenplum(JDBCMixin, DBConnection):
             "server.port": "49152-65535",
         }
 
-        # Package should match your Spark version:
-
-        # Greenplum.package_spark_2_3
-        # Greenplum.package_spark_2_4
-        # Greenplum.package_spark_3_2
-
+        # Create Spark session with Greenplum connector loaded
         # See Prerequisites page for more details
-
+        maven_packages = Greenplum.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Greenplum.package_spark_3_2)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
             .getOrCreate()
@@ -207,7 +204,7 @@ class Greenplum(JDBCMixin, DBConnection):
         # Cores number can be increased, but executors count should be reduced
         # to keep the same number of executors * cores.
 
-
+        # Create connection
         greenplum = Greenplum(
             host="master.host.or.ip",
             user="user",
@@ -465,12 +462,84 @@ class Greenplum(JDBCMixin, DBConnection):
     extra: Extra = Extra()
 
     driver: ClassVar[str] = "org.postgresql.Driver"
-    package_spark_2_3: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
-    package_spark_2_4: ClassVar[str] = "io.pivotal:greenplum-spark_2.11:2.1.4"
-    package_spark_3_2: ClassVar[str] = "io.pivotal:greenplum-spark_2.12:2.1.4"
 
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
+
+    @slot
+    @classmethod
+    def get_packages(
+        cls,
+        scala_version: str | None = None,
+        spark_version: str | None = None,
+    ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        .. warning::
+
+            You should pass at least one parameter.
+
+        Parameters
+        ----------
+        scala_version : str, optional
+            Scala version in format ``major.minor``.
+
+            If ``None``, ``spark_version`` is used to determine Scala version.
+
+        spark_version : str, optional
+            Spark version in format ``major.minor``.
+
+            Used only if ``scala_version=None``.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Greenplum
+
+            Greenplum.get_packages(scala_version="2.11")
+            Greenplum.get_packages(spark_version="3.2")
+
+        """
+
+        # Connector version is fixed, so we can perform checks for Scala/Spark version
+        if scala_version:
+            scala_ver = Version.parse(scala_version)
+        elif spark_version:
+            spark_ver = Version.parse(spark_version)
+            if spark_ver.digits(2) > (3, 2) or spark_ver.digits(2) < (2, 3):
+                raise ValueError(f"Spark {spark_ver} is not supported by Greenplum connector")
+            scala_ver = get_default_scala_version(spark_ver)
+        else:
+            raise ValueError("You should pass either `scala_version` or `spark_version`")
+
+        if scala_ver.digits(2) < (2, 11) or scala_ver.digits(2) > (2, 12):
+            raise ValueError(f"Scala {scala_ver} is not supported by Greenplum connector")
+
+        return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:2.1.4"]
+
+    @classproperty
+    def package_spark_2_3(cls) -> str:
+        """Get package name to be downloaded by Spark 2.3."""
+        msg = "`Greenplum.package_2_3` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.3')` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "io.pivotal:greenplum-spark_2.11:2.1.4"
+
+    @classproperty
+    def package_spark_2_4(cls) -> str:
+        """Get package name to be downloaded by Spark 2.4."""
+        msg = "`Greenplum.package_2_4` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.4')` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "io.pivotal:greenplum-spark_2.11:2.1.4"
+
+    @classproperty
+    def package_spark_3_2(cls) -> str:
+        """Get package name to be downloaded by Spark 3.2."""
+        msg = "`Greenplum.package_3_2` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='3.2')` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "io.pivotal:greenplum-spark_2.12:2.1.4"
 
     @property
     def instance_url(self) -> str:

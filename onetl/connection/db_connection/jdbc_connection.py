@@ -540,6 +540,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         version="0.5.0",
         reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
         action="always",
+        category=UserWarning,
     )
     class Options(ReadOptions, WriteOptions):
         class Config:

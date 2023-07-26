@@ -21,7 +21,6 @@ import textwrap
 import warnings
 from typing import List, Optional, Union
 
-from deprecated import deprecated
 from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
@@ -29,11 +28,6 @@ from onetl.impl import FrozenModel, RemotePath
 from onetl.log import log_with_indent
 
 
-@deprecated(
-    version="0.8.0",
-    reason="Use Glob, Regexp or ExcludeDir instead. Will be removed in 1.0.0",
-    action="ignore",
-)
 class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 

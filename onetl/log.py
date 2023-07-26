@@ -47,6 +47,7 @@ logging.addLevelName(NOTICE, "NOTICE")
     version="0.5.0",
     reason="Will be removed in 1.0.0, use 'setup_logging' instead",
     action="always",
+    category=UserWarning,
 )
 def setup_notebook_logging(level: int = logging.INFO) -> None:
     """Set up onETL logging.

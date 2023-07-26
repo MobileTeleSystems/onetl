@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import warnings
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -26,11 +27,13 @@ from typing import TYPE_CHECKING, ClassVar, Optional
 from pydantic import root_validator
 
 from onetl._internal import clear_statement
+from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.hooks import slot, support_hooks
 from onetl.log import BASE_LOG_INDENT, log_lines
 
-# do not import PySpark here, as we allow user to use `Oracle.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session
 
 
 if TYPE_CHECKING:
@@ -147,12 +150,15 @@ class Oracle(JDBCConnection):
 
         extra = {"defaultBatchValue": 100}
 
+        # Create Spark session with Oracle driver loaded
+        maven_packages = Oracle.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Oracle.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         oracle = Oracle(
             host="database.host.or.ip",
             user="user",
@@ -169,9 +175,47 @@ class Oracle(JDBCConnection):
     service_name: Optional[str] = None
 
     driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-    package: ClassVar[str] = "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
     _check_query: ClassVar[str] = "SELECT 1 FROM dual"
+
+    @slot
+    @classmethod
+    def get_packages(
+        cls,
+        java_version: str = "8",
+    ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Parameters
+        ----------
+        java_version : str, default ``8``
+            Java major version.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Oracle
+
+            Oracle.get_packages()
+            Oracle.get_packages(java_version="8")
+
+        """
+        java_ver = Version.parse(java_version)
+        if java_ver.major < 8:
+            raise ValueError(f"Java {java_ver} is not supported by Oracle connector")
+
+        jre_ver = "8" if java_ver.major < 11 else "11"
+        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
     @root_validator
     def only_one_of_sid_or_service_name(cls, values):

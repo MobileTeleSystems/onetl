@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.connection import MySQL
@@ -7,7 +9,16 @@ pytestmark = [pytest.mark.mysql, pytest.mark.db_connection, pytest.mark.connecti
 
 def test_mysql_class_attributes():
     assert MySQL.driver == "com.mysql.cj.jdbc.Driver"
-    assert MySQL.package == "com.mysql:mysql-connector-j:8.0.33"
+
+
+def test_mysql_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `MySQL.get_packages()` instead")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert MySQL.package == "com.mysql:mysql-connector-j:8.0.33"
+
+
+def test_mysql_get_packages():
+    assert MySQL.get_packages() == ["com.mysql:mysql-connector-j:8.0.33"]
 
 
 def test_mysql(spark_mock):

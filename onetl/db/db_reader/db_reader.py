@@ -205,9 +205,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -233,9 +234,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -264,9 +266,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -301,9 +304,10 @@ class DBReader(FrozenModel):
         from onetl.strategy import IncrementalStrategy
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -653,7 +657,7 @@ class DBReader(FrozenModel):
         from pyspark.sql.types import StructType  # noqa: WPS442
 
         # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.package` for creating Spark session
+        # as we allow user to use `Connection.get_packages()` for creating Spark session
         refs = super()._forward_refs()
         refs["StructType"] = StructType
         return refs

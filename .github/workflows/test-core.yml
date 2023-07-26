@@ -69,6 +69,7 @@ jobs:
     - name: Run tests
       run: |
         ./run_tests.sh -m 'not connection'
+        ./run_tests.sh onetl/_util
 
     - name: Upload coverage results
       uses: actions/upload-artifact@v3

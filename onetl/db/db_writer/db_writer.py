@@ -74,9 +74,10 @@ class DBWriter(FrozenModel):
         from onetl.db import DBWriter
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -101,9 +102,10 @@ class DBWriter(FrozenModel):
         from onetl.db import DBWriter
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
