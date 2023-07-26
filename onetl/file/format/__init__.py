@@ -17,3 +17,4 @@ from onetl.file.format.csv import CSV
 from onetl.file.format.json import JSON
 from onetl.file.format.jsonline import JSONLine
 from onetl.file.format.orc import ORC
+from onetl.file.format.parquet import Parquet

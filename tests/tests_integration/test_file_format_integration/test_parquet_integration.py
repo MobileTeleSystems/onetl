@@ -1,4 +1,4 @@
-"""Integration tests for JSON file format.
+"""Integration tests for Parquet file format.
 
 Test only that options are passed to Spark in both FileReader & FileWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
@@ -7,7 +7,7 @@ Do not test all the possible options and combinations, we are not testing Spark 
 import pytest
 
 from onetl.file import FileReader, FileWriter
-from onetl.file.format import JSON
+from onetl.file.format import Parquet
 
 try:
     from tests.util.assert_df import assert_equal_df
@@ -22,26 +22,26 @@ pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.
     "path, options",
     [
         ("without_compression", {}),
-        ("with_compression", {"compression": "gzip"}),
+        ("with_compression", {"compression": "snappy"}),
     ],
     ids=["without_compression", "with_compression"],
 )
-def test_json_reader(
+def test_parquet_reader(
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
     path,
     options,
 ):
-    """Reading JSON files working as expected on any Spark, Python and Java versions"""
+    """Reading Parquet files working as expected on any Spark, Python and Java versions"""
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
-    json_root = source_path / "json" / path
+    parquet_root = source_path / "parquet" / path
 
     reader = FileReader(
         connection=local_fs,
-        format=JSON.parse(options),
+        format=Parquet.parse(options),
         df_schema=df.schema,
-        source_path=json_root,
+        source_path=parquet_root,
     )
     read_df = reader.run()
 
@@ -50,16 +50,39 @@ def test_json_reader(
     assert_equal_df(read_df, df)
 
 
-def test_json_writer_is_not_supported(
+@pytest.mark.parametrize(
+    "options",
+    [
+        {},
+        {"compression": "snappy"},
+    ],
+    ids=["without_compression", "with_compression"],
+)
+def test_parquet_writer(
     local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    options,
 ):
-    """Writing JSON files is not supported"""
+    """Written files can be read by Spark"""
     file_df_connection, source_path = local_fs_file_df_connection_with_path
-    json_root = source_path / "json"
+    df = file_df_dataframe
+    parquet_root = source_path / "parquet"
 
-    with pytest.raises(ValueError):
-        FileWriter(
-            connection=file_df_connection,
-            format=JSON(),
-            target_path=json_root,
-        )
+    writer = FileWriter(
+        connection=file_df_connection,
+        format=Parquet.parse(options),
+        target_path=parquet_root,
+    )
+    writer.run(df)
+
+    reader = FileReader(
+        connection=file_df_connection,
+        format=Parquet(),
+        source_path=parquet_root,
+        df_schema=df.schema,
+    )
+    read_df = reader.run()
+
+    assert read_df.count()
+    assert read_df.schema == df.schema
+    assert_equal_df(read_df, df)
