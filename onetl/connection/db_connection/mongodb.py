@@ -276,7 +276,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -309,7 +309,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -342,7 +342,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/write/>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 

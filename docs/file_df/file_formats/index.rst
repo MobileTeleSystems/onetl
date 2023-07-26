@@ -10,6 +10,7 @@ File Formats
     csv
     json
     jsonline
+    orc
 
 .. toctree::
     :maxdepth: 1

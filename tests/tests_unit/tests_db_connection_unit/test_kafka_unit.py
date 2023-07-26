@@ -340,7 +340,6 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
     # Act
     conf = kafka.auth.get_options(kafka)
     # Assert
-    print(conf)
     assert conf == {
         "kafka.sasl.mechanism": "GSSAPI",
         "kafka.sasl.jaas.config": dedent(

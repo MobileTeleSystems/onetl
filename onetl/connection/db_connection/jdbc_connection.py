@@ -161,9 +161,9 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
 
             You can pass any value
             `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
-            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+            even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
-            The set of supported options depends on Spark version.
+            The set of supported options depends on Spark version. See link above.
 
         Examples
         --------
@@ -443,9 +443,9 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
 
             You can pass any value
             `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
-            even if it is not mentioned in this documentation. **Its name should be in** ``camelCase``!
+            even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
-            The set of supported options depends on Spark version.
+            The set of supported options depends on Spark version. See link above.
 
         Examples
         --------

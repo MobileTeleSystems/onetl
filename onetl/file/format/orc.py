@@ -16,60 +16,30 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from typing_extensions import Literal
-
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
-
-READ_WRITE_OPTIONS = {
-    "dateFormat",
-    "enableDateTimeParsingFallback",
-    "timestampFormat",
-    "timestampNTZFormat",
-    "timeZone",
-}
-
 READ_OPTIONS = {
-    "allowBackslashEscapingAnyCharacter",
-    "allowComments",
-    "allowNonNumericNumbers",
-    "allowNumericLeadingZeros",
-    "allowSingleQuotes",
-    "allowUnquotedControlChars",
-    "allowUnquotedFieldNames",
-    "columnNameOfCorruptRecord",
-    "dropFieldIfAllNull",
-    "locale",
-    "mode",
-    "prefersDecimal",
-    "primitivesAsString",
-    "samplingRatio",
+    "mergeSchema",
 }
 
 WRITE_OPTIONS = {
     "compression",
-    "ignoreNullFields",
+    "orc.*",
 }
 
 
 @support_hooks
-class JSONLine(ReadWriteFileFormat):
+class ORC(ReadWriteFileFormat):
     """
-    JSONLine file format (each line of file contains a JSON object). |support_hooks|
+    ORC file format. |support_hooks|
 
-    Based on `Spark JSON Files <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_ file format.
+    Based on `Spark ORC Files <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_ file format.
 
-    Supports reading/writing files with ``.json`` extension (NOT ``.jsonl`` or ``.jsonline``) with content like:
-
-    .. code-block:: json
-        :caption: example.json
-
-        {"key": "value1"}
-        {"key": "value2"}
+    Supports reading/writing files with ``.orc`` extension.
 
     .. note ::
 
@@ -81,22 +51,18 @@ class JSONLine(ReadWriteFileFormat):
     Examples
     --------
 
-    Describe options how to read from/write to JSON file with specific options:
+    Describe options how to read from/write to ORC file with specific options:
 
     .. code:: python
 
-        jsonline = JSONLine(encoding="utf-8", compression="gzip")
+        orc = ORC(compression="snappy")
 
     """
 
-    name: ClassVar[str] = "json"
-
-    multiLine: Literal[False] = False  # noqa: N815
-    encoding: str = "utf-8"
-    lineSep: str = "\n"  # noqa: N815
+    name: ClassVar[str] = "orc"
 
     class Config:
-        known_options = READ_WRITE_OPTIONS | READ_OPTIONS | WRITE_OPTIONS
+        known_options = READ_OPTIONS | WRITE_OPTIONS
         extra = "allow"
 
     @slot

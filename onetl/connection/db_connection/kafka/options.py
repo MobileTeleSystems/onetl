@@ -61,7 +61,7 @@ class KafkaReadOptions(GenericOptions):
         `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
         even if it is not mentioned in this documentation.
 
-        The set of supported options depends on connector version.
+        The set of supported options depends on connector version. See link above.
 
     .. warning::
 
@@ -108,7 +108,7 @@ class KafkaWriteOptions(GenericOptions):
         `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
         even if it is not mentioned in this documentation.
 
-        The set of supported options depends on connector version.
+        The set of supported options depends on connector version. See link above.
 
     .. warning::
 
