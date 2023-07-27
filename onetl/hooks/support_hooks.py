@@ -3,10 +3,13 @@ from __future__ import annotations
 import logging
 from contextlib import ExitStack, contextmanager
 from functools import partial
+from typing import TypeVar
 
 from onetl.hooks.slot import Slot, is_slot, register_slot
 
 logger = logging.getLogger(__name__)
+
+Klass = TypeVar("Klass", bound=type)
 
 
 def get_slots(cls: type) -> list[Slot]:
@@ -168,7 +171,7 @@ def resume_hooks(cls: type) -> None:
         slot.resume_hooks()
 
 
-def support_hooks(cls):
+def support_hooks(cls: Klass) -> Klass:
     """
     Decorator which adds hooks functionality to a specific class.
 
@@ -208,7 +211,7 @@ def support_hooks(cls):
     if not has_slots:
         raise SyntaxError("@support_hooks can be used only with @slot decorator on some of class methods")
 
-    cls.skip_hooks = partial(skip_hooks, cls)
-    cls.suspend_hooks = partial(suspend_hooks, cls)
-    cls.resume_hooks = partial(resume_hooks, cls)
+    cls.skip_hooks = partial(skip_hooks, cls)  # type: ignore[attr-defined]
+    cls.suspend_hooks = partial(suspend_hooks, cls)  # type: ignore[attr-defined]
+    cls.resume_hooks = partial(resume_hooks, cls)  # type: ignore[attr-defined]
     return cls
