@@ -58,9 +58,6 @@ services:
     env_file: .env.dependencies
     networks:
     - onetl
-    environment:
-    - ALLOW_PLAINTEXT_LISTENER=yes
-    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://:9092
     depends_on:
     - zookeeper
 

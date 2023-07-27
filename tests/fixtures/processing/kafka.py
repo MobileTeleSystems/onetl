@@ -1,17 +1,14 @@
 from __future__ import annotations
-import os
 
-import pandas
+import os
 from typing import TYPE_CHECKING
 
-from pyspark.sql.types import StructType, StructField, LongType, StringType, FloatType
+import pandas
+from confluent_kafka import Producer
+from pyspark.sql.functions import col, from_json
+from pyspark.sql.types import FloatType, LongType, StringType, StructField, StructType
 
 from tests.fixtures.processing.base_processing import BaseProcessing
-from pyspark.sql.functions import from_json, col
-from confluent_kafka import Producer
-
-from tests.util.assert_df import assert_equal_df
-from tests.util.to_pandas import to_pandas
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
@@ -71,7 +68,7 @@ class KafkaProcessing(BaseProcessing):
         """Called once for each message produced to indicate delivery result.
         Triggered by poll() or flush()."""
         if err is not None:
-            print("Message delivery failed: {}".format(err))
+            print(f"Message delivery failed: {err}")
         else:
             pass
 

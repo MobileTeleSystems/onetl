@@ -164,7 +164,8 @@ class Kafka(DBConnection):
         end_at: Statement | None = None,
     ) -> DataFrame:
         options: dict = {
-            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
+            f"kafka.{key}": value
+            for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()  # type: ignore
         }
         options.update(self.protocol.get_options(self))
 
