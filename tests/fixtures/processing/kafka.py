@@ -25,13 +25,6 @@ class KafkaProcessing(BaseProcessing):
         ],
     )
 
-    def __enter__(self):
-        self.connection = self.get_conn()
-        return self
-
-    def __exit__(self, _exc_type, _exc_value, _traceback):
-        return False
-
     def get_conn(self) -> Producer:
         return Producer({"bootstrap.servers": f"{self.host}:{self.port}"})
 

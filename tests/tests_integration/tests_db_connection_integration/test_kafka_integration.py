@@ -8,11 +8,12 @@ from confluent_kafka.admin import AdminClient
 
 from onetl.connection import Kafka
 from onetl.db import DBReader
-from tests.fixtures.processing.kafka import KafkaProcessing
 
 
 @pytest.fixture(name="kafka_processing")
 def create_kafka_data(spark):
+    from tests.fixtures.processing.kafka import KafkaProcessing
+
     topic = secrets.token_hex(5)
     proc = KafkaProcessing()
     df = proc.create_spark_df(spark)
