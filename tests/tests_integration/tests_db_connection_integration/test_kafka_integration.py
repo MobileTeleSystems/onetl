@@ -1,13 +1,14 @@
 import json
 import re
-from pathlib import Path
 import secrets
-import pytest
+from pathlib import Path
 
+import pytest
+from confluent_kafka.admin import AdminClient
 
 from onetl.connection import Kafka
+from onetl.db import DBReader
 from tests.fixtures.processing.kafka import KafkaProcessing
-from confluent_kafka.admin import AdminClient
 
 
 @pytest.fixture(name="kafka_processing")
@@ -69,15 +70,20 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true_error(spark):
 
 def test_kafka_connection_read(spark, kafka_processing):
     # Arrange
-    topic, proc, expected_df = kafka_processing
+    topic, processing, expected_df = kafka_processing
+
     # Act
     kafka = Kafka(
         spark=spark,
-        addresses=[f"{proc.host}:{proc.port}"],
+        addresses=[f"{processing.host}:{processing.port}"],
         cluster="cluster",
     )
 
-    df = kafka.read_source_as_df(source=topic)
-    # Assert
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+    )
+    df = reader.run()
 
-    proc.assert_equal_df(df, other_frame=expected_df)
+    # Assert
+    processing.assert_equal_df(df, other_frame=expected_df)

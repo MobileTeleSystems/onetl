@@ -162,6 +162,7 @@ class Kafka(DBConnection):
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
+        **kwargs,
     ) -> DataFrame:
         options: dict = {
             f"kafka.{key}": value
