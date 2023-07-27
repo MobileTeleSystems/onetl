@@ -128,10 +128,7 @@ def get_spark_session(
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
-        .config(
-            "spark.driver.extraJavaOptions",
-            f"-Dderby.system.home={os.fspath(spark_metastore_dir)}",
-        )
+        .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
         .config("spark.sql.warehouse.dir", warehouse_dir)
         .enableHiveSupport()
         .getOrCreate()

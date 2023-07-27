@@ -163,18 +163,13 @@ class Kafka(DBConnection):
         start_from: Statement | None = None,
         end_at: Statement | None = None,
     ) -> DataFrame:
-        extra_options: dict = self.extra.copy().dict()
-        extra_options_with_prefix: dict = self._append_prefix(
-            prefix="kafka.",
-            subject=extra_options,
-        )
-        protocol_options: dict = self.protocol.get_options(self).copy()
-        extra_options_with_prefix.update(protocol_options)
-        options: dict = extra_options_with_prefix.copy()
+        options: dict = {
+            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
+        }
+        options.update(self.protocol.get_options(self))
 
         if self.auth:
-            auth_options: dict = self.auth.get_options(self)
-            options.update(auth_options)
+            options.update(self.auth.get_options(self))
 
         options.update(
             {"kafka.bootstrap.servers": ",".join(self.addresses), "subscribe": source},
@@ -191,11 +186,7 @@ class Kafka(DBConnection):
         scala_version: str | None = None,
     ) -> list[str]:
         spark_ver = Version.parse(spark_version)
-        scala_ver = (
-            Version.parse(scala_version)
-            if scala_version
-            else get_default_scala_version(spark_ver)
-        )
+        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
         ]
@@ -212,13 +203,3 @@ class Kafka(DBConnection):
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value
-
-    @staticmethod
-    def _append_prefix(prefix: str, subject: dict):
-        subject_keys: list = list(subject.keys())
-
-        for key in subject_keys:
-            subject[f"{prefix}{key}"] = subject[key]
-            subject.pop(key)
-
-        return subject

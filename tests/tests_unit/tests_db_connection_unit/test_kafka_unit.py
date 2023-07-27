@@ -409,9 +409,7 @@ def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
         ),
     )
     # Assert
-    assert kafka.protocol.get_options(kafka) == {
-        "kafka.security.protocol": "SASL_PLAINTEXT"
-    }
+    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "SASL_PLAINTEXT"}
 
 
 def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):

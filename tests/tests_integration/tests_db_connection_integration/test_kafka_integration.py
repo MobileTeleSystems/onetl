@@ -1,22 +1,30 @@
-from datetime import datetime
-
+import json
 import re
-from confluent_kafka import Producer
 from pathlib import Path
 import secrets
 import pytest
-from pyspark.sql.types import (
-    StructField,
-    BinaryType,
-    StringType,
-    IntegerType,
-    LongType,
-    TimestampType,
-    StructType,
-    Row,
-)
+
 
 from onetl.connection import Kafka
+from tests.fixtures.processing.kafka import KafkaProcessing
+from confluent_kafka.admin import AdminClient
+
+
+@pytest.fixture(name="kafka_processing")
+def create_kafka_data(spark):
+    topic = secrets.token_hex(5)
+    proc = KafkaProcessing()
+    df = proc.create_spark_df(spark)
+    rows = [row.asDict() for row in df.collect()]
+
+    for row_to_send in rows:
+        proc.send_message(topic, json.dumps(row_to_send).encode("utf-8"))
+
+    yield topic, proc, df
+    # Release
+    admin = AdminClient({"bootstrap.servers": f"{proc.host}:{proc.port}"})
+    # TODO: there is a problem with deleting it does not always delete the topic immediately, but after 3 seconds
+    admin.delete_topics([topic])
 
 
 def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark, create_keytab):
@@ -59,67 +67,17 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true_error(spark):
         )
 
 
-def delivery_report(err, msg):
-    """Called once for each message produced to indicate delivery result.
-    Triggered by poll() or flush()."""
-    if err is not None:
-        print("Message delivery failed: {}".format(err))
-    else:
-        print("Message delivered to {} [{}]".format(msg.topic(), msg.partition()))
-
-
-def send_message(bootstrap_servers, topic, message):
-    producer = Producer({"bootstrap.servers": bootstrap_servers})
-    producer.produce(topic, message.encode("utf-8"), callback=delivery_report)
-    producer.flush()
-
-
-def test_kafka_connection_read(spark):
+def test_kafka_connection_read(spark, kafka_processing):
     # Arrange
-    bootstrap_servers = "onetl-githib-kafka-1:9092"
-    topic = secrets.token_hex(5)
-    message = "test"
-
-    send_message(bootstrap_servers, topic, message)
-
+    topic, proc, expected_df = kafka_processing
     # Act
     kafka = Kafka(
         spark=spark,
-        addresses=[bootstrap_servers],
+        addresses=[f"{proc.host}:{proc.port}"],
         cluster="cluster",
     )
 
     df = kafka.read_source_as_df(source=topic)
     # Assert
-    assert df.schema == StructType(
-        [
-            StructField("key", BinaryType(), True),
-            StructField("value", BinaryType(), True),
-            StructField("topic", StringType(), True),
-            StructField("partition", IntegerType(), True),
-            StructField("offset", LongType(), True),
-            StructField("timestamp", TimestampType(), True),
-            StructField("timestampType", IntegerType(), True),
-        ],
-    )
 
-    df = df.collect()
-    write_time = df[0][5]
-
-    assert df == [
-        Row(
-            key=None,
-            value=bytearray(b"test"),
-            topic=topic,
-            partition=0,
-            offset=0,
-            timestamp=write_time,
-            timestampType=0,
-        ),
-    ]
-
-    # Release
-    from confluent_kafka.admin import AdminClient
-
-    admin = AdminClient({"bootstrap.servers": bootstrap_servers})
-    admin.delete_topics([topic])
+    proc.assert_equal_df(df, other_frame=expected_df)

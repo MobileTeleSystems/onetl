@@ -18,6 +18,7 @@ def processing(request, spark):
         "mysql": ("tests.fixtures.processing.mysql", "MySQLProcessing"),
         "oracle": ("tests.fixtures.processing.oracle", "OracleProcessing"),
         "postgres": ("tests.fixtures.processing.postgres", "PostgresProcessing"),
+        "kafka": ("tests.fixtures.processing.kafka", "KafkaProcessing"),
     }
 
     db_storage_name = request.function.__name__.split("_")[1]
