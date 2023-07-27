@@ -5,7 +5,7 @@ import pytest
 from onetl.file.format import CSV
 
 
-def test_csv_default_options():
+def test_csv_options_default():
     csv = CSV()
     assert csv.delimiter == ","
     assert csv.encoding == "utf-8"
@@ -15,7 +15,7 @@ def test_csv_default_options():
     assert csv.lineSep == "\n"
 
 
-def test_csv_default_options_override():
+def test_csv_options_default_override():
     csv = CSV(
         delimiter="value",
         encoding="value",
@@ -32,7 +32,7 @@ def test_csv_default_options_override():
     assert csv.lineSep == "value"
 
 
-def test_csv_delimiter_alias():
+def test_csv_options_delimiter_alias():
     csv = CSV(sep="value")
     assert csv.delimiter == "value"
 
@@ -69,12 +69,12 @@ def test_csv_delimiter_alias():
         "quoteAll",
     ],
 )
-def test_csv_known_options(known_option):
+def test_csv_options_known(known_option):
     csv = CSV(**{known_option: "value"})
     assert getattr(csv, known_option) == "value"
 
 
-def test_csv_unknown_options(caplog):
+def test_csv_options_unknown(caplog):
     with caplog.at_level(logging.WARNING):
         csv = CSV(unknown="abc")
         assert csv.unknown == "abc"
