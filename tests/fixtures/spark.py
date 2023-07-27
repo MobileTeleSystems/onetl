@@ -36,12 +36,12 @@ def spark_packages():
         MSSQL,
         Clickhouse,
         Greenplum,
+        Kafka,
         MongoDB,
         MySQL,
         Oracle,
         Postgres,
         Teradata,
-        Kafka,
     )
 
     pyspark_version = get_pyspark_version()
