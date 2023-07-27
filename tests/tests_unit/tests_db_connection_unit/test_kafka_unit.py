@@ -42,7 +42,10 @@ def test_kafka_jars(spark_version, scala_version_input, scala_version_real):
         ("startingTimestamp", "startingTimestamp_value"),
         ("endingOffsets", "endingOffsets_value"),
         ("endingOffsetsByTimestamp", "endingOffsetsByTimestamp_value"),
-        ("startingOffsetsByTimestampStrategy", "startingOffsetsByTimestampStrategy_value"),
+        (
+            "startingOffsetsByTimestampStrategy",
+            "startingOffsetsByTimestampStrategy_value",
+        ),
         ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
         ("kafka.group.id", "kafka.group.id_value"),
         ("topic", "topic_value"),
@@ -406,7 +409,9 @@ def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
         ),
     )
     # Assert
-    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "SASL_PLAINTEXT"}
+    assert kafka.protocol.get_options(kafka) == {
+        "kafka.security.protocol": "SASL_PLAINTEXT"
+    }
 
 
 def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):

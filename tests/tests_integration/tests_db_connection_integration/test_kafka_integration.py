@@ -1,7 +1,20 @@
-import re
-from pathlib import Path
+from datetime import datetime
 
+import re
+from confluent_kafka import Producer
+from pathlib import Path
+import secrets
 import pytest
+from pyspark.sql.types import (
+    StructField,
+    BinaryType,
+    StringType,
+    IntegerType,
+    LongType,
+    TimestampType,
+    StructType,
+    Row,
+)
 
 from onetl.connection import Kafka
 
@@ -46,34 +59,67 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true_error(spark):
         )
 
 
-from confluent_kafka import Producer
-
-
 def delivery_report(err, msg):
-    # Обработка сообщения после отправки
+    """Called once for each message produced to indicate delivery result.
+    Triggered by poll() or flush()."""
     if err is not None:
-        print(f"Сообщение не отправлено: {err}")
+        print("Message delivery failed: {}".format(err))
     else:
-        print(f"Сообщение успешно отправлено: {msg}")
+        print("Message delivered to {} [{}]".format(msg.topic(), msg.partition()))
 
 
 def send_message(bootstrap_servers, topic, message):
-    # Создание Kafka producer
     producer = Producer({"bootstrap.servers": bootstrap_servers})
-
-    # Отправка сообщения
     producer.produce(topic, message.encode("utf-8"), callback=delivery_report)
-
-    # Ожидание завершения отправки всех сообщений
     producer.flush()
 
 
 def test_kafka_connection_read(spark):
     # Arrange
     bootstrap_servers = "onetl-githib-kafka-1:9092"
-    topic = "test-topic"
-    message = "Hello, Kafka 2!"
+    topic = secrets.token_hex(5)
+    message = "test"
 
     send_message(bootstrap_servers, topic, message)
+
     # Act
+    kafka = Kafka(
+        spark=spark,
+        addresses=[bootstrap_servers],
+        cluster="cluster",
+    )
+
+    df = kafka.read_source_as_df(source=topic)
     # Assert
+    assert df.schema == StructType(
+        [
+            StructField("key", BinaryType(), True),
+            StructField("value", BinaryType(), True),
+            StructField("topic", StringType(), True),
+            StructField("partition", IntegerType(), True),
+            StructField("offset", LongType(), True),
+            StructField("timestamp", TimestampType(), True),
+            StructField("timestampType", IntegerType(), True),
+        ],
+    )
+
+    df = df.collect()
+    write_time = df[0][5]
+
+    assert df == [
+        Row(
+            key=None,
+            value=bytearray(b"test"),
+            topic=topic,
+            partition=0,
+            offset=0,
+            timestamp=write_time,
+            timestampType=0,
+        ),
+    ]
+
+    # Release
+    from confluent_kafka.admin import AdminClient
+
+    admin = AdminClient({"bootstrap.servers": bootstrap_servers})
+    admin.delete_topics([topic])

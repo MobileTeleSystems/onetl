@@ -41,6 +41,7 @@ def spark_packages():
         Oracle,
         Postgres,
         Teradata,
+        Kafka,
     )
 
     pyspark_version = get_pyspark_version()
@@ -51,6 +52,7 @@ def spark_packages():
         Oracle.package,
         Postgres.package,
         Teradata.package,
+        ",".join(Kafka.get_package_spark(spark_version="3.4.1")),
     ]
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
@@ -76,14 +78,18 @@ def spark_packages():
         if not with_greenplum:
             return packages
 
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
+        raise ValueError(
+            f"Greenplum connector does not support Spark {pyspark_version}",
+        )
 
     if pyspark_version.digits(2) == (3, 4):
         packages.extend([MongoDB.package_spark_3_4])
         if not with_greenplum:
             return packages
 
-        raise ValueError(f"Greenplum connector does not support Spark {pyspark_version}")
+        raise ValueError(
+            f"Greenplum connector does not support Spark {pyspark_version}",
+        )
 
     raise ValueError(f"Unsupported Spark version: {pyspark_version}")
 
@@ -92,10 +98,18 @@ def spark_packages():
     scope="session",
     name="spark",
     params=[
-        pytest.param("real-spark", marks=[pytest.mark.db_connection, pytest.mark.connection]),
+        pytest.param(
+            "real-spark",
+            marks=[pytest.mark.db_connection, pytest.mark.connection],
+        ),
     ],
 )
-def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spark_packages):
+def get_spark_session(
+    warehouse_dir,
+    spark_metastore_dir,
+    ivysettings_path,
+    spark_packages,
+):
     from pyspark.sql import SparkSession
 
     spark = (
@@ -107,11 +121,17 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, spar
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
         .config("spark.executor.memory", "1g")
-        .config("spark.executor.allowSparkContext", "true")  # Greenplum uses SparkContext on executor if master==local
+        .config(
+            "spark.executor.allowSparkContext",
+            "true",
+        )  # Greenplum uses SparkContext on executor if master==local
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
-        .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
+        .config(
+            "spark.driver.extraJavaOptions",
+            f"-Dderby.system.home={os.fspath(spark_metastore_dir)}",
+        )
         .config("spark.sql.warehouse.dir", warehouse_dir)
         .enableHiveSupport()
         .getOrCreate()
