@@ -144,3 +144,21 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_column):
             table="table",
             hwm_column=hwm_column,
         )
+
+
+def test_kafka_connection_with_parameters_for_batch_strategy(spark_mock):
+    kafka = Kafka(
+        addresses=["localhost:9092"],
+        cluster="my_cluster",
+        spark=spark_mock,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="connection does not support BatchHWMStrategy",
+    ):
+        DBReader(
+            connection=kafka,
+            table="table",
+            hwm_column="offset",
+        ).get_min_max_bounds("offset")

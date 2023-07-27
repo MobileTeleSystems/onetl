@@ -9,8 +9,11 @@ from pydantic import Field, root_validator, validator
 
 from onetl._internal import uniq_ignore_case
 from onetl._util.spark import try_import_pyspark
-from onetl.base import BaseDBConnection
-from onetl.base.contains_get_df_schema import ContainsGetDFSchemaMethod
+from onetl.base import (
+    BaseDBConnection,
+    ContainsGetDFSchemaMethod,
+    ContainsGetMinMaxBounds,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
@@ -483,14 +486,17 @@ class DBReader(FrozenModel):
         )
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        return self.connection.get_min_max_bounds(
-            source=str(self.source),
-            column=column,
-            expression=expression,
-            hint=self.hint,
-            where=self.where,
-            **self._get_read_kwargs(),
-        )
+        if isinstance(self.connection, ContainsGetMinMaxBounds):
+            return self.connection.get_min_max_bounds(
+                source=str(self.source),
+                column=column,
+                expression=expression,
+                hint=self.hint,
+                where=self.where,
+                **self._get_read_kwargs(),
+            )
+
+        raise ValueError(f"{self.connection.__class__.__name__} connection does not support BatchHWMStrategy")
 
     @slot
     def run(self) -> DataFrame:

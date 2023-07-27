@@ -162,6 +162,11 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         If you only need to reduce number of rows read by Spark from opened cursor,
         use :obj:`onetl.connection.db_connection.postgres.Postgres.ReadOptions.fetchsize` instead
 
+    .. warning::
+
+        Not every DB connection supports batch strategy. For example, Kafka connection doesn't support it.
+        Make sure the connection you use is compatible with the SnapshotBatchStrategy.
+
     Parameters
     ----------
     step : Any

@@ -184,16 +184,3 @@ class BaseDBConnection(BaseConnection):
         """
         Saves dataframe to a specific target. |support_hooks|
         """
-
-    @abstractmethod
-    def get_min_max_bounds(
-        self,
-        source: str,
-        column: str,
-        expression: str | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-    ) -> tuple[Any, Any]:
-        """
-        Get MIN and MAX values for the column in the source. |support_hooks|
-        """

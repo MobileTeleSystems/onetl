@@ -97,6 +97,10 @@ class Kafka(DBConnection):
         If there is no file on the driver, then Spark will not be able to build a query execution plan,
         if there is no file on the executors, then they will not be able to read the data.
 
+    .. warning::
+
+        At current version Kafka connection doesn't support BatchHWMStrategy
+
     Examples
     --------
 
@@ -180,16 +184,6 @@ class Kafka(DBConnection):
 
     def check(self):
         return self
-
-    def get_min_max_bounds(  # type: ignore
-        self,
-        table: str,
-        column: str,
-        expression: str | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-    ) -> tuple[Any, Any]:
-        ...
 
     @validator("addresses")
     def _validate_addresses(cls, value):
