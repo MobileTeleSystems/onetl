@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from logging import getLogger
 from random import randint
 from urllib import parse as parser
 
@@ -10,6 +11,8 @@ import pandas
 from pymongo import MongoClient
 
 from tests.fixtures.processing.base_processing import BaseProcessing
+
+logger = getLogger(__name__)
 
 
 class MongoDBProcessing(BaseProcessing):

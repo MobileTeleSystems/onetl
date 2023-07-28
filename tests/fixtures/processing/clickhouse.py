@@ -3,12 +3,15 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from logging import getLogger
 from random import randint
 
 import clickhouse_driver
 import pandas
 
 from tests.fixtures.processing.base_processing import BaseProcessing
+
+logger = getLogger(__name__)
 
 
 class ClickhouseProcessing(BaseProcessing):
