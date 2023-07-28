@@ -146,7 +146,7 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_column):
         )
 
 
-def test_kafka_connection_with_parameters_for_batch_strategy(spark_mock):
+def test_kafka_connection_with_parameters_for_batch_strategy_error(spark_mock):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
