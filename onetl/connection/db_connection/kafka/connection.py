@@ -164,19 +164,19 @@ class Kafka(DBConnection):
         end_at: Statement | None = None,
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
-        result_options: dict = {  # pragma: no cover
+        result_options: dict = {
             f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
         }
         result_options.update(options.dict(by_alias=True, exclude_none=True))
-        result_options.update(self.protocol.get_options(self))  # pragma: no cover
+        result_options.update(self.protocol.get_options(self))
 
         if self.auth:  # pragma: no cover
-            result_options.update(self.auth.get_options(self))  # pragma: no cover
+            result_options.update(self.auth.get_options(self))
 
-        result_options.update(  # pragma: no cover
+        result_options.update(
             {"kafka.bootstrap.servers": ",".join(self.addresses), "subscribe": source},
         )
-        return self.spark.read.format("kafka").options(**result_options).load()  # pragma: no cover
+        return self.spark.read.format("kafka").options(**result_options).load()
 
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
