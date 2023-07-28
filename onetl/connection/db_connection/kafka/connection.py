@@ -165,8 +165,7 @@ class Kafka(DBConnection):
         **kwargs,
     ) -> DataFrame:
         options: dict = {  # pragma: no cover
-            f"kafka.{key}": value
-            for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()  # type: ignore[attr-defined]
+            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
         }
         options.update(self.protocol.get_options(self))  # pragma: no cover
 
