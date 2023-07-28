@@ -164,13 +164,13 @@ class Kafka(DBConnection):
         end_at: Statement | None = None,
         **kwargs,
     ) -> DataFrame:
-        options: dict = {
+        options: dict = {  # pragma: no cover
             f"kafka.{key}": value
             for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()  # type: ignore[attr-defined]
         }
         options.update(self.protocol.get_options(self))  # pragma: no cover
 
-        if self.auth:
+        if self.auth:  # pragma: no cover
             options.update(self.auth.get_options(self))  # pragma: no cover
 
         options.update(  # pragma: no cover
