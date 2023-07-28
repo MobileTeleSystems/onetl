@@ -16,8 +16,6 @@ logger = getLogger(__name__)
 
 
 class KafkaProcessing(BaseProcessing):
-    from confluent_kafka import Producer
-    from confluent_kafka.admin import AdminClient
     from pyspark.sql.types import (
         FloatType,
         LongType,
@@ -37,13 +35,13 @@ class KafkaProcessing(BaseProcessing):
     )
 
     @property
-    def producer(self) -> Producer:
+    def producer(self):
         from confluent_kafka import Producer
 
         return Producer({"bootstrap.servers": f"{self.host}:{self.port}"})
 
     @property
-    def admin(self) -> AdminClient:
+    def admin(self):
         from confluent_kafka.admin import AdminClient
 
         return AdminClient({"bootstrap.servers": f"{self.host}:{self.port}"})
