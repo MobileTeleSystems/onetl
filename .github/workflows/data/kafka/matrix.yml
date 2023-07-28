@@ -19,19 +19,14 @@ latest: &latest
 matrix:
   small:
   - kafka-version: 3.5.0
-  - listeners: KAFKA_CFG_ADVERTISED_LISTENERS
     <<: *max
   full:
   - kafka-version: 0.10.2-1-r3
-  - listeners: KAFKA_ADVERTISED_LISTENERS
     <<: *min
   - kafka-version: 3.5.0
-  - listeners: KAFKA_ADVERTISED_LISTENERS
     <<: *max
   nightly:
   - kafka-version: 0.10.2-1-r3
-  - listeners: KAFKA_ADVERTISED_LISTENERS
     <<: *min
   - kafka-version: latest
-  - listeners: KAFKA_CFG_ADVERTISED_LISTENERS
     <<: *latest
