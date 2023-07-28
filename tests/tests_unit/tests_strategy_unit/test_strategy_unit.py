@@ -73,7 +73,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark_mock):
                 cluster="my_cluster",
                 spark=spark_mock,
             ),
-            table=secrets.token_hex(),
+            table="topic",
             hwm_column="offset",
         )
         with pytest.raises(ValueError, match="connection does not support BatchHWMStrategy"):
