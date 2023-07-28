@@ -222,9 +222,10 @@ class Kafka(DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-        options: dict | None = None,
+        options: KafkaReadOptions = KafkaReadOptions(),  # noqa:  WPS404
     ) -> StructType:
         from pyspark.sql.types import (  # noqa:  WPS442
+            ArrayType,
             BinaryType,
             IntegerType,
             LongType,
@@ -233,8 +234,6 @@ class Kafka(DBConnection):
             StructType,
             TimestampType,
         )
-
-        log.info("|%s| Fetching schema for Kafka", self.__class__.__name__)
 
         schema = StructType(
             [
@@ -245,11 +244,21 @@ class Kafka(DBConnection):
                 StructField("offset", LongType(), nullable=True),
                 StructField("timestamp", TimestampType(), nullable=True),
                 StructField("timestampType", IntegerType(), nullable=True),
+                StructField(
+                    "headers",
+                    ArrayType(
+                        StructType(
+                            [
+                                StructField("key", StringType(), nullable=True),
+                                StructField("value", BinaryType(), nullable=True),
+                            ],
+                        ),
+                    ),
+                ),
             ],
         )
-        log.info("|%s| Schema fetched", self.__class__.__name__)
 
-        return schema
+        return schema  # noqa:  WPS331
 
     @slot
     @classmethod
