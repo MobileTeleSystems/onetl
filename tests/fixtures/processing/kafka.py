@@ -5,8 +5,6 @@ from logging import getLogger
 from typing import TYPE_CHECKING
 
 import pandas
-from confluent_kafka import Producer
-from confluent_kafka.admin import AdminClient
 
 from tests.fixtures.processing.base_processing import BaseProcessing
 
@@ -18,6 +16,8 @@ logger = getLogger(__name__)
 
 
 class KafkaProcessing(BaseProcessing):
+    from confluent_kafka import Producer
+    from confluent_kafka.admin import AdminClient
     from pyspark.sql.types import (
         FloatType,
         LongType,
@@ -38,10 +38,14 @@ class KafkaProcessing(BaseProcessing):
 
     @property
     def producer(self) -> Producer:
+        from confluent_kafka import Producer
+
         return Producer({"bootstrap.servers": f"{self.host}:{self.port}"})
 
     @property
     def admin(self) -> AdminClient:
+        from confluent_kafka.admin import AdminClient
+
         return AdminClient({"bootstrap.servers": f"{self.host}:{self.port}"})
 
     @property
