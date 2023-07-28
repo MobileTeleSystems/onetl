@@ -297,7 +297,7 @@ def entity_boundary_log(msg: str, char: str = "=") -> None:
     log.info("%s %s %s", filing, msg, filing)
 
 
-def log_options(options: dict | None, indent: int = 0):
+def log_options(options: dict | None, name: str = "options", indent: int = 0, **kwargs):
     """Log options dict in following format:
 
     Examples
@@ -323,13 +323,13 @@ def log_options(options: dict | None, indent: int = 0):
     """
 
     if options:
-        log_with_indent("options = {", indent=indent)
+        log_with_indent("%s = {", name, indent=indent, **kwargs)
         for option, value in options.items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent("%r: %s,", option, value_wrapped, indent=indent + 4)
-        log_with_indent("}")
+            log_with_indent("%r: %s,", option, value_wrapped, indent=indent + 4, **kwargs)
+        log_with_indent("}", indent=indent, **kwargs)
     else:
-        log_with_indent("options = %r", None)
+        log_with_indent("%s = %r", name, None, indent=indent, **kwargs)
 
 
 def log_dataframe_schema(df: DataFrame):

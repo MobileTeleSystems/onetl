@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
+from onetl._util.hadoop import get_hadoop_config
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
     BaseFileDFConnection,
@@ -57,7 +58,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         try:
             path = self._get_spark_default_path()
             fs = self._get_spark_fs()
-            fs.getFileStatus(path).isFile()  # type: ignore
+            fs.exists(path)
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             raise RuntimeError("Connection is unavailable") from e
@@ -79,9 +80,9 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         options: FileDFReadOptions | None = None,
     ) -> DataFrame:
         if root:
-            log.info("|%s| Reading data ...", self.__class__.__name__)
-        else:
             log.info("|%s| Reading data from '%s' ...", self.__class__.__name__, root)
+        else:
+            log.info("|%s| Reading data ...", self.__class__.__name__)
 
         reader: DataFrameReader = self.spark.read
         with ExitStack() as stack:
@@ -144,7 +145,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         """
         Check if filesystem is supported by Spark
         """
-        scheme = self._get_spark_default_path().toUri().getScheme()  # type: ignore
+        scheme = self._get_spark_default_path().toUri().getScheme()
         try:
             self._get_spark_fs()
         except Exception:
@@ -177,17 +178,17 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         """
         Return object of ``org.apache.hadoop.fs.Path`` class for :obj:`~_get_default_path`.
         """
-        path = self._convert_to_url(self._get_default_path())
+        url = self._convert_to_url(self._get_default_path())
         jvm = self.spark._jvm  # noqa: WPS437
-        return jvm.org.apache.hadoop.fs.Path(path)  # type: ignore
+        return jvm.org.apache.hadoop.fs.Path(url)  # type: ignore[union-attr]
 
     def _get_spark_fs(self):
         """
         Return object of ``org.apache.hadoop.fs.FileSystem`` class for :obj:`~_get_default_path`.
         """
         path = self._get_spark_default_path()
-        conf = self.spark.sparkContext._jsc.hadoopConfiguration()  # type: ignore
-        return path.getFileSystem(conf)  # type: ignore
+        conf = get_hadoop_config(self.spark)
+        return path.getFileSystem(conf)
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:

@@ -155,6 +155,7 @@ Without docker-compose
 
     .. code::
 
+        # HDFS server returns container hostname as connection address, causing error in DNS resolution
         127.0.0.1 hdfs
 
 .. note::

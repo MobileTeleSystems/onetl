@@ -416,7 +416,6 @@ def test_file_mover_run_relative_path_without_source_path(file_connection):
 def test_file_mover_run_absolute_path_not_match_source_path(
     file_connection_with_path_and_files,
 ):
-    # uploading files only because S3 does not support empty directories
     file_connection, source_path, _ = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 

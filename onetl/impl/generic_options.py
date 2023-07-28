@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from fnmatch import fnmatch
 from typing import Iterable, TypeVar
 
@@ -28,7 +29,7 @@ T = TypeVar("T", bound="GenericOptions")
 
 class GenericOptions(FrozenModel):
     class Config:
-        strip_prefixes: list[str] = []
+        strip_prefixes: list[str | re.Pattern] = []
         known_options: frozenset[str] | None = None
         prohibited_options: frozenset[str] = frozenset()
 
@@ -58,24 +59,38 @@ class GenericOptions(FrozenModel):
         return options
 
     @root_validator(pre=True)
-    def strip_prefixes(cls, values):
-        if not hasattr(cls.Config, "strip_prefixes"):
+    def _strip_prefixes(cls, values):
+        prefixes = cls.__config__.strip_prefixes  # type: ignore[attr-defined]
+        if not prefixes:  # type: ignore[attr-defined]
             return values
+
         for key in list(values.keys()):
-            for prefix in cls.Config.strip_prefixes:
-                if key.startswith(prefix):
-                    stripped_value = key.replace(prefix, "", 1)
-                    values[stripped_value] = values.pop(key)
+            for prefix in prefixes:  # type: ignore[attr-defined]
+                new_key, match_prefix = cls._strip_prefix(key, prefix)
+                if match_prefix:
+                    value = values.pop(key)
                     log.debug(
                         "Stripped prefix %r from %r, new key is %r",
-                        prefix,
+                        match_prefix,
                         key,
-                        stripped_value,
+                        new_key,
                     )
+                    if new_key in values:
+                        log.warning("Overwriting existing value of key %r with %r", key, new_key)  # noqa: WPS220
+                    values[new_key] = value
+                    key = new_key
         return values
 
+    @staticmethod
+    def _strip_prefix(key: str, prefix: str | re.Pattern) -> tuple[str, str | None]:
+        if isinstance(prefix, str) and key.startswith(prefix):
+            return key.replace(prefix, "", 1), prefix
+        elif isinstance(prefix, re.Pattern) and prefix.match(key):
+            return prefix.sub("", key, 1), prefix.pattern
+        return key, None
+
     @root_validator
-    def check_options_allowed(
+    def _check_options_allowed(
         cls,
         values,
     ) -> None:
@@ -95,7 +110,7 @@ class GenericOptions(FrozenModel):
         return values
 
     @root_validator
-    def warn_unknown_options(
+    def _warn_unknown_options(
         cls,
         values,
     ) -> None:
