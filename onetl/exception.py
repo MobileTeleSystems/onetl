@@ -18,10 +18,11 @@ from evacuator import NeedEvacuation
 
 MISSING_JVM_CLASS_MSG = textwrap.dedent(
     """
-    |Spark| Cannot import Java class %r.
+    |Spark| Cannot import Java class {java_class!r}.
 
         It looks like you've created Spark session without this option:
-            SparkSession.builder.config("spark.jars.packages", %s)
+            maven_packages = {package_source}.get_packages({args})
+            SparkSession.builder.config("spark.jars.packages", ",".join(maven_packages))
 
         Please call `spark.stop()`, restart the interpreter,
         and then create new SparkSession with proper options.

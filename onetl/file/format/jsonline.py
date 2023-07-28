@@ -25,35 +25,41 @@ if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
 
-READ_WRITE_OPTIONS = {
-    "dateFormat",
-    "enableDateTimeParsingFallback",
-    "timestampFormat",
-    "timestampNTZFormat",
-    "timeZone",
-}
+READ_WRITE_OPTIONS = frozenset(
+    (
+        "dateFormat",
+        "enableDateTimeParsingFallback",
+        "timestampFormat",
+        "timestampNTZFormat",
+        "timeZone",
+    ),
+)
 
-READ_OPTIONS = {
-    "allowBackslashEscapingAnyCharacter",
-    "allowComments",
-    "allowNonNumericNumbers",
-    "allowNumericLeadingZeros",
-    "allowSingleQuotes",
-    "allowUnquotedControlChars",
-    "allowUnquotedFieldNames",
-    "columnNameOfCorruptRecord",
-    "dropFieldIfAllNull",
-    "locale",
-    "mode",
-    "prefersDecimal",
-    "primitivesAsString",
-    "samplingRatio",
-}
+READ_OPTIONS = frozenset(
+    (
+        "allowBackslashEscapingAnyCharacter",
+        "allowComments",
+        "allowNonNumericNumbers",
+        "allowNumericLeadingZeros",
+        "allowSingleQuotes",
+        "allowUnquotedControlChars",
+        "allowUnquotedFieldNames",
+        "columnNameOfCorruptRecord",
+        "dropFieldIfAllNull",
+        "locale",
+        "mode",
+        "prefersDecimal",
+        "primitivesAsString",
+        "samplingRatio",
+    ),
+)
 
-WRITE_OPTIONS = {
-    "compression",
-    "ignoreNullFields",
-}
+WRITE_OPTIONS = frozenset(
+    (
+        "compression",
+        "ignoreNullFields",
+    ),
+)
 
 
 @support_hooks
@@ -61,7 +67,7 @@ class JSONLine(ReadWriteFileFormat):
     """
     JSONLine file format (each line of file contains a JSON object). |support_hooks|
 
-    Based on `Spark JSON Files <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_ file format.
+    Based on `Spark JSON <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_ file format.
 
     Supports reading/writing files with ``.json`` extension (NOT ``.jsonl`` or ``.jsonline``) with content like:
 

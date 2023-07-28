@@ -205,7 +205,7 @@ class Oracle(JDBCConnection):
         """
         java_ver = Version.parse(java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java {java_ver} is not supported by Oracle connector")
+            raise ValueError(f"Java {java_ver} is not supported by {cls.__name__} connector")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
         return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]
