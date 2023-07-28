@@ -41,6 +41,9 @@ jobs:
           # old config names for <1.1.1
           KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
           KAFKA_LISTENERS: PLAINTEXT://:9092
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092
+          ${{ inputs.listeners }}: PLAINTEXT://:9092
+
         ports:
         - 9092:9092
       zookeeper:
