@@ -14,6 +14,7 @@ def test_s3_file_connection_check_success(caplog, s3_file_connection):
     assert "type = S3" in caplog.text
     assert f"host = '{s3.host}'" in caplog.text
     assert f"port = {s3.port}" in caplog.text
+    assert f"protocol = '{s3.protocol}'" in caplog.text
     assert f"bucket = '{s3.bucket}'" in caplog.text
     assert f"access_key = '{s3.access_key}'" in caplog.text
     assert "secret_key = SecretStr('**********')" in caplog.text

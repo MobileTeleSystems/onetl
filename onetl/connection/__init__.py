@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from onetl.connection.file_connection.sftp import SFTP
     from onetl.connection.file_connection.webdav import WebDAV
     from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
+    from onetl.connection.file_df_connection.spark_s3 import SparkS3
 
 db_connection_modules = {
     "Clickhouse": "clickhouse",
@@ -65,6 +66,7 @@ file_connections_modules = {
 
 file_df_connections_modules = {
     "SparkLocalFS": "spark_local_fs",
+    "SparkS3": "spark_s3",
 }
 
 

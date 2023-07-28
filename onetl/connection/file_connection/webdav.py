@@ -119,7 +119,7 @@ class WebDAV(FileConnection, RenameDirMixin):
     password: SecretStr
     port: Optional[int] = None
     ssl_verify: Union[bool, FilePath, DirectoryPath, SSLContext] = True
-    protocol: Union[Literal["http"], Literal["https"]] = "https"
+    protocol: Literal["http", "https"] = "https"
 
     @root_validator
     def check_port(cls, values):

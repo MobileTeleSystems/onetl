@@ -5,6 +5,12 @@ on:
       minio-version:
         required: true
         type: string
+      spark-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
       python-version:
         required: true
         type: string
@@ -18,7 +24,7 @@ on:
 
 jobs:
   test-s3:
-    name: Run S3 tests (server=${{ inputs.minio-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run S3 tests (server=${{ inputs.minio-version }}, spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
     services:
       s3:
@@ -36,19 +42,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ inputs.python-version }}
+
+    - name: Cache Ivy
+      uses: actions/cache@v3
+      if: inputs.with-cache
+      with:
+        path: ~/.ivy2
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-s3-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-s3-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-s3-
 
     - name: Cache pip
       uses: actions/cache@v3
       if: inputs.with-cache
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-${{ hashFiles('requirements/core.txt', 'requirements/s3.txt', 'requirements/tests/base.txt') }}
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-${{ hashFiles('requirements/core.txt', 'requirements/s3.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt') }}
         restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-${{ hashFiles('requirements/core.txt', 'requirements/s3.txt', 'requirements/tests/base.txt') }}
+          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-${{ hashFiles('requirements/core.txt', 'requirements/s3.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt') }}
           ${{ runner.os }}-python-${{ inputs.python-version }}-tests-s3-
 
     - name: Upgrade pip
@@ -56,7 +78,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -I -r requirements/core.txt -r requirements/s3.txt -r requirements/tests/base.txt
+        pip install -I -r requirements/core.txt -r requirements/s3.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
     - name: Wait for S3 to be ready
       run: |
@@ -72,5 +94,5 @@ jobs:
     - name: Upload coverage results
       uses: actions/upload-artifact@v3
       with:
-        name: s3-${{ inputs.minio-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        name: s3-${{ inputs.minio-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*

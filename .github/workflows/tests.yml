@@ -256,7 +256,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-s3:
-    name: Run S3 tests (server=${{ matrix.minio-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run S3 tests (server=${{ matrix.minio-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -266,6 +266,8 @@ jobs:
     uses: ./.github/workflows/test-s3.yml
     with:
       minio-version: ${{ matrix.minio-version }}
+      spark-version: ${{ matrix.spark-version }}
+      java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
