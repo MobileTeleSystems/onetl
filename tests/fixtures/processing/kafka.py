@@ -89,6 +89,11 @@ class KafkaProcessing(BaseProcessing):
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
 
+    def delete_topic(self, topics: list[str]):
+        admin = self.admin
+        # https://github.com/confluentinc/confluent-kafka-python/issues/813
+        admin.delete_topics(topics, request_timeout=3)
+
     def get_expected_dataframe(  # noqa: WPS463
         self,
         schema: str,

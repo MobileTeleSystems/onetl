@@ -21,9 +21,7 @@ def create_kafka_data(spark):
 
     yield topic, proc, df
     # Release
-    admin = proc.admin
-    # https://github.com/confluentinc/confluent-kafka-python/issues/813
-    admin.delete_topics([topic], request_timeout=3)
+    proc.delete_topic([topic])
 
 
 def test_kafka_reader(spark, kafka_processing):
