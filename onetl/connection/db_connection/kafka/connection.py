@@ -218,6 +218,40 @@ class Kafka(DBConnection):
         pass
 
     @slot
+    def get_df_schema(
+        self,
+        source: str,
+        columns: list[str] | None = None,
+        options: dict | None = None,
+    ) -> StructType:
+        from pyspark.sql.types import (  # noqa:  WPS442
+            BinaryType,
+            IntegerType,
+            LongType,
+            StringType,
+            StructField,
+            StructType,
+            TimestampType,
+        )
+
+        log.info("|%s| Fetching schema for Kafka", self.__class__.__name__)
+
+        schema = StructType(
+            [
+                StructField("key", BinaryType(), nullable=True),
+                StructField("value", BinaryType(), nullable=True),
+                StructField("topic", StringType(), nullable=True),
+                StructField("partition", IntegerType(), nullable=True),
+                StructField("offset", LongType(), nullable=True),
+                StructField("timestamp", TimestampType(), nullable=True),
+                StructField("timestampType", IntegerType(), nullable=True),
+            ],
+        )
+        log.info("|%s| Schema fetched", self.__class__.__name__)
+
+        return schema
+
+    @slot
     @classmethod
     def get_packages(
         cls,
