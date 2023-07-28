@@ -376,7 +376,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     .. warning::
 
-        Not every `DB connection <https://onetl.readthedocs.io/en/0.8.1/db_connection/index.html>`_
+        Not every :ref:`DB connection <db-connections>`
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the IncrementalBatchStrategy.
 
