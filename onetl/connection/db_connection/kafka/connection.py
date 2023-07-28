@@ -151,7 +151,7 @@ class Kafka(DBConnection):
     cluster: Cluster
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
-    extra: Extra = Extra()  # type: ignore
+    extra: KafkaExtra = KafkaExtra()
 
     def read_source_as_df(  # type: ignore
         self,
@@ -162,8 +162,21 @@ class Kafka(DBConnection):
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
+        options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
-        pass
+        result_options: dict = {
+            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
+        }
+        result_options.update(options.dict(by_alias=True, exclude_none=True))
+        result_options.update(self.protocol.get_options(self))
+
+        if self.auth:  # pragma: no cover
+            result_options.update(self.auth.get_options(self))
+
+        result_options.update(
+            {"kafka.bootstrap.servers": ",".join(self.addresses), "subscribe": source},
+        )
+        return self.spark.read.format("kafka").options(**result_options).load()
 
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
@@ -176,7 +189,9 @@ class Kafka(DBConnection):
     ) -> list[str]:
         spark_ver = Version.parse(spark_version)
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
-        return [f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
+        return [
+            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
+        ]
 
     @property
     def instance_url(self):

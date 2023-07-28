@@ -42,7 +42,10 @@ def test_kafka_jars(spark_version, scala_version_input, scala_version_real):
         ("startingTimestamp", "startingTimestamp_value"),
         ("endingOffsets", "endingOffsets_value"),
         ("endingOffsetsByTimestamp", "endingOffsetsByTimestamp_value"),
-        ("startingOffsetsByTimestampStrategy", "startingOffsetsByTimestampStrategy_value"),
+        (
+            "startingOffsetsByTimestampStrategy",
+            "startingOffsetsByTimestampStrategy_value",
+        ),
         ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
         ("kafka.group.id", "kafka.group.id_value"),
         ("topic", "topic_value"),
