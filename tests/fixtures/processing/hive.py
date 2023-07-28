@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
+from logging import getLogger
 from typing import TYPE_CHECKING
 
 import pandas
@@ -10,6 +11,8 @@ from tests.fixtures.processing.base_processing import BaseProcessing
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
+
+logger = getLogger(__name__)
 
 
 class HiveProcessing(BaseProcessing):
