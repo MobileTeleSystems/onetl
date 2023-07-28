@@ -6,6 +6,8 @@ import pytest
 from onetl.connection import Kafka
 from onetl.db import DBReader
 
+pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
+
 
 @pytest.fixture(name="schema")
 def dataframe_schema():
