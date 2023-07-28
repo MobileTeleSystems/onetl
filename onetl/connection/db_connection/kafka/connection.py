@@ -151,7 +151,7 @@ class Kafka(DBConnection):
     cluster: Cluster
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
-    extra: Extra = Extra()  # type: ignore
+    extra: KafkaExtra = KafkaExtra()
 
     def read_source_as_df(  # type: ignore
         self,
