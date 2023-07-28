@@ -388,12 +388,12 @@ class JDBCMixin(FrozenModel):
         try:
             try_import_java_class(self.spark, self.driver)
         except Exception:
-            log.error(
-                MISSING_JVM_CLASS_MSG,
-                self.driver,
-                f"{self.__class__.__name__}.package",
-                exc_info=False,
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=self.driver,
+                package_source=self.__class__.__name__,
+                args="",
             )
+            log.error(msg, exc_info=False)
             raise
 
     def _query_on_driver(

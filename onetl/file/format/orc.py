@@ -22,14 +22,23 @@ from onetl.hooks import slot, support_hooks
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
-READ_OPTIONS = {
-    "mergeSchema",
-}
+PROHIBITED_OPTIONS = frozenset(
+    (
+        # These options should be passed in Spark session config, not file format options
+        "spark.*",
+    ),
+)
 
-WRITE_OPTIONS = {
-    "compression",
-    "orc.*",
-}
+READ_OPTIONS = frozenset(
+    ("mergeSchema",),
+)
+
+WRITE_OPTIONS = frozenset(
+    (
+        "compression",
+        "orc.*",
+    ),
+)
 
 
 @support_hooks
@@ -63,6 +72,7 @@ class ORC(ReadWriteFileFormat):
 
     class Config:
         known_options = READ_OPTIONS | WRITE_OPTIONS
+        prohibited_options = PROHIBITED_OPTIONS
         extra = "allow"
 
     @slot

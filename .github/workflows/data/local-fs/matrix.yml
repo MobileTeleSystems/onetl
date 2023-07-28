@@ -4,6 +4,12 @@ min: &min
   java-version: 8
   os: ubuntu-latest
 
+avro: &avro
+  spark-version: 2.4.8
+  python-version: '3.7'
+  java-version: 8
+  os: ubuntu-latest
+
 max: &max
   spark-version: 3.4.1
   python-version: '3.11'
@@ -19,9 +25,12 @@ latest: &latest
 matrix:
   small:
   - <<: *max
+  - <<: *avro
   full:
   - <<: *min
+  - <<: *avro
   - <<: *max
   nightly:
   - <<: *min
+  - <<: *avro
   - <<: *latest

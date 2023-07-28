@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 
+from onetl.file.format.avro import Avro
 from onetl.file.format.csv import CSV
 from onetl.file.format.json import JSON
 from onetl.file.format.jsonline import JSONLine

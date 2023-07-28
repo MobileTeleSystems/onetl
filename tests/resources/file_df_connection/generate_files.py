@@ -7,16 +7,21 @@ import gzip
 import io
 import json
 import os
+import random
 import shutil
 import sys
 from argparse import ArgumentParser
+from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, Any, Iterator, TextIO
 
 if TYPE_CHECKING:
+    from avro.schema import Schema as AvroSchema
     from pyarrow import Schema as ArrowSchema
     from pyarrow import Table as ArrowTable
+
+SEED = 42
 
 
 def get_data() -> list[dict]:
@@ -100,6 +105,25 @@ def get_pyarrow_table(data: list[dict]) -> ArrowTable:
 
     schema = get_pyarrow_schema()
     return pa.Table.from_pylist(data, schema)
+
+
+def get_avro_schema() -> AvroSchema:
+    from avro.schema import parse as parse_avro_schema
+
+    schema = {
+        "namespace": "my.namespace",
+        "type": "record",
+        "name": "MyType",
+        "fields": [
+            {"name": "id", "type": "int"},
+            {"name": "str_value", "type": "string"},
+            {"name": "int_value", "type": "int"},
+            {"name": "date_value", "type": {"type": "int", "logicalType": "date"}},
+            {"name": "datetime_value", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+            {"name": "float_value", "type": "double"},
+        ],
+    }
+    return parse_avro_schema(json.dumps(schema))
 
 
 def _to_string(obj):
@@ -309,12 +333,62 @@ def save_as_parquet(data: list[dict], path: Path) -> None:
     save_as_parquet_snappy(data, root / "with_compression")
 
 
+@contextmanager
+def temporary_set_seed(seed: int) -> Iterator[int]:
+    """Set random.seed to expected value, and return previous value after exit"""
+    state = random.getstate()
+    try:  # noqa: WPS501
+        random.seed(seed)
+        yield seed
+    finally:
+        random.setstate(state)
+
+
+def save_as_avro_plain(data: list[dict], path: Path) -> None:
+    from avro.datafile import DataFileWriter
+    from avro.io import DatumWriter
+
+    path.mkdir(parents=True, exist_ok=True)
+    schema = get_avro_schema()
+    with open(path / "file.avro", "wb") as file:
+        # DataFileWriter.sync_marker is initialized with randbytes
+        # temporary set seed to avoid generating files with different hashes
+        with temporary_set_seed(SEED):
+            with DataFileWriter(file, DatumWriter(), schema) as writer:
+                for row in data:
+                    writer.append(row)
+
+
+def save_as_avro_snappy(data: list[dict], path: Path) -> None:
+    from avro.datafile import DataFileWriter
+    from avro.io import DatumWriter
+
+    path.mkdir(parents=True, exist_ok=True)
+    schema = get_avro_schema()
+    with open(path / "file.snappy.avro", "wb") as file:
+        # DataFileWriter.sync_marker is initialized with randbytes
+        # temporary set seed to avoid generating files with different hashes
+        with temporary_set_seed(SEED):
+            with DataFileWriter(file, DatumWriter(), schema, codec="snappy") as writer:
+                for row in data:
+                    writer.append(row)
+
+
+def save_as_avro(data: list[dict], path: Path) -> None:
+    root = path / "avro"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_avro_plain(data, root / "without_compression")
+    save_as_avro_snappy(data, root / "with_compression")
+
+
 format_mapping = {
     "csv": save_as_csv,
     "json": save_as_json,
     "jsonline": save_as_jsonline,
     "orc": save_as_orc,
     "parquet": save_as_parquet,
+    "avro": save_as_avro,
 }
 
 
