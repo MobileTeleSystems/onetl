@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import os
-from logging import getLogger
 
 import pandas
 import pymysql
 from pandas.io import sql as psql
 
 from tests.fixtures.processing.base_processing import BaseProcessing
-
-logger = getLogger(__name__)
 
 
 class MySQLProcessing(BaseProcessing):

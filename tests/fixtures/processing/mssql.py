@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from logging import getLogger
 
 import pandas
 import pymssql
 from pandas.io import sql as psql
 
 from tests.fixtures.processing.base_processing import BaseProcessing
-
-logger = getLogger(__name__)
 
 
 class MSSQLProcessing(BaseProcessing):

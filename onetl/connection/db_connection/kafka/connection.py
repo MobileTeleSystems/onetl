@@ -165,8 +165,7 @@ class Kafka(DBConnection):
         **kwargs,
     ) -> DataFrame:
         options: dict = {
-            f"kafka.{key}": value
-            for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()  # type: ignore
+            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
         }
         options.update(self.protocol.get_options(self))
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
+from logging import getLogger
 from typing import TYPE_CHECKING
 
 import pandas
 from confluent_kafka import Producer
-from pyspark.sql.functions import col, from_json
-from pyspark.sql.types import FloatType, LongType, StringType, StructField, StructType
+from confluent_kafka.admin import AdminClient
 
 from tests.fixtures.processing.base_processing import BaseProcessing
 
@@ -14,7 +14,18 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
 
 
+logger = getLogger(__name__)
+
+
 class KafkaProcessing(BaseProcessing):
+    from pyspark.sql.types import (
+        FloatType,
+        LongType,
+        StringType,
+        StructField,
+        StructType,
+    )
+
     column_names: list[str] = ["id_int", "text_string", "hwm_int", "float_value"]
     schema = StructType(
         [
@@ -25,8 +36,13 @@ class KafkaProcessing(BaseProcessing):
         ],
     )
 
-    def get_conn(self) -> Producer:
+    @property
+    def producer(self) -> Producer:
         return Producer({"bootstrap.servers": f"{self.host}:{self.port}"})
+
+    @property
+    def admin(self) -> AdminClient:
+        return AdminClient({"bootstrap.servers": f"{self.host}:{self.port}"})
 
     @property
     def user(self) -> str:
@@ -61,12 +77,12 @@ class KafkaProcessing(BaseProcessing):
         """Called once for each message produced to indicate delivery result.
         Triggered by poll() or flush()."""
         if err is not None:
-            print(f"Message delivery failed: {err}")
+            logger.debug("Message delivery failed: %s", err)
         else:
             pass
 
     def send_message(self, topic, message):
-        producer = self.get_conn()
+        producer = self.producer
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
@@ -91,13 +107,10 @@ class KafkaProcessing(BaseProcessing):
         **kwargs,
     ) -> None:
         """Checks that df and other_frame are equal"""
+        from pyspark.sql.functions import col, from_json
 
-        value_df = df.select(from_json(col=col("value").cast("string"), schema=self.schema).alias("value"))
-        value_df = (
-            value_df.withColumn("id_int", col("value").getField("id_int"))
-            .withColumn("text_string", col("value").getField("text_string"))
-            .withColumn("hwm_int", col("value").getField("hwm_int"))
-            .withColumn("float_value", col("value").getField("float_value"))
-        ).select(["id_int", "text_string", "hwm_int", "float_value"])
+        df_from_value_field = df.select(
+            from_json(col=col("value").cast("string"), schema=self.schema).alias("value"),
+        ).select("value.*")
 
-        return super().assert_equal_df(df=value_df, other_frame=other_frame)
+        return super().assert_equal_df(df=df_from_value_field, other_frame=other_frame)

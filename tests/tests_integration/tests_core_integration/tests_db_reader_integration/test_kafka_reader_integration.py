@@ -1,9 +1,7 @@
 import json
 import secrets
-from time import sleep
 
 import pytest
-from confluent_kafka.admin import AdminClient
 
 from onetl.connection import Kafka
 from onetl.db import DBReader
@@ -23,9 +21,9 @@ def create_kafka_data(spark):
 
     yield topic, proc, df
     # Release
-    admin = AdminClient({"bootstrap.servers": f"{proc.host}:{proc.port}"})
-    admin.delete_topics([topic])
-    sleep(3)
+    admin = proc.admin
+    # https://github.com/confluentinc/confluent-kafka-python/issues/813
+    admin.delete_topics([topic], request_timeout=3)
 
 
 def test_kafka_reader(spark, kafka_processing):
