@@ -16,23 +16,7 @@ logger = getLogger(__name__)
 
 
 class KafkaProcessing(BaseProcessing):
-    from pyspark.sql.types import (
-        FloatType,
-        LongType,
-        StringType,
-        StructField,
-        StructType,
-    )
-
     column_names: list[str] = ["id_int", "text_string", "hwm_int", "float_value"]
-    schema = StructType(
-        [
-            StructField("id_int", LongType(), True),
-            StructField("text_string", StringType(), True),
-            StructField("hwm_int", LongType(), True),
-            StructField("float_value", FloatType(), True),
-        ],
-    )
 
     @property
     def producer(self):
@@ -116,8 +100,10 @@ class KafkaProcessing(BaseProcessing):
         """Checks that df and other_frame are equal"""
         from pyspark.sql.functions import col, from_json
 
+        df_schema = kwargs["df_schema"]
+
         df_from_value_field = df.select(
-            from_json(col=col("value").cast("string"), schema=self.schema).alias("value"),
+            from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
         ).select("value.*")
 
         return super().assert_equal_df(df=df_from_value_field, other_frame=other_frame)

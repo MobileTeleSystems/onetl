@@ -7,6 +7,26 @@ from onetl.connection import Kafka
 from onetl.db import DBReader
 
 
+@pytest.fixture(name="schema")
+def dataframe_schema():
+    from pyspark.sql.types import (
+        FloatType,
+        LongType,
+        StringType,
+        StructField,
+        StructType,
+    )
+
+    return StructType(
+        [
+            StructField("id_int", LongType(), True),
+            StructField("text_string", StringType(), True),
+            StructField("hwm_int", LongType(), True),
+            StructField("float_value", FloatType(), True),
+        ],
+    )
+
+
 @pytest.fixture(name="kafka_processing")
 def create_kafka_data(spark):
     from tests.fixtures.processing.kafka import KafkaProcessing
@@ -24,7 +44,7 @@ def create_kafka_data(spark):
     proc.delete_topic([topic])
 
 
-def test_kafka_reader(spark, kafka_processing):
+def test_kafka_reader(spark, kafka_processing, schema):
     # Arrange
     topic, processing, expected_df = kafka_processing
 
@@ -42,4 +62,4 @@ def test_kafka_reader(spark, kafka_processing):
     df = reader.run()
 
     # Assert
-    processing.assert_equal_df(df, other_frame=expected_df)
+    processing.assert_equal_df(df, other_frame=expected_df, df_schema=schema)
