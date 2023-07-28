@@ -52,7 +52,7 @@ def spark_packages():
         Oracle.package,
         Postgres.package,
         Teradata.package,
-        ",".join(Kafka.get_package_spark(spark_version="3.4.1")),
+        ",".join(Kafka.get_package_spark(spark_version=str(pyspark_version))),
     ]
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
