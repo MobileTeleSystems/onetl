@@ -168,15 +168,15 @@ class Kafka(DBConnection):
             f"kafka.{key}": value
             for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()  # type: ignore[attr-defined]
         }
-        options.update(self.protocol.get_options(self))  # pragma: no cever
+        options.update(self.protocol.get_options(self))  # pragma: no cover
 
         if self.auth:
-            options.update(self.auth.get_options(self))  # pragma: no cever
+            options.update(self.auth.get_options(self))  # pragma: no cover
 
-        options.update(  # pragma: no cever
+        options.update(  # pragma: no cover
             {"kafka.bootstrap.servers": ",".join(self.addresses), "subscribe": source},
         )
-        return self.spark.read.format("kafka").options(**options).load()  # pragma: no cever
+        return self.spark.read.format("kafka").options(**options).load()  # pragma: no cover
 
     def write_df_to_target(self, df: DataFrame, target: str) -> None:
         pass
