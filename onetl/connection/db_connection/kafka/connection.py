@@ -90,7 +90,7 @@ class Kafka(DBConnection):
 
         See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
         `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
-        for more details
+        for more details.
 
     .. warning::
 
@@ -99,7 +99,7 @@ class Kafka(DBConnection):
 
     .. warning::
 
-        At current version Kafka connection doesn't support BatchHWMStrategy
+        At current version Kafka connection doesn't support batch strategies.
 
     Examples
     --------
