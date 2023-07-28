@@ -90,12 +90,16 @@ class Kafka(DBConnection):
 
         See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
         `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
-        for more details
+        for more details.
 
     .. warning::
 
         If there is no file on the driver, then Spark will not be able to build a query execution plan,
         if there is no file on the executors, then they will not be able to read the data.
+
+    .. warning::
+
+        At current version Kafka connection doesn't support batch strategies.
 
     Examples
     --------
@@ -180,16 +184,6 @@ class Kafka(DBConnection):
 
     def check(self):
         return self
-
-    def get_min_max_bounds(  # type: ignore
-        self,
-        table: str,
-        column: str,
-        expression: str | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-    ) -> tuple[Any, Any]:
-        ...
 
     @validator("addresses")
     def _validate_addresses(cls, value):

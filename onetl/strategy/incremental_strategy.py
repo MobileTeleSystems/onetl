@@ -374,6 +374,12 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         All of that allows to resume reading process from the *last successful batch*.
 
+    .. warning::
+
+        Not every :ref:`DB connection <db-connections>`
+        supports batch strategy. For example, Kafka connection doesn't support it.
+        Make sure the connection you use is compatible with the IncrementalBatchStrategy.
+
     Parameters
     ----------
     step : Any
