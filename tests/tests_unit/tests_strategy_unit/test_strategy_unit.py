@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from onetl.connection import Postgres
+from onetl.connection import Kafka, Postgres
 from onetl.db import DBReader
 from onetl.strategy import (
     IncrementalBatchStrategy,
@@ -55,4 +55,26 @@ def test_strategy_hwm_column_not_set(check, strategy, kwargs, spark_mock):
         )
 
         with pytest.raises(ValueError):
+            reader.run()
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        IncrementalBatchStrategy,
+        SnapshotBatchStrategy,
+    ],
+)
+def test_strategy_kafka_with_batch_strategy_error(strategy, spark_mock):
+    with strategy(step=10):
+        reader = DBReader(
+            connection=Kafka(
+                addresses=["localhost:9092"],
+                cluster="my_cluster",
+                spark=spark_mock,
+            ),
+            table="topic",
+            hwm_column="offset",
+        )
+        with pytest.raises(ValueError, match="connection does not support BatchHWMStrategy"):
             reader.run()
