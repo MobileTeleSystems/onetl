@@ -97,10 +97,6 @@ class SparkLocalFS(SparkFileDFConnection):
             raise ValueError(f"Currently supports only spark.master='local', got {master!r}")
         return spark
 
-    @property
-    def _installation_instructions(self) -> str:
-        return "Please install Spark with Hadoop libraries"
-
     def _convert_to_url(self, path: PurePathProtocol) -> str:
         # "file:///absolute/path" on Unix
         # "file:///c:/absolute/path" on Windows

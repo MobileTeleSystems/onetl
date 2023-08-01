@@ -1,18 +1,30 @@
 min: &min
+  hadoop-version: hadoop2-hdfs
+  spark-version: 2.3.1
   python-version: '3.7'
+  java-version: 8
   os: ubuntu-latest
 
 max: &max
+  hadoop-version: hadoop3-hdfs
+  spark-version: 3.4.1
   python-version: '3.11'
+  java-version: 17
+  os: ubuntu-latest
+
+latest: &latest
+  hadoop-version: hadoop3-hdfs
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 20
   os: ubuntu-latest
 
 matrix:
   small:
-  - hadoop-version: hadoop3-hdfs
-    <<: *max
-  full: &full
-  - hadoop-version: hadoop2-hdfs
-    <<: *min
-  - hadoop-version: hadoop3-hdfs
-    <<: *max
-  nightly: *full
+  - *max
+  full:
+  - *min
+  - *max
+  nightly:
+  - *min
+  - *latest

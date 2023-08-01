@@ -10,7 +10,7 @@ from tests.util.upload_files import upload_files
 @pytest.fixture(
     scope="session",
     params=[
-        pytest.param("real-s3", marks=[pytest.mark.s3, pytest.mark.file_connection, pytest.mark.connection]),
+        pytest.param("real-s3", marks=[pytest.mark.s3, pytest.mark.connection]),
     ],
 )
 def s3_server():
@@ -79,7 +79,7 @@ def s3_file_connection_with_path_and_files(resource_path, s3_file_connection_wit
         pytest.param("s3-file-df", marks=[pytest.mark.file_df_connection, pytest.mark.connection]),
     ],
 )
-def s3_file_df_connection(s3_file_connection, spark, s3_server):
+def s3_file_df_connection(spark, s3_server):
     from onetl.connection import SparkS3
 
     return SparkS3(
