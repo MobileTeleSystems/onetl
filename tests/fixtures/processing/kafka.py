@@ -72,6 +72,35 @@ class KafkaProcessing(BaseProcessing):
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
+    def read_data_earliest(self, topic, timeout=1.0):
+        from confluent_kafka import Consumer
+
+        conf = {
+            "bootstrap.servers": f"{self.host}:{self.port}",
+            "group.id": "mygroup",
+            "auto.offset.reset": "earliest",
+        }
+
+        consumer = Consumer(conf)
+        consumer.subscribe([topic])
+
+        messages = []
+        while True:
+            msg = consumer.poll(timeout)
+            if msg is None:
+                break
+            if msg.error():
+                logger.error(f"Consumer error: {msg.error()}")
+                continue
+
+            key = msg.key()
+            value = msg.value()
+
+            messages.append((key, value))
+
+        consumer.close()
+        return messages
+
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
 
