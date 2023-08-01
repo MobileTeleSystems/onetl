@@ -64,4 +64,4 @@ def test_kafka_reader(spark, kafka_processing, schema):
     df = reader.run()
 
     # Assert
-    processing.assert_equal_df(df, other_frame=expected_df, df_schema=schema)
+    processing.assert_equal_df(processing.json_serialize(df, df_schema=schema), other_frame=expected_df)

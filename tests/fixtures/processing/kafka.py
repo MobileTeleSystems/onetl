@@ -115,22 +115,19 @@ class KafkaProcessing(BaseProcessing):
     ) -> pandas.DataFrame:
         pass
 
-    def assert_equal_df(
+    def json_serialize(
         self,
         df: SparkDataFrame,
+        df_schema: str,
         schema: str | None = None,
         table: str | None = None,
         order_by: str | None = None,
-        other_frame: pandas.DataFrame | SparkDataFrame | None = None,
-        **kwargs,
-    ) -> None:
-        """Checks that df and other_frame are equal"""
+    ) -> SparkDataFrame:
+        """Serializes dataframe to JSON"""
         from pyspark.sql.functions import col, from_json
 
-        df_schema = kwargs.get("df_schema")
-        if df_schema:
-            df = df.select(
-                from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
-            ).select("value.*")
+        df = df.select(
+            from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
+        ).select("value.*")
 
-        return super().assert_equal_df(df=df, other_frame=df)
+        return df  # noqa:  WPS331
