@@ -25,14 +25,16 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-PROHIBITED_OPTIONS = {
-    "ignoreCorruptFiles",
-    "ignoreMissingFiles",
-    "modifiedAfter",
-    "modifiedBefore",
-    "pathGlobFilter",
-    "recursiveFileLookup",
-}
+PROHIBITED_OPTIONS = frozenset(
+    (
+        "ignoreCorruptFiles",
+        "ignoreMissingFiles",
+        "modifiedAfter",
+        "modifiedBefore",
+        "pathGlobFilter",
+        "recursiveFileLookup",
+    ),
+)
 
 
 @support_hooks

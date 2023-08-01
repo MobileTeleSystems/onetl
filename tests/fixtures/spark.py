@@ -43,6 +43,7 @@ def maven_packages():
         Postgres,
         Teradata,
     )
+    from onetl.file.format import Avro
 
     pyspark_version = get_pyspark_version()
     packages = (
@@ -55,14 +56,18 @@ def maven_packages():
         + Kafka.get_packages(spark_version=pyspark_version)
     )
 
-    if pyspark_version >= (3, 2):
-        # There is no MongoDB connector for Spark less than 3.2
-        packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
-
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
     if with_greenplum:
         # Greenplum connector jar is not publicly available,
         packages.extend(Greenplum.get_packages(spark_version=pyspark_version))
+
+    if pyspark_version >= (2, 4):
+        # There is no Avro package for Spark 2.3
+        packages.extend(Avro.get_packages(spark_version=pyspark_version))
+
+    if pyspark_version >= (3, 2):
+        # There is no MongoDB connector for Spark less than 3.2
+        packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
 
     return packages
 

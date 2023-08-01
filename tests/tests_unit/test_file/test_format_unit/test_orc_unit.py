@@ -24,3 +24,16 @@ def test_orc_options_unknown(caplog):
         assert orc.unknown == "abc"
 
     assert ("Options ['unknown'] are not known by ORC, are you sure they are valid?") in caplog.text
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        "spark.sql.orc.impl",
+        "spark.sql.orc.enableVectorizedReader",
+    ],
+)
+def test_orc_options_prohibited(option):
+    msg = rf"Options \['{option}'\] are not allowed to use in a ORC"
+    with pytest.raises(ValueError, match=msg):
+        ORC.parse({option: "value"})

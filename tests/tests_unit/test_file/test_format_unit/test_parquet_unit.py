@@ -26,3 +26,16 @@ def test_parquet_options_unknown(caplog):
         assert parquet.unknown == "abc"
 
     assert ("Options ['unknown'] are not known by Parquet, are you sure they are valid?") in caplog.text
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        "spark.sql.parquet.binaryAsString",
+        "spark.sql.parquet.int96AsTimestamp",
+    ],
+)
+def test_parquet_options_prohibited(option):
+    msg = rf"Options \['{option}'\] are not allowed to use in a Parquet"
+    with pytest.raises(ValueError, match=msg):
+        Parquet.parse({option: "value"})

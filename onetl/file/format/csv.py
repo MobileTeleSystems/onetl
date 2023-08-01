@@ -25,41 +25,47 @@ if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
 
-READ_WRITE_OPTIONS = {
-    "charToEscapeQuoteEscaping",
-    "dateFormat",
-    "emptyValue",
-    "ignoreLeadingWhiteSpace",
-    "ignoreTrailingWhiteSpace",
-    "nullValue",
-    "timestampFormat",
-    "timestampNTZFormat",
-}
+READ_WRITE_OPTIONS = frozenset(
+    (
+        "charToEscapeQuoteEscaping",
+        "dateFormat",
+        "emptyValue",
+        "ignoreLeadingWhiteSpace",
+        "ignoreTrailingWhiteSpace",
+        "nullValue",
+        "timestampFormat",
+        "timestampNTZFormat",
+    ),
+)
 
-READ_OPTIONS = {
-    "columnNameOfCorruptRecord",
-    "comment",
-    "enableDateTimeParsingFallback",
-    "enforceSchema",
-    "inferSchema",
-    "locale",
-    "maxCharsPerColumn",
-    "maxColumns",
-    "mode",
-    "multiLine",
-    "nanValue",
-    "negativeInf",
-    "positiveInf",
-    "preferDate",
-    "samplingRatio",
-    "unescapedQuoteHandling",
-}
+READ_OPTIONS = frozenset(
+    (
+        "columnNameOfCorruptRecord",
+        "comment",
+        "enableDateTimeParsingFallback",
+        "enforceSchema",
+        "inferSchema",
+        "locale",
+        "maxCharsPerColumn",
+        "maxColumns",
+        "mode",
+        "multiLine",
+        "nanValue",
+        "negativeInf",
+        "positiveInf",
+        "preferDate",
+        "samplingRatio",
+        "unescapedQuoteHandling",
+    ),
+)
 
-WRITE_OPTIONS = {
-    "compression",
-    "escapeQuotes",
-    "quoteAll",
-}
+WRITE_OPTIONS = frozenset(
+    (
+        "compression",
+        "escapeQuotes",
+        "quoteAll",
+    ),
+)
 
 
 @support_hooks
@@ -67,7 +73,7 @@ class CSV(ReadWriteFileFormat):
     """
     CSV file format. |support_hooks|
 
-    Based on `Spark CSV Files <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_ file format.
+    Based on `Spark CSV <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_ file format.
 
     Supports reading/writing files with ``.csv`` extension with content like:
 

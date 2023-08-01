@@ -7,6 +7,7 @@ File Formats
     :maxdepth: 1
     :caption: File formats
 
+    avro
     csv
     json
     jsonline

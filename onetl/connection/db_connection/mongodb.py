@@ -306,13 +306,13 @@ class MongoDB(DBConnection):
         elif spark_version:
             spark_ver = Version.parse(spark_version)
             if spark_ver.major < 3:
-                raise ValueError(f"Spark {spark_ver} is not supported by MongoDB connector")
+                raise ValueError(f"Spark {spark_ver} is not supported by {cls.__name__} connector")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
-            raise ValueError(f"Scala {scala_ver} is not supported by MongoDB connector")
+            raise ValueError(f"Scala {scala_ver} is not supported by {cls.__name__} connector")
 
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
 
@@ -892,16 +892,17 @@ class MongoDB(DBConnection):
         return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
 
     def _check_driver_imported(self):
-        class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
+        java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
 
         try:
-            try_import_java_class(self.spark, class_name)
-        except Exception as e:
+            try_import_java_class(self.spark, java_class)
+        except Exception:
             spark_version = str(get_spark_version(self.spark).digits(2)).replace(".", "_")
-            log.error(
-                MISSING_JVM_CLASS_MSG,
-                class_name,
-                f"{self.__class__.__name__}.package_spark_{spark_version}",
-                exc_info=False,
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=java_class,
+                package_source=self.__class__.__name__,
+                args=f"spark_version='{spark_version}'",
             )
-            raise e
+
+            log.error(msg, exc_info=False)
+            raise
