@@ -72,7 +72,7 @@ class KafkaProcessing(BaseProcessing):
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
-    def read_data_earliest(self, topic, timeout=1.0):
+    def read_data_earliest(self, topic, num_messages=1, timeout=1.0):
         from confluent_kafka import Consumer
 
         conf = {
@@ -84,11 +84,10 @@ class KafkaProcessing(BaseProcessing):
         consumer = Consumer(conf)
         consumer.subscribe([topic])
 
-        messages = []
-        while True:
-            msg = consumer.poll(timeout)
-            if msg is None:
-                break
+        messages = consumer.consume(num_messages=num_messages, timeout=timeout)
+
+        result = []
+        for msg in messages:
             if msg.error():
                 logger.error(f"Consumer error: {msg.error()}")
                 continue
@@ -96,10 +95,10 @@ class KafkaProcessing(BaseProcessing):
             key = msg.key()
             value = msg.value()
 
-            messages.append((key, value))
+            result.append((key.decode("utf-8"), value.decode("utf-8")))
 
         consumer.close()
-        return [(k.decode("utf-8"), v.decode("utf-8")) for k, v in messages]
+        return result
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
