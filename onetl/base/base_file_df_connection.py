@@ -94,6 +94,11 @@ class BaseFileDFConnection(BaseConnection):
         Convert path from string to object. |support_hooks|
         """
 
+    @property
+    @abstractmethod
+    def instance_url(self) -> str:
+        """Instance URL"""
+
     @abstractmethod
     def read_files_as_df(
         self,

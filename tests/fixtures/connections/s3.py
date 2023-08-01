@@ -26,11 +26,16 @@ def s3_server():
     )
 
 
-@pytest.fixture()
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param("s3-file", marks=[pytest.mark.file_connection, pytest.mark.connection]),
+    ],
+)
 def s3_file_connection(s3_server):
     from onetl.connection import S3
 
-    return S3(
+    s3 = S3(
         host=s3_server.host,
         port=s3_server.port,
         bucket=s3_server.bucket,
@@ -39,14 +44,16 @@ def s3_file_connection(s3_server):
         protocol=s3_server.protocol,
     )
 
+    if not s3.client.bucket_exists(s3_server.bucket):
+        s3.client.make_bucket(s3_server.bucket)
+
+    return s3
+
 
 @pytest.fixture()
 def s3_file_connection_with_path(request, s3_file_connection):
     connection = s3_file_connection
     root = PurePosixPath("/data")
-
-    if not connection.client.bucket_exists(connection.bucket):
-        connection.client.make_bucket(connection.bucket)
 
     def finalizer():
         connection.remove_dir(root, recursive=True)
@@ -54,7 +61,6 @@ def s3_file_connection_with_path(request, s3_file_connection):
     request.addfinalizer(finalizer)
 
     connection.remove_dir(root, recursive=True)
-    connection.create_dir(root)
 
     return connection, root
 
@@ -64,4 +70,41 @@ def s3_file_connection_with_path_and_files(resource_path, s3_file_connection_wit
     connection, upload_to = s3_file_connection_with_path
     upload_from = resource_path / "file_connection"
     files = upload_files(upload_from, upload_to, connection)
+    return connection, upload_to, files
+
+
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param("s3-file-df", marks=[pytest.mark.file_df_connection, pytest.mark.connection]),
+    ],
+)
+def s3_file_df_connection(s3_file_connection, spark, s3_server):
+    from onetl.connection import SparkS3
+
+    return SparkS3(
+        host=s3_server.host,
+        port=s3_server.port,
+        bucket=s3_server.bucket,
+        access_key=s3_server.access_key,
+        secret_key=s3_server.secret_key,
+        protocol=s3_server.protocol,
+        extra={
+            "path.style.access": True,
+        },
+        spark=spark,
+    )
+
+
+@pytest.fixture()
+def s3_file_df_connection_with_path(s3_file_connection_with_path, s3_file_df_connection):
+    _, root = s3_file_connection_with_path
+    return s3_file_df_connection, root
+
+
+@pytest.fixture()
+def s3_file_df_connection_with_path_and_files(resource_path, s3_file_connection, s3_file_df_connection_with_path):
+    connection, upload_to = s3_file_df_connection_with_path
+    upload_from = resource_path / "file_df_connection"
+    files = upload_files(upload_from, upload_to, s3_file_connection)
     return connection, upload_to, files

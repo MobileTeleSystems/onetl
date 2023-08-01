@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import os
+import socket
 from pathlib import Path
 
 from pydantic import validator
@@ -36,7 +37,19 @@ class SparkLocalFS(SparkFileDFConnection):
 
     .. warning::
 
-        Requires `Spark with Hadoop libraries <https://spark.apache.org/downloads.html>`_.
+        To use SparkLocalFS connector you should have PySpark installed (or injected to ``sys.path``)
+        BEFORE creating the connector instance.
+
+        You can install PySpark as follows:
+
+        .. code:: bash
+
+            pip install onetl[spark]  # latest PySpark version
+
+            # or
+            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+
+        See :ref:`spark-install` instruction for more details.
 
     .. warning::
 
@@ -71,6 +84,11 @@ class SparkLocalFS(SparkFileDFConnection):
     @slot
     def path_from_string(self, path: os.PathLike | str) -> Path:
         return LocalPath(os.fspath(path))
+
+    @property
+    def instance_url(self):
+        fqdn = socket.getfqdn()
+        return f"file://{fqdn}"
 
     @validator("spark")
     def _validate_spark(cls, spark):

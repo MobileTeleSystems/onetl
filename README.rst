@@ -92,6 +92,8 @@ Supported storages
 |                    | WebDAV       | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_                                           |
 +--------------------+--------------+--------------------------------------------------------------------------------------------------------------+
 | Files as DataFrame | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-generic-options.html>`_ |
+|                    +--------------+--------------------------------------------------------------------------------------------------------------+
+|                    | SparkS3      | `Hadoop AWS <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_ library       |
 +--------------------+--------------+--------------------------------------------------------------------------------------------------------------+
 
 
@@ -187,7 +189,7 @@ or inject PySpark to ``sys.path`` in some other way BEFORE creating a class inst
 With file connections
 ~~~~~~~~~~~~~~~~~~~~~
 
-All file connection classes (``FTP``,  ``SFTP``, ``HDFS`` and so on) requires specific Python clients to be installed.
+All File (but not *FileDF*) connection classes (``FTP``,  ``SFTP``, ``HDFS`` and so on) requires specific Python clients to be installed.
 
 Each client can be installed explicitly by passing connector name (in lowercase) to ``extras``:
 
