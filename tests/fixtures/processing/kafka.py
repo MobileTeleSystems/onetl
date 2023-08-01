@@ -10,6 +10,7 @@ from tests.fixtures.processing.base_processing import BaseProcessing
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
+    from pyspark.sql.types import StructType
 
 
 logger = getLogger(__name__)
@@ -118,7 +119,7 @@ class KafkaProcessing(BaseProcessing):
     def json_serialize(
         self,
         df: SparkDataFrame,
-        df_schema: str,
+        df_schema: StructType,
     ) -> SparkDataFrame:
         """Serializes dataframe to JSON"""
         from pyspark.sql.functions import col, from_json
