@@ -41,3 +41,4 @@ def test_kafka_writer_snapshot(spark, kafka_processing):
     read_df = spark.createDataFrame(data, ["key", "value"])
     assert len(data) == df.count()
     assert df.schema == read_df.schema
+    processing.assert_equal_df(df, other_frame=read_df)

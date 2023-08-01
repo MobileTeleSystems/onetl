@@ -73,7 +73,7 @@ class KafkaProcessing(BaseProcessing):
         producer.flush()
 
     def read_data_earliest(self, topic, num_messages=1, timeout=1.0):
-        from confluent_kafka import Consumer
+        from confluent_kafka import Consumer, KafkaException
 
         conf = {
             "bootstrap.servers": f"{self.host}:{self.port}",
@@ -89,8 +89,7 @@ class KafkaProcessing(BaseProcessing):
         result = []
         for msg in messages:
             if msg.error():
-                logger.error(f"Consumer error: {msg.error()}")
-                continue
+                raise KafkaException(msg.error())
 
             key = msg.key()
             value = msg.value()
@@ -128,10 +127,10 @@ class KafkaProcessing(BaseProcessing):
         """Checks that df and other_frame are equal"""
         from pyspark.sql.functions import col, from_json
 
-        df_schema = kwargs["df_schema"]
+        df_schema = kwargs.get("df_schema")
+        if df_schema:
+            df = df.select(
+                from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
+            ).select("value.*")
 
-        df_from_value_field = df.select(
-            from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
-        ).select("value.*")
-
-        return super().assert_equal_df(df=df_from_value_field, other_frame=other_frame)
+        return super().assert_equal_df(df=df, other_frame=df)
