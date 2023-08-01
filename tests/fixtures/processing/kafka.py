@@ -119,9 +119,6 @@ class KafkaProcessing(BaseProcessing):
         self,
         df: SparkDataFrame,
         df_schema: str,
-        schema: str | None = None,
-        table: str | None = None,
-        order_by: str | None = None,
     ) -> SparkDataFrame:
         """Serializes dataframe to JSON"""
         from pyspark.sql.functions import col, from_json
