@@ -8,7 +8,7 @@ from onetl.db import DBWriter
 pytestmark = pytest.mark.kafka
 
 
-@pytest.fixture(name="df")
+@pytest.fixture(name="kafka_processing")
 def create_kafka_df(spark):
     from tests.fixtures.processing.kafka import KafkaProcessing
 
@@ -23,8 +23,8 @@ def create_kafka_df(spark):
     proc.delete_topic([topic])
 
 
-def test_kafka_writer_snapshot(spark, df):
-    topic, processing, df = df
+def test_kafka_writer_snapshot(spark, kafka_processing):
+    topic, processing, df = kafka_processing
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
@@ -37,9 +37,8 @@ def test_kafka_writer_snapshot(spark, df):
     )
     writer.run(df)
 
-    messages = processing.read_data_earliest(topic)
-    assert len(messages) == df.count()
+    data = processing.read_data_earliest(topic)
+    assert len(data) == df.count()
 
-    data = [(k.decode("utf-8"), v.decode("utf-8")) for k, v in messages]
     read_df = spark.createDataFrame(data, ["key", "value"])
     assert df.schema == read_df.schema

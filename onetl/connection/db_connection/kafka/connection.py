@@ -225,6 +225,9 @@ class Kafka(DBConnection):
             f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
         }
         write_options.update(options.dict(by_alias=True, exclude_none=True))
+        write_options.update(self.protocol.get_options(self))
+        if self.auth:
+            write_options.update(self.auth.get_options(self))
         write_options.update({"kafka.bootstrap.servers": ",".join(self.addresses), "topic": target})
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)

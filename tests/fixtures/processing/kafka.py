@@ -99,7 +99,7 @@ class KafkaProcessing(BaseProcessing):
             messages.append((key, value))
 
         consumer.close()
-        return messages
+        return [(k.decode("utf-8"), v.decode("utf-8")) for k, v in messages]
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
