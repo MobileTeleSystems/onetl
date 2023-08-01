@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 import pytest
 
@@ -9,7 +10,7 @@ pytestmark = [pytest.mark.greenplum, pytest.mark.db_connection, pytest.mark.conn
 
 
 def test_greenplum_driver():
-    assert Greenplum.driver == "org.postgresql.Driver"
+    assert Greenplum.DRIVER == "org.postgresql.Driver"
 
 
 def test_greenplum_package():
@@ -68,6 +69,19 @@ def test_greenplum_get_packages_scala_version_not_supported(scala_version):
 )
 def test_greenplum_get_packages(spark_version, scala_version, package):
     assert Greenplum.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+
+
+def test_greenplum_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'io.pivotal.greenplum.spark.GreenplumRelationProvider'"
+    with pytest.raises(ValueError, match=msg):
+        with patch.object(spark_no_packages, "version", new="3.2.0"):
+            Greenplum(
+                host="some_host",
+                user="user",
+                database="database",
+                password="passwd",
+                spark=spark_no_packages,
+            )
 
 
 def test_greenplum(spark_mock):

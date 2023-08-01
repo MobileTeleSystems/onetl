@@ -20,7 +20,7 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, validator
 
 from onetl._internal import clear_statement, stringify, to_camel
 from onetl._util.java import get_java_gateway, try_import_java_class
@@ -66,8 +66,8 @@ class JDBCMixin(FrozenModel):
     spark: SparkSession = Field(repr=False)
     user: str
     password: SecretStr
-    driver: ClassVar[str]
-    _check_query: ClassVar[str]
+    DRIVER: ClassVar[str]
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
     class JDBCOptions(GenericOptions):
         """Generic options, related to specific JDBC driver.
@@ -149,15 +149,14 @@ class JDBCMixin(FrozenModel):
 
     @slot
     def check(self):
-        self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()  # type: ignore
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(self._check_query, level=logging.DEBUG)
+        log_lines(self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))  # type: ignore
+            self._query_optional_on_driver(self._CHECK_QUERY, self.JDBCOptions(fetchsize=1))  # type: ignore
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -249,7 +248,6 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
-        self._check_driver_imported()
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -364,7 +362,6 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
-        self._check_driver_imported()
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
@@ -384,17 +381,20 @@ class JDBCMixin(FrozenModel):
             log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
 
-    def _check_driver_imported(self):
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
         try:
-            try_import_java_class(self.spark, self.driver)
-        except Exception:
+            try_import_java_class(spark, cls.DRIVER)
+        except Exception as e:
             msg = MISSING_JVM_CLASS_MSG.format(
-                java_class=self.driver,
-                package_source=self.__class__.__name__,
+                java_class=cls.DRIVER,
+                package_source=cls.__name__,
                 args="",
             )
-            log.error(msg, exc_info=False)
-            raise
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark
 
     def _query_on_driver(
         self,
@@ -448,7 +448,7 @@ class JDBCMixin(FrozenModel):
             update={
                 "user": self.user,
                 "password": self.password.get_secret_value() if self.password is not None else "",
-                "driver": self.driver,
+                "driver": self.DRIVER,
                 "url": self.jdbc_url,
             },
         ).dict(by_alias=True, **kwargs)

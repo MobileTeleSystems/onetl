@@ -36,8 +36,6 @@ log = getLogger(__name__)
 class DBConnection(BaseDBConnection, FrozenModel):
     spark: SparkSession = Field(repr=False)
 
-    _check_query: ClassVar[str] = "SELECT 1"
-
     class Dialect(BaseDBConnection.Dialect):
         @classmethod
         def _expression_with_alias(cls, expression: str, alias: str) -> str:

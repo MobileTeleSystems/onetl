@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.clickhouse, pytest.mark.db_connection, pytest.mark.con
 
 
 def test_clickhouse_driver():
-    assert Clickhouse.driver == "ru.yandex.clickhouse.ClickHouseDriver"
+    assert Clickhouse.DRIVER == "ru.yandex.clickhouse.ClickHouseDriver"
 
 
 def test_clickhouse_package():
@@ -19,6 +19,18 @@ def test_clickhouse_package():
 
 def test_clickhouse_get_packages():
     assert Clickhouse.get_packages() == ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
+
+
+def test_clickhouse_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'ru.yandex.clickhouse.ClickHouseDriver'"
+    with pytest.raises(ValueError, match=msg):
+        Clickhouse(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_clickhouse(spark_mock):

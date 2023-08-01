@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.mssql, pytest.mark.db_connection, pytest.mark.connecti
 
 
 def test_mssql_class_attributes():
-    assert MSSQL.driver == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    assert MSSQL.DRIVER == "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 
 
 def test_mssql_package():
@@ -39,6 +39,18 @@ def test_mssql_get_packages_java_version_not_supported(java_version):
 )
 def test_mssql_get_packages(java_version, package):
     assert MSSQL.get_packages(java_version=java_version) == [package]
+
+
+def test_mssql_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'com.microsoft.sqlserver.jdbc.SQLServerDriver'"
+    with pytest.raises(ValueError, match=msg):
+        MSSQL(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_mssql(spark_mock):

@@ -107,8 +107,9 @@ def test_avro_options_prohibited(option):
         Avro.parse({option: "value"})
 
 
+@pytest.mark.local_fs
 def test_avro_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'org.apache.spark.sql.avro.AvroFileFormat'"
     with pytest.raises(ValueError, match=msg):
         with patch.object(spark_no_packages, "version", new="2.4.0"):
-            Avro.check_if_supported(spark_no_packages)
+            Avro().check_if_supported(spark_no_packages)
