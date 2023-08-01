@@ -503,7 +503,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return user
 
-    @root_validator(pre=True)
+    @root_validator
     def validate_cluster_or_hostname_set(cls, values):
         host = values.get("host")
         cluster = values.get("cluster")
@@ -631,9 +631,7 @@ class HDFS(FileConnection, RenameDirMixin):
         class_name = self.__class__.__name__
         log.info("|%s| Detecting active namenode of cluster %r ...", class_name, self.cluster)
 
-        host: str | None = None
         namenodes = self.slots.get_cluster_namenodes(self.cluster)
-
         if not namenodes:
             raise RuntimeError(f"Cannot get list of namenodes for a cluster {self.cluster!r}")
 
@@ -642,14 +640,10 @@ class HDFS(FileConnection, RenameDirMixin):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
             if self.slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
-                host = namenode
-                break
+                return namenode
             log.debug("|%s|     Node %r is not active, skipping", class_name, namenode)
 
-        if not host:
-            raise RuntimeError(f"Cannot detect active namenode for cluster {self.cluster!r}")
-
-        return host
+        raise RuntimeError(f"Cannot detect active namenode for cluster {self.cluster!r}")
 
     def _get_host(self) -> str:
         if not self.host and self.cluster:

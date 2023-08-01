@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from onetl.connection.file_connection.s3 import S3
     from onetl.connection.file_connection.sftp import SFTP
     from onetl.connection.file_connection.webdav import WebDAV
+    from onetl.connection.file_df_connection.spark_hdfs import SparkHDFS
     from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
     from onetl.connection.file_df_connection.spark_s3 import SparkS3
 
@@ -66,6 +67,7 @@ file_connections_modules = {
 
 file_df_connections_modules = {
     "SparkLocalFS": "spark_local_fs",
+    "SparkHDFS": "spark_hdfs",
     "SparkS3": "spark_s3",
 }
 

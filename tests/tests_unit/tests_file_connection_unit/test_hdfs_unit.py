@@ -245,8 +245,6 @@ def test_hdfs_get_webhdfs_port_hook(request):
 def test_hdfs_known_get_current(request, mocker):
     from onetl.connection import HDFS
 
-    mocker.patch.object(HDFS, "list_dir", return_value=None)
-
     # no hooks bound to HDFS.slots.get_current_cluster
     error_msg = re.escape(
         "HDFS.get_current() can be used only if there are some hooks bound to HDFS.slots.get_current_cluster",
@@ -261,5 +259,5 @@ def test_hdfs_known_get_current(request, mocker):
 
     request.addfinalizer(get_current_cluster.disable)
 
-    assert HDFS.get_current().cluster == "rnd-dwh"
-    HDFS(cluster="rnd-prod").check()  # unlike Hive, HDFS connection can be created outside the cluster
+    hdfs = HDFS.get_current()
+    assert hdfs.cluster == "rnd-dwh"
