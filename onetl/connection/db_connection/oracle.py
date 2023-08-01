@@ -174,9 +174,8 @@ class Oracle(JDBCConnection):
     sid: Optional[str] = None
     service_name: Optional[str] = None
 
-    driver: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
-
-    _check_query: ClassVar[str] = "SELECT 1 FROM dual"
+    DRIVER: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1 FROM dual"
 
     @slot
     @classmethod

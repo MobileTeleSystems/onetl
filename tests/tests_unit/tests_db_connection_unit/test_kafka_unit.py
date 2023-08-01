@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 from textwrap import dedent
+from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
@@ -25,6 +26,17 @@ pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connecti
 )
 def test_kafka_get_packages(spark_version, scala_version, package):
     assert Kafka.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+
+
+def test_kafka_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'org.apache.spark.sql.kafka010.KafkaSourceProvider'"
+    with pytest.raises(ValueError, match=msg):
+        with patch.object(spark_no_packages, "version", new="2.4.0"):
+            Kafka(
+                cluster="some_cluster",
+                addresses=["192.168.1.1"],
+                spark=spark_no_packages,
+            )
 
 
 @pytest.mark.parametrize(

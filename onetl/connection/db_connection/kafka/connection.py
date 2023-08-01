@@ -20,7 +20,9 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from etl_entities.instance import Cluster
 from pydantic import validator
 
+from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
+from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
@@ -36,6 +38,7 @@ from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
 )
+from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 
@@ -311,3 +314,21 @@ class Kafka(DBConnection):
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value
+
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
+        java_class = "org.apache.spark.sql.kafka010.KafkaSourceProvider"
+
+        try:
+            try_import_java_class(spark, java_class)
+        except Exception as e:
+            spark_version = get_spark_version(spark).digits(2)
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=java_class,
+                package_source=cls.__name__,
+                args=f"spark_version='{spark_version}'",
+            )
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark

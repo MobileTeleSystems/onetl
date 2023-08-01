@@ -131,7 +131,7 @@ class Postgres(JDBCConnection):
     database: str
     port: int = 5432
 
-    driver: ClassVar[str] = "org.postgresql.Driver"
+    DRIVER: ClassVar[str] = "org.postgresql.Driver"
 
     @slot
     @classmethod

@@ -26,9 +26,8 @@ class BaseReadableFileFormat(ABC):
     Representation of readable file format.
     """
 
-    @classmethod
     @abstractmethod
-    def check_if_supported(cls, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: SparkSession) -> None:
         """
         Check if Spark session does support this file format. |support_hooks|
 
@@ -59,9 +58,8 @@ class BaseWritableFileFormat(ABC):
     Representation of writable file format.
     """
 
-    @classmethod
     @abstractmethod
-    def check_if_supported(cls, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: SparkSession) -> None:
         """
         Check if Spark session does support this file format. |support_hooks|
 

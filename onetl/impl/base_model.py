@@ -43,7 +43,7 @@ class BaseModel(PydanticBaseModel):
     def _forward_refs(cls) -> dict[str, type]:
         refs: dict[str, type] = {}
         for item in dir(cls):
-            if "_" in item:
+            if item.startswith("_") or item.startswith("package"):
                 continue
 
             value = getattr(cls, item)

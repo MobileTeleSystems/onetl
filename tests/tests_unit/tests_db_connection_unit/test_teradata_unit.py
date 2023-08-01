@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.teradata, pytest.mark.db_connection, pytest.mark.conne
 
 
 def test_teradata_class_attributes():
-    assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
+    assert Teradata.DRIVER == "com.teradata.jdbc.TeraDriver"
 
 
 def test_teradata_package():
@@ -19,6 +19,18 @@ def test_teradata_package():
 
 def test_teradata_get_packages():
     assert Teradata.get_packages() == ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+
+
+def test_teradata_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'com.teradata.jdbc.TeraDriver'"
+    with pytest.raises(ValueError, match=msg):
+        Teradata(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_teradata(spark_mock):

@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING, ClassVar, Dict, Optional
 
 from pydantic import Field, validator
@@ -55,6 +56,8 @@ WRITE_OPTIONS = frozenset(
         "compression",
     ),
 )
+
+log = logging.getLogger(__name__)
 
 
 @support_hooks
@@ -161,8 +164,7 @@ class Avro(ReadWriteFileFormat):
         return [f"org.apache.spark:spark-avro_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 
     @slot
-    @classmethod
-    def check_if_supported(cls, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: SparkSession) -> None:
         java_class = "org.apache.spark.sql.avro.AvroFileFormat"
 
         try:
@@ -171,9 +173,11 @@ class Avro(ReadWriteFileFormat):
             spark_version = get_spark_version(spark)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=cls.__name__,
+                package_source=self.__class__.__name__,
                 args=f"spark_version='{spark_version}'",
             )
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
     @slot

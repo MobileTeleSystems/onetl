@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 
@@ -64,6 +65,19 @@ def test_mongodb_get_packages_scala_version_not_supported(scala_version):
 )
 def test_mongodb_get_packages(spark_version, scala_version, package):
     assert MongoDB.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+
+
+def test_mongodb_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'com.mongodb.spark.sql.connector.MongoTableProvider'"
+    with pytest.raises(ValueError, match=msg):
+        with patch.object(spark_no_packages, "version", new="3.2.0"):
+            MongoDB(
+                host="host",
+                user="user",
+                password="password",
+                database="database",
+                spark=spark_no_packages,
+            )
 
 
 def test_mongodb(spark_mock):
