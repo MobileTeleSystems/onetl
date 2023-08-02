@@ -116,7 +116,7 @@ class KafkaProcessing(BaseProcessing):
     ) -> pandas.DataFrame:
         pass
 
-    def json_serialize(
+    def json_deserialize(
         self,
         df: SparkDataFrame,
         df_schema: StructType,
