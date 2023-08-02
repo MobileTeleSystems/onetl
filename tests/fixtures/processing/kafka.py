@@ -73,7 +73,7 @@ class KafkaProcessing(BaseProcessing):
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
-    def read_data_earliest(self, topic, num_messages=1, timeout=1.0):
+    def get_expected_df(self, topic, num_messages=1, timeout=1.0):
         from confluent_kafka import Consumer, KafkaException
 
         conf = {
@@ -98,7 +98,7 @@ class KafkaProcessing(BaseProcessing):
             result.append((key.decode("utf-8"), value.decode("utf-8")))
 
         consumer.close()
-        return result
+        return pandas.DataFrame(result, columns=["key", "value"])
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
@@ -121,11 +121,20 @@ class KafkaProcessing(BaseProcessing):
         df: SparkDataFrame,
         df_schema: StructType,
     ) -> SparkDataFrame:
-        """Serializes dataframe to JSON"""
+        """Deserializes dataframe's "value" column from JSON to struct"""
         from pyspark.sql.functions import col, from_json
 
         df = df.select(
             from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
         ).select("value.*")
+
+        return df  # noqa:  WPS331
+
+    def json_serialize(self, df: SparkDataFrame) -> SparkDataFrame:
+        """Serializes dataframe's columns into JSON "value" field"""
+        from pyspark.sql.functions import col, struct, to_json
+
+        df = df.select(struct(*df.columns).alias("value"))
+        df = df.select(to_json(col("value")).alias("value"))
 
         return df  # noqa:  WPS331

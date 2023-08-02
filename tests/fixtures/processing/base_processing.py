@@ -130,12 +130,17 @@ class BaseProcessing(ABC):
         self,
         min_id: int = 1,
         max_id: int = _df_max_length,
+        column_names: list[str] = None,
     ) -> pandas.DataFrame:
         time_multiplier = 100000
 
         values = defaultdict(list)
+
+        if not column_names:
+            column_names = self.column_names
+
         for i in range(min_id, max_id + 1):
-            for column in self.column_names:
+            for column in column_names:
                 column_name = column.lower()
 
                 if "int" in column_name:
@@ -158,8 +163,9 @@ class BaseProcessing(ABC):
         spark: SparkSession,
         min_id: int = 1,
         max_id: int = _df_max_length,
+        column_names: list[str] = None,
     ) -> SparkDataFrame:
-        return spark.createDataFrame(self.create_pandas_df(min_id=min_id, max_id=max_id))
+        return spark.createDataFrame(self.create_pandas_df(min_id=min_id, max_id=max_id, column_names=column_names))
 
     def fix_pandas_df(
         self,

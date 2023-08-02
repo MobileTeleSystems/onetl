@@ -15,8 +15,8 @@ def create_kafka_df(spark):
     topic = secrets.token_hex(5)
     proc = KafkaProcessing()
 
-    data = [(f"key{i}", f"value{i}") for i in range(1, 11)]
-    df = spark.createDataFrame(data, ["key", "value"])
+    df = proc.create_spark_df(spark, column_names=["key_text", "value_text"])
+    df = df.withColumnRenamed("key_text", "key").withColumnRenamed("value_text", "value")
 
     yield topic, proc, df
 
@@ -37,8 +37,6 @@ def test_kafka_writer_snapshot(spark, kafka_processing):
     )
     writer.run(df)
 
-    data = processing.read_data_earliest(topic, num_messages=df.count(), timeout=3)
-    read_df = spark.createDataFrame(data, ["key", "value"])
-    assert len(data) == df.count()
-    assert df.schema == read_df.schema
-    processing.assert_equal_df(df, other_frame=read_df)
+    pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
+    assert len(pd_df) == df.count()
+    processing.assert_equal_df(df, other_frame=pd_df)
