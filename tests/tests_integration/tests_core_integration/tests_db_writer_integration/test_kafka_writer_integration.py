@@ -15,8 +15,8 @@ def create_kafka_df(spark):
     topic = secrets.token_hex(5)
     proc = KafkaProcessing()
 
-    df = proc.create_spark_df(spark, column_names=["key_text", "value_text"])
-    df = df.withColumnRenamed("key_text", "key").withColumnRenamed("value_text", "value")
+    df = proc.create_spark_df(spark)
+    df = proc.json_serialize(df)
 
     yield topic, proc, df
 

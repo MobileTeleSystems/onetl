@@ -91,14 +91,11 @@ class KafkaProcessing(BaseProcessing):
         for msg in messages:
             if msg.error():
                 raise KafkaException(msg.error())
-
-            key = msg.key()
-            value = msg.value()
-
-            result.append((key.decode("utf-8"), value.decode("utf-8")))
+            else:
+                result.append(msg.value().decode("utf-8"))
 
         consumer.close()
-        return pandas.DataFrame(result, columns=["key", "value"])
+        return pandas.DataFrame(result, columns=["value"])
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
