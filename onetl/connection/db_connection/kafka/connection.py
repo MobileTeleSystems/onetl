@@ -217,8 +217,25 @@ class Kafka(DBConnection):
         )
         return self.spark.read.format("kafka").options(**result_options).load()
 
-    def write_df_to_target(self, df: DataFrame, target: str) -> None:
-        pass
+    @slot
+    def write_df_to_target(
+        self,
+        df: DataFrame,
+        target: str,
+        options: KafkaWriteOptions = KafkaWriteOptions(),  # noqa: B008, WPS404
+    ) -> None:
+        write_options: dict = {
+            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
+        }
+        write_options.update(options.dict(by_alias=True, exclude_none=True))
+        write_options.update(self.protocol.get_options(self))
+        if self.auth:  # pragma: no cover
+            write_options.update(self.auth.get_options(self))
+        write_options.update({"kafka.bootstrap.servers": ",".join(self.addresses), "topic": target})
+
+        log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
+        df.write.format("kafka").options(**write_options).save()
+        log.info("|%s| Data is successfully written to topic %r", self.__class__.__name__, target)
 
     @slot
     def get_df_schema(

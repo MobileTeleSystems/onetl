@@ -10,6 +10,7 @@ from tests.fixtures.processing.base_processing import BaseProcessing
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
+    from pyspark.sql.types import StructType
 
 
 logger = getLogger(__name__)
@@ -72,6 +73,30 @@ class KafkaProcessing(BaseProcessing):
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
+    def get_expected_df(self, topic: str, num_messages: int = 1, timeout: float = 1.0) -> pandas.DataFrame:
+        from confluent_kafka import Consumer, KafkaException
+
+        conf = {
+            "bootstrap.servers": f"{self.host}:{self.port}",
+            "group.id": "mygroup",
+            "auto.offset.reset": "earliest",
+        }
+
+        consumer = Consumer(conf)
+        consumer.subscribe([topic])
+
+        messages = consumer.consume(num_messages=num_messages, timeout=timeout)
+
+        result = []
+        for msg in messages:
+            if msg.error():
+                raise KafkaException(msg.error())
+            else:
+                result.append(msg.value().decode("utf-8"))
+
+        consumer.close()
+        return pandas.DataFrame(result, columns=["value"])
+
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
 
@@ -88,22 +113,25 @@ class KafkaProcessing(BaseProcessing):
     ) -> pandas.DataFrame:
         pass
 
-    def assert_equal_df(
+    def json_deserialize(
         self,
         df: SparkDataFrame,
-        schema: str | None = None,
-        table: str | None = None,
-        order_by: str | None = None,
-        other_frame: pandas.DataFrame | SparkDataFrame | None = None,
-        **kwargs,
-    ) -> None:
-        """Checks that df and other_frame are equal"""
+        df_schema: StructType,
+    ) -> SparkDataFrame:
+        """Deserializes dataframe's "value" column from JSON to struct"""
         from pyspark.sql.functions import col, from_json
 
-        df_schema = kwargs["df_schema"]
-
-        df_from_value_field = df.select(
+        df = df.select(
             from_json(col=col("value").cast("string"), schema=df_schema).alias("value"),
         ).select("value.*")
 
-        return super().assert_equal_df(df=df_from_value_field, other_frame=other_frame)
+        return df  # noqa:  WPS331
+
+    def json_serialize(self, df: SparkDataFrame) -> SparkDataFrame:
+        """Serializes dataframe's columns into JSON "value" field"""
+        from pyspark.sql.functions import col, struct, to_json
+
+        df = df.select(struct(*df.columns).alias("value"))
+        df = df.select(to_json(col("value")).alias("value"))
+
+        return df  # noqa:  WPS331
