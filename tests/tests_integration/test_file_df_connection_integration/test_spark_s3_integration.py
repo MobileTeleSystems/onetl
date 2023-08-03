@@ -30,6 +30,22 @@ def test_spark_s3_check(s3_file_df_connection, caplog):
     assert "Connection is available" in caplog.text
 
 
+def test_spark_s3_check_failed(spark, s3_server):
+    wrong_s3 = SparkS3(
+        host=s3_server.host,
+        port=s3_server.port,
+        bucket=s3_server.bucket,
+        protocol=s3_server.protocol,
+        access_key="something",
+        secret_key="wrong",
+        spark=spark,
+    )
+
+    with wrong_s3:
+        with pytest.raises(RuntimeError, match="Connection is unavailable"):
+            wrong_s3.check()
+
+
 def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
     wrong_s3 = SparkS3(
         host=s3_server.host,
@@ -41,6 +57,7 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         spark=spark,
     )
     with suppress(RuntimeError):
+        # patch configuration with old values, and do not reset them
         wrong_s3.check()
 
     real_s3 = SparkS3(
@@ -62,13 +79,17 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         hadoop_conf = get_hadoop_config(spark)
 
         # default values from Spark config or previous tests
-        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) is None  # per-bucket config
-        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None  # root config
+        # per-bucket config
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == "wrong"
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) is None
+        # root config
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") == "file"
 
         # Hadoop configuration is reset, and new S3 connection uses valid options
         real_s3.check()
         assert msg in caplog.text
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == s3_server.access_key
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) == "true"
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") == "magic"
@@ -77,12 +98,14 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         # Options are the same, nothing is changed
         real_s3.check()
         assert msg not in caplog.text
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == s3_server.access_key
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) == "true"
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") == "magic"
 
         real_s3.close()
         # Options are reset
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) is None
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) is None
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") is None
