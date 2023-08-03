@@ -224,6 +224,21 @@ class Kafka(DBConnection):
         target: str,
         options: KafkaWriteOptions = KafkaWriteOptions(),  # noqa: B008, WPS404
     ) -> None:
+        # Check that the DataFrame doesn't contain any columns not in the schema
+        schema: StructType = self.get_df_schema(target)
+        schema_field_names = {field.name for field in schema.fields}
+        df_column_names = set(df.columns)
+        if not df_column_names.issubset(schema_field_names):
+            invalid_columns = df_column_names - schema_field_names
+            raise ValueError(f"Invalid column names: {invalid_columns}. Expected columns: {schema_field_names}")
+
+        # Check that the DataFrame doesn't contain a 'headers' column with includeHeaders=False
+        if not getattr(options, "includeHeaders", True) and "headers" in df.columns:
+            raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(includeHeaders=False)")
+
+        if "topic" in df.columns:
+            log.warning("The 'topic' column in the DataFrame will be overridden with the value in 'table' - %r", target)
+
         write_options: dict = {
             f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
         }
