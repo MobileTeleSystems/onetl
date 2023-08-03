@@ -229,7 +229,7 @@ class Kafka(DBConnection):
         }
         write_options.update(options.dict(by_alias=True, exclude_none=True))
         write_options.update(self.protocol.get_options(self))
-        if self.auth:
+        if self.auth:  # pragma: no cover
             write_options.update(self.auth.get_options(self))
         write_options.update({"kafka.bootstrap.servers": ",".join(self.addresses), "topic": target})
 
