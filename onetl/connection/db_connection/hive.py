@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, List, Optional, Tuple, Union
 
 from deprecated import deprecated
 from etl_entities.instance import Cluster
@@ -514,6 +514,7 @@ class Hive(DBConnection):
         pass
 
     cluster: Cluster
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
     @validator("cluster")
     def validate_cluster_name(cls, cluster):
@@ -586,10 +587,10 @@ class Hive(DBConnection):
         self._log_parameters()
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
-        log_lines(self._check_query, level=logging.DEBUG)
+        log_lines(self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._execute_sql(self._check_query)
+            self._execute_sql(self._CHECK_QUERY)
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)

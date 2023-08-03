@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mappi
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from pydantic import SecretStr
+from pydantic import SecretStr, validator
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -730,8 +730,6 @@ class MongoDB(DBConnection):
             )
 
         """
-        self._check_driver_imported()
-
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -761,7 +759,6 @@ class MongoDB(DBConnection):
 
     @slot
     def check(self):
-        self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
 
@@ -891,18 +888,20 @@ class MongoDB(DBConnection):
         password = parser.quote(self.password.get_secret_value())
         return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
 
-    def _check_driver_imported(self):
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
         java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
 
         try:
-            try_import_java_class(self.spark, java_class)
-        except Exception:
-            spark_version = str(get_spark_version(self.spark).digits(2)).replace(".", "_")
+            try_import_java_class(spark, java_class)
+        except Exception as e:
+            spark_version = get_spark_version(spark).digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=self.__class__.__name__,
+                package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-
-            log.error(msg, exc_info=False)
-            raise
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark

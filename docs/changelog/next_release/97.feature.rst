@@ -1,0 +1,1 @@
+Check of Java class availability moved from ``.check()`` method to connection constructor.

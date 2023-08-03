@@ -106,7 +106,6 @@ class JSONLine(ReadWriteFileFormat):
         extra = "allow"
 
     @slot
-    @classmethod
-    def check_if_supported(cls, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: SparkSession) -> None:
         # always available
         pass

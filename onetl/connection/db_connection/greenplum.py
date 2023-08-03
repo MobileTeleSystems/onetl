@@ -24,7 +24,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from etl_entities.instance import Host
-from pydantic import Field
+from pydantic import Field, validator
 
 from onetl._internal import get_sql_query, to_camel
 from onetl._util.classproperty import classproperty
@@ -461,8 +461,7 @@ class Greenplum(JDBCMixin, DBConnection):
     port: int = 5432
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "org.postgresql.Driver"
-
+    DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
 
@@ -670,21 +669,23 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return min_value, max_value
 
-    def _check_driver_imported(self):
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
         java_class = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
 
         try:
-            try_import_java_class(self.spark, java_class)
-        except Exception:
-            spark_version = str(get_spark_version(self.spark).digits(2)).replace(".", "_")
+            try_import_java_class(spark, java_class)
+        except Exception as e:
+            spark_version = get_spark_version(spark).digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=self.__class__.__name__,
+                package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            log.error(msg, exc_info=False)
-
-            raise
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark
 
     def _connector_params(
         self,
@@ -694,7 +695,7 @@ class Greenplum(JDBCMixin, DBConnection):
         extra = self.extra.dict(by_alias=True, exclude_none=True)
         extra = {key: value for key, value in extra.items() if key.startswith("server.") or key.startswith("pool.")}
         return {
-            "driver": self.driver,
+            "driver": self.DRIVER,
             "url": self.jdbc_url,
             "user": self.user,
             "password": self.password.get_secret_value(),

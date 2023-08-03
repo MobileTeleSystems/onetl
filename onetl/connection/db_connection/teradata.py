@@ -145,9 +145,8 @@ class Teradata(JDBCConnection):
     database: Optional[str] = None
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
-
-    _check_query: ClassVar[str] = "SELECT 1 AS check_result"
+    DRIVER: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS check_result"
 
     @slot
     @classmethod

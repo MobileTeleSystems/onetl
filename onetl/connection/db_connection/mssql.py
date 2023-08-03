@@ -169,8 +169,8 @@ class MSSQL(JDBCConnection):
     port: int = 1433
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    _check_query: ClassVar[str] = "SELECT 1 AS field"
+    DRIVER: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS field"
 
     @slot
     @classmethod

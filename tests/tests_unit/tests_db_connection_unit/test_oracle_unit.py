@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.oracle, pytest.mark.db_connection, pytest.mark.connect
 
 
 def test_oracle_class_attributes():
-    assert Oracle.driver == "oracle.jdbc.driver.OracleDriver"
+    assert Oracle.DRIVER == "oracle.jdbc.driver.OracleDriver"
 
 
 def test_oracle_package():
@@ -39,6 +39,18 @@ def test_oracle_get_packages_java_version_not_supported(java_version):
 )
 def test_oracle_get_packages(java_version, package):
     assert Oracle.get_packages(java_version=java_version) == [package]
+
+
+def test_oracle_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'oracle.jdbc.driver.OracleDriver'"
+    with pytest.raises(ValueError, match=msg):
+        Oracle(
+            host="some_host",
+            user="user",
+            sid="sid",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_oracle(spark_mock):

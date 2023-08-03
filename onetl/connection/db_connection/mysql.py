@@ -124,7 +124,7 @@ class MySQL(JDBCConnection):
     database: Optional[str] = None
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
+    DRIVER: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
 
     @slot
     @classmethod

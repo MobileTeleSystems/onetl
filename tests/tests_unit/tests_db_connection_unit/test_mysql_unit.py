@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.mysql, pytest.mark.db_connection, pytest.mark.connecti
 
 
 def test_mysql_class_attributes():
-    assert MySQL.driver == "com.mysql.cj.jdbc.Driver"
+    assert MySQL.DRIVER == "com.mysql.cj.jdbc.Driver"
 
 
 def test_mysql_package():
@@ -19,6 +19,18 @@ def test_mysql_package():
 
 def test_mysql_get_packages():
     assert MySQL.get_packages() == ["com.mysql:mysql-connector-j:8.0.33"]
+
+
+def test_mysql_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'com.mysql.cj.jdbc.Driver'"
+    with pytest.raises(ValueError, match=msg):
+        MySQL(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_mysql(spark_mock):

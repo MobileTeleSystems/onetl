@@ -126,7 +126,7 @@ class Clickhouse(JDBCConnection):
     port: int = 8123
     database: Optional[str] = None
 
-    driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
+    DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
 
     @slot
     @classmethod
