@@ -65,3 +65,41 @@ def test_kafka_reader(spark, kafka_processing, schema):
 
     # Assert
     processing.assert_equal_df(df, other_frame=expected_df, df_schema=schema)
+
+
+def test_kafka_reader_columns_and_types(spark, kafka_processing):
+    topic, processing, _ = kafka_processing
+
+    kafka = Kafka(
+        spark=spark,
+        addresses=[f"{processing.host}:{processing.port}"],
+        cluster="cluster",
+    )
+
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+    )
+
+    df = reader.run()
+
+    expected_columns = ["topic", "key", "value", "timestamp", "timestampType"]
+    assert set(expected_columns).issubset(set(df.columns))  # checks expected_columns in df.columns
+
+    expected_schema = kafka.get_df_schema(topic)
+    assert expected_schema[:-1] == df.schema  # headers aren't included in schema if includeHeaders=False
+
+    # Check that the DataFrame also has a "headers" column when includeHeaders=True
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+        options=kafka.ReadOptions(includeHeaders=True),
+    )
+
+    df = reader.run()
+
+    expected_columns.append("headers")
+    assert set(expected_columns).issubset(set(df.columns))  # checks expected_columns in df.columns
+
+    expected_schema = kafka.get_df_schema(topic)
+    assert df.schema == expected_schema
