@@ -105,6 +105,8 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, mave
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
+        .config("spark.driver.bindAddress", "127.0.0.1")  # prevent Spark from unreachable network connection
+        .config("spark.driver.host", "127.0.0.1")
         .config("spark.executor.memory", "1g")
         .config("spark.executor.allowSparkContext", "true")  # Greenplum uses SparkContext on executor if master==local
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
