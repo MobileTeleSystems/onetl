@@ -73,7 +73,7 @@ class KafkaProcessing(BaseProcessing):
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
-    def get_expected_df(self, topic, num_messages=1, timeout=1.0):
+    def get_expected_df(self, topic: str, num_messages: int = 1, timeout: float = 1.0) -> pandas.DataFrame:
         from confluent_kafka import Consumer, KafkaException
 
         conf = {
