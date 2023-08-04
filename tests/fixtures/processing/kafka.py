@@ -94,10 +94,11 @@ class KafkaProcessing(BaseProcessing):
             else:
                 key = msg.key().decode("utf-8") if msg.key() else None
                 value = msg.value().decode("utf-8") if msg.value() else None
-                result.append((key, value))
+                partition = msg.partition()
+                result.append((key, value, partition))
 
         consumer.close()
-        return pandas.DataFrame(result, columns=["key", "value"])
+        return pandas.DataFrame(result, columns=["key", "value", "partition"])
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
@@ -109,7 +110,7 @@ class KafkaProcessing(BaseProcessing):
 
     def topic_exists(self, topic: str) -> bool:
         topic_metadata = self.admin.list_topics(timeout=5)
-        return topic in {t.topic for t in iter(topic_metadata.topics.values())}
+        return topic in topic_metadata.topics
 
     def get_num_partitions(self, topic: str) -> int:
         metadata = self.admin.list_topics(topic, timeout=5)

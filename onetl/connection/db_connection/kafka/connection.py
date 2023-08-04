@@ -230,7 +230,7 @@ class Kafka(DBConnection):
         df_column_names = set(df.columns)
         if not df_column_names.issubset(schema_field_names):
             invalid_columns = df_column_names - schema_field_names
-            raise ValueError(f"Invalid column names: {invalid_columns}. Expected columns: {schema_field_names}")
+            raise ValueError(f"Invalid column names: {invalid_columns}.")
 
         # Check that the DataFrame doesn't contain a 'headers' column with includeHeaders=False
         if not getattr(options, "includeHeaders", True) and "headers" in df.columns:

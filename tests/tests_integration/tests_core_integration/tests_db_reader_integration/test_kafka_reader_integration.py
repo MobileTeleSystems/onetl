@@ -83,9 +83,6 @@ def test_kafka_reader_columns_and_types(spark, kafka_processing):
 
     df = reader.run()
 
-    expected_columns = ["topic", "key", "value", "timestamp", "timestampType"]
-    assert set(expected_columns).issubset(set(df.columns))  # checks expected_columns in df.columns
-
     expected_schema = kafka.get_df_schema(topic)
     assert expected_schema[:-1] == df.schema  # headers aren't included in schema if includeHeaders=False
 
@@ -97,9 +94,6 @@ def test_kafka_reader_columns_and_types(spark, kafka_processing):
     )
 
     df = reader.run()
-
-    expected_columns.append("headers")
-    assert set(expected_columns).issubset(set(df.columns))  # checks expected_columns in df.columns
 
     expected_schema = kafka.get_df_schema(topic)
     assert df.schema == expected_schema

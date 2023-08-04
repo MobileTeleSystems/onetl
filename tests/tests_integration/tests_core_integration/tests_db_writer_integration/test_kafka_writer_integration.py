@@ -1,3 +1,5 @@
+import logging
+import re
 import secrets
 
 import pytest
@@ -39,7 +41,18 @@ def test_kafka_writer_snapshot(spark, kafka_processing):
 
     pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
     assert len(pd_df) == df.count()
-    processing.assert_equal_df(df, other_frame=pd_df.drop("key", axis=1))
+    processing.assert_equal_df(df, other_frame=pd_df.drop(columns=["key", "partition"], axis=1))
+    # Check that the 'key' column is filled with nulls
+    assert pd_df["key"].isnull().sum() == df.count()
+
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+        options=kafka.ReadOptions(includeHeaders=True),
+    )
+    df_read = reader.run()
+    # Check that all values in 'headers' are null
+    assert df_read.select("headers").na.drop().count() == 0
 
 
 def test_kafka_writer_no_value_column_error(spark, kafka_processing):
@@ -83,7 +96,8 @@ def test_kafka_writer_invalid_column_error(spark, kafka_processing):
         table=topic,
     )
 
-    with pytest.raises(ValueError, match="Invalid column names"):
+    error_msg = "Invalid column names: {'invalid_column'}."
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
         writer.run(df)
 
 
@@ -147,17 +161,10 @@ def test_kafka_writer_key_column(spark, kafka_processing):
 
     pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
     assert len(pd_df) == df.count()
-    processing.assert_equal_df(df, other_frame=pd_df)
-
-    # Remove the 'key' column from the DataFrame
-    df_no_key = df.drop("key")
-    writer.run(df_no_key)
-    # Check that the 'key' column is filled with nulls
-    pd_df = processing.get_expected_df(topic, num_messages=df.count() + df_no_key.count(), timeout=3)
-    assert pd_df["key"].isnull().sum() == df_no_key.count()
+    processing.assert_equal_df(df, other_frame=pd_df.drop(columns=["partition"], axis=1))
 
 
-def test_kafka_writer_topic_column(spark, kafka_processing):
+def test_kafka_writer_topic_column(spark, kafka_processing, caplog):
     from pyspark.sql.functions import lit
 
     topic, processing, df = kafka_processing
@@ -177,10 +184,14 @@ def test_kafka_writer_topic_column(spark, kafka_processing):
     assert processing.topic_exists(topic)
 
     df = df.withColumn("topic", lit("other_topic"))
-    writer.run(df)
 
-    # Check that the 'topic' matches the table name (not the "other_topic")
-    assert processing.topic_exists(topic)
+    with caplog.at_level(logging.WARNING):
+        writer.run(df)
+        assert (
+            f"The 'topic' column in the DataFrame will be overridden with the value in 'table' - '{topic}'"
+            in caplog.text
+        )
+
     assert not processing.topic_exists("other_topic")
 
 
@@ -199,20 +210,14 @@ def test_kafka_writer_partition_column(spark, kafka_processing):
     )
     writer.run(df)
 
-    # Read the data from Kafka
-    reader = DBReader(
-        connection=kafka,
-        source=topic,
-    )
-    df_read = reader.run()
+    pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
 
-    # Check that the 'partition' column is filled with the default partition value
-    assert df_read.select("partition").distinct().collect()[0][0] == 0
+    # Check that the 'partition' column is filled with the default partition value - 0
     assert processing.get_num_partitions(topic) == 1
+    assert pd_df["partition"].unique()[0] == 0
 
 
 def test_kafka_writer_headers(spark, kafka_processing):
-    from pyspark.sql import functions as F  # noqa: N812
     from pyspark.sql.types import (
         ArrayType,
         BinaryType,
@@ -235,17 +240,11 @@ def test_kafka_writer_headers(spark, kafka_processing):
         options=kafka.WriteOptions(includeHeaders=True),
     )
 
-    writer.run(df)
-
-    # Read the data from Kafka
     reader = DBReader(
         connection=kafka,
         source=topic,
         options=kafka.ReadOptions(includeHeaders=True),
     )
-    df_read = reader.run()
-
-    assert df_read.filter(F.col("headers").isNull()).count() == df.count()
 
     # Add a 'headers' column to the DataFrame
     headers_schema = ArrayType(
@@ -262,8 +261,7 @@ def test_kafka_writer_headers(spark, kafka_processing):
 
     df_read = reader.run()
 
-    assert df_read.filter(F.col("headers").isNotNull()).count() == df.count()
     processing.assert_equal_df(
         df.select("headers"),
-        other_frame=df_read.filter(F.col("headers").isNotNull()).select("headers"),
+        other_frame=df_read.select("headers"),
     )
