@@ -81,9 +81,9 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
 
     def get_options(self, kafka: Kafka) -> dict:
         return {
-            "kafka.sasl.mechanism": "GSSAPI",
-            "kafka.sasl.jaas.config": self.get_jaas_conf(kafka),
-            "kafka.sasl.kerberos.service.name": self.service_name,
+            "sasl.mechanism": "GSSAPI",
+            "sasl.jaas.config": self.get_jaas_conf(kafka),
+            "sasl.kerberos.service.name": self.service_name,
         }
 
     @validator("keytab")

@@ -20,6 +20,7 @@ PROHIBITED_OPTIONS = frozenset(
         "assign",
         "endingOffsets",
         "endingOffsetsByTimestamp",
+        "endingTimestamp",
         "kafka.*",
         "startingOffsets",
         "startingOffsetsByTimestamp",
@@ -33,7 +34,6 @@ PROHIBITED_OPTIONS = frozenset(
 
 KNOWN_READ_OPTIONS = frozenset(
     (
-        "endingTimestamp",
         "failOnDataLoss",
         "fetchOffset.numRetries",
         "fetchOffset.retryIntervalMs",
@@ -48,6 +48,8 @@ KNOWN_READ_OPTIONS = frozenset(
 )
 
 KNOWN_WRITE_OPTIONS = frozenset(
+    # not adding this to class itself because headers support was added to Spark only in 3.0
+    # https://issues.apache.org/jira/browse/SPARK-23539
     ("includeHeaders",),
 )
 

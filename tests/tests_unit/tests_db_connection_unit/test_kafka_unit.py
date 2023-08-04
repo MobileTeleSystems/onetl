@@ -2,10 +2,8 @@ import os
 import re
 from pathlib import Path
 from textwrap import dedent
-from unittest.mock import patch
 
 import pytest
-from pydantic import ValidationError
 
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
@@ -16,9 +14,9 @@ pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connecti
 @pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
-        ("2.3.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.0"),
-        ("2.3.0", "2.11", "org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.0"),
-        ("2.3.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:2.3.0"),
+        ("2.4.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0"),
+        ("2.4.0", "2.11", "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0"),
+        ("2.4.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.0"),
         ("3.3.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
         ("3.3.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
         ("3.3.0", "2.13", "org.apache.spark:spark-sql-kafka-0-10_2.13:3.3.0"),
@@ -28,15 +26,37 @@ def test_kafka_get_packages(spark_version, scala_version, package):
     assert Kafka.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
 
 
+@pytest.mark.parametrize(
+    "spark_version",
+    [
+        "2.2.0",
+        "2.3.1",
+    ],
+)
+def test_kafka_get_packages_error(spark_version):
+    with pytest.raises(ValueError, match=f"Spark version must be at least 2.4, got {spark_version}"):
+        Kafka.get_packages(spark_version=spark_version)
+
+
+def test_kafka_too_old_spark_error(spark_mock, mocker):
+    msg = "Spark version must be at least 2.4, got 2.3.1"
+    mocker.patch.object(spark_mock, "version", new="2.3.1")
+    with pytest.raises(ValueError, match=msg):
+        Kafka(
+            cluster="some_cluster",
+            addresses=["192.168.1.1"],
+            spark=spark_mock,
+        )
+
+
 def test_kafka_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'org.apache.spark.sql.kafka010.KafkaSourceProvider'"
     with pytest.raises(ValueError, match=msg):
-        with patch.object(spark_no_packages, "version", new="2.4.0"):
-            Kafka(
-                cluster="some_cluster",
-                addresses=["192.168.1.1"],
-                spark=spark_no_packages,
-            )
+        Kafka(
+            cluster="some_cluster",
+            addresses=["192.168.1.1"],
+            spark=spark_no_packages,
+        )
 
 
 @pytest.mark.parametrize(
@@ -48,6 +68,7 @@ def test_kafka_missing_package(spark_no_packages):
         ("startingOffsets", "startingOffsets_value"),
         ("startingOffsetsByTimestamp", "startingOffsetsByTimestamp_value"),
         ("startingTimestamp", "startingTimestamp_value"),
+        ("endingTimestamp", "endingTimestamp_value"),
         ("endingOffsets", "endingOffsets_value"),
         ("endingOffsetsByTimestamp", "endingOffsetsByTimestamp_value"),
         (
@@ -232,7 +253,7 @@ def test_kafka_valid_extras(arg, value):
     assert extra_dict["group.id"] == value
 
 
-def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
+def test_kafka_weak_permissons_keytab_error(create_keytab):
     # Arrange
     os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339
 
@@ -248,7 +269,7 @@ def test_kafka_weak_permissons_keytab_error(spark_mock, create_keytab):
         )
 
 
-def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
+def test_kafka_wrong_path_keytab_error():
     # Assert
     msg = "File 'some/path' is missing"
     with pytest.raises(
@@ -261,7 +282,7 @@ def test_kafka_wrong_path_keytab_error(spark_mock, tmp_path_factory):
         )
 
 
-def test_passed_only_keytab_error(spark_mock, create_keytab):
+def test_passed_only_keytab_error(create_keytab):
     # Assert
     msg = "principal\n  field required"
     with pytest.raises(
@@ -273,7 +294,7 @@ def test_passed_only_keytab_error(spark_mock, create_keytab):
         )
 
 
-def test_passed_only_pass_error(spark_mock):
+def test_passed_only_pass_error():
     msg = "username\n  field required"
     with pytest.raises(
         ValueError,
@@ -284,7 +305,7 @@ def test_passed_only_pass_error(spark_mock):
         )
 
 
-def test_passed_only_user_error(spark_mock):
+def test_passed_only_user_error():
     msg = "password\n  field required"
     with pytest.raises(
         ValueError,
@@ -325,8 +346,8 @@ def test_kafka_connection_get_jaas_conf_password(spark_mock):
     conf = kafka.auth.get_options(kafka)
     # Assert
     assert conf == {
-        "kafka.sasl.mechanism": "PLAIN",
-        "kafka.sasl.jaas.config": dedent(
+        "sasl.mechanism": "PLAIN",
+        "sasl.jaas.config": dedent(
             """
             org.apache.kafka.common.security.plain.PlainLoginModule required
             username="user"
@@ -352,8 +373,8 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
     conf = kafka.auth.get_options(kafka)
     # Assert
     assert conf == {
-        "kafka.sasl.mechanism": "GSSAPI",
-        "kafka.sasl.jaas.config": dedent(
+        "sasl.mechanism": "GSSAPI",
+        "sasl.jaas.config": dedent(
             f"""
             com.sun.security.auth.module.Krb5LoginModule required
             useTicketCache=false
@@ -365,7 +386,7 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
             useKeyTab=true
             debug=false;""",
         ).strip(),
-        "kafka.sasl.kerberos.service.name": "kafka",
+        "sasl.kerberos.service.name": "kafka",
     }
 
 
@@ -386,8 +407,8 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
     conf = kafka.auth.get_options(kafka)
     # Assert
     assert conf == {
-        "kafka.sasl.mechanism": "GSSAPI",
-        "kafka.sasl.jaas.config": dedent(
+        "sasl.mechanism": "GSSAPI",
+        "sasl.jaas.config": dedent(
             f"""
             com.sun.security.auth.module.Krb5LoginModule required
             useTicketCache=false
@@ -399,7 +420,7 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
             useKeyTab=true
             debug=false;""",
         ).strip(),
-        "kafka.sasl.kerberos.service.name": "kafka",
+        "sasl.kerberos.service.name": "kafka",
     }
 
     Path("./keytab").unlink()
@@ -417,7 +438,7 @@ def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
         ),
     )
     # Assert
-    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "SASL_PLAINTEXT"}
+    assert kafka.protocol.get_options(kafka) == {"security.protocol": "SASL_PLAINTEXT"}
 
 
 def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):
@@ -429,4 +450,4 @@ def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):
     )
 
     # Assert
-    assert kafka.protocol.get_options(kafka) == {"kafka.security.protocol": "PLAINTEXT"}
+    assert kafka.protocol.get_options(kafka) == {"security.protocol": "PLAINTEXT"}

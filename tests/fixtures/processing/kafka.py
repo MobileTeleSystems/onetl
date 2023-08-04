@@ -19,14 +19,23 @@ logger = getLogger(__name__)
 class KafkaProcessing(BaseProcessing):
     column_names: list[str] = ["id_int", "text_string", "hwm_int", "float_value"]
 
-    @property
-    def producer(self):
+    def get_consumer(self):
+        from confluent_kafka import Consumer
+
+        return Consumer(
+            {
+                "bootstrap.servers": f"{self.host}:{self.port}",
+                "group.id": "mygroup",
+                "auto.offset.reset": "earliest",
+            },
+        )
+
+    def get_producer(self):
         from confluent_kafka import Producer
 
         return Producer({"bootstrap.servers": f"{self.host}:{self.port}"})
 
-    @property
-    def admin(self):
+    def get_admin_client(self):
         from confluent_kafka.admin import AdminClient
 
         return AdminClient({"bootstrap.servers": f"{self.host}:{self.port}"})
@@ -45,7 +54,11 @@ class KafkaProcessing(BaseProcessing):
 
     @property
     def port(self) -> int:
-        return int(os.environ["ONETL_KAFKA_PORT"])
+        return int(os.environ["ONETL_KAFKA_PLAINTEXT_ANONYMOUS_PORT"])
+
+    @property
+    def basic_auth_port(self) -> int:
+        return int(os.environ["ONETL_KAFKA_PLAINTEXT_BASIC_PORT"])
 
     def create_schema(self, schema: str) -> None:
         pass
@@ -69,20 +82,15 @@ class KafkaProcessing(BaseProcessing):
             pass
 
     def send_message(self, topic, message):
-        producer = self.producer
+        producer = self.get_producer()
         producer.produce(topic, message, callback=self.delivery_report)
         producer.flush()
 
     def get_expected_df(self, topic: str, num_messages: int = 1, timeout: float = 1.0) -> pandas.DataFrame:
-        from confluent_kafka import Consumer, KafkaException
+        from confluent_kafka import KafkaException
 
-        conf = {
-            "bootstrap.servers": f"{self.host}:{self.port}",
-            "group.id": "mygroup",
-            "auto.offset.reset": "earliest",
-        }
+        consumer = self.get_consumer()
 
-        consumer = Consumer(conf)
         consumer.subscribe([topic])
 
         messages = consumer.consume(num_messages=num_messages, timeout=timeout)
@@ -105,16 +113,18 @@ class KafkaProcessing(BaseProcessing):
         pass
 
     def delete_topic(self, topics: list[str]):
-        admin = self.admin
+        admin = self.get_admin_client()
         # https://github.com/confluentinc/confluent-kafka-python/issues/813
-        admin.delete_topics(topics, request_timeout=3)
+        admin.delete_topics(topics, request_timeout=5)
 
     def topic_exists(self, topic: str) -> bool:
-        topic_metadata = self.admin.list_topics(timeout=5)
+        admin = self.get_admin_client()
+        topic_metadata = admin.list_topics(timeout=5)
         return topic in topic_metadata.topics
 
     def get_num_partitions(self, topic: str) -> int:
-        metadata = self.admin.list_topics(topic, timeout=5)
+        admin = self.get_admin_client()
+        metadata = admin.list_topics(topic, timeout=5)
         topic_metadata = metadata.topics[topic]
 
         # Return the number of partitions

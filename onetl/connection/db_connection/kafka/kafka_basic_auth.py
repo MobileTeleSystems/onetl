@@ -45,6 +45,6 @@ class KafkaBasicAuth(KafkaAuth, GenericOptions):
 
     def get_options(self, kafka: Kafka) -> dict:
         return {
-            "kafka.sasl.mechanism": "PLAIN",
-            "kafka.sasl.jaas.config": self.get_jaas_conf(),
+            "sasl.mechanism": "PLAIN",
+            "sasl.jaas.config": self.get_jaas_conf(),
         }

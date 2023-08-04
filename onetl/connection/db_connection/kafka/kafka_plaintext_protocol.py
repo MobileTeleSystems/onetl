@@ -15,15 +15,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from onetl.impl.frozen_model import FrozenModel
+
 if TYPE_CHECKING:
     from onetl.connection import Kafka
 
 from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 
 
-class KafkaPlaintextProtocol(KafkaProtocol):
+class KafkaPlaintextProtocol(KafkaProtocol, FrozenModel):
     def get_options(self, kafka: Kafka) -> dict:
         # Access to Kafka is needed to select the type of protocol depending on the authentication scheme.
         if kafka.auth:
-            return {"kafka.security.protocol": "SASL_PLAINTEXT"}
-        return {"kafka.security.protocol": "PLAINTEXT"}
+            return {"security.protocol": "SASL_PLAINTEXT"}
+        return {"security.protocol": "PLAINTEXT"}

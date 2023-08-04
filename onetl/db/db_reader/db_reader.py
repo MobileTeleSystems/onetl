@@ -500,7 +500,7 @@ class DBReader(FrozenModel):
                 **self._get_read_kwargs(),
             )
 
-        raise ValueError(f"{self.connection.__class__.__name__} connection does not support BatchHWMStrategy")
+        raise ValueError(f"{self.connection.__class__.__name__} connection does not support batch strategies")
 
     @slot
     def run(self) -> DataFrame:
