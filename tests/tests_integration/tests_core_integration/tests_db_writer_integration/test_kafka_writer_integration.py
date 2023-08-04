@@ -56,7 +56,7 @@ def test_kafka_writer_snapshot(spark, kafka_processing):
 
 
 def test_kafka_writer_no_value_column_error(spark, kafka_processing):
-    from pyspark.errors.exceptions.captured import AnalysisException
+    from pyspark.sql.utils import AnalysisException
 
     topic, processing, df = kafka_processing
 
