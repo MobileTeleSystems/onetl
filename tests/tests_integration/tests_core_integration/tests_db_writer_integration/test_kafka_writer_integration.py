@@ -87,7 +87,7 @@ def test_kafka_writer_invalid_column_error(spark, kafka_processing):
         writer.run(df)
 
 
-def test_kafka_writer_headers_with_include_headers_error(spark, kafka_processing):
+def test_kafka_writer_with_include_headers_error(spark, kafka_processing):
     from pyspark.sql.types import (
         ArrayType,
         BinaryType,
@@ -209,3 +209,61 @@ def test_kafka_writer_partition_column(spark, kafka_processing):
     # Check that the 'partition' column is filled with the default partition value
     assert df_read.select("partition").distinct().collect()[0][0] == 0
     assert processing.get_num_partitions(topic) == 1
+
+
+def test_kafka_writer_headers(spark, kafka_processing):
+    from pyspark.sql import functions as F  # noqa: N812
+    from pyspark.sql.types import (
+        ArrayType,
+        BinaryType,
+        StringType,
+        StructField,
+        StructType,
+    )
+
+    topic, processing, df = kafka_processing
+
+    kafka = Kafka(
+        spark=spark,
+        addresses=[f"{processing.host}:{processing.port}"],
+        cluster="cluster",
+    )
+
+    writer = DBWriter(
+        connection=kafka,
+        table=topic,
+        options=kafka.WriteOptions(includeHeaders=True),
+    )
+
+    writer.run(df)
+
+    # Read the data from Kafka
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+        options=kafka.ReadOptions(includeHeaders=True),
+    )
+    df_read = reader.run()
+
+    assert df_read.filter(F.col("headers").isNull()).count() == df.count()
+
+    # Add a 'headers' column to the DataFrame
+    headers_schema = ArrayType(
+        StructType(
+            [
+                StructField("key", StringType()),
+                StructField("value", BinaryType()),
+            ],
+        ),
+    )
+    data = [(row["value"], [("key", b"value")]) for row in df.collect()]
+    df = spark.createDataFrame(data, schema=df.schema.add("headers", headers_schema))
+    writer.run(df)
+
+    df_read = reader.run()
+
+    assert df_read.filter(F.col("headers").isNotNull()).count() == df.count()
+    processing.assert_equal_df(
+        df.select("headers"),
+        other_frame=df_read.filter(F.col("headers").isNotNull()).select("headers"),
+    )
