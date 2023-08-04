@@ -1,4 +1,4 @@
-.. _spark-local-fs:
+.. _spark-s3:
 
 Spark S3
 =============

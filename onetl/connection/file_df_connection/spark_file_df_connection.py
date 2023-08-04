@@ -52,11 +52,10 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
     @slot
     def check(self):
-        self._check_if_schema_supported()
+        path = self._get_spark_default_path()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
         try:
-            path = self._get_spark_default_path()
             fs = self._get_spark_fs()
             fs.exists(path)
             log.info("|%s| Connection is available.", self.__class__.__name__)
@@ -141,25 +140,6 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
         log.info("|%s| Data is successfully saved to '%s'", self.__class__.__name__, path)
 
-    def _check_if_schema_supported(self) -> None:
-        """
-        Check if filesystem is supported by Spark
-        """
-        scheme = self._get_spark_default_path().toUri().getScheme()
-        try:
-            self._get_spark_fs()
-        except Exception:
-            msg = f"Spark session does not support filesystem '{scheme}://'.\n{self._installation_instructions}"
-            log.error(msg, exc_info=False)
-            raise
-
-    @property
-    @abstractmethod
-    def _installation_instructions(self) -> str:
-        """
-        Return installation instruction to use in :obj:`~check` method.
-        """
-
     @abstractmethod
     def _convert_to_url(self, path: PurePathProtocol) -> str:
         """
@@ -205,6 +185,6 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
     def _log_parameters(self):
         log.info("|Spark| Using connection parameters:")
         log_with_indent("type = %s", self.__class__.__name__)
-        parameters = self.dict(by_alias=True, exclude_none=True, exclude={"spark"})
+        parameters = self.dict(exclude_none=True, exclude={"spark"})
         for attr, value in sorted(parameters.items()):
             log_with_indent("%s = %r", attr, value)

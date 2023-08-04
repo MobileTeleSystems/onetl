@@ -270,6 +270,11 @@ class SparkS3(SparkFileDFConnection):
         self._reset_hadoop_conf()
 
     @slot
+    def check(self):
+        self._patch_hadoop_conf()
+        return super().check()
+
+    @slot
     def read_files_as_df(
         self,
         paths: list[PurePathProtocol],
@@ -291,10 +296,6 @@ class SparkS3(SparkFileDFConnection):
     ) -> None:
         self._patch_hadoop_conf()
         return super().write_df_as_files(df, path, format=format, options=options)
-
-    def _check_if_schema_supported(self) -> None:
-        self._patch_hadoop_conf()
-        super()._check_if_schema_supported()
 
     @root_validator
     def _validate_port(cls, values):
@@ -439,10 +440,6 @@ class SparkS3(SparkFileDFConnection):
 
         log.debug("Reset FileSystem cache")
         self._get_spark_fs().close()
-
-    @property
-    def _installation_instructions(self) -> str:
-        return "Please install Spark with Hadoop AWS library"
 
     def _convert_to_url(self, path: PurePathProtocol) -> str:
         # Path looks like "s3a://bucket/absolute/path"
