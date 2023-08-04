@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from etl_entities import Column
 
@@ -106,25 +104,26 @@ def test_kafka_reader_valid_hwm_column(spark_mock, hwm_column):
     )
 
 
-def test_kafka_reader_hwm_column_by_version(spark_mock):
+def test_kafka_reader_hwm_column_by_version(spark_mock, mocker):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
         spark=spark_mock,
     )
-    with patch.object(spark_mock, "version", new="3.3.0"):
+    mocker.patch.object(spark_mock, "version", new="3.2.0")
+    DBReader(
+        connection=kafka,
+        table="table",
+        hwm_column="timestamp",
+    )
+
+    mocker.patch.object(spark_mock, "version", new="2.4.0")
+    with pytest.raises(ValueError, match="Spark version must be 3.x"):
         DBReader(
             connection=kafka,
             table="table",
             hwm_column="timestamp",
         )
-    with patch.object(spark_mock, "version", new="2.3.0"):
-        with pytest.raises(ValueError, match="Spark version must be 3.x"):
-            DBReader(
-                connection=kafka,
-                table="table",
-                hwm_column="timestamp",
-            )
 
 
 @pytest.mark.parametrize("hwm_column", ["unknown", '("some", "thing")'])

@@ -55,7 +55,6 @@ def maven_packages():
         + Oracle.get_packages()
         + Postgres.get_packages()
         + Teradata.get_packages()
-        + Kafka.get_packages(spark_version=pyspark_version)
     )
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
@@ -66,6 +65,8 @@ def maven_packages():
     if pyspark_version >= (2, 4):
         # There is no Avro package for Spark 2.3
         packages.extend(Avro.get_packages(spark_version=pyspark_version))
+        # Kafka connector for Spark 2.3 is too old and not supported
+        packages.extend(Kafka.get_packages(spark_version=pyspark_version))
 
     if pyspark_version >= (3, 2):
         hadoop_versions_for_spark = {

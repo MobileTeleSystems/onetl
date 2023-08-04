@@ -54,7 +54,8 @@ services:
     image: ${KAFKA_IMAGE:-bitnami/kafka:latest}
     restart: unless-stopped
     ports:
-    - 9094:9094
+    - 9093:9093
+    - 9095:9095
     env_file: .env.dependencies
     networks:
     - onetl

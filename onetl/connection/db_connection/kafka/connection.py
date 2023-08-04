@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
@@ -41,6 +42,7 @@ from onetl.connection.db_connection.kafka.options import (
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
+from onetl.log import log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -64,7 +66,7 @@ class Kafka(DBConnection):
     .. dropdown:: Version compatibility
 
         * Apache Kafka versions: 0.10 or higher
-        * Spark versions: 2.3.x - 3.4.x
+        * Spark versions: 2.4.x - 3.4.x
 
     Parameters
     ----------
@@ -192,6 +194,20 @@ class Kafka(DBConnection):
     protocol: KafkaProtocol = PlaintextProtocol()
     extra: KafkaExtra = KafkaExtra()
 
+    @slot
+    def check(self):
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
+
+        try:
+            self._get_topics()
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+        return self
+
+    @slot
     def read_source_as_df(  # type: ignore
         self,
         source: str,
@@ -203,18 +219,9 @@ class Kafka(DBConnection):
         end_at: Statement | None = None,
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
-        result_options: dict = {
-            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
-        }
+        result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
-        result_options.update(self.protocol.get_options(self))
-
-        if self.auth:  # pragma: no cover
-            result_options.update(self.auth.get_options(self))
-
-        result_options.update(
-            {"kafka.bootstrap.servers": ",".join(self.addresses), "subscribe": source},
-        )
+        result_options["subscribe"] = source
         return self.spark.read.format("kafka").options(**result_options).load()
 
     @slot
@@ -244,14 +251,9 @@ class Kafka(DBConnection):
         if "topic" in df.columns:
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
-        write_options: dict = {
-            f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
-        }
+        write_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         write_options.update(options.dict(by_alias=True, exclude_none=True))
-        write_options.update(self.protocol.get_options(self))
-        if self.auth:  # pragma: no cover
-            write_options.update(self.auth.get_options(self))
-        write_options.update({"kafka.bootstrap.servers": ",".join(self.addresses), "topic": target})
+        write_options["topic"] = target
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
         df.write.format("kafka").options(**write_options).save()
@@ -334,6 +336,13 @@ class Kafka(DBConnection):
 
         # Connector version is same as Spark, do not perform any additional checks
         spark_ver = Version.parse(spark_version)
+        if spark_ver < (2, 4):
+            # Kafka connector for Spark 2.3 is build with Kafka client 0.10.0.1 which does not support
+            # passing `sasl.jaas.config` option. It is supported only in 0.10.2.0,
+            # see https://issues.apache.org/jira/browse/KAFKA-4259
+            # Old client requires generating JAAS file and placing it to filesystem, which is not secure.
+            raise ValueError(f"Spark version must be at least 2.4, got {spark_ver}")
+
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
@@ -343,14 +352,19 @@ class Kafka(DBConnection):
     def instance_url(self):
         return "kafka://" + self.cluster
 
-    def check(self):
-        return self
-
     @validator("addresses")
     def _validate_addresses(cls, value):
         if not value:
             raise ValueError("Passed empty parameter 'addresses'")
         return value
+
+    @validator("spark")
+    def _check_spark_version(cls, spark):
+        spark_version = get_spark_version(spark)
+        if spark_version < (2, 4):
+            raise ValueError(f"Spark version must be at least 2.4, got {spark_version}")
+
+        return spark
 
     @validator("spark")
     def _check_java_class_imported(cls, spark):
@@ -369,3 +383,43 @@ class Kafka(DBConnection):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
+
+    def _get_connection_properties(self) -> dict:
+        result = {"bootstrap.servers": ",".join(self.addresses)}
+        result.update(self.extra.dict(by_alias=True, exclude_none=True))
+        result.update(self.protocol.get_options(self))
+
+        if self.auth:
+            result.update(self.auth.get_options(self))
+        return result
+
+    def _get_java_consumer(self):
+        connection_properties = self._get_connection_properties()
+        connection_properties.update(
+            {
+                # Consumer cannot be created without these options
+                # They are set by Spark internally, but for manual consumer creation we need to pass them explicitly
+                "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            },
+        )
+        jvm = self.spark._jvm
+        consumer_class = jvm.org.apache.kafka.clients.consumer.KafkaConsumer
+        return consumer_class(connection_properties)
+
+    def _get_topics(self, timeout: int = 1) -> set[str]:
+        jvm = self.spark._jvm
+        duration = jvm.java.time.Duration.ofSeconds(timeout)  # type: ignore[union-attr]
+        consumer = self._get_java_consumer()
+        with closing(consumer):
+            topics = consumer.listTopics(duration)
+            return set(topics)
+
+    def _log_parameters(self):
+        log.info("|Spark| Using connection parameters:")
+        log_with_indent("type = %s", self.__class__.__name__)
+        log_with_indent("addresses = %r", self.addresses)
+        log_with_indent("cluster = %r", self.cluster)
+        log_with_indent("protocol = %r", self.protocol)
+        log_with_indent("auth = %r", self.auth)
+        log_with_indent("extra = %r", self.extra.dict(by_alias=True, exclude_none=True))
