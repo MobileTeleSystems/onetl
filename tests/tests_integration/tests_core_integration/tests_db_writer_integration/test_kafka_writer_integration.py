@@ -121,7 +121,7 @@ def test_kafka_writer_with_include_headers_error(spark, kafka_processing):
             ],
         ),
     )
-    data = [(row["value"], [("key", b"value")]) for row in df.collect()]
+    data = [(row["value"], [("key", bytearray(b"value"))]) for row in df.collect()]
     df = spark.createDataFrame(data, schema=df.schema.add("headers", headers_schema))
 
     kafka = Kafka(
@@ -255,7 +255,7 @@ def test_kafka_writer_headers(spark, kafka_processing):
             ],
         ),
     )
-    data = [(row["value"], [("key", b"value")]) for row in df.collect()]
+    data = [(row["value"], [("key", bytearray(b"value"))]) for row in df.collect()]
     df = spark.createDataFrame(data, schema=df.schema.add("headers", headers_schema))
     writer.run(df)
 
