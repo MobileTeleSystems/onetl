@@ -71,6 +71,7 @@ def file_df_dataframe(spark, file_df_schema):
     params=[
         lazy_fixture("local_fs_file_df_connection"),
         lazy_fixture("s3_file_df_connection"),
+        lazy_fixture("hdfs_file_df_connection"),
     ],
 )
 def file_df_connection(request):
@@ -81,6 +82,7 @@ def file_df_connection(request):
     params=[
         lazy_fixture("local_fs_file_df_connection_with_path"),
         lazy_fixture("s3_file_df_connection_with_path"),
+        lazy_fixture("hdfs_file_df_connection_with_path"),
     ],
 )
 def file_df_connection_with_path(request):
@@ -91,6 +93,7 @@ def file_df_connection_with_path(request):
     params=[
         lazy_fixture("local_fs_file_df_connection_with_path_and_files"),
         lazy_fixture("s3_file_df_connection_with_path_and_files"),
+        lazy_fixture("hdfs_file_df_connection_with_path_and_files"),
     ],
 )
 def file_df_connection_with_path_and_files(request):

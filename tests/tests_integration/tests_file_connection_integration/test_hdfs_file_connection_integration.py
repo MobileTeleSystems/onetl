@@ -19,7 +19,7 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
 
     assert "type = HDFS" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
-    assert f"port = {hdfs.webhdfs_port}" in caplog.text
+    assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
     assert "user = " not in caplog.text
     assert "keytab =" not in caplog.text
@@ -45,14 +45,14 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
 
     request.addfinalizer(finalizer)
 
-    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port, user=getuser(), keytab=keytab)
+    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), keytab=keytab)
 
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
     assert "type = HDFS" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
-    assert f"port = {hdfs.webhdfs_port}" in caplog.text
+    assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert f"user = '{hdfs.user}'" in caplog.text
     assert "timeout = 10" in caplog.text
     assert f"keytab = '{keytab}' (kind='file'" in caplog.text
@@ -67,14 +67,14 @@ def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
 
     mocker.patch.object(hdfs, "kinit")
 
-    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.port, user=getuser(), password="somepass")
+    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), password="somepass")
 
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
     assert "type = HDFS" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
-    assert f"port = {hdfs.webhdfs_port}" in caplog.text
+    assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
     assert f"user = '{hdfs.user}'" in caplog.text
     assert "keytab =" not in caplog.text
@@ -101,7 +101,7 @@ def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
 
     request.addfinalizer(is_namenode_active.disable)
 
-    HDFS(host=hdfs_server.host, port=hdfs_server.port).check()  # no exception
+    HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port).check()  # no exception
 
     with pytest.raises(RuntimeError, match="Host 'some-node2.domain.com' is not an active namenode"):
         HDFS(host="some-node2.domain.com").check()
@@ -128,7 +128,7 @@ def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
     @hook
     def get_webhdfs_port(cluster: str) -> int | None:
         if cluster == "rnd-dwh":
-            return hdfs_server.port
+            return hdfs_server.webhdfs_port
         return None
 
     request.addfinalizer(get_webhdfs_port.disable)
@@ -145,4 +145,6 @@ def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
         return "rnd-dwh"
 
     request.addfinalizer(get_current_cluster.disable)
-    assert HDFS.get_current().check()
+    hdfs = HDFS.get_current()
+    assert hdfs.cluster == "rnd-dwh"
+    assert hdfs.check()
