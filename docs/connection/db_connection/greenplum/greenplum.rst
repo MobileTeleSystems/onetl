@@ -20,7 +20,7 @@ Greenplum connector
 
     To make distributed queries like ``JOIN`` **on Greenplum side**, you should create a temporary table,
     populate it with the data you need (using ``.execute`` method to call ``INSERT INTO ... AS SELECT ...``),
-    and then read the data from this table using :obj:`onetl.db.db_reader.db_reader.DBReader`.
+    and then read the data from this table using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
 
     In this case data will be read directly from segment nodes in a distributed way
 

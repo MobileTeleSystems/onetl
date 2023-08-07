@@ -81,7 +81,8 @@ class SparkS3(SparkFileDFConnection):
 
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
-        Does NOT support file operations, like create, delete, rename, etc.
+        Does NOT support file operations, like create, delete, rename, etc. For these operations,
+        use :obj:`S3 <onetl.connection.file_connection.s3.S3>` connection.
 
     Parameters
     ----------

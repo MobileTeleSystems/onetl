@@ -120,6 +120,7 @@ Base ``onetl`` package contains:
 
 * ``DBReader``, ``DBWriter`` and related classes
 * ``FileDownloader``, ``FileUploader``, ``FileMover`` and related classes, like file filters & limits
+* ``FileReader``, ``FileWriter`` and related classes, like file formats
 * Read Strategies & HWM classes
 * Plugins support
 
@@ -138,10 +139,12 @@ It can be installed via:
 
 .. _spark-install:
 
-With DB connections
-~~~~~~~~~~~~~~~~~~~
+With DB and FileDF connections
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All DB connection classes (``Clickhouse``, ``Greenplum``, ``Hive`` and others) requires PySpark to be installed.
+All DB connection classes (``Clickhouse``, ``Greenplum``, ``Hive`` and others)
+and all FileDF connection classes (``SparkHDFS``, ``SparkLocalFS``, ``SparkS3``)
+require PySpark to be installed.
 
 Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:
 
@@ -183,12 +186,12 @@ or install PySpark explicitly:
     pip install onetl pyspark==3.4.1  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
-**Otherwise class import will fail.**
+**Otherwise connection object cannot be created.**
 
 
 .. _files-install:
 
-With file connections
+With File connections
 ~~~~~~~~~~~~~~~~~~~~~
 
 All File (but not *FileDF*) connection classes (``FTP``,  ``SFTP``, ``HDFS`` and so on) requires specific Python clients to be installed.
@@ -222,7 +225,7 @@ so some connections require additional setup to work properly.
   `GSSApi <https://pypi.org/project/gssapi/>`_ for authentication in WebHDFS.
   It also uses ``kinit`` executable to generate Kerberos ticket.
 
-* ``Hive``
+* ``Hive`` and ``SparkHDFS``
   Requires Kerberos ticket to exist before creating Spark session.
 
 So you need to install OS packages with:
@@ -273,6 +276,11 @@ MSSQL → Hive
 
 Read data from MSSQL, transform & write to Hive.
 
+.. code:: bash
+
+    # install onETL and PySpark
+    pip install onetl[spark]
+
 .. code:: python
 
     # Import pyspark to initialize the SparkSession
@@ -290,28 +298,29 @@ Read data from MSSQL, transform & write to Hive.
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
 
-    # Initiate new SparkSession with MSSQL driver loaded
+    # Initialize new SparkSession with MSSQL driver loaded
     maven_packages = MSSQL.get_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))
-        .enableHiveSupport()
+        .enableHiveSupport()  # for Hive
         .getOrCreate()
     )
 
-    # Initiate MSSQL connection and check if database is accessible
+    # Initialize MSSQL connection and check if database is accessible
     mssql = MSSQL(
         host="mssqldb.demo.com",
         user="onetl",
         password="onetl",
         database="Telecom",
         spark=spark,
+        # These options are passed to MSSQL JDBC Driver:
         extra={"ApplicationIntent": "ReadOnly"},
     ).check()
 
     # >>> INFO:|MSSQL| Connection is available.
 
-    # Initiate reader
+    # Initialize DB reader
     reader = DBReader(
         connection=mssql,
         source="dbo.demo_table",
@@ -322,26 +331,42 @@ Read data from MSSQL, transform & write to Hive.
 
     # Read data to DataFrame
     df = reader.run()
+    df.printSchema()
+    # root
+    #  |-- id: integer (nullable = true)
+    #  |-- phone_number: string (nullable = true)
+    #  |-- region: string (nullable = true)
+    #  |-- birth_date: date (nullable = true)
+    #  |-- registered_at: timestamp (nullable = true)
+    #  |-- account_balance: double (nullable = true)
 
     # Apply any PySpark transformations
     from pyspark.sql.functions import lit
 
     df_to_write = df.withColumn("engine", lit("onetl"))
+    df_to_write.printSchema()
+    # root
+    #  |-- id: integer (nullable = true)
+    #  |-- phone_number: string (nullable = true)
+    #  |-- region: string (nullable = true)
+    #  |-- birth_date: date (nullable = true)
+    #  |-- registered_at: timestamp (nullable = true)
+    #  |-- account_balance: double (nullable = true)
+    #  |-- engine: string (nullable = false)
 
-
-    # Initiate Hive connection
+    # Initialize Hive connection
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
-    # Initiate writer
-    writer = DBWriter(
+    # Initialize DB writer
+    db_writer = DBWriter(
         connection=hive,
         target="dl_sb.demo_table",
         # Set some Hive write options:
-        options=Hive.WriteOptions(mode="overwrite"),
+        options=Hive.WriteOptions(mode="overwrite_table"),
     )
 
     # Write data from DataFrame to Hive
-    writer.run(df_to_write)
+    db_writer.run(df_to_write)
 
     # Success!
 
@@ -349,6 +374,11 @@ SFTP → HDFS
 ~~~~~~~~~~~
 
 Download files from SFTP & upload them to HDFS.
+
+.. code:: bash
+
+    # install onETL with SFTP and HDFS clients, and Kerberos support
+    pip install onetl[hdfs,sftp,kerberos]
 
 .. code:: python
 
@@ -368,32 +398,35 @@ Download files from SFTP & upload them to HDFS.
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
 
-    # Initiate SFTP connection and check it
+    # Initialize SFTP connection and check it
     sftp = SFTP(
         host="sftp.test.com",
-        user="onetl",
-        password="onetl",
+        user="someuser",
+        password="somepassword",
     ).check()
 
     # >>> INFO:|SFTP| Connection is available.
 
-    # Initiate downloader
-    downloader = FileDownloader(
+    # Initialize downloader
+    file_downloader = FileDownloader(
         connection=sftp,
         source_path="/remote/tests/Report",  # path on SFTP
         local_path="/local/onetl/Report",  # local fs path
         filters=[
-            Glob("*.csv"),  # download only files matching the glob
-            ExcludeDir(
-                "/remote/tests/Report/exclude_dir/"
-            ),  # exclude files from this directory
+            # download only files matching the glob
+            Glob("*.csv"),
+            # exclude files from this directory
+            ExcludeDir("/remote/tests/Report/exclude_dir/"),
         ],
         limits=[
-            MaxFilesCount(1000),  # download max 1000 files per run
+            # download max 1000 files per run
+            MaxFilesCount(1000),
         ],
         options=FileDownloader.Options(
-            delete_source=True,  # delete files from SFTP after successful download
-            mode="error",  # mark file as failed if it already exist in local_path
+            # delete files from SFTP after successful download
+            delete_source=True,
+            # mark file as failed if it already exist in local_path
+            mode="error",
         ),
     )
 
@@ -426,21 +459,21 @@ Download files from SFTP & upload them to HDFS.
     #    LocalPath('/home/onetl/Report/file2.json'),
     # ]
 
-    # Initiate HDFS connection
+    # Initialize HDFS connection
     hdfs = HDFS(
         host="my.name.node",
-        user="onetl",
-        password="onetl",  # or keytab
+        user="someuser",
+        password="somepassword",  # or keytab
     )
 
-    # Initiate uploader
-    uploader = FileUploader(
+    # Initialize uploader
+    file_uploader = FileUploader(
         connection=hdfs,
         target_path="/user/onetl/Report/",  # hdfs path
     )
 
     # Upload files from local fs to HDFS
-    upload_result = uploader.run(renamed_files)
+    upload_result = file_uploader.run(renamed_files)
 
     # Method run returns a UploadResult object,
     # which contains collection of uploaded files, divided to 4 categories
@@ -448,10 +481,153 @@ Download files from SFTP & upload them to HDFS.
 
     #  UploadResult(
     #      successful=[RemoteFile('/user/onetl/Report/file1.json')],
-    #      failed=[FailedRemoteFile('/local/onetl/Report/file2.json')],
+    #      failed=[FailedLocalFile('/local/onetl/Report/file2.json')],
     #      ignored=[],
     #      missing=[],
     #  )
 
     # Raise exception if there are failed files, or there were no files in the local filesystem, or some input file is missing
     upload_result.raise_if_failed() or upload_result.raise_if_empty() or upload_result.raise_if_missing()
+
+    # Success!
+
+
+S3 → Postgres
+~~~~~~~~~~~~~~~~
+
+Read files directly from S3 path, convert them to dataframe, transform it and then write to a database.
+
+.. code:: bash
+
+    # install onETL and PySpark
+    pip install onetl[spark]
+
+.. code:: python
+
+    # Import pyspark to initialize the SparkSession
+    from pyspark.sql import SparkSession
+
+    # import function to setup onETL logging
+    from onetl.log import setup_logging
+
+    # Import required connections
+    from onetl.connection import Postgres, SparkS3
+
+    # Import onETL classes to read files
+    from onetl.file import FileReader
+    from onetl.file.format import CSV
+
+    # Import onETL classes to write data
+    from onetl.db import DBWriter
+
+    # change logging level to INFO, and set up default logging format and handler
+    setup_logging()
+
+    # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
+    maven_packages = SparkS3.get_packages(hadoop_version="3.3.4") + Postgres.get_packages()
+    spark = (
+        SparkSession.builder.appName("spark_app_onetl_demo")
+        .config("spark.jars.packages", ",".join(maven_packages))
+        .getOrCreate()
+    )
+
+    # Initialize S3 connection and check it
+    spark_s3 = SparkS3(
+        host="s3.test.com",
+        protocol="https",
+        bucket="my-bucket",
+        access_key="somekey",
+        secret_key="somesecret",
+        # Access bucket as s3.test.com/my-bucket
+        extra={"path.style.access": True},
+        spark=spark,
+    ).check()
+
+    # >>> INFO:|SparkS3| Connection is available.
+
+    # Describe file format and parsing options
+    csv = CSV(
+        delimiter=";",
+        header=True,
+        encoding="utf-8",
+    )
+
+    # Describe DataFrame schema of files
+    from pyspark.sql.types import (
+        DateType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
+    df_schema = StructType(
+        [
+            StructField("id", IntegerType()),
+            StructField("phone_number", StringType()),
+            StructField("region", StringType()),
+            StructField("birth_date", DateType()),
+            StructField("registered_at", TimestampType()),
+            StructField("account_balance", DoubleType()),
+        ],
+    )
+
+    # Initialize file reader
+    reader = FileReader(
+        connection=spark_s3,
+        source_path="/remote/tests/Report",  # path on S3 there *.csv files are located
+        format=csv,  # file format with specific parsing options
+        df_schema=df_schema,  # columns & types
+    )
+
+    # Read files directly from S3 as Spark DataFrame
+    df = reader.run()
+
+    # Check that DataFrame schema is same as expected
+    df.printSchema()
+    # root
+    #  |-- id: integer (nullable = true)
+    #  |-- phone_number: string (nullable = true)
+    #  |-- region: string (nullable = true)
+    #  |-- birth_date: date (nullable = true)
+    #  |-- registered_at: timestamp (nullable = true)
+    #  |-- account_balance: double (nullable = true)
+
+    # Apply any PySpark transformations
+    from pyspark.sql.functions import lit
+
+    df_to_write = df.withColumn("engine", lit("onetl"))
+    df_to_write.printSchema()
+    # root
+    #  |-- id: integer (nullable = true)
+    #  |-- phone_number: string (nullable = true)
+    #  |-- region: string (nullable = true)
+    #  |-- birth_date: date (nullable = true)
+    #  |-- registered_at: timestamp (nullable = true)
+    #  |-- account_balance: double (nullable = true)
+    #  |-- engine: string (nullable = false)
+
+    # Initialize Postgres connection
+    postgres = Postgres(
+        host="192.169.11.23",
+        user="onetl",
+        password="somepassword",
+        database="mydb",
+        spark=spark,
+    )
+
+    # Initialize DB writer
+    db_writer = DBWriter(
+        connection=postgres,
+        # write to specific table
+        target="public.my_table",
+        # with some writing options
+        options=Postgres.WriteOptions(mode="append"),
+    )
+
+    # Write DataFrame to Postgres table
+    db_writer.run(df_to_write)
+
+    # Success!
