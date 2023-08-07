@@ -447,4 +447,6 @@ class SparkS3(SparkFileDFConnection):
         return "s3a://" + self.bucket + "/" + path.as_posix().lstrip("/")
 
     def _get_default_path(self):
-        return RemotePath()
+        # Accessing s3://bucket will not fail even if user passed wrong connection options
+        # Trying to access some path in bucket to trigger a request
+        return RemotePath("/check")

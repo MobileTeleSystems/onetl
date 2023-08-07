@@ -79,9 +79,10 @@ def s3_file_connection_with_path_and_files(resource_path, s3_file_connection_wit
         pytest.param("s3-file-df", marks=[pytest.mark.file_df_connection, pytest.mark.connection]),
     ],
 )
-def s3_file_df_connection(spark, s3_server):
+def s3_file_df_connection(s3_file_connection, spark, s3_server):
     from onetl.connection import SparkS3
 
+    # s3_file_connection is used only to create bucket
     return SparkS3(
         host=s3_server.host,
         port=s3_server.port,
