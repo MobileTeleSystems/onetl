@@ -203,7 +203,7 @@ class HDFS(FileConnection, RenameDirMixin):
     """
 
     @support_hooks
-    class slots:  # noqa: N801
+    class Slots:
         """Slots that could be implemented by third-party plugins"""
 
         @slot
@@ -235,7 +235,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.normalize_cluster_name.bind
+                @HDFS.Slots.normalize_cluster_name.bind
                 @hook
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
@@ -273,7 +273,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.normalize_namenode_host.bind
+                @HDFS.Slots.normalize_namenode_host.bind
                 @hook
                 def normalize_namenode_host(host: str, cluster: str) -> str | None:
                     if cluster == "rnd-dwh":
@@ -310,7 +310,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_known_clusters.bind
+                @HDFS.Slots.get_known_clusters.bind
                 @hook
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
@@ -346,7 +346,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_cluster_namenodes.bind
+                @HDFS.Slots.get_cluster_namenodes.bind
                 @hook
                 def get_cluster_namenodes(cluster: str) -> str[str] | None:
                     if cluster == "rnd-dwh":
@@ -379,7 +379,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_current_cluster.bind
+                @HDFS.Slots.get_current_cluster.bind
                 @hook
                 def get_current_cluster() -> str:
                     # some magic here
@@ -415,7 +415,7 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.get_webhdfs_port.bind
+                @HDFS.Slots.get_webhdfs_port.bind
                 @hook
                 def get_webhdfs_port(cluster: str) -> int | None:
                     if cluster == "rnd-dwh":
@@ -463,12 +463,15 @@ class HDFS(FileConnection, RenameDirMixin):
                 from onetl.hooks import hook
 
 
-                @HDFS.slots.is_namenode_active.bind
+                @HDFS.Slots.is_namenode_active.bind
                 @hook
                 def is_namenode_active(host: str, cluster: str | None) -> bool:
                     # some magic here
                     return True
             """
+
+    # TODO: remove in v1.0.0
+    slots = Slots
 
     cluster: Optional[Cluster] = None
     host: Optional[Host] = None
@@ -516,12 +519,12 @@ class HDFS(FileConnection, RenameDirMixin):
     @validator("cluster")
     def validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
-        validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+        validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
         log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
-        known_clusters = cls.slots.get_known_clusters()
+        known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
                 f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
@@ -534,13 +537,13 @@ class HDFS(FileConnection, RenameDirMixin):
         cluster = values.get("cluster")
 
         log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
-        namenode = cls.slots.normalize_namenode_host(host, cluster) or host
+        namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
             log.debug("|%s|   Got %r", cls.__name__, namenode)
 
         if cluster:
             log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
-            known_namenodes = cls.slots.get_cluster_namenodes(cluster)
+            known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
             if known_namenodes and namenode not in known_namenodes:
                 raise ValueError(
                     f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
@@ -554,7 +557,7 @@ class HDFS(FileConnection, RenameDirMixin):
         cluster = values.get("cluster")
         if cluster:
             log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
-            result = cls.slots.get_webhdfs_port(cluster) or port
+            result = cls.Slots.get_webhdfs_port(cluster) or port
             if result != port:
                 log.debug("|%s|   Got %r", cls.__name__, result)
             return result
@@ -607,11 +610,11 @@ class HDFS(FileConnection, RenameDirMixin):
         """
 
         log.info("|%s| Detecting current cluster...", cls.__name__)
-        current_cluster = cls.slots.get_current_cluster()
+        current_cluster = cls.Slots.get_current_cluster()
         if not current_cluster:
             raise RuntimeError(
                 f"{cls.__name__}.get_current() can be used only if there are "
-                f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
+                f"some hooks bound to {cls.__name__}.Slots.get_current_cluster",
             )
 
         log.info("|%s|   Got %r", cls.__name__, current_cluster)
@@ -631,14 +634,14 @@ class HDFS(FileConnection, RenameDirMixin):
         class_name = self.__class__.__name__
         log.info("|%s| Detecting active namenode of cluster %r ...", class_name, self.cluster)
 
-        namenodes = self.slots.get_cluster_namenodes(self.cluster)
+        namenodes = self.Slots.get_cluster_namenodes(self.cluster)
         if not namenodes:
             raise RuntimeError(f"Cannot get list of namenodes for a cluster {self.cluster!r}")
 
         nodes_len = len(namenodes)
         for i, namenode in enumerate(namenodes):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
-            if self.slots.is_namenode_active(namenode, self.cluster):
+            if self.Slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
                 return namenode
             log.debug("|%s|     Node %r is not active, skipping", class_name, namenode)
@@ -656,7 +659,7 @@ class HDFS(FileConnection, RenameDirMixin):
         else:
             log.info("|%s| Detecting if namenode %r is active...", class_name, self.host)
 
-        is_active = self.slots.is_namenode_active(self.host, self.cluster)
+        is_active = self.Slots.is_namenode_active(self.host, self.cluster)
         if is_active:
             log.info("|%s|   Namenode %r is active!", class_name, self.host)
             return self.host
