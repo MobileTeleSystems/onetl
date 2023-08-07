@@ -400,7 +400,7 @@ class Hive(DBConnection):
         pass
 
     @support_hooks
-    class slots:  # noqa: N801
+    class Slots:
         """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins."""
 
         @slot
@@ -432,7 +432,7 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.normalize_cluster_name.bind
+                @Hive.Slots.normalize_cluster_name.bind
                 @hook
                 def normalize_cluster_name(cluster: str) -> str:
                     return cluster.lower()
@@ -463,7 +463,7 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.get_known_clusters.bind
+                @Hive.Slots.get_known_clusters.bind
                 @hook
                 def get_known_clusters() -> str[str]:
                     return {"rnd-dwh", "rnd-prod"}
@@ -494,12 +494,15 @@ class Hive(DBConnection):
                 from onetl.hooks import hook
 
 
-                @Hive.slots.get_current_cluster.bind
+                @Hive.Slots.get_current_cluster.bind
                 @hook
                 def get_current_cluster() -> str:
                     # some magic here
                     return "rnd-dwh"
             """
+
+    # TODO: remove in v1.0.0
+    slots = Slots
 
     class Dialect(  # noqa: WPS215
         SupportTableWithDBSchema,
@@ -519,12 +522,12 @@ class Hive(DBConnection):
     @validator("cluster")
     def validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
-        validated_cluster = cls.slots.normalize_cluster_name(cluster) or cluster
+        validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__)
 
         log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
-        known_clusters = cls.slots.get_known_clusters()
+        known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
                 f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
@@ -562,11 +565,11 @@ class Hive(DBConnection):
         """
 
         log.info("|%s| Detecting current cluster...", cls.__name__)
-        current_cluster = cls.slots.get_current_cluster()
+        current_cluster = cls.Slots.get_current_cluster()
         if not current_cluster:
             raise RuntimeError(
                 f"{cls.__name__}.get_current() can be used only if there are "
-                f"some hooks bound to {cls.__name__}.slots.get_current_cluster",
+                f"some hooks bound to {cls.__name__}.Slots.get_current_cluster",
             )
 
         log.info("|%s| Got %r", cls.__name__, current_cluster)
@@ -579,7 +582,7 @@ class Hive(DBConnection):
     @slot
     def check(self):
         log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
-        current_cluster = self.slots.get_current_cluster()
+        current_cluster = self.Slots.get_current_cluster()
         if current_cluster and self.cluster != current_cluster:
             raise ValueError("You can connect to a Hive cluster only from the same cluster")
 

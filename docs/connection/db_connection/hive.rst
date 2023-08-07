@@ -9,7 +9,7 @@ Hive connection
 
     Hive
     Hive.WriteOptions
-    Hive.slots
+    Hive.Slots
 
 .. autoclass:: Hive
     :members: get_current, check, sql, execute
@@ -21,6 +21,6 @@ Hive connection
     :members: mode, format, partition_by, bucket_by, sort_by, compression
     :member-order: bysource
 
-.. autoclass:: slots
+.. autoclass:: Slots
     :members: normalize_cluster_name, get_known_clusters, get_current_cluster
     :member-order: bysource

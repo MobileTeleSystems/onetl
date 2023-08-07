@@ -152,7 +152,7 @@ def test_hdfs_connection_with_password_and_keytab(request, tmp_path_factory):
 def test_hdfs_get_known_clusters_hook(request):
     from onetl.connection import HDFS
 
-    @HDFS.slots.get_known_clusters.bind
+    @HDFS.Slots.get_known_clusters.bind
     @hook
     def get_known_clusters() -> set[str]:
         return {"known1", "known2"}
@@ -171,7 +171,7 @@ def test_hdfs_get_known_clusters_hook(request):
 def test_hdfs_known_normalize_cluster_name_hook(request):
     from onetl.connection import HDFS
 
-    @HDFS.slots.normalize_cluster_name.bind
+    @HDFS.Slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
         return cluster.lower().replace("_", "-")
@@ -186,7 +186,7 @@ def test_hdfs_known_normalize_cluster_name_hook(request):
 def test_hdfs_get_cluster_namenodes_hook(request):
     from onetl.connection import HDFS
 
-    @HDFS.slots.get_cluster_namenodes.bind
+    @HDFS.Slots.get_cluster_namenodes.bind
     @hook
     def get_cluster_namenodes(cluster: str) -> set[str]:
         return {"some-node1.domain.com", "some-node2.domain.com"}
@@ -206,7 +206,7 @@ def test_hdfs_get_cluster_namenodes_hook(request):
 def test_hdfs_normalize_namenode_host_hook(request):
     from onetl.connection import HDFS
 
-    @HDFS.slots.normalize_namenode_host.bind
+    @HDFS.Slots.normalize_namenode_host.bind
     @hook
     def normalize_namenode_host(host: str, cluster: str | None) -> str:
         host = host.lower()
@@ -226,7 +226,7 @@ def test_hdfs_normalize_namenode_host_hook(request):
 def test_hdfs_get_webhdfs_port_hook(request):
     from onetl.connection import HDFS
 
-    @HDFS.slots.get_webhdfs_port.bind
+    @HDFS.Slots.get_webhdfs_port.bind
     @hook
     def get_webhdfs_port(cluster: str) -> int | None:
         if cluster == "rnd-dwh":
@@ -245,14 +245,14 @@ def test_hdfs_get_webhdfs_port_hook(request):
 def test_hdfs_known_get_current(request, mocker):
     from onetl.connection import HDFS
 
-    # no hooks bound to HDFS.slots.get_current_cluster
+    # no hooks bound to HDFS.Slots.get_current_cluster
     error_msg = re.escape(
-        "HDFS.get_current() can be used only if there are some hooks bound to HDFS.slots.get_current_cluster",
+        "HDFS.get_current() can be used only if there are some hooks bound to HDFS.Slots.get_current_cluster",
     )
     with pytest.raises(RuntimeError, match=error_msg):
         HDFS.get_current()
 
-    @HDFS.slots.get_current_cluster.bind
+    @HDFS.Slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"
