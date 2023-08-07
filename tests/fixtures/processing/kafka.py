@@ -92,10 +92,14 @@ class KafkaProcessing(BaseProcessing):
             if msg.error():
                 raise KafkaException(msg.error())
             else:
-                result.append(msg.value().decode("utf-8"))
+                key = msg.key().decode("utf-8") if msg.key() else None
+                value = msg.value().decode("utf-8") if msg.value() else None
+                partition = msg.partition()
+                headers = msg.headers()
+                result.append((key, value, partition, headers, topic))
 
         consumer.close()
-        return pandas.DataFrame(result, columns=["value"])
+        return pandas.DataFrame(result, columns=["key", "value", "partition", "headers", "topic"])
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
@@ -104,6 +108,17 @@ class KafkaProcessing(BaseProcessing):
         admin = self.admin
         # https://github.com/confluentinc/confluent-kafka-python/issues/813
         admin.delete_topics(topics, request_timeout=3)
+
+    def topic_exists(self, topic: str) -> bool:
+        topic_metadata = self.admin.list_topics(timeout=5)
+        return topic in topic_metadata.topics
+
+    def get_num_partitions(self, topic: str) -> int:
+        metadata = self.admin.list_topics(topic, timeout=5)
+        topic_metadata = metadata.topics[topic]
+
+        # Return the number of partitions
+        return len(topic_metadata.partitions)
 
     def get_expected_dataframe(  # noqa: WPS463
         self,
