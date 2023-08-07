@@ -237,7 +237,7 @@ class Kafka(DBConnection):
             raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(includeHeaders=False)")
 
         if "topic" in df.columns:
-            log.warning("The 'topic' column in the DataFrame will be overridden with the value in 'table' - %r", target)
+            log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
         write_options: dict = {
             f"kafka.{key}": value for key, value in self.extra.dict(by_alias=True, exclude_none=True).items()
