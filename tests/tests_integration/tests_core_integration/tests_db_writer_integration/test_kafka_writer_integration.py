@@ -61,6 +61,8 @@ def kafka_spark_df(spark, kafka_processing):
 
 
 def test_kafka_writer_snapshot(spark, kafka_processing, kafka_spark_df):
+    from pyspark.sql.functions import lit
+
     if get_spark_version(spark).major < 3:
         pytest.skip("Spark 3.x or later is required to write/read 'headers' from Kafka messages")
 
@@ -81,12 +83,8 @@ def test_kafka_writer_snapshot(spark, kafka_processing, kafka_spark_df):
 
     pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
 
-    assert len(pd_df) == df.count()
-    processing.assert_equal_df(df, other_frame=pd_df.drop(columns=["key", "partition", "headers", "topic"], axis=1))
-    # Check that the 'key' column is filled with nulls
-    assert pd_df["key"].isnull().all()
-    # Check that all values in 'headers' are null
-    assert pd_df["headers"].isnull().all()
+    read_df = df.withColumn("key", lit(None)).withColumn("headers", lit(None))
+    processing.assert_equal_df(pd_df.drop(columns=["partition", "topic"], axis=1), other_frame=read_df)
 
 
 def test_kafka_writer_no_value_column_error(spark, kafka_processing, kafka_spark_df):
@@ -157,12 +155,8 @@ def test_kafka_writer_with_include_headers_error(spark, kafka_processing, kafka_
 
 
 def test_kafka_writer_key_column(spark, kafka_processing, kafka_spark_df):
-    from pyspark.sql.functions import lit
-
     topic, processing = kafka_processing
-    df = kafka_spark_df.select("value")
-
-    df = df.withColumn("key", lit("key_value"))
+    df = kafka_spark_df.select("value", "key")
 
     kafka = Kafka(
         spark=spark,
@@ -211,7 +205,7 @@ def test_kafka_writer_topic_column(spark, kafka_processing, caplog, kafka_spark_
 
 def test_kafka_writer_partition_column(spark, kafka_processing, kafka_spark_df):
     topic, processing = kafka_processing
-    df = kafka_spark_df.select("value")
+    df = kafka_spark_df.select("value", "partition")
 
     kafka = Kafka(
         spark=spark,
@@ -250,11 +244,12 @@ def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
         options=kafka.WriteOptions(includeHeaders=True),
     )
 
-    writer.run(kafka_spark_df)
+    df = kafka_spark_df.select("value", "headers")
+    writer.run(df)
 
     pd_df = processing.get_expected_df(topic, num_messages=kafka_spark_df.count(), timeout=3)
 
     processing.assert_equal_df(
-        kafka_spark_df.select("headers"),
-        other_frame=pd_df.loc[:, ["headers"]],
+        df,
+        other_frame=pd_df.drop(columns=["key", "partition", "topic"], axis=1),
     )
