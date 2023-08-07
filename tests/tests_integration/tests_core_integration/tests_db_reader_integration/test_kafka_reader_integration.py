@@ -153,7 +153,7 @@ def test_kafka_reader_columns_and_types_without_headers(spark, kafka_processing,
 
 def test_kafka_reader_columns_and_types_with_headers(spark, kafka_processing, kafka_schema_with_headers):
     if get_spark_version(spark).major < 3:
-        pytest.skip("requires Spark 3.x or later")
+        pytest.skip("Spark 3.x or later is required to write/read 'headers' from Kafka messages")
 
     topic, processing, _ = kafka_processing
 

@@ -96,12 +96,10 @@ class KafkaProcessing(BaseProcessing):
                 value = msg.value().decode("utf-8") if msg.value() else None
                 partition = msg.partition()
                 headers = msg.headers()
-                if headers is not None:
-                    headers = [h[1].decode("utf-8") for h in headers]
-                result.append((key, value, partition, headers))
+                result.append((key, value, partition, headers, topic))
 
         consumer.close()
-        return pandas.DataFrame(result, columns=["key", "value", "partition", "headers"])
+        return pandas.DataFrame(result, columns=["key", "value", "partition", "headers", "topic"])
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
