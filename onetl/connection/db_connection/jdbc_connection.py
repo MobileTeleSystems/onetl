@@ -567,7 +567,8 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
 
         .. note::
 
-            This method does not support :ref:`strategy`, use :obj:`onetl.db.db_reader.db_reader.DBReader` instead
+            This method does not support :ref:`strategy`,
+            use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
 
         .. note::
 
