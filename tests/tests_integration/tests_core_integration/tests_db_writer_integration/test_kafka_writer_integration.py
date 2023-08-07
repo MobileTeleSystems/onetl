@@ -83,8 +83,13 @@ def test_kafka_writer_snapshot(spark, kafka_processing, kafka_spark_df):
 
     pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=3)
 
-    read_df = df.withColumn("key", lit(None)).withColumn("headers", lit(None))
-    processing.assert_equal_df(pd_df.drop(columns=["partition", "topic"], axis=1), other_frame=read_df)
+    read_df = (
+        df.withColumn("key", lit(None))
+        .withColumn("topic", lit(topic))
+        .withColumn("partition", lit(0))
+        .withColumn("headers", lit(None))
+    )
+    processing.assert_equal_df(pd_df, other_frame=read_df)
 
 
 def test_kafka_writer_no_value_column_error(spark, kafka_processing, kafka_spark_df):
