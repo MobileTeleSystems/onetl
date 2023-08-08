@@ -7,6 +7,7 @@ import pytest
 
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
+from onetl.hooks import hook
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -451,3 +452,66 @@ def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):
 
     # Assert
     assert kafka.protocol.get_options(kafka) == {"security.protocol": "PLAINTEXT"}
+
+
+def test_kafka_normalize_cluster_name_hook(request, spark_mock):
+    @Kafka.Slots.normalize_cluster_name.bind
+    @hook
+    def normalize_cluster_name(cluster: str):
+        return cluster.lower().replace("_", "-")
+
+    request.addfinalizer(normalize_cluster_name.disable)
+
+    assert Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1"]).cluster == "kafka-cluster"
+    assert Kafka(cluster="kafka_cluster", spark=spark_mock, addresses=["192.168.1.1"]).cluster == "kafka-cluster"
+    assert Kafka(cluster="KAFKA-CLUSTER", spark=spark_mock, addresses=["192.168.1.1"]).cluster == "kafka-cluster"
+
+
+def test_kafka_get_known_clusters_hook(request, spark_mock):
+    @Kafka.Slots.get_known_clusters.bind
+    @hook
+    def get_known_clusters():
+        return {"cluster", "local"}
+
+    request.addfinalizer(get_known_clusters.disable)
+
+    assert Kafka(cluster="cluster", spark=spark_mock, addresses=["192.168.1.1"]).cluster in get_known_clusters()
+    assert Kafka(cluster="local", spark=spark_mock, addresses=["192.168.1.1"]).cluster in get_known_clusters()
+    error_msg = "Cluster 'unknown-cluster' is not in the known clusters list: ['cluster', 'local']"
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        Kafka(cluster="unknown-cluster", spark=spark_mock, addresses=["192.168.1.1", "192.168.1.2"])
+
+
+def test_kafka_normalize_address_hook(request, spark_mock):
+    @Kafka.Slots.normalize_address.bind
+    @hook
+    def normalize_address(address: str, cluster: str):
+        if cluster == "kafka-cluster":
+            return f"{address}:9093"
+        elif cluster == "local":
+            return f"{address}:9092"
+        return None
+
+    request.addfinalizer(normalize_address.disable)
+
+    assert Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1"]).addresses == ["192.168.1.1:9093"]
+    assert Kafka(cluster="local", spark=spark_mock, addresses=["localhost"]).addresses == ["localhost:9092"]
+
+
+def test_kafka_get_cluster_addresses_hook(request, spark_mock):
+    @Kafka.Slots.get_cluster_addresses.bind
+    @hook
+    def get_cluster_addresses(cluster: str):
+        if cluster == "kafka-cluster":
+            return ["192.168.1.1", "192.168.1.2"]
+        return None
+
+    request.addfinalizer(get_cluster_addresses.disable)
+
+    assert Kafka(cluster="kafka-cluster", spark=spark_mock).addresses == [
+        "192.168.1.1",
+        "192.168.1.2",
+    ]
+
+    with pytest.raises(ValueError, match="Addresses 192.168.1.3 are not in the cluster"):
+        Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1", "192.168.1.3"])
