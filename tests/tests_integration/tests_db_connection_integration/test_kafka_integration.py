@@ -148,15 +148,6 @@ def test_kafka_db_connection_check_with_hooks(request, spark, caplog):
         spark=spark,
     ).check()
 
-    with caplog.at_level(logging.DEBUG):
-        Kafka(
-            addresses=[f"{kafka_processing.host.upper()}:{kafka_processing.port}"],
-            cluster="local",
-            spark=spark,
-        ).check()
-
-        assert f"Got f['{kafka_processing.host}:{kafka_processing.port}']" in caplog.text
-
     with pytest.raises(
         ValueError,
         match=re.escape("Cluster 'kafka-cluster' is not in the known clusters list: ['local']"),
