@@ -10,7 +10,7 @@ from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileMover
 from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
-from onetl.impl import FailedRemoteFile, FileWriteMode, RemoteFile, RemotePath
+from onetl.impl import FailedRemoteFile, FileExistsBehavior, RemoteFile, RemotePath
 
 
 def test_file_mover_view_file(file_connection_with_path_and_files):
@@ -430,11 +430,7 @@ def test_file_mover_run_absolute_path_not_match_source_path(
         mover.run(["/some/relative/path/file.txt"])
 
 
-@pytest.mark.parametrize(
-    "options",
-    [{"mode": "error"}, FileMover.Options(mode="error"), FileMover.Options(mode=FileWriteMode.ERROR)],
-)
-def test_file_mover_mode_error(request, file_connection_with_path_and_files, options):
+def test_file_mover_mode_fail(request, file_connection_with_path_and_files):
     file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 
@@ -455,7 +451,7 @@ def test_file_mover_mode_error(request, file_connection_with_path_and_files, opt
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=options,
+        options=FileMover.Options(if_exists=FileExistsBehavior.ERROR),
     )
 
     move_result = mover.run()
@@ -483,7 +479,7 @@ def test_file_mover_mode_error(request, file_connection_with_path_and_files, opt
         assert file_connection.read_text(target_file) == "unchanged"
 
 
-def test_file_mover_mode_ignore(request, file_connection_with_path_and_files, caplog):
+def test_file_mover_mode_skip_file(request, file_connection_with_path_and_files, caplog):
     file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 
@@ -506,7 +502,7 @@ def test_file_mover_mode_ignore(request, file_connection_with_path_and_files, ca
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(mode=FileWriteMode.IGNORE),
+        options=FileMover.Options(if_exists=FileExistsBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -536,7 +532,7 @@ def test_file_mover_mode_ignore(request, file_connection_with_path_and_files, ca
         assert file_connection.read_text(target_file) == "unchanged"
 
 
-def test_file_mover_mode_overwrite(request, file_connection_with_path_and_files, caplog):
+def test_file_mover_mode_replace_file(request, file_connection_with_path_and_files, caplog):
     file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
 
@@ -563,7 +559,7 @@ def test_file_mover_mode_overwrite(request, file_connection_with_path_and_files,
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(mode=FileWriteMode.OVERWRITE),
+        options=FileMover.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -597,7 +593,7 @@ def test_file_mover_mode_overwrite(request, file_connection_with_path_and_files,
 
 
 @pytest.mark.parametrize("remote_dir_exist", [True, False])
-def test_file_mover_mode_delete_all(
+def test_file_mover_mode_replace_entire_directory(
     request,
     file_connection_with_path_and_files,
     remote_dir_exist,
@@ -619,7 +615,7 @@ def test_file_mover_mode_delete_all(
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(mode=FileWriteMode.DELETE_ALL),
+        options=FileMover.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

@@ -139,7 +139,7 @@ def test_file_downloader_increment_hwm_is_ignored_for_user_input(
         source_path=remote_path,
         local_path=local_path,
         hwm_type="file_list",
-        options=FileDownloader.Options(mode="overwrite"),
+        options=FileDownloader.Options(if_exists="replace_file"),
     )
 
     with hwm_store:

@@ -9,7 +9,7 @@ import pytest
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileUploader
-from onetl.impl import FailedLocalFile, FileWriteMode, LocalPath, RemoteFile
+from onetl.impl import FailedLocalFile, FileExistsBehavior, LocalPath, RemoteFile
 
 
 def test_file_uploader_view_files(file_connection, file_connection_resource_path):
@@ -256,11 +256,7 @@ def test_file_uploader_run_delete_local(
     assert existing_files
 
 
-@pytest.mark.parametrize(
-    "options",
-    [{"mode": "error"}, FileUploader.Options(mode="error"), FileUploader.Options(mode=FileWriteMode.ERROR)],
-)
-def test_file_uploader_run_mode_error(request, file_connection, file_connection_test_files, options):
+def test_file_uploader_run_mode_fail(request, file_connection, file_connection_test_files):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     test_files = file_connection_test_files
 
@@ -279,7 +275,7 @@ def test_file_uploader_run_mode_error(request, file_connection, file_connection_
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=options,
+        options=FileUploader.Options(if_exists=FileExistsBehavior.ERROR),
     )
 
     upload_result = uploader.run(test_files)
@@ -311,7 +307,7 @@ def test_file_uploader_run_mode_error(request, file_connection, file_connection_
         assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_file_uploader_run_mode_ignore(request, file_connection, file_connection_test_files, caplog):
+def test_file_uploader_run_mode_skip_file(request, file_connection, file_connection_test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     test_files = file_connection_test_files
 
@@ -330,7 +326,7 @@ def test_file_uploader_run_mode_ignore(request, file_connection, file_connection
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(mode=FileWriteMode.IGNORE),
+        options=FileUploader.Options(if_exists=FileExistsBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -363,7 +359,7 @@ def test_file_uploader_run_mode_ignore(request, file_connection, file_connection
         assert file_connection.read_text(remote_file) == "unchanged"
 
 
-def test_file_uploader_run_mode_overwrite(request, file_connection, file_connection_test_files, caplog):
+def test_file_uploader_run_mode_replace_file(request, file_connection, file_connection_test_files, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     test_files = file_connection_test_files
 
@@ -382,7 +378,7 @@ def test_file_uploader_run_mode_overwrite(request, file_connection, file_connect
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(mode=FileWriteMode.OVERWRITE),
+        options=FileUploader.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -419,7 +415,7 @@ def test_file_uploader_run_mode_overwrite(request, file_connection, file_connect
 
 
 @pytest.mark.parametrize("remote_dir_exist", [True, False])
-def test_file_uploader_run_mode_delete_all(
+def test_file_uploader_run_mode_replace_entire_directory(
     request,
     file_connection,
     file_connection_test_files,
@@ -443,7 +439,7 @@ def test_file_uploader_run_mode_delete_all(
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(mode=FileWriteMode.DELETE_ALL),
+        options=FileUploader.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

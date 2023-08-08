@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mappi
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from pydantic import SecretStr, validator
+from pydantic import Field, SecretStr, root_validator, validator
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -97,12 +97,23 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 )
 
 
-class MongoDBWriteMode(str, Enum):
+class MongoDBCollectionExistsBehavior(str, Enum):
     APPEND = "append"
-    OVERWRITE = "overwrite"
+    REPLACE_ENTIRE_COLLECTION = "replace_entire_collection"
 
     def __str__(self) -> str:
         return str(self.value)
+
+    @classmethod  # noqa: WPS120
+    def _missing_(cls, value: object):  # noqa: WPS120
+        if str(value) == "overwrite":
+            warnings.warn(
+                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                "Use `replace_entire_collection` instead",
+                category=UserWarning,
+                stacklevel=4,
+            )
+            return cls.REPLACE_ENTIRE_COLLECTION
 
 
 PIPELINE_PROHIBITED_OPTIONS = frozenset(
@@ -438,42 +449,44 @@ class MongoDB(DBConnection):
         .. code:: python
 
             options = MongoDB.WriteOptions(
-                mode="append",
+                if_exists="append",
                 sampleSize=500,
                 localThreshold=20,
             )
         """
 
-        mode: MongoDBWriteMode = MongoDBWriteMode.APPEND
-        """Mode of writing data into target table.
+        if_exists: MongoDBCollectionExistsBehavior = Field(default=MongoDBCollectionExistsBehavior.APPEND, alias="mode")
+        """Behavior of writing data into existing collection.
 
         Possible values:
             * ``append`` (default)
-                Appends data into existing table.
+                Adds new objects into existing collection.
 
-                Behavior in details:
+                .. dropdown:: Behavior in details
 
-                * Table does not exist
-                    Table is created using other options from current class
+                * Collection does not exist
+                    Collection is created using options provided by user
                     (``shardkey`` and others).
 
-                * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data
+                * Collection exists
+                    Data is appended to a collection.
 
-            * ``overwrite``
-                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+                    .. warning::
 
-                Behavior in details:
+                        This mode does not check whether collection already contains
+                        objects from dataframe, so duplicated objects can be created.
 
-                * Table does not exist
-                    Table is created using other options from current class
+            * ``replace_entire_collection``
+                **Collection is deleted and then created**.
+
+                .. dropdown:: Behavior in details
+
+                * Collection does not exist
+                    Collection is created using options provided by user
                     (``shardkey`` and others).
 
-                * Table exists
-                    Table content is replaced with dataframe content.
-
-                    After writing completed, target table could either have the same DDL as
-                    before writing data, or can be recreated.
+                * Collection exists
+                    Collection content is replaced with dataframe content.
 
         .. note::
 
@@ -484,6 +497,17 @@ class MongoDB(DBConnection):
             prohibited_options = PROHIBITED_OPTIONS
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     class Dialect(  # noqa: WPS215
         SupportTableWithoutDBSchema,
@@ -872,10 +896,14 @@ class MongoDB(DBConnection):
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        mode = write_options.mode
-        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
+        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
         write_options_dict["connection.uri"] = self.connection_url
         write_options_dict["collection"] = target
+        mode = (
+            "overwrite"
+            if write_options.if_exists == MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION
+            else "append"
+        )
 
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
         df.write.format("mongodb").mode(mode).options(**write_options_dict).save()

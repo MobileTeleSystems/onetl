@@ -16,7 +16,7 @@ from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import (
     FailedRemoteFile,
-    FileWriteMode,
+    FileExistsBehavior,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -449,11 +449,7 @@ def test_file_downloader_run_absolute_path_not_match_source_path(
         downloader.run(["/some/relative/path/file.txt"])
 
 
-@pytest.mark.parametrize(
-    "options",
-    [{"mode": "error"}, FileDownloader.Options(mode="error"), FileDownloader.Options(mode=FileWriteMode.ERROR)],
-)
-def test_file_downloader_mode_error(file_connection_with_path_and_files, options, tmp_path_factory):
+def test_file_downloader_mode_fail(file_connection_with_path_and_files, tmp_path_factory):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -470,7 +466,7 @@ def test_file_downloader_mode_error(file_connection_with_path_and_files, options
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=options,
+        options=FileDownloader.Options(if_exists=FileExistsBehavior.ERROR),
     )
 
     download_result = downloader.run()
@@ -502,7 +498,7 @@ def test_file_downloader_mode_error(file_connection_with_path_and_files, options
         assert local_file.read_text() == "unchanged"
 
 
-def test_file_downloader_mode_ignore(file_connection_with_path_and_files, tmp_path_factory, caplog):
+def test_file_downloader_mode_skip_file(file_connection_with_path_and_files, tmp_path_factory, caplog):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -521,7 +517,7 @@ def test_file_downloader_mode_ignore(file_connection_with_path_and_files, tmp_pa
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(mode=FileWriteMode.IGNORE),
+        options=FileDownloader.Options(if_exists=FileExistsBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -554,7 +550,7 @@ def test_file_downloader_mode_ignore(file_connection_with_path_and_files, tmp_pa
         assert local_file.read_text() == "unchanged"
 
 
-def test_file_downloader_mode_overwrite(file_connection_with_path_and_files, tmp_path_factory, caplog):
+def test_file_downloader_mode_replace_file(file_connection_with_path_and_files, tmp_path_factory, caplog):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -573,7 +569,7 @@ def test_file_downloader_mode_overwrite(file_connection_with_path_and_files, tmp
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(mode=FileWriteMode.OVERWRITE),
+        options=FileDownloader.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -611,7 +607,7 @@ def test_file_downloader_mode_overwrite(file_connection_with_path_and_files, tmp
 
 
 @pytest.mark.parametrize("local_dir_exist", [True, False])
-def test_file_downloader_mode_delete_all(
+def test_file_downloader_mode_replace_entire_directory(
     file_connection_with_path_and_files,
     tmp_path_factory,
     local_dir_exist,
@@ -631,7 +627,7 @@ def test_file_downloader_mode_delete_all(
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(mode=FileWriteMode.DELETE_ALL),
+        options=FileDownloader.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

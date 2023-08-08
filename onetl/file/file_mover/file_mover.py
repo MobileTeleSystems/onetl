@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
@@ -31,7 +32,7 @@ from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
-    FileWriteMode,
+    FileExistsBehavior,
     FrozenModel,
     GenericOptions,
     RemoteFile,
@@ -141,7 +142,7 @@ class FileMover(FrozenModel):
                 ExcludeDir("/path/to/source/dir/exclude"),
             ],
             limits=[MaxFilesCount(100)],
-            options=FileMover.Options(mode="overwrite"),
+            options=FileMover.Options(if_exists="replace_file"),
         )
 
         # move files from "/path/to/source/dir" to "/path/to/target/dir",
@@ -155,7 +156,7 @@ class FileMover(FrozenModel):
     class Options(GenericOptions):
         """File moving options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistsBehavior = Field(default=FileExistsBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -175,6 +176,17 @@ class FileMover(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileMover.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -319,7 +331,7 @@ class FileMover(FrozenModel):
         to_move = self._validate_files(files)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             self.connection.remove_dir(self.target_path, recursive=True)
             self.connection.create_dir(self.target_path)
 
@@ -406,7 +418,7 @@ class FileMover(FrozenModel):
 
         log_options(self.options.dict(by_alias=True))
 
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE MOVING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -545,10 +557,10 @@ class FileMover(FrozenModel):
             if self.connection.path_exists(target_file):
                 new_file = self.connection.resolve_file(target_file)
 
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistsBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(new_file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistsBehavior.IGNORE:
                     log.warning(
                         "|%s| File %s already exists, skipping",
                         self.connection.__class__.__name__,

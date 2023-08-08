@@ -24,7 +24,7 @@ from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
@@ -37,7 +37,7 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
-    FileWriteMode,
+    FileExistsBehavior,
     FrozenModel,
     GenericOptions,
     LocalPath,
@@ -176,7 +176,7 @@ class FileDownloader(FrozenModel):
                 ExcludeDir("/path/to/remote/source/exclude_dir"),
             ],
             limits=[MaxFilesCount(100)],
-            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
+            options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
         )
 
         # download files to "/path/to/local",
@@ -212,7 +212,7 @@ class FileDownloader(FrozenModel):
     class Options(GenericOptions):
         """File downloading options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistsBehavior = Field(default=FileExistsBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -239,6 +239,17 @@ class FileDownloader(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileDownloader.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -396,7 +407,7 @@ class FileDownloader(FrozenModel):
         to_download = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             if self.local_path.exists():
                 shutil.rmtree(self.local_path)
             self.local_path.mkdir()
@@ -602,7 +613,7 @@ class FileDownloader(FrozenModel):
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
 
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -761,10 +772,10 @@ class FileDownloader(FrozenModel):
 
             replace = False
             if local_file.exists():
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistsBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistsBehavior.IGNORE:
                     log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
                     return FileDownloadStatus.SKIPPED, remote_file
 
