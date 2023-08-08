@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from onetl.connection import MongoDB
+from onetl.connection.db_connection.mongodb import MongoDBCollectionExistsBehavior
 
 pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -227,3 +228,59 @@ def test_mongodb_convert_dict_to_str():
         '{"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}}]}]'
         "}"
     )
+
+
+@pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, MongoDBCollectionExistsBehavior.APPEND),
+        ({"if_exists": "append"}, MongoDBCollectionExistsBehavior.APPEND),
+        ({"if_exists": "replace_entire_collection"}, MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION),
+    ],
+)
+def test_mongodb_write_options_if_exists(options, value):
+    assert MongoDB.WriteOptions(**options).if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            MongoDBCollectionExistsBehavior.APPEND,
+            "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_entire_collection"},
+            MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION,
+            "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "overwrite"},
+            MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION,
+            "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_entire_collection` instead",
+        ),
+    ],
+)
+def test_mongodb_write_options_mode_deprecated(options, value, message):
+    with pytest.warns(UserWarning, match=re.escape(message)):
+        options = MongoDB.WriteOptions(**options)
+        assert options.if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        # disallowed modes
+        {"mode": "error"},
+        {"mode": "ignore"},
+        # wrong mode
+        {"mode": "wrong_mode"},
+    ],
+)
+def test_mongodb_write_options_mode_wrong(options):
+    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+        MongoDB.WriteOptions(**options)

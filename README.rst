@@ -362,7 +362,7 @@ Read data from MSSQL, transform & write to Hive.
         connection=hive,
         target="dl_sb.demo_table",
         # Set some Hive write options:
-        options=Hive.WriteOptions(mode="overwrite_table"),
+        options=Hive.WriteOptions(if_exists="replace_entire_table"),
     )
 
     # Write data from DataFrame to Hive
@@ -426,7 +426,7 @@ Download files from SFTP & upload them to HDFS.
             # delete files from SFTP after successful download
             delete_source=True,
             # mark file as failed if it already exist in local_path
-            mode="error",
+            if_exists="error",
         ),
     )
 
@@ -624,7 +624,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         # write to specific table
         target="public.my_table",
         # with some writing options
-        options=Postgres.WriteOptions(mode="append"),
+        options=Postgres.WriteOptions(if_exists="append"),
     )
 
     # Write DataFrame to Postgres table

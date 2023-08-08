@@ -52,7 +52,7 @@ def test_greenplum_writer_mode_append(spark, processing, prepare_schema_table):
     writer = DBWriter(
         connection=greenplum,
         target=prepare_schema_table.full_name,
-        options=Greenplum.WriteOptions(mode="append"),
+        options=Greenplum.WriteOptions(if_exists="append"),
     )
 
     writer.run(df1)
@@ -84,7 +84,7 @@ def test_greenplum_writer_mode(spark, processing, prepare_schema_table):
     writer = DBWriter(
         connection=greenplum,
         target=prepare_schema_table.full_name,
-        options=Greenplum.WriteOptions(mode="overwrite"),
+        options=Greenplum.WriteOptions(if_exists="replace_entire_table"),
     )
 
     writer.run(df1)

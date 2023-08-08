@@ -24,9 +24,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from etl_entities.instance import Host
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
-from onetl._internal import get_sql_query, to_camel
+from onetl._internal import get_sql_query
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -93,12 +93,23 @@ READ_OPTIONS = frozenset(
 )
 
 
-class GreenplumWriteMode(str, Enum):
+class GreenplumTableExistsBehavior(str, Enum):
     APPEND = "append"
-    OVERWRITE = "overwrite"
+    REPLACE_ENTIRE_TABLE = "replace_entire_table"
 
     def __str__(self) -> str:
         return str(self.value)
+
+    @classmethod  # noqa: WPS120
+    def _missing_(cls, value: object):  # noqa: WPS120
+        if str(value) == "overwrite":
+            warnings.warn(
+                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                "Use `replace_entire_table` instead",
+                category=UserWarning,
+                stacklevel=4,
+            )
+            return cls.REPLACE_ENTIRE_TABLE
 
 
 @dataclass
@@ -261,7 +272,6 @@ class Greenplum(JDBCMixin, DBConnection):
                 | GENERIC_PROHIBITED_OPTIONS
                 | WRITE_OPTIONS
             )
-            alias_generator = to_camel
 
         partition_column: Optional[str] = Field(alias="partitionColumn")
         """Column used to parallelize reading from a table.
@@ -384,7 +394,7 @@ class Greenplum(JDBCMixin, DBConnection):
         .. code:: python
 
             options = Greenplum.WriteOptions(
-                mode="append",
+                if_exists="append",
                 truncate="false",
                 distributedBy="mycolumn",
             )
@@ -398,31 +408,42 @@ class Greenplum(JDBCMixin, DBConnection):
                 | GENERIC_PROHIBITED_OPTIONS
                 | READ_OPTIONS
             )
-            alias_generator = to_camel
 
-        mode: GreenplumWriteMode = GreenplumWriteMode.APPEND
-        """Mode of writing data into target table.
+        if_exists: GreenplumTableExistsBehavior = Field(default=GreenplumTableExistsBehavior.APPEND, alias="mode")
+        """Behavior of writing data into existing table.
 
         Possible values:
             * ``append`` (default)
-                Appends data into existing table.
+                Adds new rows into existing table.
 
-                Behavior in details:
+                .. dropdown:: Behavior in details
 
                 * Table does not exist
-                    Table is created using other options from current class
+                    Table is created using options provided by user
                     (``distributedBy`` and others).
 
                 * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data
+                    Data is appended to a table. Table has the same DDL as before writing data.
 
-            * ``overwrite``
-                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+                    .. warning::
 
-                Behavior in details:
+                        This mode does not check whether table already contains
+                        rows from dataframe, so duplicated rows can be created.
+
+                        Also Spark does not support passing custom options to
+                        insert statement, like ``ON CONFLICT``, so don't try to
+                        implement deduplication using unique indexes or constraints.
+
+                        Instead, write to staging table and perform deduplication
+                        using :obj:`~execute` method.
+
+            * ``replace_entire_table``
+                **Table is dropped and then created**.
+
+                .. dropdown:: Behavior in details
 
                 * Table does not exist
-                    Table is created using other options from current class
+                    Table is created using options provided by user
                     (``distributedBy`` and others).
 
                 * Table exists
@@ -435,6 +456,17 @@ class Greenplum(JDBCMixin, DBConnection):
 
             ``error`` and ``ignore`` modes are not supported.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `Greenplum.WriteOptions(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     class Dialect(  # noqa: WPS215
         SupportTableWithDBSchema,
@@ -594,15 +626,16 @@ class Greenplum(JDBCMixin, DBConnection):
         options: WriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
+        options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
 
         self._check_expected_jobs_number(df, action="write")
 
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
+        mode = "overwrite" if write_options.if_exists == GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE else "append"
         df.write.format("greenplum").options(
             **self._connector_params(target),
             **options_dict,
-        ).mode(write_options.mode).save()
+        ).mode(mode).save()
 
         log.info("|%s| Table %r is successfully written", self.__class__.__name__, target)
 

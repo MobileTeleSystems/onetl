@@ -235,7 +235,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         connection=hive,
         target="dl_sb.demo_table",
         # HOW do we write - overwrite all the data in the existing table
-        options=Hive.WriteOptions(mode="overwrite_table"),
+        options=Hive.WriteOptions(if_exists="replace_entire_table"),
     )
 
     file_downloader = FileDownloader(
@@ -249,7 +249,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         # HOW do we download:
         options=FileDownloader.Options(
             delete_source=True,  # after downloading each file remove it from source_path
-            mode="overwrite",  # overwrite existing files in the local_path
+            if_exists="replace_file",  # replace existing files in the local_path
         ),
     )
 
@@ -262,7 +262,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         # HOW do we upload:
         options=FileUploader.Options(
             delete_local=True,  # after uploading each file remove it from local_path
-            mode="overwrite",  # overwrite existing files in the target_path
+            if_exists="replace_file",  # replace existing files in the target_path
         ),
     )
 
@@ -272,8 +272,8 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         connection=hdfs,
         # WHERE do we move files to
         target_path="/some",  # a specific remote dir within the same HDFS connection
-        # HOW do we load - overwrite existing files in the target_path
-        options=FileMover.Options(mode="overwrite"),
+        # HOW do we load - replace existing files in the target_path
+        options=FileMover.Options(if_exists="replace_file"),
     )
 
     file_reader = FileReader(
@@ -366,6 +366,6 @@ like ``mkdir``, ``remove_file``, ``get_table_schema``, and so on.
 High-level operations, like
     * :ref:`strategy` support
     * Handling metadata push/pull
-    * Handling different options, like ``mode="overwrite"`` in case of file download/upload
+    * Handling different options, like ``if_exists="replace_file"`` in case of file download/upload
 
 is moved to a separate class which calls the connection object methods to perform some complex logic.

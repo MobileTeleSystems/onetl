@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection
@@ -33,7 +34,7 @@ from onetl.file.file_uploader.upload_result import UploadResult
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedLocalFile,
-    FileWriteMode,
+    FileExistsBehavior,
     FrozenModel,
     GenericOptions,
     LocalPath,
@@ -136,7 +137,7 @@ class FileUploader(FrozenModel):
             target_path="/path/to/remote/source",
             temp_path="/user/onetl",
             local_path="/some/local/directory",
-            options=FileUploader.Options(delete_local=True, mode="overwrite"),
+            options=FileUploader.Options(delete_local=True, if_exists="overwrite"),
         )
 
     """
@@ -144,7 +145,7 @@ class FileUploader(FrozenModel):
     class Options(GenericOptions):
         """File uploading options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistsBehavior = Field(default=FileExistsBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the target directory.
 
@@ -171,6 +172,17 @@ class FileUploader(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileUploader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileUploader.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -327,7 +339,7 @@ class FileUploader(FrozenModel):
         to_upload = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             self.connection.remove_dir(self.target_path, recursive=True)
             self.connection.create_dir(self.target_path)
 
@@ -424,7 +436,7 @@ class FileUploader(FrozenModel):
         if self.options.delete_local:
             log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)
 
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.local_path:
@@ -576,10 +588,10 @@ class FileUploader(FrozenModel):
             replace = False
             if self.connection.path_exists(target_file):
                 file = self.connection.resolve_file(target_file)
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistsBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistsBehavior.IGNORE:
                     log.warning("|%s| File %s already exists, skipping", self.__class__.__name__, path_repr(file))
                     return FileUploadStatus.SKIPPED, local_file
 

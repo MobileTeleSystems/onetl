@@ -1,28 +1,9 @@
 import re
-import textwrap
 
 import pytest
 
-from onetl.file import FileUploader
+from onetl.file import FileMover
 from onetl.impl.file_exist_behavior import FileExistsBehavior
-
-
-def test_file_uploader_deprecated_import():
-    msg = textwrap.dedent(
-        """
-        This import is deprecated since v0.8.0:
-
-            from onetl.core import FileUploader
-
-        Please use instead:
-
-            from onetl.file import FileUploader
-        """,
-    )
-    with pytest.warns(UserWarning, match=re.escape(msg)):
-        from onetl.core import FileUploader as OldFileUploader
-
-        assert OldFileUploader is FileUploader
 
 
 @pytest.mark.parametrize(
@@ -35,8 +16,8 @@ def test_file_uploader_deprecated_import():
         ({"if_exists": "replace_entire_directory"}, FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
     ],
 )
-def test_file_uploader_options_if_exists(options, value):
-    assert FileUploader.Options(**options).if_exists == value
+def test_file_mover_options_if_exists(options, value):
+    assert FileMover.Options(**options).if_exists == value
 
 
 @pytest.mark.parametrize(
@@ -45,14 +26,14 @@ def test_file_uploader_options_if_exists(options, value):
         (
             {"mode": "replace_file"},
             FileExistsBehavior.REPLACE_FILE,
-            "Option `FileUploader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-            "Use `FileUploader.Options(if_exists=...)` instead",
+            "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `FileMover.Options(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_directory"},
             FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY,
-            "Option `FileUploader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-            "Use `FileUploader.Options(if_exists=...)` instead",
+            "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `FileMover.Options(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
@@ -67,12 +48,12 @@ def test_file_uploader_options_if_exists(options, value):
         ),
     ],
 )
-def test_file_uploader_options_mode_deprecated(options, value, message):
+def test_file_mover_options_mode_deprecated(options, value, message):
     with pytest.warns(UserWarning, match=re.escape(message)):
-        options = FileUploader.Options(**options)
+        options = FileMover.Options(**options)
         assert options.if_exists == value
 
 
-def test_file_uploader_options_modes_wrong():
+def test_file_mover_options_modes_wrong():
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        FileUploader.Options(mode="wrong_mode")
+        FileMover.Options(mode="wrong_mode")

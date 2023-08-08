@@ -55,9 +55,9 @@ class DBWriter(FrozenModel):
         Spark write options.
 
         For example:
-        ``{"mode": "overwrite", "compression": "snappy"}``
+        ``{"if_exists": "replace_entire_table", "compression": "snappy"}``
         or
-        ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
+        ``Hive.WriteOptions(if_exists="replace_entire_table", compression="snappy")``
 
         .. note::
 
