@@ -105,7 +105,7 @@ class KafkaSlots:
             @Kafka.Slots.normalize_address.bind
             @hook
             def normalize_address(address: str, cluster: str) -> str | None:
-                if cluster == "kafka-cluster":
+                if cluster == "kafka-cluster" and ":" not in address:
                     return f"{address}:9092"
                 return None
         """
