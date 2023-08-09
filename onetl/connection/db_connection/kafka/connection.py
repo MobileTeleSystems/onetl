@@ -396,7 +396,7 @@ class Kafka(DBConnection):
         cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
         disallowed_addresses = {address for address in validated_addresses if address not in cluster_addresses}
         if cluster_addresses and disallowed_addresses:
-            log.error("|%s| Addresses: %r for provided cluster %r", cls.__name__, cluster_addresses, cluster)
+            log.error("|%s| Addresses for cluster %r: %r", cls.__name__, cluster, cluster_addresses)
             raise ValueError(f"Addresses {', '.join(disallowed_addresses)} are not in the cluster")
 
         return validated_addresses
