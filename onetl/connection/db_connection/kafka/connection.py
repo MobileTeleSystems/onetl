@@ -19,7 +19,7 @@ from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
-from pydantic import validator
+from pydantic import root_validator, validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -39,6 +39,7 @@ from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
 )
+from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
@@ -188,8 +189,9 @@ class Kafka(DBConnection):
     Extra = KafkaExtra
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
-    addresses: List[str]
+    Slots = KafkaSlots
     cluster: Cluster
+    addresses: List[str]
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
     extra: KafkaExtra = KafkaExtra()
@@ -352,11 +354,51 @@ class Kafka(DBConnection):
     def instance_url(self):
         return "kafka://" + self.cluster
 
+    @root_validator(pre=True)
+    def _get_addresses_by_cluster(cls, values):
+        cluster = values.get("cluster")
+        addresses = values.get("addresses")
+        if not addresses:
+            cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
+            if cluster_addresses:
+                log.debug("|%s| Set cluster %r addresses: %r", cls.__name__, cluster, cluster_addresses)
+                values["addresses"] = cluster_addresses
+            else:
+                raise ValueError("Passed empty parameter 'addresses'")
+        return values
+
+    @validator("cluster")
+    def _validate_cluster_name(cls, cluster):
+        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
+        if validated_cluster != cluster:
+            log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
+
+        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        known_clusters = cls.Slots.get_known_clusters()
+        if known_clusters and validated_cluster not in known_clusters:
+            raise ValueError(
+                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
+            )
+
+        return validated_cluster
+
     @validator("addresses")
-    def _validate_addresses(cls, value):
-        if not value:
-            raise ValueError("Passed empty parameter 'addresses'")
-        return value
+    def _validate_addresses(cls, value, values):
+        cluster = values.get("cluster")
+
+        log.debug("|%s| Normalizing addresses %r names ...", cls.__name__, value)
+
+        validated_addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
+        if validated_addresses != value:
+            log.debug("|%s| Got %r", cls.__name__, validated_addresses)
+
+        cluster_addresses = set(cls.Slots.get_cluster_addresses(cluster) or [])
+        unknown_addresses = {address for address in validated_addresses if address not in cluster_addresses}
+        if cluster_addresses and unknown_addresses:
+            raise ValueError(f"Cluster {cluster!r} does not contain addresses {unknown_addresses!r}")
+
+        return validated_addresses
 
     @validator("spark")
     def _check_spark_version(cls, spark):
