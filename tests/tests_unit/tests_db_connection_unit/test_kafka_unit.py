@@ -513,5 +513,5 @@ def test_kafka_get_cluster_addresses_hook(request, spark_mock):
         "192.168.1.2",
     ]
 
-    with pytest.raises(ValueError, match="Addresses 192.168.1.3 are not in the cluster"):
+    with pytest.raises(ValueError, match="Cluster 'kafka-cluster' does not contain addresses {'192.168.1.3'}"):
         Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1", "192.168.1.3"])
