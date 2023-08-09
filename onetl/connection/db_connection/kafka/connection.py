@@ -396,8 +396,7 @@ class Kafka(DBConnection):
         cluster_addresses = set(cls.Slots.get_cluster_addresses(cluster) or [])
         unknown_addresses = {address for address in validated_addresses if address not in cluster_addresses}
         if cluster_addresses and unknown_addresses:
-            log.error("|%s| Addresses for cluster %r: %r", cls.__name__, cluster, cluster_addresses)
-            raise ValueError(f"Addresses {', '.join(unknown_addresses)} are not in the cluster")
+            raise ValueError(f"Cluster {cluster!r} does not contain addresses {unknown_addresses!r}")
 
         return validated_addresses
 
