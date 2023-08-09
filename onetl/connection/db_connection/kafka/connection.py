@@ -361,7 +361,7 @@ class Kafka(DBConnection):
         if not addresses:
             cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
             if cluster_addresses:
-                log.debug("|%s| Set cluster addresses: %r for cluster %r", cls.__name__, cluster_addresses, cluster)
+                log.debug("|%s| Set cluster %r addresses: %r", cls.__name__, cluster, cluster_addresses)
                 values["addresses"] = cluster_addresses
             else:
                 raise ValueError("Passed empty parameter 'addresses'")
