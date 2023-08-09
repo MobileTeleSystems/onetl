@@ -183,7 +183,7 @@ class DBWriter(FrozenModel):
         """
         Method for writing your df to specified target. |support_hooks|
 
-        .. note :: Method supports only **batch** DataFrames.
+        .. note :: Method doesn't support only **streaming** DataFrames.
 
         Parameters
         ----------
