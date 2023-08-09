@@ -565,3 +565,21 @@ def test_file_writer_run_if_exists_append_to_overlapping_partitions(
     assert read_df.count()
     assert read_df.schema == file_df_schema_str_value_last
     assert_equal_df(read_df, df, order_by="id")
+
+
+def test_file_writer_with_streaming_df(
+    spark,
+    file_df_connection_with_path,
+):
+    file_df_connection, target_path = file_df_connection_with_path
+    csv_root = target_path / "csv"
+    writer = FileWriter(
+        connection=file_df_connection,
+        format=CSV(),
+        target_path=csv_root,
+    )
+
+    streaming_df = spark.readStream.format("rate").load()
+    assert streaming_df.isStreaming
+    with pytest.raises(ValueError, match="DataFrame is streaming. FileWriter supports only batch DataFrames."):
+        writer.run(streaming_df)
