@@ -17,31 +17,14 @@ from __future__ import annotations
 import os
 import subprocess
 from logging import getLogger
-from pathlib import Path
 
-from onetl.exception import NotAFileError
-from onetl.impl import path_repr
+from onetl._util.file import is_file_readable
 
 log = getLogger(__name__)
 
 
-def check_keytab_file(path: str | os.PathLike) -> Path:
-    path = Path(os.path.expandvars(path)).expanduser().resolve()
-
-    if not path.exists():
-        raise FileNotFoundError(f"File '{path}' does not exist")
-
-    if not path.is_file():
-        raise NotAFileError(f"{path_repr(path)} is not a file")
-
-    if not os.access(path, os.R_OK):
-        raise OSError(f"No access to keytab file {path_repr(path)}")
-
-    return path
-
-
 def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
-    path = check_keytab_file(keytab)
+    path = is_file_readable(keytab)
 
     cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
     log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))

@@ -14,7 +14,7 @@ from onetl.file.format import ORC
     ],
 )
 def test_orc_options_known(known_option):
-    orc = ORC(**{known_option: "value"})
+    orc = ORC.parse({known_option: "value"})
     assert getattr(orc, known_option) == "value"
 
 

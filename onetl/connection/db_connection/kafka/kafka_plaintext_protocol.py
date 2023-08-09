@@ -29,3 +29,7 @@ class KafkaPlaintextProtocol(KafkaProtocol, FrozenModel):
         if kafka.auth:
             return {"security.protocol": "SASL_PLAINTEXT"}
         return {"security.protocol": "PLAINTEXT"}
+
+    def cleanup(self, kafka: Kafka) -> None:
+        # nothing to cleanup
+        pass

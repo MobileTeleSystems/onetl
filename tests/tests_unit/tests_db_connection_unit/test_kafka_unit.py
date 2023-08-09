@@ -1,12 +1,13 @@
+import logging
 import os
 import re
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
+from onetl.exception import NotAFileError
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
@@ -72,10 +73,6 @@ def test_kafka_missing_package(spark_no_packages):
         ("endingTimestamp", "endingTimestamp_value"),
         ("endingOffsets", "endingOffsets_value"),
         ("endingOffsetsByTimestamp", "endingOffsetsByTimestamp_value"),
-        (
-            "startingOffsetsByTimestampStrategy",
-            "startingOffsetsByTimestampStrategy_value",
-        ),
         ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
         ("kafka.group.id", "kafka.group.id_value"),
         ("topic", "topic_value"),
@@ -84,10 +81,10 @@ def test_kafka_missing_package(spark_no_packages):
 def test_kafka_prohibited_options_error(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaReadOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Kafka.ReadOptions(**{arg: value})
+        Kafka.ReadOptions.parse({arg: value})
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Kafka.WriteOptions(**{arg: value})
+        Kafka.WriteOptions.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -107,7 +104,7 @@ def test_kafka_prohibited_options_error(arg, value):
 )
 def test_kafka_allowed_read_options_no_error(arg, value):
     try:
-        Kafka.ReadOptions(**{arg: value})
+        Kafka.ReadOptions.parse({arg: value})
     except ValidationError:
         pytest.fail("ValidationError for ReadOptions raised unexpectedly!")
 
@@ -120,13 +117,12 @@ def test_kafka_allowed_read_options_no_error(arg, value):
 )
 def test_kafka_allowed_write_options_no_error(arg, value):
     try:
-        Kafka.WriteOptions(**{arg: value})
+        Kafka.WriteOptions.parse({arg: value})
     except ValidationError:
         pytest.fail("ValidationError for Write options raised unexpectedly!")
 
 
-def test_kafka_auth(spark_mock):
-    # Act
+def test_kafka_basic_auth(spark_mock):
     conn = Kafka(
         spark=spark_mock,
         cluster="some_cluster",
@@ -137,7 +133,6 @@ def test_kafka_auth(spark_mock):
         ),
     )
 
-    # Assert
     assert conn.auth.user == "user"
     assert conn.cluster == "some_cluster"
     assert conn.auth.password != "passwd"
@@ -148,14 +143,11 @@ def test_kafka_auth(spark_mock):
 
 
 def test_kafka_anon_auth(spark_mock):
-    # Act
     conn = Kafka(
         spark=spark_mock,
         cluster="some_cluster",
         addresses=["192.168.1.1"],
     )
-
-    # Assert
     assert not conn.auth
     assert conn.cluster == "some_cluster"
     assert conn.addresses == ["192.168.1.1"]
@@ -164,7 +156,6 @@ def test_kafka_anon_auth(spark_mock):
 
 
 def test_kafka_auth_keytab(spark_mock, create_keytab):
-    # Act
     conn = Kafka(
         spark=spark_mock,
         cluster="some_cluster",
@@ -175,30 +166,7 @@ def test_kafka_auth_keytab(spark_mock, create_keytab):
         ),
     )
 
-    # Assert
     assert conn.auth.principal == "user"
-    assert conn.cluster == "some_cluster"
-    assert conn.addresses == ["192.168.1.1"]
-
-    assert conn.instance_url == "kafka://some_cluster"
-
-
-def test_kafka_auth_keytab_custom_param(spark_mock, create_keytab):
-    # Act
-    conn = Kafka(
-        spark=spark_mock,
-        cluster="some_cluster",
-        addresses=["192.168.1.1"],
-        auth=Kafka.KerberosAuth(
-            principal="user",
-            keytab=create_keytab,
-            custom_parameter="some_parameter",
-        ),
-    )
-
-    # Assert
-    assert conn.auth.principal == "user"
-    assert conn.auth.custom_parameter == "some_parameter"
     assert conn.cluster == "some_cluster"
     assert conn.addresses == ["192.168.1.1"]
 
@@ -219,104 +187,6 @@ def test_kafka_empty_addresses(spark_mock):
         )
 
 
-@pytest.mark.parametrize(
-    "arg, value",
-    [
-        ("bootstrap.servers", "kafka.bootstrap.servers_value"),
-        ("kafka.bootstrap.servers", "kafka.bootstrap.servers_value"),
-        ("security.protocol", "ssl"),
-        ("kafka.security.protocol", "ssl"),
-        ("sasl.mechanism", "PLAIN"),
-        ("kafka.sasl.mechanism", "PLAIN"),
-        ("key.key_value", "key_value"),
-        ("kafka.key.key_value", "key_value"),
-        ("value.value", "value"),
-        ("kafka.value.value", "value"),
-    ],
-)
-def test_kafka_invalid_extras(arg, value):
-    with pytest.raises(
-        ValueError,
-        match=re.escape("are not allowed to use in a KafkaExtra"),
-    ):
-        KafkaExtra.parse({arg: value})
-
-
-@pytest.mark.parametrize(
-    "arg, value",
-    [
-        ("kafka.group.id", "group_id"),
-        ("group.id", "group_id"),
-    ],
-)
-def test_kafka_valid_extras(arg, value):
-    extra_dict = KafkaExtra.parse({arg: value}).dict()
-    assert extra_dict["group.id"] == value
-
-
-def test_kafka_weak_permissons_keytab_error(create_keytab):
-    # Arrange
-    os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339
-
-    # Assert
-    msg = f"No access to file '{create_keytab}'"
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka.KerberosAuth(
-            principal="user",
-            keytab=create_keytab,
-        )
-
-
-def test_kafka_wrong_path_keytab_error():
-    # Assert
-    msg = "File 'some/path' is missing"
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka.KerberosAuth(
-            principal="user",
-            keytab="some/path",
-        )
-
-
-def test_passed_only_keytab_error(create_keytab):
-    # Assert
-    msg = "principal\n  field required"
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka.KerberosAuth(
-            keytab=create_keytab,
-        )
-
-
-def test_passed_only_pass_error():
-    msg = "username\n  field required"
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka.BasicAuth(
-            password="passwd",
-        )
-
-
-def test_passed_only_user_error():
-    msg = "password\n  field required"
-    with pytest.raises(
-        ValueError,
-        match=re.escape(msg),
-    ):
-        Kafka.BasicAuth(
-            user="user",
-        )
-
-
 def test_kafka_empty_cluster(spark_mock):
     with pytest.raises(
         ValueError,
@@ -334,8 +204,104 @@ def test_kafka_empty_cluster(spark_mock):
         )
 
 
-def test_kafka_connection_get_jaas_conf_password(spark_mock):
-    # Arrange
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("bootstrap.servers", "kafka.bootstrap.servers_value"),
+        ("security.protocol", "ssl"),
+        ("sasl.mechanism", "PLAIN"),
+        ("auto.offset.reset", "true"),
+        ("enable.auto.commit", "true"),
+        ("interceptor.classes", "some.Class"),
+        ("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer"),
+        ("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer"),
+        ("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer"),
+        ("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer"),
+    ],
+)
+def test_kafka_invalid_extras(arg, value):
+    msg = re.escape("are not allowed to use in a KafkaExtra")
+    with pytest.raises(ValueError, match=msg):
+        KafkaExtra.parse({arg: value})
+    with pytest.raises(ValueError, match=msg):
+        KafkaExtra.parse({"kafka." + arg: value})
+
+
+@pytest.mark.parametrize(
+    "arg, value",
+    [
+        ("kafka.group.id", "group_id"),
+        ("group.id", "group_id"),
+    ],
+)
+def test_kafka_valid_extras(arg, value):
+    extra_dict = KafkaExtra.parse({arg: value}).dict()
+    assert extra_dict["group.id"] == value
+
+
+def test_kafka_kerberos_auth_not_enough_permissions_keytab_error(create_keytab):
+    os.chmod(create_keytab, 0o000)  # noqa: S103, WPS339
+
+    with pytest.raises(
+        OSError,
+        match=re.escape(f"No read access to file '{create_keytab}'"),
+    ):
+        Kafka.KerberosAuth(
+            principal="user",
+            keytab=create_keytab,
+        )
+
+
+def test_kafka_kerberos_auth_missing_keytab_error():
+    path = Path("some/path").resolve()
+
+    with pytest.raises(
+        FileNotFoundError,
+        match=re.escape(f"File '{path}' does not exist"),
+    ):
+        Kafka.KerberosAuth(
+            principal="user",
+            keytab="some/path",
+        )
+
+
+def test_kafka_kerberos_auth_wrong_keytab_type_error(tmp_path_factory):
+    path = tmp_path_factory.mktemp("data")
+
+    with pytest.raises(
+        NotAFileError,
+        match=f"'{path}'.* is not a file",
+    ):
+        Kafka.KerberosAuth(
+            principal="user",
+            keytab=path,
+        )
+
+
+def test_kafka_kerberos_auth_use_keytab_without_keytab():
+    with pytest.raises(
+        ValueError,
+        match="keytab is required if useKeytab is True",
+    ):
+        Kafka.KerberosAuth(principal="user")
+
+
+@pytest.mark.parametrize("option", ["sasl.kerberos.service.name", "sasl.jaas.config", "sasl.mechanism"])
+def test_kafka_kerberos_auth_prohibited_options(option, create_keytab):
+    msg = rf"Options \['{option}'\] are not allowed to use in a KafkaKerberosAuth"
+    with pytest.raises(ValueError, match=msg):
+        Kafka.KerberosAuth.parse({"principal": "user", "keytab": create_keytab, option: "value"})
+
+
+@pytest.mark.parametrize("option", ["unknown", "sasl.unknown"])
+def test_kafka_kerberos_auth_unknown_options(option, caplog, create_keytab):
+    with caplog.at_level(logging.WARNING):
+        Kafka.KerberosAuth.parse({"principal": "user", "keytab": create_keytab, option: "value"})
+
+    assert f"Options ['{option}'] are not known by KafkaKerberosAuth, are you sure they are valid?" in caplog.text
+
+
+def test_kafka_basic_auth(spark_mock):
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
@@ -343,22 +309,20 @@ def test_kafka_connection_get_jaas_conf_password(spark_mock):
         auth=Kafka.BasicAuth(username="user", password="password"),
     )
 
-    # Act
     conf = kafka.auth.get_options(kafka)
-    # Assert
-    assert conf == {
-        "sasl.mechanism": "PLAIN",
-        "sasl.jaas.config": dedent(
-            """
-            org.apache.kafka.common.security.plain.PlainLoginModule required
-            username="user"
-            password="password";""",
-        ).strip(),
-    }
+    with kafka:
+        assert conf == {
+            "sasl.mechanism": "PLAIN",
+            "sasl.jaas.config": (
+                "org.apache.kafka.common.security.plain.PlainLoginModule required "
+                'username="user" '
+                'password="password";'
+            ),
+        }
 
 
-def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_keytab):
-    # Arrange
+def test_kafka_kerberos_auth_deploy_keytab_false(spark_mock, create_keytab, keytab_md5):
+    keytab_path = Path("kafka_user_" + keytab_md5 + ".keytab")
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
@@ -370,29 +334,30 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_false(spark_mock, create_k
         ),
     )
 
-    # Act
-    conf = kafka.auth.get_options(kafka)
-    # Assert
-    assert conf == {
-        "sasl.mechanism": "GSSAPI",
-        "sasl.jaas.config": dedent(
-            f"""
-            com.sun.security.auth.module.Krb5LoginModule required
-            useTicketCache=false
-            principal="user"
-            keyTab="{create_keytab}"
-            serviceName="kafka"
-            renewTicket=true
-            storeKey=true
-            useKeyTab=true
-            debug=false;""",
-        ).strip(),
-        "sasl.kerberos.service.name": "kafka",
-    }
+    with kafka:
+        conf = kafka.auth.get_options(kafka)
+        assert conf == {
+            "sasl.mechanism": "GSSAPI",
+            "sasl.jaas.config": (
+                "com.sun.security.auth.module.Krb5LoginModule required "
+                'principal="user" '
+                f'keyTab="{create_keytab}" '
+                'serviceName="kafka" '
+                "renewTicket=true "
+                "storeKey=true "
+                "useKeyTab=true "
+                "useTicketCache=false;"
+            ),
+            "sasl.kerberos.service.name": "kafka",
+        }
+        assert not keytab_path.exists()
+
+    assert not keytab_path.exists()
 
 
-def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_keytab):
-    # Arrange
+def test_kafka_kerberos_auth_deploy_keytab_true(spark_mock, create_keytab, keytab_md5):
+    keytab_path = Path("kafka_user_" + keytab_md5 + ".keytab")
+
     # deploy_keytab=True by default
     kafka = Kafka(
         spark=spark_mock,
@@ -404,31 +369,59 @@ def test_kafka_connection_get_jaas_conf_deploy_keytab_true(spark_mock, create_ke
         ),
     )
 
-    # Act
-    conf = kafka.auth.get_options(kafka)
-    # Assert
-    assert conf == {
-        "sasl.mechanism": "GSSAPI",
-        "sasl.jaas.config": dedent(
-            f"""
-            com.sun.security.auth.module.Krb5LoginModule required
-            useTicketCache=false
-            principal="user"
-            keyTab="{create_keytab.name}"
-            serviceName="kafka"
-            renewTicket=true
-            storeKey=true
-            useKeyTab=true
-            debug=false;""",
-        ).strip(),
-        "sasl.kerberos.service.name": "kafka",
-    }
+    with kafka:
+        conf = kafka.auth.get_options(kafka)
+        assert conf == {
+            "sasl.mechanism": "GSSAPI",
+            "sasl.jaas.config": (
+                "com.sun.security.auth.module.Krb5LoginModule required "
+                'principal="user" '
+                f'keyTab="{keytab_path.name}" '
+                'serviceName="kafka" '
+                "renewTicket=true "
+                "storeKey=true "
+                "useKeyTab=true "
+                "useTicketCache=false;"
+            ),
+            "sasl.kerberos.service.name": "kafka",
+        }
 
-    Path("./keytab").unlink()
+        assert keytab_path.exists()
+        assert keytab_path.read_text() == create_keytab.read_text()
+
+    assert not keytab_path.exists()
 
 
-def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
-    # Arrange
+def test_kafka_kerberos_auth_no_keytab(spark_mock):
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.KerberosAuth(
+            principal="user",
+            useKeyTab=False,
+            useTicketCache=True,
+        ),
+    )
+
+    with kafka:
+        conf = kafka.auth.get_options(kafka)
+        assert conf == {
+            "sasl.mechanism": "GSSAPI",
+            "sasl.jaas.config": (
+                "com.sun.security.auth.module.Krb5LoginModule required "
+                'principal="user" '
+                'serviceName="kafka" '
+                "renewTicket=true "
+                "storeKey=true "
+                "useKeyTab=false "
+                "useTicketCache=true;"
+            ),
+            "sasl.kerberos.service.name": "kafka",
+        }
+
+
+def test_kafka_kerberos_auth_custom_jaas_conf_options(spark_mock, create_keytab):
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
@@ -436,22 +429,87 @@ def test_kafka_connection_protocol_with_auth(spark_mock, create_keytab):
         auth=Kafka.KerberosAuth(
             principal="user",
             keytab=create_keytab,
+            deploy_keytab=False,
+            debug=True,
         ),
     )
-    # Assert
-    assert kafka.protocol.get_options(kafka) == {"security.protocol": "SASL_PLAINTEXT"}
+
+    conf = kafka.auth.get_options(kafka)
+    assert conf == {
+        "sasl.mechanism": "GSSAPI",
+        "sasl.jaas.config": (
+            "com.sun.security.auth.module.Krb5LoginModule required "
+            'principal="user" '
+            f'keyTab="{create_keytab}" '
+            'serviceName="kafka" '
+            "renewTicket=true "
+            "storeKey=true "
+            "useKeyTab=true "
+            "useTicketCache=false "
+            "debug=true;"
+        ),
+        "sasl.kerberos.service.name": "kafka",
+    }
 
 
-def test_kafka_connection_protocol_without_auth(spark_mock, create_keytab):
-    # Arrange
+def test_kafka_kerberos_auth_custom_kafka_conf_options(spark_mock, create_keytab):
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.KerberosAuth.parse(
+            {
+                "principal": "user",
+                "keytab": create_keytab,
+                "deploy_keytab": False,
+                "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
+                "kafka.sasl.kerberos.min.time.before.relogin": "60000",
+            },
+        ),
+    )
+
+    conf = kafka.auth.get_options(kafka)
+    assert conf == {
+        "sasl.mechanism": "GSSAPI",
+        "sasl.jaas.config": (
+            "com.sun.security.auth.module.Krb5LoginModule required "
+            'principal="user" '
+            f'keyTab="{create_keytab}" '
+            'serviceName="kafka" '
+            "renewTicket=true "
+            "storeKey=true "
+            "useKeyTab=true "
+            "useTicketCache=false;"
+        ),
+        "sasl.kerberos.service.name": "kafka",
+        "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
+        "sasl.kerberos.min.time.before.relogin": "60000",
+    }
+
+
+def test_kafka_plaintext_protocol_with_auth(spark_mock):
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.BasicAuth(
+            user="user",
+            password="abc",
+        ),
+    )
+    with kafka:
+        assert kafka.protocol.get_options(kafka) == {"security.protocol": "SASL_PLAINTEXT"}
+
+
+def test_kafka_plaintext_protocol_without_auth(spark_mock):
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
         cluster="cluster",
     )
 
-    # Assert
-    assert kafka.protocol.get_options(kafka) == {"security.protocol": "PLAINTEXT"}
+    with kafka:
+        assert kafka.protocol.get_options(kafka) == {"security.protocol": "PLAINTEXT"}
 
 
 def test_kafka_normalize_cluster_name_hook(request, spark_mock):

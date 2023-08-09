@@ -13,7 +13,7 @@ from onetl.file import FileWriter
     ],
 )
 def test_file_writer_options(option, value):
-    options = FileWriter.Options(**{option: value})
+    options = FileWriter.Options.parse({option: value})
     assert getattr(options, option) == value
 
 

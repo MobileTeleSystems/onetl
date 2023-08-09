@@ -16,7 +16,7 @@ from onetl.file.format import Parquet
     ],
 )
 def test_parquet_options_known(known_option):
-    parquet = Parquet(**{known_option: "value"})
+    parquet = Parquet.parse({known_option: "value"})
     assert getattr(parquet, known_option) == "value"
 
 

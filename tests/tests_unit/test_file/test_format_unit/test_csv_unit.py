@@ -70,7 +70,7 @@ def test_csv_options_delimiter_alias():
     ],
 )
 def test_csv_options_known(known_option):
-    csv = CSV(**{known_option: "value"})
+    csv = CSV.parse({known_option: "value"})
     assert getattr(csv, known_option) == "value"
 
 

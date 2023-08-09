@@ -53,7 +53,7 @@ def test_jsonline_options_cannot_override_multiline():
     ],
 )
 def test_jsonline_options_known(known_option):
-    jsonline = JSONLine(**{known_option: "value"})
+    jsonline = JSONLine.parse({known_option: "value"})
     assert getattr(jsonline, known_option) == "value"
 
 

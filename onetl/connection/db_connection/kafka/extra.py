@@ -17,12 +17,19 @@ from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
     (
+        # filled by onETL classes
         "bootstrap.servers",
         "security.protocol",
         "sasl.*",
         "ssl.*",
-        "key.*",
-        "value.*",
+        # Not supported by Spark
+        "auto.offset.reset",
+        "enable.auto.commit",
+        "interceptor.classes",
+        "key.deserializer",
+        "key.serializer",
+        "value.deserializer",
+        "value.serializer",
     ),
 )
 
