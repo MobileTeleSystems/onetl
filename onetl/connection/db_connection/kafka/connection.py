@@ -189,12 +189,12 @@ class Kafka(DBConnection):
     Extra = KafkaExtra
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
+    Slots = KafkaSlots
     cluster: Cluster
-    addresses: Optional[List[str]]
+    addresses: List[str]
     auth: Optional[KafkaAuth] = None
     protocol: KafkaProtocol = PlaintextProtocol()
     extra: KafkaExtra = KafkaExtra()
-    Slots = KafkaSlots
 
     @slot
     def check(self):
@@ -354,20 +354,21 @@ class Kafka(DBConnection):
     def instance_url(self):
         return "kafka://" + self.cluster
 
-    @root_validator(pre=False)
-    def return_addresses_by_cluster(cls, values):
+    @root_validator(pre=True)
+    def _return_addresses_by_cluster(cls, values):
         cluster = values.get("cluster")
         addresses = values.get("addresses")
-        cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
         if not addresses:
+            cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
             if cluster_addresses:
+                log.debug("|%s| Set cluster addresses: %r for cluster %r", cls.__name__, cluster_addresses, cluster)
                 values["addresses"] = cluster_addresses
             else:
                 raise ValueError("Passed empty parameter 'addresses'")
         return values
 
     @validator("cluster")
-    def validate_cluster_name(cls, cluster):
+    def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
@@ -395,6 +396,7 @@ class Kafka(DBConnection):
         cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
         disallowed_addresses = {address for address in validated_addresses if address not in cluster_addresses}
         if cluster_addresses and disallowed_addresses:
+            log.error("|%s| Addresses: %r for provided cluster %r", cls.__name__, cluster_addresses, cluster)
             raise ValueError(f"Addresses {', '.join(disallowed_addresses)} are not in the cluster")
 
         return validated_addresses
@@ -426,7 +428,7 @@ class Kafka(DBConnection):
         return spark
 
     def _get_connection_properties(self) -> dict:
-        result = {"bootstrap.servers": ",".join(self.addresses)}  # type: ignore[arg-type]
+        result = {"bootstrap.servers": ",".join(self.addresses)}
         result.update(self.extra.dict(by_alias=True, exclude_none=True))
         result.update(self.protocol.get_options(self))
 
