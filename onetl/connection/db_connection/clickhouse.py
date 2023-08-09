@@ -17,15 +17,17 @@ from __future__ import annotations
 import logging
 import warnings
 from datetime import date, datetime
-from typing import ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.ivy import inject_ivy_package
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import StatementType
 from onetl.hooks import slot, support_hooks
 
 # do not import PySpark here, as we allow user to use `Clickhouse.get_packages()` for creating Spark session
-
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 log = logging.getLogger(__name__)
 
@@ -105,12 +107,8 @@ class Clickhouse(JDBCConnection):
         extra = {"continueBatchOnError": "false"}
 
         # Create Spark session with Clickhouse driver loaded
-        maven_packages = Clickhouse.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        Clickhouse.inject_packages(spark)
 
         # Create connection
         clickhouse = Clickhouse(
@@ -137,12 +135,19 @@ class Clickhouse(JDBCConnection):
         Examples
         --------
 
+        Create Spark session with Clickhouse driver downloaded:
+
         .. code:: python
 
             from onetl.connection import Clickhouse
+            from pyspark.sql import SparkSession
 
-            Clickhouse.get_packages()
-
+            maven_packages = Clickhouse.get_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
         """
         return ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
 
@@ -152,6 +157,36 @@ class Clickhouse(JDBCConnection):
         msg = "`Clickhouse.package` will be removed in 1.0.0, use `Clickhouse.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Clickhouse driver downloaded:
+
+        .. code:: python
+
+            from onetl.connection import Clickhouse
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            Clickhouse.inject_packages(spark)
+        """
+        for package in cls.get_packages():
+            inject_ivy_package(spark, package)
 
     @property
     def jdbc_url(self) -> str:

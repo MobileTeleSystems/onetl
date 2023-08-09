@@ -27,8 +27,9 @@ from etl_entities.instance import Host
 from pydantic import SecretStr, validator
 
 from onetl._util.classproperty import classproperty
+from onetl._util.ivy import inject_ivy_package
 from onetl._util.java import try_import_java_class
-from onetl._util.scala import get_default_scala_version
+from onetl._util.scala import get_default_scala_version, get_scala_version
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.base.base_db_connection import BaseDBConnection
@@ -46,8 +47,9 @@ from onetl.hwm import Statement
 from onetl.impl import GenericOptions
 from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
 
+# do not import PySpark here, as we allow user to use `MongoDB.get_packages()` for creating Spark session
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
@@ -234,12 +236,8 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MongoDB connector loaded
-        maven_packages = Greenplum.get_packages(spark_version="3.2")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        MongoDB.inject_packages(spark)
 
         # Create connection
         mongo = MongoDB(
@@ -266,8 +264,8 @@ class MongoDB(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        scala_version: str | None = None,
-        spark_version: str | None = None,
+        scala_version: str | Version | None = None,
+        spark_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -294,9 +292,14 @@ class MongoDB(DBConnection):
         .. code:: python
 
             from onetl.connection import MongoDB
+            from pyspark.sql import SparkSession
 
-            MongoDB.get_packages(scala_version="2.11")
-            MongoDB.get_packages(spark_version="3.2")
+            maven_packages = Greenplum.get_packages(spark_version="3.2")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
         """
 
@@ -306,13 +309,13 @@ class MongoDB(DBConnection):
         elif spark_version:
             spark_ver = Version.parse(spark_version)
             if spark_ver.major < 3:
-                raise ValueError(f"Spark {spark_ver} is not supported by {cls.__name__} connector")
+                raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
-            raise ValueError(f"Scala {scala_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
 
@@ -345,6 +348,38 @@ class MongoDB(DBConnection):
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with MongoDB driver downloaded:
+
+        .. code:: python
+
+            from onetl.connection import MongoDB
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            MongoDB.inject_packages(spark)
+        """
+        spark_version = get_spark_version(spark)
+        scala_version = get_scala_version(spark)
+        for package in cls.get_packages(spark_version=spark_version, scala_version=scala_version):
+            inject_ivy_package(spark, package)
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.
@@ -896,11 +931,9 @@ class MongoDB(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
-                args=f"spark_version='{spark_version}'",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

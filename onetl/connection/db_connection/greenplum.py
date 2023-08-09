@@ -28,8 +28,9 @@ from pydantic import Field, validator
 
 from onetl._internal import get_sql_query, to_camel
 from onetl._util.classproperty import classproperty
+from onetl._util.ivy import inject_ivy_package
 from onetl._util.java import try_import_java_class
-from onetl._util.scala import get_default_scala_version
+from onetl._util.scala import get_default_scala_version, get_scala_version
 from onetl._util.spark import get_executor_total_cores, get_spark_version
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -51,7 +52,7 @@ from onetl.log import log_lines, log_with_indent
 
 # do not import PySpark here, as we allow user to use `Greenplum.get_packages()` for creating Spark session
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
@@ -184,14 +185,13 @@ class Greenplum(JDBCMixin, DBConnection):
 
         # Create Spark session with Greenplum connector loaded
         # See Prerequisites page for more details
-        maven_packages = Greenplum.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
             .getOrCreate()
         )
+        Greenplum.inject_packages(spark)
 
         # IMPORTANT!!!
         # Each job on the Spark executor make its own connection to Greenplum master node,
@@ -469,8 +469,8 @@ class Greenplum(JDBCMixin, DBConnection):
     @classmethod
     def get_packages(
         cls,
-        scala_version: str | None = None,
-        spark_version: str | None = None,
+        scala_version: str | Version | None = None,
+        spark_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -494,13 +494,21 @@ class Greenplum(JDBCMixin, DBConnection):
         Examples
         --------
 
+        Create Spark session with Greenplum connector downloaded:
+
         .. code:: python
 
             from onetl.connection import Greenplum
+            from pyspark.sql import SparkSession
 
-            Greenplum.get_packages(scala_version="2.11")
-            Greenplum.get_packages(spark_version="3.2")
-
+            maven_packages = Greenplum.get_packages(spark_version="3.2")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .config("spark.dynamicAllocation.maxExecutors", 10)
+                .config("spark.executor.cores", 1)
+                .getOrCreate()
+            )
         """
 
         # Connector version is fixed, so we can perform checks for Scala/Spark version
@@ -509,13 +517,13 @@ class Greenplum(JDBCMixin, DBConnection):
         elif spark_version:
             spark_ver = Version.parse(spark_version)
             if spark_ver.digits(2) > (3, 2) or spark_ver.digits(2) < (2, 3):
-                raise ValueError(f"Spark {spark_ver} is not supported by {cls.__name__} connector")
+                raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         if scala_ver.digits(2) < (2, 11) or scala_ver.digits(2) > (2, 12):
-            raise ValueError(f"Scala {scala_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver}")
 
         return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:2.1.4"]
 
@@ -539,6 +547,43 @@ class Greenplum(JDBCMixin, DBConnection):
         msg = "`Greenplum.package_3_2` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='3.2')` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "io.pivotal:greenplum-spark_2.12:2.1.4"
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Greenplum driver downloaded:
+
+        .. code:: python
+
+            from onetl.connection import Greenplum
+            from pyspark.sql import SparkSession
+
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.dynamicAllocation.maxExecutors", 10)
+                .config("spark.executor.cores", 1)
+                .getOrCreate()
+            )
+            Greenplum.inject_packages(spark)
+        """
+        spark_version = get_spark_version(spark)
+        scala_version = get_scala_version(spark)
+        for package in cls.get_packages(spark_version=spark_version, scala_version=scala_version):
+            inject_ivy_package(spark, package)
 
     @property
     def instance_url(self) -> str:
@@ -676,11 +721,9 @@ class Greenplum(JDBCMixin, DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
-                args=f"spark_version='{spark_version}'",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

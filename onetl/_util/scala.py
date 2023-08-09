@@ -14,7 +14,21 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from onetl._util.version import Version
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
+
+
+def get_scala_version(spark_session: SparkSession) -> Version:
+    """
+    Get Scala version Spark is compiled with
+    """
+    properties = spark_session._jvm.scala.util.Properties  # type: ignore
+    scala_version: str = properties.versionNumberString()
+    return Version.parse(scala_version)
 
 
 def get_default_scala_version(spark_version: Version) -> Version:

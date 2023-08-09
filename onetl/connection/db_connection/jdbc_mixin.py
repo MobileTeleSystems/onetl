@@ -389,7 +389,6 @@ class JDBCMixin(FrozenModel):
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=cls.DRIVER,
                 package_source=cls.__name__,
-                args="",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

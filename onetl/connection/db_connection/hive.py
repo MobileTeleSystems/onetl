@@ -572,7 +572,7 @@ class Hive(DBConnection):
                 f"some hooks bound to {cls.__name__}.Slots.get_current_cluster",
             )
 
-        log.info("|%s| Got %r", cls.__name__, current_cluster)
+        log.info("|%s|   Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, spark=spark)  # type: ignore[arg-type]
 
     @property
@@ -581,7 +581,7 @@ class Hive(DBConnection):
 
     @slot
     def check(self):
-        log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
+        log.debug("|%s| Checking current cluster name...", self.__class__.__name__)
         current_cluster = self.Slots.get_current_cluster()
         if current_cluster and self.cluster != current_cluster:
             raise ValueError("You can connect to a Hive cluster only from the same cluster")

@@ -68,12 +68,25 @@ Can be used if you have access both to public repos (like Maven) and a private A
 * Create Spark session with passing Greenplum package name to ``spark.jars.packages`` Spark config option.
 
 
-Example
-^^^^^^^
+Examples
+^^^^^^^^
+
+For Spark 3.x:
 
 .. code:: python
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    spark = (
+        SparkSession.builder.config("spark.app.name", "onetl")
+        .config("spark.jars.repositories", "http://nexus.domain.com/example-repo/")
+        .getOrCreate()
+    )
+    Greenplum.inject_packages(spark)
+
+For Spark 2.x
+
+.. code:: python
+
+    maven_packages = Greenplum.get_packages(spark_version="2.4")
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.repositories", "http://nexus.domain.com/example-repo/")
@@ -123,13 +136,12 @@ Example
 .. code-block:: python
     :caption: script.py
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.ivySettings", "/path/to/ivysettings.xml")
-        .config("spark.jars.packages", ",".join(maven_packages))
         .getOrCreate()
     )
+    Greenplum.inject_packages(spark)
 
 Moving ``.jar`` file to ``~/.ivy2/jars/``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,12 +157,8 @@ Example
 
 .. code:: python
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
-    spark = (
-        SparkSession.builder.config("spark.app.name", "onetl")
-        .config("spark.jars.packages", ",".join(maven_packages))
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
+    Greenplum.inject_packages(spark)
 
 Inserting ``.jar`` file to Spark jars folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

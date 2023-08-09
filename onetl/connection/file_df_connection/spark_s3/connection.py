@@ -23,7 +23,12 @@ from pydantic import SecretStr, root_validator, validator
 from typing_extensions import Literal
 
 from onetl._internal import stringify
-from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
+from onetl._util.hadoop import (
+    fix_hadoop_config_get_class,
+    get_hadoop_config,
+    get_hadoop_version,
+)
+from onetl._util.ivy import inject_ivy_package
 from onetl._util.java import try_import_java_class
 from onetl._util.version import Version
 from onetl.base import (
@@ -152,12 +157,8 @@ class SparkS3(SparkFileDFConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(hadoop_version="3.3.6")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        SparkS3.inject_packages(spark)
 
         # Create connection
         s3 = SparkS3(
@@ -202,11 +203,11 @@ class SparkS3(SparkFileDFConnection):
     region: Optional[str] = None
     extra: SparkS3Extra = SparkS3Extra()
 
-    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.name"]
+    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.magic.enabled", "committer.name"]
 
     @slot
     @classmethod
-    def get_packages(cls, hadoop_version: str) -> list[str]:
+    def get_packages(cls, hadoop_version: str | Version) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
 
@@ -221,14 +222,52 @@ class SparkS3(SparkFileDFConnection):
         .. code:: python
 
             from onetl.connection import SparkS3
+            from pyspark.sql import SparkSession
 
-            SparkS3.get_packages(spark_version="3.3.1")
+            maven_packages = SparkS3.get_packages(hadoop_version="3.3.6")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
         """
         hadoop_ver = Version.parse(hadoop_version)
         if hadoop_ver.major < 3:
             raise ValueError(f"Only Hadoop 3.x libraries are supported, got {hadoop_version}")
         return [f"org.apache.hadoop:hadoop-aws:{hadoop_ver.digits(3)}"]
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Kafka connector downloaded:
+
+        .. code:: python
+
+            from onetl.connection import SparkS3
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            SparkS3.inject_packages(spark)
+        """
+        hadoop_version = get_hadoop_version(spark)
+        for package in cls.get_packages(hadoop_version=hadoop_version):
+            inject_ivy_package(spark, package)
+        fix_hadoop_config_get_class(spark)
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
@@ -316,7 +355,6 @@ class SparkS3(SparkFileDFConnection):
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
-                args="...",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

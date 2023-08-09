@@ -16,13 +16,16 @@ from __future__ import annotations
 
 import warnings
 from datetime import date, datetime
-from typing import ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.ivy import inject_ivy_package
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.hooks import slot
 
 # do not import PySpark here, as we allow user to use `Teradata.get_packages()` for creating Spark session
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 
 class Teradata(JDBCConnection):
@@ -72,7 +75,7 @@ class Teradata(JDBCConnection):
     database : str, optional
         Database in RDBMS, NOT schema.
 
-        See `this page <https://www.educba.com/postgresql-database-vs-schema/>`_ for more details
+        See `this page <https://www.educba.com/teradataql-database-vs-schema/>`_ for more details
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
@@ -109,12 +112,8 @@ class Teradata(JDBCConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Teradata driver loaded
-        maven_packages = Teradata.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        Teradata.inject_packages(spark)
 
         # Create connection
         teradata = Teradata(
@@ -160,8 +159,14 @@ class Teradata(JDBCConnection):
         .. code:: python
 
             from onetl.connection import Teradata
+            from pyspark.sql import SparkSession
 
-            Teradata.get_packages()
+            maven_packages = Teradata.get_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
         """
         return ["com.teradata.jdbc:terajdbc:17.20.00.15"]
@@ -172,6 +177,36 @@ class Teradata(JDBCConnection):
         msg = "`Teradata.package` will be removed in 1.0.0, use `Teradata.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "com.teradata.jdbc:terajdbc:17.20.00.15"
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Teradata driver downloaded:
+
+        .. code:: python
+
+            from onetl.connection import Teradata
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            Teradata.inject_packages(spark)
+        """
+        for package in cls.get_packages():
+            inject_ivy_package(spark, package)
 
     @property
     def jdbc_url(self) -> str:

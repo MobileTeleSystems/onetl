@@ -21,8 +21,9 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from etl_entities.instance import Cluster
 from pydantic import root_validator, validator
 
+from onetl._util.ivy import inject_ivy_package
 from onetl._util.java import try_import_java_class
-from onetl._util.scala import get_default_scala_version
+from onetl._util.scala import get_default_scala_version, get_scala_version
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -45,8 +46,9 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.log import log_with_indent
 
+# do not import PySpark here, as we allow user to use `Kafka.get_packages()` for creating Spark session
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
@@ -115,12 +117,8 @@ class Kafka(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Kafka connector loaded
-        maven_packages = Kafka.get_packages(spark_version="3.2.4")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        Kafka.inject_packages(spark)
 
         # Create connection
         kafka = Kafka(
@@ -308,8 +306,8 @@ class Kafka(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
-        scala_version: str | None = None,
+        spark_version: str | Version,
+        scala_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -330,9 +328,14 @@ class Kafka(DBConnection):
         .. code:: python
 
             from onetl.connection import Kafka
+            from pyspark.sql import SparkSession
 
-            Kafka.get_packages(spark_version="3.2.4")
-            Kafka.get_packages(spark_version="3.2.4", scala_version="2.13")
+            maven_packages = Kafka.get_packages(spark_version="3.2.4")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
         """
 
@@ -349,6 +352,38 @@ class Kafka(DBConnection):
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
         ]
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Kafka connector downloaded:
+
+        .. code:: python
+
+            from onetl.connection import Kafka
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            Kafka.inject_packages(spark)
+        """
+        spark_version = get_spark_version(spark)
+        scala_version = get_scala_version(spark)
+        for package in cls.get_packages(spark_version=spark_version, scala_version=scala_version):
+            inject_ivy_package(spark, package)
 
     @property
     def instance_url(self):
@@ -415,11 +450,9 @@ class Kafka(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
-                args=f"spark_version='{spark_version}'",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

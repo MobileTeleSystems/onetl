@@ -23,7 +23,7 @@ def test_oracle_get_packages_no_input():
 
 @pytest.mark.parametrize("java_version", ["7", "6"])
 def test_oracle_get_packages_java_version_not_supported(java_version):
-    with pytest.raises(ValueError, match=f"Java {java_version} is not supported by Oracle connector"):
+    with pytest.raises(ValueError, match=f"Java version must be at least 8, got {java_version}"):
         Oracle.get_packages(java_version=java_version)
 
 

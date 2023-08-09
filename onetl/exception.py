@@ -21,8 +21,8 @@ MISSING_JVM_CLASS_MSG = textwrap.dedent(
     Cannot import Java class {java_class!r}.
 
         It looks like you've created Spark session without this option:
-            maven_packages = {package_source}.get_packages({args})
-            SparkSession.builder.config("spark.jars.packages", ",".join(maven_packages))
+            spark = SparkSession.builder.getOrCreate()
+            {package_source}.inject_packages(spark)
 
         Please call `spark.stop()`, restart the interpreter,
         and then create new SparkSession with proper options.

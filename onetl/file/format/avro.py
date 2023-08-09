@@ -20,8 +20,9 @@ from typing import TYPE_CHECKING, ClassVar, Dict, Optional
 
 from pydantic import Field, validator
 
+from onetl._util.ivy import inject_ivy_package
 from onetl._util.java import try_import_java_class
-from onetl._util.scala import get_default_scala_version
+from onetl._util.scala import get_default_scala_version, get_scala_version
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.exception import MISSING_JVM_CLASS_MSG
@@ -94,12 +95,8 @@ class Avro(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Avro package loaded
-        maven_packages = Avro.get_packages(spark_version="3.4.1")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        Avro.inject_packages(spark)
 
         # Describe file format
         schema = {
@@ -125,8 +122,8 @@ class Avro(ReadWriteFileFormat):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
-        scala_version: str | None = None,
+        spark_version: str | Version,
+        scala_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -148,20 +145,55 @@ class Avro(ReadWriteFileFormat):
 
             from onetl.file.format import Avro
 
-            Avro.get_packages(spark_version="3.2.4")
-            Avro.get_packages(spark_version="3.2.4", scala_version="2.13")
-
+            maven_packages = Avro.get_packages(spark_version="3.4.1")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
         """
 
         spark_ver = Version.parse(spark_version)
         if spark_ver < (2, 4):
-            raise ValueError(f"Spark {spark_version} is not supported by {cls.__name__}")
+            raise ValueError(f"Spark version should be at least 2.4, got {spark_version}")
 
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
         if scala_ver.digits(2) < (2, 11):
-            raise ValueError(f"Scala {scala_ver} is not supported by {cls.__name__}")
+            raise ValueError(f"Scala version should be at least 2.11, got {scala_ver}")
 
         return [f"org.apache.spark:spark-avro_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with Kafka connector downloaded:
+
+        .. code:: python
+
+            from onetl.file.format import Avro
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            Avro.inject_packages(spark)
+        """
+        spark_version = get_spark_version(spark)
+        scala_version = get_scala_version(spark)
+        for package in cls.get_packages(spark_version=spark_version, scala_version=scala_version):
+            inject_ivy_package(spark, package)
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:
@@ -170,11 +202,9 @@ class Avro(ReadWriteFileFormat):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=self.__class__.__name__,
-                args=f"spark_version='{spark_version}'",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

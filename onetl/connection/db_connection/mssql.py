@@ -16,14 +16,18 @@ from __future__ import annotations
 
 import warnings
 from datetime import date, datetime
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from onetl._util.classproperty import classproperty
+from onetl._util.ivy import inject_ivy_package
+from onetl._util.java import get_java_version
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.hooks import slot, support_hooks
 
 # do not import PySpark here, as we allow user to use `MSSQL.get_packages()` for creating Spark session
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 
 @support_hooks
@@ -101,12 +105,8 @@ class MSSQL(JDBCConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MSSQL driver loaded
-        maven_packages = MSSQL.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+        MSSQL.inject_packages(spark)
 
         # Create connection
         mssql = MSSQL(
@@ -176,7 +176,7 @@ class MSSQL(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        java_version: str = "8",
+        java_version: str | Version = "8",
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -192,14 +192,19 @@ class MSSQL(JDBCConnection):
         .. code:: python
 
             from onetl.connection import MSSQL
+            from pyspark.sql import SparkSession
 
-            MSSQL.get_packages()
-            MSSQL.get_packages(java_version="8")
+            maven_packages = MSSQL.get_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
         """
         java_ver = Version.parse(java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java {java_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Java version must be at least 8, got {java_ver}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
         return [f"com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre{jre_ver}"]
@@ -210,6 +215,37 @@ class MSSQL(JDBCConnection):
         msg = "`MSSQL.package` will be removed in 1.0.0, use `MSSQL.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
+
+    @classmethod
+    def inject_packages(cls, spark: SparkSession) -> None:
+        """
+        Download and inject packages to existing Spark session.
+
+        .. note::
+
+            Can be used only on Spark 3.2+. For older versions use :obj:~get_packages`.
+
+        Parameters
+        ----------
+        spark : :obj:`pyspark.sql.SparkSession`
+            Spark session.
+
+        Examples
+        --------
+
+        Create Spark session with MSSQL driver downloaded:
+
+        .. code:: python
+
+            from onetl.connection import MSSQL
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+            MSSQL.inject_packages(spark)
+        """
+        java_version = get_java_version(spark)
+        for package in cls.get_packages(java_version=java_version):
+            inject_ivy_package(spark, package)
 
     class Dialect(JDBCConnection.Dialect):
         @classmethod

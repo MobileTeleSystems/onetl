@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from onetl._util.spark import get_pyspark_version
-from onetl._util.version import Version
 
 
 @pytest.fixture(scope="session")
@@ -33,21 +32,22 @@ def ivysettings_path():
 
 @pytest.fixture(scope="session")
 def maven_packages():
+    pyspark_version = get_pyspark_version()
+    if pyspark_version.major >= 3:
+        return []
+
     from onetl.connection import (
         MSSQL,
         Clickhouse,
         Greenplum,
         Kafka,
-        MongoDB,
         MySQL,
         Oracle,
         Postgres,
-        SparkS3,
         Teradata,
     )
     from onetl.file.format import Avro
 
-    pyspark_version = get_pyspark_version()
     packages = (
         Clickhouse.get_packages()
         + MSSQL.get_packages()
@@ -67,23 +67,6 @@ def maven_packages():
         packages.extend(Avro.get_packages(spark_version=pyspark_version))
         # Kafka connector for Spark 2.3 is too old and not supported
         packages.extend(Kafka.get_packages(spark_version=pyspark_version))
-
-    if pyspark_version >= (3, 2):
-        hadoop_versions_for_spark = {
-            Version(3, 2): "3.3.1",
-            Version(3, 3): "3.3.2",
-            Version(3, 4): "3.3.4",
-        }
-
-        hadoop_version = hadoop_versions_for_spark.get(pyspark_version.digits(2), None)
-        if not hadoop_version:
-            raise RuntimeError(f"Unknown Hadoop version for Spark {pyspark_version}")
-
-        # There is no SparkS3 connector for Spark less than 3
-        packages.extend(SparkS3.get_packages(hadoop_version=hadoop_version))
-
-        # There is no MongoDB connector for Spark less than 3.2
-        packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
 
     return packages
 
@@ -118,6 +101,38 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, mave
         .enableHiveSupport()
         .getOrCreate()
     )
+
+    pyspark_version = get_pyspark_version()
+    if pyspark_version.major >= 3:
+        from onetl.connection import (
+            MSSQL,
+            Clickhouse,
+            Greenplum,
+            Kafka,
+            MongoDB,
+            MySQL,
+            Oracle,
+            Postgres,
+            SparkS3,
+            Teradata,
+        )
+        from onetl.file.format import Avro
+
+        Clickhouse.inject_packages(spark)
+        MSSQL.inject_packages(spark)
+        MySQL.inject_packages(spark)
+        Oracle.inject_packages(spark)
+        Postgres.inject_packages(spark)
+        Teradata.inject_packages(spark)
+        Avro.inject_packages(spark)
+        Kafka.inject_packages(spark)
+        SparkS3.inject_packages(spark)
+        MongoDB.inject_packages(spark)
+
+        with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
+        if with_greenplum:
+            # Greenplum connector jar is not publicly available,
+            Greenplum.inject_packages(spark)
 
     yield spark
     spark.sparkContext.stop()

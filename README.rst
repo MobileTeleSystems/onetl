@@ -298,14 +298,13 @@ Read data from MSSQL, transform & write to Hive.
     # change logging level to INFO, and set up default logging format and handler
     setup_logging()
 
-    # Initialize new SparkSession with MSSQL driver loaded
-    maven_packages = MSSQL.get_packages()
+    # Initialize new SparkSession with MSSQL driver and Hive support
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
-        .config("spark.jars.packages", ",".join(maven_packages))
-        .enableHiveSupport()  # for Hive
+        .enableHiveSupport()
         .getOrCreate()
     )
+    MSSQL.inject_packages(spark)
 
     # Initialize MSSQL connection and check if database is accessible
     mssql = MSSQL(
@@ -524,12 +523,9 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(hadoop_version="3.3.4") + Postgres.get_packages()
-    spark = (
-        SparkSession.builder.appName("spark_app_onetl_demo")
-        .config("spark.jars.packages", ",".join(maven_packages))
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("spark_app_onetl_demo").getOrCreate()
+    SparkS3.inject_packages(spark)
+    Postgres.inject_packages(spark)
 
     # Initialize S3 connection and check it
     spark_s3 = SparkS3(

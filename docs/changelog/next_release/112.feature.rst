@@ -1,0 +1,32 @@
+Implemented new way of passing Maven packages to Spark session - downloading packages and injecting them to already running session.
+This allows to automatically detect current Spark/Hadoop/Java/Scala version, and use proper package versions.
+
+Before:
+.. code:: python
+
+    from onetl.connection import Postgres, Kafka, SparkS3
+    from pyspark.sql import SparkSession
+
+    maven_packages = (
+        Postgres.get_packages()
+        + Kafka.get_packages(spark_version="3.4.1", scala_version="2.12")
+        + SparkS3.get_packages(hadoop_version="3.3.4")
+    )
+    spark = (
+        SparkSession.builder.appName("spark-app-name")
+        .config("spark.jars.packages", ",".join(maven_packages))
+        .getOrCreate()
+    )
+
+After:
+.. code:: python
+
+    from onetl.connection import Postgres, Kafka, SparkS3
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder.appName("spark-app-name").getOrCreate()
+    Postgres.inject_packages(spark)
+    Kafka.inject_packages(spark)
+    SparkS3.inject_packages(spark)
+
+Note: this works only on Spark 3.2+. For Spark 2.x users still need to use ``.get_packages(...)``.
