@@ -27,4 +27,14 @@ class KafkaAuth(ABC):
 
     @abstractmethod
     def get_options(self, kafka: Kafka) -> dict:
+        """
+        Get options for Kafka connection
+        """
+        ...
+
+    @abstractmethod
+    def cleanup(self, kafka: Kafka) -> None:
+        """
+        This method is called while closing Kafka connection
+        """
         ...

@@ -47,14 +47,14 @@ def test_jdbc_options_default():
 def test_jdbc_read_write_options_populated_by_connection_class(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.ReadOptions(**{arg: value})
+        Postgres.ReadOptions.parse({arg: value})
 
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.WriteOptions(**{arg: value})
+        Postgres.WriteOptions.parse({arg: value})
 
     # JDBCOptions does not have such restriction
-    options = Postgres.JDBCOptions(**{arg: value})
+    options = Postgres.JDBCOptions.parse({arg: value})
     assert options.dict()[arg] == value
 
 
@@ -75,7 +75,7 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value):
 def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.ReadOptions(**{arg: value})
+        Postgres.ReadOptions.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,7 @@ def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
 def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.WriteOptions(**{arg: value})
+        Postgres.WriteOptions.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
 def test_jdbc_old_options_allowed_but_deprecated(arg, value):
     warning_msg = "Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0"
     with pytest.warns(UserWarning, match=warning_msg):
-        options = Postgres.Options(**{arg: value})
+        options = Postgres.Options.parse({arg: value})
 
     assert options.dict(by_alias=True)[to_camel(arg)] == value
 

@@ -13,101 +13,204 @@
 #  limitations under the License.
 from __future__ import annotations
 
+import logging
 import os
 import shutil
-from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, validator
+from pydantic import Field, PrivateAttr, root_validator, validator
 
-from onetl._internal import to_camel
+from onetl._util.file import get_file_hash, is_file_readable
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
 if TYPE_CHECKING:
     from onetl.connection import Kafka
 
+log = logging.getLogger(__name__)
+
+
+KNOWN_OPTIONS = frozenset(
+    (
+        "clearPass",
+        "debug",
+        "doNotPrompt",
+        "isInitiator",
+        "refreshKrb5Config",
+        "renewTGT",
+        "storePass",
+        "ticketCache",
+        "tryFirstPass",
+        "useFirstPass",
+        "sasl.kerberos.*",
+    ),
+)
+
+
+PROHIBITED_OPTIONS = frozenset(
+    (
+        # Already set by class itself
+        "sasl.kerberos.service.name",
+        "sasl.jaas.config",
+        "sasl.mechanism",
+    ),
+)
+
 
 class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     """
     A class designed to generate a Kafka connection configuration using K8S.
 
-    https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig
-    https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html
+    For more details see:
+    * https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig
+    * https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html
+
+    Examples
+    --------
+
+    Auth in Kafka with keytab, deploy keytab files to all Spark executors:
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+
+        auth = Kafka.KerberosAuth(
+            principal="user",
+            keytab="/path/to/keytab",
+            deploy_keytab=True,
+        )
+
+    Auth in Kafka with keytab, do not deploy keytab (it should be present on all executors):
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+
+        auth = Kafka.KerberosAuth(
+            principal="user",
+            keytab="/path/to/keytab",
+            deploy_keytab=False,
+        )
+
+    Auth in Kafka with existing Kerberos ticket (only for ``spark.master: local``):
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+
+        auth = Kafka.KerberosAuth(
+            principal="user",
+            use_keytab=False,
+            use_ticket_cache=True,
+        )
+
+    Pass custom options for JAAS config and Kafka SASL:
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+
+        auth = Kafka.KerberosAuth.parse(
+            {
+                "principal": "user",
+                "keytab": "/path/to/keytab",
+                # options without sasl.kerberos. prefix are passed to JAAS config
+                # names are in camel case!
+                "isInitiator": True,
+                # options with sasl.kerberos. prefix are passed to Kafka config
+                "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
+            }
+        )
     """
 
     principal: str
-    keytab: LocalPath = Field(alias="keyTab")
+    keytab: Optional[LocalPath] = Field(default=None, alias="keyTab")
     deploy_keytab: bool = True
     service_name: str = Field(default="kafka", alias="serviceName")
     renew_ticket: bool = Field(default=True, alias="renewTicket")
     store_key: bool = Field(default=True, alias="storeKey")
     use_keytab: bool = Field(default=True, alias="useKeyTab")
-    debug: bool = False
+    use_ticket_cache: bool = Field(default=False, alias="useTicketCache")
+
+    _keytab_path: Optional[LocalPath] = PrivateAttr(default=None)
 
     class Config:
-        prohibited_options = {"use_ticket_cache", "useTicketCache"}
+        prohibited_options = PROHIBITED_OPTIONS
+        known_options = KNOWN_OPTIONS
+        strip_prefixes = ["kafka."]
         extra = "allow"
-        alias_generator = to_camel
 
     def get_jaas_conf(self, kafka: Kafka) -> str:
-        options = {}
-
-        keytab_processed = self._move_keytab_if_deploy(kafka)
-        keytab_path = self.keytab if keytab_processed is None else keytab_processed
-
-        class_options = self.dict(
+        options = self.dict(
             by_alias=True,
             exclude_none=True,
             exclude={"deploy_keytab"},
         )
-        class_options["keyTab"] = keytab_path
+        if self.keytab:
+            options["keyTab"] = self._prepare_keytab(kafka)
 
-        for class_option, value in class_options.items():
+        jaas_conf_items = []
+        for key, value in options.items():
+            if key.startswith("sasl."):
+                continue
             if isinstance(value, bool):
-                options[class_option] = str(value).lower()
+                jaas_conf_items.append(f"{key}={str(value).lower()}")
             else:
-                options[class_option] = f'"{value}"'
-        conf = "\n".join(f"{k}={v}" for k, v in options.items())
-        return (
-            dedent(
-                """
-                com.sun.security.auth.module.Krb5LoginModule required
-                useTicketCache=false
-                """,
-            ).strip()
-            + f"\n{conf};"
-        )
+                jaas_conf_items.append(f'{key}="{value}"')
+
+        return "com.sun.security.auth.module.Krb5LoginModule required " + " ".join(jaas_conf_items) + ";"
 
     def get_options(self, kafka: Kafka) -> dict:
-        return {
-            "sasl.mechanism": "GSSAPI",
-            "sasl.jaas.config": self.get_jaas_conf(kafka),
-            "sasl.kerberos.service.name": self.service_name,
+        options = {
+            key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
         }
+        options.update(
+            {
+                "sasl.mechanism": "GSSAPI",
+                "sasl.jaas.config": self.get_jaas_conf(kafka),
+                "sasl.kerberos.service.name": self.service_name,
+            },
+        )
+        return options
+
+    def cleanup(self, kafka: Kafka) -> None:
+        if self._keytab_path and self._keytab_path.exists():
+            log.debug("Removing keytab from %s", path_repr(self._keytab_path))
+            try:
+                self._keytab_path.unlink()
+            except OSError:
+                log.exception("Failed to remove keytab file '%s'", self._keytab_path)
+        self._keytab_path = None
 
     @validator("keytab")
     def _validate_keytab(cls, value):
-        if not os.path.exists(value):
-            raise ValueError(
-                f"File '{os.fspath(value)}' is missing",
-            )
+        return is_file_readable(value)
 
-        if not os.access(value, os.R_OK):
-            raise ValueError(
-                f"No access to file {path_repr(value)}",
-            )
+    @root_validator
+    def _use_keytab(cls, values):
+        keytab = values.get("keytab")
+        use_keytab = values.get("use_keytab")
+        if use_keytab and not keytab:
+            raise ValueError("keytab is required if useKeytab is True")
+        return values
 
-        return value
+    def _prepare_keytab(self, kafka: Kafka) -> str:
+        keytab: LocalPath = self.keytab  # type: ignore[assignment]
+        if not self.deploy_keytab:
+            return os.fspath(keytab)
 
-    def _move_keytab_if_deploy(self, kafka: Kafka):
-        if self.deploy_keytab:
-            kafka.spark.sparkContext.addFile(os.fspath(self.keytab))
-            return self._move_keytab(self.keytab)
+        self._keytab_path = self._generate_keytab_path(keytab, self.principal)
+        log.debug("Moving keytab from %s to %s", path_repr(keytab), path_repr(self._keytab_path))
+        shutil.copy2(keytab, self._keytab_path)
+        kafka.spark.sparkContext.addFile(os.fspath(self._keytab_path))
+        return os.fspath(self._keytab_path.name)
 
     @staticmethod
-    def _move_keytab(keytab: LocalPath) -> LocalPath:
-        cwd = LocalPath(os.getcwd())
-        copy_path = LocalPath(shutil.copy2(keytab, cwd))
-
-        return copy_path.relative_to(cwd)
+    def _generate_keytab_path(keytab: LocalPath, principal: str) -> LocalPath:
+        # Using hash in keytab name prevents collisions if there are several Kafka instances with
+        # keytab paths like `/some/kafka.keytab` and `/another/kafka.keytab`.
+        # Not using random values here to avoid generating too much garbage in current directory.
+        # Also Spark copies all files to the executor working directory ignoring their paths,
+        # so if there is some other connector deploy keytab file, these files will have different names.
+        keytab_hash = get_file_hash(keytab, "md5")
+        return LocalPath().joinpath(f"kafka_{principal}_{keytab_hash.hexdigest()}.keytab").resolve()

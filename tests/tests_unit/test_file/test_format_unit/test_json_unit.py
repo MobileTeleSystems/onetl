@@ -53,7 +53,7 @@ def test_json_options_cannot_override_multiline():
     ],
 )
 def test_json_options_known(known_option):
-    json = JSON(**{known_option: "value"})
+    json = JSON.parse({known_option: "value"})
     assert getattr(json, known_option) == "value"
 
 
