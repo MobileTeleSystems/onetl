@@ -104,7 +104,7 @@ class FileWriter(FrozenModel):
         """
         Method for writing DataFrame as files. |support_hooks|
 
-        .. note :: Method doesn't support only **streaming** DataFrames.
+        .. note :: Method does support only **batching** DataFrames.
 
         Parameters
         ----------
