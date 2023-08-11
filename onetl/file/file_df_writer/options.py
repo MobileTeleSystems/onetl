@@ -44,8 +44,8 @@ class FileDFExistsBehavior(str, Enum):
 
 
 @support_hooks
-class FileWriterOptions(FileDFWriteOptions, GenericOptions):
-    """Options for :obj:`FileWriter <onetl.file.file_writer.file_writer.FileWriter>`.
+class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
+    """Options for :obj:`FileDFWriter <onetl.file.file_df_writer.file_df_writer.FileDFWriter>`.
 
     See `Spark Generic Load/Save Functions <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_
     documentation for more details.
@@ -63,9 +63,9 @@ class FileWriterOptions(FileDFWriteOptions, GenericOptions):
 
     .. code:: python
 
-        from onetl.file import FileWriter
+        from onetl.file import FileDFWriter
 
-        options = FileWriter.Options(
+        options = FileDFWriter.Options(
             partition_by="month",
             if_exists="replace_overlapping_partitions",
         )

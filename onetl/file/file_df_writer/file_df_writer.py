@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Optional
 from pydantic import validator
 
 from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
-from onetl.file.file_writer.options import FileWriterOptions
+from onetl.file.file_df_writer.options import FileDFWriterOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel
 from onetl.log import (
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 
 @support_hooks
-class FileWriter(FrozenModel):
+class FileDFWriter(FrozenModel):
     """Allows you to write Spark DataFrame as files in a target path of specified file connection
     with parameters. |support_hooks|
 
@@ -52,7 +52,7 @@ class FileWriter(FrozenModel):
     target_path : os.PathLike or str
         Directory path to write data to.
 
-    options : :obj:`FileWriterOptions <onetl.file.file_writer.options.FileWriterOptions>`, optional
+    options : :obj:`FileDFWriterOptions <onetl.file.file_df_writer.options.FileDFWriterOptions>`, optional
         Common writing options.
 
     Examples
@@ -62,12 +62,12 @@ class FileWriter(FrozenModel):
     .. code:: python
 
         from onetl.connection import SparkLocalFS
-        from onetl.file import FileWriter
+        from onetl.file import FileDFWriter
         from onetl.file.format import CSV
 
         local_fs = SparkLocalFS(spark=spark)
 
-        writer = FileWriter(
+        writer = FileDFWriter(
             connection=local_fs,
             format=CSV(delimiter=","),
             target_path="/path/to/directory",
@@ -78,26 +78,26 @@ class FileWriter(FrozenModel):
     .. code:: python
 
         from onetl.connection import SparkLocalFS
-        from onetl.file import FileWriter
+        from onetl.file import FileDFWriter
         from onetl.file.format import CSV
 
         csv = CSV(delimiter=",")
         local_fs = SparkLocalFS(spark=spark)
 
-        writer = FileWriter(
+        writer = FileDFWriter(
             connection=local_fs,
             format=csv,
             target_path="/path/to/directory",
-            options=FileWriter.Options(if_exists="replace_entire_directory"),
+            options=FileDFWriter.Options(if_exists="replace_entire_directory"),
         )
     """
 
-    Options = FileWriterOptions
+    Options = FileDFWriterOptions
 
     connection: BaseFileDFConnection
     format: BaseWritableFileFormat
     target_path: Optional[PurePathProtocol] = None
-    options: FileWriterOptions = FileWriterOptions()
+    options: FileDFWriterOptions = FileDFWriterOptions()
 
     @slot
     def run(self, df: DataFrame) -> None:

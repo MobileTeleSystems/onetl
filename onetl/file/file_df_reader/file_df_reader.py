@@ -23,7 +23,7 @@ from pydantic import validator
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
-from onetl.file.file_reader.options import FileReaderOptions
+from onetl.file.file_df_reader.options import FileDFReaderOptions
 from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel
@@ -43,7 +43,7 @@ log = logging.getLogger(__name__)
 
 
 @support_hooks
-class FileReader(FrozenModel):
+class FileDFReader(FrozenModel):
     """Allows you to read files from a source path with specified file connection
     and parameters, and return a Spark DataFrame. |support_hooks|
 
@@ -68,7 +68,7 @@ class FileReader(FrozenModel):
     df_schema : :obj:`pyspark.sql.types.StructType`, optional, default: ``None``
         Spark DataFrame schema.
 
-    options : :obj:`FileReaderOptions <onetl.file.file_reader.options.FileReaderOptions>`, optional
+    options : :obj:`FileDFReaderOptions <onetl.file.file_df_reader.options.FileDFReaderOptions>`, optional
         Common reading options.
 
     Examples
@@ -78,12 +78,12 @@ class FileReader(FrozenModel):
     .. code:: python
 
         from onetl.connection import SparkLocalFS
-        from onetl.file import FileReader
+        from onetl.file import FileDFReader
         from onetl.file.format import CSV
 
         local_fs = SparkLocalFS(spark=spark)
 
-        reader = FileReader(
+        reader = FileDFReader(
             connection=local_fs,
             format=CSV(delimiter=","),
             source_path="/path/to/directory",
@@ -94,27 +94,27 @@ class FileReader(FrozenModel):
     .. code:: python
 
         from onetl.connection import SparkLocalFS
-        from onetl.file import FileReader
+        from onetl.file import FileDFReader
         from onetl.file.format import CSV
 
         csv = CSV(delimiter=",")
         local_fs = SparkLocalFS(spark=spark)
 
-        reader = FileReader(
+        reader = FileDFReader(
             connection=local_fs,
             format=csv,
             source_path="/path/to/directory",
-            options=FileReader.Options(recursive=False),
+            options=FileDFReader.Options(recursive=False),
         )
     """
 
-    Options = FileReaderOptions
+    Options = FileDFReaderOptions
 
     connection: BaseFileDFConnection
     format: BaseReadableFileFormat
     source_path: Optional[PurePathProtocol] = None
     df_schema: Optional[StructType] = None
-    options: FileReaderOptions = FileReaderOptions()
+    options: FileDFReaderOptions = FileDFReaderOptions()
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DataFrame:
@@ -143,13 +143,13 @@ class FileReader(FrozenModel):
         .. code:: python
 
             from onetl.connection import SparkLocalFS
-            from onetl.file import FileReader
+            from onetl.file import FileDFReader
             from onetl.file.format import CSV
 
             csv = CSV(delimiter=",")
             local_fs = SparkLocalFS(spark=spark)
 
-            reader = FileReader(
+            reader = FileDFReader(
                 connection=local_fs,
                 format=csv,
                 source_path="/path",
@@ -161,13 +161,13 @@ class FileReader(FrozenModel):
         .. code:: python
 
             from onetl.connection import SparkLocalFS
-            from onetl.file import FileReader
+            from onetl.file import FileDFReader
             from onetl.file.format import CSV
 
             csv = CSV(delimiter=",")
             local_fs = SparkLocalFS(spark=spark)
 
-            reader = FileReader(
+            reader = FileDFReader(
                 connection=local_fs,
                 format=csv,
             )
@@ -184,13 +184,13 @@ class FileReader(FrozenModel):
         .. code:: python
 
             from onetl.connection import SparkLocalFS
-            from onetl.file import FileReader
+            from onetl.file import FileDFReader
             from onetl.file.format import CSV
 
             csv = CSV(delimiter=",")
             local_fs = SparkLocalFS(spark=spark)
 
-            reader = FileReader(
+            reader = FileDFReader(
                 connection=local_fs,
                 format=csv,
                 source_path="/path",

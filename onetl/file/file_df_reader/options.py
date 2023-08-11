@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 
 
 @support_hooks
-class FileReaderOptions(FileDFReadOptions, GenericOptions):
-    """Options for :obj:`FileReader <onetl.file.file_reader.file_reader.FileReader>`.
+class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
+    """Options for :obj:`FileDFReader <onetl.file.file_df_reader.file_df_reader.FileDFReader>`.
 
     See `Spark Generic File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_
     documentation for more details.
@@ -47,9 +47,9 @@ class FileReaderOptions(FileDFReadOptions, GenericOptions):
 
     .. code:: python
 
-        from onetl.file import FileReader
+        from onetl.file import FileDFReader
 
-        options = FileReader.Options(recursive=True)
+        options = FileDFReader.Options(recursive=True)
     """
 
     class Config:

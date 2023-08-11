@@ -1,13 +1,13 @@
 """Integration tests for CSV file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
 from onetl._util.spark import get_spark_version
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import CSV
 
 try:
@@ -31,7 +31,7 @@ def test_csv_reader_with_infer_schema(
     df = file_df_dataframe
     csv_root = source_path / "csv/without_header"
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=CSV(inferSchema=True),
         source_path=csv_root,
@@ -74,7 +74,7 @@ def test_csv_reader_with_options(
     df = file_df_dataframe
     csv_root = source_path / f"csv/with_{option}"
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=CSV.parse({option: value}),
         df_schema=df.schema,
@@ -109,14 +109,14 @@ def test_csv_writer_with_options(
 
     csv = CSV.parse({option: value})
 
-    writer = FileWriter(
+    writer = FileDFWriter(
         connection=file_df_connection,
         format=csv,
         target_path=csv_root,
     )
     writer.run(df)
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=csv,
         source_path=csv_root,

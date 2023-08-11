@@ -12,4 +12,4 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.file.file_reader.file_reader import FileReader
+from onetl.file.file_df_reader.file_df_reader import FileDFReader

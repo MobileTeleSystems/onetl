@@ -1,12 +1,12 @@
 """Integration tests for JSONLine file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSONLine
 
 try:
@@ -37,7 +37,7 @@ def test_jsonline_reader(
     df = file_df_dataframe
     jsonline_root = source_path / "jsonline" / path
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=JSONLine.parse(options),
         df_schema=df.schema,
@@ -68,14 +68,14 @@ def test_jsonline_writer(
     df = file_df_dataframe
     jsonline_root = source_path / "jsonline"
 
-    writer = FileWriter(
+    writer = FileDFWriter(
         connection=file_df_connection,
         format=JSONLine.parse(options),
         target_path=jsonline_root,
     )
     writer.run(df)
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=JSONLine(),
         source_path=jsonline_root,

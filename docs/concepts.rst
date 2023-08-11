@@ -135,8 +135,8 @@ onETL provides several classes for this:
 
     * :ref:`DBReader <db-reader>`
     * :ref:`DBWriter <db-writer>`
-    * :ref:`FileReader <file-reader>`
-    * :ref:`FileWriter <file-writer>`
+    * :ref:`FileDFReader <file-df-reader>`
+    * :ref:`FileDFWriter <file-df-writer>`
     * :ref:`FileDownloader <file-downloader>`
     * :ref:`FileUploader <file-uploader>`
     * :ref:`FileMover <file-mover>`
@@ -169,15 +169,15 @@ Extract data
 
 To extract data you can use classes:
 
-+-----------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-|                                   | Use case                                  | Connection                                        | ``run()`` gets                                    | ``run()`` returns                                                                                                                    |
-+===================================+===========================================+===================================================+===================================================+======================================================================================================================================+
-| :ref:`DBReader <db-reader>`       | Reading data from a database              | Any :ref:`DBConnection <db-connections>`          | \-                                                | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
-+-----------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`FileReader <file-reader>`   | Read data from a file or set of files     | Any :ref:`FileDFConnection <file-df-connections>` | No input, or List[File path on FileSystem]        | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
-+-----------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`FileDownloader <db-reader>` | Download files from remote FS to local FS | Any :ref:`FileConnection <file-connections>`      | No input, or List[File path on remote FileSystem] | :ref:`DownloadResult <download-result>`                                                                                              |
-+-----------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
++--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+|                                      | Use case                                  | Connection                                        | ``run()`` gets                                    | ``run()`` returns                                                                                                                    |
++======================================+===========================================+===================================================+===================================================+======================================================================================================================================+
+| :ref:`DBReader <db-reader>`          | Reading data from a database              | Any :ref:`DBConnection <db-connections>`          | \-                                                | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
++--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| :ref:`FileDFReader <file-df-reader>` | Read data from a file or set of files     | Any :ref:`FileDFConnection <file-df-connections>` | No input, or List[File path on FileSystem]        | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
++--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| :ref:`FileDownloader <db-reader>`    | Download files from remote FS to local FS | Any :ref:`FileConnection <file-connections>`      | No input, or List[File path on remote FileSystem] | :ref:`DownloadResult <download-result>`                                                                                              |
++--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 Load data
 ---------
@@ -189,7 +189,7 @@ To load data you can use classes:
 +=====================================+==============================================+===================================================+======================================================================================================================================+=====================================+
 | :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`          | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
 +-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-| :ref:`FileWriter <db-writer>`       | Writing data from a DataFrame to a folder    | Any :ref:`FileDFConnection <file-df-connections>` | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
+| :ref:`FileDFWriter <db-writer>`     | Writing data from a DataFrame to a folder    | Any :ref:`FileDFConnection <file-df-connections>` | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
 +-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
 | :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>`      | List[File path on local FileSystem]                                                                                                  | :ref:`UploadResult <upload-result>` |
 +-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
@@ -276,26 +276,26 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         options=FileMover.Options(if_exists="replace_file"),
     )
 
-    file_reader = FileReader(
+    file_df_reader = FileDFReader(
         # WHAT do we read - *.csv files from some dir in S3
         connection=s3,
         source_path="/source",
         file_format=CSV(),
         # HOW do we read - load files from /source/*.csv, not from /source/nested/*.csv
-        options=FileReader.Options(recursive=False),
+        options=FileDFReader.Options(recursive=False),
     )
 
-    file_writer = FileWriter(
+    file_df_writer = FileDFWriter(
         # WHERE do we write to - as .csv files in some dir in S3
         connection=s3,
         target_path="/target",
         file_format=CSV(),
         # HOW do we write - replace all existing files in /target, if exists
-        options=FileWriter.Options(if_exists="replace_entire_directory"),
+        options=FileDFWriter.Options(if_exists="replace_entire_directory"),
     )
 
 More information about ``options`` could be found on :ref:`DB connection <db-connection>`. and
-:ref:`file-downloader` / :ref:`file-uploader` / :ref:`file-mover` / :ref:`file-reader` / :ref:`file-writer` documentation
+:ref:`file-downloader` / :ref:`file-uploader` / :ref:`file-mover` / :ref:`file-df-reader` / :ref:`file-df-writer` documentation
 
 Read Strategies
 ---------------

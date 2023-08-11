@@ -12,8 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from onetl.file.file_df_reader import FileDFReader
+from onetl.file.file_df_writer import FileDFWriter
 from onetl.file.file_downloader import DownloadResult, FileDownloader
 from onetl.file.file_mover import FileMover, MoveResult
-from onetl.file.file_reader import FileReader
 from onetl.file.file_uploader import FileUploader, UploadResult
-from onetl.file.file_writer import FileWriter

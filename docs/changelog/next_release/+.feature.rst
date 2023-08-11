@@ -10,8 +10,8 @@ FileDFConnections:
 
 High-level classes:
 
-* ``FileReader`` (:github:pull:`73`)
-* ``FileWriter`` (:github:pull:`81`)
+* ``FileDFReader`` (:github:pull:`73`)
+* ``FileDFWriter`` (:github:pull:`81`)
 
 File formats:
 

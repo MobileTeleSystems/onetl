@@ -1,13 +1,13 @@
 """Integration tests for Avro file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
 from onetl._util.spark import get_spark_version
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import Avro
 
 try:
@@ -62,7 +62,7 @@ def test_avro_reader(
     df = file_df_dataframe
     avro_root = source_path / "avro" / path
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=Avro(schema_dict=avro_schema, **options),
         df_schema=df.schema,
@@ -100,14 +100,14 @@ def test_avro_writer(
     df = file_df_dataframe
     avro_root = source_path / "avro"
 
-    writer = FileWriter(
+    writer = FileDFWriter(
         connection=file_df_connection,
         format=Avro(schema_dict=avro_schema, **options),
         target_path=avro_root,
     )
     writer.run(df)
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=Avro(),
         source_path=avro_root,

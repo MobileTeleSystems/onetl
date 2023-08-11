@@ -4,6 +4,6 @@
     :maxdepth: 1
     :caption: File DataFrame classes
 
-    file_reader/index
-    file_writer/index
+    file_df_reader/index
+    file_df_writer/index
     file_formats/index
