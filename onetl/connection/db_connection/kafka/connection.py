@@ -262,9 +262,8 @@ class Kafka(DBConnection):
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
-        if mode == KafkaTopicExistBehaviorKafka.ERROR:
-            if target in self._get_topics():
-                raise TargetAlreadyExistsError(f"Topic {target} already exists")
+        if mode == KafkaTopicExistBehaviorKafka.ERROR and target in self._get_topics():
+            raise TargetAlreadyExistsError(f"Topic {target} already exists")
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
         df.write.format("kafka").mode(mode).options(**write_options).save()
