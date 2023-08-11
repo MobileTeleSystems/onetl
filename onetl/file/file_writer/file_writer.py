@@ -104,6 +104,8 @@ class FileWriter(FrozenModel):
         """
         Method for writing DataFrame as files. |support_hooks|
 
+        .. note :: Method does support only **batching** DataFrames.
+
         Parameters
         ----------
 
@@ -119,6 +121,9 @@ class FileWriter(FrozenModel):
 
             writer.run(df)
         """
+
+        if df.isStreaming:
+            raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
         entity_boundary_log(f"{self.__class__.__name__} starts")
 

@@ -183,6 +183,8 @@ class DBWriter(FrozenModel):
         """
         Method for writing your df to specified target. |support_hooks|
 
+        .. note :: Method does support only **batching** DataFrames.
+
         Parameters
         ----------
         df : pyspark.sql.dataframe.DataFrame
@@ -197,6 +199,8 @@ class DBWriter(FrozenModel):
 
             writer.run(df)
         """
+        if df.isStreaming:
+            raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
         entity_boundary_log(msg="DBWriter starts")
 
