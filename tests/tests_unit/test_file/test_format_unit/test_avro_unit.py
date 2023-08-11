@@ -66,7 +66,7 @@ def test_avro_options_schema(value, real_value):
     ],
 )
 def test_avro_options_alias(name, real_name, value):
-    avro = Avro(**{name: value})
+    avro = Avro.parse({name: value})
     assert getattr(avro, real_name) == value
 
 
@@ -82,7 +82,7 @@ def test_avro_options_alias(name, real_name, value):
     ],
 )
 def test_avro_options_known(known_option):
-    avro = Avro(**{known_option: "value"})
+    avro = Avro.parse({known_option: "value"})
     assert getattr(avro, known_option) == "value"
 
 

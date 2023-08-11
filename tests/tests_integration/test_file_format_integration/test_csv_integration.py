@@ -76,7 +76,7 @@ def test_csv_reader_with_options(
 
     reader = FileReader(
         connection=local_fs,
-        format=CSV(**{option: value}),
+        format=CSV.parse({option: value}),
         df_schema=df.schema,
         source_path=csv_root,
     )
@@ -107,7 +107,7 @@ def test_csv_writer_with_options(
     df = file_df_dataframe
     csv_root = source_path / "csv"
 
-    csv = CSV(**{option: value})
+    csv = CSV.parse({option: value})
 
     writer = FileWriter(
         connection=file_df_connection,

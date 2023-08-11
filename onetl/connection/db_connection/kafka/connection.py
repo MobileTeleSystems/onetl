@@ -358,6 +358,38 @@ class Kafka(DBConnection):
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
         ]
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    @slot
+    def close(self):
+        """
+        Close all connections created to Kafka. |support_hooks|
+
+        Examples
+        --------
+
+        Close connection automatically:
+
+        .. code:: python
+
+            with connection:
+                ...
+
+        Close connection manually:
+
+        .. code:: python
+
+            connection.close()
+
+        """
+        self.protocol.cleanup(self)
+        if self.auth:
+            self.auth.cleanup(self)
+
     @property
     def instance_url(self):
         return "kafka://" + self.cluster
@@ -402,7 +434,7 @@ class Kafka(DBConnection):
             log.debug("|%s| Got %r", cls.__name__, validated_addresses)
 
         cluster_addresses = set(cls.Slots.get_cluster_addresses(cluster) or [])
-        unknown_addresses = {address for address in validated_addresses if address not in cluster_addresses}
+        unknown_addresses = set(validated_addresses) - cluster_addresses
         if cluster_addresses and unknown_addresses:
             raise ValueError(f"Cluster {cluster!r} does not contain addresses {unknown_addresses!r}")
 

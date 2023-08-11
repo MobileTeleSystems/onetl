@@ -216,7 +216,7 @@ def test_greenplum_read_write_options_populated_by_connection_class():
 )
 def test_greenplum_read_write_options_prohibited(arg, value, options_class):
     with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
-        options_class(**{arg: value})
+        options_class.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -233,7 +233,7 @@ def test_greenplum_read_write_options_prohibited(arg, value, options_class):
 def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Greenplum.ReadOptions(**{arg: value})
+        Greenplum.ReadOptions.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -249,7 +249,7 @@ def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
 def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
     with pytest.raises(ValueError, match=error_msg):
-        Greenplum.WriteOptions(**{arg: value})
+        Greenplum.WriteOptions.parse({arg: value})
 
 
 @pytest.mark.parametrize(

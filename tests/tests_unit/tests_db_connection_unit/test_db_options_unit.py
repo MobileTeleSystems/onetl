@@ -30,7 +30,7 @@ pytestmark = [pytest.mark.postgres]
 )
 def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, value):
     with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
-        options_class(**{arg: value})
+        options_class.parse({arg: value})
 
 
 @pytest.mark.parametrize(

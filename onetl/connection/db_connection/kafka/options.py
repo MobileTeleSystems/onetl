@@ -27,7 +27,6 @@ PROHIBITED_OPTIONS = frozenset(
         "kafka.*",
         "startingOffsets",
         "startingOffsetsByTimestamp",
-        "startingOffsetsByTimestampStrategy",
         "startingTimestamp",
         "subscribe",
         "subscribePattern",
@@ -85,7 +84,6 @@ class KafkaReadOptions(GenericOptions):
             * ``kafka.*``
             * ``startingOffsets``
             * ``startingOffsetsByTimestamp``
-            * ``startingOffsetsByTimestampStrategy``
             * ``startingTimestamp``
             * ``subscribe``
             * ``subscribePattern``
@@ -102,7 +100,7 @@ class KafkaReadOptions(GenericOptions):
     .. code:: python
 
         Kafka.ReadOptions(
-            maxOffsetsPerTrigger=10000,
+            minPartitions=50,
         )
     """
 
@@ -132,7 +130,6 @@ class KafkaWriteOptions(GenericOptions):
             * ``kafka.*``
             * ``startingOffsets``
             * ``startingOffsetsByTimestamp``
-            * ``startingOffsetsByTimestampStrategy``
             * ``startingTimestamp``
             * ``subscribe``
             * ``subscribePattern``
