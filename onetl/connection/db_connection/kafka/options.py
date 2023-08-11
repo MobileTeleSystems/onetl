@@ -57,7 +57,7 @@ KNOWN_WRITE_OPTIONS = frozenset(
 )
 
 
-class TopicExistBehaviorKafka(str, Enum):
+class KafkaTopicExistBehaviorKafka(str, Enum):
     ERROR = "error"
     APPEND = "append"
 
@@ -154,7 +154,7 @@ class KafkaWriteOptions(GenericOptions):
         )
     """
 
-    if_exists: TopicExistBehaviorKafka = Field(default=TopicExistBehaviorKafka.APPEND)
+    if_exists: KafkaTopicExistBehaviorKafka = Field(default=KafkaTopicExistBehaviorKafka.APPEND)
     """Behavior of writing data into existing topic.
 
     Possible values:
@@ -168,7 +168,7 @@ class KafkaWriteOptions(GenericOptions):
         extra = "allow"
 
     @root_validator(pre=True)
-    def mode_is_restricted(cls, values):
+    def _mode_is_restricted(cls, values):
         if "mode" in values:
             raise ValueError("Parameter `mode` is not allowed. Please use `if_exists` parameter instead.")
         return values

@@ -6,7 +6,6 @@ import pytest
 
 from onetl._util.spark import get_spark_version
 from onetl.connection import Kafka
-from onetl.connection.db_connection.kafka.options import TopicExistBehaviorKafka
 from onetl.db import DBWriter
 from onetl.exception import TargetAlreadyExistsError
 
@@ -263,6 +262,8 @@ def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
 
 
 def test_kafka_writer_mode(spark, kafka_processing, kafka_spark_df):
+    from pyspark.sql.functions import lit
+
     topic, processing = kafka_processing
     df = kafka_spark_df.select("value")
 
@@ -277,15 +278,15 @@ def test_kafka_writer_mode(spark, kafka_processing, kafka_spark_df):
         table=topic,
         options=kafka.WriteOptions(includeHeaders=True),
     )
-    assert writer.options.if_exists == TopicExistBehaviorKafka.APPEND
 
     writer.run(df)
     writer.run(df)
 
     pd_df = processing.get_expected_df(topic, num_messages=2 * kafka_spark_df.count(), timeout=5)
+    read_df = df.withColumn("key", lit(None)).withColumn("topic", lit(topic)).withColumn("partition", lit(0))
 
     # Check that second dataframe record is appended to first dataframe in same topic
-    assert len(pd_df) == 2 * df.count()
+    processing.assert_equal_df(pd_df.drop(columns=["headers"], axis=1), other_frame=read_df.union(read_df))
 
 
 def test_kafka_writer_mode_error(spark, kafka_processing, kafka_spark_df):
@@ -302,10 +303,9 @@ def test_kafka_writer_mode_error(spark, kafka_processing, kafka_spark_df):
         table=topic,
         options=kafka.WriteOptions(if_exists="error"),
     )
-    assert writer.options.if_exists == TopicExistBehaviorKafka.ERROR
 
     # Write is successful as topic didn't exist
     writer.run(df)
 
-    with pytest.raises(TargetAlreadyExistsError):
+    with pytest.raises(TargetAlreadyExistsError, match=f"Topic {topic} already exists"):
         writer.run(df)

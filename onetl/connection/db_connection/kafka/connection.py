@@ -37,8 +37,8 @@ from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
 from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
+    KafkaTopicExistBehaviorKafka,
     KafkaWriteOptions,
-    TopicExistBehaviorKafka,
 )
 from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
@@ -262,9 +262,9 @@ class Kafka(DBConnection):
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
-        if mode == TopicExistBehaviorKafka.ERROR:
+        if mode == KafkaTopicExistBehaviorKafka.ERROR:
             if target in self._get_topics():
-                raise TargetAlreadyExistsError
+                raise TargetAlreadyExistsError(f"Topic {target} already exists")
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
         df.write.format("kafka").mode(mode).options(**write_options).save()

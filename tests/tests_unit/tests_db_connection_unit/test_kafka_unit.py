@@ -7,7 +7,7 @@ import pytest
 
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
-from onetl.connection.db_connection.kafka.options import TopicExistBehaviorKafka
+from onetl.connection.db_connection.kafka.options import KafkaTopicExistBehaviorKafka
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
@@ -521,9 +521,9 @@ def test_kafka_get_cluster_addresses_hook(request, spark_mock):
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, TopicExistBehaviorKafka.APPEND),
-        ({"if_exists": "append"}, TopicExistBehaviorKafka.APPEND),
-        ({"if_exists": "error"}, TopicExistBehaviorKafka.ERROR),
+        ({}, KafkaTopicExistBehaviorKafka.APPEND),
+        ({"if_exists": "append"}, KafkaTopicExistBehaviorKafka.APPEND),
+        ({"if_exists": "error"}, KafkaTopicExistBehaviorKafka.ERROR),
     ],
 )
 def test_kafka_write_options_if_exists(options, value):
@@ -531,21 +531,19 @@ def test_kafka_write_options_if_exists(options, value):
 
 
 @pytest.mark.parametrize(
-    "options, value, message",
+    "options, message",
     [
         (
             {"mode": "append"},
-            TopicExistBehaviorKafka.APPEND,
             "Parameter `mode` is not allowed. Please use `if_exists` parameter instead.",
         ),
         (
             {"mode": "error"},
-            TopicExistBehaviorKafka.ERROR,
             "Parameter `mode` is not allowed. Please use `if_exists` parameter instead.",
         ),
     ],
 )
-def test_kafka_write_options_mode_restricted(options, value, message):
+def test_kafka_write_options_mode_restricted(options, message):
     with pytest.raises(ValueError, match=re.escape(message)):
         Kafka.WriteOptions(**options)
 
@@ -554,7 +552,7 @@ def test_kafka_write_options_mode_restricted(options, value, message):
     "options",
     [
         # disallowed mode
-        {"if_exists": "replace_entire_collection"},
+        {"if_exists": "ignore"},
         # wrong mode
         {"if_exists": "wrong_mode"},
     ],
