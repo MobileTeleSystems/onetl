@@ -1,12 +1,12 @@
 """Integration tests for JSON file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSON
 
 try:
@@ -37,7 +37,7 @@ def test_json_reader(
     df = file_df_dataframe
     json_root = source_path / "json" / path
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=JSON.parse(options),
         df_schema=df.schema,
@@ -58,7 +58,7 @@ def test_json_writer_is_not_supported(
     json_root = source_path / "json"
 
     with pytest.raises(ValueError):
-        FileWriter(
+        FileDFWriter(
             connection=file_df_connection,
             format=JSON(),
             target_path=json_root,

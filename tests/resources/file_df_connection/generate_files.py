@@ -345,31 +345,31 @@ def temporary_set_seed(seed: int) -> Iterator[int]:
 
 
 def save_as_avro_plain(data: list[dict], path: Path) -> None:
-    from avro.datafile import DataFileWriter
+    from avro.datafile import DataFileDFWriter
     from avro.io import DatumWriter
 
     path.mkdir(parents=True, exist_ok=True)
     schema = get_avro_schema()
     with open(path / "file.avro", "wb") as file:
-        # DataFileWriter.sync_marker is initialized with randbytes
+        # DataFileDFWriter.sync_marker is initialized with randbytes
         # temporary set seed to avoid generating files with different hashes
         with temporary_set_seed(SEED):
-            with DataFileWriter(file, DatumWriter(), schema) as writer:
+            with DataFileDFWriter(file, DatumWriter(), schema) as writer:
                 for row in data:
                     writer.append(row)
 
 
 def save_as_avro_snappy(data: list[dict], path: Path) -> None:
-    from avro.datafile import DataFileWriter
+    from avro.datafile import DataFileDFWriter
     from avro.io import DatumWriter
 
     path.mkdir(parents=True, exist_ok=True)
     schema = get_avro_schema()
     with open(path / "file.snappy.avro", "wb") as file:
-        # DataFileWriter.sync_marker is initialized with randbytes
+        # DataFileDFWriter.sync_marker is initialized with randbytes
         # temporary set seed to avoid generating files with different hashes
         with temporary_set_seed(SEED):
-            with DataFileWriter(file, DatumWriter(), schema, codec="snappy") as writer:
+            with DataFileDFWriter(file, DatumWriter(), schema, codec="snappy") as writer:
                 for row in data:
                     writer.append(row)
 

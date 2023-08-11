@@ -1,4 +1,4 @@
-.. _file-writer-root:
+.. _file-df-writer-root:
 
 File Writer
 ===============
@@ -7,5 +7,5 @@ File Writer
     :maxdepth: 1
     :caption: File Writer
 
-    file_writer
+    file_df_writer
     options

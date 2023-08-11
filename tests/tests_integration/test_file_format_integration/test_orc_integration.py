@@ -1,12 +1,12 @@
 """Integration tests for ORC file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import ORC
 
 try:
@@ -37,7 +37,7 @@ def test_orc_reader(
     df = file_df_dataframe
     orc_root = source_path / "orc" / path
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=ORC.parse(options),
         df_schema=df.schema,
@@ -68,14 +68,14 @@ def test_orc_writer(
     df = file_df_dataframe
     orc_root = source_path / "orc"
 
-    writer = FileWriter(
+    writer = FileDFWriter(
         connection=file_df_connection,
         format=ORC.parse(options),
         target_path=orc_root,
     )
     writer.run(df)
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=ORC(),
         source_path=orc_root,

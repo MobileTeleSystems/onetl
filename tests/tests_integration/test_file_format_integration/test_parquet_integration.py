@@ -1,12 +1,12 @@
 """Integration tests for Parquet file format.
 
-Test only that options are passed to Spark in both FileReader & FileWriter.
+Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
 import pytest
 
-from onetl.file import FileReader, FileWriter
+from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import Parquet
 
 try:
@@ -37,7 +37,7 @@ def test_parquet_reader(
     df = file_df_dataframe
     parquet_root = source_path / "parquet" / path
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=local_fs,
         format=Parquet.parse(options),
         df_schema=df.schema,
@@ -68,14 +68,14 @@ def test_parquet_writer(
     df = file_df_dataframe
     parquet_root = source_path / "parquet"
 
-    writer = FileWriter(
+    writer = FileDFWriter(
         connection=file_df_connection,
         format=Parquet.parse(options),
         target_path=parquet_root,
     )
     writer.run(df)
 
-    reader = FileReader(
+    reader = FileDFReader(
         connection=file_df_connection,
         format=Parquet(),
         source_path=parquet_root,

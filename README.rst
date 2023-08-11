@@ -120,7 +120,7 @@ Base ``onetl`` package contains:
 
 * ``DBReader``, ``DBWriter`` and related classes
 * ``FileDownloader``, ``FileUploader``, ``FileMover`` and related classes, like file filters & limits
-* ``FileReader``, ``FileWriter`` and related classes, like file formats
+* ``FileDFReader``, ``FileDFWriter`` and related classes, like file formats
 * Read Strategies & HWM classes
 * Plugins support
 
@@ -514,7 +514,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     from onetl.connection import Postgres, SparkS3
 
     # Import onETL classes to read files
-    from onetl.file import FileReader
+    from onetl.file import FileDFReader
     from onetl.file.format import CSV
 
     # Import onETL classes to write data
@@ -575,7 +575,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     )
 
     # Initialize file reader
-    reader = FileReader(
+    reader = FileDFReader(
         connection=spark_s3,
         source_path="/remote/tests/Report",  # path on S3 there *.csv files are located
         format=csv,  # file format with specific parsing options

@@ -12,4 +12,4 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.file.file_writer.file_writer import FileWriter
+from onetl.file.file_df_writer.file_df_writer import FileDFWriter

@@ -1,4 +1,4 @@
-.. _file-reader-root:
+.. _file-df-reader-root:
 
 File Reader
 ===============
@@ -7,5 +7,5 @@ File Reader
     :maxdepth: 1
     :caption: File Reader
 
-    file_reader
+    file_df_reader
     options

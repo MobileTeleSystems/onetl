@@ -1,6 +1,6 @@
 import pytest
 
-from onetl.file import FileWriter
+from onetl.file import FileDFWriter
 
 
 @pytest.mark.parametrize(
@@ -12,14 +12,14 @@ from onetl.file import FileWriter
         ("unknown", "abc"),
     ],
 )
-def test_file_writer_options(option, value):
-    options = FileWriter.Options.parse({option: value})
+def test_file_df_writer_options(option, value):
+    options = FileDFWriter.Options.parse({option: value})
     assert getattr(options, option) == value
 
 
-def test_file_writer_options_mode_prohibited():
+def test_file_df_writer_options_mode_prohibited():
     with pytest.raises(ValueError):
-        FileWriter.Options(mode="error")
+        FileDFWriter.Options(mode="error")
 
 
 @pytest.mark.parametrize(
@@ -29,11 +29,11 @@ def test_file_writer_options_mode_prohibited():
         ("static", "replace_entire_directory"),
     ],
 )
-def test_file_writer_options_unsupported_partition_overwrite(mode, recommended):
+def test_file_df_writer_options_unsupported_partition_overwrite(mode, recommended):
     error_msg = f"`partitionOverwriteMode` option should be replaced with if_exists='{recommended}'"
 
     with pytest.raises(ValueError, match=error_msg):
-        FileWriter.Options(partitionOverwriteMode=mode)
+        FileDFWriter.Options(partitionOverwriteMode=mode)
 
     with pytest.raises(ValueError, match=error_msg):
-        FileWriter.Options(partition_overwrite_mode=mode)
+        FileDFWriter.Options(partition_overwrite_mode=mode)
