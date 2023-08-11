@@ -123,3 +123,7 @@ class SignatureError(TypeError):
     """
     Raised when hook signature is not consistent with slot
     """
+
+
+class TargetAlreadyExistsError(Exception):
+    """Raised if the target already exists in source"""

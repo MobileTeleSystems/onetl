@@ -7,6 +7,7 @@ import pytest
 
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
+from onetl.connection.db_connection.kafka.options import TopicExistBehaviorKafka
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
@@ -515,3 +516,49 @@ def test_kafka_get_cluster_addresses_hook(request, spark_mock):
 
     with pytest.raises(ValueError, match="Cluster 'kafka-cluster' does not contain addresses {'192.168.1.3'}"):
         Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1", "192.168.1.3"])
+
+
+@pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, TopicExistBehaviorKafka.APPEND),
+        ({"if_exists": "append"}, TopicExistBehaviorKafka.APPEND),
+        ({"if_exists": "error"}, TopicExistBehaviorKafka.ERROR),
+    ],
+)
+def test_kafka_write_options_if_exists(options, value):
+    assert Kafka.WriteOptions(**options).if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            TopicExistBehaviorKafka.APPEND,
+            "Parameter `mode` is not allowed. Please use `if_exists` parameter instead.",
+        ),
+        (
+            {"mode": "error"},
+            TopicExistBehaviorKafka.ERROR,
+            "Parameter `mode` is not allowed. Please use `if_exists` parameter instead.",
+        ),
+    ],
+)
+def test_kafka_write_options_mode_restricted(options, value, message):
+    with pytest.raises(ValueError, match=re.escape(message)):
+        Kafka.WriteOptions(**options)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        # disallowed mode
+        {"if_exists": "replace_entire_collection"},
+        # wrong mode
+        {"if_exists": "wrong_mode"},
+    ],
+)
+def test_kafka_write_options_mode_wrong(options):
+    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+        Kafka.WriteOptions(**options)

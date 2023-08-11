@@ -38,9 +38,10 @@ from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaWriteOptions,
+    TopicExistBehaviorKafka,
 )
 from onetl.connection.db_connection.kafka.slots import KafkaSlots
-from onetl.exception import MISSING_JVM_CLASS_MSG
+from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
 from onetl.log import log_with_indent
@@ -254,11 +255,19 @@ class Kafka(DBConnection):
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
         write_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
-        write_options.update(options.dict(by_alias=True, exclude_none=True))
+        write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
+        # As of Apache Spark version 3.4.1, the mode 'error' is not functioning as expected.
+        # This issue has been reported and can be tracked at:
+        # https://issues.apache.org/jira/browse/SPARK-44774
+        mode = options.if_exists
+        if mode == TopicExistBehaviorKafka.ERROR:
+            if target in self._get_topics():
+                raise TargetAlreadyExistsError
+
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
-        df.write.format("kafka").options(**write_options).save()
+        df.write.format("kafka").mode(mode).options(**write_options).save()
         log.info("|%s| Data is successfully written to topic %r", self.__class__.__name__, target)
 
     @slot
