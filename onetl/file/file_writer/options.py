@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 
 
-class FileWriteMode(str, Enum):
+class FileDFExistsBehavior(str, Enum):
     ERROR = "error"
     APPEND = "append"
     REPLACE_OVERLAPPING_PARTITIONS = "replace_overlapping_partitions"
@@ -75,7 +75,7 @@ class FileWriterOptions(FileDFWriteOptions, GenericOptions):
         prohibited_options = {"mode"}
         extra = "allow"
 
-    if_exists: FileWriteMode = FileWriteMode.ERROR
+    if_exists: FileDFExistsBehavior = FileDFExistsBehavior.ERROR
     """Behavior for existing target directory.
 
     If target directory does not exist, it will be created.
@@ -214,7 +214,7 @@ class FileWriterOptions(FileDFWriteOptions, GenericOptions):
         """
         from pyspark.sql import SparkSession
 
-        for method, value in self.dict(by_alias=True, exclude_none=True, exclude={"mode"}).items():
+        for method, value in self.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
             # <value> is the arguments that will be passed to the <method>
             # format orc, parquet methods and format simultaneously
             if hasattr(writer, method):
@@ -236,15 +236,18 @@ class FileWriterOptions(FileDFWriteOptions, GenericOptions):
 
         context = nullcontext()
 
-        if self.if_exists == FileWriteMode.REPLACE_OVERLAPPING_PARTITIONS:
+        if self.if_exists == FileDFExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS:
             context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic")  # noqa: WPS437
-        elif self.if_exists == FileWriteMode.REPLACE_ENTIRE_DIRECTORY:
+        elif self.if_exists == FileDFExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
             context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "static")  # noqa: WPS437
 
         mode = self.if_exists.value
-        if self.if_exists in {FileWriteMode.REPLACE_OVERLAPPING_PARTITIONS, FileWriteMode.REPLACE_ENTIRE_DIRECTORY}:
+        if self.if_exists in {
+            FileDFExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            FileDFExistsBehavior.REPLACE_ENTIRE_DIRECTORY,
+        }:
             mode = "overwrite"
-        elif self.if_exists == FileWriteMode.SKIP_ENTIRE_DIRECTORY:
+        elif self.if_exists == FileDFExistsBehavior.SKIP_ENTIRE_DIRECTORY:
             mode = "ignore"
 
         with context:

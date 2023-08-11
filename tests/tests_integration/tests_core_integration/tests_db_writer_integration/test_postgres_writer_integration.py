@@ -103,7 +103,7 @@ def test_postgres_writer_mode_append(spark, processing, prepare_schema_table):
     writer = DBWriter(
         connection=postgres,
         target=prepare_schema_table.full_name,
-        options=Postgres.WriteOptions(mode="append"),
+        options=Postgres.WriteOptions(if_exists="append"),
     )
 
     writer.run(df1)
@@ -116,7 +116,7 @@ def test_postgres_writer_mode_append(spark, processing, prepare_schema_table):
     )
 
 
-def test_postgres_writer_mode_overwrite(spark, processing, prepare_schema_table):
+def test_postgres_writer_mode_replace_entire_table(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
     df1 = df[df.id_int < 1001]
     df2 = df[df.id_int > 1000]
@@ -133,7 +133,7 @@ def test_postgres_writer_mode_overwrite(spark, processing, prepare_schema_table)
     writer = DBWriter(
         connection=postgres,
         target=prepare_schema_table.full_name,
-        options=Postgres.WriteOptions(mode="overwrite"),
+        options=Postgres.WriteOptions(if_exists="replace_entire_table"),
     )
 
     writer.run(df1)

@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import logging
 import secrets
+import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from deprecated import deprecated
 from etl_entities.instance import Host
-from pydantic import PositiveInt, root_validator
+from pydantic import Field, PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -116,15 +117,26 @@ READ_TOP_LEVEL_OPTIONS = frozenset(("url", "column", "lower_bound", "upper_bound
 #   spark.write.jdbc(
 #     url, table, mode,
 #     properties:  { "user" : "SYSTEM", "password" : "mypassword", ... })
-WRITE_TOP_LEVEL_OPTIONS = frozenset(("url", "mode"))
+WRITE_TOP_LEVEL_OPTIONS = frozenset("url")
 
 
-class JDBCWriteMode(str, Enum):
+class JDBCTableExistsBehavior(str, Enum):
     APPEND = "append"
-    OVERWRITE = "overwrite"
+    REPLACE_ENTIRE_TABLE = "replace_entire_table"
 
     def __str__(self) -> str:
         return str(self.value)
+
+    @classmethod  # noqa: WPS120
+    def _missing_(cls, value: object):  # noqa: WPS120
+        if str(value) == "overwrite":
+            warnings.warn(
+                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                "Use `replace_entire_table` instead",
+                category=UserWarning,
+                stacklevel=4,
+            )
+            return cls.REPLACE_ENTIRE_TABLE
 
 
 class PartitioningMode(str, Enum):
@@ -454,7 +466,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
 
         .. code:: python
 
-            options = JDBC.WriteOptions(mode="append", batchsize=20_000, someNewOption="value")
+            options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, someNewOption="value")
         """
 
         class Config:
@@ -464,29 +476,41 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
             )
             alias_generator = to_camel
 
-        mode: JDBCWriteMode = JDBCWriteMode.APPEND
-        """Mode of writing data into target table.
+        if_exists: JDBCTableExistsBehavior = Field(default=JDBCTableExistsBehavior.APPEND, alias="mode")
+        """Behavior of writing data into existing table.
 
         Possible values:
             * ``append`` (default)
-                Appends data into existing table.
+                Adds new rows into existing table.
 
-                Behavior in details:
+                .. dropdown:: Behavior in details
 
                 * Table does not exist
-                    Table is created using other options from current class
+                    Table is created using options provided by user
                     (``createTableOptions``, ``createTableColumnTypes``, etc).
 
                 * Table exists
                     Data is appended to a table. Table has the same DDL as before writing data
 
-            * ``overwrite``
-                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+                    .. warning::
 
-                Behavior in details:
+                        This mode does not check whether table already contains
+                        rows from dataframe, so duplicated rows can be created.
+
+                        Also Spark does not support passing custom options to
+                        insert statement, like ``ON CONFLICT``, so don't try to
+                        implement deduplication using unique indexes or constraints.
+
+                        Instead, write to staging table and perform deduplication
+                        using :obj:`~execute` method.
+
+            * ``replace_entire_table``
+                **Table is dropped and then created, or truncated**.
+
+                .. dropdown:: Behavior in details
 
                 * Table does not exist
-                    Table is created using other options from current class
+                    Table is created using options provided by user
                     (``createTableOptions``, ``createTableColumnTypes``, etc).
 
                 * Table exists
@@ -535,6 +559,17 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         Please refer the documentation for
         `java.sql.Connection <https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html>`_.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `WriteOptions(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     @deprecated(
         version="0.5.0",
@@ -649,7 +684,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
             table=source,
             where=where,
             hint=hint,
-            options=self.ReadOptions.parse(options).copy(exclude={"mode", "partitioning_mode"}),
+            options=self.ReadOptions.parse(options).copy(exclude={"if_exists", "partitioning_mode"}),
         )
 
         # hack to avoid column name verification
@@ -688,10 +723,12 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
-        write_options = self.options_to_jdbc_params(self.WriteOptions.parse(options))
+        write_options = self.WriteOptions.parse(options)
+        jdbc_params = self.options_to_jdbc_params(write_options)
 
+        mode = "append" if write_options.if_exists == JDBCTableExistsBehavior.APPEND else "overwrite"
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        df.write.jdbc(table=target, **write_options)
+        df.write.jdbc(table=target, mode=mode, **jdbc_params)
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
     @slot
@@ -733,12 +770,13 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         result = self._get_jdbc_properties(
             options,
             include=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
+            exclude={"if_exists"},
             exclude_none=True,
         )
 
         result["properties"] = self._get_jdbc_properties(
             options,
-            exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
+            exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS | {"if_exists"},
             exclude_none=True,
         )
 
@@ -796,8 +834,6 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         options: ReadOptions,
     ) -> DataFrame:
         jdbc_params = self.options_to_jdbc_params(options)
-        jdbc_params.pop("mode", None)
-
         return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
 
     def _exclude_partition_options(

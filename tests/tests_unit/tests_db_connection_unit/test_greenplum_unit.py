@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from onetl.connection import Greenplum
-from onetl.connection.db_connection.greenplum import GreenplumWriteMode
+from onetl.connection.db_connection.greenplum import GreenplumTableExistsBehavior
 
 pytestmark = [pytest.mark.greenplum, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -177,7 +177,7 @@ def test_greenplum_without_mandatory_args(spark_mock):
 def test_greenplum_write_options_default():
     options = Greenplum.WriteOptions()
 
-    assert options.mode == GreenplumWriteMode.APPEND
+    assert options.if_exists == GreenplumTableExistsBehavior.APPEND
     assert options.query_timeout is None
 
 
@@ -253,6 +253,47 @@ def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
 
 
 @pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, GreenplumTableExistsBehavior.APPEND),
+        ({"if_exists": "append"}, GreenplumTableExistsBehavior.APPEND),
+        ({"if_exists": "replace_entire_table"}, GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+    ],
+)
+def test_greenplum_write_options_if_exists(options, value):
+    assert Greenplum.WriteOptions(**options).if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            GreenplumTableExistsBehavior.APPEND,
+            "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Greenplum.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_entire_table"},
+            GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Greenplum.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "overwrite"},
+            GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_entire_table` instead",
+        ),
+    ],
+)
+def test_greenplum_write_options_mode_deprecated(options, value, message):
+    with pytest.warns(UserWarning, match=re.escape(message)):
+        options = Greenplum.WriteOptions(**options)
+        assert options.if_exists == value
+
+
+@pytest.mark.parametrize(
     "options",
     [
         # disallowed modes
@@ -262,6 +303,6 @@ def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
         {"mode": "wrong_mode"},
     ],
 )
-def test_greenplum_write_options_wrong_mode(options):
+def test_greenplum_write_options_mode_wrong(options):
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
         Greenplum.WriteOptions(**options)

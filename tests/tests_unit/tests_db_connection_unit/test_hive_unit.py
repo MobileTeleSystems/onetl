@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import logging
 import re
 
 import pytest
 
 from onetl.connection import Hive
-from onetl.connection.db_connection.hive import HiveWriteMode
+from onetl.connection.db_connection.hive import HiveTableExistsBehavior
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.hive, pytest.mark.db_connection, pytest.mark.connection]
@@ -118,27 +117,14 @@ def test_hive_write_options_sort_by_without_bucket_by(sort_by):
 
 
 @pytest.mark.parametrize(
-    "options",
-    [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-    ],
-)
-def test_hive_options_unsupported_modes(options):
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        Hive.WriteOptions(**options)
-
-
-@pytest.mark.parametrize(
     "mode, recommended",
     [
-        ("dynamic", "overwrite_partitions"),
-        ("static", "overwrite_table"),
+        ("dynamic", "replace_overlapping_partitions"),
+        ("static", "replace_entire_table"),
     ],
 )
 def test_hive_write_options_unsupported_partition_overwrite(mode, recommended):
-    error_msg = f"`partitionOverwriteMode` option should be replaced with mode='{recommended}'"
+    error_msg = f"`partitionOverwriteMode` option should be replaced with if_exists='{recommended}'"
 
     with pytest.raises(ValueError, match=error_msg):
         Hive.WriteOptions(partitionOverwriteMode=mode)
@@ -160,13 +146,76 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
         Hive.WriteOptions(insertInto=insert_into)
 
 
-def test_hive_write_options_deprecated_mode_overwrite(caplog):
-    warning_msg = (
-        "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, use `overwrite_partitions` instead"
-    )
+@pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, HiveTableExistsBehavior.APPEND),
+        ({"if_exists": "append"}, HiveTableExistsBehavior.APPEND),
+        ({"if_exists": "replace_overlapping_partitions"}, HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS),
+        ({"if_exists": "replace_entire_table"}, HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+    ],
+)
+def test_hive_write_options_if_exists(options, value):
+    assert Hive.WriteOptions(**options).if_exists == value
 
-    with caplog.at_level(logging.INFO):
-        options = Hive.WriteOptions(mode="overwrite")
-        assert warning_msg in caplog.text
 
-    assert options.mode == HiveWriteMode.OVERWRITE_PARTITIONS
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            HiveTableExistsBehavior.APPEND,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_overlapping_partitions"},
+            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_entire_table"},
+            HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "overwrite"},
+            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0. "
+            "Use `replace_overlapping_partitions` instead",
+        ),
+        (
+            {"mode": "overwrite_partitions"},
+            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Mode `overwrite_partitions` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_overlapping_partitions` instead",
+        ),
+        (
+            {"mode": "overwrite_table"},
+            HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Mode `overwrite_table` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_entire_table` instead",
+        ),
+    ],
+)
+def test_hive_write_options_mode_deprecated(options, value, message):
+    with pytest.warns(UserWarning, match=re.escape(message)):
+        options = Hive.WriteOptions(**options)
+        assert options.if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        # disallowed modes
+        {"mode": "error"},
+        {"mode": "ignore"},
+        # wrong mode
+        {"mode": "wrong_mode"},
+    ],
+)
+def test_hive_write_options_mode_unsupported(options):
+    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+        Hive.WriteOptions(**options)

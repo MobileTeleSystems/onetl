@@ -10,13 +10,22 @@ from onetl.db import DBWriter
 pytestmark = pytest.mark.hive
 
 
-def test_hive_writer(spark, processing, get_schema_table, caplog):
+@pytest.mark.parametrize(
+    "if_exists",
+    [
+        "append",
+        "replace_overlapping_partitions",
+        "replace_entire_table",
+    ],
+)
+def test_hive_writer_target_does_not_exist(spark, processing, get_schema_table, if_exists, caplog):
     df = processing.create_spark_df(spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,  # new table
+        options=Hive.WriteOptions(if_exists=if_exists),
     )
 
     with caplog.at_level(logging.INFO):
@@ -32,34 +41,19 @@ def test_hive_writer(spark, processing, get_schema_table, caplog):
     )
 
 
-def test_hive_writer_with_dict_options(spark, processing, get_schema_table):
+@pytest.mark.parametrize(
+    "options",
+    [{"compression": "snappy"}, Hive.WriteOptions(compression="snappy")],
+    ids=["options as dict", "options as model"],
+)
+def test_hive_writer_with_options(spark, processing, get_schema_table, options):
     df = processing.create_spark_df(spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
     writer = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options={"compression": "snappy"},
-    )
-    writer.run(df)
-
-    response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
-    response = response.collect()[0][0]
-
-    if get_spark_version(spark).major < 3:
-        assert "`compression` 'snappy'" in response
-    else:
-        assert "'compression' = 'snappy'" in response
-
-
-def test_hive_writer_with_pydantic_options(spark, processing, get_schema_table):
-    df = processing.create_spark_df(spark)
-    hive = Hive(cluster="rnd-dwh", spark=spark)
-
-    writer = DBWriter(
-        connection=hive,
-        target=get_schema_table.full_name,
-        options=Hive.WriteOptions(compression="snappy"),
+        options=options,
     )
     writer.run(df)
 
@@ -230,14 +224,12 @@ def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table
 @pytest.mark.parametrize(
     "options",
     [
-        Hive.WriteOptions(),
-        Hive.WriteOptions(mode="append"),
-        Hive.WriteOptions(mode="overwrite"),
-        Hive.WriteOptions(mode="overwrite_table"),
-        Hive.WriteOptions(mode="overwrite_partitions"),
+        Hive.WriteOptions(if_exists="append"),
+        Hive.WriteOptions(if_exists="replace_entire_table"),
+        Hive.WriteOptions(if_exists="replace_overlapping_partitions"),
     ],
 )
-def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table, options, caplog):
+def test_hive_writer_create_table_if_exists(spark, processing, get_schema_table, options, caplog):
     df = processing.create_spark_df(spark=spark)
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
@@ -259,28 +251,6 @@ def test_hive_writer_create_table_with_mode(spark, processing, get_schema_table,
     )
 
 
-def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog):
-    df = processing.create_spark_df(spark)
-    hive = Hive(cluster="rnd-dwh", spark=spark)
-
-    writer = DBWriter(
-        connection=hive,
-        target=prepare_schema_table.full_name,  # table already exist
-    )
-
-    with caplog.at_level(logging.INFO):
-        writer.run(df)
-
-        assert f"|Hive| Inserting data into existing table '{prepare_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Data is successfully inserted into table '{prepare_schema_table.full_name}'" in caplog.text
-
-    processing.assert_equal_df(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        df=df,
-    )
-
-
 @pytest.mark.parametrize(
     "options, option_kv",
     [
@@ -291,188 +261,231 @@ def test_hive_writer_insert_into(spark, processing, prepare_schema_table, caplog
             "{'bucketBy': (5, 'id_int'), 'sortBy': 'hwm_int'}",
         ),
         (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
-        (Hive.WriteOptions(format="orc"), "{'format': 'orc'}"),
+        (Hive.WriteOptions(format="parquet"), "{'format': 'parquet'}"),
     ],
 )
-def test_hive_writer_insert_into_with_options(spark, processing, prepare_schema_table, options, option_kv, caplog):
+def test_hive_writer_insert_into_with_options(spark, processing, get_schema_table, options, option_kv, caplog):
     df = processing.create_spark_df(spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
-    writer = DBWriter(
+    df1 = df[df.id_int <= 50]
+    df2 = df[df.id_int > 50]
+
+    writer1 = DBWriter(
         connection=hive,
-        target=prepare_schema_table.full_name,  # table already exist
+        target=get_schema_table.full_name,
+    )
+    # create & fill up the table without any options
+    writer1.run(df1)
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    writer2 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
         options=options,
     )
 
     error_msg = f"|Hive| Options {option_kv} are not supported while inserting into existing table, ignoring"
     with caplog.at_level(logging.WARNING):
-        writer.run(df)
-
+        # write to table with new options
+        writer2.run(df2)
         assert error_msg in caplog.text
 
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    # table DDL remains the same
+    assert new_ddl == old_ddl
+    assert "compression" not in new_ddl
+    assert "USING parquet" not in new_ddl
+    assert "PARTITIONED BY" not in new_ddl
+    assert "SORTED BY" not in new_ddl
+    assert "CLUSTERED BY" not in new_ddl
+    assert "BUCKETS" not in new_ddl
+
+    # table contains both old and new data
     processing.assert_equal_df(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 
 @pytest.mark.parametrize(
-    "options",
+    "original_options, new_options",
     [
-        Hive.WriteOptions(mode="append", partitionBy="id_int"),
-        Hive.WriteOptions(partitionBy="id_int"),  # default is mode=append
+        pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
+        pytest.param({"partitionBy": "text_string"}, {}, id="table_partitioned_dataframe_is_not"),
+        pytest.param({"partitionBy": "text_string"}, {"partitionBy": "id_int"}, id="different_partitioning_schema"),
+        pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
     ],
 )
-def test_hive_writer_insert_into_with_mode_append(spark, processing, prepare_schema_table, options, caplog):
-    from pyspark.sql.functions import col
-
+def test_hive_writer_insert_into_append(spark, processing, get_schema_table, original_options, new_options, caplog):
     df = processing.create_spark_df(spark=spark)
 
-    df1 = df[df.id_int <= 50]
-    df2 = df[df.id_int > 50]
-    df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
+    df1 = df[df.id_int <= 25]
+    df2 = df.where("id_int > 25 AND id_int <= 50")
+    df3 = df[df.id_int > 50]
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
-    writer = DBWriter(
+    writer1 = DBWriter(
         connection=hive,
-        target=prepare_schema_table.full_name,
-        options=options,
+        target=get_schema_table.full_name,
+        options=original_options,
+    )
+    # create & fill up the table with some data
+    writer1.run(df1.union(df2))
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    writer2 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=Hive.WriteOptions(if_exists="append", **new_options),
     )
 
-    with caplog.at_level(logging.WARNING):
-        writer.run(df1)
-        writer.run(df2_reversed)
+    with caplog.at_level(logging.INFO):
+        writer2.run(df1.union(df3))
+
+        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'" in caplog.text
+
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    # table DDL remains the same
+    assert new_ddl == old_ddl
 
     # table contains both old and new data
     processing.assert_equal_df(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        df=df,
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df1.union(df1).union(df2).union(df3),
         order_by="id_int",
     )
 
-    response = hive.sql(f"SHOW CREATE TABLE {prepare_schema_table.full_name}")
-    response = response.collect()[0][0]
 
-    # table was not recreated
-    assert "PARTITIONED BY" not in response
+@pytest.mark.parametrize(
+    "original_options, new_options",
+    [
+        pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
+        pytest.param({"partitionBy": "text_string"}, {}, id="table_partitioned_dataframe_is_not"),
+        pytest.param({"partitionBy": "text_string"}, {"partitionBy": "id_int"}, id="different_partitioning_schema"),
+        pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
+    ],
+)
+def test_hive_writer_insert_into_replace_entire_table(
+    spark,
+    processing,
+    get_schema_table,
+    original_options,
+    new_options,
+    caplog,
+):
+    df = processing.create_spark_df(spark=spark)
+
+    df1 = df[df.id_int <= 50]
+    df2 = df[df.id_int > 50]
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    writer1 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=original_options,
+    )
+    # create & fill up the table with some data
+    writer1.run(df1)
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    writer2 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=Hive.WriteOptions(if_exists="replace_entire_table", **new_options),
+    )
+    with caplog.at_level(logging.INFO):
+        # recreate table with different columns order to produce different DDL
+        writer2.run(df2.select(*reversed(df2.columns)))
+
+        # unlike other modes, this creates new table
+        assert f"|Hive| Saving data to a table '{get_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created" in caplog.text
+
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    # database content is replaced by new data
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df2,
+        order_by="id_int",
+    )
+
+    # table is recreated
+    assert new_ddl != old_ddl
 
 
-def test_hive_writer_insert_into_with_mode_overwrite_table(spark, processing, prepare_schema_table, caplog):
+def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partitioned_table(
+    spark,
+    processing,
+    get_schema_table,
+    caplog,
+):
     from pyspark.sql.functions import col
 
     df = processing.create_spark_df(spark=spark)
 
     df1 = df[df.id_int <= 50]
     df2 = df[df.id_int > 50]
+    # to test that inserting dataframe into existing table is performed using column names, but not order
     df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
-    writer = DBWriter(
-        connection=hive,
-        target=prepare_schema_table.full_name,
-        options=Hive.WriteOptions(mode="overwrite_table", partitionBy="id_int"),
-    )
 
-    with caplog.at_level(logging.WARNING):
-        writer.run(df1)
-        writer.run(df2_reversed)
-
-    # database content is replaced by new data
-    processing.assert_equal_df(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        df=df2.orderBy("id_int"),
-        order_by="id_int",
-    )
-
-
-def test_hive_writer_insert_into_with_mode_overwrite_partitions(spark, processing, prepare_schema_table, caplog):
-    from pyspark.sql.functions import col
-
-    df = processing.create_spark_df(spark=spark)
-
-    df1 = df[df.id_int <= 50]
-    df2 = df[df.id_int > 50]
-    df2_reversed = df2.select(*(col(column).alias(column.upper()) for column in reversed(df2.columns)))
-
-    hive = Hive(cluster="rnd-dwh", spark=spark)
-    writer = DBWriter(
-        connection=hive,
-        target=prepare_schema_table.full_name,
-        options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="id_int"),
-    )
-
-    with caplog.at_level(logging.WARNING):
-        writer.run(df1)
-        writer.run(df2_reversed)
-
-    # database content is replaced by new data
-    processing.assert_equal_df(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        df=df2.orderBy("id_int"),
-        order_by="id_int",
-    )
-
-    response = hive.sql(f"SHOW CREATE TABLE {prepare_schema_table.full_name}")
-    response = response.collect()[0][0]
-
-    # table was not recreated
-    assert "PARTITIONED BY" not in response
-
-
-def test_hive_writer_insert_into_partitioned_table_with_mode_append(
-    spark,
-    processing,
-    get_schema_table,
-):
-    df = processing.create_spark_df(spark=spark)
-
-    df1 = df[df.id_int <= 25]
-    df2 = df.where("id_int > 25 AND id_int <= 50")
-    df3 = df[df.id_int > 50]
-
-    hive = Hive(cluster="rnd-dwh", spark=spark)
-
-    writer = DBWriter(
+    writer1 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(partitionBy="id_int"),
     )
-
     # create & fill up the table with some data
-    writer.run(df1.union(df2))
+    writer1.run(df1)
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
-    writer = DBWriter(
+    writer2 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(mode="append"),
+        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by="id_int"),
     )
-    df13 = df1.union(df3)
-    writer.run(df13.select(*reversed(df13.columns)))
 
-    # table contains all the data, including duplicates
-    # spark.sql.sources.partitionOverwriteMode does not matter
+    with caplog.at_level(logging.INFO):
+        writer2.run(df2_reversed)
+
+        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'" in caplog.text
+
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    # table DDL remains the same
+    assert new_ddl == old_ddl
+
+    # but database content is replaced by new data
     processing.assert_equal_df(
         schema=get_schema_table.schema,
         table=get_schema_table.table,
-        df=df1.union(df1).union(df2).union(df3).orderBy("id_int"),
+        df=df2,
         order_by="id_int",
     )
 
-    response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
-    response = response.collect()[0][0]
 
-    # table was not recreated
-    assert "PARTITIONED BY (id_int)" in response
-
-
-def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
+@pytest.mark.parametrize(
+    "partition_by",
+    [
+        pytest.param(None, id="table_partitioned_dataframe_is_not"),
+        pytest.param("hwm_int", id="different_partitioning_schema"),
+        pytest.param("id_int", id="same_partitioning_schema"),
+    ],
+)
+def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_table(
     spark,
     processing,
     get_schema_table,
+    partition_by,
 ):
     df = processing.create_spark_df(spark=spark)
 
@@ -482,88 +495,39 @@ def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_table(
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
-    writer = DBWriter(
+    writer1 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(partitionBy="id_int"),
+        options=Hive.WriteOptions(partition_by="id_int"),
     )
 
     # create & fill up the table with some data
-    writer.run(df1.union(df2))
+    writer1.run(df1.union(df2))
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
-    writer = DBWriter(
+    writer2 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(mode="overwrite_table", partitionBy="hwm_int"),
+        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by=partition_by),
     )
 
-    df13 = df1.union(df3)
-    writer.run(df13.select(*reversed(df13.columns)))
-
-    # table contains only data from the dataframe (df1, df3),
-    # existing data is removed (df2)
-    processing.assert_equal_df(
-        schema=get_schema_table.schema,
-        table=get_schema_table.table,
-        df=df1.union(df3).orderBy("id_int"),
-        order_by="id_int",
-    )
-
-    response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
-    response = response.collect()[0][0]
-
-    # table was recreated with new set of options
-    assert "PARTITIONED BY (hwm_int)" in response
-
-
-def test_hive_writer_insert_into_partitioned_table_with_mode_overwrite_partitions(
-    spark,
-    processing,
-    get_schema_table,
-):
-    df = processing.create_spark_df(spark=spark)
-
-    df1 = df[df.id_int <= 25]
-    df2 = df.where("id_int > 25 AND id_int <= 50")
-    df3 = df[df.id_int > 50]
-
-    hive = Hive(cluster="rnd-dwh", spark=spark)
-
-    writer = DBWriter(
-        connection=hive,
-        target=get_schema_table.full_name,
-        options=Hive.WriteOptions(partitionBy="id_int"),
-    )
-
-    # create & fill up the table with some data
-    writer.run(df1.union(df2))
-
-    writer = DBWriter(
-        connection=hive,
-        target=get_schema_table.full_name,
-        options=Hive.WriteOptions(mode="overwrite_partitions", partitionBy="hwm_int"),
-    )
-
-    df13 = df1.union(df3)
-    writer.run(df13.select(*reversed(df13.columns)))
+    writer2.run(df1.union(df3))
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
     # table contains all the data from both existing (df2) and new partitions (df1, df3)
     # existing partition data is overwritten with data from dataframe (df1)
     processing.assert_equal_df(
         schema=get_schema_table.schema,
         table=get_schema_table.table,
-        df=df1.union(df2).union(df3).orderBy("id_int"),
+        df=df1.union(df2).union(df3),
         order_by="id_int",
     )
 
-    response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
-    response = response.collect()[0][0]
-
-    # unlike mode="overwrite_table", table was not recreated
-    assert "PARTITIONED BY (id_int)" in response
+    # table DDL remains the same
+    assert new_ddl == old_ddl
 
 
-@pytest.mark.parametrize("mode", ["append", "overwrite_partitions"])
+@pytest.mark.parametrize("mode", ["append", "replace_overlapping_partitions"])
 def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema_table, mode):
     df = processing.create_spark_df(spark=spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
@@ -571,7 +535,7 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     writer = DBWriter(
         connection=hive,
         target=prepare_schema_table.full_name,
-        options=Hive.WriteOptions(mode=mode),
+        options=Hive.WriteOptions(if_exists=mode),
     )
 
     prefix = rf"""
@@ -613,7 +577,7 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     with pytest.raises(ValueError, match=error_msg3):
         writer.run(df3)
 
-    # too much columns
+    # too many columns
     df4 = df.withColumn("unknown", df.id_int).select(df.id_int, df.hwm_int, "unknown")
     error_msg3 = textwrap.dedent(
         rf"""

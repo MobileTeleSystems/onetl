@@ -1,32 +1,34 @@
+import re
+
 import pytest
 
 from onetl._internal import to_camel
-from onetl.connection import Oracle, Postgres
-from onetl.connection.db_connection.jdbc_connection import JDBCWriteMode
+from onetl.connection import Postgres
+from onetl.connection.db_connection.jdbc_connection import JDBCTableExistsBehavior
 
-pytestmark = [pytest.mark.db_connection, pytest.mark.connection]
+pytestmark = [pytest.mark.postgres]
 
 
 def test_jdbc_read_options_default():
-    options = Oracle.ReadOptions()
+    options = Postgres.ReadOptions()
 
     assert options.fetchsize == 100_000
     assert options.query_timeout is None
 
 
 def test_jdbc_write_options_default():
-    options = Oracle.WriteOptions()
+    options = Postgres.WriteOptions()
 
-    assert options.mode == JDBCWriteMode.APPEND
+    assert options.if_exists == JDBCTableExistsBehavior.APPEND
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
     assert options.query_timeout is None
 
 
 def test_jdbc_options_default():
-    options = Oracle.Options()
+    options = Postgres.Options()
 
-    assert options.mode == JDBCWriteMode.APPEND
+    assert options.if_exists == JDBCTableExistsBehavior.APPEND
     assert options.fetchsize == 100_000
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
@@ -175,7 +177,6 @@ def test_jdbc_write_options_case():
     camel_case = Postgres.WriteOptions(
         batchsize=1000,
         truncate=True,
-        mode="append",
         isolationLevel="NONE",
         snake_case_option="left unchanged",
         # unknown options names are NOT being converted from snake_case to CamelCase
@@ -186,7 +187,6 @@ def test_jdbc_write_options_case():
     snake_case = Postgres.WriteOptions(
         batchsize=1000,
         truncate=True,
-        mode="append",
         isolation_level="NONE",
         # unknown options names are NOT being converted from snake_case to CamelCase
         snake_case_option="left unchanged",
@@ -238,7 +238,6 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
         options=Postgres.WriteOptions(
             batchsize=1000,
             truncate=True,
-            mode="append",
             isolation_level="NONE",
             snake_case_option="left unchanged",
             camelCaseOption="left unchanged",
@@ -247,7 +246,6 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
     )
 
     assert jdbc_params == {
-        "mode": "append",
         "properties": {
             "batchsize": "1000",
             "driver": "org.postgresql.Driver",
@@ -264,6 +262,47 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
 
 
 @pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, JDBCTableExistsBehavior.APPEND),
+        ({"if_exists": "append"}, JDBCTableExistsBehavior.APPEND),
+        ({"if_exists": "replace_entire_table"}, JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+    ],
+)
+def test_jdbc_write_options_if_exists(options, value):
+    assert Postgres.WriteOptions(**options).if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            JDBCTableExistsBehavior.APPEND,
+            "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_entire_table"},
+            JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "overwrite"},
+            JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_entire_table` instead",
+        ),
+    ],
+)
+def test_jdbc_write_options_mode_deprecated(options, value, message):
+    with pytest.warns(UserWarning, match=re.escape(message)):
+        options = Postgres.WriteOptions(**options)
+        assert options.if_exists == value
+
+
+@pytest.mark.parametrize(
     "options",
     [
         # disallowed modes
@@ -273,8 +312,6 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
         {"mode": "wrong_mode"},
     ],
 )
-def test_jdbc_write_options_wrong_mode(spark_mock, options):
-    oracle = Oracle(host="some_host", user="user", password="passwd", sid="sid", spark=spark_mock)
-
+def test_jdbc_write_options_mode_wrong(options):
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        oracle.WriteOptions(**options)
+        Postgres.WriteOptions(**options)

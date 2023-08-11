@@ -55,9 +55,9 @@ class DBWriter(FrozenModel):
         Spark write options.
 
         For example:
-        ``{"mode": "overwrite", "compression": "snappy"}``
+        ``{"if_exists": "replace_entire_table", "compression": "snappy"}``
         or
-        ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
+        ``Hive.WriteOptions(if_exists="replace_entire_table", compression="snappy")``
 
         .. note::
 
@@ -183,6 +183,8 @@ class DBWriter(FrozenModel):
         """
         Method for writing your df to specified target. |support_hooks|
 
+        .. note :: Method does support only **batching** DataFrames.
+
         Parameters
         ----------
         df : pyspark.sql.dataframe.DataFrame
@@ -197,6 +199,8 @@ class DBWriter(FrozenModel):
 
             writer.run(df)
         """
+        if df.isStreaming:
+            raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
         entity_boundary_log(msg="DBWriter starts")
 

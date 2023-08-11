@@ -3,9 +3,9 @@ import re
 
 import pytest
 
-from onetl.connection import Greenplum, Hive, Oracle, Postgres
+from onetl.connection import Greenplum, Hive, Postgres
 
-pytestmark = [pytest.mark.db_connection, pytest.mark.connection]
+pytestmark = [pytest.mark.postgres]
 
 
 @pytest.mark.parametrize(
@@ -22,8 +22,8 @@ pytestmark = [pytest.mark.db_connection, pytest.mark.connection]
 @pytest.mark.parametrize(
     "arg, value",
     [
-        ("url", "jdbc:ora:thin/abc"),
-        ("driver", "com.oracle.jdbc.Driver"),
+        ("url", "jdbc:postgresql://localhost:5432/postgres"),
+        ("driver", "org.postgresql.Driver"),
         ("user", "me"),
         ("password", "abc"),
     ],
@@ -36,13 +36,13 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
 @pytest.mark.parametrize(
     "options_class, options_class_name, known_options",
     [
-        (Hive.WriteOptions, "WriteOptions", {"mode": "overwrite_partitions"}),
-        (Hive.Options, "Options", {"mode": "overwrite_partitions"}),
+        (Hive.WriteOptions, "WriteOptions", {"if_exists": "replace_overlapping_partitions"}),
+        (Hive.Options, "Options", {"if_exists": "replace_overlapping_partitions"}),
         (Postgres.ReadOptions, "ReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
-        (Postgres.WriteOptions, "WriteOptions", {"mode": "overwrite", "keytab": "a/b/c"}),
-        (Postgres.Options, "Options", {"mode": "overwrite", "keytab": "a/b/c"}),
+        (Postgres.WriteOptions, "WriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Postgres.Options, "Options", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Greenplum.ReadOptions, "ReadOptions", {"partitions": 10}),
-        (Greenplum.WriteOptions, "WriteOptions", {"mode": "overwrite"}),
+        (Greenplum.WriteOptions, "WriteOptions", {"if_exists": "replace_entire_table"}),
     ],
 )
 def test_db_options_warn_for_unknown(options_class, options_class_name, known_options, caplog):
@@ -65,12 +65,12 @@ def test_db_options_warn_for_unknown(options_class, options_class_name, known_op
     "options_class,options",
     [
         (
-            Oracle.ReadOptions,
-            Oracle.WriteOptions(mode="append"),
+            Postgres.ReadOptions,
+            Postgres.WriteOptions(),
         ),
         (
-            Oracle.WriteOptions,
-            Oracle.ReadOptions(fetchsize=1000),
+            Postgres.WriteOptions,
+            Postgres.ReadOptions(),
         ),
     ],
     ids=[
@@ -87,12 +87,12 @@ def test_db_options_parse_mismatch_class(options_class, options):
     "connection,options",
     [
         (
-            Oracle,
+            Postgres,
             Hive.WriteOptions(format="orc"),
         ),
         (
             Hive,
-            Oracle.WriteOptions(truncate=True),
+            Postgres.WriteOptions(truncate=True),
         ),
     ],
     ids=["JDBC connection with Hive options.", "Hive connection with JDBC options."],

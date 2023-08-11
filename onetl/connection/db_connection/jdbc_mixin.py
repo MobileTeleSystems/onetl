@@ -20,9 +20,9 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
 
-from pydantic import Field, SecretStr, validator
+from pydantic import Field, PrivateAttr, SecretStr, validator
 
-from onetl._internal import clear_statement, stringify, to_camel
+from onetl._internal import clear_statement, stringify
 from onetl._util.java import get_java_gateway, try_import_java_class
 from onetl._util.spark import get_spark_version
 from onetl.exception import MISSING_JVM_CLASS_MSG
@@ -82,9 +82,8 @@ class JDBCMixin(FrozenModel):
         class Config:
             prohibited_options = PROHIBITED_OPTIONS
             extra = "allow"
-            alias_generator = to_camel
 
-        query_timeout: Optional[int] = None
+        query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
         """The number of seconds the driver will wait for a statement to execute.
         Zero means there is no limit.
 
@@ -104,7 +103,7 @@ class JDBCMixin(FrozenModel):
         """
 
     # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
-    _last_connection_and_options: Optional[Tuple[Any, JDBCOptions]] = None
+    _last_connection_and_options: Optional[Tuple[Any, JDBCOptions]] = PrivateAttr(default=None)
 
     @property
     @abstractmethod
