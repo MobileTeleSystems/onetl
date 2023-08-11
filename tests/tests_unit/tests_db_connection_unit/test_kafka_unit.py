@@ -156,6 +156,29 @@ def test_kafka_anon_auth(spark_mock):
     assert conn.instance_url == "kafka://some_cluster"
 
 
+@pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
+def test_kafka_scram_auth(spark_mock, digest):
+    conn = Kafka(
+        spark=spark_mock,
+        cluster="some_cluster",
+        addresses=["192.168.1.1"],
+        auth=Kafka.ScramAuth(
+            user="user",
+            password="passwd",
+            digest=digest,
+        ),
+    )
+
+    assert conn.auth.user == "user"
+    assert conn.cluster == "some_cluster"
+    assert conn.auth.password != "passwd"
+    assert conn.auth.password.get_secret_value() == "passwd"
+    assert conn.auth.digest == digest
+    assert conn.addresses == ["192.168.1.1"]
+
+    assert conn.instance_url == "kafka://some_cluster"
+
+
 def test_kafka_auth_keytab(spark_mock, create_keytab):
     conn = Kafka(
         spark=spark_mock,
@@ -320,6 +343,71 @@ def test_kafka_basic_auth(spark_mock):
                 'password="password";'
             ),
         }
+
+
+@pytest.mark.parametrize("option", ["sasl.jaas.config", "sasl.mechanism"])
+def test_kafka_scram_auth_prohibited_options(option):
+    msg = rf"Options \['{option}'\] are not allowed to use in a KafkaScramAuth"
+    with pytest.raises(ValueError, match=msg):
+        Kafka.ScramAuth.parse({"username": "user", "password": "some", "digest": "SHA-256", option: "value"})
+
+
+@pytest.mark.parametrize("option", ["unknown", "sasl.unknown"])
+def test_kafka_scram_auth_unknown_options(option, caplog):
+    with caplog.at_level(logging.WARNING):
+        Kafka.ScramAuth.parse({"username": "user", "password": "some", "digest": "SHA-256", option: "value"})
+
+    assert f"Options ['{option}'] are not known by KafkaScramAuth, are you sure they are valid?" in caplog.text
+
+
+@pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
+def test_kafka_scram_auth_get_jaas_conf(spark_mock, digest):
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.ScramAuth(username="user", password="password", digest=digest),
+    )
+
+    conf = kafka.auth.get_options(kafka)
+    assert conf == {
+        "sasl.mechanism": f"SCRAM-{digest}",
+        "sasl.jaas.config": (
+            "org.apache.kafka.common.security.scram.ScramLoginModule required "
+            'username="user" '
+            'password="password";'
+        ),
+    }
+
+
+@pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
+def test_kafka_scram_auth_get_jaas_conf_custom_properties(spark_mock, digest):
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.ScramAuth.parse(
+            {
+                "username": "user",
+                "password": "password",
+                "digest": digest,
+                "sasl.login.class": "com.example.CustomScramLogin",
+                "kafka.sasl.login.callback.handler.class": "com.example.CustomCallbackHandler",
+            },
+        ),
+    )
+
+    conf = kafka.auth.get_options(kafka)
+    assert conf == {
+        "sasl.mechanism": f"SCRAM-{digest}",
+        "sasl.jaas.config": (
+            "org.apache.kafka.common.security.scram.ScramLoginModule required "
+            'username="user" '
+            'password="password";'
+        ),
+        "sasl.login.class": "com.example.CustomScramLogin",
+        "sasl.login.callback.handler.class": "com.example.CustomCallbackHandler",
+    }
 
 
 def test_kafka_kerberos_auth_deploy_keytab_false(spark_mock, create_keytab, keytab_md5):

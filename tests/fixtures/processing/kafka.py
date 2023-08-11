@@ -57,8 +57,8 @@ class KafkaProcessing(BaseProcessing):
         return int(os.environ["ONETL_KAFKA_PLAINTEXT_ANONYMOUS_PORT"])
 
     @property
-    def basic_auth_port(self) -> int:
-        return int(os.environ["ONETL_KAFKA_PLAINTEXT_BASIC_PORT"])
+    def sasl_port(self) -> int:
+        return int(os.environ["ONETL_KAFKA_PLAINTEXT_SASL_PORT"])
 
     def create_schema(self, schema: str) -> None:
         pass
