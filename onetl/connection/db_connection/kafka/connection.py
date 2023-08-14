@@ -184,7 +184,7 @@ class Kafka(DBConnection):
                 keystore_type="PEM",
                 keystore_certificate_chain="-----BEGIN CERTIFICATE-----MIIDZjC...-----END CERTIFICATE-----",
                 keystore_key="-----BEGIN ENCRYPTED PRIVATE KEY-----MIIDZjC..-----END ENCRYPTED PRIVATE KEY-----",
-                key_password="<private_key_password>",
+                key_password="password",
                 truststore_type="PEM",
                 truststore_certificates="-----BEGIN CERTIFICATE-----MICC...-----END CERTIFICATE-----",
             ),

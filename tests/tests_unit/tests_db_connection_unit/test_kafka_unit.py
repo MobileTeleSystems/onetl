@@ -740,3 +740,27 @@ def test_kafka_ssl_protocol_with_extra_fields(spark_mock):
 
     assert options["ssl.enabled.protocols"] == "TLSv1.2"
     assert options["ssl.endpoint.identification.algorithm"] == "HTTPS"
+
+
+def test_kafka_ssl_protocol_with_basic_auth(spark_mock):
+    params = {
+        "ssl.keystore.type": "PEM",
+        "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+        "ssl.keystore.key": "<private-key_string>",
+        "ssl.key.password": "<private_key_password>",
+        "ssl.truststore.type": "PEM",
+        "ssl.truststore.certificates": "<trusted-certificates>",
+    }
+
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        protocol=Kafka.SSLProtocol.parse(params),
+        auth=Kafka.BasicAuth(
+            user="user",
+            password="abc",
+        ),
+    )
+    with kafka:
+        assert kafka.protocol.get_options(kafka)["security.protocol"] == "SASL_SSL"

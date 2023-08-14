@@ -50,7 +50,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
                 keystore_type="PEM",
                 keystore_certificate_chain="-----BEGIN CERTIFICATE-----MIIDZjC...-----END CERTIFICATE-----",
                 keystore_key="-----BEGIN ENCRYPTED PRIVATE KEY-----MIIDZjC..-----END ENCRYPTED PRIVATE KEY-----",
-                key_password="<private_key_password>",
+                key_password="password",
                 truststore_type="PEM",
                 truststore_certificates="-----BEGIN CERTIFICATE-----MICC...-----END CERTIFICATE-----",
             ),
@@ -63,7 +63,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
         ssl = Kafka.SSLProtocol(
             keystore_type="PEM",
             keystore_location="/path/to/file/containing/certificate/chain.pem",
-            key_password="<private_key_password>",
+            key_password="password",
             truststore_type="PEM",
             truststore_location="/path/to/truststore/certificate.pem",
         )
@@ -87,9 +87,9 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
 
         ssl = Kafka.SSLProtocol.parse(
             {
-                "keystore_type": "JKS",
-                "keystore_location": "/opt/keystore.jks",
-                "keystore_password": "password",
+                "ssl.keystore.type": "JKS",
+                "ssl.keystore.location": "/opt/keystore.jks",
+                "ssl.keystore.password": "password",
                 "ssl.protocol": "TLSv1.3",
             }
         )
