@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import validator
 
@@ -96,7 +96,7 @@ class FileDFWriter(FrozenModel):
 
     connection: BaseFileDFConnection
     format: BaseWritableFileFormat
-    target_path: Optional[PurePathProtocol] = None
+    target_path: PurePathProtocol
     options: FileDFWriterOptions = FileDFWriterOptions()
 
     @slot
@@ -150,8 +150,6 @@ class FileDFWriter(FrozenModel):
     @validator("target_path", pre=True)
     def _validate_target_path(cls, target_path, values):
         connection: BaseFileDFConnection = values["connection"]
-        if target_path is None:
-            return None
         return connection.path_from_string(target_path)
 
     @validator("format")
