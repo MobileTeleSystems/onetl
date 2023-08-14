@@ -34,8 +34,9 @@ from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerber
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
     KafkaPlaintextProtocol,
 )
-from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
+
 from onetl.connection.db_connection.kafka.kafka_ssl_protocol import KafkaSSLProtocol
+from onetl.connection.db_connection.kafka.kafka_scram_auth import KafkaScramAuth
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaTopicExistBehaviorKafka,
@@ -209,6 +210,7 @@ class Kafka(DBConnection):
 
     BasicAuth = KafkaBasicAuth
     KerberosAuth = KafkaKerberosAuth
+    ScramAuth = KafkaScramAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
     SSLProtocol = KafkaSSLProtocol
@@ -216,6 +218,7 @@ class Kafka(DBConnection):
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
     Slots = KafkaSlots
+
     cluster: Cluster
     addresses: List[str]
     auth: Optional[KafkaAuth] = None
