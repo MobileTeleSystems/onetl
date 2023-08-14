@@ -34,7 +34,7 @@ root_log = logging.getLogger()
 HALF_SCREEN_SIZE = 45
 BASE_LOG_INDENT = 8
 LOG_FORMAT = "%(asctime)s [%(levelname)-8s] %(threadName)s: %(message)s"
-CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "smbclient"}
+CLIENT_MODULES = {"hdfs", "paramiko", "ftputil", "minio", "webdav3", "pyspark"}
 
 DISABLED = 9999  # CRITICAL is 50, we need even higher to disable all logs
 logging.addLevelName(DISABLED, "DISABLED")
@@ -49,7 +49,7 @@ logging.addLevelName(NOTICE, "NOTICE")
     action="always",
     category=UserWarning,
 )
-def setup_notebook_logging(level: int = logging.INFO) -> None:
+def setup_notebook_logging(level: int | str = logging.INFO) -> None:
     """Set up onETL logging.
 
     What this function does:
@@ -78,57 +78,76 @@ def setup_notebook_logging(level: int = logging.INFO) -> None:
     setup_logging(level)
 
 
-def setup_logging(level: int = logging.INFO) -> None:
+def setup_logging(level: int | str = logging.INFO, enable_clients: bool = False) -> None:
     """Set up onETL logging.
 
     What this function does:
         * Adds stderr logging handler
-        * Changes root logger format to ``2023-05-31 11:22:33.456 [INFO]: message``
+        * Changes root logger format to ``2023-05-31 11:22:33.456 [INFO] MainThread: message``
         * Changes root logger level to ``level``
         * Changes onETL logger level to ``level``
-        * Disables loggers of underlying client modules
+        * Sets up logging level of underlying client modules
 
     .. note::
 
         Should be used only in IDEs (like Jupyter notebooks or PyCharm),
         or scripts (ETL pipelines).
 
-    .. warning::
-
-        Should **NOT** be used in applications, you should set up logging settings manually,
-        according to your framework documentation.
-
     Parameters
     ----------
     level : ``int`` or ``str``, default ``INFO``
         Log level for onETL module
+
+    enable_clients : ``bool``, default ``False``
+        If ``True``, enable logging of underlying client modules.
+        Otherwise, set client modules log level to ``DISABLED``.
+
+        .. note::
+
+            For ``level="DEBUG"`` it is recommended to use ``enable_clients=True``
     """
 
     logging.basicConfig(level=level)
     set_default_logging_format()
 
     onetl_log.setLevel(level)
-    disable_clients_logging()
+    setup_clients_logging(level if enable_clients else DISABLED)
 
 
-def disable_clients_logging() -> None:
-    """Disables logging of underlying client modules user by onETL.
+def setup_clients_logging(level: int | str = DISABLED) -> None:
+    """Set logging of underlying client modules used by onETL.
 
     Affected modules:
-        * ``paramiko``
-        * ``hdfs``
         * ``ftputil``
-        * ``smbclient``
+        * ``hdfs``
+        * ``minio``
+        * ``paramiko``
+        * ``py4j``
+        * ``pyspark``
+        * ``webdav3``
 
     .. note::
 
-        Can be used in applications, but it is recommended to disable these loggers
+        Can be used in applications, but it is recommended to set up these loggers
         according to your framework documentation.
 
+    Parameters
+    ----------
+    level : ``int`` or ``str``, default ``DISABLED``
+        Log level for client modules
+
+        .. note::
+
+            For ``py4j``, logging level with maximum verbosity is ``INFO`` because ``DEBUG`` logs are
+            totally unreadable.
     """
 
     for client_module in CLIENT_MODULES:
-        logging.getLogger(client_module).setLevel(DISABLED)
+        logging.getLogger(client_module).setLevel(level)
+
+    if isinstance(level, str):
+        level = int(logging.getLevelName(level))
+    logging.getLogger("py4j").setLevel(max(level, logging.INFO))
 
 
 def set_default_logging_format() -> None:
@@ -143,7 +162,7 @@ def set_default_logging_format() -> None:
 
     .. warning::
 
-        Should **NOT** in applications, you should set up logging settings manually,
+        Should **NOT** be used in applications, you should set up logging settings manually,
         according to your framework documentation.
     """
 
