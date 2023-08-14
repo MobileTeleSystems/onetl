@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from onetl.connection import Greenplum
-from onetl.connection.db_connection.greenplum import GreenplumTableExistsBehavior
+from onetl.connection.db_connection.greenplum import GreenplumTableExistBehavior
 
 pytestmark = [pytest.mark.greenplum, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -177,7 +177,7 @@ def test_greenplum_without_mandatory_args(spark_mock):
 def test_greenplum_write_options_default():
     options = Greenplum.WriteOptions()
 
-    assert options.if_exists == GreenplumTableExistsBehavior.APPEND
+    assert options.if_exists == GreenplumTableExistBehavior.APPEND
     assert options.query_timeout is None
 
 
@@ -255,9 +255,9 @@ def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, GreenplumTableExistsBehavior.APPEND),
-        ({"if_exists": "append"}, GreenplumTableExistsBehavior.APPEND),
-        ({"if_exists": "replace_entire_table"}, GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+        ({}, GreenplumTableExistBehavior.APPEND),
+        ({"if_exists": "append"}, GreenplumTableExistBehavior.APPEND),
+        ({"if_exists": "replace_entire_table"}, GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE),
     ],
 )
 def test_greenplum_write_options_if_exists(options, value):
@@ -269,19 +269,19 @@ def test_greenplum_write_options_if_exists(options, value):
     [
         (
             {"mode": "append"},
-            GreenplumTableExistsBehavior.APPEND,
+            GreenplumTableExistBehavior.APPEND,
             "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `Greenplum.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_table"},
-            GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `Greenplum.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
-            GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),

@@ -10,7 +10,7 @@ from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileMover
 from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
-from onetl.impl import FailedRemoteFile, FileExistsBehavior, RemoteFile, RemotePath
+from onetl.impl import FailedRemoteFile, FileExistBehavior, RemoteFile, RemotePath
 
 
 def test_file_mover_view_file(file_connection_with_path_and_files):
@@ -451,7 +451,7 @@ def test_file_mover_mode_fail(request, file_connection_with_path_and_files):
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(if_exists=FileExistsBehavior.ERROR),
+        options=FileMover.Options(if_exists=FileExistBehavior.ERROR),
     )
 
     move_result = mover.run()
@@ -502,7 +502,7 @@ def test_file_mover_mode_skip_file(request, file_connection_with_path_and_files,
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(if_exists=FileExistsBehavior.IGNORE),
+        options=FileMover.Options(if_exists=FileExistBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -559,7 +559,7 @@ def test_file_mover_mode_replace_file(request, file_connection_with_path_and_fil
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
+        options=FileMover.Options(if_exists=FileExistBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -615,7 +615,7 @@ def test_file_mover_mode_replace_entire_directory(
         connection=file_connection,
         source_path=source_path,
         target_path=target_path,
-        options=FileMover.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
+        options=FileMover.Options(if_exists=FileExistBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

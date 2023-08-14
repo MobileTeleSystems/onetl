@@ -10,7 +10,7 @@ from onetl.core import FileFilter, FileLimit
 from onetl.file import FileDownloader
 from onetl.file.filter import Glob
 from onetl.file.limit import MaxFilesCount
-from onetl.impl.file_exist_behavior import FileExistsBehavior
+from onetl.impl.file_exist_behavior import FileExistBehavior
 
 
 def test_file_downloader_deprecated_import():
@@ -155,11 +155,11 @@ def test_file_downloader_limit_legacy(file_limit):
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, FileExistsBehavior.ERROR),
-        ({"if_exists": "error"}, FileExistsBehavior.ERROR),
-        ({"if_exists": "ignore"}, FileExistsBehavior.IGNORE),
-        ({"if_exists": "replace_file"}, FileExistsBehavior.REPLACE_FILE),
-        ({"if_exists": "replace_entire_directory"}, FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
+        ({}, FileExistBehavior.ERROR),
+        ({"if_exists": "error"}, FileExistBehavior.ERROR),
+        ({"if_exists": "ignore"}, FileExistBehavior.IGNORE),
+        ({"if_exists": "replace_file"}, FileExistBehavior.REPLACE_FILE),
+        ({"if_exists": "replace_entire_directory"}, FileExistBehavior.REPLACE_ENTIRE_DIRECTORY),
     ],
 )
 def test_file_downloader_options_if_exists(options, value):
@@ -171,24 +171,24 @@ def test_file_downloader_options_if_exists(options, value):
     [
         (
             {"mode": "replace_file"},
-            FileExistsBehavior.REPLACE_FILE,
+            FileExistBehavior.REPLACE_FILE,
             "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `FileDownloader.Options(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_directory"},
-            FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY,
+            FileExistBehavior.REPLACE_ENTIRE_DIRECTORY,
             "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `FileDownloader.Options(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
-            FileExistsBehavior.REPLACE_FILE,
+            FileExistBehavior.REPLACE_FILE,
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. " "Use `replace_file` instead",
         ),
         (
             {"mode": "delete_all"},
-            FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY,
+            FileExistBehavior.REPLACE_ENTIRE_DIRECTORY,
             "Mode `delete_all` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_directory` instead",
         ),

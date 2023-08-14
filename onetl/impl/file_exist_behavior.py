@@ -19,7 +19,7 @@ from enum import Enum
 log = logging.getLogger(__name__)
 
 
-class FileExistsBehavior(str, Enum):
+class FileExistBehavior(str, Enum):
     ERROR = "error"
     IGNORE = "ignore"
     REPLACE_FILE = "replace_file"

@@ -16,7 +16,7 @@ from onetl.file.filter import ExcludeDir, Glob
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import (
     FailedRemoteFile,
-    FileExistsBehavior,
+    FileExistBehavior,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -466,7 +466,7 @@ def test_file_downloader_mode_fail(file_connection_with_path_and_files, tmp_path
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(if_exists=FileExistsBehavior.ERROR),
+        options=FileDownloader.Options(if_exists=FileExistBehavior.ERROR),
     )
 
     download_result = downloader.run()
@@ -517,7 +517,7 @@ def test_file_downloader_mode_skip_file(file_connection_with_path_and_files, tmp
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(if_exists=FileExistsBehavior.IGNORE),
+        options=FileDownloader.Options(if_exists=FileExistBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -569,7 +569,7 @@ def test_file_downloader_mode_replace_file(file_connection_with_path_and_files, 
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
+        options=FileDownloader.Options(if_exists=FileExistBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -627,7 +627,7 @@ def test_file_downloader_mode_replace_entire_directory(
         connection=file_connection,
         source_path=remote_path,
         local_path=local_path,
-        options=FileDownloader.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
+        options=FileDownloader.Options(if_exists=FileExistBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

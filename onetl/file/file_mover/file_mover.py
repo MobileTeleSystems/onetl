@@ -32,7 +32,7 @@ from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
-    FileExistsBehavior,
+    FileExistBehavior,
     FrozenModel,
     GenericOptions,
     RemoteFile,
@@ -156,7 +156,7 @@ class FileMover(FrozenModel):
     class Options(GenericOptions):
         """File moving options"""
 
-        if_exists: FileExistsBehavior = Field(default=FileExistsBehavior.ERROR, alias="mode")
+        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -331,7 +331,7 @@ class FileMover(FrozenModel):
         to_move = self._validate_files(files)
 
         # remove folder only after everything is checked
-        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             self.connection.remove_dir(self.target_path, recursive=True)
             self.connection.create_dir(self.target_path)
 
@@ -418,7 +418,7 @@ class FileMover(FrozenModel):
 
         log_options(self.options.dict(by_alias=True))
 
-        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE MOVING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -557,10 +557,10 @@ class FileMover(FrozenModel):
             if self.connection.path_exists(target_file):
                 new_file = self.connection.resolve_file(target_file)
 
-                if self.options.if_exists == FileExistsBehavior.ERROR:
+                if self.options.if_exists == FileExistBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(new_file)} already exists")
 
-                if self.options.if_exists == FileExistsBehavior.IGNORE:
+                if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning(
                         "|%s| File %s already exists, skipping",
                         self.connection.__class__.__name__,

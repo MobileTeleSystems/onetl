@@ -14,7 +14,7 @@
 
 from onetl.impl.base_model import BaseModel
 from onetl.impl.failed_local_file import FailedLocalFile
-from onetl.impl.file_exist_behavior import FileExistsBehavior
+from onetl.impl.file_exist_behavior import FileExistBehavior
 from onetl.impl.frozen_model import FrozenModel
 from onetl.impl.generic_options import GenericOptions
 from onetl.impl.local_path import LocalPath

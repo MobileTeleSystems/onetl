@@ -93,7 +93,7 @@ READ_OPTIONS = frozenset(
 )
 
 
-class GreenplumTableExistsBehavior(str, Enum):
+class GreenplumTableExistBehavior(str, Enum):
     APPEND = "append"
     REPLACE_ENTIRE_TABLE = "replace_entire_table"
 
@@ -409,7 +409,7 @@ class Greenplum(JDBCMixin, DBConnection):
                 | READ_OPTIONS
             )
 
-        if_exists: GreenplumTableExistsBehavior = Field(default=GreenplumTableExistsBehavior.APPEND, alias="mode")
+        if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")
         """Behavior of writing data into existing table.
 
         Possible values:
@@ -631,7 +631,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self._check_expected_jobs_number(df, action="write")
 
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        mode = "overwrite" if write_options.if_exists == GreenplumTableExistsBehavior.REPLACE_ENTIRE_TABLE else "append"
+        mode = "overwrite" if write_options.if_exists == GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE else "append"
         df.write.format("greenplum").options(
             **self._connector_params(target),
             **options_dict,

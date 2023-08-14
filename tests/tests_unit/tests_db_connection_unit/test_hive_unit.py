@@ -5,7 +5,7 @@ import re
 import pytest
 
 from onetl.connection import Hive
-from onetl.connection.db_connection.hive import HiveTableExistsBehavior
+from onetl.connection.db_connection.hive import HiveTableExistBehavior
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.hive, pytest.mark.db_connection, pytest.mark.connection]
@@ -149,10 +149,10 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, HiveTableExistsBehavior.APPEND),
-        ({"if_exists": "append"}, HiveTableExistsBehavior.APPEND),
-        ({"if_exists": "replace_overlapping_partitions"}, HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS),
-        ({"if_exists": "replace_entire_table"}, HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+        ({}, HiveTableExistBehavior.APPEND),
+        ({"if_exists": "append"}, HiveTableExistBehavior.APPEND),
+        ({"if_exists": "replace_overlapping_partitions"}, HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS),
+        ({"if_exists": "replace_entire_table"}, HiveTableExistBehavior.REPLACE_ENTIRE_TABLE),
     ],
 )
 def test_hive_write_options_if_exists(options, value):
@@ -164,37 +164,37 @@ def test_hive_write_options_if_exists(options, value):
     [
         (
             {"mode": "append"},
-            HiveTableExistsBehavior.APPEND,
+            HiveTableExistBehavior.APPEND,
             "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `Hive.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_overlapping_partitions"},
-            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
             "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `Hive.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_table"},
-            HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            HiveTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `Hive.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
-            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
             "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0. "
             "Use `replace_overlapping_partitions` instead",
         ),
         (
             {"mode": "overwrite_partitions"},
-            HiveTableExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
             "Mode `overwrite_partitions` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_overlapping_partitions` instead",
         ),
         (
             {"mode": "overwrite_table"},
-            HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            HiveTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Mode `overwrite_table` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),

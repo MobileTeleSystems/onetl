@@ -4,7 +4,7 @@ import pytest
 
 from onetl._internal import to_camel
 from onetl.connection import Postgres
-from onetl.connection.db_connection.jdbc_connection import JDBCTableExistsBehavior
+from onetl.connection.db_connection.jdbc_connection import JDBCTableExistBehavior
 
 pytestmark = [pytest.mark.postgres]
 
@@ -19,7 +19,7 @@ def test_jdbc_read_options_default():
 def test_jdbc_write_options_default():
     options = Postgres.WriteOptions()
 
-    assert options.if_exists == JDBCTableExistsBehavior.APPEND
+    assert options.if_exists == JDBCTableExistBehavior.APPEND
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
     assert options.query_timeout is None
@@ -28,7 +28,7 @@ def test_jdbc_write_options_default():
 def test_jdbc_options_default():
     options = Postgres.Options()
 
-    assert options.if_exists == JDBCTableExistsBehavior.APPEND
+    assert options.if_exists == JDBCTableExistBehavior.APPEND
     assert options.fetchsize == 100_000
     assert options.batchsize == 20_000
     assert options.isolation_level == "READ_UNCOMMITTED"
@@ -264,9 +264,9 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, JDBCTableExistsBehavior.APPEND),
-        ({"if_exists": "append"}, JDBCTableExistsBehavior.APPEND),
-        ({"if_exists": "replace_entire_table"}, JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE),
+        ({}, JDBCTableExistBehavior.APPEND),
+        ({"if_exists": "append"}, JDBCTableExistBehavior.APPEND),
+        ({"if_exists": "replace_entire_table"}, JDBCTableExistBehavior.REPLACE_ENTIRE_TABLE),
     ],
 )
 def test_jdbc_write_options_if_exists(options, value):
@@ -278,19 +278,19 @@ def test_jdbc_write_options_if_exists(options, value):
     [
         (
             {"mode": "append"},
-            JDBCTableExistsBehavior.APPEND,
+            JDBCTableExistBehavior.APPEND,
             "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_table"},
-            JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            JDBCTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
-            JDBCTableExistsBehavior.REPLACE_ENTIRE_TABLE,
+            JDBCTableExistBehavior.REPLACE_ENTIRE_TABLE,
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 
 
-class FileDFExistsBehavior(str, Enum):
+class FileDFExistBehavior(str, Enum):
     ERROR = "error"
     APPEND = "append"
     REPLACE_OVERLAPPING_PARTITIONS = "replace_overlapping_partitions"
@@ -75,7 +75,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
         prohibited_options = {"mode"}
         extra = "allow"
 
-    if_exists: FileDFExistsBehavior = FileDFExistsBehavior.ERROR
+    if_exists: FileDFExistBehavior = FileDFExistBehavior.ERROR
     """Behavior for existing target directory.
 
     If target directory does not exist, it will be created.
@@ -236,18 +236,18 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
         context = nullcontext()
 
-        if self.if_exists == FileDFExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS:
+        if self.if_exists == FileDFExistBehavior.REPLACE_OVERLAPPING_PARTITIONS:
             context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic")  # noqa: WPS437
-        elif self.if_exists == FileDFExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
+        elif self.if_exists == FileDFExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "static")  # noqa: WPS437
 
         mode = self.if_exists.value
         if self.if_exists in {
-            FileDFExistsBehavior.REPLACE_OVERLAPPING_PARTITIONS,
-            FileDFExistsBehavior.REPLACE_ENTIRE_DIRECTORY,
+            FileDFExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            FileDFExistBehavior.REPLACE_ENTIRE_DIRECTORY,
         }:
             mode = "overwrite"
-        elif self.if_exists == FileDFExistsBehavior.SKIP_ENTIRE_DIRECTORY:
+        elif self.if_exists == FileDFExistBehavior.SKIP_ENTIRE_DIRECTORY:
             mode = "ignore"
 
         with context:

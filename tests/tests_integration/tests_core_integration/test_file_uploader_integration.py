@@ -9,7 +9,7 @@ import pytest
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileUploader
-from onetl.impl import FailedLocalFile, FileExistsBehavior, LocalPath, RemoteFile
+from onetl.impl import FailedLocalFile, FileExistBehavior, LocalPath, RemoteFile
 
 
 def test_file_uploader_view_files(file_connection, file_connection_resource_path):
@@ -275,7 +275,7 @@ def test_file_uploader_run_mode_fail(request, file_connection, file_connection_t
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(if_exists=FileExistsBehavior.ERROR),
+        options=FileUploader.Options(if_exists=FileExistBehavior.ERROR),
     )
 
     upload_result = uploader.run(test_files)
@@ -326,7 +326,7 @@ def test_file_uploader_run_mode_skip_file(request, file_connection, file_connect
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(if_exists=FileExistsBehavior.IGNORE),
+        options=FileUploader.Options(if_exists=FileExistBehavior.IGNORE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -378,7 +378,7 @@ def test_file_uploader_run_mode_replace_file(request, file_connection, file_conn
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(if_exists=FileExistsBehavior.REPLACE_FILE),
+        options=FileUploader.Options(if_exists=FileExistBehavior.REPLACE_FILE),
     )
 
     with caplog.at_level(logging.WARNING):
@@ -439,7 +439,7 @@ def test_file_uploader_run_mode_replace_entire_directory(
     uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
-        options=FileUploader.Options(if_exists=FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY),
+        options=FileUploader.Options(if_exists=FileExistBehavior.REPLACE_ENTIRE_DIRECTORY),
     )
 
     with caplog.at_level(logging.WARNING):

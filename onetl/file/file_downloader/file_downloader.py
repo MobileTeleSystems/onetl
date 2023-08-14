@@ -37,7 +37,7 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
-    FileExistsBehavior,
+    FileExistBehavior,
     FrozenModel,
     GenericOptions,
     LocalPath,
@@ -212,7 +212,7 @@ class FileDownloader(FrozenModel):
     class Options(GenericOptions):
         """File downloading options"""
 
-        if_exists: FileExistsBehavior = Field(default=FileExistsBehavior.ERROR, alias="mode")
+        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -407,7 +407,7 @@ class FileDownloader(FrozenModel):
         to_download = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             if self.local_path.exists():
                 shutil.rmtree(self.local_path)
             self.local_path.mkdir()
@@ -613,7 +613,7 @@ class FileDownloader(FrozenModel):
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
 
-        if self.options.if_exists == FileExistsBehavior.REPLACE_ENTIRE_DIRECTORY:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -772,10 +772,10 @@ class FileDownloader(FrozenModel):
 
             replace = False
             if local_file.exists():
-                if self.options.if_exists == FileExistsBehavior.ERROR:
+                if self.options.if_exists == FileExistBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
-                if self.options.if_exists == FileExistsBehavior.IGNORE:
+                if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
                     return FileDownloadStatus.SKIPPED, remote_file
 

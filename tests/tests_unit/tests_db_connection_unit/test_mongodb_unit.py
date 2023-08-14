@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from onetl.connection import MongoDB
-from onetl.connection.db_connection.mongodb import MongoDBCollectionExistsBehavior
+from onetl.connection.db_connection.mongodb import MongoDBCollectionExistBehavior
 
 pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -233,9 +233,9 @@ def test_mongodb_convert_dict_to_str():
 @pytest.mark.parametrize(
     "options, value",
     [
-        ({}, MongoDBCollectionExistsBehavior.APPEND),
-        ({"if_exists": "append"}, MongoDBCollectionExistsBehavior.APPEND),
-        ({"if_exists": "replace_entire_collection"}, MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION),
+        ({}, MongoDBCollectionExistBehavior.APPEND),
+        ({"if_exists": "append"}, MongoDBCollectionExistBehavior.APPEND),
+        ({"if_exists": "replace_entire_collection"}, MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION),
     ],
 )
 def test_mongodb_write_options_if_exists(options, value):
@@ -247,19 +247,19 @@ def test_mongodb_write_options_if_exists(options, value):
     [
         (
             {"mode": "append"},
-            MongoDBCollectionExistsBehavior.APPEND,
+            MongoDBCollectionExistBehavior.APPEND,
             "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `MongoDB.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "replace_entire_collection"},
-            MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION,
+            MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION,
             "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `MongoDB.WriteOptions(if_exists=...)` instead",
         ),
         (
             {"mode": "overwrite"},
-            MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION,
+            MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION,
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_collection` instead",
         ),

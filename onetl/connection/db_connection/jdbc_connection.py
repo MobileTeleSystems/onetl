@@ -120,7 +120,7 @@ READ_TOP_LEVEL_OPTIONS = frozenset(("url", "column", "lower_bound", "upper_bound
 WRITE_TOP_LEVEL_OPTIONS = frozenset("url")
 
 
-class JDBCTableExistsBehavior(str, Enum):
+class JDBCTableExistBehavior(str, Enum):
     APPEND = "append"
     REPLACE_ENTIRE_TABLE = "replace_entire_table"
 
@@ -476,7 +476,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
             )
             alias_generator = to_camel
 
-        if_exists: JDBCTableExistsBehavior = Field(default=JDBCTableExistsBehavior.APPEND, alias="mode")
+        if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
         """Behavior of writing data into existing table.
 
         Possible values:
@@ -726,7 +726,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         write_options = self.WriteOptions.parse(options)
         jdbc_params = self.options_to_jdbc_params(write_options)
 
-        mode = "append" if write_options.if_exists == JDBCTableExistsBehavior.APPEND else "overwrite"
+        mode = "append" if write_options.if_exists == JDBCTableExistBehavior.APPEND else "overwrite"
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
         df.write.jdbc(table=target, mode=mode, **jdbc_params)
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)

@@ -97,7 +97,7 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 )
 
 
-class MongoDBCollectionExistsBehavior(str, Enum):
+class MongoDBCollectionExistBehavior(str, Enum):
     APPEND = "append"
     REPLACE_ENTIRE_COLLECTION = "replace_entire_collection"
 
@@ -455,7 +455,7 @@ class MongoDB(DBConnection):
             )
         """
 
-        if_exists: MongoDBCollectionExistsBehavior = Field(default=MongoDBCollectionExistsBehavior.APPEND, alias="mode")
+        if_exists: MongoDBCollectionExistBehavior = Field(default=MongoDBCollectionExistBehavior.APPEND, alias="mode")
         """Behavior of writing data into existing collection.
 
         Possible values:
@@ -901,7 +901,7 @@ class MongoDB(DBConnection):
         write_options_dict["collection"] = target
         mode = (
             "overwrite"
-            if write_options.if_exists == MongoDBCollectionExistsBehavior.REPLACE_ENTIRE_COLLECTION
+            if write_options.if_exists == MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION
             else "append"
         )
 

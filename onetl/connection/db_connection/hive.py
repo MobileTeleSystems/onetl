@@ -51,7 +51,7 @@ PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 log = logging.getLogger(__name__)
 
 
-class HiveTableExistsBehavior(str, Enum):
+class HiveTableExistBehavior(str, Enum):
     APPEND = "append"
     REPLACE_ENTIRE_TABLE = "replace_entire_table"
     REPLACE_OVERLAPPING_PARTITIONS = "replace_overlapping_partitions"
@@ -218,7 +218,7 @@ class Hive(DBConnection):
             known_options: frozenset = frozenset()
             extra = "allow"
 
-        if_exists: HiveTableExistsBehavior = Field(default=HiveTableExistsBehavior.APPEND, alias="mode")
+        if_exists: HiveTableExistBehavior = Field(default=HiveTableExistBehavior.APPEND, alias="mode")
         """Behavior of writing data into existing table.
 
         Possible values:
@@ -782,7 +782,7 @@ class Hive(DBConnection):
             table_exists = False
 
         # https://stackoverflow.com/a/72747050
-        if table_exists and write_options.if_exists != HiveTableExistsBehavior.REPLACE_ENTIRE_TABLE:
+        if table_exists and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
             # using saveAsTable on existing table does not handle
             # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
             self._insert_into(df, target, options)
@@ -945,7 +945,7 @@ class Hive(DBConnection):
         # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
         # so using a workaround with patching Spark config and then setting up the previous value
         with inject_spark_param(self.spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic"):
-            overwrite = write_options.if_exists != HiveTableExistsBehavior.APPEND
+            overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
             writer.insertInto(table, overwrite=overwrite)
 
         log.info("|%s| Data is successfully inserted into table %r", self.__class__.__name__, table)
@@ -972,7 +972,7 @@ class Hive(DBConnection):
             else:
                 writer = writer.option(method, value)
 
-        mode = "append" if write_options.if_exists == HiveTableExistsBehavior.APPEND else "overwrite"
+        mode = "append" if write_options.if_exists == HiveTableExistBehavior.APPEND else "overwrite"
         writer.mode(mode).saveAsTable(table)
 
         log.info("|%s| Table %r is successfully created", self.__class__.__name__, table)
