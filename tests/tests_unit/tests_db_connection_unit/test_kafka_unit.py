@@ -3,7 +3,6 @@ import os
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from textwrap import dedent
 
 import pytest
 
