@@ -48,7 +48,7 @@ class Postgres(JDBCConnection):
 
         * PostgreSQL server versions: 8.2 or higher
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://jdbc.postgresql.org/download/>`_.
 

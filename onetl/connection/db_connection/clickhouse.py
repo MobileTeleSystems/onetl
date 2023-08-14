@@ -41,7 +41,7 @@ class Clickhouse(JDBCConnection):
 
         * Clickhouse server versions: 20.7 or higher
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
 

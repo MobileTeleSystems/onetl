@@ -1,5 +1,4 @@
 import logging
-from unittest.mock import patch
 
 import pytest
 
@@ -9,24 +8,18 @@ from onetl.file.format import Avro
 @pytest.mark.parametrize(
     "spark_version",
     [
-        "2.2",
-        "2.3",
+        "2.2.1",
+        "2.3.1",
     ],
 )
 def test_avro_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark {spark_version} is not supported by Avro"):
+    with pytest.raises(ValueError, match=f"Spark version should be at least 2.4, got {spark_version}"):
         Avro.get_packages(spark_version=spark_version)
 
 
-@pytest.mark.parametrize(
-    "scala_version",
-    [
-        "2.10",
-    ],
-)
-def test_avro_get_packages_scala_version_not_supported(scala_version):
-    with pytest.raises(ValueError, match=f"Scala {scala_version} is not supported by Avro"):
-        Avro.get_packages(spark_version="2.4.0", scala_version=scala_version)
+def test_avro_get_packages_scala_version_not_supported():
+    with pytest.raises(ValueError, match="Scala version should be at least 2.11, got 2.10"):
+        Avro.get_packages(spark_version="2.4.0", scala_version="2.10")
 
 
 @pytest.mark.parametrize(
@@ -111,5 +104,4 @@ def test_avro_options_prohibited(option):
 def test_avro_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'org.apache.spark.sql.avro.AvroFileFormat'"
     with pytest.raises(ValueError, match=msg):
-        with patch.object(spark_no_packages, "version", new="2.4.0"):
-            Avro().check_if_supported(spark_no_packages)
+        Avro().check_if_supported(spark_no_packages)

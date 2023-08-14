@@ -13,7 +13,7 @@ avro: &avro
 max: &max
   spark-version: 3.4.1
   python-version: '3.11'
-  java-version: 17
+  java-version: 20
   os: ubuntu-latest
 
 latest: &latest

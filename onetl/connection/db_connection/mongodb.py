@@ -185,7 +185,7 @@ class MongoDB(DBConnection):
 
         * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
@@ -317,13 +317,13 @@ class MongoDB(DBConnection):
         elif spark_version:
             spark_ver = Version.parse(spark_version)
             if spark_ver.major < 3:
-                raise ValueError(f"Spark {spark_ver} is not supported by {cls.__name__} connector")
+                raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
-            raise ValueError(f"Scala {scala_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
 

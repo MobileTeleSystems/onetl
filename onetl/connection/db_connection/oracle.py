@@ -76,7 +76,7 @@ class Oracle(JDBCConnection):
 
         * Oracle Server versions: 23c, 21c, 19c, 18c, 12.2 and probably 11.2 (tested, but that's not official).
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
 
@@ -204,7 +204,7 @@ class Oracle(JDBCConnection):
         """
         java_ver = Version.parse(java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java {java_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Java version must be at least 8, got {java_ver}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
         return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]

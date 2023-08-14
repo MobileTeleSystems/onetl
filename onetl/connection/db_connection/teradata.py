@@ -35,7 +35,7 @@ class Teradata(JDBCConnection):
 
         * Teradata server versions: 16.10 - 20.0
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html>`_.
 
