@@ -116,6 +116,10 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
             result["security.protocol"] = "SSL"
         return result
 
+    def cleanup(self, kafka: Kafka) -> None:
+        # nothing to cleanup
+        pass
+
     @validator("keystore_location", "truststore_location")
     def validate_path(cls, value: LocalPath) -> LocalPath:
         if value and not os.path.exists(value):
