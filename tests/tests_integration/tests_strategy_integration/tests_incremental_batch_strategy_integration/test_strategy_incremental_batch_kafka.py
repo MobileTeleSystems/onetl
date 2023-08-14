@@ -4,7 +4,7 @@ from onetl.connection import Kafka
 from onetl.db import DBReader
 from onetl.strategy import IncrementalBatchStrategy, SnapshotBatchStrategy
 
-pytestmark = [pytest.mark.kafka, pytest.mark.df_connection, pytest.mark.connection]
+pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
 
 
 @pytest.mark.parametrize(

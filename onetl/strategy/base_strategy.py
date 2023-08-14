@@ -68,7 +68,7 @@ class BaseStrategy(BaseModel):
         log.info("|onETL| Using %s as a strategy", self.__class__.__name__)
         parameters = self.dict(by_alias=True, exclude_none=True, exclude=self._log_exclude_fields())
         for attr, value in sorted(parameters.items()):
-            log_with_indent("%s = %r", attr, value)
+            log_with_indent(log, "%s = %r", attr, value)
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

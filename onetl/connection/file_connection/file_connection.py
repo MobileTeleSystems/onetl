@@ -716,13 +716,13 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|onETL| Using connection parameters:")
-        log_with_indent("type = %s", self.__class__.__name__)
+        log_with_indent(log, "type = %s", self.__class__.__name__)
         parameters = self.dict(exclude_none=True)
         for attr, value in sorted(parameters.items()):
             if isinstance(value, os.PathLike):
-                log_with_indent("%s = %s", attr, path_repr(value))
+                log_with_indent(log, "%s = %s", attr, path_repr(value))
             else:
-                log_with_indent("%s = %r", attr, value)
+                log_with_indent(log, "%s = %r", attr, value)
 
     @abstractmethod
     def _get_client(self) -> Any:

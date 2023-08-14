@@ -17,6 +17,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import sys
 from contextlib import redirect_stdout
 from enum import Enum
 from textwrap import dedent
@@ -27,7 +28,6 @@ from deprecated import deprecated
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
-log = logging.getLogger(__name__)
 onetl_log = logging.getLogger("onetl")
 root_log = logging.getLogger()
 
@@ -134,7 +134,7 @@ def disable_clients_logging() -> None:
 def set_default_logging_format() -> None:
     """Sets default logging format to preferred by onETL.
 
-    Example log message: ``2023-05-31 11:22:33.456 [INFO]: message``
+    Example log message: ``2023-05-31 11:22:33.456 [INFO] MainThread: message``
 
     .. note::
 
@@ -152,7 +152,23 @@ def set_default_logging_format() -> None:
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
 
-def log_with_indent(inp: str, *args, indent: int = 0, level: int = logging.INFO, **kwargs) -> None:
+def _log(logger: logging.Logger, msg: str, *args, level: int = logging.INFO, stacklevel: int = 1, **kwargs) -> None:
+    if sys.version_info >= (3, 8):
+        # https://github.com/python/cpython/pull/7424
+        logger.log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)  # noqa: WPS204
+    else:
+        logger.log(level, msg, *args, **kwargs)
+
+
+def log_with_indent(
+    logger: logging.Logger,
+    inp: str,
+    *args,
+    indent: int = 0,
+    level: int = logging.INFO,
+    stacklevel: int = 1,
+    **kwargs,
+) -> None:
     """Log a message with indentation.
 
     Supports all positional and keyword arguments which ``logging.log`` support.
@@ -162,8 +178,14 @@ def log_with_indent(inp: str, *args, indent: int = 0, level: int = logging.INFO,
 
     .. code:: python
 
-        log_with_indent("message")
-        log_with_indent("message with additional %s", "indent", indent=4, level=logging.DEBUG)
+        log_with_indent(logger, "message")
+        log_with_indent(
+            logger,
+            "message with additional %s",
+            "indent",
+            indent=4,
+            level=logging.DEBUG,
+        )
 
     .. code-block:: text
 
@@ -171,10 +193,17 @@ def log_with_indent(inp: str, *args, indent: int = 0, level: int = logging.INFO,
         DEBUG onetl.module            message with additional indent
 
     """
-    log.log(level, "%s" + inp, " " * (BASE_LOG_INDENT + indent), *args, **kwargs)
+    _log(logger, "%s" + inp, " " * (BASE_LOG_INDENT + indent), *args, level=level, stacklevel=stacklevel + 1, **kwargs)
 
 
-def log_lines(inp: str, name: str | None = None, indent: int = 0, level: int = logging.INFO):
+def log_lines(
+    logger: logging.Logger,
+    inp: str,
+    name: str | None = None,
+    indent: int = 0,
+    level: int = logging.INFO,
+    stacklevel: int = 1,
+):
     r"""Log input multiline string with indentation.
 
     Any input indentation is being stripped.
@@ -186,8 +215,8 @@ def log_lines(inp: str, name: str | None = None, indent: int = 0, level: int = l
 
     .. code:: python
 
-        log_lines("line1\nline2")
-        log_lines("  line1\n      line2\n  line3", level=logging.DEBUG)
+        log_lines(logger, "line1\nline2")
+        log_lines(logger, "  line1\n      line2\n  line3", level=logging.DEBUG)
 
     .. code-block:: text
 
@@ -201,14 +230,22 @@ def log_lines(inp: str, name: str | None = None, indent: int = 0, level: int = l
     """
 
     base_indent = " " * (BASE_LOG_INDENT + indent)
+    stacklevel += 1
     for index, line in enumerate(dedent(inp).splitlines()):
         if name and not index:
-            log.log(level, "%s%s = %s", base_indent, name, line)
+            _log(logger, "%s%s = %s", base_indent, name, line, level=level, stacklevel=stacklevel)
         else:
-            log.log(level, "%s%s", base_indent, line)
+            _log(logger, "%s%s", base_indent, line, level=level, stacklevel=stacklevel)
 
 
-def log_json(inp: Any, name: str | None = None, indent: int = 0, level: int = logging.INFO):
+def log_json(
+    logger: logging.Logger,
+    inp: Any,
+    name: str | None = None,
+    indent: int = 0,
+    level: int = logging.INFO,
+    stacklevel: int = 1,
+):
     """Log input object in JSON notation.
 
     Does NOT support variable substitution.
@@ -218,9 +255,9 @@ def log_json(inp: Any, name: str | None = None, indent: int = 0, level: int = lo
 
     .. code:: python
 
-        log_json(["item1", {"item2": "value2"}, None])
+        log_json(logger, ["item1", {"item2": "value2"}, None])
 
-        log_json({"item2": "value2"}, name="myvar", level=logging.DEBUG)
+        log_json(logger, {"item2": "value2"}, name="myvar", level=logging.DEBUG)
 
     .. code-block:: text
 
@@ -236,10 +273,18 @@ def log_json(inp: Any, name: str | None = None, indent: int = 0, level: int = lo
 
     """
 
-    log_lines(json.dumps(inp, indent=4), name, indent, level)
+    log_lines(logger, json.dumps(inp, indent=4), name, indent, level, stacklevel=stacklevel + 1)
 
 
-def log_collection(name: str, collection: Iterable, indent: int = 0, level: int = logging.INFO):
+def log_collection(
+    logger: logging.Logger,
+    name: str,
+    collection: Iterable,
+    max_items: int | None = None,
+    indent: int = 0,
+    level: int = logging.INFO,
+    stacklevel: int = 1,
+):
     """Log input collection.
 
     Does NOT support variable substitution.
@@ -249,11 +294,20 @@ def log_collection(name: str, collection: Iterable, indent: int = 0, level: int 
 
     .. code:: python
 
-        log_collection("myvar", ["item1", {"item2": "value2"}, None])
-
-        log_collection("myvar", ["item1", "item2"], level=logging.DEBUG)
+        log_collection(logger, "myvar", [])
+        log_collection(logger, "myvar", ["item1", {"item2": "value2"}, None])
+        log_collection(logger, "myvar", ["item1", "item2", "item3"], max_items=1)
+        log_collection(
+            logger,
+            "myvar",
+            ["item1", "item2", "item3"],
+            max_items=1,
+            level=logging.DEBUG,
+        )
 
     .. code-block:: text
+
+        INFO  onetl.module        myvar = []
 
         INFO  onetl.module        myvar = [
         INFO  onetl.module            'item1',
@@ -261,22 +315,55 @@ def log_collection(name: str, collection: Iterable, indent: int = 0, level: int 
         INFO  onetl.module            None,
         INFO  onetl.module        ]
 
+        INFO onetl.module        myvar = [
+        INFO onetl.module            'item1',
+        INFO onetl.module            # ... 2 more items of type <class 'str'>
+        INFO onetl.module            # change level to 'DEBUG' to print all values
+        INFO onetl.module        ]
+
         DEBUG onetl.module        myvar = [
         DEBUG onetl.module            'item1',
         DEBUG onetl.module            'item2',
+        DEBUG onetl.module            'item3',
         DEBUG onetl.module        ]
 
     """
 
     base_indent = " " * (BASE_LOG_INDENT + indent)
+    stacklevel += 1
+    items = list(collection)  # force convert all iterators to list to know size
+    if not items:
+        _log(logger, "%s%s = []", base_indent, name, level=level, stacklevel=stacklevel)
+        return
+
     nested_indent = " " * (BASE_LOG_INDENT + indent + 4)
-    log.log(level, "%s%s = [", base_indent, name)
-    for item in collection:
-        log.log(level, "%s%r,", nested_indent, item)
-    log.log(level, "%s]", base_indent)
+    _log(logger, "%s%s = [", base_indent, name, level=level, stacklevel=stacklevel)
+
+    for i, item in enumerate(items, start=1):
+        if max_items and i > max_items and level >= logging.DEBUG:
+            _log(
+                logger,
+                "%s# ... %d more items of type %r",
+                nested_indent,
+                len(items) - max_items,
+                type(item),
+                level=level,
+                stacklevel=stacklevel,
+            )
+            _log(
+                logger,
+                "%s# change level to 'DEBUG' to print all values",
+                nested_indent,
+                level=level,
+                stacklevel=stacklevel,
+            )
+            break
+        _log(logger, "%s%r,", nested_indent, item, level=level, stacklevel=stacklevel)
+
+    _log(logger, "%s]", base_indent, level=level, stacklevel=stacklevel)
 
 
-def entity_boundary_log(msg: str, char: str = "=") -> None:
+def entity_boundary_log(logger: logging.Logger, msg: str, char: str = "=", stacklevel: int = 1) -> None:
     """Prints message with boundary characters.
 
     Examples
@@ -284,8 +371,8 @@ def entity_boundary_log(msg: str, char: str = "=") -> None:
 
     .. code:: python
 
-        entity_boundary_log("Begin")
-        entity_boundary_log("End", "-")
+        entity_boundary_log(logger, "Begin")
+        entity_boundary_log(logger, "End", "-")
 
     .. code-block:: text
 
@@ -294,10 +381,17 @@ def entity_boundary_log(msg: str, char: str = "=") -> None:
 
     """
     filing = char * (HALF_SCREEN_SIZE - len(msg) // 2)
-    log.info("%s %s %s", filing, msg, filing)
+    _log(logger, "%s %s %s", filing, msg, filing, stacklevel=stacklevel + 1)
 
 
-def log_options(options: dict | None, name: str = "options", indent: int = 0, **kwargs):
+def log_options(
+    logger: logging.Logger,
+    options: dict | None,
+    name: str = "options",
+    indent: int = 0,
+    stacklevel: int = 1,
+    **kwargs,
+):
     """Log options dict in following format:
 
     Examples
@@ -305,8 +399,13 @@ def log_options(options: dict | None, name: str = "options", indent: int = 0, **
 
     .. code:: python
 
-        log_options(Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE))
-        log_options(None)
+        log_options(
+            logger,
+            Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE).dict(
+                by_alias=True
+            ),
+        )
+        log_options(logger, None)
 
     .. code-block:: text
 
@@ -322,17 +421,26 @@ def log_options(options: dict | None, name: str = "options", indent: int = 0, **
 
     """
 
+    stacklevel += 1
     if options:
-        log_with_indent("%s = {", name, indent=indent, **kwargs)
+        log_with_indent(logger, "%s = {", name, indent=indent, stacklevel=stacklevel, **kwargs)
         for option, value in options.items():
             value_wrapped = f"'{value}'" if isinstance(value, Enum) else repr(value)
-            log_with_indent("%r: %s,", option, value_wrapped, indent=indent + 4, **kwargs)
-        log_with_indent("}", indent=indent, **kwargs)
+            log_with_indent(
+                logger,
+                "%r: %s,",
+                option,
+                value_wrapped,
+                indent=indent + 4,
+                stacklevel=stacklevel,
+                **kwargs,
+            )
+        log_with_indent(logger, "}", indent=indent, stacklevel=stacklevel, **kwargs)
     else:
-        log_with_indent("%s = %r", name, None, indent=indent, **kwargs)
+        log_with_indent(logger, "%s = %r", name, None, indent=indent, stacklevel=stacklevel, **kwargs)
 
 
-def log_dataframe_schema(df: DataFrame):
+def log_dataframe_schema(logger: logging.Logger, df: DataFrame, stacklevel: int = 1):
     """Log dataframe schema in the following format:
 
     Examples
@@ -340,7 +448,7 @@ def log_dataframe_schema(df: DataFrame):
 
     .. code:: python
 
-        log_dataframe_schema(df)
+        log_dataframe_schema(logger, df)
 
     .. code-block:: text
 
@@ -350,7 +458,8 @@ def log_dataframe_schema(df: DataFrame):
 
     """
 
-    log_with_indent("df_schema:")
+    stacklevel += 1
+    log_with_indent(logger, "df_schema:", stacklevel=stacklevel)
 
     schema_tree = io.StringIO()
     with redirect_stdout(schema_tree):
@@ -359,4 +468,4 @@ def log_dataframe_schema(df: DataFrame):
         df.printSchema()
 
     for line in schema_tree.getvalue().splitlines():
-        log_with_indent("%s", line, indent=4)
+        log_with_indent(logger, "%s", line, indent=4, stacklevel=stacklevel)
