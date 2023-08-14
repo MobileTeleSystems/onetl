@@ -115,6 +115,10 @@ class JDBCMixin(FrozenModel):
         """
         Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods. |support_hooks|
 
+        Returns
+        -------
+        Connection itself
+
         Examples
         --------
 
@@ -135,6 +139,7 @@ class JDBCMixin(FrozenModel):
         """
 
         self._close_connections()
+        return self
 
     def __enter__(self):
         return self

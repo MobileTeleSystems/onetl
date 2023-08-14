@@ -251,6 +251,10 @@ class SparkS3(SparkFileDFConnection):
 
         Also resets all ``fs.s3a.bucket.$BUCKET.*`` properties of Hadoop configuration.
 
+        Returns
+        -------
+        Connection itself
+
         Examples
         --------
 
@@ -269,6 +273,7 @@ class SparkS3(SparkFileDFConnection):
 
         """
         self._reset_hadoop_conf()
+        return self
 
     @slot
     def check(self):

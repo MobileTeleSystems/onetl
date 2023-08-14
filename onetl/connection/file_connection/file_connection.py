@@ -78,7 +78,11 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @slot
     def close(self):
         """
-        Close all connections, opened by other methods call.
+        Close all connections, opened by other methods call. |support_hooks|
+
+        Returns
+        -------
+        Connection itself
 
         Examples
         --------
@@ -102,10 +106,11 @@ class FileConnection(BaseFileConnection, FrozenModel):
         try:
             client = self._clients_cache.client
         except AttributeError:
-            return
+            return self
 
         self._close_client(client)
         del self._clients_cache.client
+        return self
 
     def __enter__(self):
         return self

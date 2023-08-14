@@ -369,6 +369,10 @@ class Kafka(DBConnection):
         """
         Close all connections created to Kafka. |support_hooks|
 
+        Returns
+        -------
+        Connection itself
+
         Examples
         --------
 
@@ -389,6 +393,7 @@ class Kafka(DBConnection):
         self.protocol.cleanup(self)
         if self.auth:
             self.auth.cleanup(self)
+        return self
 
     @property
     def instance_url(self):

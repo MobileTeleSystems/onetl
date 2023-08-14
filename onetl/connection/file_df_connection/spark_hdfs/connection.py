@@ -197,6 +197,10 @@ class SparkHDFS(SparkFileDFConnection):
         """
         Close all connections created to HDFS. |support_hooks|
 
+        Returns
+        -------
+        Connection itself
+
         Examples
         --------
 
@@ -217,6 +221,7 @@ class SparkHDFS(SparkFileDFConnection):
         log.debug("Reset FileSystem cache")
         self._get_spark_fs().close()
         object.__setattr__(self, "_active_host", None)  # noqa: WPS609
+        return self
 
     @slot
     @classmethod
