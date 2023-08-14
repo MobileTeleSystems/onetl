@@ -2,6 +2,8 @@ import logging
 import os
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from textwrap import dedent
 
 import pytest
 
@@ -12,6 +14,14 @@ from onetl.exception import NotAFileError
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connection]
+
+
+@pytest.fixture
+def create_temp_file():
+    with NamedTemporaryFile(delete=False) as temp_file:
+        fake_certificate_content = "-----BEGIN CERTIFICATE-----\nFAKE_CERTIFICATE_CONTENT\n-----END CERTIFICATE-----\n"
+        temp_file.write(fake_certificate_content.encode())
+        yield Path(temp_file.name)
 
 
 @pytest.mark.parametrize(
@@ -618,3 +628,126 @@ def test_kafka_write_options_mode_restricted(options, message):
 def test_kafka_write_options_mode_wrong(options):
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
         Kafka.WriteOptions(**options)
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    ["", "kafka."],
+)
+def test_kafka_ssl_protocol_with_raw_strings(spark_mock, prefix):
+    json_input = f"""
+        {{
+            "{prefix}ssl.keystore.type": "PEM",
+            "{prefix}ssl.keystore.certificate.chain": "<certificate-chain-here>",
+            "{prefix}ssl.keystore.key": "<private-key_string>",
+            "{prefix}ssl.key.password": "<private_key_password>",
+            "{prefix}ssl.truststore.type": "PEM",
+            "{prefix}ssl.truststore.certificates": "<trusted-certificates>"
+        }}
+        """
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        protocol=Kafka.SSLProtocol.parse_raw(json_input),
+    )
+
+    options = kafka.protocol.get_options(kafka)
+
+    # Convert the SecretStr to plain strings for comparison
+    options["ssl.keystore.key"] = options["ssl.keystore.key"].get_secret_value()
+    options["ssl.key.password"] = options["ssl.key.password"].get_secret_value()
+
+    assert options == {
+        "ssl.keystore.type": "PEM",
+        "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+        "ssl.keystore.key": "<private-key_string>",
+        "ssl.key.password": "<private_key_password>",
+        "ssl.truststore.type": "PEM",
+        "ssl.truststore.certificates": "<trusted-certificates>",
+        "security.protocol": "SSL",
+    }
+
+
+@pytest.mark.parametrize(
+    "keystore_type,truststore_type",
+    [
+        ("PEM", "PEM"),
+        ("JKS", "JKS"),
+    ],
+)
+def test_kafka_ssl_protocol_with_file_paths(
+    spark_mock,
+    create_temp_file,
+    keystore_type,
+    truststore_type,
+):
+    keystore_location = create_temp_file
+    truststore_location = create_temp_file
+
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        protocol=Kafka.SSLProtocol(
+            keystore_type=keystore_type,
+            keystore_location=keystore_location,
+            key_password="<private_key_password>",
+            truststore_type=truststore_type,
+            truststore_location=truststore_location,
+        ),
+    )
+
+    options = kafka.protocol.get_options(kafka)
+    options["ssl.key.password"] = options["ssl.key.password"].get_secret_value()
+
+    assert options == {
+        "ssl.keystore.type": keystore_type,
+        "ssl.keystore.location": keystore_location,
+        "ssl.key.password": "<private_key_password>",
+        "ssl.truststore.type": truststore_type,
+        "ssl.truststore.location": truststore_location,
+        "security.protocol": "SSL",
+    }
+
+
+def test_kafka_ssl_protocol_pem_certificates_as_file_paths_error(spark_mock):
+    error_msg = "The path /not/existing/path does not exist (type=value_error)"
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        Kafka(
+            spark=spark_mock,
+            addresses=["some_address"],
+            cluster="cluster",
+            protocol=Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_location="/not/existing/path",
+                key_password="<private_key_password>",
+                truststore_type="PEM",
+                truststore_location="/not/existing/path",
+            ),
+        )
+
+
+def test_kafka_ssl_protocol_with_extra_fields(spark_mock):
+    json_input = """
+    {
+        "ssl.keystore.type": "PEM",
+        "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+        "ssl.keystore.key": "<private-key_string>",
+        "ssl.key.password": "<private_key_password>",
+        "ssl.truststore.type": "PEM",
+        "ssl.truststore.certificates": "<trusted-certificates>",
+        "ssl.enabled.protocols": "TLSv1.2",
+        "kafka.ssl.endpoint.identification.algorithm": "HTTPS"
+    }
+    """
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        protocol=Kafka.SSLProtocol.parse_raw(json_input),
+    )
+    options = kafka.protocol.get_options(kafka)
+
+    assert options["ssl.enabled.protocols"] == "TLSv1.2"
+    assert options["ssl.endpoint.identification.algorithm"] == "HTTPS"

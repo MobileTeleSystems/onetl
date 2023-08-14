@@ -35,6 +35,7 @@ from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
     KafkaPlaintextProtocol,
 )
 from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
+from onetl.connection.db_connection.kafka.kafka_ssl_protocol import KafkaSSLProtocol
 from onetl.connection.db_connection.kafka.options import (
     KafkaReadOptions,
     KafkaTopicExistBehaviorKafka,
@@ -181,12 +182,35 @@ class Kafka(DBConnection):
             spark=spark,
         )
 
+    Connect to Kafka using ``PLAINTEXT`` protocol:
+
+    .. code:: python
+
+        kafka = Kafka(
+            protocol=Kafka.PlaintextProtocol(),
+        )
+
+    Connect to Kafka using ``SSL`` protocol:
+
+    .. code:: python
+
+        kafka = Kafka(
+            protocol=Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_certificate_chain="<certificate-chain-here>",
+                keystore_key="<private-key_string>",
+                key_password="<private_key_password>",
+                truststore_type="PEM",
+                truststore_certificates="<trusted-certificates>",
+            ),
+        )
     """
 
     BasicAuth = KafkaBasicAuth
     KerberosAuth = KafkaKerberosAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions
+    SSLProtocol = KafkaSSLProtocol
     Extra = KafkaExtra
     Dialect = KafkaDialect
     PlaintextProtocol = KafkaPlaintextProtocol
