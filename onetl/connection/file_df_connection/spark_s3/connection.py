@@ -59,7 +59,7 @@ class SparkS3(SparkFileDFConnection):
     .. dropdown:: Version compatibility
 
         * Spark versions: 3.2.x - 3.4.x (only with Hadoop 3.x libraries)
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
     .. warning::
 
@@ -202,7 +202,7 @@ class SparkS3(SparkFileDFConnection):
     region: Optional[str] = None
     extra: SparkS3Extra = SparkS3Extra()
 
-    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.name"]
+    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.magic.enabled", "committer.name"]
 
     @slot
     @classmethod

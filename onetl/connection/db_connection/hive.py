@@ -99,7 +99,7 @@ class Hive(DBConnection):
 
         * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
     .. warning::
 

@@ -1,6 +1,5 @@
 import logging
 import secrets
-from unittest.mock import patch
 
 import pytest
 
@@ -9,15 +8,14 @@ from onetl.connection import Teradata
 pytestmark = pytest.mark.teradata
 
 
-@patch.object(Teradata, "_query_optional_on_driver")
-def test_teradata_connection_check(query_or_none_on_driver, spark, caplog):
-    query_or_none_on_driver.result = None
-
+def test_teradata_connection_check(spark, mocker, caplog):
     host = "some.domain.com"
     port = 1234
     database = secrets.token_hex()
     user = secrets.token_hex()
     password = secrets.token_hex()
+
+    mocker.patch.object(Teradata, "_query_optional_on_driver")
 
     teradata = Teradata(
         host=host,

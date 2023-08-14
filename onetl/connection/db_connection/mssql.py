@@ -38,7 +38,7 @@ class MSSQL(JDBCConnection):
 
         * SQL Server versions: 2014 - 2022
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
         and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.
@@ -199,7 +199,7 @@ class MSSQL(JDBCConnection):
         """
         java_ver = Version.parse(java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java {java_ver} is not supported by {cls.__name__} connector")
+            raise ValueError(f"Java version must be at least 8, got {java_ver}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
         return [f"com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre{jre_ver}"]

@@ -36,7 +36,7 @@ class MySQL(JDBCConnection):
 
         * MySQL server versions: 5.7, 8.0
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
 

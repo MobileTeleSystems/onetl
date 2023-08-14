@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-from unittest.mock import patch
 
 import pytest
 
@@ -32,7 +31,7 @@ def test_mongodb_get_packages_no_input():
     ],
 )
 def test_mongodb_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark {spark_version} is not supported by MongoDB connector"):
+    with pytest.raises(ValueError, match=f"Spark version must be at least 3.0, got {spark_version}"):
         MongoDB.get_packages(spark_version=spark_version)
 
 
@@ -45,7 +44,7 @@ def test_mongodb_get_packages_spark_version_not_supported(spark_version):
     ],
 )
 def test_mongodb_get_packages_scala_version_not_supported(scala_version):
-    with pytest.raises(ValueError, match=f"Scala {scala_version} is not supported by MongoDB connector"):
+    with pytest.raises(ValueError, match=f"Scala version must be 2.12 - 2.13, got {scala_version}"):
         MongoDB.get_packages(scala_version=scala_version)
 
 
@@ -71,14 +70,13 @@ def test_mongodb_get_packages(spark_version, scala_version, package):
 def test_mongodb_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'com.mongodb.spark.sql.connector.MongoTableProvider'"
     with pytest.raises(ValueError, match=msg):
-        with patch.object(spark_no_packages, "version", new="3.2.0"):
-            MongoDB(
-                host="host",
-                user="user",
-                password="password",
-                database="database",
-                spark=spark_no_packages,
-            )
+        MongoDB(
+            host="host",
+            user="user",
+            password="password",
+            database="database",
+            spark=spark_no_packages,
+        )
 
 
 def test_mongodb(spark_mock):
