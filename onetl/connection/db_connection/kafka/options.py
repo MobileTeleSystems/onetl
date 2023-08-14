@@ -12,6 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from enum import Enum
+
+from pydantic import Field, root_validator
 
 from onetl.impl import GenericOptions
 
@@ -51,6 +54,14 @@ KNOWN_WRITE_OPTIONS = frozenset(
     # https://issues.apache.org/jira/browse/SPARK-23539
     ("includeHeaders",),
 )
+
+
+class KafkaTopicExistBehaviorKafka(str, Enum):
+    ERROR = "error"
+    APPEND = "append"
+
+    def __str__(self) -> str:
+        return str(self.value)
 
 
 class KafkaReadOptions(GenericOptions):
@@ -135,11 +146,26 @@ class KafkaWriteOptions(GenericOptions):
     .. code:: python
 
         options = Kafka.WriteOptions(
+            if_exists="append",
             includeHeaders=False,
         )
+    """
+
+    if_exists: KafkaTopicExistBehaviorKafka = Field(default=KafkaTopicExistBehaviorKafka.APPEND)
+    """Behavior of writing data into existing topic.
+
+    Possible values:
+        * ``append`` (default) - Adds new objects into existing topic.
+        * ``error`` - Raises an error if topic already exists.
     """
 
     class Config:
         prohibited_options = PROHIBITED_OPTIONS
         known_options = KNOWN_WRITE_OPTIONS
         extra = "allow"
+
+    @root_validator(pre=True)
+    def _mode_is_restricted(cls, values):
+        if "mode" in values:
+            raise ValueError("Parameter `mode` is not allowed. Please use `if_exists` parameter instead.")
+        return values
