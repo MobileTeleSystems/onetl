@@ -80,15 +80,12 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
 
     .. code:: python
 
-        ssl = Kafka.SSLProtocol(
-            keystore_type="JKS",
-            keystore_location="/opt/keystore.jks",
-            keystore_password="password",
-            **{
-                "ssl.protocol": "TLSv1.3",
-                "ssl.enabled.protocols": "TLSv1.3",
-            },
-        )
+        ssl = Kafka.SSLProtocol.parse({
+            "keystore_type": "JKS",
+            "keystore_location": "/opt/keystore.jks",
+            "keystore_password": "password",
+            "ssl.protocol": "TLSv1.3",
+        })
     """
 
     keystore_type: str = Field(alias="ssl.keystore.type")
