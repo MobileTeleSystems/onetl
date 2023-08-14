@@ -217,14 +217,14 @@ class FileDFReader(FrozenModel):
             paths = FileSet([self.source_path])
 
         self.connection.check()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         return self._read_files(paths)
 
     def _read_files(self, paths: FileSet[PurePathProtocol]) -> DataFrame:
         log.info("|%s| Paths to be read:", self.__class__.__name__)
-        log_lines(str(paths))
-        log_with_indent("")
+        log_lines(log, str(paths))
+        log_with_indent(log, "")
 
         return self.connection.read_files_as_df(
             root=self.source_path,
@@ -234,20 +234,19 @@ class FileDFReader(FrozenModel):
             options=self.options,
         )
 
-    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
-        entity_boundary_log(msg=f"{self.__class__.__name__} starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} starts")
 
         log.info("|%s| -> |Spark| Reading files using parameters:", self.connection.__class__.__name__)
-        log_with_indent("source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
-        log_with_indent("format = %r", self.format)
+        log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
+        log_with_indent(log, "format = %r", self.format)
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore[attr-defined]
-            log_dataframe_schema(empty_df)
+            log_dataframe_schema(log, empty_df)
 
         options_dict = self.options.dict(exclude_none=True)
-        if options_dict:
-            log_options(options_dict)
+        log_options(log, options_dict)
 
         if files is not None and self.source_path:
             log.warning(

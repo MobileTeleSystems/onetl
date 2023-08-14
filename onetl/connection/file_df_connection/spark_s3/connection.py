@@ -407,8 +407,8 @@ class SparkS3(SparkFileDFConnection):
                     self.__class__.__name__,
                 )
                 if log.isEnabledFor(logging.DEBUG):
-                    log_options(expected_values, "expected", level=logging.DEBUG)
-                    log_options(real_values, "real", level=logging.DEBUG)
+                    log_options(log, expected_values, "expected", level=logging.DEBUG)
+                    log_options(log, real_values, "real", level=logging.DEBUG)
 
             log.debug("Reset FileSystem cache")
             # Reset FileSystem cache to apply new config

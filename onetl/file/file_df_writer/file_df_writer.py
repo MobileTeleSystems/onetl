@@ -125,7 +125,7 @@ class FileDFWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        entity_boundary_log(f"{self.__class__.__name__} starts")
+        entity_boundary_log(log, f"{self.__class__.__name__} starts")
 
         self._log_parameters(df)
         self.connection.check()
@@ -136,18 +136,16 @@ class FileDFWriter(FrozenModel):
             options=self.options,
         )
 
-        entity_boundary_log(f"{self.__class__.__name__} ends", char="-")
+        entity_boundary_log(log, f"{self.__class__.__name__} ends", char="-")
 
-    def _log_parameters(self, df: DataFrame) -> None:  # noqa: WPS213
+    def _log_parameters(self, df: DataFrame) -> None:
         log.info("|Spark| -> |%s| Writing dataframe using parameters:", self.connection.__class__.__name__)
-        log_with_indent("target_path = '%s'", self.target_path)
-        log_with_indent("format = %r", self.format)
+        log_with_indent(log, "target_path = '%s'", self.target_path)
+        log_with_indent(log, "format = %r", self.format)
 
         options_dict = self.options.dict(exclude_none=True)
-        if options_dict:
-            log_options(options_dict)
-
-        log_dataframe_schema(df)
+        log_options(log, options_dict)
+        log_dataframe_schema(log, df)
 
     @validator("target_path", pre=True)
     def _validate_target_path(cls, target_path, values):

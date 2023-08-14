@@ -46,7 +46,7 @@ from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
-from onetl.log import log_with_indent
+from onetl.log import log_collection, log_with_indent
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -532,9 +532,9 @@ class Kafka(DBConnection):
 
     def _log_parameters(self):
         log.info("|Spark| Using connection parameters:")
-        log_with_indent("type = %s", self.__class__.__name__)
-        log_with_indent("addresses = %r", self.addresses)
-        log_with_indent("cluster = %r", self.cluster)
-        log_with_indent("protocol = %r", self.protocol)
-        log_with_indent("auth = %r", self.auth)
-        log_with_indent("extra = %r", self.extra.dict(by_alias=True, exclude_none=True))
+        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log_with_indent(log, "cluster = %r", self.cluster)
+        log_collection(log, "addresses", self.addresses, max_items=10)
+        log_with_indent(log, "protocol = %r", self.protocol)
+        log_with_indent(log, "auth = %r", self.auth)
+        log_with_indent(log, "extra = %r", self.extra.dict(by_alias=True, exclude_none=True))

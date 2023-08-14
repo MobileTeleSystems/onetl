@@ -157,7 +157,7 @@ class JDBCMixin(FrozenModel):
         self._log_parameters()  # type: ignore
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(self._CHECK_QUERY, level=logging.DEBUG)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
             self._query_optional_on_driver(self._CHECK_QUERY, self.JDBCOptions(fetchsize=1))  # type: ignore
@@ -255,7 +255,7 @@ class JDBCMixin(FrozenModel):
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(query)
+        log_lines(log, query)
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
@@ -369,7 +369,7 @@ class JDBCMixin(FrozenModel):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_lines(statement)
+        log_lines(log, statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)

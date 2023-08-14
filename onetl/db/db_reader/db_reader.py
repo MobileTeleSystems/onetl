@@ -539,10 +539,9 @@ class DBReader(FrozenModel):
             StrategyHelper,
         )
 
-        entity_boundary_log(msg="DBReader starts")
+        entity_boundary_log(log, msg="DBReader starts")
 
         self._log_parameters()
-        self._log_options()
         self.connection.check()
 
         helper: StrategyHelper
@@ -565,36 +564,35 @@ class DBReader(FrozenModel):
         )
 
         df = helper.save(df)
-        entity_boundary_log(msg="DBReader ends", char="-")
+        entity_boundary_log(log, msg="DBReader ends", char="-")
 
         return df
 
     def _log_parameters(self) -> None:
         log.info("|%s| -> |Spark| Reading DataFrame from source using parameters:", self.connection.__class__.__name__)
-        log_with_indent("source = '%s'", self.source)
+        log_with_indent(log, "source = '%s'", self.source)
 
         if self.hint:
-            log_json(self.hint, "hint")
+            log_json(log, self.hint, "hint")
 
         if self.columns:
-            log_collection("columns", self.columns)
+            log_collection(log, "columns", self.columns)
 
         if self.where:
-            log_json(self.where, "where")
+            log_json(log, self.where, "where")
 
         if self.hwm_column:
-            log_with_indent("hwm_column = '%s'", self.hwm_column)
+            log_with_indent(log, "hwm_column = '%s'", self.hwm_column)
 
         if self.hwm_expression:
-            log_json(self.hwm_expression, "hwm_expression")
+            log_json(log, self.hwm_expression, "hwm_expression")
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore
-            log_dataframe_schema(empty_df)
+            log_dataframe_schema(log, empty_df)
 
-    def _log_options(self) -> None:
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
-        log_options(options)
+        log_options(log, options)
 
     def _resolve_all_columns(self) -> list[str] | None:
         """

@@ -103,10 +103,14 @@ def test_clickhouse_strategy_incremental(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
-# Fail if HWM is Numeric, or Decimal with fractional part, or string
+@pytest.mark.flaky(
+    # sometimes test fails with vague error on Spark side, e.g. `An error occurred while calling o58.version`
+    only_rerun="py4j.protocol.Py4JError",
+)
 @pytest.mark.parametrize(
     "hwm_column",
     [
+        # Fail if HWM is Numeric, or Decimal with fractional part, or string
         "float_value",
         "text_string",
     ],

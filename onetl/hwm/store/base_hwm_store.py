@@ -117,6 +117,6 @@ class BaseHWMStore(BaseModel, ABC):
             log.info("|%s| Using options:", self.__class__.__name__)
             for option, value in options.items():
                 if isinstance(value, os.PathLike):
-                    log_with_indent("%s = %s", option, path_repr(value))
+                    log_with_indent(log, "%s = %s", option, path_repr(value))
                 else:
-                    log_with_indent("%s = %r", option, value)
+                    log_with_indent(log, "%s = %r", option, value)

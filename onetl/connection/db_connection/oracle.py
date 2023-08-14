@@ -277,7 +277,7 @@ class Oracle(JDBCConnection):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_lines(statement)
+        log_lines(log, statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
@@ -420,7 +420,7 @@ class Oracle(JDBCConnection):
         fail = any(error.level == logging.ERROR for error in aggregated_errors)
 
         message = self._build_error_message(aggregated_errors)
-        log_lines(message, level=logging.ERROR if fail else logging.WARNING)
+        log_lines(log, message, level=logging.ERROR if fail else logging.WARNING)
 
         if fail:
             raise ValueError(message)

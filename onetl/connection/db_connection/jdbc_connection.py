@@ -661,7 +661,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
-        log_lines(query)
+        log_lines(log, query)
 
         df = self._query_on_executor(query, self.ReadOptions.parse(options))
 
@@ -744,7 +744,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         read_options = self._exclude_partition_options(options, fetchsize=0)
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(query, level=logging.DEBUG)
+        log_lines(log, query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
         log.info("|%s| Schema fetched", self.__class__.__name__)
@@ -815,7 +815,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         )
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(query)
+        log_lines(log, query)
 
         df = self._query_on_driver(query, read_options)
         row = df.collect()[0]
@@ -823,8 +823,8 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         max_value = row["max"]
 
         log.info("|Spark| Received values:")
-        log_with_indent("MIN(%s) = %r", column, min_value)
-        log_with_indent("MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", column, min_value)
+        log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -903,4 +903,4 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
 
     def _log_parameters(self):
         super()._log_parameters()
-        log_with_indent("jdbc_url = %r", self.jdbc_url)
+        log_with_indent(log, "jdbc_url = %r", self.jdbc_url)

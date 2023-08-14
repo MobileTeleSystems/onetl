@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import logging
 import textwrap
 import warnings
 
@@ -22,9 +21,6 @@ from pydantic import validator
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
-from onetl.log import log_with_indent
-
-log = logging.getLogger(__name__)
 
 
 class FileLimit(BaseFileLimit, FrozenModel):
@@ -79,12 +75,8 @@ class FileLimit(BaseFileLimit, FrozenModel):
     def is_reached(self) -> bool:
         return self._counter >= self.count_limit
 
-    def log_options(self, indent: int = 0):
-        for key, value in self.dict(by_alias=True).items():  # noqa: WPS528
-            log_with_indent("%s = %r", key, value, indent=indent)
-
     @validator("count_limit")
-    def log_deprecated(cls, value):
+    def _deprecated(cls, value):
         message = f"""
             Using FileLimit is deprecated since v0.8.0 and will be removed in v1.0.0.
 

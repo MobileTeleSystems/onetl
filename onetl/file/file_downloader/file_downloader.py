@@ -381,12 +381,12 @@ class FileDownloader(FrozenModel):
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_options(files)
+        self._log_parameters(files)
 
         # Check everything
         self._check_local_path()
         self.connection.check()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         if self.source_path:
             self._check_source_path()
@@ -469,7 +469,7 @@ class FileDownloader(FrozenModel):
             }
         """
 
-        log.info("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
+        log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
         self._check_source_path()
         result = FileSet()
@@ -590,25 +590,16 @@ class FileDownloader(FrozenModel):
         self._init_hwm()
         return self._download_files(to_download)
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
-        entity_boundary_log(msg="FileDownloader starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg="FileDownloader starts")
 
         log.info("|%s| -> |Local FS| Downloading files using parameters:", self.connection.__class__.__name__)
-        log_with_indent("source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
-        log_with_indent("local_path = '%s'", self.local_path)
-        log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
-
-        if self.filters:
-            log_collection("filters", self.filters)
-        else:
-            log_with_indent("filters = []")
-
-        if self.limits:
-            log_collection("limits", self.limits)
-        else:
-            log_with_indent("limits = []")
-
-        log_options(self.options.dict(by_alias=True))
+        log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
+        log_with_indent(log, "local_path = '%s'", self.local_path)
+        log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
+        log_collection(log, "filters", self.filters)
+        log_collection(log, "limits", self.limits)
+        log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
@@ -683,9 +674,9 @@ class FileDownloader(FrozenModel):
     ) -> DownloadResult:
         files = FileSet(item[0] for item in to_download)
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
-        log_lines(str(files))
-        log_with_indent("")
-        log.info("|%s| Starting the download process", self.__class__.__name__)
+        log_lines(log, str(files))
+        log_with_indent(log, "")
+        log.info("|%s| Starting the download process ...", self.__class__.__name__)
 
         self._create_dirs(to_download)
 
@@ -727,7 +718,10 @@ class FileDownloader(FrozenModel):
         result = []
 
         if workers > 1:
-            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+            with ThreadPoolExecutor(
+                max_workers=max(workers, len(to_download)),
+                thread_name_prefix=self.__class__.__name__,
+            ) as executor:
                 futures = [
                     executor.submit(self._download_file, source_file, target_file, tmp_file)
                     for source_file, target_file, tmp_file in to_download
@@ -839,10 +833,10 @@ class FileDownloader(FrozenModel):
             log.exception("|Local FS| Error while removing temp directory")
 
     def _log_result(self, result: DownloadResult) -> None:
-        log_with_indent("")
+        log_with_indent(log, "")
         log.info("|%s| Download result:", self.__class__.__name__)
-        log_lines(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+        log_lines(log, str(result))
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")
 
     @staticmethod
     def _check_hwm_type(hwm_type: type[HWM]) -> None:

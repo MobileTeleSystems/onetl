@@ -313,14 +313,14 @@ class FileUploader(FrozenModel):
         if files is None and not self.local_path:
             raise ValueError("Neither file list nor `local_path` are passed")
 
-        self._log_options(files)
+        self._log_parameters(files)
 
         # Check everything
         if self.local_path:
             self._check_local_path()
 
         self.connection.check()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         self.connection.create_dir(self.target_path)
 
@@ -395,7 +395,7 @@ class FileUploader(FrozenModel):
             }
         """
 
-        log.info("|Local FS| Getting files list from path '%s'", self.local_path)
+        log.debug("|Local FS| Getting files list from path '%s'", self.local_path)
 
         self._check_local_path()
         result = FileSet()
@@ -423,15 +423,14 @@ class FileUploader(FrozenModel):
     def _validate_temp_path(cls, temp_path):
         return RemotePath(temp_path) if temp_path else None
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(msg="FileUploader starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg="FileUploader starts")
 
         log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
-        log_with_indent("local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
-        log_with_indent("target_path = '%s'", self.target_path)
-        log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
-
-        log_options(self.options.dict(by_alias=True))
+        log_with_indent(log, "local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
+        log_with_indent(log, "target_path = '%s'", self.target_path)
+        log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
+        log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_local:
             log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)
@@ -500,9 +499,9 @@ class FileUploader(FrozenModel):
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         files = FileSet(item[0] for item in to_upload)
         log.info("|%s| Files to be uploaded:", self.__class__.__name__)
-        log_lines(str(files))
-        log_with_indent("")
-        log.info("|%s| Starting the upload process", self.__class__.__name__)
+        log_lines(log, str(files))
+        log_with_indent(log, "")
+        log.info("|%s| Starting the upload process ...", self.__class__.__name__)
 
         self._create_dirs(to_upload)
 
@@ -544,7 +543,10 @@ class FileUploader(FrozenModel):
         result = []
 
         if workers > 1:
-            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+            with ThreadPoolExecutor(
+                max_workers=max(workers, len(to_upload)),
+                thread_name_prefix=self.__class__.__name__,
+            ) as executor:
                 futures = [
                     executor.submit(self._upload_file, local_file, target_file, tmp_file)
                     for local_file, target_file, tmp_file in to_upload
@@ -630,5 +632,5 @@ class FileUploader(FrozenModel):
     def _log_result(self, result: UploadResult) -> None:
         log.info("")
         log.info("|%s| Upload result:", self.__class__.__name__)
-        log_lines(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+        log_lines(log, str(result))
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")

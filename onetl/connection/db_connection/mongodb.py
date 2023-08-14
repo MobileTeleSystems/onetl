@@ -759,14 +759,14 @@ class MongoDB(DBConnection):
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
         pipeline = self.Dialect.prepare_pipeline(pipeline)
-        log_with_indent("collection = %r", collection)
-        log_json(pipeline, name="pipeline")
+        log_with_indent(log, "collection = %r", collection)
+        log_json(log, pipeline, name="pipeline")
 
         if df_schema:
             empty_df = self.spark.createDataFrame([], df_schema)
-            log_dataframe_schema(empty_df)
+            log_dataframe_schema(log, empty_df)
 
-        log_options(read_options)
+        log_options(log, read_options)
 
         read_options["collection"] = collection
         read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
@@ -827,9 +827,9 @@ class MongoDB(DBConnection):
             read_options["hint"] = self.Dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_with_indent("collection = %r", source)
-        log_json(pipeline, "pipeline")
-        log_json(hint, "hint")
+        log_with_indent(log, "collection = %r", source)
+        log_json(log, pipeline, "pipeline")
+        log_json(log, hint, "hint")
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
         row = df.collect()[0]
@@ -837,8 +837,8 @@ class MongoDB(DBConnection):
         max_value = row["max"]
 
         log.info("|Spark| Received values:")
-        log_with_indent("MIN(%s) = %r", column, min_value)
-        log_with_indent("MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", column, min_value)
+        log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
@@ -872,9 +872,9 @@ class MongoDB(DBConnection):
         read_options["collection"] = source
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_with_indent("collection = %r", source)
-        log_json(pipeline, "pipeline")
-        log_json(hint, "hint")
+        log_with_indent(log, "collection = %r", source)
+        log_json(log, pipeline, "pipeline")
+        log_json(log, hint, "hint")
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:

@@ -25,7 +25,6 @@ from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath
-from onetl.log import log_with_indent
 
 
 class FileFilter(BaseFileFilter, FrozenModel):
@@ -208,7 +207,3 @@ class FileFilter(BaseFileFilter, FrozenModel):
             return self.regexp.search(os.fspath(path)) is not None
 
         return True
-
-    def log_options(self, indent: int = 0):
-        for key, value in self.dict(exclude_none=True, by_alias=True).items():  # noqa: WPS528
-            log_with_indent("%s = %r", key, value, indent=indent)

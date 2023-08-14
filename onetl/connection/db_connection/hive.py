@@ -647,7 +647,7 @@ class Hive(DBConnection):
         self._log_parameters()
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
-        log_lines(self._CHECK_QUERY, level=logging.DEBUG)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
             self._execute_sql(self._CHECK_QUERY)
@@ -699,7 +699,7 @@ class Hive(DBConnection):
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
-        log_lines(query)
+        log_lines(log, query)
 
         df = self._execute_sql(query)
         log.info("|Spark| DataFrame successfully created from SQL statement")
@@ -759,7 +759,7 @@ class Hive(DBConnection):
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement:", self.__class__.__name__)
-        log_lines(statement)
+        log_lines(log, statement)
 
         self._execute_sql(statement).collect()
         log.info("|%s| Call succeeded", self.__class__.__name__)
@@ -822,7 +822,7 @@ class Hive(DBConnection):
         query = get_sql_query(source, columns=columns, where="1=0", compact=True)
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
-        log_lines(query, level=logging.DEBUG)
+        log_lines(log, query, level=logging.DEBUG)
 
         df = self._execute_sql(query)
         log.info("|%s| Schema fetched", self.__class__.__name__)
@@ -856,7 +856,7 @@ class Hive(DBConnection):
         )
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
-        log_lines(sql_text, level=logging.DEBUG)
+        log_lines(log, sql_text, level=logging.DEBUG)
 
         df = self._execute_sql(sql_text)
         row = df.collect()[0]
@@ -864,8 +864,8 @@ class Hive(DBConnection):
         max_value = row["max"]
 
         log.info("|Spark| Received values:")
-        log_with_indent("MIN(%s) = %r", column, min_value)
-        log_with_indent("MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", column, min_value)
+        log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 

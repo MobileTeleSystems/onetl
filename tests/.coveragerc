@@ -18,3 +18,4 @@ exclude_lines =
     @(abc\.)?abstractmethod
     if pyspark_version
     spark = SparkSession._instantiatedSession
+    if log.isEnabledFor(logging.DEBUG):
