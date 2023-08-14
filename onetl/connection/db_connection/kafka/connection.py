@@ -167,21 +167,6 @@ class Kafka(DBConnection):
             spark=spark,
         )
 
-    Connect to Kafka with extra options:
-
-    .. code:: python
-
-        # Create Spark session with Kafka connector loaded
-        ...
-
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster=["my-cluster"],
-            extra={"max.request.size": 1000000},
-            spark=spark,
-        )
-
     Connect to Kafka using ``PLAINTEXT`` protocol:
 
     .. code:: python
@@ -197,13 +182,29 @@ class Kafka(DBConnection):
         kafka = Kafka(
             protocol=Kafka.SSLProtocol(
                 keystore_type="PEM",
-                keystore_certificate_chain="<certificate-chain-here>",
-                keystore_key="<private-key_string>",
+                keystore_certificate_chain="-----BEGIN CERTIFICATE-----MIIDZjC...-----END CERTIFICATE-----",
+                keystore_key="-----BEGIN ENCRYPTED PRIVATE KEY-----MIIDZjC..-----END ENCRYPTED PRIVATE KEY-----",
                 key_password="<private_key_password>",
                 truststore_type="PEM",
-                truststore_certificates="<trusted-certificates>",
+                truststore_certificates="-----BEGIN CERTIFICATE-----MICC...-----END CERTIFICATE-----",
             ),
         )
+
+    Connect to Kafka with extra options:
+
+    .. code:: python
+
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster=["my-cluster"],
+            extra={"max.request.size": 1000000},
+            spark=spark,
+        )
+
     """
 
     BasicAuth = KafkaBasicAuth

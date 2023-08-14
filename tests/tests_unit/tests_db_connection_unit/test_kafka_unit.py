@@ -2,7 +2,6 @@ import logging
 import os
 import re
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 import pytest
 
@@ -16,11 +15,11 @@ pytestmark = [pytest.mark.kafka, pytest.mark.db_connection, pytest.mark.connecti
 
 
 @pytest.fixture
-def create_temp_file():
-    with NamedTemporaryFile(delete=False) as temp_file:
-        fake_certificate_content = "-----BEGIN CERTIFICATE-----\nFAKE_CERTIFICATE_CONTENT\n-----END CERTIFICATE-----\n"
-        temp_file.write(fake_certificate_content.encode())
-        yield Path(temp_file.name)
+def create_temp_file(tmp_path_factory):
+    path = Path(tmp_path_factory.mktemp("data") / "some.key")
+    path.write_text("-----BEGIN CERTIFICATE-----\nFAKE_CERTIFICATE_CONTENT\n-----END CERTIFICATE-----\n")
+
+    return path
 
 
 @pytest.mark.parametrize(
@@ -634,28 +633,22 @@ def test_kafka_write_options_mode_wrong(options):
     ["", "kafka."],
 )
 def test_kafka_ssl_protocol_with_raw_strings(spark_mock, prefix):
-    json_input = f"""
-        {{
-            "{prefix}ssl.keystore.type": "PEM",
-            "{prefix}ssl.keystore.certificate.chain": "<certificate-chain-here>",
-            "{prefix}ssl.keystore.key": "<private-key_string>",
-            "{prefix}ssl.key.password": "<private_key_password>",
-            "{prefix}ssl.truststore.type": "PEM",
-            "{prefix}ssl.truststore.certificates": "<trusted-certificates>"
-        }}
-        """
+    params = {
+        f"{prefix}ssl.keystore.type": "PEM",
+        f"{prefix}ssl.keystore.certificate.chain": "<certificate-chain-here>",
+        f"{prefix}ssl.keystore.key": "<private-key_string>",
+        f"{prefix}ssl.key.password": "<private_key_password>",
+        f"{prefix}ssl.truststore.type": "PEM",
+        f"{prefix}ssl.truststore.certificates": "<trusted-certificates>",
+    }
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
         cluster="cluster",
-        protocol=Kafka.SSLProtocol.parse_raw(json_input),
+        protocol=Kafka.SSLProtocol.parse(params),
     )
 
     options = kafka.protocol.get_options(kafka)
-
-    # Convert the SecretStr to plain strings for comparison
-    options["ssl.keystore.key"] = options["ssl.keystore.key"].get_secret_value()
-    options["ssl.key.password"] = options["ssl.key.password"].get_secret_value()
 
     assert options == {
         "ssl.keystore.type": "PEM",
@@ -698,7 +691,6 @@ def test_kafka_ssl_protocol_with_file_paths(
     )
 
     options = kafka.protocol.get_options(kafka)
-    options["ssl.key.password"] = options["ssl.key.password"].get_secret_value()
 
     assert options == {
         "ssl.keystore.type": keystore_type,
@@ -711,8 +703,8 @@ def test_kafka_ssl_protocol_with_file_paths(
 
 
 def test_kafka_ssl_protocol_pem_certificates_as_file_paths_error(spark_mock):
-    error_msg = "The path /not/existing/path does not exist (type=value_error)"
-    with pytest.raises(ValueError, match=re.escape(error_msg)):
+    error_msg = "File '/not/existing/path' does not exist"
+    with pytest.raises(FileNotFoundError, match=re.escape(error_msg)):
         Kafka(
             spark=spark_mock,
             addresses=["some_address"],
@@ -728,8 +720,7 @@ def test_kafka_ssl_protocol_pem_certificates_as_file_paths_error(spark_mock):
 
 
 def test_kafka_ssl_protocol_with_extra_fields(spark_mock):
-    json_input = """
-    {
+    params = {
         "ssl.keystore.type": "PEM",
         "ssl.keystore.certificate.chain": "<certificate-chain-here>",
         "ssl.keystore.key": "<private-key_string>",
@@ -737,14 +728,13 @@ def test_kafka_ssl_protocol_with_extra_fields(spark_mock):
         "ssl.truststore.type": "PEM",
         "ssl.truststore.certificates": "<trusted-certificates>",
         "ssl.enabled.protocols": "TLSv1.2",
-        "kafka.ssl.endpoint.identification.algorithm": "HTTPS"
+        "kafka.ssl.endpoint.identification.algorithm": "HTTPS",
     }
-    """
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
         cluster="cluster",
-        protocol=Kafka.SSLProtocol.parse_raw(json_input),
+        protocol=Kafka.SSLProtocol.parse(params),
     )
     options = kafka.protocol.get_options(kafka)
 
