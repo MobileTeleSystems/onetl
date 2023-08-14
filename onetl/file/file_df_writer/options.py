@@ -72,7 +72,6 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     """
 
     class Config:
-        prohibited_options = {"mode"}
         extra = "allow"
 
     if_exists: FileDFExistBehavior = FileDFExistBehavior.ERROR
@@ -252,6 +251,12 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
         with context:
             yield writer.mode(mode)
+
+    @root_validator(pre=True)
+    def _mode_is_restricted(cls, values):
+        if "mode" in values:
+            raise ValueError("Parameter `mode` is not allowed. Please use `if_exists` parameter instead.")
+        return values
 
     @root_validator
     def _partition_overwrite_mode_is_not_allowed(cls, values):

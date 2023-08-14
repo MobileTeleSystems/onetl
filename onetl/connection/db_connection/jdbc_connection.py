@@ -71,7 +71,6 @@ READ_WRITE_OPTIONS = frozenset(
 WRITE_OPTIONS = frozenset(
     (
         "column",  # in some part of Spark source code option 'partitionColumn' is called just 'column'
-        "mode",
         "batchsize",
         "isolationLevel",
         "isolation_level",

@@ -73,7 +73,6 @@ EXTRA_OPTIONS = frozenset(
 
 WRITE_OPTIONS = frozenset(
     (
-        "mode",
         "truncate",
         "distributedBy",
         "distributed_by",

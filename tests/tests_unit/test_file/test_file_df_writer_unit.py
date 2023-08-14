@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from onetl.file import FileDFWriter
@@ -18,7 +20,8 @@ def test_file_df_writer_options(option, value):
 
 
 def test_file_df_writer_options_mode_prohibited():
-    with pytest.raises(ValueError):
+    msg = re.escape("Parameter `mode` is not allowed. Please use `if_exists` parameter instead.")
+    with pytest.raises(ValueError, match=msg):
         FileDFWriter.Options(mode="error")
 
 
