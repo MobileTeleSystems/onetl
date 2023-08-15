@@ -28,15 +28,14 @@ if TYPE_CHECKING:
 
 class KafkaScramAuth(KafkaAuth, GenericOptions):
     """
-    A class designed to generate a Kafka connection configuration using K8S.
+    Connect to Kafka using ``sasl.mechanism="SCRAM-SHA-*"``.
 
-    For more details see:
-    * https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig
+    For more details see `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig>`_.
 
     Examples
     --------
 
-    SASL auth in Kafka with ``SCRAM-SHA-256`` mechanism:
+    Auth in Kafka with ``SCRAM-SHA-256`` mechanism:
 
     .. code:: python
 
@@ -48,7 +47,7 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
             digest="SHA-256",
         )
 
-    SASL auth in Kafka with ``SCRAM-SHA-512`` mechanism and passing some custom SASL options to Kafka config:
+    Auth in Kafka with ``SCRAM-SHA-512`` mechanism and some custom SASL options passed to Kafka client config:
 
     .. code:: python
 
@@ -59,6 +58,7 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
                 "user": "me",
                 "password": "abc",
                 "digest": "SHA-512",
+                # options with sasl.login. prefix are passed to Kafka client config
                 "sasl.login.class": "com.example.CustomScramLogin",
             }
         )

@@ -1,0 +1,15 @@
+Added support for reading and writing data to Kafka topics.
+
+For these operations, new classes were added.
+
+* ``Kafka`` (:github:pull:`54`, :github:pull:`60`, :github:pull:`72`, :github:pull:`84`, :github:pull:`87`, :github:pull:`89`, :github:pull:`93`, :github:pull:`96`, :github:pull:`102`, :github:pull:`104`)
+* ``Kafka.PlaintextProtocol`` (:github:pull:`79`)
+* ``Kafka.SSLProtocol`` (:github:pull:`118`)
+* ``Kafka.BasicAuth`` (:github:pull:`63`, :github:pull:`77`)
+* ``Kafka.KerberosAuth`` (:github:pull:`63`, :github:pull:`77`, :github:pull:`110`)
+* ``Kafka.ScramAuth`` (:github:pull:`115`)
+* ``Kafka.Slots`` (:github:pull:`109`)
+* ``Kafka.ReadOptions`` (:github:pull:`68`)
+* ``Kafka.WriteOptions`` (:github:pull:`68`)
+
+Currently, Kafka does not support incremental read strategies, this will be implemented in future releases.

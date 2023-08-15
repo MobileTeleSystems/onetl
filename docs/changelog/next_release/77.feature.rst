@@ -1,1 +1,0 @@
-Moved generation of authentication configs into separate classes.

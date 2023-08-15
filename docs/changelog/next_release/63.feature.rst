@@ -1,1 +1,0 @@
-Generate config for authorization in Kafka.

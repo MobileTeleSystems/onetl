@@ -197,6 +197,10 @@ class SparkHDFS(SparkFileDFConnection):
         """
         Close all connections created to HDFS. |support_hooks|
 
+        .. note::
+
+            Connection can be used again after it was closed.
+
         Returns
         -------
         Connection itself

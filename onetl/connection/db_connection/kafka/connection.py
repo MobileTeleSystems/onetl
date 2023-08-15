@@ -61,7 +61,7 @@ class Kafka(DBConnection):
     """
     This connector is designed to read and write from Kafka in batch mode.
 
-    Based on `official Kafka 0.10+ Source For Spark
+    Based on `official Kafka Source For Spark
     <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
     .. note::
@@ -77,41 +77,50 @@ class Kafka(DBConnection):
     ----------
 
     addresses : list[str]
-        A list of broker addresses, for example ``[192.168.1.10:9092, 192.168.1.11:9092]``.
-        The list cannot be empty.
+        A list of broker addresses, for example ``["192.168.1.10:9092", "192.168.1.11:9092"]``.
 
-    cluster : Cluster
-        Cluster name. Used for HWM and lineage. A cluster field cannot be empty.
+    cluster : str
+        Cluster name. Used for HWM and lineage.
 
     auth : KafkaAuth, default: ``None``
-        An attribute that contains a class that generates a Kafka connection configuration.
-        It depends on the type of connection to Kafka.
+        Kafka authentication mechanism. ``None`` means anonymous auth.
 
-    protocol : KafkaProtocol, default: ``PlaintextProtocol``
-        Class containing connection parameters. If the protocol parameter is not specified, then the parameter will be
-        passed ``PLAINTEXT``, otherwise the ``SASL_PLAINTEXT`` parameter will be passed to the
-        ``kafka.security.protocol`` option
-    extra: dict, default: ``None``
-        A dictionary of additional properties to be used when connecting to Kafka. These are typically
-        Kafka-specific properties that control behavior of the producer or consumer.
+    protocol : KafkaProtocol, default: :obj:`PlaintextProtocol <onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol>`
+        Kafka security protocol.
 
-        For example: {"group.id": "myGroup"}
+    extra : dict, default: ``None``
+        A dictionary of additional properties to be used when connecting to Kafka.
 
-        Be aware of options that populated from connection
-        attributes (like "bootstrap.servers") are not allowed to override.
+        These are Kafka-specific properties that control behavior of the producer or consumer. See:
 
-        See Connection `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_,
-        `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
-        for more details.
+        * `producer options documentation <https://kafka.apache.org/documentation/#producerconfigs>`_
+        * `consumer options documentation <https://kafka.apache.org/documentation/#consumerconfigs>`_
+        * `Spark Kafka documentation <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html#kafka-specific-configurations>`_
 
-    .. warning::
+        Options are passed without ``kafka.`` prefix, for example:
 
-        At current version Kafka connection doesn't support batch strategies.
+        For example:
+
+        .. code:: python
+
+            extra = {
+                "group.id": "myGroup",
+                "request.timeout.ms": 120000,
+            }
+
+        .. warning::
+
+            Options that populated from connection
+            attributes (like ``bootstrap.servers``, ``sasl.*``, ``ssl.*``) are not allowed to override.
+
+        .. note::
+
+            At current version Kafka connection doesn't support batch strategies.
 
     Examples
     --------
 
-    Connect to Kafka as anonymous user (default):
+    Connect to Kafka using ``PLAINTEXT`` protocol and without any auth mechanism (anonymous user, default):
 
     .. code:: python
 
@@ -129,11 +138,11 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster=["my-cluster"],
+            cluster="my-cluster",
             spark=spark,
         )
 
-    Connect to Kafka using basic (plain) auth:
+    Connect to Kafka using ``PLAINTEXT`` protocol and basic (``PLAIN``) auth mechanism:
 
     .. code:: python
 
@@ -143,15 +152,15 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster=["my-cluster"],
-            auth=Kafka.SimpleAuth(
+            cluster="my-cluster",
+            auth=Kafka.BasicAuth(
                 user="me",
                 password="password",
             ),
             spark=spark,
         )
 
-    Connect to Kafka using Kerberos auth:
+    Connect to Kafka using ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth mechanism:
 
     .. code:: python
 
@@ -161,35 +170,43 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster=["my-cluster"],
+            cluster="my-cluster",
             auth=Kafka.KerberosAuth(
                 principal="me@example.com",
                 keytab="/path/to/keytab",
+                deploy_keytab=True,
             ),
             spark=spark,
         )
 
-    Connect to Kafka using ``PLAINTEXT`` protocol:
+    Connect to Kafka using ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth mechanism:
 
     .. code:: python
 
+        from pathlib import Path
+
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
         kafka = Kafka(
-            protocol=Kafka.PlaintextProtocol(),
-        )
-
-    Connect to Kafka using ``SSL`` protocol:
-
-    .. code:: python
-
-        kafka = Kafka(
-            protocol=Kafka.SSLProtocol(
-                keystore_type="PEM",
-                keystore_certificate_chain="-----BEGIN CERTIFICATE-----MIIDZjC...-----END CERTIFICATE-----",
-                keystore_key="-----BEGIN ENCRYPTED PRIVATE KEY-----MIIDZjC..-----END ENCRYPTED PRIVATE KEY-----",
-                key_password="password",
-                truststore_type="PEM",
-                truststore_certificates="-----BEGIN CERTIFICATE-----MICC...-----END CERTIFICATE-----",
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster="my-cluster",
+            protocol=(
+                Kafka.SSLProtocol(
+                    keystore_type="PEM",
+                    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                    keystore_key=Path("path/to/user.key").read_text(),
+                    truststore_type="PEM",
+                    truststore_certificates=Path("/path/to/server.crt").read_text(),
+                ),
             ),
+            auth=Kafka.ScramAuth(
+                user="me",
+                password="abc",
+                digest="SHA-512",
+            ),
+            spark=spark,
         )
 
     Connect to Kafka with extra options:
@@ -202,7 +219,9 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster=["my-cluster"],
+            cluster="my-cluster",
+            protocol=...,
+            auth=...,
             extra={"max.request.size": 1000000},
             spark=spark,
         )
@@ -400,6 +419,10 @@ class Kafka(DBConnection):
     def close(self):
         """
         Close all connections created to Kafka. |support_hooks|
+
+        .. note::
+
+            Connection can be used again after it was closed.
 
         Returns
         -------

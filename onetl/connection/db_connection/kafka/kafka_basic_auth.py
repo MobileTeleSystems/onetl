@@ -26,15 +26,14 @@ if TYPE_CHECKING:
 
 class KafkaBasicAuth(KafkaAuth, GenericOptions):
     """
-    A class designed to generate a connection configuration using a login and password.
+    Connect to Kafka using ``sasl.mechanism="PLAIN"``.
 
-    For more details see:
-    * https://kafka.apache.org/documentation/#security_sasl_plain
+    For more details see `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_plain>`_.
 
     Examples
     --------
 
-    Auth in Kafka with user and password (``PLAIN`` mechanism):
+    Auth in Kafka with user and password:
 
     .. code:: python
 
