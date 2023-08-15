@@ -59,16 +59,17 @@ PROHIBITED_OPTIONS = frozenset(
 
 class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     """
-    A class designed to generate a Kafka connection configuration using K8S.
+    Connect to Kafka using ``sasl.mechanism="GSSAPI"``.
 
     For more details see:
-    * https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig
-    * https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html
+
+    * `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig>`_
+    * `Krb5LoginModule documentation <https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html>`_
 
     Examples
     --------
 
-    Auth in Kafka with keytab, deploy keytab files to all Spark executors:
+    Auth in Kafka with keytab, automatically deploy keytab files to all Spark hosts (driver and executors):
 
     .. code:: python
 
@@ -80,7 +81,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
             deploy_keytab=True,
         )
 
-    Auth in Kafka with keytab, do not deploy keytab (it should be present on all executors):
+    Auth in Kafka with keytab, keytab is **already deployed** on all Spark hosts (driver and executors):
 
     .. code:: python
 
@@ -92,7 +93,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
             deploy_keytab=False,
         )
 
-    Auth in Kafka with existing Kerberos ticket (only for ``spark.master: local``):
+    Auth in Kafka with existing Kerberos ticket (only Spark session created with ``master=local``):
 
     .. code:: python
 
@@ -117,7 +118,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
                 # options without sasl.kerberos. prefix are passed to JAAS config
                 # names are in camel case!
                 "isInitiator": True,
-                # options with sasl.kerberos. prefix are passed to Kafka config
+                # options with sasl.kerberos. prefix are passed to Kafka client config
                 "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
             }
         )

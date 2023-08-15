@@ -26,6 +26,7 @@ class KafkaSlots:
     def normalize_cluster_name(cluster: str) -> str | None:
         """
         Normalize the given Kafka cluster name.
+
         This can be used to ensure that the Kafka cluster name conforms to specific naming conventions.
 
         Parameters
@@ -40,7 +41,9 @@ class KafkaSlots:
 
         Examples
         --------
+
         .. code:: python
+
             from onetl.connection import Kafka
             from onetl.hooks import hook
 
@@ -56,6 +59,7 @@ class KafkaSlots:
     def get_known_clusters() -> set[str] | None:
         """
         Retrieve the collection of known Kafka clusters.
+
         This can be used to validate if the provided Kafka cluster name is recognized in the system.
 
         Returns
@@ -65,7 +69,9 @@ class KafkaSlots:
 
         Examples
         --------
+
         .. code:: python
+
             from onetl.connection import Kafka
             from onetl.hooks import hook
 
@@ -81,6 +87,7 @@ class KafkaSlots:
     def normalize_address(address: str, cluster: str) -> str | None:
         """
         Normalize the given broker address for a specific Kafka cluster.
+
         This can be used to format the broker address according to specific rules, such as adding default ports.
 
         Parameters
@@ -97,7 +104,9 @@ class KafkaSlots:
 
         Examples
         --------
+
         .. code:: python
+
             from onetl.connection import Kafka
             from onetl.hooks import hook
 
@@ -115,6 +124,7 @@ class KafkaSlots:
     def get_cluster_addresses(cluster: str) -> list[str] | None:
         """
         Retrieve a collection of known broker addresses for the specified Kafka cluster.
+
         This can be used to obtain the broker addresses dynamically.
 
         Parameters
@@ -129,7 +139,9 @@ class KafkaSlots:
 
         Examples
         --------
+
         .. code:: python
+
             from onetl.connection import Kafka
             from onetl.hooks import hook
 

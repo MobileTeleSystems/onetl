@@ -29,70 +29,102 @@ from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 
 class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
     """
-    Class encapsulates all the necessary configurations and interactions for managing
-    SSL protocols within a Kafka system. It serves as a handler for different keystore types and truststore configurations,
-    allowing the connection to Kafka brokers through SSL.
+    Connect to Kafka using ``SSL`` or ``SASL_SSL`` security protocols.
 
-    See:
+    For more details see:
+
+    * `Kafka Documentation <https://kafka.apache.org/documentation/#producerconfigs_ssl.keystore.location>`_
     * `IBM Documentation <https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/19.0.x?topic=fcee-kafka-using-ssl-kerberos-authentication>`_
-    * `Kafka Documentation <https://kafka.apache.org/090/documentation.html>`_
     * `How to use PEM Certificates with Kafka <https://codingharbour.com/apache-kafka/using-pem-certificates-with-apache-kafka/>`_
 
     Examples
     --------
 
-    PEM certificates as raw strings:
+    Pass PEM key and certificates as files located on Spark driver host:
 
     .. code:: python
 
-        ssl = (
+        from pathlib import Path
+
+        # Just read existing files located on host, and pass key and certificates as strings
+        protocol = (
             Kafka.SSLProtocol(
                 keystore_type="PEM",
-                keystore_certificate_chain="-----BEGIN CERTIFICATE-----MIIDZjC...-----END CERTIFICATE-----",
-                keystore_key="-----BEGIN ENCRYPTED PRIVATE KEY-----MIIDZjC..-----END ENCRYPTED PRIVATE KEY-----",
-                key_password="password",
+                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                keystore_key=Path("path/to/user.key").read_text(),
                 truststore_type="PEM",
-                truststore_certificates="-----BEGIN CERTIFICATE-----MICC...-----END CERTIFICATE-----",
+                truststore_certificates=Path("/path/to/server.crt").read_text(),
             ),
         )
 
-    PEM certificates as file paths:
+    Pass PEM key and certificates as raw strings:
 
     .. code:: python
 
-        ssl = Kafka.SSLProtocol(
-            keystore_type="PEM",
-            keystore_location="/path/to/file/containing/certificate/chain.pem",
-            key_password="password",
-            truststore_type="PEM",
-            truststore_location="/path/to/truststore/certificate.pem",
+        protocol = (
+            Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_certificate_chain="-----BEGIN CERTIFICATE-----\\nMIIDZjC...\\n-----END CERTIFICATE-----",
+                keystore_key="-----BEGIN PRIVATE KEY-----\\nMIIEvg..\\n-----END PRIVATE KEY-----",
+                truststore_type="PEM",
+                truststore_certificates="-----BEGIN CERTIFICATE-----\\nMICC...\\n-----END CERTIFICATE-----",
+            ),
         )
 
-    JKS store path:
+    Pass custom options:
 
     .. code:: python
 
-        ssl = Kafka.SSLProtocol(
-            keystore_type="JKS",
-            keystore_location="/opt/keystore.jks",
-            keystore_password="password",
-            truststore_type="JKS",
-            truststore_location="/opt/truststore.jks",
-            truststore_password="password",
-        )
-
-    Custom options:
-
-    .. code:: python
-
-        ssl = Kafka.SSLProtocol.parse(
+        protocol = Kafka.SSLProtocol.parse(
             {
-                "ssl.keystore.type": "JKS",
-                "ssl.keystore.location": "/opt/keystore.jks",
-                "ssl.keystore.password": "password",
+                # Just the same options as above, but using Kafka config naming
+                "ssl.keystore.type": "PEM",
+                "ssl.keystore.certificate_chain": "-----BEGIN CERTIFICATE-----\\nMIIDZjC...\\n-----END CERTIFICATE-----",
+                "ssl.keystore.key": "-----BEGIN PRIVATE KEY-----\\nMIIEvg..\\n-----END PRIVATE KEY-----",
+                "ssl.truststore.type": "PEM",
+                "ssl.truststore.certificates": "-----BEGIN CERTIFICATE-----\\nMICC...\\n-----END CERTIFICATE-----",
+                # Any option starting from "ssl." is passed to Kafka client as-is
                 "ssl.protocol": "TLSv1.3",
             }
         )
+
+    .. dropdown :: Not recommended
+
+        Pass PEM certificates as files:
+
+        * ENCRYPT ``user.key`` file with password ``"some password"`` `using PKCS#8 scheme <https://www.mkssoftware.com/docs/man1/openssl_pkcs8.1.asp>`_.
+        * Save encrypted key to file ``/path/to/user/encrypted_key_with_certificate_chain.pem``.
+        * Then append user certificate to the end of this file.
+        * Deploy this file (and server certificate too) to **EVERY** host Spark could run (both driver and executors).
+        * Then pass file locations and password for key decryption to options below.
+
+        .. code:: python
+
+            protocol = Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_location="/path/to/user/encrypted_key_with_certificate_chain.pem",
+                key_password="some password",
+                truststore_type="PEM",
+                truststore_location="/path/to/server.crt",
+            )
+
+        Pass JKS (Java Key Store) location:
+
+        * `Add user key and certificate to JKS keystore <https://stackoverflow.com/a/4326346>`_.
+        * `Add server certificate to JKS truststore <https://stackoverflow.com/a/373307>`_.
+        * This should be done on **EVERY** host Spark could run (both driver and executors).
+        * Pass keystore and truststore paths to options below, as well as passwords for accessing these stores:
+
+        .. code:: python
+
+            protocol = Kafka.SSLProtocol(
+                keystore_type="JKS",
+                keystore_location="/usr/lib/jvm/default/lib/security/keystore.jks",
+                keystore_password="changeit",
+                truststore_type="JKS",
+                truststore_location="/usr/lib/jvm/default/lib/security/truststore.jks",
+                truststore_password="changeit",
+            )
     """
 
     keystore_type: str = Field(alias="ssl.keystore.type")

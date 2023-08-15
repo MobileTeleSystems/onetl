@@ -80,6 +80,10 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """
         Close all connections, opened by other methods call. |support_hooks|
 
+        .. note::
+
+            Connection can be used again after it was closed.
+
         Returns
         -------
         Connection itself

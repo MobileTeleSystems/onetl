@@ -115,6 +115,10 @@ class JDBCMixin(FrozenModel):
         """
         Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods. |support_hooks|
 
+        .. note::
+
+            Connection can be used again after it was closed.
+
         Returns
         -------
         Connection itself

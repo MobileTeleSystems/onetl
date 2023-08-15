@@ -21,16 +21,37 @@ if TYPE_CHECKING:
 
 
 class KafkaProtocol(ABC):
+    """
+    Interface for Kafka connection Protocol classes.
+    """
+
     @abstractmethod
     def get_options(self, kafka: Kafka) -> dict:
         """
         Get options for Kafka connection
+
+        Parameters
+        ----------
+        kafka : :obj:`Kafka <onetl.connection.db_connection.kafka.connection.Kafka>`
+            Connection instance
+
+        Returns
+        -------
+        dict:
+            Kafka client options
         """
         ...
 
     @abstractmethod
     def cleanup(self, kafka: Kafka) -> None:
         """
-        This method is called while closing Kafka connection
+        This method is called while closing Kafka connection.
+
+        Implement it to cleanup resources like temporary files.
+
+        Parameters
+        ----------
+        kafka : :obj:`Kafka <onetl.connection.db_connection.kafka.connection.Kafka>`
+            Connection instance
         """
         ...

@@ -251,6 +251,10 @@ class SparkS3(SparkFileDFConnection):
 
         Also resets all ``fs.s3a.bucket.$BUCKET.*`` properties of Hadoop configuration.
 
+        .. note::
+
+            Connection can be used again after it was closed.
+
         Returns
         -------
         Connection itself
