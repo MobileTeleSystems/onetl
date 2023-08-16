@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from etl_entities import ProcessStackManager
+from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from pathlib import PurePath
@@ -82,40 +83,53 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     return result
 
 
-def stringify(inp: dict) -> dict[str, Any]:
+def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
     """
-    Convert all dict keys and values (recursively) to strings.
+    Convert values to strings.
 
-    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``
+    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``.
+
+    If input is dict, return dict with stringified values and keys (recursive).
+
+    If input is list, return list with stringified values (recursive).
+
+    If ``quote=True``, wrap string values with double quotes.
 
     Examples
     --------
 
-    .. code:: python
-
-        inp = {"abc": 1, "cde": True, "def": "string"}
-        out = {"abc": "1", "cde": "true", "def": "string"}
-
-        assert stringify(inp) == out
+    >>> assert stringify(1) == "1"
+    >>> assert stringify(True) == "true"
+    >>> assert stringify(False) == "false"
+    >>> assert stringify(None) == "null"
+    >>> assert stringify("string") == "string"
+    >>> assert stringify("string", quote=True) == '"string"'
+    >>> assert stringify({"abc": 1}) == {"abc": "1"}
+    >>> assert stringify([1, True, False, None, "string"]) == ["1", "true", "false", "null", "string"]
     """
 
-    result: dict[str, Any] = {}
+    if isinstance(value, dict):
+        return {stringify(k): stringify(v, quote) for k, v in value.items()}
 
-    for key, value in inp.items():
-        if isinstance(value, dict):
-            result[str(key)] = stringify(value)
-        else:
-            str_val = str(value)
-            value_lower = str_val.lower()
-            result[str(key)] = str_val
+    if isinstance(value, list):
+        return [stringify(v, quote) for v in value]
 
-            if value_lower in {"true", "false"}:
-                result[str(key)] = value_lower
+    if value is None:
+        return "null"
 
-            if value is None:
-                result[str(key)] = "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
 
-    return result
+    if isinstance(value, SecretStr):
+        value = value.get_secret_value()
+
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
+
+    if isinstance(value, str):
+        return f'"{value}"' if quote else value
+
+    return str(value)
 
 
 def to_camel(string: str) -> str:

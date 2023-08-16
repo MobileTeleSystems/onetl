@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from logging import getLogger
 from typing import TYPE_CHECKING
 
 import pandas
@@ -12,8 +11,7 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
     from pyspark.sql.types import StructType
 
-
-logger = getLogger(__name__)
+DEFAULT_TIMEOUT = 10.0
 
 
 class KafkaProcessing(BaseProcessing):
@@ -74,25 +72,26 @@ class KafkaProcessing(BaseProcessing):
 
     @staticmethod
     def delivery_report(err, msg):
-        """Called once for each message produced to indicate delivery result.
-        Triggered by poll() or flush()."""
-        if err is not None:
-            logger.debug("Message delivery failed: %s", err)
-        else:
-            pass
+        from confluent_kafka import KafkaException
 
-    def send_message(self, topic, message):
+        if err is not None:
+            raise KafkaException(f"Message {msg} delivery failed: {err}")
+
+    def send_message(self, topic, message, timeout: float = DEFAULT_TIMEOUT):
+        from confluent_kafka import KafkaException
+
         producer = self.get_producer()
         producer.produce(topic, message, callback=self.delivery_report)
-        producer.flush()
+        messages_left = producer.flush(timeout)
+        if messages_left:
+            raise KafkaException(f"{messages_left} messages were not delivered")
 
-    def get_expected_df(self, topic: str, num_messages: int = 1, timeout: float = 1.0) -> pandas.DataFrame:
+    def get_expected_df(self, topic: str, num_messages: int = 1, timeout: float = DEFAULT_TIMEOUT) -> pandas.DataFrame:
         from confluent_kafka import KafkaException
 
         consumer = self.get_consumer()
-
+        consumer.list_topics(timeout=timeout)  # if Kafka is not accessible, raise exception
         consumer.subscribe([topic])
-
         messages = consumer.consume(num_messages=num_messages, timeout=timeout)
 
         result = []
@@ -112,19 +111,19 @@ class KafkaProcessing(BaseProcessing):
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
 
-    def delete_topic(self, topics: list[str]):
+    def delete_topic(self, topics: list[str], timeout: float = DEFAULT_TIMEOUT):
         admin = self.get_admin_client()
         # https://github.com/confluentinc/confluent-kafka-python/issues/813
-        admin.delete_topics(topics, request_timeout=5)
+        admin.delete_topics(topics, request_timeout=timeout)
 
-    def topic_exists(self, topic: str) -> bool:
+    def topic_exists(self, topic: str, timeout: float = DEFAULT_TIMEOUT) -> bool:
         admin = self.get_admin_client()
-        topic_metadata = admin.list_topics(timeout=5)
+        topic_metadata = admin.list_topics(timeout=timeout)
         return topic in topic_metadata.topics
 
-    def get_num_partitions(self, topic: str) -> int:
+    def get_num_partitions(self, topic: str, timeout: float = DEFAULT_TIMEOUT) -> int:
         admin = self.get_admin_client()
-        metadata = admin.list_topics(topic, timeout=5)
+        metadata = admin.list_topics(topic, timeout=timeout)
         topic_metadata = metadata.topics[topic]
 
         # Return the number of partitions

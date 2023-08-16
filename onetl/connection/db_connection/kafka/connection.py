@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from etl_entities.instance import Cluster
 from pydantic import root_validator, validator
 
+from onetl._internal import stringify
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_spark_version
@@ -228,7 +229,7 @@ class Kafka(DBConnection):
     @slot
     def check(self):
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
-        self._log_parameters()  # type: ignore
+        self._log_parameters()
 
         try:
             self._get_topics()
@@ -239,7 +240,7 @@ class Kafka(DBConnection):
         return self
 
     @slot
-    def read_source_as_df(  # type: ignore
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
@@ -250,10 +251,13 @@ class Kafka(DBConnection):
         end_at: Statement | None = None,
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
+        log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
-        return self.spark.read.format("kafka").options(**result_options).load()
+        df = self.spark.read.format("kafka").options(**result_options).load()
+        log.info("|%s| Dataframe is successfully created", self.__class__.__name__)
+        return df
 
     @slot
     def write_df_to_target(
@@ -503,10 +507,11 @@ class Kafka(DBConnection):
         result = {"bootstrap.servers": ",".join(self.addresses)}
         result.update(self.extra.dict(by_alias=True, exclude_none=True))
         result.update(self.protocol.get_options(self))
-
         if self.auth:
             result.update(self.auth.get_options(self))
-        return result
+
+        result["client.id"] = self.spark.sparkContext.appName  # type: ignore[assignment]
+        return stringify(result)
 
     def _get_java_consumer(self):
         connection_properties = self._get_connection_properties()
@@ -522,8 +527,11 @@ class Kafka(DBConnection):
         consumer_class = jvm.org.apache.kafka.clients.consumer.KafkaConsumer
         return consumer_class(connection_properties)
 
-    def _get_topics(self, timeout: int = 1) -> set[str]:
+    def _get_topics(self, timeout: int = 10) -> set[str]:
         jvm = self.spark._jvm
+        # Maybe we should not pass explicit timeout at all,
+        # and instead use default.api.timeout.ms which is configurable via self.extra.
+        # Think about this next time if someone see issues in real use
         duration = jvm.java.time.Duration.ofSeconds(timeout)  # type: ignore[union-attr]
         consumer = self._get_java_consumer()
         with closing(consumer):

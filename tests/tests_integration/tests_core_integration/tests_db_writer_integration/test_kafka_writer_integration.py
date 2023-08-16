@@ -82,7 +82,7 @@ def test_kafka_writer_snapshot(spark, kafka_processing, kafka_spark_df):
     )
     writer.run(df)
 
-    pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=5)
+    pd_df = processing.get_expected_df(topic, num_messages=df.count())
 
     read_df = (
         df.withColumn("key", lit(None))
@@ -176,7 +176,7 @@ def test_kafka_writer_key_column(spark, kafka_processing, kafka_spark_df):
     )
     writer.run(df)
 
-    pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=5)
+    pd_df = processing.get_expected_df(topic, num_messages=df.count())
     assert len(pd_df) == df.count()
     processing.assert_equal_df(df, other_frame=pd_df.drop(columns=["partition", "headers", "topic"], axis=1))
 
@@ -225,7 +225,7 @@ def test_kafka_writer_partition_column(spark, kafka_processing, kafka_spark_df):
     )
     writer.run(df)
 
-    pd_df = processing.get_expected_df(topic, num_messages=df.count(), timeout=5)
+    pd_df = processing.get_expected_df(topic, num_messages=df.count())
 
     # Check that the 'partition' column is filled with the default partition value - 0
     assert processing.get_num_partitions(topic) == 1
@@ -253,7 +253,7 @@ def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
     df = kafka_spark_df.select("value", "headers")
     writer.run(df)
 
-    pd_df = processing.get_expected_df(topic, num_messages=kafka_spark_df.count(), timeout=5)
+    pd_df = processing.get_expected_df(topic, num_messages=kafka_spark_df.count())
 
     processing.assert_equal_df(
         df,
@@ -282,7 +282,7 @@ def test_kafka_writer_mode(spark, kafka_processing, kafka_spark_df):
     writer.run(df)
     writer.run(df)
 
-    pd_df = processing.get_expected_df(topic, num_messages=2 * kafka_spark_df.count(), timeout=5)
+    pd_df = processing.get_expected_df(topic, num_messages=2 * kafka_spark_df.count())
     read_df = df.withColumn("key", lit(None)).withColumn("topic", lit(topic)).withColumn("partition", lit(0))
 
     # Check that second dataframe record is appended to first dataframe in same topic

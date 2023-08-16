@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 from typing_extensions import Literal
 
+from onetl._internal import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 
@@ -82,16 +83,16 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
         )
 
     def get_options(self, kafka: Kafka) -> dict:
-        options = {
+        result = {
             key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
         }
-        options.update(
+        result.update(
             {
                 "sasl.mechanism": f"SCRAM-{self.digest}",
                 "sasl.jaas.config": self.get_jaas_conf(),
             },
         )
-        return options
+        return stringify(result)
 
     def cleanup(self, kafka: Kafka) -> None:
         # nothing to cleanup
