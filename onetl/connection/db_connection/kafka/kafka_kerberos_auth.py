@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field, PrivateAttr, root_validator, validator
 
+from onetl._internal import stringify
 from onetl._util.file import get_file_hash, is_file_readable
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
@@ -149,29 +150,22 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         if self.keytab:
             options["keyTab"] = self._prepare_keytab(kafka)
 
-        jaas_conf_items = []
-        for key, value in options.items():
-            if key.startswith("sasl."):
-                continue
-            if isinstance(value, bool):
-                jaas_conf_items.append(f"{key}={str(value).lower()}")
-            else:
-                jaas_conf_items.append(f'{key}="{value}"')
-
+        jaas_conf = stringify({key: value for key, value in options.items() if not key.startswith("sasl.")}, quote=True)
+        jaas_conf_items = [f"{key}={value}" for key, value in jaas_conf.items()]
         return "com.sun.security.auth.module.Krb5LoginModule required " + " ".join(jaas_conf_items) + ";"
 
     def get_options(self, kafka: Kafka) -> dict:
-        options = {
+        result = {
             key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
         }
-        options.update(
+        result.update(
             {
                 "sasl.mechanism": "GSSAPI",
                 "sasl.jaas.config": self.get_jaas_conf(kafka),
                 "sasl.kerberos.service.name": self.service_name,
             },
         )
-        return options
+        return stringify(result)
 
     def cleanup(self, kafka: Kafka) -> None:
         if self._keytab_path and self._keytab_path.exists():

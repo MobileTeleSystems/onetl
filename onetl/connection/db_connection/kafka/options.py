@@ -34,25 +34,26 @@ PROHIBITED_OPTIONS = frozenset(
     ),
 )
 
+KNOWN_READ_WRITE_OPTIONS = frozenset(
+    (
+        # not adding this to class itself because headers support was added to Spark only in 3.0
+        # https://issues.apache.org/jira/browse/SPARK-23539
+        "includeHeaders",
+    ),
+)
+
 KNOWN_READ_OPTIONS = frozenset(
     (
         "failOnDataLoss",
         "fetchOffset.numRetries",
         "fetchOffset.retryIntervalMs",
         "groupIdPrefix",
-        "includeHeaders",
         "kafkaConsumer.pollTimeoutMs",
         "maxOffsetsPerTrigger",
         "maxTriggerDelay",
         "minOffsetsPerTrigger",
         "minPartitions",
     ),
-)
-
-KNOWN_WRITE_OPTIONS = frozenset(
-    # not adding this to class itself because headers support was added to Spark only in 3.0
-    # https://issues.apache.org/jira/browse/SPARK-23539
-    ("includeHeaders",),
 )
 
 
@@ -99,14 +100,15 @@ class KafkaReadOptions(GenericOptions):
 
     .. code:: python
 
-        Kafka.ReadOptions(
+        options = Kafka.ReadOptions(
             minPartitions=50,
+            includeHeaders=True,
         )
     """
 
     class Config:
         prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
+        known_options = KNOWN_READ_OPTIONS | KNOWN_READ_WRITE_OPTIONS
         extra = "allow"
 
 
@@ -154,14 +156,16 @@ class KafkaWriteOptions(GenericOptions):
     if_exists: KafkaTopicExistBehaviorKafka = Field(default=KafkaTopicExistBehaviorKafka.APPEND)
     """Behavior of writing data into existing topic.
 
+    Same as ``df.write.mode(...)``.
+
     Possible values:
         * ``append`` (default) - Adds new objects into existing topic.
         * ``error`` - Raises an error if topic already exists.
     """
 
     class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_WRITE_OPTIONS
+        prohibited_options = PROHIBITED_OPTIONS | KNOWN_READ_OPTIONS
+        known_options = KNOWN_READ_WRITE_OPTIONS
         extra = "allow"
 
     @root_validator(pre=True)

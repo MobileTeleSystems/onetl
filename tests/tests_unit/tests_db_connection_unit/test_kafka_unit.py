@@ -400,7 +400,7 @@ def test_kafka_scram_auth_get_jaas_conf_custom_properties(spark_mock, digest):
                 "password": "password",
                 "digest": digest,
                 "sasl.login.class": "com.example.CustomScramLogin",
-                "kafka.sasl.login.callback.handler.class": "com.example.CustomCallbackHandler",
+                "kafka.sasl.login.some.option": 1,
             },
         ),
     )
@@ -414,7 +414,7 @@ def test_kafka_scram_auth_get_jaas_conf_custom_properties(spark_mock, digest):
             'password="password";'
         ),
         "sasl.login.class": "com.example.CustomScramLogin",
-        "sasl.login.callback.handler.class": "com.example.CustomCallbackHandler",
+        "sasl.login.some.option": "1",
     }
 
 
@@ -560,7 +560,7 @@ def test_kafka_kerberos_auth_custom_kafka_conf_options(spark_mock, create_keytab
                 "keytab": create_keytab,
                 "deploy_keytab": False,
                 "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
-                "kafka.sasl.kerberos.min.time.before.relogin": "60000",
+                "kafka.sasl.kerberos.min.time.before.relogin": 60000,
             },
         ),
     )
@@ -725,7 +725,6 @@ def test_kafka_ssl_protocol_with_raw_strings(spark_mock, prefix):
         f"{prefix}ssl.keystore.type": "PEM",
         f"{prefix}ssl.keystore.certificate.chain": "<certificate-chain-here>",
         f"{prefix}ssl.keystore.key": "<private-key_string>",
-        f"{prefix}ssl.key.password": "<private_key_password>",
         f"{prefix}ssl.truststore.type": "PEM",
         f"{prefix}ssl.truststore.certificates": "<trusted-certificates>",
     }
@@ -742,7 +741,6 @@ def test_kafka_ssl_protocol_with_raw_strings(spark_mock, prefix):
         "ssl.keystore.type": "PEM",
         "ssl.keystore.certificate.chain": "<certificate-chain-here>",
         "ssl.keystore.key": "<private-key_string>",
-        "ssl.key.password": "<private_key_password>",
         "ssl.truststore.type": "PEM",
         "ssl.truststore.certificates": "<trusted-certificates>",
         "security.protocol": "SSL",
@@ -782,10 +780,10 @@ def test_kafka_ssl_protocol_with_file_paths(
 
     assert options == {
         "ssl.keystore.type": keystore_type,
-        "ssl.keystore.location": keystore_location,
+        "ssl.keystore.location": os.fspath(keystore_location),
         "ssl.key.password": "<private_key_password>",
         "ssl.truststore.type": truststore_type,
-        "ssl.truststore.location": truststore_location,
+        "ssl.truststore.location": os.fspath(truststore_location),
         "security.protocol": "SSL",
     }
 
@@ -808,47 +806,60 @@ def test_kafka_ssl_protocol_pem_certificates_as_file_paths_error(spark_mock):
 
 
 def test_kafka_ssl_protocol_with_extra_fields(spark_mock):
-    params = {
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        protocol=Kafka.SSLProtocol.parse(
+            {
+                "ssl.keystore.type": "PEM",
+                "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+                "ssl.keystore.key": "<private-key_string>",
+                "ssl.truststore.type": "PEM",
+                "ssl.truststore.certificates": "<trusted-certificates>",
+                "ssl.enabled.protocols": "TLSv1.2",
+                "kafka.ssl.endpoint.some.value": True,
+            },
+        ),
+    )
+
+    assert kafka.protocol.get_options(kafka) == {
         "ssl.keystore.type": "PEM",
         "ssl.keystore.certificate.chain": "<certificate-chain-here>",
         "ssl.keystore.key": "<private-key_string>",
-        "ssl.key.password": "<private_key_password>",
         "ssl.truststore.type": "PEM",
         "ssl.truststore.certificates": "<trusted-certificates>",
         "ssl.enabled.protocols": "TLSv1.2",
-        "kafka.ssl.endpoint.identification.algorithm": "HTTPS",
+        "ssl.endpoint.some.value": "true",
+        "security.protocol": "SSL",
     }
-    kafka = Kafka(
-        spark=spark_mock,
-        addresses=["some_address"],
-        cluster="cluster",
-        protocol=Kafka.SSLProtocol.parse(params),
-    )
-    options = kafka.protocol.get_options(kafka)
-
-    assert options["ssl.enabled.protocols"] == "TLSv1.2"
-    assert options["ssl.endpoint.identification.algorithm"] == "HTTPS"
 
 
 def test_kafka_ssl_protocol_with_basic_auth(spark_mock):
-    params = {
-        "ssl.keystore.type": "PEM",
-        "ssl.keystore.certificate.chain": "<certificate-chain-here>",
-        "ssl.keystore.key": "<private-key_string>",
-        "ssl.key.password": "<private_key_password>",
-        "ssl.truststore.type": "PEM",
-        "ssl.truststore.certificates": "<trusted-certificates>",
-    }
-
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
         cluster="cluster",
-        protocol=Kafka.SSLProtocol.parse(params),
+        protocol=Kafka.SSLProtocol.parse(
+            {
+                "ssl.keystore.type": "PEM",
+                "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+                "ssl.keystore.key": "<private-key_string>",
+                "ssl.truststore.type": "PEM",
+                "ssl.truststore.certificates": "<trusted-certificates>",
+            },
+        ),
         auth=Kafka.BasicAuth(
             user="user",
             password="abc",
         ),
     )
     with kafka:
-        assert kafka.protocol.get_options(kafka)["security.protocol"] == "SASL_SSL"
+        assert kafka.protocol.get_options(kafka) == {
+            "ssl.keystore.type": "PEM",
+            "ssl.keystore.certificate.chain": "<certificate-chain-here>",
+            "ssl.keystore.key": "<private-key_string>",
+            "ssl.truststore.type": "PEM",
+            "ssl.truststore.certificates": "<trusted-certificates>",
+            "security.protocol": "SASL_SSL",
+        }

@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field, SecretStr, validator
 
+from onetl._internal import stringify
 from onetl._util.file import is_file_readable
 from onetl.impl import GenericOptions, LocalPath
 
@@ -114,16 +115,11 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
 
     def get_options(self, kafka: Kafka) -> dict:
         result = self.dict(by_alias=True, exclude_none=True)
-
-        for key, value in result.items():
-            if isinstance(value, SecretStr):
-                result[key] = value.get_secret_value()
-
         if kafka.auth:
             result["security.protocol"] = "SASL_SSL"
         else:
             result["security.protocol"] = "SSL"
-        return result
+        return stringify(result)
 
     def cleanup(self, kafka: Kafka) -> None:
         # nothing to cleanup
