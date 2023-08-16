@@ -25,6 +25,8 @@ from typing_extensions import Literal
 from onetl._internal import stringify
 from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
 from onetl._util.java import try_import_java_class
+from onetl._util.scala import get_default_scala_version
+from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.base import (
     BaseReadableFileFormat,
@@ -54,12 +56,17 @@ class SparkS3(SparkFileDFConnection):
     """
     Spark connection to S3 filesystem. |support_hooks|
 
-    Based on `Hadoop-AWS module <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_.
+    Based on `Hadoop-AWS module <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_
+    and `Spark integration with Cloud Infrastructures <https://spark.apache.org/docs/latest/cloud-integration.html>`_.
 
     .. dropdown:: Version compatibility
 
         * Spark versions: 3.2.x - 3.4.x (only with Hadoop 3.x libraries)
         * Java versions: 8 - 20
+
+    .. warning::
+
+        See :spark-s3-troubleshooting` guide.
 
     .. warning::
 
@@ -144,7 +151,7 @@ class SparkS3(SparkFileDFConnection):
 
     Create connection to S3 to work with dataframes.
 
-    Connect to bucket as subdomain (``bucket.domain.com``):
+    Connect to bucket as subdomain (``my-bucket.domain.com``):
 
     .. code:: python
 
@@ -152,10 +159,24 @@ class SparkS3(SparkFileDFConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(hadoop_version="3.3.6")
+        maven_packages = SparkS3.get_packages(spark_version="3.4.1")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
+            .config("spark.hadoop.fs.s3a.committer.name", "magic")
+            .config(
+                "spark.hadoop.mapreduce.outputcommitter.factory.scheme.s3a",
+                "org.apache.hadoop.fs.s3a.commit.S3ACommitterFactory",
+            )
+            .config(
+                "spark.sql.parquet.output.committer.class",
+                "org.apache.spark.internal.io.cloud.BindingParquetOutputCommitter",
+            )
+            .config(
+                "spark.sql.sources.commitProtocolClass",
+                "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol",
+            )
             .getOrCreate()
         )
 
@@ -163,13 +184,13 @@ class SparkS3(SparkFileDFConnection):
         s3 = SparkS3(
             host="domain.com",
             protocol="http",
-            bucket="bucket",
+            bucket="my-bucket",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
             spark=spark,
         ).check()
 
-    Connect to bucket as subpath (``domain.com/bucket``):
+    Connect to bucket as subpath (``domain.com/my-bucket``):
 
     .. code:: python
 
@@ -180,7 +201,7 @@ class SparkS3(SparkFileDFConnection):
         s3 = SparkS3(
             host="domain.com",
             protocol="http",
-            bucket="bucket",
+            bucket="my-bucket",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
             extra={
@@ -206,14 +227,23 @@ class SparkS3(SparkFileDFConnection):
 
     @slot
     @classmethod
-    def get_packages(cls, hadoop_version: str) -> list[str]:
+    def get_packages(
+        cls,
+        spark_version: str,
+        scala_version: str | None = None,
+    ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
 
         Parameters
         ----------
-        hadoop_version : str
-            Hadoop version in format ``major.minor.patch``.
+        spark_version : str
+            Spark version in format ``major.minor.patch``.
+
+        scala_version : str, optional
+            Scala version in format ``major.minor``.
+
+            If ``None``, ``spark_version`` is used to determine Scala version.
 
         Examples
         --------
@@ -222,13 +252,18 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.3.1")
+            SparkS3.get_packages(spark_version="3.4.1")
+            SparkS3.get_packages(spark_version="3.4.1", scala_version="2.12")
 
         """
-        hadoop_ver = Version.parse(hadoop_version)
-        if hadoop_ver.major < 3:
-            raise ValueError(f"Only Hadoop 3.x libraries are supported, got {hadoop_version}")
-        return [f"org.apache.hadoop:hadoop-aws:{hadoop_ver.digits(3)}"]
+
+        spark_ver = Version.parse(spark_version)
+        if spark_ver.major < 3:
+            # https://issues.apache.org/jira/browse/SPARK-23977
+            raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
+
+        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
@@ -322,10 +357,11 @@ class SparkS3(SparkFileDFConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
+            spark_version = get_spark_version(spark).digits(3)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
-                args="...",
+                args=f"spark_version='{spark_version}'",
             )
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)

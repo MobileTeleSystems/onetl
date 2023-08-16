@@ -1,7 +1,7 @@
-.. _spark-s3:
+.. _spark-s3-connection:
 
-Spark S3
-=============
+Spark S3 Connection
+===================
 
 .. currentmodule:: onetl.connection.file_df_connection.spark_s3.connection
 

@@ -8,21 +8,27 @@ pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connec
 
 
 @pytest.mark.parametrize(
-    "hadoop_version, package",
+    "spark_version, scala_version, package",
     [
-        ("3.3.1", "org.apache.hadoop:hadoop-aws:3.3.1"),
-        ("3.3.2", "org.apache.hadoop:hadoop-aws:3.3.2"),
-        ("3.3.6", "org.apache.hadoop:hadoop-aws:3.3.6"),
+        ("3.4.1", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.4.1"),
+        ("3.4.1", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.4.1"),
+        ("3.4.1", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.4.1"),
     ],
 )
-def test_spark_s3_get_packages(hadoop_version, package):
-    assert SparkS3.get_packages(hadoop_version=hadoop_version) == [package]
+def test_spark_s3_get_packages(spark_version, scala_version, package):
+    assert SparkS3.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
 
 
-@pytest.mark.parametrize("hadoop_version", ["2.7.3", "2.8.0", "2.10.1"])
-def test_spark_s3_get_packages_hadoop_2_error(hadoop_version):
-    with pytest.raises(ValueError, match=f"Only Hadoop 3.x libraries are supported, got {hadoop_version}"):
-        SparkS3.get_packages(hadoop_version=hadoop_version)
+@pytest.mark.parametrize(
+    "spark_version",
+    [
+        "2.3.1",
+        "2.4.8",
+    ],
+)
+def test_spark_s3_get_packages_spark_2_error(spark_version):
+    with pytest.raises(ValueError, match=f"Spark version must be at least 3.x, got {spark_version}"):
+        SparkS3.get_packages(spark_version=spark_version)
 
 
 @pytest.mark.parametrize("hadoop_version", ["2.7.3", "2.8.0", "2.10.1"])

@@ -5,7 +5,7 @@ For these operations, new classes were added.
 FileDFConnections:
 
 * ``SparkHDFS`` (:github:pull:`98`)
-* ``SparkS3`` (:github:pull:`94`, :github:pull:`100`)
+* ``SparkS3`` (:github:pull:`94`, :github:pull:`100`, :github:pull:`124`)
 * ``SparkLocalFS`` (:github:pull:`67`)
 
 High-level classes:

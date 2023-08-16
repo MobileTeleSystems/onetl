@@ -1,7 +1,7 @@
 .. _spark-hdfs-slots:
 
-Slots
-=====
+Spark HDFS Slots
+================
 
 .. currentmodule:: onetl.connection.file_df_connection.spark_hdfs.slots
 

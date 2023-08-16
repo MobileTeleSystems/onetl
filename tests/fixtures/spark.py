@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from onetl._util.spark import get_pyspark_version
-from onetl._util.version import Version
 
 
 @pytest.fixture(scope="session")
@@ -69,18 +68,8 @@ def maven_packages():
         packages.extend(Kafka.get_packages(spark_version=pyspark_version))
 
     if pyspark_version >= (3, 2):
-        hadoop_versions_for_spark = {
-            Version(3, 2): "3.3.1",
-            Version(3, 3): "3.3.2",
-            Version(3, 4): "3.3.4",
-        }
-
-        hadoop_version = hadoop_versions_for_spark.get(pyspark_version.digits(2), None)
-        if not hadoop_version:
-            raise RuntimeError(f"Unknown Hadoop version for Spark {pyspark_version}")
-
         # There is no SparkS3 connector for Spark less than 3
-        packages.extend(SparkS3.get_packages(hadoop_version=hadoop_version))
+        packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
 
         # There is no MongoDB connector for Spark less than 3.2
         packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
