@@ -1,4 +1,0 @@
-Allow to set client modules log level in ``onetl.log.setup_clients_logging()``.
-
-Allow to enable underlying client modules logging in ``onetl.log.setup_logging()`` by providing additional argument ``enable_clients=True``.
-This is useful for debug.

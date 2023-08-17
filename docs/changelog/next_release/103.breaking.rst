@@ -1,6 +1,0 @@
-Rename classes:
-
-* ``HDFS.slots`` -> ``HDFS.Slots``
-* ``Hive.slots`` -> ``Hive.Slots``
-
-Old names are left intact, but will be removed in v1.0.0
