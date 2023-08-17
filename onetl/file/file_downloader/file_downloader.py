@@ -714,12 +714,12 @@ class FileDownloader(FrozenModel):
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
     ) -> list[tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]]:
-        workers = self.options.workers
+        workers = min(self.options.workers, len(to_download))
         result = []
 
         if workers > 1:
             with ThreadPoolExecutor(
-                max_workers=min(workers, len(to_download)),
+                max_workers=workers,
                 thread_name_prefix=self.__class__.__name__,
             ) as executor:
                 futures = [

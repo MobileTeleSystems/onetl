@@ -511,12 +511,12 @@ class FileMover(FrozenModel):
         self,
         to_move: MOVE_ITEMS_TYPE,
     ) -> list[tuple[FileMoveStatus, PurePathProtocol | PathWithStatsProtocol]]:
-        workers = self.options.workers
+        workers = min(self.options.workers, len(to_move))
         result = []
 
         if workers > 1:
             with ThreadPoolExecutor(
-                max_workers=min(workers, len(to_move)),
+                max_workers=workers,
                 thread_name_prefix=self.__class__.__name__,
             ) as executor:
                 futures = [
