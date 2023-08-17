@@ -15,18 +15,22 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
+from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import StatementType
+from onetl.hooks import slot, support_hooks
 
-# do not import PySpark here, as we allow user to use `Clickhouse.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `Clickhouse.get_packages()` for creating Spark session
 
 
 log = logging.getLogger(__name__)
 
 
+@support_hooks
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
@@ -37,7 +41,7 @@ class Clickhouse(JDBCConnection):
 
         * Clickhouse server versions: 20.7 or higher
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
 
@@ -100,12 +104,15 @@ class Clickhouse(JDBCConnection):
 
         extra = {"continueBatchOnError": "false"}
 
+        # Create Spark session with Clickhouse driver loaded
+        maven_packages = Clickhouse.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Clickhouse.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         clickhouse = Clickhouse(
             host="database.host.or.ip",
             user="user",
@@ -119,8 +126,32 @@ class Clickhouse(JDBCConnection):
     port: int = 8123
     database: Optional[str] = None
 
-    driver: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
-    package: ClassVar[str] = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+    DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
+
+    @slot
+    @classmethod
+    def get_packages(cls) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Clickhouse
+
+            Clickhouse.get_packages()
+
+        """
+        return ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`Clickhouse.package` will be removed in 1.0.0, use `Clickhouse.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
 
     @property
     def jdbc_url(self) -> str:

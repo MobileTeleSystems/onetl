@@ -17,22 +17,27 @@ from __future__ import annotations
 import json
 import logging
 import operator
+import warnings
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mapping
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from pydantic import SecretStr
+from pydantic import Field, SecretStr, root_validator, validator
 
+from onetl._util.classproperty import classproperty
+from onetl._util.java import try_import_java_class
+from onetl._util.scala import get_default_scala_version
+from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaStruct,
+    SupportHWMColumnStr,
     SupportHWMExpressionNone,
-)
-from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
     SupportTableWithoutDBSchema,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
@@ -92,12 +97,23 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 )
 
 
-class MongoDBWriteMode(str, Enum):
+class MongoDBCollectionExistBehavior(str, Enum):
     APPEND = "append"
-    OVERWRITE = "overwrite"
+    REPLACE_ENTIRE_COLLECTION = "replace_entire_collection"
 
     def __str__(self) -> str:
         return str(self.value)
+
+    @classmethod  # noqa: WPS120
+    def _missing_(cls, value: object):  # noqa: WPS120
+        if str(value) == "overwrite":
+            warnings.warn(
+                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                "Use `replace_entire_collection` instead",
+                category=UserWarning,
+                stacklevel=4,
+            )
+            return cls.REPLACE_ENTIRE_COLLECTION
 
 
 PIPELINE_PROHIBITED_OPTIONS = frozenset(
@@ -169,7 +185,7 @@ class MongoDB(DBConnection):
 
         * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
@@ -228,17 +244,15 @@ class MongoDB(DBConnection):
         from onetl.connection import MongoDB
         from pyspark.sql import SparkSession
 
-        # Package should match your Spark version:
-        # MongoDB.package_spark_3_2
-        # MongoDB.package_spark_3_3
-        # MongoDB.package_spark_3_4
-
+        # Create Spark session with MongoDB connector loaded
+        maven_packages = Greenplum.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MongoDB.package_spark_3_2)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         mongo = MongoDB(
             host="master.host.or.ip",
             user="user",
@@ -258,9 +272,90 @@ class MongoDB(DBConnection):
     password: SecretStr
     port: int = 27017
     extra: Extra = Extra()
-    package_spark_3_2: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    package_spark_3_3: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-    package_spark_3_4: ClassVar[str] = "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @slot
+    @classmethod
+    def get_packages(
+        cls,
+        scala_version: str | None = None,
+        spark_version: str | None = None,
+    ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        .. warning::
+
+            You should pass at least one parameter.
+
+        Parameters
+        ----------
+        scala_version : str, optional
+            Scala version in format ``major.minor``.
+
+            If ``None``, ``spark_version`` is used to determine Scala version.
+
+        spark_version : str, optional
+            Spark version in format ``major.minor``.
+
+            Used only if ``scala_version=None``.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import MongoDB
+
+            MongoDB.get_packages(scala_version="2.11")
+            MongoDB.get_packages(spark_version="3.2")
+
+        """
+
+        # Connector version is fixed, so we can perform checks for Scala/Spark version
+        if scala_version:
+            scala_ver = Version.parse(scala_version)
+        elif spark_version:
+            spark_ver = Version.parse(spark_version)
+            if spark_ver.major < 3:
+                raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
+            scala_ver = get_default_scala_version(spark_ver)
+        else:
+            raise ValueError("You should pass either `scala_version` or `spark_version`")
+
+        if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
+            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
+
+        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
+
+    @classproperty
+    def package_spark_3_2(cls) -> str:
+        """Get package name to be downloaded by Spark 3.2."""
+        msg = (
+            "`MongoDB.package_spark_3_2` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.2')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @classproperty
+    def package_spark_3_3(cls) -> str:
+        """Get package name to be downloaded by Spark 3.3."""
+        msg = (
+            "`MongoDB.package_spark_3_3` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.3')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+
+    @classproperty
+    def package_spark_3_4(cls) -> str:
+        """Get package name to be downloaded by Spark 3.4."""
+        msg = (
+            "`MongoDB.package_spark_3_4` will be removed in 1.0.0, "
+            "use `MongoDB.get_packages(spark_version='3.4')` instead"
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
     class PipelineOptions(GenericOptions):
         """Aggregation pipeline options for MongoDB connector.
@@ -273,7 +368,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -306,7 +401,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -339,7 +434,7 @@ class MongoDB(DBConnection):
             `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/write/>`_,
             even if it is not mentioned in this documentation.
 
-            The set of supported options depends on connector version.
+            The set of supported options depends on connector version. See link above.
 
         .. warning::
 
@@ -354,42 +449,44 @@ class MongoDB(DBConnection):
         .. code:: python
 
             options = MongoDB.WriteOptions(
-                mode="append",
+                if_exists="append",
                 sampleSize=500,
                 localThreshold=20,
             )
         """
 
-        mode: MongoDBWriteMode = MongoDBWriteMode.APPEND
-        """Mode of writing data into target table.
+        if_exists: MongoDBCollectionExistBehavior = Field(default=MongoDBCollectionExistBehavior.APPEND, alias="mode")
+        """Behavior of writing data into existing collection.
 
         Possible values:
             * ``append`` (default)
-                Appends data into existing table.
+                Adds new objects into existing collection.
 
-                Behavior in details:
+                .. dropdown:: Behavior in details
 
-                * Table does not exist
-                    Table is created using other options from current class
+                * Collection does not exist
+                    Collection is created using options provided by user
                     (``shardkey`` and others).
 
-                * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data
+                * Collection exists
+                    Data is appended to a collection.
 
-            * ``overwrite``
-                Overwrites data in the entire table (**table is dropped and then created, or truncated**).
+                    .. warning::
 
-                Behavior in details:
+                        This mode does not check whether collection already contains
+                        objects from dataframe, so duplicated objects can be created.
 
-                * Table does not exist
-                    Table is created using other options from current class
+            * ``replace_entire_collection``
+                **Collection is deleted and then created**.
+
+                .. dropdown:: Behavior in details
+
+                * Collection does not exist
+                    Collection is created using options provided by user
                     (``shardkey`` and others).
 
-                * Table exists
-                    Table content is replaced with dataframe content.
-
-                    After writing completed, target table could either have the same DDL as
-                    before writing data, or can be recreated.
+                * Collection exists
+                    Collection content is replaced with dataframe content.
 
         .. note::
 
@@ -401,11 +498,23 @@ class MongoDB(DBConnection):
             known_options = KNOWN_WRITE_OPTIONS
             extra = "allow"
 
-    class Dialect(
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
+
+    class Dialect(  # noqa: WPS215
         SupportTableWithoutDBSchema,
         SupportHWMExpressionNone,
         SupportColumnsNone,
         SupportDfSchemaStruct,
+        SupportHWMColumnStr,
         DBConnection.Dialect,
     ):
         _compare_statements: ClassVar[Dict[Callable, str]] = {
@@ -552,7 +661,8 @@ class MongoDB(DBConnection):
 
         .. note::
 
-            This method does not support :ref:`strategy`, use :obj:`onetl.db.db_reader.db_reader.DBReader` instead
+            This method does not support :ref:`strategy`,
+            use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
 
         .. note::
 
@@ -645,20 +755,18 @@ class MongoDB(DBConnection):
             )
 
         """
-        self._check_driver_imported()
-
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
         pipeline = self.Dialect.prepare_pipeline(pipeline)
-        log_with_indent("collection = %r", collection)
-        log_json(pipeline, name="pipeline")
+        log_with_indent(log, "collection = %r", collection)
+        log_json(log, pipeline, name="pipeline")
 
         if df_schema:
             empty_df = self.spark.createDataFrame([], df_schema)
-            log_dataframe_schema(empty_df)
+            log_dataframe_schema(log, empty_df)
 
-        log_options(read_options)
+        log_options(log, read_options)
 
         read_options["collection"] = collection
         read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
@@ -676,12 +784,11 @@ class MongoDB(DBConnection):
 
     @slot
     def check(self):
-        self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
 
         try:
-            jvm = self.spark._sc._gateway.jvm  # type: ignore
+            jvm = self.spark._jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
             log.info("|%s| Connection is available.", self.__class__.__name__)
@@ -701,8 +808,6 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         options: ReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        self._check_driver_imported()
-
         log.info("|Spark| Getting min and max values for column %r", column)
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -722,9 +827,9 @@ class MongoDB(DBConnection):
             read_options["hint"] = self.Dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_with_indent("collection = %r", source)
-        log_json(pipeline, "pipeline")
-        log_json(hint, "hint")
+        log_with_indent(log, "collection = %r", source)
+        log_json(log, pipeline, "pipeline")
+        log_json(log, hint, "hint")
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
         row = df.collect()[0]
@@ -732,13 +837,13 @@ class MongoDB(DBConnection):
         max_value = row["max"]
 
         log.info("|Spark| Received values:")
-        log_with_indent("MIN(%s) = %r", column, min_value)
-        log_with_indent("MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", column, min_value)
+        log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
         return min_value, max_value
 
     @slot
-    def read_df(
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
@@ -749,8 +854,6 @@ class MongoDB(DBConnection):
         end_at: Statement | None = None,
         options: ReadOptions | dict | None = None,
     ) -> DataFrame:
-        self._check_driver_imported()
-
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         final_where = self.Dialect._condition_assembler(
             condition=where,
@@ -769,9 +872,9 @@ class MongoDB(DBConnection):
         read_options["collection"] = source
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
-        log_with_indent("collection = %r", source)
-        log_json(pipeline, "pipeline")
-        log_json(hint, "hint")
+        log_with_indent(log, "collection = %r", source)
+        log_json(log, pipeline, "pipeline")
+        log_json(log, hint, "hint")
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:
@@ -786,21 +889,24 @@ class MongoDB(DBConnection):
         return df
 
     @slot
-    def write_df(
+    def write_df_to_target(
         self,
         df: DataFrame,
         target: str,
         options: WriteOptions | dict | None = None,
     ) -> None:
-        self._check_driver_imported()
         write_options = self.WriteOptions.parse(options)
-        mode = write_options.mode
-        write_options = write_options.dict(by_alias=True, exclude_none=True, exclude={"mode"})
-        write_options["connection.uri"] = self.connection_url
-        write_options["collection"] = target
+        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
+        write_options_dict["connection.uri"] = self.connection_url
+        write_options_dict["collection"] = target
+        mode = (
+            "overwrite"
+            if write_options.if_exists == MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION
+            else "append"
+        )
 
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
-        df.write.format("mongodb").mode(mode).options(**write_options).save()
+        df.write.format("mongodb").mode(mode).options(**write_options_dict).save()
         log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
 
     @property
@@ -811,20 +917,20 @@ class MongoDB(DBConnection):
         password = parser.quote(self.password.get_secret_value())
         return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
 
-    def _check_driver_imported(self):
-        spark_version = "_".join(self.spark.version.split(".")[:2])
-
-        gateway = self.spark._sc._gateway  # type: ignore
-        class_name = "com.mongodb.spark.sql.connector.MongoTableProvider"
-        missing_class = getattr(gateway.jvm, class_name)
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
+        java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
 
         try:
-            gateway.help(missing_class, display=False)
+            try_import_java_class(spark, java_class)
         except Exception as e:
-            log.error(
-                MISSING_JVM_CLASS_MSG,
-                class_name,
-                f"{self.__class__.__name__}.package_spark_{spark_version}",
-                exc_info=False,
+            spark_version = get_spark_version(spark).digits(2)
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=java_class,
+                package_source=cls.__name__,
+                args=f"spark_version='{spark_version}'",
             )
-            raise e
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark

@@ -1,4 +1,4 @@
-.. _base-filter:
+.. _base-file-filter:
 
 Base interface
 ==============

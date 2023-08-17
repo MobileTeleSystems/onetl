@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import textwrap
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional
 
@@ -8,9 +7,13 @@ import frozendict
 from etl_entities import Column, Table
 from pydantic import Field, root_validator, validator
 
-from onetl._internal import uniq_ignore_case  # noqa: WPS436
-from onetl.base import BaseDBConnection
-from onetl.base.contains_get_df_schema import ContainsGetDFSchemaMethod
+from onetl._internal import uniq_ignore_case
+from onetl._util.spark import try_import_pyspark
+from onetl.base import (
+    BaseDBConnection,
+    ContainsGetDFSchemaMethod,
+    ContainsGetMinMaxBounds,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
@@ -202,9 +205,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -230,9 +234,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -261,9 +266,10 @@ class DBReader(FrozenModel):
         from onetl.connection import Postgres
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -298,9 +304,10 @@ class DBReader(FrozenModel):
         from onetl.strategy import IncrementalStrategy
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -373,9 +380,9 @@ class DBReader(FrozenModel):
         hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
         df_schema: StructType | None = values.get("df_schema")
         hwm_expression: str | None = values.get("hwm_expression")
+        connection: BaseDBConnection = values["connection"]
 
         if hwm_column is None or isinstance(hwm_column, Column):
-            # nothing to validate
             return values
 
         if not hwm_expression and not isinstance(hwm_column, str):
@@ -394,6 +401,9 @@ class DBReader(FrozenModel):
                 "'df_schema' struct must contain column specified in 'hwm_column'. "
                 "Otherwise DBReader cannot determine HWM type for this column",
             )
+
+        dialect = connection.Dialect
+        dialect.validate_hwm_column(connection, hwm_column)  # type: ignore
 
         values["hwm_column"] = Column(name=hwm_column)  # type: ignore
         values["hwm_expression"] = hwm_expression
@@ -480,14 +490,17 @@ class DBReader(FrozenModel):
         )
 
     def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        return self.connection.get_min_max_bounds(
-            source=str(self.source),
-            column=column,
-            expression=expression,
-            hint=self.hint,
-            where=self.where,
-            **self._get_read_kwargs(),
-        )
+        if isinstance(self.connection, ContainsGetMinMaxBounds):
+            return self.connection.get_min_max_bounds(
+                source=str(self.source),
+                column=column,
+                expression=expression,
+                hint=self.hint,
+                where=self.where,
+                **self._get_read_kwargs(),
+            )
+
+        raise ValueError(f"{self.connection.__class__.__name__} connection does not support batch strategies")
 
     @slot
     def run(self) -> DataFrame:
@@ -526,10 +539,9 @@ class DBReader(FrozenModel):
             StrategyHelper,
         )
 
-        entity_boundary_log(msg="DBReader starts")
+        entity_boundary_log(log, msg="DBReader starts")
 
         self._log_parameters()
-        self._log_options()
         self.connection.check()
 
         helper: StrategyHelper
@@ -540,7 +552,7 @@ class DBReader(FrozenModel):
 
         start_from, end_at = helper.get_boundaries()
 
-        df = self.connection.read_df(
+        df = self.connection.read_source_as_df(
             source=str(self.source),
             columns=self._resolve_all_columns(),
             hint=self.hint,
@@ -552,36 +564,35 @@ class DBReader(FrozenModel):
         )
 
         df = helper.save(df)
-        entity_boundary_log(msg="DBReader ends", char="-")
+        entity_boundary_log(log, msg="DBReader ends", char="-")
 
         return df
 
     def _log_parameters(self) -> None:
         log.info("|%s| -> |Spark| Reading DataFrame from source using parameters:", self.connection.__class__.__name__)
-        log_with_indent("source = '%s'", self.source)
+        log_with_indent(log, "source = '%s'", self.source)
 
         if self.hint:
-            log_json(self.hint, "hint")
+            log_json(log, self.hint, "hint")
 
         if self.columns:
-            log_collection("columns", self.columns)
+            log_collection(log, "columns", self.columns)
 
         if self.where:
-            log_json(self.where, "where")
+            log_json(log, self.where, "where")
 
         if self.hwm_column:
-            log_with_indent("hwm_column = '%s'", self.hwm_column)
+            log_with_indent(log, "hwm_column = '%s'", self.hwm_column)
 
         if self.hwm_expression:
-            log_json(self.hwm_expression, "hwm_expression")
+            log_json(log, self.hwm_expression, "hwm_expression")
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore
-            log_dataframe_schema(empty_df)
+            log_dataframe_schema(log, empty_df)
 
-    def _log_options(self) -> None:
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
-        log_options(options)
+        log_options(log, options)
 
     def _resolve_all_columns(self) -> list[str] | None:
         """
@@ -640,25 +651,11 @@ class DBReader(FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
+        try_import_pyspark()
+        from pyspark.sql.types import StructType  # noqa: WPS442
+
         # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.package` for creating Spark session
-
+        # as we allow user to use `Connection.get_packages()` for creating Spark session
         refs = super()._forward_refs()
-        try:
-            from pyspark.sql.types import StructType  # noqa: WPS442
-        except (ImportError, NameError) as e:
-            raise ImportError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import module "pyspark".
-
-                    Since onETL v0.7.0 you should install package as follows:
-                        pip install onetl[spark]
-
-                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
-                    """,
-                ).strip(),
-            ) from e
-
         refs["StructType"] = StructType
         return refs

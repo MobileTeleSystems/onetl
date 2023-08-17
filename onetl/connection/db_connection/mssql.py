@@ -14,14 +14,19 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import date, datetime
 from typing import ClassVar
 
+from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.hooks import slot, support_hooks
 
-# do not import PySpark here, as we allow user to use `MSSQL.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `MSSQL.get_packages()` for creating Spark session
 
 
+@support_hooks
 class MSSQL(JDBCConnection):
     """MSSQL JDBC connection. |support_hooks|
 
@@ -33,7 +38,7 @@ class MSSQL(JDBCConnection):
 
         * SQL Server versions: 2014 - 2022
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
         and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.
@@ -95,21 +100,22 @@ class MSSQL(JDBCConnection):
         from onetl.connection import MSSQL
         from pyspark.sql import SparkSession
 
-        extra = {
-            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-        }
-
+        # Create Spark session with MSSQL driver loaded
+        maven_packages = MSSQL.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MSSQL.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={
+                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+            },
             spark=spark,
         )
 
@@ -117,27 +123,20 @@ class MSSQL(JDBCConnection):
 
     .. code:: python
 
-        from onetl.connection import MSSQL
-        from pyspark.sql import SparkSession
+        # Create Spark session with MSSQL driver loaded
+        ...
 
-        extra = {
-            "Domain": "some.domain.com",  # add here your domain
-            "IntegratedSecurity": "true",
-            "authenticationScheme": "NTLM",
-            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-        }
-
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MSSQL.package)
-            .getOrCreate()
-        )
-
+        # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={
+                "Domain": "some.domain.com",  # add here your domain
+                "IntegratedSecurity": "true",
+                "authenticationScheme": "NTLM",
+                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+            },
             spark=spark,
         )
 
@@ -145,25 +144,18 @@ class MSSQL(JDBCConnection):
 
     .. code:: python
 
-        from onetl.connection import MSSQL
-        from pyspark.sql import SparkSession
+        # Create Spark session with MSSQL driver loaded
+        ...
 
-        extra = {
-            "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
-            "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-        }
-
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MSSQL.package)
-            .getOrCreate()
-        )
-
+        # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={
+                "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
+                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+            },
             spark=spark,
         )
 
@@ -177,9 +169,47 @@ class MSSQL(JDBCConnection):
     port: int = 1433
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    package: ClassVar[str] = "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
-    _check_query: ClassVar[str] = "SELECT 1 AS field"
+    DRIVER: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS field"
+
+    @slot
+    @classmethod
+    def get_packages(
+        cls,
+        java_version: str = "8",
+    ) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Parameters
+        ----------
+        java_version : str, default ``8``
+            Java major version.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import MSSQL
+
+            MSSQL.get_packages()
+            MSSQL.get_packages(java_version="8")
+
+        """
+        java_ver = Version.parse(java_version)
+        if java_ver.major < 8:
+            raise ValueError(f"Java version must be at least 8, got {java_ver}")
+
+        jre_ver = "8" if java_ver.major < 11 else "11"
+        return [f"com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre{jre_ver}"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`MSSQL.package` will be removed in 1.0.0, use `MSSQL.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
 
     class Dialect(JDBCConnection.Dialect):
         @classmethod

@@ -55,9 +55,9 @@ class DBWriter(FrozenModel):
         Spark write options.
 
         For example:
-        ``{"mode": "overwrite", "compression": "snappy"}``
+        ``{"if_exists": "replace_entire_table", "compression": "snappy"}``
         or
-        ``Hive.WriteOptions(mode="overwrite", compression="snappy")``
+        ``Hive.WriteOptions(if_exists="replace_entire_table", compression="snappy")``
 
         .. note::
 
@@ -74,9 +74,10 @@ class DBWriter(FrozenModel):
         from onetl.db import DBWriter
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -101,9 +102,10 @@ class DBWriter(FrozenModel):
         from onetl.db import DBWriter
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -181,6 +183,8 @@ class DBWriter(FrozenModel):
         """
         Method for writing your df to specified target. |support_hooks|
 
+        .. note :: Method does support only **batching** DataFrames.
+
         Parameters
         ----------
         df : pyspark.sql.dataframe.DataFrame
@@ -195,26 +199,28 @@ class DBWriter(FrozenModel):
 
             writer.run(df)
         """
+        if df.isStreaming:
+            raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        entity_boundary_log(msg="DBWriter starts")
+        entity_boundary_log(log, msg="DBWriter starts")
 
         self._log_parameters()
-        log_dataframe_schema(df)
+        log_dataframe_schema(log, df)
         self.connection.check()
-        self.connection.write_df(
+        self.connection.write_df_to_target(
             df=df,
             target=str(self.target),
             **self._get_write_kwargs(),
         )
 
-        entity_boundary_log(msg="DBWriter ends", char="-")
+        entity_boundary_log(log, msg="DBWriter ends", char="-")
 
     def _log_parameters(self) -> None:
         log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)
-        log_with_indent("target = '%s'", self.target)
+        log_with_indent(log, "target = '%s'", self.target)
 
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
-        log_options(options)
+        log_options(log, options)
 
     def _get_write_kwargs(self) -> dict:
         if self.options:

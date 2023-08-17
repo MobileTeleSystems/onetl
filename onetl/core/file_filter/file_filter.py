@@ -21,19 +21,12 @@ import textwrap
 import warnings
 from typing import List, Optional, Union
 
-from deprecated import deprecated
 from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath
-from onetl.log import log_with_indent
 
 
-@deprecated(
-    version="0.8.0",
-    reason="Use Glob, Regexp or ExcludeDir instead. Will be removed in 1.0.0",
-    action="ignore",
-)
 class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 
@@ -214,7 +207,3 @@ class FileFilter(BaseFileFilter, FrozenModel):
             return self.regexp.search(os.fspath(path)) is not None
 
         return True
-
-    def log_options(self, indent: int = 0):
-        for key, value in self.dict(exclude_none=True, by_alias=True).items():  # noqa: WPS528
-            log_with_indent("%s = %r", key, value, indent=indent)

@@ -44,9 +44,9 @@ jobs:
       if: inputs.with-cache
       with:
         path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
         restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
           ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-teradata-
 
     - name: Cache pip

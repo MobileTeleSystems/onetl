@@ -26,7 +26,19 @@ jobs:
   test-kafka:
     name: Run Kafka tests (server=${{ inputs.kafka-version }}, spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
+
     services:
+      zookeeper:
+        image: bitnami/zookeeper:3.8
+        env:
+          TZ: UTC
+          ALLOW_ANONYMOUS_LOGIN: 'yes'
+        options: >-
+          --health-cmd "nc -z localhost 2181 || exit"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
       kafka:
         image: bitnami/kafka:${{ inputs.kafka-version }}
         env:
@@ -37,19 +49,27 @@ jobs:
           KAFKA_CLIENT_PASSWORDS: uufoFae9sahSoidoo0eagaidaoreif6z
           KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
           KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+          KAFKA_ZOOKEEPER_BOOTSTRAP_SCRAM_USERS: 'true'
+          KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL_PLAINTEXT_ANONYMOUS
+          KAFKA_CFG_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://:9093,INTERNAL_PLAINTEXT_SASL://:9094,EXTERNAL_PLAINTEXT_SASL://:9095
+          KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://kafka:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://localhost:9093,INTERNAL_PLAINTEXT_SASL://kafka:9094,EXTERNAL_PLAINTEXT_SASL://localhost:9095
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,EXTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,INTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT,EXTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT
+          KAFKA_CFG_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
           # old config names for <1.1.1
           KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-          KAFKA_LISTENERS: PLAINTEXT://:9092
+          KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL_PLAINTEXT_ANONYMOUS
+          KAFKA_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://:9093,INTERNAL_PLAINTEXT_SASL://:9094,EXTERNAL_PLAINTEXT_SASL://:9095
+          KAFKA_ADVERTISED_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://kafka:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://localhost:9093,INTERNAL_PLAINTEXT_SASL://kafka:9094,EXTERNAL_PLAINTEXT_SASL://localhost:9095
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,EXTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,INTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT,EXTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT
+          KAFKA_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
         ports:
-        - 9092:9092
-      zookeeper:
-        image: bitnami/zookeeper:3.8
-        env:
-          TZ: UTC
-          ALLOW_ANONYMOUS_LOGIN: 'yes'
-        ports:
-        - 2181:2181
+        - 9093:9093
+        - 9095:9095
+        options: >-
+          --health-cmd "kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --list"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - name: Checkout code
@@ -71,9 +91,9 @@ jobs:
       if: inputs.with-cache
       with:
         path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
         restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
           ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-kafka-
 
     - name: Cache pip
@@ -95,7 +115,8 @@ jobs:
 
     - name: Wait for Kafka to be ready
       run: |
-        ./docker/wait-for-it.sh -h localhost -p 9092 -t 60
+        ./docker/wait-for-it.sh -h localhost -p 9093 -t 60
+        ./docker/wait-for-it.sh -h localhost -p 9095 -t 60
 
     - name: Run tests
       run: |

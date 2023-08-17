@@ -1,23 +1,32 @@
 min: &min
+  # prior image versions returns empty content of bucket root, some kind of bug
+  minio-version: 2021.3.17
+  # Minimal Spark version with Hadoop 3.x support
+  spark-version: 3.2.3
   python-version: '3.7'
+  java-version: 8
   os: ubuntu-latest
 
 max: &max
+  minio-version: 2023.7.18
+  spark-version: 3.4.1
   python-version: '3.11'
+  java-version: 20
+  os: ubuntu-latest
+
+latest: &latest
+  minio-version: latest
+  spark-version: latest
+  python-version: '3.11'
+  java-version: 20
   os: ubuntu-latest
 
 matrix:
   small:
-  - minio-version: 2023.6.23
-    <<: *max
+  - *max
   full:
-  # prior image versions returns empty content of bucket root, some kind of bug
-  - minio-version: 2021.3.17
-    <<: *min
-  - minio-version: 2023.6.23
-    <<: *max
+  - *min
+  - *max
   nightly:
-  - minio-version: 2021.3.17
-    <<: *min
-  - minio-version: latest
-    <<: *max
+  - *min
+  - *latest

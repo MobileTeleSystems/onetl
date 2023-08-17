@@ -1,4 +1,4 @@
-.. _file-module:
+.. _file-root:
 
 .. toctree::
     :maxdepth: 1

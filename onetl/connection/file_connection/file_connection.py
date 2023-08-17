@@ -78,7 +78,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @slot
     def close(self):
         """
-        Close all connections, opened by other methods call.
+        Close all connections, opened by other methods call. |support_hooks|
+
+        .. note::
+
+            Connection can be used again after it was closed.
+
+        Returns
+        -------
+        Connection itself
 
         Examples
         --------
@@ -102,10 +110,11 @@ class FileConnection(BaseFileConnection, FrozenModel):
         try:
             client = self._clients_cache.client
         except AttributeError:
-            return
+            return self
 
         self._close_client(client)
         del self._clients_cache.client
+        return self
 
     def __enter__(self):
         return self
@@ -711,13 +720,13 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|onETL| Using connection parameters:")
-        log_with_indent("type = %s", self.__class__.__name__)
-        parameters = self.dict(by_alias=True, exclude_none=True)
+        log_with_indent(log, "type = %s", self.__class__.__name__)
+        parameters = self.dict(exclude_none=True)
         for attr, value in sorted(parameters.items()):
             if isinstance(value, os.PathLike):
-                log_with_indent("%s = %s", attr, path_repr(value))
+                log_with_indent(log, "%s = %s", attr, path_repr(value))
             else:
-                log_with_indent("%s = %r", attr, value)
+                log_with_indent(log, "%s = %r", attr, value)
 
     @abstractmethod
     def _get_client(self) -> Any:

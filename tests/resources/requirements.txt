@@ -1,0 +1,2 @@
+avro[snappy]
+pyarrow

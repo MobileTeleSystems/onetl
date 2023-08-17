@@ -93,6 +93,11 @@ class PurePathProtocol(Protocol[T]):
         Return the relative path to another path
         """
 
+    def as_posix(self) -> str:
+        """
+        Get POSIX representation of path
+        """
+
     def joinpath(self, *args) -> T:
         """
         Add items to path

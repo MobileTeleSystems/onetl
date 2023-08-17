@@ -1,0 +1,6 @@
+.github/workflows/data/file-df/**
+onetl/file_df_connection/spark_file_df_connection.py
+onetl/file/file_df_reader/**
+onetl/file/file_df_writer/**
+onetl/file/__init__.py
+tests/resources/file_df_connection/**

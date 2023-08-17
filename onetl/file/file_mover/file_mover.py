@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
@@ -31,7 +32,7 @@ from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
-    FileWriteMode,
+    FileExistBehavior,
     FrozenModel,
     GenericOptions,
     RemoteFile,
@@ -141,7 +142,7 @@ class FileMover(FrozenModel):
                 ExcludeDir("/path/to/source/dir/exclude"),
             ],
             limits=[MaxFilesCount(100)],
-            options=FileMover.Options(mode="overwrite"),
+            options=FileMover.Options(if_exists="replace_file"),
         )
 
         # move files from "/path/to/source/dir" to "/path/to/target/dir",
@@ -155,7 +156,7 @@ class FileMover(FrozenModel):
     class Options(GenericOptions):
         """File moving options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -175,6 +176,17 @@ class FileMover(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileMover.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -297,12 +309,12 @@ class FileMover(FrozenModel):
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_options(files)
+        self._log_parameters(files)
 
         # Check everything
         self.connection.check()
         self._check_target_path()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         if self.source_path:
             self._check_source_path()
@@ -319,7 +331,7 @@ class FileMover(FrozenModel):
         to_move = self._validate_files(files)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             self.connection.remove_dir(self.target_path, recursive=True)
             self.connection.create_dir(self.target_path)
 
@@ -369,7 +381,7 @@ class FileMover(FrozenModel):
             }
         """
 
-        log.info("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
+        log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
         self._check_source_path()
         result = FileSet()
@@ -386,27 +398,18 @@ class FileMover(FrozenModel):
 
         return result
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
-        entity_boundary_log(msg="FileMover starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg="FileMover starts")
 
         connection_class = self.connection.__class__.__name__
         log.info("|%s| -> |%s| Moving files using parameters:", connection_class, connection_class)
-        log_with_indent("source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
-        log_with_indent("target_path = '%s'", self.target_path)
+        log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
+        log_with_indent(log, "target_path = '%s'", self.target_path)
+        log_collection(log, "filters", self.filters)
+        log_collection(log, "limits", self.limits)
+        log_options(log, self.options.dict(by_alias=True))
 
-        if self.filters:
-            log_collection("filters", self.filters)
-        else:
-            log_with_indent("filters = []")
-
-        if self.limits:
-            log_collection("limits", self.limits)
-        else:
-            log_with_indent("limits = []")
-
-        log_options(self.options.dict(by_alias=True))
-
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE MOVING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -473,9 +476,9 @@ class FileMover(FrozenModel):
     ) -> MoveResult:
         files = FileSet(item[0] for item in to_move)
         log.info("|%s| Files to be moved:", self.__class__.__name__)
-        log_lines(str(files))
-        log_with_indent("")
-        log.info("|%s| Starting the move process", self.__class__.__name__)
+        log_lines(log, str(files))
+        log_with_indent(log, "")
+        log.info("|%s| Starting the move process ...", self.__class__.__name__)
 
         self._create_dirs(to_move)
 
@@ -512,7 +515,10 @@ class FileMover(FrozenModel):
         result = []
 
         if workers > 1:
-            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+            with ThreadPoolExecutor(
+                max_workers=max(workers, len(to_move)),
+                thread_name_prefix=self.__class__.__name__,
+            ) as executor:
                 futures = [
                     executor.submit(self._move_file, source_file, target_file) for source_file, target_file in to_move
                 ]
@@ -545,10 +551,10 @@ class FileMover(FrozenModel):
             if self.connection.path_exists(target_file):
                 new_file = self.connection.resolve_file(target_file)
 
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(new_file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning(
                         "|%s| File %s already exists, skipping",
                         self.connection.__class__.__name__,
@@ -578,7 +584,7 @@ class FileMover(FrozenModel):
             return FileMoveStatus.FAILED, FailedRemoteFile(path=source_file.path, stats=source_file.stats, exception=e)
 
     def _log_result(self, result: MoveResult) -> None:
-        log_with_indent("")
+        log_with_indent(log, "")
         log.info("|%s| Move result:", self.__class__.__name__)
-        log_lines(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+        log_lines(log, str(result))
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")

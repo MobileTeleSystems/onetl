@@ -1,0 +1,128 @@
+0.9.0 (2023-08-17)
+==================
+
+Breaking Changes
+----------------
+
+- Rename methods:
+
+  * ``DBConnection.read_df`` -> ``DBConnection.read_source_as_df``
+  * ``DBConnection.write_df`` -> ``DBConnection.write_df_to_target`` (:github:pull:`66`)
+- Rename classes:
+
+  * ``HDFS.slots`` -> ``HDFS.Slots``
+  * ``Hive.slots`` -> ``Hive.Slots``
+
+  Old names are left intact, but will be removed in v1.0.0 (:github:pull:`103`)
+- Rename options to make them self-explanatory:
+
+  * ``Hive.WriteOptions(mode="append")`` -> ``Hive.WriteOptions(if_exists="append")``
+  * ``Hive.WriteOptions(mode="overwrite_table")`` -> ``Hive.WriteOptions(if_exists="replace_entire_table")``
+  * ``Hive.WriteOptions(mode="overwrite_partitions")`` -> ``Hive.WriteOptions(if_exists="replace_overlapping_partitions")``
+
+  * ``JDBC.WriteOptions(mode="append")`` -> ``JDBC.WriteOptions(if_exists="append")``
+  * ``JDBC.WriteOptions(mode="overwrite")`` -> ``JDBC.WriteOptions(if_exists="replace_entire_table")``
+
+  * ``Greenplum.WriteOptions(mode="append")`` -> ``Greenplum.WriteOptions(if_exists="append")``
+  * ``Greenplum.WriteOptions(mode="overwrite")`` -> ``Greenplum.WriteOptions(if_exists="replace_entire_table")``
+
+  * ``MongoDB.WriteOptions(mode="append")`` -> ``Greenplum.WriteOptions(if_exists="append")``
+  * ``MongoDB.WriteOptions(mode="overwrite")`` -> ``Greenplum.WriteOptions(if_exists="replace_entire_collection")``
+
+  * ``FileDownloader.Options(mode="error")`` -> ``FileDownloader.Options(if_exists="error")``
+  * ``FileDownloader.Options(mode="ignore")`` -> ``FileDownloader.Options(if_exists="ignore")``
+  * ``FileDownloader.Options(mode="overwrite")`` -> ``FileDownloader.Options(if_exists="replace_file")``
+  * ``FileDownloader.Options(mode="delete_all")`` -> ``FileDownloader.Options(if_exists="replace_entire_directory")``
+
+  * ``FileUploader.Options(mode="error")`` -> ``FileUploader.Options(if_exists="error")``
+  * ``FileUploader.Options(mode="ignore")`` -> ``FileUploader.Options(if_exists="ignore")``
+  * ``FileUploader.Options(mode="overwrite")`` -> ``FileUploader.Options(if_exists="replace_file")``
+  * ``FileUploader.Options(mode="delete_all")`` -> ``FileUploader.Options(if_exists="replace_entire_directory")``
+
+  * ``FileMover.Options(mode="error")`` -> ``FileMover.Options(if_exists="error")``
+  * ``FileMover.Options(mode="ignore")`` -> ``FileMover.Options(if_exists="ignore")``
+  * ``FileMover.Options(mode="overwrite")`` -> ``FileMover.Options(if_exists="replace_file")``
+  * ``FileMover.Options(mode="delete_all")`` -> ``FileMover.Options(if_exists="replace_entire_directory")``
+
+  Old names are left intact, but will be removed in v1.0.0 (:github:pull:`108`)
+- Rename ``onetl.log.disable_clients_logging()`` to ``onetl.log.setup_clients_logging()``. (:github:pull:`120`)
+
+
+Features
+--------
+
+- Add new methods returning Maven packages for specific connection class:
+
+  * ``Clickhouse.get_packages()``
+  * ``MySQL.get_packages()``
+  * ``Postgres.get_packages()``
+  * ``Teradata.get_packages()``
+  * ``MSSQL.get_packages(java_version="8")``
+  * ``Oracle.get_packages(java_version="8")``
+  * ``Greenplum.get_packages(scala_version="2.12")``
+  * ``MongoDB.get_packages(scala_version="2.12")``
+  * ``Kafka.get_packages(spark_version="3.4.1", scala_version="2.12")``
+
+  Deprecate old syntax:
+
+  * ``Clickhouse.package``
+  * ``MySQL.package``
+  * ``Postgres.package``
+  * ``Teradata.package``
+  * ``MSSQL.package``
+  * ``Oracle.package``
+  * ``Greenplum.package_spark_2_3``
+  * ``Greenplum.package_spark_2_4``
+  * ``Greenplum.package_spark_3_2``
+  * ``MongoDB.package_spark_3_2``
+  * ``MongoDB.package_spark_3_3``
+  * ``MongoDB.package_spark_3_4`` (:github:pull:`87`)
+- Allow to set client modules log level in ``onetl.log.setup_clients_logging()``.
+
+  Allow to enable underlying client modules logging in ``onetl.log.setup_logging()`` by providing additional argument ``enable_clients=True``.
+  This is useful for debug. (:github:pull:`120`)
+- Added support for reading and writing data to Kafka topics.
+
+  For these operations, new classes were added.
+
+  * ``Kafka`` (:github:pull:`54`, :github:pull:`60`, :github:pull:`72`, :github:pull:`84`, :github:pull:`87`, :github:pull:`89`, :github:pull:`93`, :github:pull:`96`, :github:pull:`102`, :github:pull:`104`)
+  * ``Kafka.PlaintextProtocol`` (:github:pull:`79`)
+  * ``Kafka.SSLProtocol`` (:github:pull:`118`)
+  * ``Kafka.BasicAuth`` (:github:pull:`63`, :github:pull:`77`)
+  * ``Kafka.KerberosAuth`` (:github:pull:`63`, :github:pull:`77`, :github:pull:`110`)
+  * ``Kafka.ScramAuth`` (:github:pull:`115`)
+  * ``Kafka.Slots`` (:github:pull:`109`)
+  * ``Kafka.ReadOptions`` (:github:pull:`68`)
+  * ``Kafka.WriteOptions`` (:github:pull:`68`)
+
+  Currently, Kafka does not support incremental read strategies, this will be implemented in future releases.
+- Added support for reading files as Spark DataFrame and saving DataFrame as Files.
+
+  For these operations, new classes were added.
+
+  FileDFConnections:
+
+  * ``SparkHDFS`` (:github:pull:`98`)
+  * ``SparkS3`` (:github:pull:`94`, :github:pull:`100`, :github:pull:`124`)
+  * ``SparkLocalFS`` (:github:pull:`67`)
+
+  High-level classes:
+
+  * ``FileDFReader`` (:github:pull:`73`)
+  * ``FileDFWriter`` (:github:pull:`81`)
+
+  File formats:
+
+  * ``Avro`` (:github:pull:`69`)
+  * ``CSV`` (:github:pull:`92`)
+  * ``JSON`` (:github:pull:`83`)
+  * ``JSONLine`` (:github:pull:`83`)
+  * ``ORC`` (:github:pull:`86`)
+  * ``Parquet`` (:github:pull:`88`)
+
+
+Improvements
+------------
+
+- Remove redundant checks for driver availability in Greenplum and MongoDB connections. (:github:pull:`67`)
+- Check of Java class availability moved from ``.check()`` method to connection constructor. (:github:pull:`97`)

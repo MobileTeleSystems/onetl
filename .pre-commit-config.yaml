@@ -14,7 +14,7 @@ repos:
   - id: requirements-txt-fixer
     files: ^(requirements/.*\.txt)$
   - id: end-of-file-fixer
-    exclude: ^.*/VERSION$
+    exclude: ^(.*/VERSION|tests/resources/.*/.*)$
   - id: fix-byte-order-marker
   - id: fix-encoding-pragma
     args: [--remove]
@@ -23,7 +23,7 @@ repos:
     args: [--django]
   - id: trailing-whitespace
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.5.1
+  rev: v1.5.4
   hooks:
   - id: remove-tabs
     exclude: ^docs/(make.bat|Makefile)
@@ -33,7 +33,7 @@ repos:
   - id: codespell
     args: [-w]
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.9.0
+  rev: v2.10.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2', --preserve-quotes]
@@ -59,17 +59,17 @@ repos:
   - id: rst-inline-touching-normal
   - id: text-unicode-replacement-char
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.8.0
+  rev: v3.10.1
   hooks:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/psf/black
-  rev: 23.3.0
+  rev: 23.7.0
   hooks:
   - id: black
     language_version: python3
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.14.0
+  rev: 1.15.0
   hooks:
   - id: blacken-docs
 - repo: meta

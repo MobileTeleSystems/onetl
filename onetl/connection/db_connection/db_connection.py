@@ -15,13 +15,13 @@
 from __future__ import annotations
 
 import operator
-import textwrap
 from datetime import date, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict
 
 from pydantic import Field
 
+from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseDBConnection
 from onetl.hwm import Statement
 from onetl.impl import FrozenModel
@@ -35,8 +35,6 @@ log = getLogger(__name__)
 
 class DBConnection(BaseDBConnection, FrozenModel):
     spark: SparkSession = Field(repr=False)
-
-    _check_query: ClassVar[str] = "SELECT 1"
 
     class Dialect(BaseDBConnection.Dialect):
         @classmethod
@@ -143,32 +141,19 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     @classmethod
     def _forward_refs(cls) -> dict[str, type]:
+        try_import_pyspark()
+
+        from pyspark.sql import SparkSession  # noqa: WPS442
+
         # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.package` for creating Spark session
-
+        # as we allow user to use `Connection.get_packages()` for creating Spark session
         refs = super()._forward_refs()
-        try:
-            from pyspark.sql import SparkSession  # noqa: WPS442
-        except (ImportError, NameError) as e:
-            raise ImportError(
-                textwrap.dedent(
-                    f"""
-                    Cannot import module "pyspark".
-
-                    Since onETL v0.7.0 you should install package as follows:
-                        pip install onetl[spark]
-
-                    or inject PySpark to sys.path in some other way BEFORE creating {cls.__name__} instance.
-                    """,
-                ).strip(),
-            ) from e
-
         refs["SparkSession"] = SparkSession
         return refs
 
     def _log_parameters(self):
         log.info("|Spark| Using connection parameters:")
-        log_with_indent("type = %s", self.__class__.__name__)
-        parameters = self.dict(by_alias=True, exclude_none=True, exclude={"spark"})
+        log_with_indent(log, "type = %s", self.__class__.__name__)
+        parameters = self.dict(exclude_none=True, exclude={"spark"})
         for attr, value in sorted(parameters.items()):
-            log_with_indent("%s = %r", attr, value)
+            log_with_indent(log, "%s = %r", attr, value)

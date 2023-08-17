@@ -8,7 +8,7 @@ from contextlib import ExitStack, suppress
 from functools import partial, wraps
 from typing import Any, Callable, ContextManager, TypeVar
 
-from typing_extensions import Protocol
+from typing_extensions import ParamSpec, Protocol
 
 from onetl.exception import SignatureError
 from onetl.hooks.hook import CanProcessResult, Hook, HookPriority
@@ -19,10 +19,11 @@ from onetl.log import NOTICE
 
 logger = logging.getLogger(__name__)
 
+P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def _unwrap_method(method: Callable) -> Callable:
+def _unwrap_method(method: Callable[P, T]) -> Callable[P, T]:
     """Unwrap @classmethod and @staticmethod to get original function"""
     return getattr(method, "__func__", method)
 
@@ -280,10 +281,17 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
         MyClass.static_method = register_slot(MyClass, "static_method")
     """
 
-    method = getattr(cls, method_name)
-    original_method = _unwrap_method(method)
+    # <function MyClass.method>
+    # <classmethod object>
+    # <staticmethod object>
+    method_or_descriptor = cls.__dict__[method_name]
 
-    @wraps(method)  # noqa: WPS231, WPS213
+    # <function MyClass.method>
+    # <function MyClass.class_method>
+    # <function MyClass.static_method>
+    original_method = _unwrap_method(method_or_descriptor)
+
+    @wraps(original_method)  # noqa: WPS231, WPS213
     def wrapper(*args, **kwargs):  # noqa: WPS231, WPS213
         with MethodInheritanceStack(cls, method_name) as stack_manager, ExitStack() as context_stack:
             if not HooksState.enabled():
@@ -294,13 +302,13 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                 logger.log(
                     NOTICE,
                     "|Hooks| Skipping hooks for '%s' because method is called via super()",
-                    method.__qualname__,
+                    original_method.__qualname__,
                 )
                 return original_method(*args, **kwargs)
 
             hooks = get_hooks_hierarchy(cls, method_name)
             if not hooks:
-                logger.log(NOTICE, "|Hooks| No active hooks for '%s'", method.__qualname__)
+                logger.log(NOTICE, "|Hooks| No active hooks for '%s'", original_method.__qualname__)
                 return original_method(*args, **kwargs)
 
             original_indent = 4 * stack_manager.level
@@ -331,7 +339,7 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
                 )
 
                 hook_args = _prepare_hook_args(
-                    method=method,
+                    method=original_method,
                     hook=hook,
                     args=args,
                     kwargs=kwargs,
@@ -426,18 +434,17 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
             return result
 
     # adding __hooks__ to wrapper is important to detect them with @support_hooks decorator
-    raw_method = cls.__dict__[method_name]
-    wrapper.__hooks__ = raw_method.__hooks__  # type: ignore[attr-defined]
+    wrapper.__hooks__ = method_or_descriptor.__hooks__  # type: ignore[attr-defined]
 
     wrapper.skip_hooks = wrapper.__hooks__.skip  # type: ignore[attr-defined]
     wrapper.suspend_hooks = wrapper.__hooks__.stop  # type: ignore[attr-defined]
     wrapper.resume_hooks = wrapper.__hooks__.resume  # type: ignore[attr-defined]
     wrapper.bind = partial(bind_hook, wrapper)  # type: ignore[attr-defined]
 
-    # wrap result back to @classmethod and @staticmethod
-    if isinstance(raw_method, classmethod):
+    # wrap result back to @classmethod and @staticmethod, if was used
+    if isinstance(method_or_descriptor, classmethod):
         return classmethod(wrapper)
-    elif isinstance(raw_method, staticmethod):
+    elif isinstance(method_or_descriptor, staticmethod):
         return staticmethod(wrapper)
 
     return wrapper
@@ -470,7 +477,7 @@ class Slot(Protocol):
     def __hooks__(self) -> HookCollection:
         """Collection of hooks bound to the slot"""
 
-    def skip_hooks(self):
+    def skip_hooks(self) -> ContextManager[None]:
         """
         Context manager which temporary stops all the hooks bound to the slot.
 
@@ -617,7 +624,7 @@ class Slot(Protocol):
         ...
 
 
-def slot(original_method) -> Slot:
+def slot(method: Callable[P, T]) -> Callable[P, T]:
     """
     Decorator which enables hooks functionality on a specific class method.
 
@@ -688,15 +695,16 @@ def slot(original_method) -> Slot:
         MyClass.static_method(3)  # will execute callback3(3)
     """
 
-    if hasattr(original_method, "__hooks__"):
+    if hasattr(method, "__hooks__"):
         raise SyntaxError("Cannot place @slot hook twice on the same method")
 
-    method = getattr(original_method, "__wrapped__", original_method)
-    if not _is_method(method):
-        raise TypeError(f"@slot decorator could be applied to only to methods of class, got {type(method)}")
+    original_method = getattr(method, "__wrapped__", method)
 
-    if _is_private(method):
-        raise ValueError(f"@slot decorator could be applied to public methods only, got '{method.__name__}'")
+    if not _is_method(original_method):
+        raise TypeError(f"@slot decorator could be applied to only to methods of class, got {type(original_method)}")
 
-    original_method.__hooks__ = HookCollection()
-    return original_method
+    if _is_private(original_method):
+        raise ValueError(f"@slot decorator could be applied to public methods only, got '{original_method.__name__}'")
+
+    method.__hooks__ = HookCollection()  # type: ignore[attr-defined]
+    return method

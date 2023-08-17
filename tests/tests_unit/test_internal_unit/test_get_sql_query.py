@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from onetl._internal import get_sql_query  # noqa: WPS436
+from onetl._internal import get_sql_query
 
 
 @pytest.mark.parametrize(

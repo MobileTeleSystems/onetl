@@ -62,7 +62,7 @@ class HWMStrategy(BaseStrategy):
             hwm_store = HWMStoreManager.get_current()
 
             log.info("|%s| Loading HWM from %s:", class_name, hwm_store.__class__.__name__)
-            log_with_indent("qualified_name = %r", self.hwm.qualified_name)
+            log_with_indent(log, "qualified_name = %r", self.hwm.qualified_name)
 
             result = hwm_store.get(self.hwm.qualified_name)
 
@@ -92,30 +92,26 @@ class HWMStrategy(BaseStrategy):
 
             log.info("|%s| Saving HWM to %r:", class_name, hwm_store.__class__.__name__)
             self._log_hwm(self.hwm)
-            log_with_indent("qualified_name = %r", self.hwm.qualified_name)
+            log_with_indent(log, "qualified_name = %r", self.hwm.qualified_name)
 
             location = hwm_store.save(self.hwm)
             log.info("|%s| HWM has been saved", class_name)
 
             if location:
                 if isinstance(location, os.PathLike):
-                    log_with_indent("location = '%s'", os.fspath(location))
+                    log_with_indent(log, "location = '%s'", os.fspath(location))
                 else:
-                    log_with_indent("location = %r", location)
+                    log_with_indent(log, "location = %r", location)
         else:
             log.debug("|%s| HWM value is not set, do not save", class_name)
 
     def _log_hwm(self, hwm: HWM) -> None:
-        log_with_indent("type = %s", hwm.__class__.__name__)
+        log_with_indent(log, "type = %s", hwm.__class__.__name__)
 
         if isinstance(hwm.value, Collection):
-            if log.isEnabledFor(logging.DEBUG):
-                # file list can be very large, dont' show it unless user asked for
-                log_collection("value", hwm.value, level=logging.DEBUG)
-            else:
-                log_with_indent("value = %r<%d items>", hwm.value.__class__.__name__, len(hwm.value))
+            log_collection(log, "value", hwm.value, max_items=10)
         else:
-            log_with_indent("value = %r", hwm.value)
+            log_with_indent(log, "value = %r", hwm.value)
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

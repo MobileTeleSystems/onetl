@@ -18,7 +18,7 @@ import io
 import os
 import textwrap
 from logging import getLogger
-from typing import Optional, Union
+from typing import Optional
 
 from onetl.hooks import slot, support_hooks
 
@@ -106,9 +106,10 @@ class S3(FileConnection):
 
         s3 = S3(
             host="s3.domain.com",
+            protocol="http",
+            bucket="my-bucket",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
-            protocol="http",
         )
 
     """
@@ -118,7 +119,7 @@ class S3(FileConnection):
     bucket: str
     access_key: str
     secret_key: SecretStr
-    protocol: Union[Literal["http"], Literal["https"]] = "https"
+    protocol: Literal["http", "https"] = "https"
     session_token: Optional[SecretStr] = None
     region: Optional[str] = None
 

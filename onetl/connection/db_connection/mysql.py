@@ -14,14 +14,18 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
+from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.hooks import slot, support_hooks
 
-# do not import PySpark here, as we allow user to use `MySQL.package` for creating Spark session
+# do not import PySpark here, as we allow user to use `MySQL.get_packages()` for creating Spark session
 
 
+@support_hooks
 class MySQL(JDBCConnection):
     """MySQL JDBC connection. |support_hooks|
 
@@ -32,7 +36,7 @@ class MySQL(JDBCConnection):
 
         * MySQL server versions: 5.7, 8.0
         * Spark versions: 2.3.x - 3.4.x
-        * Java versions: 8 - 17
+        * Java versions: 8 - 20
 
         See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
 
@@ -93,19 +97,20 @@ class MySQL(JDBCConnection):
         from onetl.connection import MySQL
         from pyspark.sql import SparkSession
 
-        extra = {"useSSL": "false"}
-
+        # Create Spark session with MySQL driver loaded
+        maven_packages = MySQL.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", MySQL.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
+        # Create connection
         mysql = MySQL(
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={"useSSL": "false"},
             spark=spark,
         )
 
@@ -119,8 +124,32 @@ class MySQL(JDBCConnection):
     database: Optional[str] = None
     extra: Extra = Extra()
 
-    driver: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
-    package: ClassVar[str] = "com.mysql:mysql-connector-j:8.0.33"
+    DRIVER: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
+
+    @slot
+    @classmethod
+    def get_packages(cls) -> list[str]:
+        """
+        Get package names to be downloaded by Spark. |support_hooks|
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import MySQL
+
+            MySQL.get_packages()
+
+        """
+        return ["com.mysql:mysql-connector-j:8.0.33"]
+
+    @classproperty
+    def package(cls) -> str:
+        """Get package name to be downloaded by Spark."""
+        msg = "`MySQL.package` will be removed in 1.0.0, use `MySQL.get_packages()` instead"
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return "com.mysql:mysql-connector-j:8.0.33"
 
     @property
     def jdbc_url(self):

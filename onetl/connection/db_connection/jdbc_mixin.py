@@ -20,9 +20,11 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
 
-from pydantic import Field, SecretStr
+from pydantic import Field, PrivateAttr, SecretStr, validator
 
-from onetl._internal import clear_statement, stringify, to_camel  # noqa: WPS436
+from onetl._internal import clear_statement, stringify
+from onetl._util.java import get_java_gateway, try_import_java_class
+from onetl._util.spark import get_spark_version
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
@@ -64,8 +66,8 @@ class JDBCMixin(FrozenModel):
     spark: SparkSession = Field(repr=False)
     user: str
     password: SecretStr
-    driver: ClassVar[str]
-    _check_query: ClassVar[str]
+    DRIVER: ClassVar[str]
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
     class JDBCOptions(GenericOptions):
         """Generic options, related to specific JDBC driver.
@@ -80,9 +82,8 @@ class JDBCMixin(FrozenModel):
         class Config:
             prohibited_options = PROHIBITED_OPTIONS
             extra = "allow"
-            alias_generator = to_camel
 
-        query_timeout: Optional[int] = None
+        query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
         """The number of seconds the driver will wait for a statement to execute.
         Zero means there is no limit.
 
@@ -102,7 +103,7 @@ class JDBCMixin(FrozenModel):
         """
 
     # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
-    _last_connection_and_options: Optional[Tuple[Any, JDBCOptions]] = None
+    _last_connection_and_options: Optional[Tuple[Any, JDBCOptions]] = PrivateAttr(default=None)
 
     @property
     @abstractmethod
@@ -113,6 +114,14 @@ class JDBCMixin(FrozenModel):
     def close(self):
         """
         Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods. |support_hooks|
+
+        .. note::
+
+            Connection can be used again after it was closed.
+
+        Returns
+        -------
+        Connection itself
 
         Examples
         --------
@@ -134,6 +143,7 @@ class JDBCMixin(FrozenModel):
         """
 
         self._close_connections()
+        return self
 
     def __enter__(self):
         return self
@@ -147,15 +157,14 @@ class JDBCMixin(FrozenModel):
 
     @slot
     def check(self):
-        self._check_driver_imported()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()  # type: ignore
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(self._check_query, level=logging.DEBUG)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._query_optional_on_driver(self._check_query, self.JDBCOptions(fetchsize=1))  # type: ignore
+            self._query_optional_on_driver(self._CHECK_QUERY, self.JDBCOptions(fetchsize=1))  # type: ignore
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -186,7 +195,7 @@ class JDBCMixin(FrozenModel):
             (even on clustered instances).
             Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
 
-            Use :obj:`onetl.db.db_reader.db_reader.DBReader` for reading
+            Use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` for reading
             data from table via Spark executors, or for handling different :ref:`strategy`.
 
         .. note::
@@ -247,11 +256,10 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
-        self._check_driver_imported()
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(query)
+        log_lines(log, query)
 
         df = self._query_on_driver(query, self.JDBCOptions.parse(options))
 
@@ -362,11 +370,10 @@ class JDBCMixin(FrozenModel):
             assert df.count()
         """
 
-        self._check_driver_imported()
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_lines(statement)
+        log_lines(log, statement)
 
         call_options = self.JDBCOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
@@ -382,20 +389,20 @@ class JDBCMixin(FrozenModel):
             log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
 
-    def _check_driver_imported(self):
-        gateway = self.spark._sc._gateway  # type: ignore
-        driver_class = getattr(gateway.jvm, self.driver)
-
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
         try:
-            gateway.help(driver_class, display=False)
-        except Exception:
-            log.error(
-                MISSING_JVM_CLASS_MSG,
-                self.driver,
-                f"{self.__class__.__name__}.package",
-                exc_info=False,
+            try_import_java_class(spark, cls.DRIVER)
+        except Exception as e:
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=cls.DRIVER,
+                package_source=cls.__name__,
+                args="",
             )
-            raise
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark
 
     def _query_on_driver(
         self,
@@ -449,7 +456,7 @@ class JDBCMixin(FrozenModel):
             update={
                 "user": self.user,
                 "password": self.password.get_secret_value() if self.password is not None else "",
-                "driver": self.driver,
+                "driver": self.DRIVER,
                 "url": self.jdbc_url,
             },
         ).dict(by_alias=True, **kwargs)
@@ -488,7 +495,7 @@ class JDBCMixin(FrozenModel):
             last_connection.close()
 
         connection_properties = self._options_to_connection_properties(options)
-        driver_manager = self.spark._sc._gateway.jvm.java.sql.DriverManager  # type: ignore
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
         self._last_connection_and_options = (new_connection, options)
@@ -545,12 +552,9 @@ class JDBCMixin(FrozenModel):
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JDBCRDD.scala#L298-L301
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L103-L105
         """
+        from py4j.java_gateway import is_instance_of
 
-        def jvm_is_instance(obj, klass):  # noqa: WPS430
-            import py4j
-
-            return py4j.java_gateway.is_instance_of(self.spark._sc._gateway, obj, klass)  # type: ignore
-
+        gateway = get_java_gateway(self.spark)
         prepared_statement = self.spark._jvm.java.sql.PreparedStatement  # type: ignore
         callable_statement = self.spark._jvm.java.sql.CallableStatement  # type: ignore
 
@@ -562,9 +566,9 @@ class JDBCMixin(FrozenModel):
                 jdbc_statement.setQueryTimeout(options.query_timeout)
 
             # Java SQL classes are not consistent..
-            if jvm_is_instance(jdbc_statement, prepared_statement):
+            if is_instance_of(gateway, jdbc_statement, prepared_statement):
                 jdbc_statement.execute()
-            elif jvm_is_instance(jdbc_statement, callable_statement):
+            elif is_instance_of(gateway, jdbc_statement, callable_statement):
                 jdbc_statement.execute()
             elif read_only:
                 jdbc_statement.executeQuery(statement)
@@ -644,7 +648,7 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if self.spark.version[:3] >= "3.4":
+        if get_spark_version(self.spark) >= (3, 4):
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:

@@ -29,12 +29,12 @@ if TYPE_CHECKING:
 
 class BaseDBConnection(BaseConnection):
     """
-    Implements generic methods for reading data from and writing data to a database
+    Implements generic methods for reading and writing dataframe from/to database-like source
     """
 
     class Dialect(ABC):
         """
-        Collection of methods used for validating input values before passing them to read_df/write_df
+        Collection of methods used for validating input values before passing them to read_source_as_df/write_df_to_target
         """
 
         @classmethod
@@ -54,6 +54,23 @@ class BaseDBConnection(BaseConnection):
         @abstractmethod
         def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
             """Check if ``columns`` value is valid.
+
+            Raises
+            ------
+            TypeError
+                If value type is invalid
+            ValueError
+                If value is invalid
+            """
+
+        @classmethod
+        @abstractmethod
+        def validate_hwm_column(
+            cls,
+            connection: BaseDBConnection,
+            hwm_column: str | None,
+        ) -> str | None:
+            """Check if ``hwm_column`` value is valid.
 
             Raises
             ------
@@ -141,10 +158,10 @@ class BaseDBConnection(BaseConnection):
     def instance_url(self) -> str:
         """Instance URL"""
 
-    @abstractmethod
-    # Some heirs may have a different number of parameters.
+    # Some implementations may have a different number of parameters.
     # For example, the 'options' parameter may be present. This is fine.
-    def read_df(
+    @abstractmethod
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
@@ -159,24 +176,11 @@ class BaseDBConnection(BaseConnection):
         """
 
     @abstractmethod
-    def write_df(
+    def write_df_to_target(
         self,
         df: DataFrame,
         target: str,
     ) -> None:
         """
         Saves dataframe to a specific target. |support_hooks|
-        """
-
-    @abstractmethod
-    def get_min_max_bounds(
-        self,
-        source: str,
-        column: str,
-        expression: str | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-    ) -> tuple[Any, Any]:
-        """
-        Get MIN and MAX values for the column in the source. |support_hooks|
         """

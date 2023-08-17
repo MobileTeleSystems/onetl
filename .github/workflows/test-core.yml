@@ -44,9 +44,9 @@ jobs:
       if: inputs.with-cache
       with:
         path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
         restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py') }}
+          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
           ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-
 
     - name: Cache pip
@@ -69,6 +69,7 @@ jobs:
     - name: Run tests
       run: |
         ./run_tests.sh -m 'not connection'
+        ./run_tests.sh onetl/_util
 
     - name: Upload coverage results
       uses: actions/upload-artifact@v3

@@ -20,15 +20,13 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from math import inf
 from typing import TYPE_CHECKING, Any
 
 from etl_entities import ProcessStackManager
+from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from pathlib import PurePath
-
-    from pyspark.sql import SparkSession
 
 # e.g. 20230524122150
 DATETIME_FORMAT = "%Y%m%d%H%M%S"
@@ -85,40 +83,53 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     return result
 
 
-def stringify(inp: dict) -> dict[str, Any]:
+def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
     """
-    Convert all dict keys and values (recursively) to strings.
+    Convert values to strings.
 
-    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``
+    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``.
+
+    If input is dict, return dict with stringified values and keys (recursive).
+
+    If input is list, return list with stringified values (recursive).
+
+    If ``quote=True``, wrap string values with double quotes.
 
     Examples
     --------
 
-    .. code:: python
-
-        inp = {"abc": 1, "cde": True, "def": "string"}
-        out = {"abc": "1", "cde": "true", "def": "string"}
-
-        assert stringify(inp) == out
+    >>> assert stringify(1) == "1"
+    >>> assert stringify(True) == "true"
+    >>> assert stringify(False) == "false"
+    >>> assert stringify(None) == "null"
+    >>> assert stringify("string") == "string"
+    >>> assert stringify("string", quote=True) == '"string"'
+    >>> assert stringify({"abc": 1}) == {"abc": "1"}
+    >>> assert stringify([1, True, False, None, "string"]) == ["1", "true", "false", "null", "string"]
     """
 
-    result: dict[str, Any] = {}
+    if isinstance(value, dict):
+        return {stringify(k): stringify(v, quote) for k, v in value.items()}
 
-    for key, value in inp.items():
-        if isinstance(value, dict):
-            result[str(key)] = stringify(value)
-        else:
-            str_val = str(value)
-            value_lower = str_val.lower()
-            result[str(key)] = str_val
+    if isinstance(value, list):
+        return [stringify(v, quote) for v in value]
 
-            if value_lower in {"true", "false"}:
-                result[str(key)] = value_lower
+    if value is None:
+        return "null"
 
-            if value is None:
-                result[str(key)] = "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
 
-    return result
+    if isinstance(value, SecretStr):
+        value = value.get_secret_value()
+
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
+
+    if isinstance(value, str):
+        return f'"{value}"' if quote else value
+
+    return str(value)
 
 
 def to_camel(string: str) -> str:
@@ -207,54 +218,3 @@ def get_sql_query(
             where_str,
         ],
     ).strip()
-
-
-def spark_max_cores_with_config(spark: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
-    """
-    Calculate maximum number of cores which can be used by Spark
-
-    Returns
-    -------
-    Tuple
-        First item is an actual number of cores.
-        Second is a dict with config options were used to calculate this value.
-    """
-
-    conf = spark.sparkContext.getConf()
-    config = {}
-
-    master = conf.get("spark.master", "local")
-
-    if "local" in master:
-        # no executors, only driver
-        expected_cores = spark._jvm.Runtime.getRuntime().availableProcessors()  # type: ignore # noqa: WPS437
-        config["spark.driver.cores"] = expected_cores
-    else:
-        cores = int(conf.get("spark.executor.cores", "1"))
-        config["spark.executor.cores"] = cores
-
-        dynamic_allocation = conf.get("spark.dynamicAllocation.enabled", "false") == "true"
-        if dynamic_allocation:
-            # https://spark.apache.org/docs/latest/configuration.html#dynamic-allocation
-            # We cannot rely on current executors count because this number depends on
-            # current load - it increases while performing heavy calculations, and decreases if executors are idle.
-            # If user haven't executed anything in current session, number of executors will be 0.
-            #
-            # Yes, scheduler can refuse to provide executors == maxExecutors, because
-            # queue size limit is reached, or other application has higher priority, so executors were preempted.
-            # But cluster health cannot rely on a chance, so pessimistic approach is preferred.
-
-            dynamic_executors = conf.get("spark.dynamicAllocation.maxExecutors", "infinity")
-            executors_ratio = int(conf.get("spark.dynamicAllocation.executorAllocationRatio", "1"))
-            config["spark.dynamicAllocation.maxExecutors"] = dynamic_executors
-            executors = inf if dynamic_executors == "infinity" else int(dynamic_executors * executors_ratio)
-        else:
-            fixed_executors: float = int(conf.get("spark.executor.instances", "0"))
-            config["spark.executor.instances"] = fixed_executors
-            executors = fixed_executors
-
-        expected_cores = executors * cores
-        if include_driver:
-            expected_cores += 1
-
-    return expected_cores, config

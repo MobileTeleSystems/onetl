@@ -223,9 +223,10 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -374,6 +375,12 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         All of that allows to resume reading process from the *last successful batch*.
 
+    .. warning::
+
+        Not every :ref:`DB connection <db-connections>`
+        supports batch strategy. For example, Kafka connection doesn't support it.
+        Make sure the connection you use is compatible with the IncrementalBatchStrategy.
+
     Parameters
     ----------
     step : Any
@@ -479,9 +486,10 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 

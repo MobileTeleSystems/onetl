@@ -1,8 +1,10 @@
-autodoc_pydantic
+autodoc-pydantic<2.0.0
 furo
 importlib-resources<6
 numpydoc
-sphinx
+pygments-csv-lexer
+# https://github.com/pradyunsg/furo/discussions/693
+sphinx<7.2.0
 sphinx-copybutton
 sphinx-design
 sphinx-tabs
@@ -10,6 +12,4 @@ sphinx-toolbox
 sphinx_substitution_extensions
 sphinxcontrib-towncrier
 towncrier
-# ReadTheDocs uses old OpenSSL version
-# https://github.com/urllib3/urllib3/issues/2168
-urllib3<2.0
+urllib3

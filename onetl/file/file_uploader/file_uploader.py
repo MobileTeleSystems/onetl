@@ -16,14 +16,15 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
-from onetl._internal import generate_temp_path  # noqa: WPS436
+from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection
 from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
@@ -33,7 +34,7 @@ from onetl.file.file_uploader.upload_result import UploadResult
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedLocalFile,
-    FileWriteMode,
+    FileExistBehavior,
     FrozenModel,
     GenericOptions,
     LocalPath,
@@ -136,7 +137,7 @@ class FileUploader(FrozenModel):
             target_path="/path/to/remote/source",
             temp_path="/user/onetl",
             local_path="/some/local/directory",
-            options=FileUploader.Options(delete_local=True, mode="overwrite"),
+            options=FileUploader.Options(delete_local=True, if_exists="overwrite"),
         )
 
     """
@@ -144,7 +145,7 @@ class FileUploader(FrozenModel):
     class Options(GenericOptions):
         """File uploading options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the target directory.
 
@@ -171,6 +172,17 @@ class FileUploader(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileUploader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileUploader.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -301,14 +313,14 @@ class FileUploader(FrozenModel):
         if files is None and not self.local_path:
             raise ValueError("Neither file list nor `local_path` are passed")
 
-        self._log_options(files)
+        self._log_parameters(files)
 
         # Check everything
         if self.local_path:
             self._check_local_path()
 
         self.connection.check()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         self.connection.create_dir(self.target_path)
 
@@ -327,7 +339,7 @@ class FileUploader(FrozenModel):
         to_upload = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             self.connection.remove_dir(self.target_path, recursive=True)
             self.connection.create_dir(self.target_path)
 
@@ -383,7 +395,7 @@ class FileUploader(FrozenModel):
             }
         """
 
-        log.info("|Local FS| Getting files list from path '%s'", self.local_path)
+        log.debug("|Local FS| Getting files list from path '%s'", self.local_path)
 
         self._check_local_path()
         result = FileSet()
@@ -411,20 +423,19 @@ class FileUploader(FrozenModel):
     def _validate_temp_path(cls, temp_path):
         return RemotePath(temp_path) if temp_path else None
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(msg="FileUploader starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg="FileUploader starts")
 
         log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
-        log_with_indent("local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
-        log_with_indent("target_path = '%s'", self.target_path)
-        log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
-
-        log_options(self.options.dict(by_alias=True))
+        log_with_indent(log, "local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
+        log_with_indent(log, "target_path = '%s'", self.target_path)
+        log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
+        log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_local:
             log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)
 
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE UPLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.local_path:
@@ -488,9 +499,9 @@ class FileUploader(FrozenModel):
     def _upload_files(self, to_upload: UPLOAD_ITEMS_TYPE) -> UploadResult:
         files = FileSet(item[0] for item in to_upload)
         log.info("|%s| Files to be uploaded:", self.__class__.__name__)
-        log_lines(str(files))
-        log_with_indent("")
-        log.info("|%s| Starting the upload process", self.__class__.__name__)
+        log_lines(log, str(files))
+        log_with_indent(log, "")
+        log.info("|%s| Starting the upload process ...", self.__class__.__name__)
 
         self._create_dirs(to_upload)
 
@@ -532,7 +543,10 @@ class FileUploader(FrozenModel):
         result = []
 
         if workers > 1:
-            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+            with ThreadPoolExecutor(
+                max_workers=max(workers, len(to_upload)),
+                thread_name_prefix=self.__class__.__name__,
+            ) as executor:
                 futures = [
                     executor.submit(self._upload_file, local_file, target_file, tmp_file)
                     for local_file, target_file, tmp_file in to_upload
@@ -576,10 +590,10 @@ class FileUploader(FrozenModel):
             replace = False
             if self.connection.path_exists(target_file):
                 file = self.connection.resolve_file(target_file)
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning("|%s| File %s already exists, skipping", self.__class__.__name__, path_repr(file))
                     return FileUploadStatus.SKIPPED, local_file
 
@@ -618,5 +632,5 @@ class FileUploader(FrozenModel):
     def _log_result(self, result: UploadResult) -> None:
         log.info("")
         log.info("|%s| Upload result:", self.__class__.__name__)
-        log_lines(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+        log_lines(log, str(result))
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")

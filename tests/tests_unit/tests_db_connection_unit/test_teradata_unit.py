@@ -1,13 +1,36 @@
+import re
+
 import pytest
 
 from onetl.connection import Teradata
 
-pytestmark = pytest.mark.teradata
+pytestmark = [pytest.mark.teradata, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_teradata_class_attributes():
-    assert Teradata.driver == "com.teradata.jdbc.TeraDriver"
-    assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
+    assert Teradata.DRIVER == "com.teradata.jdbc.TeraDriver"
+
+
+def test_teradata_package():
+    warning_msg = re.escape("will be removed in 1.0.0, use `Teradata.get_packages()` instead")
+    with pytest.warns(UserWarning, match=warning_msg):
+        assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
+
+
+def test_teradata_get_packages():
+    assert Teradata.get_packages() == ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+
+
+def test_teradata_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'com.teradata.jdbc.TeraDriver'"
+    with pytest.raises(ValueError, match=msg):
+        Teradata(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_no_packages,
+        )
 
 
 def test_teradata(spark_mock):

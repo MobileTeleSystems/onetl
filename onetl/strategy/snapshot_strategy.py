@@ -70,9 +70,10 @@ class SnapshotStrategy(BaseStrategy):
 
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 
@@ -162,6 +163,12 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         If you only need to reduce number of rows read by Spark from opened cursor,
         use :obj:`onetl.connection.db_connection.postgres.Postgres.ReadOptions.fetchsize` instead
 
+    .. warning::
+
+        Not every :ref:`DB connection <db-connections>`
+        supports batch strategy. For example, Kafka connection doesn't support it.
+        Make sure the connection you use is compatible with the SnapshotBatchStrategy.
+
     Parameters
     ----------
     step : Any
@@ -234,9 +241,10 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         from pyspark.sql import SparkSession
 
+        maven_packages = Postgres.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", Postgres.package)
+            .config("spark.jars.packages", ",".join(maven_packages))
             .getOrCreate()
         )
 

@@ -1,4 +1,4 @@
-.. _db-module:
+.. _db-root:
 
 .. toctree::
     :maxdepth: 1

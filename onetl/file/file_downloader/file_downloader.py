@@ -24,9 +24,9 @@ from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
-from onetl._internal import generate_temp_path  # noqa: WPS436
+from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
@@ -37,7 +37,7 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
-    FileWriteMode,
+    FileExistBehavior,
     FrozenModel,
     GenericOptions,
     LocalPath,
@@ -176,7 +176,7 @@ class FileDownloader(FrozenModel):
                 ExcludeDir("/path/to/remote/source/exclude_dir"),
             ],
             limits=[MaxFilesCount(100)],
-            options=FileDownloader.Options(delete_source=True, mode="overwrite"),
+            options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
         )
 
         # download files to "/path/to/local",
@@ -212,7 +212,7 @@ class FileDownloader(FrozenModel):
     class Options(GenericOptions):
         """File downloading options"""
 
-        mode: FileWriteMode = FileWriteMode.ERROR
+        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
         """
         How to handle existing files in the local directory.
 
@@ -239,6 +239,17 @@ class FileDownloader(FrozenModel):
 
         Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
         """
+
+        @root_validator(pre=True)
+        def mode_is_deprecated(cls, values):
+            if "mode" in values:
+                warnings.warn(
+                    "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+                    "Use `FileDownloader.Options(if_exists=...)` instead",
+                    category=UserWarning,
+                    stacklevel=3,
+                )
+            return values
 
     connection: BaseFileConnection
 
@@ -370,12 +381,12 @@ class FileDownloader(FrozenModel):
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_options(files)
+        self._log_parameters(files)
 
         # Check everything
         self._check_local_path()
         self.connection.check()
-        log_with_indent("")
+        log_with_indent(log, "")
 
         if self.source_path:
             self._check_source_path()
@@ -396,7 +407,7 @@ class FileDownloader(FrozenModel):
         to_download = self._validate_files(files, current_temp_dir=current_temp_dir)
 
         # remove folder only after everything is checked
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             if self.local_path.exists():
                 shutil.rmtree(self.local_path)
             self.local_path.mkdir()
@@ -458,7 +469,7 @@ class FileDownloader(FrozenModel):
             }
         """
 
-        log.info("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
+        log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
         self._check_source_path()
         result = FileSet()
@@ -579,30 +590,21 @@ class FileDownloader(FrozenModel):
         self._init_hwm()
         return self._download_files(to_download)
 
-    def _log_options(self, files: Iterable[str | os.PathLike] | None = None) -> None:  # noqa: WPS213
-        entity_boundary_log(msg="FileDownloader starts")
+    def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
+        entity_boundary_log(log, msg="FileDownloader starts")
 
         log.info("|%s| -> |Local FS| Downloading files using parameters:", self.connection.__class__.__name__)
-        log_with_indent("source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
-        log_with_indent("local_path = '%s'", self.local_path)
-        log_with_indent("temp_path = '%s'", f"'{self.temp_path}'" if self.temp_path else "None")
-
-        if self.filters:
-            log_collection("filters", self.filters)
-        else:
-            log_with_indent("filters = []")
-
-        if self.limits:
-            log_collection("limits", self.limits)
-        else:
-            log_with_indent("limits = []")
-
-        log_options(self.options.dict(by_alias=True))
+        log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
+        log_with_indent(log, "local_path = '%s'", self.local_path)
+        log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
+        log_collection(log, "filters", self.filters)
+        log_collection(log, "limits", self.limits)
+        log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
 
-        if self.options.mode == FileWriteMode.DELETE_ALL:
+        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| LOCAL DIRECTORY WILL BE CLEANED UP BEFORE DOWNLOADING FILES !!!", self.__class__.__name__)
 
         if files and self.source_path:
@@ -672,9 +674,9 @@ class FileDownloader(FrozenModel):
     ) -> DownloadResult:
         files = FileSet(item[0] for item in to_download)
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
-        log_lines(str(files))
-        log_with_indent("")
-        log.info("|%s| Starting the download process", self.__class__.__name__)
+        log_lines(log, str(files))
+        log_with_indent(log, "")
+        log.info("|%s| Starting the download process ...", self.__class__.__name__)
 
         self._create_dirs(to_download)
 
@@ -716,7 +718,10 @@ class FileDownloader(FrozenModel):
         result = []
 
         if workers > 1:
-            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix=self.__class__.__name__) as executor:
+            with ThreadPoolExecutor(
+                max_workers=max(workers, len(to_download)),
+                thread_name_prefix=self.__class__.__name__,
+            ) as executor:
                 futures = [
                     executor.submit(self._download_file, source_file, target_file, tmp_file)
                     for source_file, target_file, tmp_file in to_download
@@ -761,10 +766,10 @@ class FileDownloader(FrozenModel):
 
             replace = False
             if local_file.exists():
-                if self.options.mode == FileWriteMode.ERROR:
+                if self.options.if_exists == FileExistBehavior.ERROR:
                     raise FileExistsError(f"File {path_repr(local_file)} already exists")
 
-                if self.options.mode == FileWriteMode.IGNORE:
+                if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
                     return FileDownloadStatus.SKIPPED, remote_file
 
@@ -828,10 +833,10 @@ class FileDownloader(FrozenModel):
             log.exception("|Local FS| Error while removing temp directory")
 
     def _log_result(self, result: DownloadResult) -> None:
-        log_with_indent("")
+        log_with_indent(log, "")
         log.info("|%s| Download result:", self.__class__.__name__)
-        log_lines(str(result))
-        entity_boundary_log(msg=f"{self.__class__.__name__} ends", char="-")
+        log_lines(log, str(result))
+        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")
 
     @staticmethod
     def _check_hwm_type(hwm_type: type[HWM]) -> None:

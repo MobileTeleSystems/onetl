@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import logging
 import re
 
 import pytest
 
 from onetl.connection import Hive
-from onetl.connection.db_connection.hive import HiveWriteMode
+from onetl.connection.db_connection.hive import HiveTableExistBehavior
 from onetl.hooks import hook
 
-pytestmark = pytest.mark.hive
+pytestmark = [pytest.mark.hive, pytest.mark.db_connection, pytest.mark.connection]
 
 
 def test_hive_missing_args(spark_mock):
@@ -31,7 +30,7 @@ def test_hive_get_known_clusters_hook(request, spark_mock):
     # no exception
     Hive(cluster="unknown", spark=spark_mock)
 
-    @Hive.slots.get_known_clusters.bind
+    @Hive.Slots.get_known_clusters.bind
     @hook
     def get_known_clusters() -> set[str]:
         return {"known1", "known2"}
@@ -48,7 +47,7 @@ def test_hive_get_known_clusters_hook(request, spark_mock):
 
 
 def test_hive_known_normalize_cluster_name_hook(request, spark_mock):
-    @Hive.slots.normalize_cluster_name.bind
+    @Hive.Slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
         return cluster.lower().replace("_", "-")
@@ -67,7 +66,7 @@ def test_hive_known_get_current_cluster_hook(request, spark_mock, mocker):
     Hive(cluster="rnd-prod", spark=spark_mock).check()
     Hive(cluster="rnd-dwh", spark=spark_mock).check()
 
-    @Hive.slots.get_current_cluster.bind
+    @Hive.Slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"
@@ -82,14 +81,14 @@ def test_hive_known_get_current_cluster_hook(request, spark_mock, mocker):
 
 
 def test_hive_known_get_current(request, spark_mock):
-    # no hooks bound to Hive.slots.get_current_cluster
+    # no hooks bound to Hive.Slots.get_current_cluster
     error_msg = re.escape(
-        "Hive.get_current() can be used only if there are some hooks bound to Hive.slots.get_current_cluster",
+        "Hive.get_current() can be used only if there are some hooks bound to Hive.Slots.get_current_cluster",
     )
     with pytest.raises(RuntimeError, match=error_msg):
         Hive.get_current(spark=spark_mock)
 
-    @Hive.slots.get_current_cluster.bind
+    @Hive.Slots.get_current_cluster.bind
     @hook
     def get_current_cluster() -> str:
         return "rnd-dwh"
@@ -101,7 +100,7 @@ def test_hive_known_get_current(request, spark_mock):
 
 def test_hive_old_options_deprecated():
     warning_msg = "Please use 'WriteOptions' class instead. Will be removed in v1.0.0"
-    with pytest.deprecated_call(match=warning_msg):
+    with pytest.warns(UserWarning, match=warning_msg):
         options = Hive.Options(some="value")
 
     assert options.some == "value"
@@ -118,23 +117,14 @@ def test_hive_write_options_sort_by_without_bucket_by(sort_by):
 
 
 @pytest.mark.parametrize(
-    "options",
+    "mode, recommended",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
+        ("dynamic", "replace_overlapping_partitions"),
+        ("static", "replace_entire_table"),
     ],
 )
-def test_hive_options_unsupported_modes(options):
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        Hive.WriteOptions(**options)
-
-
-@pytest.mark.parametrize("mode", ["static", "dynamic"])
-def test_hive_write_options_unsupported_partition_overwrite(mode):
-    error_msg = (
-        "`partitionOverwriteMode` option should be replaced with mode='overwrite_partitions' or 'overwrite_table'"
-    )
+def test_hive_write_options_unsupported_partition_overwrite(mode, recommended):
+    error_msg = f"`partitionOverwriteMode` option should be replaced with if_exists='{recommended}'"
 
     with pytest.raises(ValueError, match=error_msg):
         Hive.WriteOptions(partitionOverwriteMode=mode)
@@ -156,13 +146,76 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
         Hive.WriteOptions(insertInto=insert_into)
 
 
-def test_hive_write_options_deprecated_mode_overwrite(caplog):
-    warning_msg = (
-        "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0, use `overwrite_partitions` instead"
-    )
+@pytest.mark.parametrize(
+    "options, value",
+    [
+        ({}, HiveTableExistBehavior.APPEND),
+        ({"if_exists": "append"}, HiveTableExistBehavior.APPEND),
+        ({"if_exists": "replace_overlapping_partitions"}, HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS),
+        ({"if_exists": "replace_entire_table"}, HiveTableExistBehavior.REPLACE_ENTIRE_TABLE),
+    ],
+)
+def test_hive_write_options_if_exists(options, value):
+    assert Hive.WriteOptions(**options).if_exists == value
 
-    with caplog.at_level(logging.INFO):
-        options = Hive.WriteOptions(mode="overwrite")
-        assert warning_msg in caplog.text
 
-    assert options.mode == HiveWriteMode.OVERWRITE_PARTITIONS
+@pytest.mark.parametrize(
+    "options, value, message",
+    [
+        (
+            {"mode": "append"},
+            HiveTableExistBehavior.APPEND,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_overlapping_partitions"},
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "replace_entire_table"},
+            HiveTableExistBehavior.REPLACE_ENTIRE_TABLE,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "overwrite"},
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Mode `overwrite` is deprecated since v0.4.0 and will be removed in v1.0.0. "
+            "Use `replace_overlapping_partitions` instead",
+        ),
+        (
+            {"mode": "overwrite_partitions"},
+            HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
+            "Mode `overwrite_partitions` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_overlapping_partitions` instead",
+        ),
+        (
+            {"mode": "overwrite_table"},
+            HiveTableExistBehavior.REPLACE_ENTIRE_TABLE,
+            "Mode `overwrite_table` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `replace_entire_table` instead",
+        ),
+    ],
+)
+def test_hive_write_options_mode_deprecated(options, value, message):
+    with pytest.warns(UserWarning, match=re.escape(message)):
+        options = Hive.WriteOptions(**options)
+        assert options.if_exists == value
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        # disallowed modes
+        {"mode": "error"},
+        {"mode": "ignore"},
+        # wrong mode
+        {"mode": "wrong_mode"},
+    ],
+)
+def test_hive_write_options_mode_unsupported(options):
+    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+        Hive.WriteOptions(**options)

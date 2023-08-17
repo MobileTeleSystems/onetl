@@ -14,7 +14,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget \
         procps \
-        openjdk-11-jdk \
+        openjdk-17-jdk \
         libsasl2-modules \
         libsasl2-dev \
         libaio1 \
@@ -66,7 +66,8 @@ RUN pip install \
     -r /app/requirements/tests/mssql.txt \
     -r /app/requirements/tests/mysql.txt \
     -r /app/requirements/tests/oracle.txt \
-    -r /app/requirements/tests/postgres.txt
+    -r /app/requirements/tests/postgres.txt \
+    -r /app/requirements/tests/kafka.txt
 
 FROM base AS full
 
