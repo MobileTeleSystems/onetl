@@ -3,7 +3,8 @@ furo
 importlib-resources<6
 numpydoc
 pygments-csv-lexer
-sphinx
+# https://github.com/pradyunsg/furo/discussions/693
+sphinx<7.2.0
 sphinx-copybutton
 sphinx-design
 sphinx-tabs
