@@ -719,7 +719,7 @@ class FileDownloader(FrozenModel):
 
         if workers > 1:
             with ThreadPoolExecutor(
-                max_workers=max(workers, len(to_download)),
+                max_workers=min(workers, len(to_download)),
                 thread_name_prefix=self.__class__.__name__,
             ) as executor:
                 futures = [

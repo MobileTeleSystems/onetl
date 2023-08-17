@@ -544,7 +544,7 @@ class FileUploader(FrozenModel):
 
         if workers > 1:
             with ThreadPoolExecutor(
-                max_workers=max(workers, len(to_upload)),
+                max_workers=min(workers, len(to_upload)),
                 thread_name_prefix=self.__class__.__name__,
             ) as executor:
                 futures = [
