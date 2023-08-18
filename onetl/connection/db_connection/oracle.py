@@ -24,13 +24,21 @@ from datetime import date, datetime
 from textwrap import indent
 from typing import TYPE_CHECKING, ClassVar, Optional
 
+from deprecated import deprecated
 from pydantic import root_validator
 
 from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
+from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCReadOptions,
+    JDBCWriteOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
+from onetl.impl import GenericOptions
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session
@@ -63,6 +71,11 @@ class ErrorPosition:
     def sort_key(self) -> tuple[int, int, int]:
         # Sort results by priority (``ERROR``, then ``WARNING``), line, position (symbol)
         return 100 - self.level, self.line, self.position
+
+
+class OracleExtra(GenericOptions):
+    class Config:
+        extra = "allow"
 
 
 @support_hooks
@@ -173,6 +186,9 @@ class Oracle(JDBCConnection):
     port: int = 1521
     sid: Optional[str] = None
     service_name: Optional[str] = None
+    extra: OracleExtra = OracleExtra()
+
+    Extra = OracleExtra
 
     DRIVER: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 FROM dual"
@@ -229,7 +245,7 @@ class Oracle(JDBCConnection):
 
         return values
 
-    class Dialect(JDBCConnection.Dialect):
+    class Dialect(JDBCDialect):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.strftime("%Y-%m-%d %H:%M:%S")
@@ -240,7 +256,7 @@ class Oracle(JDBCConnection):
             result = value.strftime("%Y-%m-%d")
             return f"TO_DATE('{result}', 'YYYY-MM-DD')"
 
-    class ReadOptions(JDBCConnection.ReadOptions):
+    class ReadOptions(JDBCReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"ora_hash({partition_column}, {num_partitions})"
@@ -249,7 +265,15 @@ class Oracle(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD({partition_column}, {num_partitions})"
 
-    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+        category=UserWarning,
+    )
+    class Options(ReadOptions, JDBCWriteOptions):
+        class Config:
+            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @property
     def jdbc_url(self) -> str:
@@ -272,7 +296,7 @@ class Oracle(JDBCConnection):
     def execute(
         self,
         statement: str,
-        options: Oracle.JDBCOptions | dict | None = None,  # noqa: WPS437
+        options: JDBCOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
         statement = clear_statement(statement)
 
@@ -323,7 +347,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: Oracle.JDBCOptions,
+        options: JDBCOptions,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -393,7 +417,7 @@ class Oracle(JDBCConnection):
     def _handle_compile_errors(
         self,
         statement: str,
-        options: Oracle.JDBCOptions,
+        options: JDBCOptions,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.

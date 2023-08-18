@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import MSSQL
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
+from onetl.connection.db_connection.jdbc_connection import JDBCPartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.mssql
@@ -45,8 +45,8 @@ def test_mssql_reader_snapshot_partitioning_mode_mod(spark, processing, load_tab
     reader = DBReader(
         connection=mssql,
         source=load_table_data.full_name,
-        options=mssql.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
+        options=MSSQL.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.MOD,
             partition_column="id_int",
             num_partitions=5,
         ),
@@ -76,8 +76,8 @@ def test_mssql_reader_snapshot_partitioning_mode_hash(spark, processing, load_ta
     reader = DBReader(
         connection=mssql,
         source=load_table_data.full_name,
-        options=mssql.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
+        options=MSSQL.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.HASH,
             partition_column="text_string",
             num_partitions=5,
         ),

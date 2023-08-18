@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import MySQL
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
+from onetl.connection.db_connection.jdbc_connection import JDBCPartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.mysql
@@ -44,8 +44,8 @@ def test_mysql_reader_snapshot_partitioning_mode_mod(spark, processing, load_tab
     reader = DBReader(
         connection=mysql,
         source=load_table_data.full_name,
-        options=mysql.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
+        options=MySQL.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.MOD,
             partition_column="id_int",
             num_partitions=5,
         ),
@@ -74,8 +74,8 @@ def test_mysql_reader_snapshot_partitioning_mode_hash(spark, processing, load_ta
     reader = DBReader(
         connection=mysql,
         source=load_table_data.full_name,
-        options=mysql.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
+        options=MySQL.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.HASH,
             partition_column="text_string",
             num_partitions=5,
         ),

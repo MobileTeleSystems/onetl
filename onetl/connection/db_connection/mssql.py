@@ -18,10 +18,19 @@ import warnings
 from datetime import date, datetime
 from typing import ClassVar
 
+from deprecated import deprecated
+
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
+from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCReadOptions,
+    JDBCWriteOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
+from onetl.impl import GenericOptions
 
 # do not import PySpark here, as we allow user to use `MSSQL.get_packages()` for creating Spark session
 
@@ -161,8 +170,9 @@ class MSSQL(JDBCConnection):
 
     """
 
-    class Extra(JDBCConnection.Extra):
+    class Extra(GenericOptions):
         class Config:
+            extra = "allow"
             prohibited_options = frozenset(("databaseName",))
 
     database: str
@@ -211,7 +221,7 @@ class MSSQL(JDBCConnection):
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
 
-    class Dialect(JDBCConnection.Dialect):
+    class Dialect(JDBCDialect):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.isoformat()
@@ -222,7 +232,7 @@ class MSSQL(JDBCConnection):
             result = value.isoformat()
             return f"CAST('{result}' AS date)"
 
-    class ReadOptions(JDBCConnection.ReadOptions):
+    class ReadOptions(JDBCReadOptions):
         # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
@@ -232,7 +242,15 @@ class MSSQL(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
-    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+        category=UserWarning,
+    )
+    class Options(ReadOptions, JDBCWriteOptions):
+        class Config:
+            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @property
     def jdbc_url(self) -> str:
