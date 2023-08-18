@@ -9,7 +9,7 @@ File Connections
 
     FTP <ftp>
     FTPS <ftps>
-    HDFS <hdfs>
+    HDFS <hdfs/index>
     SFTP <sftp>
     S3 <s3>
     Webdav <webdav>

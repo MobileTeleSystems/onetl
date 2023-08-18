@@ -25,6 +25,7 @@ from pydantic import Field, FilePath, SecretStr, root_validator, validator
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
+from onetl.connection.file_connection.hdfs.slots import HDFSSlots
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.connection.kerberos_helpers import kinit
 from onetl.hooks import slot, support_hooks
@@ -88,7 +89,8 @@ class HDFS(FileConnection, RenameDirMixin):
         Used for:
             * HWM and lineage (as instance name for file paths), if set.
             * Validation of ``host`` value,
-                if latter is passed and if some hooks are bound to :obj:`~slots.get_cluster_namenodes`.
+                if latter is passed and if some hooks are bound to
+                :obj:`Slots.get_cluster_namenodes <onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_cluster_namenodes>`
 
         .. warning:
 
@@ -100,7 +102,8 @@ class HDFS(FileConnection, RenameDirMixin):
         Should be an active namenode (NOT standby).
 
         If value is not set, but there are some hooks bound to
-        :obj:`~slots.get_cluster_namenodes` and :obj:`~slots.is_namenode_active`,
+        :obj:`Slots.get_cluster_namenodes <onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_cluster_namenodes>`
+        and :obj:`Slots.is_namenode_active <onetl.connection.file_connection.hdfs.slots.HDFSSlots.is_namenode_active>`,
         onETL will iterate over cluster namenodes to detect which one is active.
 
         .. warning:
@@ -110,7 +113,8 @@ class HDFS(FileConnection, RenameDirMixin):
     webhdfs_port : int, default: ``50070``
         Port of Hadoop namenode (WebHDFS protocol).
 
-        If omitted, but there are some hooks bound to :obj:`~slots.get_webhdfs_port` slot,
+        If omitted, but there are some hooks bound to
+        :obj:`Slots.get_webhdfs_port <onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_webhdfs_port>` slot,
         onETL will try to detect port number for a specific ``cluster``.
 
     user : str, optional
@@ -202,277 +206,6 @@ class HDFS(FileConnection, RenameDirMixin):
         ).check()
     """
 
-    @support_hooks
-    class Slots:
-        """Slots that could be implemented by third-party plugins"""
-
-        @slot
-        @staticmethod
-        def normalize_cluster_name(cluster: str) -> str | None:
-            """
-            Normalize cluster name passed into HDFS constructor.
-
-            If hooks didn't return anything, cluster name is left intact.
-
-            Parameters
-            ----------
-            cluster : :obj:`str`
-                Cluster name
-
-            Returns
-            -------
-            str | None
-                Normalized cluster name.
-
-                If hook cannot be applied to a specific cluster, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.normalize_cluster_name.bind
-                @hook
-                def normalize_cluster_name(cluster: str) -> str:
-                    return cluster.lower()
-            """
-
-        @slot
-        @staticmethod
-        def normalize_namenode_host(host: str, cluster: str | None) -> str | None:
-            """
-            Normalize namenode host passed into HDFS constructor.
-
-            If hooks didn't return anything, host is left intact.
-
-            Parameters
-            ----------
-            host : :obj:`str`
-                Namenode host (raw)
-
-            cluster : :obj:`str` or :obj:`None`
-                Cluster name (normalized), if set
-
-            Returns
-            -------
-            str | None
-                Normalized namenode host name.
-
-                If hook cannot be applied to a specific host name, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.normalize_namenode_host.bind
-                @hook
-                def normalize_namenode_host(host: str, cluster: str) -> str | None:
-                    if cluster == "rnd-dwh":
-                        if not host.endswith(".domain.com"):
-                            # fix missing domain name
-                            host += ".domain.com"
-                        return host
-
-                    return None
-            """
-
-        @slot
-        @staticmethod
-        def get_known_clusters() -> set[str] | None:
-            """
-            Return collection of known clusters.
-
-            Cluster passed into HDFS constructor should be present in this list.
-            If hooks didn't return anything, no validation will be performed.
-
-            Returns
-            -------
-            set[str] | None
-                Collection of cluster names (in normalized form).
-
-                If hook cannot be applied, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.get_known_clusters.bind
-                @hook
-                def get_known_clusters() -> str[str]:
-                    return {"rnd-dwh", "rnd-prod"}
-            """
-
-        @slot
-        @staticmethod
-        def get_cluster_namenodes(cluster: str) -> set[str] | None:
-            """
-            Return collection of known namenodes for the cluster.
-
-            Namenode host passed into HDFS constructor should be present in this list.
-            If hooks didn't return anything, no validation will be performed.
-
-            Parameters
-            ----------
-            cluster : :obj:`str`
-                Cluster name (normalized)
-
-            Returns
-            -------
-            set[str] | None
-                Collection of host names (in normalized form).
-
-                If hook cannot be applied, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.get_cluster_namenodes.bind
-                @hook
-                def get_cluster_namenodes(cluster: str) -> str[str] | None:
-                    if cluster == "rnd-dwh":
-                        return {"namenode1.domain.com", "namenode2.domain.com"}
-                    return None
-            """
-
-        @slot
-        @staticmethod
-        def get_current_cluster() -> str | None:
-            """
-            Get current cluster name.
-
-            Used in :obj:`~get_current_cluster` to  automatically fill up ``cluster`` attribute of a connection.
-            If hooks didn't return anything, calling the method above will raise an exception.
-
-            Returns
-            -------
-            str | None
-                Current cluster name (in normalized form).
-
-                If hook cannot be applied, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.get_current_cluster.bind
-                @hook
-                def get_current_cluster() -> str:
-                    # some magic here
-                    return "rnd-dwh"
-            """
-
-        @slot
-        @staticmethod
-        def get_webhdfs_port(cluster: str) -> int | None:
-            """
-            Get WebHDFS port number for a specific cluster.
-
-            Used by constructor to automatically set port number if omitted.
-
-            Parameters
-            ----------
-            cluster : :obj:`str`
-                Cluster name (normalized)
-
-            Returns
-            -------
-            int | None
-                WebHDFS port number.
-
-                If hook cannot be applied, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.get_webhdfs_port.bind
-                @hook
-                def get_webhdfs_port(cluster: str) -> int | None:
-                    if cluster == "rnd-dwh":
-                        return 50007  # Cloudera
-                    return None
-            """
-
-        @slot
-        @staticmethod
-        def is_namenode_active(host: str, cluster: str | None) -> bool | None:
-            """
-            Check whether a namenode of a specified cluster is active (=not standby) or not.
-
-            Used for:
-                * If HDFS connection is created without ``host``
-
-                    Connector will iterate over :obj:`~get_cluster_namenodes` of a cluster to get active namenode,
-                    and then use it instead of ``host`` attribute.
-
-                * If HDFS connection is created with ``host``
-
-                    :obj:`~check` will determine whether this host is active.
-
-            Parameters
-            ----------
-            host : :obj:`str`
-                Namenode host (normalized)
-
-            cluster : :obj:`str` or :obj:`None`
-                Cluster name (normalized), if set
-
-            Returns
-            -------
-            bool | None
-                ``True`` if namenode is active, ``False`` if not.
-
-                If hook cannot be applied, it should return ``None``.
-
-            Examples
-            --------
-
-            .. code:: python
-
-                from onetl.connection import HDFS
-                from onetl.hooks import hook
-
-
-                @HDFS.Slots.is_namenode_active.bind
-                @hook
-                def is_namenode_active(host: str, cluster: str | None) -> bool:
-                    # some magic here
-                    return True
-            """
-
-    # TODO: remove in v1.0.0
-    slots = Slots
-
     cluster: Optional[Cluster] = None
     host: Optional[Host] = None
     webhdfs_port: int = Field(alias="port", default=50070)
@@ -481,101 +214,9 @@ class HDFS(FileConnection, RenameDirMixin):
     keytab: Optional[FilePath] = None
     timeout: int = 10
 
-    @validator("user", pre=True)
-    def validate_packages(cls, user):
-        if user:
-            try:
-                from hdfs.ext.kerberos import KerberosClient as CheckForKerberosSupport
-            except (ImportError, NameError) as e:
-                raise ImportError(
-                    textwrap.dedent(
-                        """
-                        Cannot import module "hdfs.ext.kerberos".
-
-                        Since onETL v0.7.0 you should install package as follows:
-                            pip install onetl[hdfs,kerberos]
-
-                        or
-                            pip install onetl[all]
-
-                        You should also have Kerberos libraries installed to OS,
-                        specifically ``kinit`` executable.
-                        """,
-                    ).strip(),
-                ) from e
-
-        return user
-
-    @root_validator
-    def validate_cluster_or_hostname_set(cls, values):
-        host = values.get("host")
-        cluster = values.get("cluster")
-
-        if not cluster and not host:
-            raise ValueError("You should pass either host or cluster name")
-
-        return values
-
-    @validator("cluster")
-    def validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
-        validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
-        if validated_cluster != cluster:
-            log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
-
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
-        known_clusters = cls.Slots.get_known_clusters()
-        if known_clusters and validated_cluster not in known_clusters:
-            raise ValueError(
-                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
-            )
-
-        return validated_cluster
-
-    @validator("host")
-    def validate_host_name(cls, host, values):
-        cluster = values.get("cluster")
-
-        log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
-        namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
-        if namenode != host:
-            log.debug("|%s|   Got %r", cls.__name__, namenode)
-
-        if cluster:
-            log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
-            known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
-            if known_namenodes and namenode not in known_namenodes:
-                raise ValueError(
-                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
-                    f"{sorted(known_namenodes)!r}",
-                )
-
-        return namenode
-
-    @validator("webhdfs_port", always=True)
-    def validate_port_number(cls, port, values):
-        cluster = values.get("cluster")
-        if cluster:
-            log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
-            result = cls.Slots.get_webhdfs_port(cluster) or port
-            if result != port:
-                log.debug("|%s|   Got %r", cls.__name__, result)
-            return result
-
-        return port
-
-    @root_validator
-    def validate_credentials(cls, values):
-        user = values.get("user")
-        password = values.get("password")
-        keytab = values.get("keytab")
-        if password and keytab:
-            raise ValueError("Please provide either `keytab` or `password` for kinit, not both")
-
-        if (password or keytab) and not user:
-            raise ValueError("`keytab` or `password` should be used only with `user`")
-
-        return values
+    Slots = HDFSSlots
+    # TODO: remove in v1.0.0
+    slots = Slots
 
     @slot
     @classmethod
@@ -587,7 +228,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         .. note::
 
-            Can be used only if there are a some hooks bound to slot :obj:`~slots.get_current_cluster`.
+            Can be used only if there are a some hooks bound to slot
+            :obj:`Slots.get_current_cluster <onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_current_cluster>`
 
         Parameters
         ----------
@@ -629,6 +271,102 @@ class HDFS(FileConnection, RenameDirMixin):
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
+
+    @validator("user", pre=True)
+    def _validate_packages(cls, user):
+        if user:
+            try:
+                from hdfs.ext.kerberos import KerberosClient as CheckForKerberosSupport
+            except (ImportError, NameError) as e:
+                raise ImportError(
+                    textwrap.dedent(
+                        """
+                        Cannot import module "hdfs.ext.kerberos".
+
+                        Since onETL v0.7.0 you should install package as follows:
+                            pip install onetl[hdfs,kerberos]
+
+                        or
+                            pip install onetl[all]
+
+                        You should also have Kerberos libraries installed to OS,
+                        specifically ``kinit`` executable.
+                        """,
+                    ).strip(),
+                ) from e
+
+        return user
+
+    @root_validator
+    def _validate_cluster_or_hostname_set(cls, values):
+        host = values.get("host")
+        cluster = values.get("cluster")
+
+        if not cluster and not host:
+            raise ValueError("You should pass either host or cluster name")
+
+        return values
+
+    @validator("cluster")
+    def _validate_cluster_name(cls, cluster):
+        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
+        if validated_cluster != cluster:
+            log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
+
+        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        known_clusters = cls.Slots.get_known_clusters()
+        if known_clusters and validated_cluster not in known_clusters:
+            raise ValueError(
+                f"Cluster {validated_cluster!r} is not in the known clusters list: {sorted(known_clusters)!r}",
+            )
+
+        return validated_cluster
+
+    @validator("host")
+    def _validate_host_name(cls, host, values):
+        cluster = values.get("cluster")
+
+        log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
+        namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
+        if namenode != host:
+            log.debug("|%s|   Got %r", cls.__name__, namenode)
+
+        if cluster:
+            log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
+            known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
+            if known_namenodes and namenode not in known_namenodes:
+                raise ValueError(
+                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
+                    f"{sorted(known_namenodes)!r}",
+                )
+
+        return namenode
+
+    @validator("webhdfs_port", always=True)
+    def _validate_port_number(cls, port, values):
+        cluster = values.get("cluster")
+        if cluster:
+            log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
+            result = cls.Slots.get_webhdfs_port(cluster) or port
+            if result != port:
+                log.debug("|%s|   Got %r", cls.__name__, result)
+            return result
+
+        return port
+
+    @root_validator
+    def _validate_credentials(cls, values):
+        user = values.get("user")
+        password = values.get("password")
+        keytab = values.get("keytab")
+        if password and keytab:
+            raise ValueError("Please provide either `keytab` or `password` for kinit, not both")
+
+        if (password or keytab) and not user:
+            raise ValueError("`keytab` or `password` should be used only with `user`")
+
+        return values
 
     def _get_active_namenode(self) -> str:
         class_name = self.__class__.__name__

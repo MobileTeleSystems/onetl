@@ -75,7 +75,7 @@ class SparkHDFS(SparkFileDFConnection):
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
-        use :obj:`HDFS <onetl.connection.file_connection.hdfs.HDFS>` connection.
+        use :obj:`HDFS <onetl.connection.file_connection.hdfs.connection.HDFS>` connection.
 
     Parameters
     ----------

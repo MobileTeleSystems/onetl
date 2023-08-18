@@ -30,9 +30,9 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
 
 def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
     from onetl.connection import HDFS
-    from onetl.connection.file_connection import hdfs
+    from onetl.connection.file_connection.hdfs import connection
 
-    mocker.patch.object(hdfs, "kinit")
+    mocker.patch.object(connection, "kinit")
 
     folder: Path = tmp_path_factory.mktemp("keytab")
     folder.mkdir(exist_ok=True, parents=True)
@@ -63,9 +63,9 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
 
 def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     from onetl.connection import HDFS
-    from onetl.connection.file_connection import hdfs
+    from onetl.connection.file_connection.hdfs import connection
 
-    mocker.patch.object(hdfs, "kinit")
+    mocker.patch.object(connection, "kinit")
 
     hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), password="somepass")
 
