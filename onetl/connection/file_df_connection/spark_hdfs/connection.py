@@ -85,7 +85,8 @@ class SparkHDFS(SparkFileDFConnection):
         Used for:
             * HWM and lineage (as instance name for file paths)
             * Validation of ``host`` value,
-                if latter is passed and if some hooks are bound to :obj:`~slots.get_cluster_namenodes`.
+                if latter is passed and if some hooks are bound to
+                :obj:`Slots.get_cluster_namenodes <onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_cluster_namenodes>`.
 
     host : str, optional
         Hadoop namenode host. For example: ``namenode1.domain.com``.

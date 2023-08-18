@@ -10,7 +10,7 @@ DB Connections
     Clickhouse <clickhouse>
     Greenplum <greenplum/index>
     Kafka <kafka/index>
-    Hive <hive>
+    Hive <hive/index>
     MongoDB <mongodb/index>
     MSSQL <mssql>
     MySQL <mysql>

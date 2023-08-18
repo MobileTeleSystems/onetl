@@ -36,8 +36,8 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
 @pytest.mark.parametrize(
     "options_class, options_class_name, known_options",
     [
-        (Hive.WriteOptions, "WriteOptions", {"if_exists": "replace_overlapping_partitions"}),
-        (Hive.Options, "Options", {"if_exists": "replace_overlapping_partitions"}),
+        (Hive.WriteOptions, "HiveWriteOptions", {"if_exists": "replace_overlapping_partitions"}),
+        (Hive.Options, "HiveLegacyOptions", {"if_exists": "replace_overlapping_partitions"}),
         (Postgres.ReadOptions, "ReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
         (Postgres.WriteOptions, "JDBCWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Postgres.Options, "Options", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
