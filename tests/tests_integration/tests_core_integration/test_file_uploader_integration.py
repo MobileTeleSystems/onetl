@@ -72,14 +72,14 @@ def test_file_uploader_run_with_files(
         upload_result = uploader.run(run_path_type(file) for file in test_files)
 
     files_count = len(test_files)
-    real_workers = min(workers, files_count)
     if 1 <= files_count < workers:
-        assert f"|FileUploader| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+        assert f"Asked for {workers} workers, but there are only {files_count} files" in caplog.text
 
-    if real_workers > 1:
-        assert f"|FileUploader| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    if workers > 1 and files_count > 1:
+        real_workers = min(workers, files_count)
+        assert f"Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
     else:
-        assert "|FileUploader| Using plain old for-loop" in caplog.text
+        assert "Using plain old for-loop" in caplog.text
 
     assert not upload_result.failed
     assert not upload_result.missing
@@ -529,25 +529,29 @@ def test_file_uploader_run_input_is_not_file(file_connection):
     [False, True],
     ids=["Without local_path", "With local_path"],
 )
-def test_file_uploader_run_with_empty_files(file_connection, pass_local_path, tmp_path_factory):
+def test_file_uploader_run_with_empty_files(file_connection, pass_local_path, tmp_path_factory, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     local_path = tmp_path_factory.mktemp("local_path")
 
-    downloader = FileUploader(
+    uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
         local_path=local_path if pass_local_path else None,
     )
 
-    download_result = downloader.run([])
+    with caplog.at_level(logging.INFO):
+        upload_result = uploader.run([])  # argument takes precedence over source_path content
 
-    assert not download_result.failed
-    assert not download_result.skipped
-    assert not download_result.missing
-    assert not download_result.successful
+    assert "No files to upload!" in caplog.text
+    assert "Starting the upload process" not in caplog.text
+
+    assert not upload_result.failed
+    assert not upload_result.skipped
+    assert not upload_result.missing
+    assert not upload_result.successful
 
 
-def test_file_uploader_run_with_empty_local_path(request, file_connection, tmp_path_factory):
+def test_file_uploader_run_with_empty_local_path(request, file_connection, tmp_path_factory, caplog):
     target_path = PurePosixPath(f"/tmp/test_upload_{secrets.token_hex(5)}")
     local_path = tmp_path_factory.mktemp("local_path")
 
@@ -556,18 +560,22 @@ def test_file_uploader_run_with_empty_local_path(request, file_connection, tmp_p
 
     request.addfinalizer(finalizer)
 
-    downloader = FileUploader(
+    uploader = FileUploader(
         connection=file_connection,
         target_path=target_path,
         local_path=local_path,
     )
 
-    download_result = downloader.run()
+    with caplog.at_level(logging.INFO):
+        upload_result = uploader.run()
 
-    assert not download_result.failed
-    assert not download_result.skipped
-    assert not download_result.missing
-    assert not download_result.successful
+    assert "No files to upload!" in caplog.text
+    assert "Starting the upload process" not in caplog.text
+
+    assert not upload_result.failed
+    assert not upload_result.skipped
+    assert not upload_result.missing
+    assert not upload_result.successful
 
 
 def test_file_uploader_without_files_and_without_local_path(file_connection):

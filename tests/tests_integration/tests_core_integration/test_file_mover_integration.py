@@ -73,14 +73,14 @@ def test_file_mover_run(
         move_result = mover.run()
 
     files_count = len(uploaded_files)
-    real_workers = min(workers, files_count)
     if 1 <= files_count < workers:
-        assert f"|FileMover| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+        assert f"Asked for {workers} workers, but there are only {files_count} files" in caplog.text
 
-    if real_workers > 1:
-        assert f"|FileMover| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    if workers > 1 and files_count > 1:
+        real_workers = min(workers, files_count)
+        assert f"Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
     else:
-        assert "|FileMover| Using plain old for-loop" in caplog.text
+        assert "Using plain old for-loop" in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped
@@ -356,6 +356,7 @@ def test_file_mover_run_with_empty_files_input(
     request,
     file_connection_with_path_and_files,
     pass_source_path,
+    caplog,
 ):
     file_connection, source_path, _ = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
@@ -371,7 +372,11 @@ def test_file_mover_run_with_empty_files_input(
         source_path=source_path if pass_source_path else None,
     )
 
-    move_result = mover.run([])  # this argument takes precedence
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run([])  # argument takes precedence over source_path content
+
+    assert "No files to move!" in caplog.text
+    assert "Starting the moving process" not in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped
@@ -379,7 +384,7 @@ def test_file_mover_run_with_empty_files_input(
     assert not move_result.successful
 
 
-def test_file_mover_run_with_empty_source_path(request, file_connection):
+def test_file_mover_run_with_empty_source_path(request, file_connection, caplog):
     source_path = PurePosixPath(f"/tmp/test_move_{secrets.token_hex(5)}")
 
     file_connection.create_dir(source_path)
@@ -405,7 +410,11 @@ def test_file_mover_run_with_empty_source_path(request, file_connection):
         source_path=source_path,
     )
 
-    move_result = mover.run()
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+
+    assert "No files to move!" in caplog.text
+    assert "Starting the moving process" not in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped

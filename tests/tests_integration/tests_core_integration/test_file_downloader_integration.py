@@ -78,14 +78,14 @@ def test_file_downloader_run(
         download_result = downloader.run()
 
     files_count = len(uploaded_files)
-    real_workers = min(workers, files_count)
     if 1 <= files_count < workers:
-        assert f"|FileDownloader| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+        assert f"Asked for {workers} workers, but there are only {files_count} files" in caplog.text
 
-    if real_workers > 1:
-        assert f"|FileDownloader| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    if workers > 1 and files_count > 1:
+        real_workers = min(workers, files_count)
+        assert f"Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
     else:
-        assert "|FileDownloader| Using plain old for-loop" in caplog.text
+        assert "Using plain old for-loop" in caplog.text
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -384,6 +384,7 @@ def test_file_downloader_run_with_empty_files_input(
     file_connection_with_path_and_files,
     pass_source_path,
     tmp_path_factory,
+    caplog,
 ):
     file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
@@ -394,7 +395,11 @@ def test_file_downloader_run_with_empty_files_input(
         source_path=remote_path if pass_source_path else None,
     )
 
-    download_result = downloader.run([])  # this argument takes precedence
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run([])  # argument takes precedence over source_path content
+
+    assert "No files to download!" in caplog.text
+    assert "Starting the download process" not in caplog.text
 
     assert not download_result.failed
     assert not download_result.skipped
@@ -402,7 +407,7 @@ def test_file_downloader_run_with_empty_files_input(
     assert not download_result.successful
 
 
-def test_file_downloader_run_with_empty_source_path(request, file_connection_with_path, tmp_path_factory):
+def test_file_downloader_run_with_empty_source_path(request, file_connection_with_path, tmp_path_factory, caplog):
     file_connection, remote_path = file_connection_with_path
     remote_path = PurePosixPath(f"/tmp/test_download_{secrets.token_hex(5)}")
 
@@ -423,7 +428,11 @@ def test_file_downloader_run_with_empty_source_path(request, file_connection_wit
             source_path=remote_path,
         )
 
-        download_result = downloader.run()
+        with caplog.at_level(logging.INFO):
+            download_result = downloader.run()
+
+        assert "No files to download!" in caplog.text
+        assert "Starting the download process" not in caplog.text
 
         assert not download_result.failed
         assert not download_result.skipped
