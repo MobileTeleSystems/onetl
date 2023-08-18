@@ -8,13 +8,9 @@ File Downloader
 .. autosummary::
 
     FileDownloader
-    FileDownloader.Options
+    FileDownloader.run
+    FileDownloader.view_files
 
 .. autoclass:: FileDownloader
     :members: run, view_files
-
-.. currentmodule:: onetl.file.file_downloader.file_downloader.FileDownloader
-
-.. autopydantic_model:: Options
-    :members: mode, delete_source, workers
     :member-order: bysource

@@ -16,25 +16,24 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, root_validator, validator
+from pydantic import Field, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
-from onetl.file.file_mover.move_result import MoveResult
+from onetl.file.file_mover.options import FileMoverOptions
+from onetl.file.file_mover.result import MoveResult
 from onetl.file.file_set import FileSet
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
     FrozenModel,
-    GenericOptions,
     RemoteFile,
     RemotePath,
     path_repr,
@@ -153,41 +152,6 @@ class FileMover(FrozenModel):
 
     """
 
-    class Options(GenericOptions):
-        """File moving options"""
-
-        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
-        """
-        How to handle existing files in the local directory.
-
-        Possible values:
-            * ``error`` (default) - do nothing, mark file as failed
-            * ``ignore`` - do nothing, mark file as ignored
-            * ``overwrite`` - replace existing file with a new one
-            * ``delete_all`` - delete directory content before moving files
-        """
-
-        workers: int = Field(default=1, ge=1)
-        """
-        Number of workers to create for parallel file moving.
-
-        1 (default) means files will me moved sequentially.
-        2 or more means files will be moved in parallel workers.
-
-        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
-        """
-
-        @root_validator(pre=True)
-        def mode_is_deprecated(cls, values):
-            if "mode" in values:
-                warnings.warn(
-                    "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                    "Use `FileMover.Options(if_exists=...)` instead",
-                    category=UserWarning,
-                    stacklevel=3,
-                )
-            return values
-
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -196,7 +160,9 @@ class FileMover(FrozenModel):
     filters: List[BaseFileFilter] = Field(default_factory=list)
     limits: List[BaseFileLimit] = Field(default_factory=list)
 
-    options: Options = Options()
+    options: FileMoverOptions = FileMoverOptions()
+
+    Options = FileMoverOptions
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231

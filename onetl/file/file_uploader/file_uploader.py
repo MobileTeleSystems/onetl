@@ -16,13 +16,12 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, root_validator, validator
+from pydantic import validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection
@@ -30,13 +29,13 @@ from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file.file_set import FileSet
-from onetl.file.file_uploader.upload_result import UploadResult
+from onetl.file.file_uploader.options import FileUploaderOptions
+from onetl.file.file_uploader.result import UploadResult
 from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedLocalFile,
     FileExistBehavior,
     FrozenModel,
-    GenericOptions,
     LocalPath,
     RemotePath,
     path_repr,
@@ -142,48 +141,6 @@ class FileUploader(FrozenModel):
 
     """
 
-    class Options(GenericOptions):
-        """File uploading options"""
-
-        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
-        """
-        How to handle existing files in the target directory.
-
-        Possible values:
-            * ``error`` (default) - do nothing, mark file as failed
-            * ``ignore`` - do nothing, mark file as ignored
-            * ``overwrite`` - replace existing file with a new one
-            * ``delete_all`` - delete local directory content before downloading files
-        """
-
-        delete_local: bool = False
-        """
-        If ``True``, remove local file after successful download.
-
-        If download failed, file will left intact.
-        """
-
-        workers: int = Field(default=1, ge=1)
-        """
-        Number of workers to create for parallel file upload.
-
-        1 (default) means files will me uploaded sequentially.
-        2 or more means files will be uploaded in parallel workers.
-
-        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
-        """
-
-        @root_validator(pre=True)
-        def mode_is_deprecated(cls, values):
-            if "mode" in values:
-                warnings.warn(
-                    "Option `FileUploader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                    "Use `FileUploader.Options(if_exists=...)` instead",
-                    category=UserWarning,
-                    stacklevel=3,
-                )
-            return values
-
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -191,7 +148,9 @@ class FileUploader(FrozenModel):
     local_path: Optional[LocalPath] = None
     temp_path: Optional[RemotePath] = None
 
-    options: Options = Options()
+    options: FileUploaderOptions = FileUploaderOptions()
+
+    Options = FileUploaderOptions
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:

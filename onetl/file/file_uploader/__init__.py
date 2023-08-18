@@ -13,4 +13,5 @@
 #  limitations under the License.
 
 from onetl.file.file_uploader.file_uploader import FileUploader
-from onetl.file.file_uploader.upload_result import UploadResult
+from onetl.file.file_uploader.options import FileUploaderOptions
+from onetl.file.file_uploader.result import UploadResult
