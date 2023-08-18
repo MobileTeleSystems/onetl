@@ -11,7 +11,7 @@ DB Connections
     Greenplum <greenplum/index>
     Kafka <kafka/index>
     Hive <hive>
-    MongoDB <mongodb>
+    MongoDB <mongodb/index>
     MSSQL <mssql>
     MySQL <mysql>
     Oracle <oracle>

@@ -14,32 +14,26 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import operator
 import warnings
-from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Mapping
+from typing import TYPE_CHECKING, Any
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from pydantic import Field, SecretStr, root_validator, validator
+from pydantic import SecretStr, validator
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
-from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection import DBConnection
-from onetl.connection.db_connection.db_connection.dialect import DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsNone,
-    SupportDfSchemaStruct,
-    SupportHWMColumnStr,
-    SupportHWMExpressionNone,
-    SupportTableWithoutDBSchema,
+from onetl.connection.db_connection.mongodb.dialect import MongoDBDialect
+from onetl.connection.db_connection.mongodb.options import (
+    MongoDBCollectionExistBehavior,
+    MongoDBPipelineOptions,
+    MongoDBReadOptions,
+    MongoDBWriteOptions,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
@@ -54,125 +48,9 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-_upper_level_operators = frozenset(  # noqa: WPS527
-    [
-        "$addFields",
-        "$bucket",
-        "$bucketAuto",
-        "$changeStream",
-        "$collStats",
-        "$count",
-        "$currentOp",
-        "$densify",
-        "$documents",
-        "$facet",
-        "$fill",
-        "$geoNear",
-        "$graphLookup",
-        "$group",
-        "$indexStats",
-        "$limit",
-        "$listLocalSessions",
-        "$listSessions",
-        "$lookup",
-        "$merge",
-        "$out",
-        "$planCacheStats",
-        "$project",
-        "$redact",
-        "$replaceRoot",
-        "$replaceWith",
-        "$sample",
-        "$search",
-        "$searchMeta",
-        "$set",
-        "$setWindowFields",
-        "$shardedDataDistribution",
-        "$skip",
-        "$sort",
-        "$sortByCount",
-        "$unionWith",
-        "$unset",
-        "$unwind",
-    ],
-)
-
-
-class MongoDBCollectionExistBehavior(str, Enum):
-    APPEND = "append"
-    REPLACE_ENTIRE_COLLECTION = "replace_entire_collection"
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    @classmethod  # noqa: WPS120
-    def _missing_(cls, value: object):  # noqa: WPS120
-        if str(value) == "overwrite":
-            warnings.warn(
-                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                "Use `replace_entire_collection` instead",
-                category=UserWarning,
-                stacklevel=4,
-            )
-            return cls.REPLACE_ENTIRE_COLLECTION
-
-
-PIPELINE_PROHIBITED_OPTIONS = frozenset(
-    (
-        "uri",
-        "database",
-        "collection",
-        "pipeline",
-    ),
-)
-
-PROHIBITED_OPTIONS = frozenset(
-    (
-        "uri",
-        "database",
-        "collection",
-        "pipeline",
-        "hint",
-    ),
-)
-
-KNOWN_READ_OPTIONS = frozenset(
-    (
-        "localThreshold",
-        "readPreference.name",
-        "readPreference.tagSets",
-        "readConcern.level",
-        "sampleSize",
-        "samplePoolSize",
-        "partitioner",
-        "partitionerOptions",
-        "registerSQLHelperFunctions",
-        "sql.inferschema.mapTypes.enabled",
-        "sql.inferschema.mapTypes.minimumKeys",
-        "sql.pipeline.includeNullFilters",
-        "sql.pipeline.includeFiltersAndProjections",
-        "pipeline",
-        "hint",
-        "collation",
-        "allowDiskUse",
-        "batchSize",
-    ),
-)
-
-KNOWN_WRITE_OPTIONS = frozenset(
-    (
-        "extendedBsonTypes",
-        "localThreshold",
-        "replaceDocument",
-        "maxBatchSize",
-        "writeConcern.w",
-        "writeConcern.journal",
-        "writeConcern.wTimeoutMS",
-        "shardKey",
-        "forceInsert",
-        "ordered",
-    ),
-)
+class MongoDBExtra(GenericOptions):
+    class Config:
+        extra = "allow"
 
 
 @support_hooks
@@ -263,16 +141,18 @@ class MongoDB(DBConnection):
         )
     """
 
-    class Extra(GenericOptions):
-        class Config:
-            extra = "allow"
-
     database: str
     host: Host
     user: str
     password: SecretStr
     port: int = 27017
-    extra: Extra = Extra()
+    extra: MongoDBExtra = MongoDBExtra()
+
+    Dialect = MongoDBDialect
+    ReadOptions = MongoDBReadOptions
+    WriteOptions = MongoDBWriteOptions
+    PipelineOptions = MongoDBPipelineOptions
+    Extra = MongoDBExtra
 
     @slot
     @classmethod
@@ -358,295 +238,13 @@ class MongoDB(DBConnection):
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
 
-    class PipelineOptions(GenericOptions):
-        """Aggregation pipeline options for MongoDB connector.
-
-        The only difference from :obj:`~ReadOptions` that it is allowed to pass the 'hint' parameter.
-
-        .. note ::
-
-            You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
-            even if it is not mentioned in this documentation.
-
-            The set of supported options depends on connector version. See link above.
-
-        .. warning::
-
-            Options ``uri``, ``database``, ``collection``, ``pipeline`` are populated from connection attributes,
-            and cannot be set in ``PipelineOptions`` class.
-
-        Examples
-        --------
-
-        Pipeline options initialization
-
-        .. code:: python
-
-            MongoDB.PipelineOptions(
-                hint="{'_id': 1}",
-            )
-        """
-
-        class Config:
-            prohibited_options = PIPELINE_PROHIBITED_OPTIONS
-            known_options = KNOWN_READ_OPTIONS
-            extra = "allow"
-
-    class ReadOptions(GenericOptions):
-        """Reading options for MongoDB connector.
-
-        .. note ::
-
-            You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
-            even if it is not mentioned in this documentation.
-
-            The set of supported options depends on connector version. See link above.
-
-        .. warning::
-
-            Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
-            attributes, and cannot be set in ``ReadOptions`` class.
-
-        Examples
-        --------
-
-        Read options initialization
-
-        .. code:: python
-
-            MongoDB.ReadOptions(
-                batchSize=10000,
-            )
-        """
-
-        class Config:
-            prohibited_options = PROHIBITED_OPTIONS
-            known_options = KNOWN_READ_OPTIONS
-            extra = "allow"
-
-    class WriteOptions(GenericOptions):
-        """Writing options for MongoDB connector.
-
-        .. note ::
-
-            You can pass any value
-            `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/write/>`_,
-            even if it is not mentioned in this documentation.
-
-            The set of supported options depends on connector version. See link above.
-
-        .. warning::
-
-            Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
-            and cannot be set in ``WriteOptions`` class.
-
-        Examples
-        --------
-
-        Write options initialization
-
-        .. code:: python
-
-            options = MongoDB.WriteOptions(
-                if_exists="append",
-                sampleSize=500,
-                localThreshold=20,
-            )
-        """
-
-        if_exists: MongoDBCollectionExistBehavior = Field(default=MongoDBCollectionExistBehavior.APPEND, alias="mode")
-        """Behavior of writing data into existing collection.
-
-        Possible values:
-            * ``append`` (default)
-                Adds new objects into existing collection.
-
-                .. dropdown:: Behavior in details
-
-                * Collection does not exist
-                    Collection is created using options provided by user
-                    (``shardkey`` and others).
-
-                * Collection exists
-                    Data is appended to a collection.
-
-                    .. warning::
-
-                        This mode does not check whether collection already contains
-                        objects from dataframe, so duplicated objects can be created.
-
-            * ``replace_entire_collection``
-                **Collection is deleted and then created**.
-
-                .. dropdown:: Behavior in details
-
-                * Collection does not exist
-                    Collection is created using options provided by user
-                    (``shardkey`` and others).
-
-                * Collection exists
-                    Collection content is replaced with dataframe content.
-
-        .. note::
-
-            ``error`` and ``ignore`` modes are not supported.
-        """
-
-        class Config:
-            prohibited_options = PROHIBITED_OPTIONS
-            known_options = KNOWN_WRITE_OPTIONS
-            extra = "allow"
-
-        @root_validator(pre=True)
-        def mode_is_deprecated(cls, values):
-            if "mode" in values:
-                warnings.warn(
-                    "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                    "Use `MongoDB.WriteOptions(if_exists=...)` instead",
-                    category=UserWarning,
-                    stacklevel=3,
-                )
-            return values
-
-    class Dialect(  # noqa: WPS215
-        SupportTableWithoutDBSchema,
-        SupportHWMExpressionNone,
-        SupportColumnsNone,
-        SupportDfSchemaStruct,
-        SupportHWMColumnStr,
-        DBDialect,
-    ):
-        _compare_statements: ClassVar[Dict[Callable, str]] = {
-            operator.ge: "$gte",
-            operator.gt: "$gt",
-            operator.le: "$lte",
-            operator.lt: "$lt",
-            operator.eq: "$eq",
-            operator.ne: "$ne",
-        }
-
-        @classmethod
-        def validate_where(
-            cls,
-            connection: BaseDBConnection,
-            where: Any,
-        ) -> dict | None:
-            if where is None:
-                return None
-
-            if not isinstance(where, dict):
-                raise ValueError(
-                    f"{connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
-                    f"got {where.__class__.__name__!r}",
-                )
-
-            for key in where:
-                cls._validate_top_level_keys_in_where_parameter(key)
-            return where
-
-        @classmethod
-        def validate_hint(
-            cls,
-            connection: BaseDBConnection,
-            hint: Any,
-        ) -> dict | None:
-            if hint is None:
-                return None
-
-            if not isinstance(hint, dict):
-                raise ValueError(
-                    f"{connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
-                    f"got {hint.__class__.__name__!r}",
-                )
-            return hint
-
-        @classmethod
-        def prepare_pipeline(
-            cls,
-            pipeline: Any,
-        ) -> Any:
-            """
-            Prepares pipeline (list or dict) to MongoDB syntax, but without converting it to string.
-            """
-
-            if isinstance(pipeline, datetime):
-                return {"$date": pipeline.astimezone().isoformat()}
-
-            if isinstance(pipeline, Mapping):
-                return {cls.prepare_pipeline(key): cls.prepare_pipeline(value) for key, value in pipeline.items()}
-
-            if isinstance(pipeline, Iterable) and not isinstance(pipeline, str):
-                return [cls.prepare_pipeline(item) for item in pipeline]
-
-            return pipeline
-
-        @classmethod
-        def convert_to_str(
-            cls,
-            value: Any,
-        ) -> str:
-            """
-            Converts the given dictionary, list or primitive to a string.
-            """
-
-            return json.dumps(cls.prepare_pipeline(value))
-
-        @classmethod
-        def _merge_conditions(cls, conditions: list[Any]) -> Any:
-            if len(conditions) == 1:
-                return conditions[0]
-
-            return {"$and": conditions}
-
-        @classmethod
-        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> dict:
-            """
-            Returns the comparison statement in MongoDB syntax:
-
-            .. code::
-
-                {
-                    "field": {
-                        "$gt": "some_value",
-                    }
-                }
-            """
-            return {
-                arg1: {
-                    cls._compare_statements[comparator]: arg2,
-                },
-            }
-
-        @classmethod
-        def _validate_top_level_keys_in_where_parameter(cls, key: str):
-            """
-            Checks the 'where' parameter for illegal operators, such as ``$match``, ``$merge`` or ``$changeStream``.
-
-            'where' clause can contain only filtering operators, like ``{"col1" {"$eq": 1}}`` or ``{"$and": [...]}``.
-            """
-            if key.startswith("$"):
-                if key == "$match":
-                    raise ValueError(
-                        "'$match' operator not allowed at the top level of the 'where' parameter dictionary. "
-                        "This error most likely occurred due to the fact that you used the MongoDB format for the "
-                        "pipeline {'$match': {'column': ...}}. In the onETL paradigm, you do not need to specify the "
-                        "'$match' keyword, but write the filtering condition right away, like {'column': ...}",
-                    )
-                if key in _upper_level_operators:  # noqa: WPS220
-                    raise ValueError(  # noqa: WPS220
-                        f"An invalid parameter {key!r} was specified in the 'where' "
-                        "field. You cannot use aggregations or 'groupBy' clauses in 'where'",
-                    )
-
     @slot
     def pipeline(
         self,
         collection: str,
         pipeline: dict | list[dict],
         df_schema: StructType | None = None,
-        options: PipelineOptions | dict | None = None,
+        options: MongoDBPipelineOptions | dict | None = None,
     ):
         """
         Execute a pipeline for a specific collection, and return DataFrame. |support_hooks|
@@ -807,7 +405,7 @@ class MongoDB(DBConnection):
         expression: str | None = None,  # noqa: U100
         hint: dict | None = None,  # noqa: U100
         where: dict | None = None,
-        options: ReadOptions | dict | None = None,
+        options: MongoDBReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
         log.info("|Spark| Getting min and max values for column %r", column)
 
@@ -853,7 +451,7 @@ class MongoDB(DBConnection):
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
-        options: ReadOptions | dict | None = None,
+        options: MongoDBReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         final_where = self.Dialect._condition_assembler(
@@ -894,7 +492,7 @@ class MongoDB(DBConnection):
         self,
         df: DataFrame,
         target: str,
-        options: WriteOptions | dict | None = None,
+        options: MongoDBWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
         write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
