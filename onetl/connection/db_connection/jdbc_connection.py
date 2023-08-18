@@ -25,7 +25,7 @@ from etl_entities.instance import Host
 from pydantic import Field, PositiveInt, root_validator
 
 from onetl._internal import clear_statement, get_sql_query, to_camel
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection import DBConnection, DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
@@ -162,7 +162,7 @@ class JDBCConnection(SupportDfSchemaNone, JDBCMixin, DBConnection):
         SupportHintStr,
         SupportHWMExpressionStr,
         SupportHWMColumnStr,
-        DBConnection.Dialect,
+        DBDialect,
     ):
         pass
 

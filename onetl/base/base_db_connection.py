@@ -27,131 +27,134 @@ if TYPE_CHECKING:
     from pyspark.sql.types import StructType
 
 
+class BaseDBDialect(ABC):
+    """
+    Collection of methods used for validating input values before passing them to read_source_as_df/write_df_to_target
+    """
+
+    @classmethod
+    @abstractmethod
+    def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
+        """Check if ``source`` or ``target`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
+        """Check if ``columns`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_hwm_column(
+        cls,
+        connection: BaseDBConnection,
+        hwm_column: str | None,
+    ) -> str | None:
+        """Check if ``hwm_column`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
+        """Check if ``df_schema`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
+        """Check if ``where`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
+        """Check if ``hint`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
+        """Check if ``hwm_expression`` value is valid.
+
+        Raises
+        ------
+        TypeError
+            If value type is invalid
+        ValueError
+            If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def _merge_conditions(cls, conditions: list[Any]) -> Any:
+        """
+        Convert multiple WHERE conditions to one
+        """
+
+    @classmethod
+    @abstractmethod
+    def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
+        """
+        Return "expression AS alias" statement
+        """
+
+    @classmethod
+    @abstractmethod
+    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
+        """
+        Return "arg1 COMPARATOR arg2" statement
+        """
+
+
 class BaseDBConnection(BaseConnection):
     """
     Implements generic methods for reading and writing dataframe from/to database-like source
     """
 
-    class Dialect(ABC):
-        """
-        Collection of methods used for validating input values before passing them to read_source_as_df/write_df_to_target
-        """
-
-        @classmethod
-        @abstractmethod
-        def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
-            """Check if ``source`` or ``target`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
-            """Check if ``columns`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_hwm_column(
-            cls,
-            connection: BaseDBConnection,
-            hwm_column: str | None,
-        ) -> str | None:
-            """Check if ``hwm_column`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
-            """Check if ``df_schema`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
-            """Check if ``where`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
-            """Check if ``hint`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-            """Check if ``hwm_expression`` value is valid.
-
-            Raises
-            ------
-            TypeError
-                If value type is invalid
-            ValueError
-                If value is invalid
-            """
-
-        @classmethod
-        @abstractmethod
-        def _merge_conditions(cls, conditions: list[Any]) -> Any:
-            """
-            Convert multiple WHERE conditions to one
-            """
-
-        @classmethod
-        @abstractmethod
-        def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
-            """
-            Return "expression AS alias" statement
-            """
-
-        @classmethod
-        @abstractmethod
-        def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
-            """
-            Return "arg1 COMPARATOR arg2" statement
-            """
+    Dialect = BaseDBDialect
 
     @property
     @abstractmethod

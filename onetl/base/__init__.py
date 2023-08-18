@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from onetl.base.base_connection import BaseConnection
-from onetl.base.base_db_connection import BaseDBConnection
+from onetl.base.base_db_connection import BaseDBConnection, BaseDBDialect
 from onetl.base.base_file_connection import BaseFileConnection
 from onetl.base.base_file_df_connection import (
     BaseFileDFConnection,

@@ -19,7 +19,7 @@ from datetime import date, datetime
 from typing import ClassVar
 
 from onetl._util.classproperty import classproperty
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
@@ -166,7 +166,7 @@ class Postgres(JDBCConnection):
         SupportHWMExpressionStr,
         SupportHWMColumnStr,
         SupportHintNone,
-        DBConnection.Dialect,
+        DBDialect,
     ):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
