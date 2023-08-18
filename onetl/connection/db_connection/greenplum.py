@@ -32,7 +32,7 @@ from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_executor_total_cores, get_spark_version
 from onetl._util.version import Version
-from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection import DBConnection, DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
@@ -476,7 +476,7 @@ class Greenplum(JDBCMixin, DBConnection):
         SupportHintNone,
         SupportHWMExpressionStr,
         SupportHWMColumnStr,
-        DBConnection.Dialect,
+        DBDialect,
     ):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:

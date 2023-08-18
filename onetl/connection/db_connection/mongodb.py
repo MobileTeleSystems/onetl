@@ -33,6 +33,7 @@ from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
 from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaStruct,
@@ -515,7 +516,7 @@ class MongoDB(DBConnection):
         SupportColumnsNone,
         SupportDfSchemaStruct,
         SupportHWMColumnStr,
-        DBConnection.Dialect,
+        DBDialect,
     ):
         _compare_statements: ClassVar[Dict[Callable, str]] = {
             operator.ge: "$gte",

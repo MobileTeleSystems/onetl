@@ -27,6 +27,7 @@ from pydantic import Field, root_validator, validator
 from onetl._internal import clear_statement, get_sql_query
 from onetl._util.spark import inject_spark_param
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
@@ -569,7 +570,7 @@ class Hive(DBConnection):
         SupportHintStr,
         SupportHWMExpressionStr,
         SupportHWMColumnStr,
-        DBConnection.Dialect,
+        DBDialect,
     ):
         pass
 
