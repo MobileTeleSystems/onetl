@@ -8,4 +8,5 @@ File Mover
     :caption: File Mover
 
     file_mover
-    move_result
+    options
+    result

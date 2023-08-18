@@ -8,4 +8,5 @@ File Uploader
     :caption: File Uploader
 
     file_uploader
-    upload_result
+    options
+    result

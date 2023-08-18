@@ -8,4 +8,5 @@ File Downloader
     :caption: File Downloader
 
     file_downloader
-    download_result
+    options
+    result
