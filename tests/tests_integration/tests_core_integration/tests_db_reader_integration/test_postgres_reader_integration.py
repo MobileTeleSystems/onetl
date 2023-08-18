@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import Postgres
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
+from onetl.connection.db_connection.jdbc_connection import JDBCPartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.postgres
@@ -43,8 +43,8 @@ def test_postgres_reader_snapshot_partitioning_mode_mod(spark, processing, load_
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        options=postgres.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
+        options=Postgres.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.MOD,
             partition_column="id_int",
             num_partitions=5,
         ),
@@ -73,8 +73,8 @@ def test_postgres_reader_snapshot_partitioning_mode_hash(spark, processing, load
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        options=postgres.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
+        options=Postgres.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.HASH,
             partition_column="text_string",
             num_partitions=5,
         ),

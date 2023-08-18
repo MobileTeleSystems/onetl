@@ -18,6 +18,8 @@ import warnings
 from datetime import date, datetime
 from typing import ClassVar
 
+from deprecated import deprecated
+
 from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
@@ -32,9 +34,20 @@ from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema i
     SupportTableWithDBSchema,
 )
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCReadOptions,
+    JDBCWriteOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
+from onetl.impl import GenericOptions
 
 # do not import PySpark here, as we allow user to use `Postgres.get_packages()` for creating Spark session
+
+
+class PostgresExtra(GenericOptions):
+    class Config:
+        extra = "allow"
 
 
 @support_hooks
@@ -130,6 +143,9 @@ class Postgres(JDBCConnection):
 
     database: str
     port: int = 5432
+    extra: PostgresExtra = PostgresExtra()
+
+    Extra = PostgresExtra
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
 
@@ -178,7 +194,7 @@ class Postgres(JDBCConnection):
             result = value.isoformat()
             return f"'{result}'::date"
 
-    class ReadOptions(JDBCConnection.ReadOptions):
+    class ReadOptions(JDBCReadOptions):
         # https://stackoverflow.com/a/9812029
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
@@ -188,7 +204,15 @@ class Postgres(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
-    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+        category=UserWarning,
+    )
+    class Options(ReadOptions, JDBCWriteOptions):
+        class Config:
+            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @property
     def jdbc_url(self) -> str:
@@ -202,7 +226,7 @@ class Postgres(JDBCConnection):
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
 
-    def _options_to_connection_properties(self, options: JDBCConnection.JDBCOptions):  # noqa: WPS437
+    def _options_to_connection_properties(self, options: JDBCOptions):  # noqa: WPS437
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

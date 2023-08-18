@@ -43,6 +43,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportWhereStr,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Statement
@@ -233,9 +234,9 @@ class Greenplum(JDBCMixin, DBConnection):
 
         class Config:
             extra = "allow"
-            prohibited_options = JDBCMixin.JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
+            prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
 
-    class ReadOptions(JDBCMixin.JDBCOptions):
+    class ReadOptions(JDBCOptions):
         """Pivotal's Greenplum Spark connector reading options.
 
         .. note ::
@@ -267,10 +268,7 @@ class Greenplum(JDBCMixin, DBConnection):
         class Config:
             known_options = READ_OPTIONS
             prohibited_options = (
-                JDBCMixin.JDBCOptions.Config.prohibited_options
-                | EXTRA_OPTIONS
-                | GENERIC_PROHIBITED_OPTIONS
-                | WRITE_OPTIONS
+                JDBCOptions.Config.prohibited_options | EXTRA_OPTIONS | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
             )
 
         partition_column: Optional[str] = Field(alias="partitionColumn")
@@ -370,7 +368,7 @@ class Greenplum(JDBCMixin, DBConnection):
             or both should be ``None``
         """
 
-    class WriteOptions(JDBCMixin.JDBCOptions):
+    class WriteOptions(JDBCOptions):
         """Pivotal's Greenplum Spark connector writing options.
 
         .. note ::
@@ -403,10 +401,7 @@ class Greenplum(JDBCMixin, DBConnection):
         class Config:
             known_options = WRITE_OPTIONS
             prohibited_options = (
-                JDBCMixin.JDBCOptions.Config.prohibited_options
-                | EXTRA_OPTIONS
-                | GENERIC_PROHIBITED_OPTIONS
-                | READ_OPTIONS
+                JDBCOptions.Config.prohibited_options | EXTRA_OPTIONS | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
             )
 
         if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")
@@ -644,7 +639,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-        options: JDBCMixin.JDBCOptions | dict | None = None,
+        options: JDBCOptions | dict | None = None,
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
@@ -667,7 +662,7 @@ class Greenplum(JDBCMixin, DBConnection):
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: JDBCMixin.JDBCOptions | dict | None = None,
+        options: JDBCOptions | dict | None = None,
     ) -> tuple[Any, Any]:
         log.info("|Spark| Getting min and max values for column %r", column)
 
@@ -737,7 +732,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCMixin.JDBCOptions):
+    def _options_to_connection_properties(self, options: JDBCOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

@@ -49,7 +49,7 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value):
     with pytest.raises(ValueError, match=error_msg):
         Postgres.ReadOptions.parse({arg: value})
 
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Postgres.WriteOptions.parse({arg: value})
 
@@ -101,7 +101,7 @@ def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
     ],
 )
 def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Postgres.WriteOptions.parse({arg: value})
 

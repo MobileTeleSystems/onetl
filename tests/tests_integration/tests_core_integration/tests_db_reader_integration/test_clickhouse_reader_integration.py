@@ -1,7 +1,7 @@
 import pytest
 
 from onetl.connection import Clickhouse
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
+from onetl.connection.db_connection.jdbc_connection import JDBCPartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.clickhouse
@@ -43,8 +43,8 @@ def test_clickhouse_reader_snapshot_partitioning_mode_mod(spark, processing, loa
     reader = DBReader(
         connection=clickhouse,
         source=load_table_data.full_name,
-        options=clickhouse.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
+        options=Clickhouse.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.MOD,
             partition_column="id_int",
             num_partitions=5,
         ),
@@ -73,8 +73,8 @@ def test_clickhouse_reader_snapshot_partitioning_mode_hash(spark, processing, lo
     reader = DBReader(
         connection=clickhouse,
         source=load_table_data.full_name,
-        options=clickhouse.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
+        options=Clickhouse.ReadOptions(
+            partitioning_mode=JDBCPartitioningMode.HASH,
             partition_column="text_string",
             num_partitions=5,
         ),

@@ -167,7 +167,7 @@ def test_kafka_reader_columns_and_types_with_headers(spark, kafka_processing, ka
     reader = DBReader(
         connection=kafka,
         source=topic,
-        options=kafka.ReadOptions(includeHeaders=True),
+        options=Kafka.ReadOptions(includeHeaders=True),
     )
 
     df = reader.run()

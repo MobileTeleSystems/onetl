@@ -18,9 +18,18 @@ import warnings
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
+from deprecated import deprecated
+
 from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
+from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCReadOptions,
+    JDBCWriteOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
+from onetl.impl.generic_options import GenericOptions
 
 # do not import PySpark here, as we allow user to use `MySQL.get_packages()` for creating Spark session
 
@@ -116,9 +125,12 @@ class MySQL(JDBCConnection):
 
     """
 
-    class Extra(JDBCConnection.Extra):
+    class Extra(GenericOptions):
         useUnicode: str = "yes"  # noqa: N815
         characterEncoding: str = "UTF-8"  # noqa: N815
+
+        class Config:
+            extra = "allow"
 
     port: int = 3306
     database: Optional[str] = None
@@ -161,7 +173,7 @@ class MySQL(JDBCConnection):
 
         return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
 
-    class Dialect(JDBCConnection.Dialect):
+    class Dialect(JDBCDialect):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -172,7 +184,7 @@ class MySQL(JDBCConnection):
             result = value.strftime("%Y-%m-%d")
             return f"STR_TO_DATE('{result}', '%Y-%m-%d')"
 
-    class ReadOptions(JDBCConnection.ReadOptions):
+    class ReadOptions(JDBCReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD(CONV(CONV(RIGHT(MD5({partition_column}), 16),16, 2), 2, 10), {num_partitions})"
@@ -181,4 +193,12 @@ class MySQL(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"MOD({partition_column}, {num_partitions})"
 
-    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+        category=UserWarning,
+    )
+    class Options(ReadOptions, JDBCWriteOptions):
+        class Config:
+            prohibited_options = JDBCOptions.Config.prohibited_options

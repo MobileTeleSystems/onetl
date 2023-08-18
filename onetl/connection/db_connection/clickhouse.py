@@ -19,15 +19,29 @@ import warnings
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
+from deprecated import deprecated
+
 from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_mixin import StatementType
+from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
+from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCReadOptions,
+    JDBCWriteOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
+from onetl.impl import GenericOptions
 
 # do not import PySpark here, as we allow user to use `Clickhouse.get_packages()` for creating Spark session
 
 
 log = logging.getLogger(__name__)
+
+
+class ClickhouseExtra(GenericOptions):
+    class Config:
+        extra = "allow"
 
 
 @support_hooks
@@ -125,6 +139,9 @@ class Clickhouse(JDBCConnection):
 
     port: int = 8123
     database: Optional[str] = None
+    extra: ClickhouseExtra = ClickhouseExtra()
+
+    Extra = ClickhouseExtra
 
     DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
 
@@ -163,7 +180,7 @@ class Clickhouse(JDBCConnection):
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
 
-    class Dialect(JDBCConnection.Dialect):
+    class Dialect(JDBCDialect):
         @classmethod
         def _get_datetime_value_sql(cls, value: datetime) -> str:
             result = value.strftime("%Y-%m-%d %H:%M:%S")
@@ -174,7 +191,7 @@ class Clickhouse(JDBCConnection):
             result = value.strftime("%Y-%m-%d")
             return f"CAST('{result}' AS Date)"
 
-    class ReadOptions(JDBCConnection.ReadOptions):
+    class ReadOptions(JDBCReadOptions):
         @classmethod
         def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
             return f"modulo(halfMD5({partition_column}), {num_partitions})"
@@ -183,12 +200,20 @@ class Clickhouse(JDBCConnection):
         def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
             return f"{partition_column} % {num_partitions}"
 
-    ReadOptions.__doc__ = JDBCConnection.ReadOptions.__doc__
+    @deprecated(
+        version="0.5.0",
+        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+        action="always",
+        category=UserWarning,
+    )
+    class Options(ReadOptions, JDBCWriteOptions):
+        class Config:
+            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @staticmethod
     def _build_statement(
         statement: str,
-        statement_type: StatementType,
+        statement_type: JDBCStatementType,
         jdbc_connection,
         statement_args,
     ):
