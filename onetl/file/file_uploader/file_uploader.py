@@ -539,10 +539,22 @@ class FileUploader(FrozenModel):
         self,
         to_upload: UPLOAD_ITEMS_TYPE,
     ) -> list[tuple[FileUploadStatus, PurePathProtocol | PathWithStatsProtocol]]:
-        workers = min(self.options.workers, len(to_upload))
+        workers = self.options.workers
+        files_count = len(to_upload)
         result = []
 
-        if workers > 1:
+        real_workers = workers
+        if files_count < workers:
+            log.debug(
+                "|%s| Asked for %d workers, but there are only %d files",
+                self.__class__.__name__,
+                workers,
+                files_count,
+            )
+            real_workers = files_count
+
+        if real_workers > 1:
+            log.debug("|%s| Using ThreadPoolExecutor with %d workers", self.__class__.__name__, real_workers)
             with ThreadPoolExecutor(
                 max_workers=workers,
                 thread_name_prefix=self.__class__.__name__,
@@ -554,6 +566,7 @@ class FileUploader(FrozenModel):
                 for future in as_completed(futures):
                     result.append(future.result())
         else:
+            log.debug("|%s| Using plain old for-loop", self.__class__.__name__)
             for local_file, target_file, tmp_file in to_upload:
                 result.append(
                     self._upload_file(

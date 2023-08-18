@@ -511,10 +511,22 @@ class FileMover(FrozenModel):
         self,
         to_move: MOVE_ITEMS_TYPE,
     ) -> list[tuple[FileMoveStatus, PurePathProtocol | PathWithStatsProtocol]]:
-        workers = min(self.options.workers, len(to_move))
+        workers = self.options.workers
+        files_count = len(to_move)
         result = []
 
-        if workers > 1:
+        real_workers = workers
+        if files_count < workers:
+            log.debug(
+                "|%s| Asked for %d workers, but there are only %d files",
+                self.__class__.__name__,
+                workers,
+                files_count,
+            )
+            real_workers = files_count
+
+        if real_workers > 1:
+            log.debug("|%s| Using ThreadPoolExecutor with %d workers", self.__class__.__name__, real_workers)
             with ThreadPoolExecutor(
                 max_workers=workers,
                 thread_name_prefix=self.__class__.__name__,
@@ -525,6 +537,7 @@ class FileMover(FrozenModel):
                 for future in as_completed(futures):
                     result.append(future.result())
         else:
+            log.debug("|%s| Using plain old for-loop", self.__class__.__name__)
             for source_file, target_file in to_move:
                 result.append(
                     self._move_file(

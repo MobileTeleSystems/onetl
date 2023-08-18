@@ -35,12 +35,13 @@ def test_file_mover_view_file(file_connection_with_path_and_files):
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type PurePosixPath"])
-@pytest.mark.parametrize("workers", [1, 3])
+@pytest.mark.parametrize("workers", [1, 3, 20])
 def test_file_mover_run(
     request,
     file_connection_with_path_and_files,
     path_type,
     workers,
+    caplog,
 ):
     file_connection, source_path, uploaded_files = file_connection_with_path_and_files
     target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
@@ -68,7 +69,18 @@ def test_file_mover_run(
             files_content[file_path] = file_connection.read_bytes(file_path)
             files_size[file_path] = file_connection.get_stat(file_path).st_size
 
-    move_result = mover.run()
+    with caplog.at_level(logging.DEBUG):
+        move_result = mover.run()
+
+    files_count = len(uploaded_files)
+    real_workers = min(workers, files_count)
+    if 1 <= files_count < workers:
+        assert f"|FileMover| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+
+    if real_workers > 1:
+        assert f"|FileMover| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    else:
+        assert "|FileMover| Using plain old for-loop" in caplog.text
 
     assert not move_result.failed
     assert not move_result.skipped

@@ -41,7 +41,7 @@ def test_file_uploader_view_files(file_connection, file_connection_resource_path
     [str, Path],
     ids=["run_path_type str", "run_path_type Path"],
 )
-@pytest.mark.parametrize("workers", [1, 3])
+@pytest.mark.parametrize("workers", [1, 3, 20])
 def test_file_uploader_run_with_files(
     request,
     file_connection,
@@ -49,6 +49,7 @@ def test_file_uploader_run_with_files(
     run_path_type,
     path_type,
     workers,
+    caplog,
 ):
     target_path = path_type(f"/tmp/test_upload_{secrets.token_hex(5)}")
     test_files = file_connection_test_files
@@ -67,7 +68,18 @@ def test_file_uploader_run_with_files(
         ),
     )
 
-    upload_result = uploader.run(run_path_type(file) for file in test_files)
+    with caplog.at_level(logging.DEBUG):
+        upload_result = uploader.run(run_path_type(file) for file in test_files)
+
+    files_count = len(test_files)
+    real_workers = min(workers, files_count)
+    if 1 <= files_count < workers:
+        assert f"|FileUploader| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+
+    if real_workers > 1:
+        assert f"|FileUploader| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    else:
+        assert "|FileUploader| Using plain old for-loop" in caplog.text
 
     assert not upload_result.failed
     assert not upload_result.missing

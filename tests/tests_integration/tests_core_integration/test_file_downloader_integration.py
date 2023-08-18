@@ -53,13 +53,14 @@ def test_file_downloader_view_file(file_connection_with_path_and_files):
     [str, Path],
     ids=["run_path_type str", "run_path_type Path"],
 )
-@pytest.mark.parametrize("workers", [1, 3])
+@pytest.mark.parametrize("workers", [1, 3, 20])
 def test_file_downloader_run(
     file_connection_with_path_and_files,
     path_type,
     run_path_type,
     tmp_path_factory,
     workers,
+    caplog,
 ):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
@@ -73,7 +74,18 @@ def test_file_downloader_run(
         ),
     )
 
-    download_result = downloader.run()
+    with caplog.at_level(logging.DEBUG):
+        download_result = downloader.run()
+
+    files_count = len(uploaded_files)
+    real_workers = min(workers, files_count)
+    if 1 <= files_count < workers:
+        assert f"|FileDownloader| Asked for {workers} workers, but there are only {real_workers} files" in caplog.text
+
+    if real_workers > 1:
+        assert f"|FileDownloader| Using ThreadPoolExecutor with {real_workers} workers" in caplog.text
+    else:
+        assert "|FileDownloader| Using plain old for-loop" in caplog.text
 
     assert not download_result.failed
     assert not download_result.skipped
