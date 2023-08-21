@@ -18,13 +18,10 @@ import logging
 import os
 import textwrap
 import warnings
-from dataclasses import dataclass
-from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from etl_entities.instance import Host
-from pydantic import Field, root_validator, validator
+from pydantic import validator
 
 from onetl._internal import get_sql_query
 from onetl._util.classproperty import classproperty
@@ -32,15 +29,15 @@ from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_executor_total_cores, get_spark_version
 from onetl._util.version import Version
-from onetl.connection.db_connection.db_connection import DBConnection, DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportHWMColumnStr,
-    SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
-    SupportWhereStr,
+from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.greenplum.connection_limit import (
+    GreenplumConnectionLimit,
+)
+from onetl.connection.db_connection.greenplum.dialect import GreenplumDialect
+from onetl.connection.db_connection.greenplum.options import (
+    GreenplumReadOptions,
+    GreenplumTableExistBehavior,
+    GreenplumWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
@@ -57,14 +54,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-# options from which are populated by Greenplum class methods
-GENERIC_PROHIBITED_OPTIONS = frozenset(
-    (
-        "dbschema",
-        "dbtable",
-    ),
-)
-
 EXTRA_OPTIONS = frozenset(
     (
         "server.*",
@@ -72,67 +61,15 @@ EXTRA_OPTIONS = frozenset(
     ),
 )
 
-WRITE_OPTIONS = frozenset(
-    (
-        "mode",
-        "truncate",
-        "distributedBy",
-        "distributed_by",
-        "iteratorOptimization",
-        "iterator_optimization",
-    ),
-)
 
-READ_OPTIONS = frozenset(
-    (
-        "partitions",
-        "num_partitions",
-        "numPartitions",
-        "partitionColumn",
-        "partition_column",
-    ),
-)
+class GreenplumExtra(GenericOptions):
+    # avoid closing connections from server side
+    # while connector is moving data to executors before insert
+    tcpKeepAlive: str = "true"  # noqa: N815
 
-
-class GreenplumTableExistBehavior(str, Enum):
-    APPEND = "append"
-    REPLACE_ENTIRE_TABLE = "replace_entire_table"
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    @classmethod  # noqa: WPS120
-    def _missing_(cls, value: object):  # noqa: WPS120
-        if str(value) == "overwrite":
-            warnings.warn(
-                "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                "Use `replace_entire_table` instead",
-                category=UserWarning,
-                stacklevel=4,
-            )
-            return cls.REPLACE_ENTIRE_TABLE
-
-
-@dataclass
-class ConnectionLimits:
-    maximum: int
-    reserved: int
-    occupied: int
-
-    @property
-    def available(self) -> int:
-        return self.maximum - self.reserved - self.occupied
-
-    @property
-    def summary(self) -> str:
-        return textwrap.dedent(
-            f"""
-            available connections: {self.available}
-            occupied: {self.occupied}
-            max: {self.maximum} ("max_connection" in postgresql.conf)
-            reserved: {self.reserved} ("superuser_reserved_connections" in postgresql.conf)
-            """,
-        ).strip()
+    class Config:
+        extra = "allow"
+        prohibited_options = JDBCOptions.Config.prohibited_options
 
 
 @support_hooks
@@ -227,266 +164,15 @@ class Greenplum(JDBCMixin, DBConnection):
         )
     """
 
-    class Extra(GenericOptions):
-        # avoid closing connections from server side
-        # while connector is moving data to executors before insert
-        tcpKeepAlive: str = "true"  # noqa: N815
-
-        class Config:
-            extra = "allow"
-            prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS
-
-    class ReadOptions(JDBCOptions):
-        """Pivotal's Greenplum Spark connector reading options.
-
-        .. note ::
-
-            You can pass any value
-            `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-read_from_gpdb.html>`_,
-            even if it is not mentioned in this documentation.
-
-            The set of supported options depends on connector version. See link above.
-
-        .. warning::
-
-            Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-            etc are populated from connection attributes, and cannot be set in ``ReadOptions`` class
-
-        Examples
-        --------
-
-        Read options initialization
-
-        .. code:: python
-
-            Greenplum.ReadOptions(
-                partition_column="reg_id",
-                num_partitions=10,
-            )
-        """
-
-        class Config:
-            known_options = READ_OPTIONS
-            prohibited_options = (
-                JDBCOptions.Config.prohibited_options | EXTRA_OPTIONS | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
-            )
-
-        partition_column: Optional[str] = Field(alias="partitionColumn")
-        """Column used to parallelize reading from a table.
-
-        .. warning::
-
-            You should not change this option, unless you know what you're doing
-
-        Possible values:
-            * ``None`` (default):
-                Spark generates N jobs (where N == number of segments in Greenplum cluster),
-                each job is reading only data from a specific segment
-                (filtering data by ``gp_segment_id`` column).
-
-                This is very effective way to fetch the data from a cluster.
-
-            * table column
-                Allocate each executor a range of values from a specific column.
-
-                .. note::
-                    Column type must be numeric. Other types are not supported.
-
-                Spark generates for each executor an SQL query like:
-
-                Executor 1:
-
-                .. code:: sql
-
-                    SELECT ... FROM table
-                    WHERE (partition_column >= lowerBound
-                            OR partition_column IS NULL)
-                    AND partition_column < (lower_bound + stride)
-
-                Executor 2:
-
-                .. code:: sql
-
-                    SELECT ... FROM table
-                    WHERE partition_column >= (lower_bound + stride)
-                    AND partition_column < (lower_bound + 2 * stride)
-
-                ...
-
-                Executor N:
-
-                .. code:: sql
-
-                    SELECT ... FROM table
-                    WHERE partition_column >= (lower_bound + (N-1) * stride)
-                    AND partition_column <= upper_bound
-
-                Where ``stride=(upper_bound - lower_bound) / num_partitions``,
-                ``lower_bound=MIN(partition_column)``, ``upper_bound=MAX(partition_column)``.
-
-                .. note::
-
-                    :obj:`~num_partitions` is used just to
-                    calculate the partition stride, **NOT** for filtering the rows in table.
-                    So all rows in the table will be returned (unlike *Incremental* :ref:`strategy`).
-
-                .. note::
-
-                    All queries are executed in parallel. To execute them sequentially, use *Batch* :ref:`strategy`.
-
-        .. warning::
-
-            Both options :obj:`~partition_column` and :obj:`~num_partitions` should have a value,
-            or both should be ``None``
-
-        Examples
-        --------
-
-        Read data in 10 parallel jobs by range of values in ``id_column`` column:
-
-        .. code:: python
-
-            Greenplum.ReadOptions(
-                partition_column="id_column",
-                num_partitions=10,
-            )
-        """
-
-        num_partitions: Optional[int] = Field(alias="partitions")
-        """Number of jobs created by Spark to read the table content in parallel.
-
-        See documentation for :obj:`~partition_column` for more details
-
-        .. warning::
-
-            By default connector uses number of segments in the Greenplum cluster.
-            You should not change this option, unless you know what you're doing
-
-        .. warning::
-
-            Both options :obj:`~partition_column` and :obj:`~num_partitions` should have a value,
-            or both should be ``None``
-        """
-
-    class WriteOptions(JDBCOptions):
-        """Pivotal's Greenplum Spark connector writing options.
-
-        .. note ::
-
-            You can pass any value
-            `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-write_to_gpdb.html>`_,
-            even if it is not mentioned in this documentation.
-
-            The set of supported options depends on connector version. See link above.
-
-        .. warning::
-
-            Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-            etc are populated from connection attributes, and cannot be set in ``WriteOptions`` class
-
-        Examples
-        --------
-
-        Write options initialization
-
-        .. code:: python
-
-            options = Greenplum.WriteOptions(
-                if_exists="append",
-                truncate="false",
-                distributedBy="mycolumn",
-            )
-        """
-
-        class Config:
-            known_options = WRITE_OPTIONS
-            prohibited_options = (
-                JDBCOptions.Config.prohibited_options | EXTRA_OPTIONS | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
-            )
-
-        if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")
-        """Behavior of writing data into existing table.
-
-        Possible values:
-            * ``append`` (default)
-                Adds new rows into existing table.
-
-                .. dropdown:: Behavior in details
-
-                * Table does not exist
-                    Table is created using options provided by user
-                    (``distributedBy`` and others).
-
-                * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data.
-
-                    .. warning::
-
-                        This mode does not check whether table already contains
-                        rows from dataframe, so duplicated rows can be created.
-
-                        Also Spark does not support passing custom options to
-                        insert statement, like ``ON CONFLICT``, so don't try to
-                        implement deduplication using unique indexes or constraints.
-
-                        Instead, write to staging table and perform deduplication
-                        using :obj:`~execute` method.
-
-            * ``replace_entire_table``
-                **Table is dropped and then created**.
-
-                .. dropdown:: Behavior in details
-
-                * Table does not exist
-                    Table is created using options provided by user
-                    (``distributedBy`` and others).
-
-                * Table exists
-                    Table content is replaced with dataframe content.
-
-                    After writing completed, target table could either have the same DDL as
-                    before writing data (``truncate=True``), or can be recreated (``truncate=False``).
-
-        .. note::
-
-            ``error`` and ``ignore`` modes are not supported.
-        """
-
-        @root_validator(pre=True)
-        def mode_is_deprecated(cls, values):
-            if "mode" in values:
-                warnings.warn(
-                    "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                    "Use `Greenplum.WriteOptions(if_exists=...)` instead",
-                    category=UserWarning,
-                    stacklevel=3,
-                )
-            return values
-
-    class Dialect(  # noqa: WPS215
-        SupportTableWithDBSchema,
-        SupportColumnsList,
-        SupportDfSchemaNone,
-        SupportWhereStr,
-        SupportHintNone,
-        SupportHWMExpressionStr,
-        SupportHWMColumnStr,
-        DBDialect,
-    ):
-        @classmethod
-        def _get_datetime_value_sql(cls, value: datetime) -> str:
-            result = value.isoformat()
-            return f"cast('{result}' as timestamp)"
-
-        @classmethod
-        def _get_date_value_sql(cls, value: date) -> str:
-            result = value.isoformat()
-            return f"cast('{result}' as date)"
-
     host: Host
     database: str
     port: int = 5432
-    extra: Extra = Extra()
+    extra: GreenplumExtra = GreenplumExtra()
+
+    Extra = GreenplumExtra
+    Dialect = GreenplumDialect
+    ReadOptions = GreenplumReadOptions
+    WriteOptions = GreenplumWriteOptions
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
@@ -593,7 +279,7 @@ class Greenplum(JDBCMixin, DBConnection):
         df_schema: StructType | None = None,
         start_from: Statement | None = None,
         end_at: Statement | None = None,
-        options: ReadOptions | dict | None = None,
+        options: GreenplumReadOptions | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
@@ -618,7 +304,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         df: DataFrame,
         target: str,
-        options: WriteOptions | dict | None = None,
+        options: GreenplumWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
@@ -639,7 +325,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-        options: JDBCOptions | dict | None = None,
+        options: JDBCOptions | None = None,
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
 
@@ -662,7 +348,7 @@ class Greenplum(JDBCMixin, DBConnection):
         expression: str | None = None,
         hint: str | None = None,
         where: str | None = None,
-        options: JDBCOptions | dict | None = None,
+        options: JDBCOptions | None = None,
     ) -> tuple[Any, Any]:
         log.info("|Spark| Getting min and max values for column %r", column)
 
@@ -781,11 +467,11 @@ class Greenplum(JDBCMixin, DBConnection):
         )
         return int(result[0][0])
 
-    def _get_connections_limits(self) -> ConnectionLimits:
+    def _get_connections_limits(self) -> GreenplumConnectionLimit:
         max_connections = int(self._get_server_setting("max_connections"))
         reserved_connections = int(self._get_server_setting("superuser_reserved_connections"))
         occupied_connections = self._get_occupied_connections_count()
-        return ConnectionLimits(
+        return GreenplumConnectionLimit(
             maximum=max_connections,
             reserved=reserved_connections,
             occupied=occupied_connections,

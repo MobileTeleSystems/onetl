@@ -176,21 +176,31 @@ def test_greenplum_write_options_default():
     options = Greenplum.WriteOptions()
 
     assert options.if_exists == GreenplumTableExistBehavior.APPEND
-    assert options.query_timeout is None
+
+
+@pytest.mark.parametrize(
+    "klass, name",
+    [
+        (Greenplum.ReadOptions, "GreenplumReadOptions"),
+        (Greenplum.WriteOptions, "GreenplumWriteOptions"),
+        (Greenplum.JDBCOptions, "JDBCOptions"),
+        (Greenplum.Extra, "GreenplumExtra"),
+    ],
+)
+def test_greenplum_jdbc_options_populated_by_connection_class(klass, name):
+    error_msg = rf"Options \['driver', 'password', 'url', 'user'\] are not allowed to use in a {name}"
+    with pytest.raises(ValueError, match=error_msg):
+        klass(user="me", password="abc", driver="some.Class", url="jdbc:postgres://some/db")
 
 
 def test_greenplum_read_write_options_populated_by_connection_class():
-    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a ReadOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a GreenplumReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(dbschema="myschema", dbtable="mytable")
 
-    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a WriteOptions"
+    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a GreenplumWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(dbschema="myschema", dbtable="mytable")
-
-    error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a Extra"
-    with pytest.raises(ValueError, match=error_msg):
-        Greenplum.Extra(dbschema="myschema", dbtable="mytable")
 
     # JDBCOptions does not have such restriction
     options = Greenplum.JDBCOptions(dbschema="myschema", dbtable="mytable")
@@ -199,37 +209,16 @@ def test_greenplum_read_write_options_populated_by_connection_class():
 
 
 @pytest.mark.parametrize(
-    "options_class",
-    [
-        Greenplum.ReadOptions,
-        Greenplum.WriteOptions,
-    ],
-)
-@pytest.mark.parametrize(
-    "arg, value",
-    [
-        ("server.port", 8000),
-        ("pool.maxSize", "40"),
-    ],
-)
-def test_greenplum_read_write_options_prohibited(arg, value, options_class):
-    with pytest.raises(ValueError, match=rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"):
-        options_class.parse({arg: value})
-
-
-@pytest.mark.parametrize(
     "arg, value",
     [
         ("mode", "append"),
         ("truncate", "true"),
         ("distributedBy", "abc"),
-        ("distributed_by", "abc"),
         ("iteratorOptimization", "true"),
-        ("iterator_optimization", "true"),
     ],
 )
 def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a ReadOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a GreenplumReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions.parse({arg: value})
 
@@ -238,14 +227,12 @@ def test_greenplum_write_options_cannot_be_used_in_read_options(arg, value):
     "arg, value",
     [
         ("partitions", 10),
-        ("num_partitions", 10),
         ("numPartitions", 10),
         ("partitionColumn", "abc"),
-        ("partition_column", "abc"),
     ],
 )
 def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a WriteOptions"
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a GreenplumWriteOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions.parse({arg: value})
 
