@@ -15,23 +15,27 @@
 from __future__ import annotations
 
 import warnings
-from datetime import date, datetime
 from typing import ClassVar, Optional
-
-from deprecated import deprecated
 
 from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
-from onetl.connection.db_connection.jdbc_connection.options import (
-    JDBCReadOptions,
-    JDBCWriteOptions,
-)
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.teradata.dialect import TeradataDialect
 from onetl.hooks import slot
 from onetl.impl import GenericOptions
 
 # do not import PySpark here, as we allow user to use `Teradata.get_packages()` for creating Spark session
+
+
+class TeradataExtra(GenericOptions):
+    CHARSET: str = "UTF8"
+    COLUMN_NAME: str = "ON"
+    FLATTEN: str = "ON"
+    MAYBENULL: str = "ON"
+    STRICT_NAMES: str = "OFF"
+
+    class Config:
+        extra = "allow"
+        prohibited_options = frozenset(("DATABASE", "DBS_PORT"))
 
 
 class Teradata(JDBCConnection):
@@ -140,20 +144,12 @@ class Teradata(JDBCConnection):
 
     """
 
-    class Extra(GenericOptions):
-        CHARSET: str = "UTF8"
-        COLUMN_NAME: str = "ON"
-        FLATTEN: str = "ON"
-        MAYBENULL: str = "ON"
-        STRICT_NAMES: str = "OFF"
-
-        class Config:
-            extra = "allow"
-            prohibited_options = frozenset(("DATABASE", "DBS_PORT"))
-
     port: int = 1025
     database: Optional[str] = None
-    extra: Extra = Extra()
+    extra: TeradataExtra = TeradataExtra()
+
+    Extra = TeradataExtra
+    Dialect = TeradataDialect
 
     DRIVER: ClassVar[str] = "com.teradata.jdbc.TeraDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS check_result"
@@ -194,34 +190,3 @@ class Teradata(JDBCConnection):
 
         conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
         return f"jdbc:teradata://{self.host}/{conn}"
-
-    class Dialect(JDBCDialect):
-        @classmethod
-        def _get_datetime_value_sql(cls, value: datetime) -> str:
-            result = value.isoformat()
-            return f"CAST('{result}' AS TIMESTAMP)"
-
-        @classmethod
-        def _get_date_value_sql(cls, value: date) -> str:
-            result = value.isoformat()
-            return f"CAST('{result}' AS DATE)"
-
-    class ReadOptions(JDBCReadOptions):
-        # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
-        @classmethod
-        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-            return f"HASHAMP(HASHBUCKET(HASHROW({partition_column}))) mod {num_partitions}"
-
-        @classmethod
-        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-            return f"{partition_column} mod {num_partitions}"
-
-    @deprecated(
-        version="0.5.0",
-        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-        action="always",
-        category=UserWarning,
-    )
-    class Options(ReadOptions, JDBCWriteOptions):
-        class Config:
-            prohibited_options = JDBCOptions.Config.prohibited_options

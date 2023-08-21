@@ -401,11 +401,11 @@ class Hive(DBConnection):
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
-                    "min",
+                    self.Dialect._escape_column("min"),
                 ),
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_max_value_sql(expression or column),
-                    "max",
+                    self.Dialect._escape_column("max"),
                 ),
             ],
             where=where,

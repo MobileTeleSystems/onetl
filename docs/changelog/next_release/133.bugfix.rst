@@ -1,0 +1,1 @@
+Fix reading data from Oracle with ``partitioningMode="range"`` without explicitly set ``lowerBound`` / ``upperBound``.

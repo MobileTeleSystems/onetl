@@ -36,4 +36,6 @@ class HiveDialect(  # noqa: WPS215
     SupportHWMColumnStr,
     DBDialect,
 ):
-    pass
+    @classmethod
+    def _escape_column(cls, value: str) -> str:
+        return f"`{value}`"

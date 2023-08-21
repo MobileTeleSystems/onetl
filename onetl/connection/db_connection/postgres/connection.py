@@ -15,30 +15,12 @@
 from __future__ import annotations
 
 import warnings
-from datetime import date, datetime
 from typing import ClassVar
 
-from deprecated import deprecated
-
 from onetl._util.classproperty import classproperty
-from onetl.connection.db_connection.db_connection.dialect import DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportHWMColumnStr,
-    SupportHWMExpressionStr,
-    SupportWhereStr,
-)
-from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
-    SupportTableWithDBSchema,
-)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.options import (
-    JDBCReadOptions,
-    JDBCWriteOptions,
-)
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.postgres.dialect import PostgresDialect
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -146,6 +128,7 @@ class Postgres(JDBCConnection):
     extra: PostgresExtra = PostgresExtra()
 
     Extra = PostgresExtra
+    Dialect = PostgresDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
 
@@ -173,46 +156,6 @@ class Postgres(JDBCConnection):
         msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "org.postgresql:postgresql:42.6.0"
-
-    class Dialect(  # noqa: WPS215
-        SupportTableWithDBSchema,
-        SupportColumnsList,
-        SupportDfSchemaNone,
-        SupportWhereStr,
-        SupportHWMExpressionStr,
-        SupportHWMColumnStr,
-        SupportHintNone,
-        DBDialect,
-    ):
-        @classmethod
-        def _get_datetime_value_sql(cls, value: datetime) -> str:
-            result = value.isoformat()
-            return f"'{result}'::timestamp"
-
-        @classmethod
-        def _get_date_value_sql(cls, value: date) -> str:
-            result = value.isoformat()
-            return f"'{result}'::date"
-
-    class ReadOptions(JDBCReadOptions):
-        # https://stackoverflow.com/a/9812029
-        @classmethod
-        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-            return f"('x'||right(md5('{partition_column}'), 16))::bit(32)::bigint % {num_partitions}"
-
-        @classmethod
-        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-            return f"{partition_column} % {num_partitions}"
-
-    @deprecated(
-        version="0.5.0",
-        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-        action="always",
-        category=UserWarning,
-    )
-    class Options(ReadOptions, JDBCWriteOptions):
-        class Config:
-            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @property
     def jdbc_url(self) -> str:

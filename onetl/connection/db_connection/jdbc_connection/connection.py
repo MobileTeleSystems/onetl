@@ -22,7 +22,10 @@ from etl_entities.instance import Host
 
 from onetl._internal import clear_statement, get_sql_query
 from onetl.connection.db_connection.db_connection import DBConnection
+from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
 from onetl.connection.db_connection.jdbc_connection.options import (
+    JDBCLegacyOptions,
+    JDBCPartitioningMode,
     JDBCReadOptions,
     JDBCTableExistBehavior,
     JDBCWriteOptions,
@@ -57,8 +60,10 @@ class JDBCConnection(JDBCMixin, DBConnection):
     host: Host
     port: int
 
+    Dialect = JDBCDialect
     ReadOptions = JDBCReadOptions
     WriteOptions = JDBCWriteOptions
+    Options = JDBCLegacyOptions
 
     @property
     def instance_url(self) -> str:
@@ -159,24 +164,37 @@ class JDBCConnection(JDBCMixin, DBConnection):
             table=source,
             where=where,
             hint=hint,
-            options=self.ReadOptions.parse(options).copy(exclude={"if_exists", "partitioning_mode"}),
+            options=self.ReadOptions.parse(options),
         )
 
-        # hack to avoid column name verification
-        # in the spark, the expression in the partitioning of the column must
-        # have the same name as the field in the table ( 2.4 version )
-        # https://github.com/apache/spark/pull/21379
-
         new_columns = columns or ["*"]
-        alias = "x" + secrets.token_hex(5)
+        alias: str | None = None
 
         if read_options.partition_column:
-            aliased = self.Dialect._expression_with_alias(read_options.partition_column, alias)
-            read_options = read_options.copy(update={"partition_column": alias})
-            new_columns.append(aliased)
+            if read_options.partitioning_mode == JDBCPartitioningMode.MOD:
+                partition_column = self.Dialect._get_partition_column_mod(
+                    read_options.partition_column,
+                    read_options.num_partitions,
+                )
+            elif read_options.partitioning_mode == JDBCPartitioningMode.HASH:
+                partition_column = self.Dialect._get_partition_column_hash(
+                    read_options.partition_column,
+                    read_options.num_partitions,
+                )
+            else:
+                partition_column = read_options.partition_column
+
+            # hack to avoid column name verification
+            # in the spark, the expression in the partitioning of the column must
+            # have the same name as the field in the table ( 2.4 version )
+            # https://github.com/apache/spark/pull/21379
+            alias = "generated_" + secrets.token_hex(5)
+            alias_escaped = self.Dialect._escape_column(alias)
+            aliased_column = self.Dialect._expression_with_alias(partition_column, alias_escaped)
+            read_options = read_options.copy(update={"partition_column": alias_escaped})
+            new_columns.append(aliased_column)
 
         where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
-
         query = get_sql_query(
             table=source,
             columns=new_columns,
@@ -185,8 +203,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         )
 
         result = self.sql(query, read_options)
-
-        if read_options.partition_column:
+        if alias:
             result = result.drop(alias)
 
         return result
@@ -256,7 +273,6 @@ class JDBCConnection(JDBCMixin, DBConnection):
         )
 
         result["properties"].pop("partitioningMode", None)
-
         return result
 
     @slot
@@ -278,11 +294,11 @@ class JDBCConnection(JDBCMixin, DBConnection):
             columns=[
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_min_value_sql(expression or column),
-                    "min",
+                    self.Dialect._escape_column("min"),
                 ),
                 self.Dialect._expression_with_alias(
                     self.Dialect._get_max_value_sql(expression or column),
-                    "max",
+                    self.Dialect._escape_column("max"),
                 ),
             ],
             where=where,
@@ -324,21 +340,20 @@ class JDBCConnection(JDBCMixin, DBConnection):
     def _set_lower_upper_bound(
         self,
         table: str,
-        hint: str | None = None,
-        where: str | None = None,
-        options: JDBCReadOptions | None = None,
+        hint: str | None,
+        where: str | None,
+        options: JDBCReadOptions,
     ) -> JDBCReadOptions:
         """
         Determine values of upperBound and lowerBound options
         """
-        read_options = self.ReadOptions.parse(options)
-        if not read_options.partition_column:
-            return read_options
+        if not options.partition_column:
+            return options
 
         missing_values: list[str] = []
 
-        is_missed_lower_bound = read_options.lower_bound is None
-        is_missed_upper_bound = read_options.upper_bound is None
+        is_missed_lower_bound = options.lower_bound is None
+        is_missed_upper_bound = options.upper_bound is None
 
         if is_missed_lower_bound:
             missing_values.append("lowerBound")
@@ -347,30 +362,30 @@ class JDBCConnection(JDBCMixin, DBConnection):
             missing_values.append("upperBound")
 
         if not missing_values:
-            return read_options
+            return options
 
         log.warning(
             "|Spark| Passed numPartitions = %d, but values %r are not set. "
             "They will be detected automatically based on values in partitionColumn %r",
-            read_options.num_partitions,
+            options.num_partitions,
             missing_values,
-            read_options.partition_column,
+            options.partition_column,
         )
 
         min_partition_value, max_partition_value = self.get_min_max_bounds(
             source=table,
-            column=read_options.partition_column,
+            column=options.partition_column,
             where=where,
             hint=hint,
             options=options,
         )
 
         # The sessionInitStatement parameter is removed because it only needs to be applied once.
-        return read_options.copy(
+        return options.copy(
             exclude={"session_init_statement"},
             update={
-                "lower_bound": read_options.lower_bound if not is_missed_lower_bound else min_partition_value,
-                "upper_bound": read_options.upper_bound if not is_missed_upper_bound else max_partition_value,
+                "lower_bound": options.lower_bound if not is_missed_lower_bound else min_partition_value,
+                "upper_bound": options.upper_bound if not is_missed_upper_bound else max_partition_value,
             },
         )
 

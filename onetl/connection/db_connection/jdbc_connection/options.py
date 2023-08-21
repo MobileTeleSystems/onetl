@@ -15,10 +15,10 @@
 from __future__ import annotations
 
 import warnings
-from abc import abstractmethod
 from enum import Enum
 from typing import Optional
 
+from deprecated import deprecated
 from pydantic import Field, PositiveInt, root_validator
 
 from onetl._internal import to_camel
@@ -354,7 +354,7 @@ class JDBCReadOptions(JDBCOptions):
     """
 
     @root_validator
-    def partitioning_mode_actions(cls, values):
+    def _partitioning_mode_actions(cls, values):
         mode = values["partitioning_mode"]
         num_partitions = values.get("num_partitions")
         partition_column = values.get("partition_column")
@@ -373,32 +373,9 @@ class JDBCReadOptions(JDBCOptions):
         if mode == JDBCPartitioningMode.RANGE:
             return values
 
-        if mode == JDBCPartitioningMode.HASH:
-            values["partition_column"] = cls._get_partition_column_hash(
-                partition_column=partition_column,
-                num_partitions=num_partitions,
-            )
-
-        if mode == JDBCPartitioningMode.MOD:
-            values["partition_column"] = cls._get_partition_column_mod(
-                partition_column=partition_column,
-                num_partitions=num_partitions,
-            )
-
         values["lower_bound"] = lower_bound if lower_bound is not None else 0
         values["upper_bound"] = upper_bound if upper_bound is not None else num_partitions
-
         return values
-
-    @classmethod
-    @abstractmethod
-    def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        ...
-
-    @classmethod
-    @abstractmethod
-    def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        ...
 
 
 class JDBCWriteOptions(JDBCOptions):
@@ -521,3 +498,14 @@ class JDBCWriteOptions(JDBCOptions):
                 stacklevel=3,
             )
         return values
+
+
+@deprecated(
+    version="0.5.0",
+    reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
+    action="always",
+    category=UserWarning,
+)
+class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):
+    class Config:
+        prohibited_options = JDBCOptions.Config.prohibited_options

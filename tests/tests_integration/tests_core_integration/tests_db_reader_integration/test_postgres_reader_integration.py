@@ -1,7 +1,6 @@
 import pytest
 
 from onetl.connection import Postgres
-from onetl.connection.db_connection.jdbc_connection import JDBCPartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.postgres
@@ -30,7 +29,15 @@ def test_postgres_reader_snapshot(spark, processing, load_table_data):
     )
 
 
-def test_postgres_reader_snapshot_partitioning_mode_mod(spark, processing, load_table_data):
+@pytest.mark.parametrize(
+    "mode, column",
+    [
+        ("range", "id_int"),
+        ("hash", "text_string"),
+        ("mod", "id_int"),
+    ],
+)
+def test_postgres_reader_snapshot_partitioning_mode(mode, column, spark, processing, load_table_data):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -44,8 +51,8 @@ def test_postgres_reader_snapshot_partitioning_mode_mod(spark, processing, load_
         connection=postgres,
         source=load_table_data.full_name,
         options=Postgres.ReadOptions(
-            partitioning_mode=JDBCPartitioningMode.MOD,
-            partition_column="id_int",
+            partitioning_mode=mode,
+            partition_column=column,
             num_partitions=5,
         ),
     )
@@ -59,35 +66,7 @@ def test_postgres_reader_snapshot_partitioning_mode_mod(spark, processing, load_
         order_by="id_int",
     )
 
-
-def test_postgres_reader_snapshot_partitioning_mode_hash(spark, processing, load_table_data):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=load_table_data.full_name,
-        options=Postgres.ReadOptions(
-            partitioning_mode=JDBCPartitioningMode.HASH,
-            partition_column="text_string",
-            num_partitions=5,
-        ),
-    )
-
-    table_df = reader.run()
-
-    processing.assert_equal_df(
-        schema=load_table_data.schema,
-        table=load_table_data.table,
-        df=table_df,
-        order_by="id_int",
-    )
+    assert table_df.rdd.getNumPartitions() == 5
 
 
 def test_postgres_reader_snapshot_with_columns(spark, processing, load_table_data):

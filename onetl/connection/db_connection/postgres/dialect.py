@@ -14,36 +14,28 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from datetime import date, datetime
 
-from onetl.connection.db_connection.db_connection import DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintStr,
-    SupportHWMColumnStr,
-    SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
-    SupportWhereStr,
-)
+from onetl.connection.db_connection.dialect_mixins import SupportHintNone
+from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
-class JDBCDialect(  # noqa: WPS215
-    SupportTableWithDBSchema,
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportWhereStr,
-    SupportHintStr,
-    SupportHWMExpressionStr,
-    SupportHWMColumnStr,
-    DBDialect,
-):
+class PostgresDialect(SupportHintNone, JDBCDialect):
     @classmethod
-    @abstractmethod
+    def _get_datetime_value_sql(cls, value: datetime) -> str:
+        result = value.isoformat()
+        return f"'{result}'::timestamp"
+
+    @classmethod
+    def _get_date_value_sql(cls, value: date) -> str:
+        result = value.isoformat()
+        return f"'{result}'::date"
+
+    # https://stackoverflow.com/a/9812029
+    @classmethod
     def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"('x'||right(md5('{partition_column}'), 16))::bit(32)::bigint % {num_partitions}"
 
     @classmethod
-    @abstractmethod
     def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"{partition_column} % {num_partitions}"

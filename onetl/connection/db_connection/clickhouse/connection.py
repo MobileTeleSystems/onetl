@@ -16,20 +16,12 @@ from __future__ import annotations
 
 import logging
 import warnings
-from datetime import date, datetime
 from typing import ClassVar, Optional
 
-from deprecated import deprecated
-
 from onetl._util.classproperty import classproperty
+from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
-from onetl.connection.db_connection.jdbc_connection.options import (
-    JDBCReadOptions,
-    JDBCWriteOptions,
-)
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -142,6 +134,7 @@ class Clickhouse(JDBCConnection):
     extra: ClickhouseExtra = ClickhouseExtra()
 
     Extra = ClickhouseExtra
+    Dialect = ClickhouseDialect
 
     DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
 
@@ -179,36 +172,6 @@ class Clickhouse(JDBCConnection):
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
-
-    class Dialect(JDBCDialect):
-        @classmethod
-        def _get_datetime_value_sql(cls, value: datetime) -> str:
-            result = value.strftime("%Y-%m-%d %H:%M:%S")
-            return f"CAST('{result}' AS DateTime)"
-
-        @classmethod
-        def _get_date_value_sql(cls, value: date) -> str:
-            result = value.strftime("%Y-%m-%d")
-            return f"CAST('{result}' AS Date)"
-
-    class ReadOptions(JDBCReadOptions):
-        @classmethod
-        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-            return f"modulo(halfMD5({partition_column}), {num_partitions})"
-
-        @classmethod
-        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-            return f"{partition_column} % {num_partitions}"
-
-    @deprecated(
-        version="0.5.0",
-        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-        action="always",
-        category=UserWarning,
-    )
-    class Options(ReadOptions, JDBCWriteOptions):
-        class Config:
-            prohibited_options = JDBCOptions.Config.prohibited_options
 
     @staticmethod
     def _build_statement(

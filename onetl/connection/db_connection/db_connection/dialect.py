@@ -33,6 +33,10 @@ class DBDialect(BaseDBDialect):
     }
 
     @classmethod
+    def _escape_column(cls, value: str) -> str:
+        return f'"{value}"'
+
+    @classmethod
     def _expression_with_alias(cls, expression: str, alias: str) -> str:
         return f"{expression} AS {alias}"
 

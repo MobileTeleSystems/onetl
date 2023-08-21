@@ -20,23 +20,19 @@ import re
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass
-from datetime import date, datetime
+from decimal import Decimal
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from deprecated import deprecated
 from pydantic import root_validator
 
 from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
-from onetl.connection.db_connection.jdbc_connection.options import (
-    JDBCReadOptions,
-    JDBCWriteOptions,
-)
+from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.oracle.dialect import OracleDialect
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 from onetl.log import BASE_LOG_INDENT, log_lines
@@ -189,6 +185,7 @@ class Oracle(JDBCConnection):
     extra: OracleExtra = OracleExtra()
 
     Extra = OracleExtra
+    Dialect = OracleDialect
 
     DRIVER: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 FROM dual"
@@ -232,49 +229,6 @@ class Oracle(JDBCConnection):
         warnings.warn(msg, UserWarning, stacklevel=3)
         return "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
 
-    @root_validator
-    def only_one_of_sid_or_service_name(cls, values):
-        sid = values.get("sid")
-        service_name = values.get("service_name")
-
-        if sid and service_name:
-            raise ValueError("Only one of parameters ``sid``, ``service_name`` can be set, got both")
-
-        if not sid and not service_name:
-            raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
-
-        return values
-
-    class Dialect(JDBCDialect):
-        @classmethod
-        def _get_datetime_value_sql(cls, value: datetime) -> str:
-            result = value.strftime("%Y-%m-%d %H:%M:%S")
-            return f"TO_DATE('{result}', 'YYYY-MM-DD HH24:MI:SS')"
-
-        @classmethod
-        def _get_date_value_sql(cls, value: date) -> str:
-            result = value.strftime("%Y-%m-%d")
-            return f"TO_DATE('{result}', 'YYYY-MM-DD')"
-
-    class ReadOptions(JDBCReadOptions):
-        @classmethod
-        def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-            return f"ora_hash({partition_column}, {num_partitions})"
-
-        @classmethod
-        def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-            return f"MOD({partition_column}, {num_partitions})"
-
-    @deprecated(
-        version="0.5.0",
-        reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-        action="always",
-        category=UserWarning,
-    )
-    class Options(ReadOptions, JDBCWriteOptions):
-        class Config:
-            prohibited_options = JDBCOptions.Config.prohibited_options
-
     @property
     def jdbc_url(self) -> str:
         extra = self.extra.dict(by_alias=True)
@@ -291,6 +245,32 @@ class Oracle(JDBCConnection):
             return f"{super().instance_url}/{self.sid}"
 
         return f"{super().instance_url}/{self.service_name}"
+
+    @slot
+    def get_min_max_bounds(
+        self,
+        source: str,
+        column: str,
+        expression: str | None = None,
+        hint: str | None = None,
+        where: str | None = None,
+        options: JDBCReadOptions | None = None,
+    ) -> tuple[Any, Any]:
+        min_value, max_value = super().get_min_max_bounds(
+            source=source,
+            column=column,
+            expression=expression,
+            hint=hint,
+            where=where,
+            options=options,
+        )
+        # Oracle does not have Integer type, only Numeric, which is represented as Decimal in Python
+        # If number does not have decimal part, convert it to integer to use as lowerBound/upperBound
+        if isinstance(min_value, Decimal) and min_value == round(min_value):
+            min_value = int(min_value)
+        if isinstance(max_value, Decimal) and max_value == round(max_value):
+            max_value = int(max_value)
+        return min_value, max_value
 
     @slot
     def execute(
@@ -317,6 +297,19 @@ class Oracle(JDBCConnection):
         else:
             log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
         return df
+
+    @root_validator
+    def _only_one_of_sid_or_service_name(cls, values):
+        sid = values.get("sid")
+        service_name = values.get("service_name")
+
+        if sid and service_name:
+            raise ValueError("Only one of parameters ``sid``, ``service_name`` can be set, got both")
+
+        if not sid and not service_name:
+            raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
+
+        return values
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
         """

@@ -14,36 +14,26 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from datetime import date, datetime
 
-from onetl.connection.db_connection.db_connection import DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintStr,
-    SupportHWMColumnStr,
-    SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
-    SupportWhereStr,
-)
+from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
-class JDBCDialect(  # noqa: WPS215
-    SupportTableWithDBSchema,
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportWhereStr,
-    SupportHintStr,
-    SupportHWMExpressionStr,
-    SupportHWMColumnStr,
-    DBDialect,
-):
+class OracleDialect(JDBCDialect):
     @classmethod
-    @abstractmethod
+    def _get_datetime_value_sql(cls, value: datetime) -> str:
+        result = value.strftime("%Y-%m-%d %H:%M:%S")
+        return f"TO_DATE('{result}', 'YYYY-MM-DD HH24:MI:SS')"
+
+    @classmethod
+    def _get_date_value_sql(cls, value: date) -> str:
+        result = value.strftime("%Y-%m-%d")
+        return f"TO_DATE('{result}', 'YYYY-MM-DD')"
+
+    @classmethod
     def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"ora_hash({partition_column}, {num_partitions})"
 
     @classmethod
-    @abstractmethod
     def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"MOD({partition_column}, {num_partitions})"
