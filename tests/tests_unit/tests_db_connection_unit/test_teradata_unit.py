@@ -115,7 +115,10 @@ def test_teradata_with_extra(spark_mock):
 
 
 def test_teradata_with_extra_prohibited(spark_mock):
-    with pytest.raises(ValueError, match=r"Options \['DATABASE', 'DBS_PORT'\] are not allowed to use in a Extra"):
+    with pytest.raises(
+        ValueError,
+        match=r"Options \['DATABASE', 'DBS_PORT'\] are not allowed to use in a TeradataExtra",
+    ):
         Teradata(
             host="some_host",
             user="user",

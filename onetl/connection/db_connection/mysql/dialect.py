@@ -14,36 +14,30 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from datetime import date, datetime
 
-from onetl.connection.db_connection.db_connection import DBDialect
-from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintStr,
-    SupportHWMColumnStr,
-    SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
-    SupportWhereStr,
-)
+from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
-class JDBCDialect(  # noqa: WPS215
-    SupportTableWithDBSchema,
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportWhereStr,
-    SupportHintStr,
-    SupportHWMExpressionStr,
-    SupportHWMColumnStr,
-    DBDialect,
-):
+class MySQLDialect(JDBCDialect):
     @classmethod
-    @abstractmethod
+    def _escape_column(cls, value: str) -> str:
+        return f"`{value}`"
+
+    @classmethod
+    def _get_datetime_value_sql(cls, value: datetime) -> str:
+        result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d %H:%i:%s.%f')"
+
+    @classmethod
+    def _get_date_value_sql(cls, value: date) -> str:
+        result = value.strftime("%Y-%m-%d")
+        return f"STR_TO_DATE('{result}', '%Y-%m-%d')"
+
+    @classmethod
     def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"MOD(CONV(CONV(RIGHT(MD5({partition_column}), 16),16, 2), 2, 10), {num_partitions})"
 
     @classmethod
-    @abstractmethod
     def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        ...
+        return f"MOD({partition_column}, {num_partitions})"
