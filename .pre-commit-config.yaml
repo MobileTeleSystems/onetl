@@ -69,7 +69,7 @@ repos:
   - id: black
     language_version: python3
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.15.0
+  rev: 1.16.0
   hooks:
   - id: blacken-docs
 - repo: meta
