@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import pandas
 
 from tests.util.assert_df import assert_equal_df, assert_subset_df
-from tests.util.to_pandas import to_pandas
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
@@ -183,8 +182,10 @@ class BaseProcessing(ABC):
                 raise TypeError("Cannot use assert_equal_df without schema and table")
             other_frame = self.get_expected_dataframe(schema=schema, table=table, order_by=order_by)
 
-        left_df = self.fix_pandas_df(to_pandas(df))
-        right_df = self.fix_pandas_df(to_pandas(other_frame))
+        left_df = self.fix_pandas_df(df if isinstance(df, pandas.DataFrame) else df.toPandas())
+        right_df = self.fix_pandas_df(
+            other_frame if isinstance(other_frame, pandas.DataFrame) else other_frame.toPandas(),
+        )
         return assert_equal_df(left_df=left_df, right_df=right_df, order_by=order_by, **kwargs)
 
     def assert_subset_df(
@@ -202,6 +203,8 @@ class BaseProcessing(ABC):
                 raise TypeError("Cannot use assert_equal_df without schema and table")
             other_frame = self.get_expected_dataframe(schema=schema, table=table)
 
-        small_df = self.fix_pandas_df(to_pandas(df))
-        large_df = self.fix_pandas_df(to_pandas(other_frame))
+        small_df = self.fix_pandas_df(df if isinstance(df, pandas.DataFrame) else df.toPandas())
+        large_df = self.fix_pandas_df(
+            other_frame if isinstance(other_frame, pandas.DataFrame) else other_frame.toPandas(),
+        )
         return assert_subset_df(small_df=small_df, large_df=large_df, columns=columns)

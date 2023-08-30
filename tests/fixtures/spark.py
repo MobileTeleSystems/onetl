@@ -104,6 +104,8 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, mave
         .config("spark.default.parallelism", "1")
         .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
         .config("spark.sql.warehouse.dir", warehouse_dir)
+        .config("spark.sql.execution.arrow.enabled", "false")
+        .config("spark.sql.execution.arrow.pyspark.enabled", "false")
         .enableHiveSupport()
         .getOrCreate()
     )

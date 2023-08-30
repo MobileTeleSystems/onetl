@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, OrderedDict
 import pandas
 
 from tests.util.pandas_df import lowercase_columns
-from tests.util.to_pandas import to_pandas
 
 try:
     from pandas.testing import assert_frame_equal
@@ -26,23 +25,23 @@ def assert_equal_df(
 
     # Oracle returns column names in UPPERCASE, convert them back to lowercase
     # Nota: this is only for dataframe comparison purpose
-    left_df = lowercase_columns(to_pandas(left_df))
-    right_df = lowercase_columns(to_pandas(right_df))
+    left_pdf = lowercase_columns(left_df if isinstance(left_df, pandas.DataFrame) else left_df.toPandas())
+    right_pdf = lowercase_columns(right_df if isinstance(right_df, pandas.DataFrame) else right_df.toPandas())
 
     if order_by:
-        left_df = left_df.sort_values(by=order_by.lower())
-        right_df = right_df.sort_values(by=order_by.lower())
+        left_pdf = left_pdf.sort_values(by=order_by.lower())
+        right_pdf = right_pdf.sort_values(by=order_by.lower())
 
-        left_df.reset_index(inplace=True, drop=True)
-        right_df.reset_index(inplace=True, drop=True)
+        left_pdf.reset_index(inplace=True, drop=True)
+        right_pdf.reset_index(inplace=True, drop=True)
 
     # ignore columns order
-    left_df = left_df.sort_index(axis=1)
-    right_df = right_df.sort_index(axis=1)
+    left_pdf = left_pdf.sort_index(axis=1)
+    right_pdf = right_pdf.sort_index(axis=1)
 
     assert_frame_equal(
-        left=left_df,
-        right=right_df,
+        left=left_pdf,
+        right=right_pdf,
         check_dtype=False,
         **kwargs,
     )
@@ -55,8 +54,8 @@ def assert_subset_df(
 ) -> None:
     """Checks that left_df is subset of right_df"""
 
-    small_pdf = lowercase_columns(to_pandas(small_df))
-    large_pdf = lowercase_columns(to_pandas(large_df))
+    small_pdf = lowercase_columns(small_df if isinstance(small_df, pandas.DataFrame) else small_df.toPandas())
+    large_pdf = lowercase_columns(large_df if isinstance(large_df, pandas.DataFrame) else large_df.toPandas())
 
     if columns is None:
         left_keys = OrderedDict.fromkeys(column.lower() for column in small_pdf.columns)
