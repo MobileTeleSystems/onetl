@@ -66,7 +66,7 @@ class SparkS3(SparkFileDFConnection):
 
     .. warning::
 
-        See :spark-s3-troubleshooting` guide.
+        See :ref:`spark-s3-troubleshooting` guide.
 
     .. warning::
 
