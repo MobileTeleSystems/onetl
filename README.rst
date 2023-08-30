@@ -577,7 +577,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         ],
     )
 
-    # Initialize file reader
+    # Initialize file df reader
     reader = FileDFReader(
         connection=spark_s3,
         source_path="/remote/tests/Report",  # path on S3 there *.csv files are located

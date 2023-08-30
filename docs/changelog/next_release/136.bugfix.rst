@@ -1,0 +1,1 @@
+Update Kafka documentation with SSLProtocol usage.

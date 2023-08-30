@@ -88,9 +88,8 @@ class KafkaReadOptions(GenericOptions):
             * ``startingTimestamp``
             * ``subscribe``
             * ``subscribePattern``
-            * ``topic``
 
-        populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
+        are populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
         by the user to avoid issues.
 
     Examples
@@ -126,18 +125,10 @@ class KafkaWriteOptions(GenericOptions):
     .. warning::
 
         Options:
-            * ``assign``
-            * ``endingOffsets``
-            * ``endingOffsetsByTimestamp``
             * ``kafka.*``
-            * ``startingOffsets``
-            * ``startingOffsetsByTimestamp``
-            * ``startingTimestamp``
-            * ``subscribe``
-            * ``subscribePattern``
             * ``topic``
 
-        populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
+        are populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
         by the user to avoid issues.
 
     Examples

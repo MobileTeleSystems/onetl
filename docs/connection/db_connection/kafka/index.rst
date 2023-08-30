@@ -5,11 +5,9 @@ Kafka
 
 .. toctree::
     :maxdepth: 1
-    :caption: Connection & options
+    :caption: Connection
 
     connection
-    read_options
-    write_options
 
 .. toctree::
     :maxdepth: 1
@@ -25,6 +23,13 @@ Kafka
     basic_auth
     kerberos_auth
     scram_auth
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Operations
+
+    read
+    write
 
 .. toctree::
     :maxdepth: 1

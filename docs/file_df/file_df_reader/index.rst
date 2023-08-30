@@ -1,11 +1,11 @@
 .. _file-df-reader-root:
 
-File Reader
-===============
+FileDF Reader
+=============
 
 .. toctree::
     :maxdepth: 1
-    :caption: File Reader
+    :caption: FileDF Reader
 
     file_df_reader
     options
