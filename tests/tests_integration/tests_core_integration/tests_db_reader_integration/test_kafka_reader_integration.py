@@ -22,10 +22,10 @@ def dataframe_schema():
 
     return StructType(
         [
-            StructField("id_int", LongType(), True),
-            StructField("text_string", StringType(), True),
-            StructField("hwm_int", LongType(), True),
-            StructField("float_value", FloatType(), True),
+            StructField("id_int", LongType(), nullable=True),
+            StructField("text_string", StringType(), nullable=True),
+            StructField("hwm_int", LongType(), nullable=True),
+            StructField("float_value", FloatType(), nullable=True),
         ],
     )
 
@@ -88,6 +88,7 @@ def kafka_schema_with_headers():
                         ],
                     ),
                 ),
+                nullable=True,
             ),
         ],
     )

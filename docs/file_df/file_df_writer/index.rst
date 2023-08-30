@@ -1,11 +1,11 @@
 .. _file-df-writer-root:
 
-File Writer
-===============
+FileDF Writer
+=============
 
 .. toctree::
     :maxdepth: 1
-    :caption: File Writer
+    :caption: FileDF Writer
 
     file_df_writer
     options

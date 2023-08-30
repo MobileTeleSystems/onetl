@@ -192,14 +192,12 @@ class Kafka(DBConnection):
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
             cluster="my-cluster",
-            protocol=(
-                Kafka.SSLProtocol(
-                    keystore_type="PEM",
-                    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
-                    keystore_key=Path("path/to/user.key").read_text(),
-                    truststore_type="PEM",
-                    truststore_certificates=Path("/path/to/server.crt").read_text(),
-                ),
+            protocol=Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                keystore_key=Path("path/to/user.key").read_text(),
+                truststore_type="PEM",
+                truststore_certificates=Path("/path/to/server.crt").read_text(),
             ),
             auth=Kafka.ScramAuth(
                 user="me",
@@ -357,6 +355,7 @@ class Kafka(DBConnection):
                             ],
                         ),
                     ),
+                    nullable=True,
                 ),
             ],
         )
