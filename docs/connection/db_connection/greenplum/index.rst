@@ -12,7 +12,7 @@ Greenplum
 
 .. toctree::
     :maxdepth: 1
-    :caption: Options
+    :caption: Operations
 
     read
     write
