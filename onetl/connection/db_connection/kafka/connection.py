@@ -269,6 +269,9 @@ class Kafka(DBConnection):
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
         log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)
+        if source not in self._get_topics():
+            raise ValueError(f"Topic {source!r} doesn't exist")
+
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
