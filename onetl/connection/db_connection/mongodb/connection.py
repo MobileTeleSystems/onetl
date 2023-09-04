@@ -390,7 +390,7 @@ class MongoDB(DBConnection):
             jvm = self.spark._jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
-            log.info("|%s| Connection is available.", self.__class__.__name__)
+            log.info("|%s| Connection is available", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
@@ -407,7 +407,7 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         options: MongoDBReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|Spark| Getting min and max values for column %r", column)
+        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
@@ -435,7 +435,7 @@ class MongoDB(DBConnection):
         min_value = row["min"]
         max_value = row["max"]
 
-        log.info("|Spark| Received values:")
+        log.info("|%s| Received values:", self.__class__.__name__)
         log_with_indent(log, "MIN(%s) = %r", column, min_value)
         log_with_indent(log, "MAX(%s) = %r", column, max_value)
 

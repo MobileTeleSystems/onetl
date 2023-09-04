@@ -444,7 +444,7 @@ class FileMover(FrozenModel):
         log.info("|%s| Files to be moved:", self.__class__.__name__)
         log_lines(log, str(files))
         log_with_indent(log, "")
-        log.info("|%s| Starting the move process ...", self.__class__.__name__)
+        log.info("|%s| Starting the move process...", self.__class__.__name__)
 
         self._create_dirs(to_move)
 

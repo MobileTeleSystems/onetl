@@ -20,7 +20,7 @@ def test_hive_check(spark, caplog):
     with caplog.at_level(logging.INFO):
         assert hive.check() == hive
 
-    assert "type = Hive" in caplog.text
+    assert "|Hive|" in caplog.text
     assert "spark = " not in caplog.text
 
     assert "Connection is available" in caplog.text

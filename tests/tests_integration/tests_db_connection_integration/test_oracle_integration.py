@@ -28,7 +28,7 @@ def test_oracle_connection_check(spark, processing, caplog):
     with caplog.at_level(logging.INFO):
         assert oracle.check() == oracle
 
-    assert "type = Oracle" in caplog.text
+    assert "|Oracle|" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
     assert "database" not in caplog.text
