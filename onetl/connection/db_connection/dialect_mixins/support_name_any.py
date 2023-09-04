@@ -5,11 +5,7 @@ from etl_entities import Table
 from onetl.base import BaseDBConnection
 
 
-class SupportTableWithoutDBSchema:
+class SupportNameAny:
     @classmethod
     def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
-        if value.db is not None:
-            raise ValueError(
-                f"Table name should be passed in `mytable` format (not `myschema.mytable`), got '{value}'",
-            )
         return value

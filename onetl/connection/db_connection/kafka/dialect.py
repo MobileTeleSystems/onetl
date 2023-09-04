@@ -25,7 +25,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportDfSchemaNone,
     SupportHintNone,
     SupportHWMExpressionNone,
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
     SupportWhereNone,
 )
 
@@ -37,7 +37,7 @@ class KafkaDialect(  # noqa: WPS215
     SupportDfSchemaNone,
     SupportHintNone,
     SupportWhereNone,
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
     SupportHWMExpressionNone,
     DBDialect,
 ):

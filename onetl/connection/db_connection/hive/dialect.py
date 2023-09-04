@@ -21,13 +21,13 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintStr,
     SupportHWMColumnStr,
     SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
+    SupportNameWithSchemaOnly,
     SupportWhereStr,
 )
 
 
 class HiveDialect(  # noqa: WPS215
-    SupportTableWithDBSchema,
+    SupportNameWithSchemaOnly,
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportWhereStr,

@@ -23,13 +23,13 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportHintNone,
     SupportHWMColumnStr,
     SupportHWMExpressionStr,
-    SupportTableWithDBSchema,
+    SupportNameWithSchemaOnly,
     SupportWhereStr,
 )
 
 
 class GreenplumDialect(  # noqa: WPS215
-    SupportTableWithDBSchema,
+    SupportNameWithSchemaOnly,
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportWhereStr,
