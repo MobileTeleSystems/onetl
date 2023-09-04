@@ -30,7 +30,7 @@ Downloading Pivotal package
 ---------------------------
 
 To use Greenplum connector you should download connector ``.jar`` file from
-`Pivotal website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1287433/file_groups/13260>`_
+`Pivotal website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1341690/file_groups/14993>`_
 and then pass it to Spark session.
 
 There are several ways to do that.
