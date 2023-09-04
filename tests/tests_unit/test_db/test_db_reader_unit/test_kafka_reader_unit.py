@@ -29,30 +29,6 @@ def df_schema():
     )
 
 
-def test_kafka_reader_invalid_table(spark_mock):
-    kafka = Kafka(
-        addresses=["localhost:9092"],
-        cluster="my_cluster",
-        spark=spark_mock,
-    )
-    with pytest.raises(
-        ValueError,
-        match="Table name should be passed in `mytable` format",
-    ):
-        DBReader(
-            connection=kafka,
-            table="schema.table",  # Includes schema. Required format: table="table"
-        )
-    with pytest.raises(
-        ValueError,
-        match="Table name should be passed in `schema.name` format",
-    ):
-        DBReader(
-            connection=kafka,
-            table="schema.table.subtable",  # Includes subtable. Required format: table="table"
-        )
-
-
 def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
     kafka = Kafka(
         addresses=["localhost:9092"],

@@ -26,7 +26,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportDfSchemaStruct,
     SupportHWMColumnStr,
     SupportHWMExpressionNone,
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
 )
 
 _upper_level_operators = frozenset(  # noqa: WPS527
@@ -74,7 +74,7 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 
 
 class MongoDBDialect(  # noqa: WPS215
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
     SupportHWMExpressionNone,
     SupportColumnsNone,
     SupportDfSchemaStruct,
