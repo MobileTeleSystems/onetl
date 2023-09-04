@@ -719,10 +719,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         """
 
     def _log_parameters(self):
-        log.info("|onETL| Using connection parameters:")
-        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log.info("|%s| Using connection parameters:", self.__class__.__name__)
         parameters = self.dict(exclude_none=True)
-        for attr, value in sorted(parameters.items()):
+        for attr, value in parameters.items():
             if isinstance(value, os.PathLike):
                 log_with_indent(log, "%s = %s", attr, path_repr(value))
             else:

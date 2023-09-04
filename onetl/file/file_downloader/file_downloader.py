@@ -636,7 +636,7 @@ class FileDownloader(FrozenModel):
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
         log_lines(log, str(files))
         log_with_indent(log, "")
-        log.info("|%s| Starting the download process ...", self.__class__.__name__)
+        log.info("|%s| Starting the download process...", self.__class__.__name__)
 
         self._create_dirs(to_download)
 

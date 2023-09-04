@@ -26,7 +26,7 @@ def test_mysql_connection_check(spark, processing, caplog):
     with caplog.at_level(logging.INFO):
         assert mysql.check() == mysql
 
-    assert "type = MySQL" in caplog.text
+    assert "|MySQL|" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
     assert f"database = '{processing.database}'" in caplog.text

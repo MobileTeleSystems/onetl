@@ -13,6 +13,6 @@ def test_spark_local_fs_check(spark, caplog):
     with caplog.at_level(logging.INFO):
         assert local_fs.check() == local_fs
 
-    assert "type = SparkLocalFS" in caplog.text
+    assert "|SparkLocalFS|" in caplog.text
 
     assert "Connection is available" in caplog.text

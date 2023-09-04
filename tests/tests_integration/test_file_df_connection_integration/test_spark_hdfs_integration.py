@@ -15,7 +15,7 @@ def test_spark_hdfs_check(hdfs_file_df_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert hdfs.check() == hdfs
 
-    assert "type = SparkHDFS" in caplog.text
+    assert "|SparkHDFS|" in caplog.text
     assert f"cluster = '{hdfs.cluster}'" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"ipc_port = {hdfs.ipc_port}" in caplog.text

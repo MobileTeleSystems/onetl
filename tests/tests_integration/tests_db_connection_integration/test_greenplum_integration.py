@@ -27,7 +27,7 @@ def test_greenplum_connection_check(spark, processing, caplog):
     with caplog.at_level(logging.INFO):
         assert greenplum.check() == greenplum
 
-    assert "type = Greenplum" in caplog.text
+    assert "|Greenplum|" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
     assert f"user = '{processing.user}'" in caplog.text

@@ -11,7 +11,7 @@ def test_s3_file_connection_check_success(caplog, s3_file_connection):
     with caplog.at_level(logging.INFO):
         assert s3.check() == s3
 
-    assert "type = S3" in caplog.text
+    assert "|S3|" in caplog.text
     assert f"host = '{s3.host}'" in caplog.text
     assert f"port = {s3.port}" in caplog.text
     assert f"protocol = '{s3.protocol}'" in caplog.text

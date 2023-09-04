@@ -230,7 +230,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
+        log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         read_options = self._exclude_partition_options(self.ReadOptions.parse(options), fetchsize=0)
@@ -285,7 +285,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         where: str | None = None,
         options: JDBCReadOptions | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|Spark| Getting min and max values for column %r", column)
+        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
 
         read_options = self._exclude_partition_options(self.ReadOptions.parse(options), fetchsize=1)
 
@@ -313,7 +313,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         min_value = row["min"]
         max_value = row["max"]
 
-        log.info("|Spark| Received values:")
+        log.info("|%s| Received values:", self.__class__.__name__)
         log_with_indent(log, "MIN(%s) = %r", column, min_value)
         log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
@@ -365,8 +365,9 @@ class JDBCConnection(JDBCMixin, DBConnection):
             return options
 
         log.warning(
-            "|Spark| Passed numPartitions = %d, but values %r are not set. "
+            "|%s| Passed numPartitions = %d, but values %r are not set. "
             "They will be detected automatically based on values in partitionColumn %r",
+            self.__class__.__name__,
             options.num_partitions,
             missing_values,
             options.partition_column,

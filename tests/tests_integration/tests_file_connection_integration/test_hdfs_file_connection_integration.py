@@ -17,7 +17,7 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert hdfs.check() == hdfs
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
@@ -50,7 +50,7 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert f"user = '{hdfs.user}'" in caplog.text
@@ -72,7 +72,7 @@ def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text

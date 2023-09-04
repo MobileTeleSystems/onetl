@@ -15,7 +15,7 @@ def test_spark_s3_check(s3_file_df_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert s3.check() == s3
 
-    assert "type = SparkS3" in caplog.text
+    assert "|SparkS3|" in caplog.text
     assert f"host = '{s3.host}'" in caplog.text
     assert f"port = {s3.port}" in caplog.text
     assert f"protocol = '{s3.protocol}'" in caplog.text

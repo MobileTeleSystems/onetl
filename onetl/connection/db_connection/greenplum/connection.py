@@ -327,7 +327,7 @@ class Greenplum(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCOptions | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table %r", self.__class__.__name__, source)
+        log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = get_sql_query(source, columns=columns, where="1=0", compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
@@ -350,7 +350,7 @@ class Greenplum(JDBCMixin, DBConnection):
         where: str | None = None,
         options: JDBCOptions | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|Spark| Getting min and max values for column %r", column)
+        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
 
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
 
@@ -377,7 +377,7 @@ class Greenplum(JDBCMixin, DBConnection):
         min_value = row["min"]
         max_value = row["max"]
 
-        log.info("|Spark| Received values:")
+        log.info("|%s| Received values:", self.__class__.__name__)
         log_with_indent(log, "MIN(%r) = %r", column, min_value)
         log_with_indent(log, "MAX(%r) = %r", column, max_value)
 

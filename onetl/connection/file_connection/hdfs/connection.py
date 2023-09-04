@@ -309,12 +309,12 @@ class HDFS(FileConnection, RenameDirMixin):
 
     @validator("cluster")
     def _validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        log.debug("|%s| Checking if cluster %r is a known cluster...", cls.__name__, validated_cluster)
         known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
@@ -327,7 +327,7 @@ class HDFS(FileConnection, RenameDirMixin):
     def _validate_host_name(cls, host, values):
         cluster = values.get("cluster")
 
-        log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
+        log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
             log.debug("|%s|   Got %r", cls.__name__, namenode)

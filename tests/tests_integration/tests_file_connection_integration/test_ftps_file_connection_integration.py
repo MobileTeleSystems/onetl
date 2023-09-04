@@ -10,7 +10,7 @@ def test_ftps_file_connection_check_success(ftps_file_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert ftps.check() == ftps
 
-    assert "type = FTPS" in caplog.text
+    assert "|FTPS|" in caplog.text
     assert f"host = '{ftps.host}'" in caplog.text
     assert f"port = {ftps.port}" in caplog.text
     assert f"user = '{ftps.user}'" in caplog.text
@@ -28,7 +28,7 @@ def test_ftps_file_connection_check_anonymous(ftps_server, caplog):
     with caplog.at_level(logging.INFO):
         assert anonymous.check() == anonymous
 
-    assert "type = FTP" in caplog.text
+    assert "|FTPS|" in caplog.text
     assert f"host = '{anonymous.host}'" in caplog.text
     assert f"port = {anonymous.port}" in caplog.text
     assert "user = " not in caplog.text

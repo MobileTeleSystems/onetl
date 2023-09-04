@@ -58,7 +58,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         try:
             fs = self._get_spark_fs()
             fs.exists(path)
-            log.info("|%s| Connection is available.", self.__class__.__name__)
+            log.info("|%s| Connection is available", self.__class__.__name__)
         except Exception as e:
             raise RuntimeError("Connection is unavailable") from e
         return self
@@ -81,7 +81,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         if root:
             log.info("|%s| Reading data from '%s' ...", self.__class__.__name__, root)
         else:
-            log.info("|%s| Reading data ...", self.__class__.__name__)
+            log.info("|%s| Reading data...", self.__class__.__name__)
 
         reader: DataFrameReader = self.spark.read
         with ExitStack() as stack:
@@ -183,8 +183,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         return refs
 
     def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
-        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log.info("|%s| Using connection parameters:", self.__class__.__name__)
         parameters = self.dict(exclude_none=True, exclude={"spark"})
-        for attr, value in sorted(parameters.items()):
+        for attr, value in parameters.items():
             log_with_indent(log, "%s = %r", attr, value)

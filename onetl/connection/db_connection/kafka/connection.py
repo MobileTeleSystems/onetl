@@ -250,7 +250,7 @@ class Kafka(DBConnection):
 
         try:
             self._get_topics()
-            log.info("|%s| Connection is available.", self.__class__.__name__)
+            log.info("|%s| Connection is available", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
@@ -471,12 +471,12 @@ class Kafka(DBConnection):
 
     @validator("cluster")
     def _validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        log.debug("|%s| Checking if cluster %r is a known cluster...", cls.__name__, validated_cluster)
         known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
@@ -489,7 +489,7 @@ class Kafka(DBConnection):
     def _validate_addresses(cls, value, values):
         cluster = values.get("cluster")
 
-        log.debug("|%s| Normalizing addresses %r names ...", cls.__name__, value)
+        log.debug("|%s| Normalizing addresses %r names...", cls.__name__, value)
 
         validated_addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
         if validated_addresses != value:
@@ -564,8 +564,7 @@ class Kafka(DBConnection):
             return set(topics)
 
     def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
-        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log.info("|%s| Using connection parameters:", self.__class__.__name__)
         log_with_indent(log, "cluster = %r", self.cluster)
         log_collection(log, "addresses", self.addresses, max_items=10)
         log_with_indent(log, "protocol = %r", self.protocol)

@@ -208,7 +208,7 @@ class Hive(DBConnection):
 
         try:
             self._execute_sql(self._CHECK_QUERY)
-            log.info("|%s| Connection is available.", self.__class__.__name__)
+            log.info("|%s| Connection is available", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
@@ -375,7 +375,7 @@ class Hive(DBConnection):
         source: str,
         columns: list[str] | None = None,
     ) -> StructType:
-        log.info("|%s| Fetching schema of table table %r", self.__class__.__name__, source)
+        log.info("|%s| Fetching schema of table table %r ...", self.__class__.__name__, source)
         query = get_sql_query(source, columns=columns, where="1=0", compact=True)
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
@@ -394,7 +394,7 @@ class Hive(DBConnection):
         hint: str | None = None,
         where: str | None = None,
     ) -> Tuple[Any, Any]:
-        log.info("|Spark| Getting min and max values for column %r", column)
+        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
 
         sql_text = get_sql_query(
             table=source,
@@ -420,7 +420,7 @@ class Hive(DBConnection):
         min_value = row["min"]
         max_value = row["max"]
 
-        log.info("|Spark| Received values:")
+        log.info("|%s| Received values:", self.__class__.__name__)
         log_with_indent(log, "MIN(%s) = %r", column, min_value)
         log_with_indent(log, "MAX(%s) = %r", column, max_value)
 
@@ -428,12 +428,12 @@ class Hive(DBConnection):
 
     @validator("cluster")
     def _validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__)
 
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        log.debug("|%s| Checking if cluster %r is a known cluster...", cls.__name__, validated_cluster)
         known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
