@@ -304,7 +304,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         df: DataFrame,
         target: str,
-        options: GreenplumWriteOptions | None = None,
+        options: GreenplumWriteOptions = GreenplumWriteOptions(),  # noqa: B008, WPS404
     ) -> None:
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
@@ -312,7 +312,11 @@ class Greenplum(JDBCMixin, DBConnection):
         self._check_expected_jobs_number(df, action="write")
 
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        mode = "overwrite" if write_options.if_exists == GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE else "append"
+        mode = (
+            "overwrite"
+            if write_options.if_exists == GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE
+            else options.if_exists
+        )
         df.write.format("greenplum").options(
             **self._connector_params(target),
             **options_dict,

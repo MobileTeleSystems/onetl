@@ -170,7 +170,7 @@ Without docker-compose
 
     To run Greenplum tests, you should:
 
-    * Download `Pivotal connector for Spark <https://onetl.org.readthedocs.build/en/latest/db_connection/greenplum/prerequisites.html>`_
+    * Download `Pivotal connector for Spark <https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html>`_
     * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
     * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
 
