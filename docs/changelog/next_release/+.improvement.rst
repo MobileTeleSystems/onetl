@@ -1,0 +1,4 @@
+Improve documentation:
+
+* Add notes about reading and writing to database connections documentation
+* Add notes about executing statements in JDBC and Greenplum connections

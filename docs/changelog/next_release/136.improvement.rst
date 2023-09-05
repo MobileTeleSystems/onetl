@@ -1,1 +1,0 @@
-Add notes about reading and writing to Kafka to documentation
