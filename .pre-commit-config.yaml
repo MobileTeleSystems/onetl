@@ -77,7 +77,7 @@ repos:
   - id: check-hooks-apply
   - id: check-useless-excludes
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.2.0
+  rev: v2.2.1
   hooks:
   - id: autoflake
     args:
