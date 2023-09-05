@@ -301,12 +301,6 @@ class GreenplumWriteOptions(JDBCOptions):
                 * Table exists
                     An error is raised, and no data is written to the table.
 
-                    .. warning::
-
-                        This mode is useful when you want to ensure that the table does not
-                        already exist before writing. If the table exists, the operation will
-                        fail, and you will need to handle the error.
-
     """
 
     @root_validator(pre=True)

@@ -304,7 +304,7 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         df: DataFrame,
         target: str,
-        options: GreenplumWriteOptions = GreenplumWriteOptions(),  # noqa: B008, WPS404
+        options: GreenplumWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
         options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
@@ -315,7 +315,7 @@ class Greenplum(JDBCMixin, DBConnection):
         mode = (
             "overwrite"
             if write_options.if_exists == GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE
-            else options.if_exists
+            else write_options.if_exists.value
         )
         df.write.format("greenplum").options(
             **self._connector_params(target),
