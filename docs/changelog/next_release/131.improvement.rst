@@ -1,0 +1,1 @@
+Improve validation messages while writing dataframe to Kafka.
