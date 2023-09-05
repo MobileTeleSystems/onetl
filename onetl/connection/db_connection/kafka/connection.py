@@ -287,21 +287,27 @@ class Kafka(DBConnection):
         options: KafkaWriteOptions = KafkaWriteOptions(),  # noqa: B008, WPS404
     ) -> None:
         # Check that the DataFrame doesn't contain any columns not in the schema
-        schema: StructType = self.get_df_schema(target)
-        required_columns = [field.name for field in schema.fields if not field.nullable]
-        optional_columns = [field.name for field in schema.fields if field.nullable]
-        schema_field_names = {field.name for field in schema.fields}
-        df_column_names = set(df.columns)
-        if not df_column_names.issubset(schema_field_names):
-            invalid_columns = df_column_names - schema_field_names
+        required_columns = {"value"}
+        optional_columns = {"key", "partition", "headers"}
+        allowed_columns = required_columns | optional_columns | {"topic"}
+        df_columns = set(df.columns)
+        if not df_columns.issubset(allowed_columns):
+            invalid_columns = df_columns - allowed_columns
             raise ValueError(
-                f"Invalid column names: {invalid_columns}. Expected columns: {required_columns} (required),"
-                f" {optional_columns} (optional)",
+                f"Invalid column names: {sorted(invalid_columns)}. "
+                f"Expected columns: {sorted(required_columns)} (required),"
+                f" {sorted(optional_columns)} (optional)",
             )
 
         # Check that the DataFrame doesn't contain a 'headers' column with includeHeaders=False
-        if not getattr(options, "includeHeaders", True) and "headers" in df.columns:
-            raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(includeHeaders=False)")
+        if not options.include_headers and "headers" in df.columns:
+            raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(include_headers=False)")
+
+        spark_version = get_spark_version(self.spark)
+        if options.include_headers and spark_version.major < 3:
+            raise ValueError(
+                f"kafka.WriteOptions(include_headers=True) requires Spark 3.x, got {spark_version}",
+            )
 
         if "topic" in df.columns:
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)

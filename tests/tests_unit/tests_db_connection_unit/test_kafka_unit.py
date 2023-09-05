@@ -71,7 +71,7 @@ def test_kafka_missing_package(spark_no_packages):
 
 
 @pytest.mark.parametrize(
-    "arg, value",
+    "option, value",
     [
         ("assign", "assign_value"),
         ("subscribe", "subscribe_value"),
@@ -87,17 +87,36 @@ def test_kafka_missing_package(spark_no_packages):
         ("topic", "topic_value"),
     ],
 )
-def test_kafka_prohibited_options_error(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaReadOptions"
+@pytest.mark.parametrize(
+    "options_class, class_name",
+    [
+        (Kafka.ReadOptions, "KafkaReadOptions"),
+        (Kafka.WriteOptions, "KafkaWriteOptions"),
+    ],
+)
+def test_kafka_options_prohibited(option, value, options_class, class_name):
+    error_msg = rf"Options \['{option}'\] are not allowed to use in a {class_name}"
     with pytest.raises(ValueError, match=error_msg):
-        Kafka.ReadOptions.parse({arg: value})
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a KafkaWriteOptions"
-    with pytest.raises(ValueError, match=error_msg):
-        Kafka.WriteOptions.parse({arg: value})
+        options_class.parse({option: value})
 
 
 @pytest.mark.parametrize(
-    "arg, value",
+    "options_class, class_name",
+    [
+        (Kafka.ReadOptions, "KafkaReadOptions"),
+        (Kafka.WriteOptions, "KafkaWriteOptions"),
+    ],
+)
+def test_kafka_options_unknown(caplog, options_class, class_name):
+    with caplog.at_level(logging.WARNING):
+        options = options_class(unknown="abc")
+        assert options.unknown == "abc"
+
+    assert f"Options ['unknown'] are not known by {class_name}, are you sure they are valid?" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "option, value",
     [
         ("failOnDataLoss", "false"),
         ("kafkaConsumer.pollTimeoutMs", "30000"),
@@ -108,30 +127,21 @@ def test_kafka_prohibited_options_error(arg, value):
         ("maxTriggerDelay", "2000"),
         ("minPartitions", "2"),
         ("groupIdPrefix", "testPrefix"),
-        ("includeHeaders", "true"),
     ],
 )
-def test_kafka_allowed_read_options_no_error(arg, value):
-    try:
-        Kafka.ReadOptions.parse({arg: value})
-    except ValidationError:
-        pytest.fail("ValidationError for ReadOptions raised unexpectedly!")
+def test_kafka_read_options_allowed(option, value):
+    options = Kafka.ReadOptions.parse({option: value})
+    assert getattr(options, option) == value
 
 
-@pytest.mark.parametrize(
-    "arg, value",
-    [
-        ("includeHeaders", "true"),
-    ],
-)
-def test_kafka_allowed_write_options_no_error(arg, value):
-    try:
-        Kafka.WriteOptions.parse({arg: value})
-    except ValidationError:
-        pytest.fail("ValidationError for Write options raised unexpectedly!")
+@pytest.mark.parametrize("value", [True, False])
+@pytest.mark.parametrize("options_class", [Kafka.ReadOptions, Kafka.WriteOptions])
+def test_kafka_options_include_headers(options_class, value):
+    options = options_class(includeHeaders=value)
+    assert options.include_headers == value
 
 
-def test_kafka_basic_auth(spark_mock):
+def test_kafka_basic_auth_get_jaas_conf(spark_mock):
     conn = Kafka(
         spark=spark_mock,
         cluster="some_cluster",
@@ -237,7 +247,7 @@ def test_kafka_empty_cluster(spark_mock):
 
 
 @pytest.mark.parametrize(
-    "arg, value",
+    "option, value",
     [
         ("bootstrap.servers", "kafka.bootstrap.servers_value"),
         ("security.protocol", "ssl"),
@@ -251,23 +261,23 @@ def test_kafka_empty_cluster(spark_mock):
         ("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer"),
     ],
 )
-def test_kafka_invalid_extras(arg, value):
+def test_kafka_invalid_extras(option, value):
     msg = re.escape("are not allowed to use in a KafkaExtra")
     with pytest.raises(ValueError, match=msg):
-        KafkaExtra.parse({arg: value})
+        KafkaExtra.parse({option: value})
     with pytest.raises(ValueError, match=msg):
-        KafkaExtra.parse({"kafka." + arg: value})
+        KafkaExtra.parse({"kafka." + option: value})
 
 
 @pytest.mark.parametrize(
-    "arg, value",
+    "option, value",
     [
         ("kafka.group.id", "group_id"),
         ("group.id", "group_id"),
     ],
 )
-def test_kafka_valid_extras(arg, value):
-    extra_dict = KafkaExtra.parse({arg: value}).dict()
+def test_kafka_valid_extras(option, value):
+    extra_dict = KafkaExtra.parse({option: value}).dict()
     assert extra_dict["group.id"] == value
 
 
