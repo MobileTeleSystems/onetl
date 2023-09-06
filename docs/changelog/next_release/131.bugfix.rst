@@ -1,2 +1,0 @@
-Fixed validation of ``headers`` column is written to Kafka with default ``Kafka.WriteOptions()`` - default value was ``False``,
-but instead of raising an exception, column value was just ignored.

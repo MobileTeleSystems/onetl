@@ -1,1 +1,0 @@
-Raise exception if someone tries to read data from Kafka topic which does not exist.

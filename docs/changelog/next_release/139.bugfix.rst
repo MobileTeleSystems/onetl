@@ -1,1 +1,0 @@
-Allow to pass Kafka topics with name like ``some.topic.name`` to DBReader. Same for MongoDB collections.
