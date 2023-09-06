@@ -30,6 +30,7 @@ For writing data to Kafka, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWr
                     # optional fields, can be omitted:
                     StructField("key", BinaryType(), nullable=True),
                     StructField("partition", IntegerType(), nullable=True),
+                    # this field can be passed only with ``include_headers=True``
                     StructField(
                         "headers",
                         ArrayType(
@@ -44,6 +45,7 @@ For writing data to Kafka, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWr
                     ),
                 ],
             )
+
     You cannot pass dataframe with other column names or types.
 
 .. warning::
