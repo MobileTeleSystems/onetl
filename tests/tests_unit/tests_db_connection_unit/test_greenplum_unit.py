@@ -243,6 +243,8 @@ def test_greenplum_read_options_cannot_be_used_in_write_options(arg, value):
         ({}, GreenplumTableExistBehavior.APPEND),
         ({"if_exists": "append"}, GreenplumTableExistBehavior.APPEND),
         ({"if_exists": "replace_entire_table"}, GreenplumTableExistBehavior.REPLACE_ENTIRE_TABLE),
+        ({"if_exists": "error"}, GreenplumTableExistBehavior.ERROR),
+        ({"if_exists": "ignore"}, GreenplumTableExistBehavior.IGNORE),
     ],
 )
 def test_greenplum_write_options_if_exists(options, value):
@@ -270,6 +272,18 @@ def test_greenplum_write_options_if_exists(options, value):
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),
+        (
+            {"mode": "ignore"},
+            GreenplumTableExistBehavior.IGNORE,
+            "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Greenplum.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "error"},
+            GreenplumTableExistBehavior.ERROR,
+            "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Greenplum.WriteOptions(if_exists=...)` instead",
+        ),
     ],
 )
 def test_greenplum_write_options_mode_deprecated(options, value, message):
@@ -281,10 +295,6 @@ def test_greenplum_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-        # wrong mode
         {"mode": "wrong_mode"},
     ],
 )

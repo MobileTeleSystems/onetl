@@ -1,0 +1,1 @@
+Add ``ignore`` and ``error`` writing modes in ``Greenplum.WriteOptions``
