@@ -1,11 +1,19 @@
 .. _greenplum:
 
-Greenplum connector
+Greenplum
 ====================
 
 .. toctree::
     :maxdepth: 1
-    :caption: Greenplum connector
+    :caption: Connection
 
     prerequisites
-    greenplum
+    connection
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Operations
+
+    read
+    write
+    execute

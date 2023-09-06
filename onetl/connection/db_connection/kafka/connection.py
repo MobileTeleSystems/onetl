@@ -192,14 +192,12 @@ class Kafka(DBConnection):
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
             cluster="my-cluster",
-            protocol=(
-                Kafka.SSLProtocol(
-                    keystore_type="PEM",
-                    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
-                    keystore_key=Path("path/to/user.key").read_text(),
-                    truststore_type="PEM",
-                    truststore_certificates=Path("/path/to/server.crt").read_text(),
-                ),
+            protocol=Kafka.SSLProtocol(
+                keystore_type="PEM",
+                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                keystore_key=Path("path/to/user.key").read_text(),
+                truststore_type="PEM",
+                truststore_certificates=Path("/path/to/server.crt").read_text(),
             ),
             auth=Kafka.ScramAuth(
                 user="me",
@@ -271,11 +269,14 @@ class Kafka(DBConnection):
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
         log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)
+        if source not in self._get_topics():
+            raise ValueError(f"Topic {source!r} doesn't exist")
+
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
         df = self.spark.read.format("kafka").options(**result_options).load()
-        log.info("|%s| Dataframe is successfully created", self.__class__.__name__)
+        log.info("|%s| Dataframe is successfully created.", self.__class__.__name__)
         return df
 
     @slot
@@ -286,21 +287,27 @@ class Kafka(DBConnection):
         options: KafkaWriteOptions = KafkaWriteOptions(),  # noqa: B008, WPS404
     ) -> None:
         # Check that the DataFrame doesn't contain any columns not in the schema
-        schema: StructType = self.get_df_schema(target)
-        required_columns = [field.name for field in schema.fields if not field.nullable]
-        optional_columns = [field.name for field in schema.fields if field.nullable]
-        schema_field_names = {field.name for field in schema.fields}
-        df_column_names = set(df.columns)
-        if not df_column_names.issubset(schema_field_names):
-            invalid_columns = df_column_names - schema_field_names
+        required_columns = {"value"}
+        optional_columns = {"key", "partition", "headers"}
+        allowed_columns = required_columns | optional_columns | {"topic"}
+        df_columns = set(df.columns)
+        if not df_columns.issubset(allowed_columns):
+            invalid_columns = df_columns - allowed_columns
             raise ValueError(
-                f"Invalid column names: {invalid_columns}. Expected columns: {required_columns} (required),"
-                f" {optional_columns} (optional)",
+                f"Invalid column names: {sorted(invalid_columns)}. "
+                f"Expected columns: {sorted(required_columns)} (required),"
+                f" {sorted(optional_columns)} (optional)",
             )
 
         # Check that the DataFrame doesn't contain a 'headers' column with includeHeaders=False
-        if not getattr(options, "includeHeaders", True) and "headers" in df.columns:
-            raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(includeHeaders=False)")
+        if not options.include_headers and "headers" in df.columns:
+            raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(include_headers=False)")
+
+        spark_version = get_spark_version(self.spark)
+        if options.include_headers and spark_version.major < 3:
+            raise ValueError(
+                f"kafka.WriteOptions(include_headers=True) requires Spark 3.x, got {spark_version}",
+            )
 
         if "topic" in df.columns:
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
@@ -318,7 +325,7 @@ class Kafka(DBConnection):
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
         df.write.format("kafka").mode(mode).options(**write_options).save()
-        log.info("|%s| Data is successfully written to topic %r", self.__class__.__name__, target)
+        log.info("|%s| Data is successfully written to topic %r.", self.__class__.__name__, target)
 
     @slot
     def get_df_schema(
@@ -357,6 +364,7 @@ class Kafka(DBConnection):
                             ],
                         ),
                     ),
+                    nullable=True,
                 ),
             ],
         )
@@ -469,12 +477,12 @@ class Kafka(DBConnection):
 
     @validator("cluster")
     def _validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        log.debug("|%s| Checking if cluster %r is a known cluster...", cls.__name__, validated_cluster)
         known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
@@ -487,7 +495,7 @@ class Kafka(DBConnection):
     def _validate_addresses(cls, value, values):
         cluster = values.get("cluster")
 
-        log.debug("|%s| Normalizing addresses %r names ...", cls.__name__, value)
+        log.debug("|%s| Normalizing addresses %r names...", cls.__name__, value)
 
         validated_addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
         if validated_addresses != value:
@@ -562,8 +570,7 @@ class Kafka(DBConnection):
             return set(topics)
 
     def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
-        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log.info("|%s| Using connection parameters:", self.__class__.__name__)
         log_with_indent(log, "cluster = %r", self.cluster)
         log_collection(log, "addresses", self.addresses, max_items=10)
         log_with_indent(log, "protocol = %r", self.protocol)

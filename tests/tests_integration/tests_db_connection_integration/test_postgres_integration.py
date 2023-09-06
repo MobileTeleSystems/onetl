@@ -26,7 +26,7 @@ def test_postgres_connection_check(spark, processing, caplog):
     with caplog.at_level(logging.INFO):
         assert postgres.check() == postgres
 
-    assert "type = Postgres" in caplog.text
+    assert "|Postgres|" in caplog.text
     assert f"host = '{processing.host}'" in caplog.text
     assert f"port = {processing.port}" in caplog.text
     assert f"user = '{processing.user}'" in caplog.text
@@ -38,7 +38,7 @@ def test_postgres_connection_check(spark, processing, caplog):
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_postgres_connection_check_fail(spark):

@@ -36,13 +36,13 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
 @pytest.mark.parametrize(
     "options_class, options_class_name, known_options",
     [
-        (Hive.WriteOptions, "WriteOptions", {"if_exists": "replace_overlapping_partitions"}),
-        (Hive.Options, "Options", {"if_exists": "replace_overlapping_partitions"}),
-        (Postgres.ReadOptions, "ReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
-        (Postgres.WriteOptions, "WriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
-        (Postgres.Options, "Options", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
-        (Greenplum.ReadOptions, "ReadOptions", {"partitions": 10}),
-        (Greenplum.WriteOptions, "WriteOptions", {"if_exists": "replace_entire_table"}),
+        (Hive.WriteOptions, "HiveWriteOptions", {"if_exists": "replace_overlapping_partitions"}),
+        (Hive.Options, "HiveLegacyOptions", {"if_exists": "replace_overlapping_partitions"}),
+        (Postgres.ReadOptions, "JDBCReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Postgres.WriteOptions, "JDBCWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Postgres.Options, "JDBCLegacyOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Greenplum.ReadOptions, "GreenplumReadOptions", {"partitions": 10}),
+        (Greenplum.WriteOptions, "GreenplumWriteOptions", {"if_exists": "replace_entire_table"}),
     ],
 )
 def test_db_options_warn_for_unknown(options_class, options_class_name, known_options, caplog):

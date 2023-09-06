@@ -23,6 +23,8 @@ def fix_pyspark_df(df: SparkDataFrame) -> SparkDataFrame:
         TypeError: Casting to unit-less dtype 'datetime64' is not supported. Pass e.g. 'datetime64[ns]' instead.
 
     This method converts dates and timestamps to strings, to convert them back to original type later.
+
+    TODO: remove after https://issues.apache.org/jira/browse/SPARK-43194
     """
     from pyspark.sql.functions import date_format
     from pyspark.sql.types import DateType, TimestampType

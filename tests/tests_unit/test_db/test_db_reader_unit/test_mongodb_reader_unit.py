@@ -28,24 +28,6 @@ def df_schema():
     )
 
 
-def test_mongodb_reader_with_dbschema(spark_mock):
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
-    with pytest.raises(
-        ValueError,
-        match="Table name should be passed in `mytable` format",
-    ):
-        DBReader(
-            connection=mongo,
-            table="schema.table",  # Includes schema. Required format: table="table"
-        )
-
-
 def test_mongodb_reader_wrong_hint_type(spark_mock, df_schema):
     mongo = MongoDB(
         host="host",

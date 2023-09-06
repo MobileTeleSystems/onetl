@@ -346,8 +346,8 @@ def test_hive_writer_insert_into_append(spark, processing, get_schema_table, ori
     with caplog.at_level(logging.INFO):
         writer2.run(df1.union(df3))
 
-        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}' ..." in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -405,8 +405,8 @@ def test_hive_writer_insert_into_replace_entire_table(
         writer2.run(df2.select(*reversed(df2.columns)))
 
         # unlike other modes, this creates new table
-        assert f"|Hive| Saving data to a table '{get_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created" in caplog.text
+        assert f"|Hive| Saving data to a table '{get_schema_table.full_name}' ..." in caplog.text
+        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -456,8 +456,8 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partition
     with caplog.at_level(logging.INFO):
         writer2.run(df2_reversed)
 
-        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}'" in caplog.text
-        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'" in caplog.text
+        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}' ..." in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 

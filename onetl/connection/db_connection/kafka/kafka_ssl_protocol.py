@@ -48,28 +48,24 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
         from pathlib import Path
 
         # Just read existing files located on host, and pass key and certificates as strings
-        protocol = (
-            Kafka.SSLProtocol(
-                keystore_type="PEM",
-                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
-                keystore_key=Path("path/to/user.key").read_text(),
-                truststore_type="PEM",
-                truststore_certificates=Path("/path/to/server.crt").read_text(),
-            ),
+        protocol = Kafka.SSLProtocol(
+            keystore_type="PEM",
+            keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+            keystore_key=Path("path/to/user.key").read_text(),
+            truststore_type="PEM",
+            truststore_certificates=Path("/path/to/server.crt").read_text(),
         )
 
     Pass PEM key and certificates as raw strings:
 
     .. code:: python
 
-        protocol = (
-            Kafka.SSLProtocol(
-                keystore_type="PEM",
-                keystore_certificate_chain="-----BEGIN CERTIFICATE-----\\nMIIDZjC...\\n-----END CERTIFICATE-----",
-                keystore_key="-----BEGIN PRIVATE KEY-----\\nMIIEvg..\\n-----END PRIVATE KEY-----",
-                truststore_type="PEM",
-                truststore_certificates="-----BEGIN CERTIFICATE-----\\nMICC...\\n-----END CERTIFICATE-----",
-            ),
+        protocol = Kafka.SSLProtocol(
+            keystore_type="PEM",
+            keystore_certificate_chain="-----BEGIN CERTIFICATE-----\\nMIIDZjC...\\n-----END CERTIFICATE-----",
+            keystore_key="-----BEGIN PRIVATE KEY-----\\nMIIEvg..\\n-----END PRIVATE KEY-----",
+            truststore_type="PEM",
+            truststore_certificates="-----BEGIN CERTIFICATE-----\\nMICC...\\n-----END CERTIFICATE-----",
         )
 
     Pass custom options:

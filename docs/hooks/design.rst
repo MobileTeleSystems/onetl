@@ -696,7 +696,7 @@ But most of logs are emitted with even lower level ``NOTICE``, to make output le
     NOTICE  |Hooks| Calling hook 'mymodule.callback1' (1/2)
     NOTICE  |Hooks| Hook is finished with returning non-None result
     NOTICE  |Hooks| Calling hook 'mymodule.callback2' (2/2)
-    NOTICE  |Hooks| This is a context manager, entering...
+    NOTICE  |Hooks| This is a context manager, entering ...
     NOTICE  |Hooks|   Calling original method 'MyClass.method'
     NOTICE  |Hooks|   Method call is finished
     NOTICE  |Hooks| Method call result (*NOT* None) will be replaced with result of hook 'mymodule.callback1'

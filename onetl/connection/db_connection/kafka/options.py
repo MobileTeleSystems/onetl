@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 from enum import Enum
 
 from pydantic import Field, root_validator
@@ -31,14 +33,6 @@ PROHIBITED_OPTIONS = frozenset(
         "subscribe",
         "subscribePattern",
         "topic",
-    ),
-)
-
-KNOWN_READ_WRITE_OPTIONS = frozenset(
-    (
-        # not adding this to class itself because headers support was added to Spark only in 3.0
-        # https://issues.apache.org/jira/browse/SPARK-23539
-        "includeHeaders",
     ),
 )
 
@@ -88,9 +82,8 @@ class KafkaReadOptions(GenericOptions):
             * ``startingTimestamp``
             * ``subscribe``
             * ``subscribePattern``
-            * ``topic``
 
-        populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
+        are populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
         by the user to avoid issues.
 
     Examples
@@ -101,14 +94,21 @@ class KafkaReadOptions(GenericOptions):
     .. code:: python
 
         options = Kafka.ReadOptions(
+            include_headers=False,
             minPartitions=50,
-            includeHeaders=True,
         )
+    """
+
+    include_headers: bool = Field(default=False, alias="includeHeaders")
+    """
+    If ``True``, add ``headers`` column to output DataFrame.
+
+    If ``False``, column will not be added.
     """
 
     class Config:
         prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS | KNOWN_READ_WRITE_OPTIONS
+        known_options = KNOWN_READ_OPTIONS
         extra = "allow"
 
 
@@ -126,18 +126,10 @@ class KafkaWriteOptions(GenericOptions):
     .. warning::
 
         Options:
-            * ``assign``
-            * ``endingOffsets``
-            * ``endingOffsetsByTimestamp``
             * ``kafka.*``
-            * ``startingOffsets``
-            * ``startingOffsetsByTimestamp``
-            * ``startingTimestamp``
-            * ``subscribe``
-            * ``subscribePattern``
             * ``topic``
 
-        populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
+        are populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
         by the user to avoid issues.
 
     Examples
@@ -149,7 +141,7 @@ class KafkaWriteOptions(GenericOptions):
 
         options = Kafka.WriteOptions(
             if_exists="append",
-            includeHeaders=False,
+            include_headers=True,
         )
     """
 
@@ -163,9 +155,16 @@ class KafkaWriteOptions(GenericOptions):
         * ``error`` - Raises an error if topic already exists.
     """
 
+    include_headers: bool = Field(default=False, alias="includeHeaders")
+    """
+    If ``True``, ``headers`` column from dataframe can be written to Kafka (requires Kafka 2.0+).
+
+    If ``False`` and dataframe contains ``headers`` column, an exception will be raised.
+    """
+
     class Config:
         prohibited_options = PROHIBITED_OPTIONS | KNOWN_READ_OPTIONS
-        known_options = KNOWN_READ_WRITE_OPTIONS
+        known_options: frozenset[str] = frozenset()
         extra = "allow"
 
     @root_validator(pre=True)

@@ -75,7 +75,7 @@ class SparkHDFS(SparkFileDFConnection):
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
-        use :obj:`HDFS <onetl.connection.file_connection.hdfs.HDFS>` connection.
+        use :obj:`HDFS <onetl.connection.file_connection.hdfs.connection.HDFS>` connection.
 
     Parameters
     ----------
@@ -85,7 +85,8 @@ class SparkHDFS(SparkFileDFConnection):
         Used for:
             * HWM and lineage (as instance name for file paths)
             * Validation of ``host`` value,
-                if latter is passed and if some hooks are bound to :obj:`~slots.get_cluster_namenodes`.
+                if latter is passed and if some hooks are bound to
+                :obj:`Slots.get_cluster_namenodes <onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_cluster_namenodes>`.
 
     host : str, optional
         Hadoop namenode host. For example: ``namenode1.domain.com``.
@@ -270,12 +271,12 @@ class SparkHDFS(SparkFileDFConnection):
 
     @validator("cluster")
     def _validate_cluster_name(cls, cluster):
-        log.debug("|%s| Normalizing cluster %r name ...", cls.__name__, cluster)
+        log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
         if validated_cluster != cluster:
             log.debug("|%s|   Got %r", cls.__name__, validated_cluster)
 
-        log.debug("|%s| Checking if cluster %r is a known cluster ...", cls.__name__, validated_cluster)
+        log.debug("|%s| Checking if cluster %r is a known cluster...", cls.__name__, validated_cluster)
         known_clusters = cls.Slots.get_known_clusters()
         if known_clusters and validated_cluster not in known_clusters:
             raise ValueError(
@@ -288,7 +289,7 @@ class SparkHDFS(SparkFileDFConnection):
     def _validate_host_name(cls, host, values):
         cluster = values.get("cluster")
 
-        log.debug("|%s| Normalizing namenode %r ...", cls.__name__, host)
+        log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
             log.debug("|%s|   Got %r", cls.__name__, namenode)

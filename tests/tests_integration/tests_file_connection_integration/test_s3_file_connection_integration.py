@@ -11,7 +11,7 @@ def test_s3_file_connection_check_success(caplog, s3_file_connection):
     with caplog.at_level(logging.INFO):
         assert s3.check() == s3
 
-    assert "type = S3" in caplog.text
+    assert "|S3|" in caplog.text
     assert f"host = '{s3.host}'" in caplog.text
     assert f"port = {s3.port}" in caplog.text
     assert f"protocol = '{s3.protocol}'" in caplog.text
@@ -21,7 +21,7 @@ def test_s3_file_connection_check_success(caplog, s3_file_connection):
     assert s3.secret_key.get_secret_value() not in caplog.text
     assert "session_token =" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_s3_file_connection_check_failed(s3_server):

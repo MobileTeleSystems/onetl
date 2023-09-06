@@ -29,7 +29,7 @@ def test_teradata_connection_check(spark, mocker, caplog):
     with caplog.at_level(logging.INFO):
         assert teradata.check() == teradata
 
-    assert "type = Teradata" in caplog.text
+    assert "|Teradata|" in caplog.text
     assert f"host = '{host}'" in caplog.text
     assert f"port = {port}" in caplog.text
     assert f"database = '{database}" in caplog.text
@@ -40,7 +40,7 @@ def test_teradata_connection_check(spark, mocker, caplog):
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_teradata_connection_check_fail(spark):

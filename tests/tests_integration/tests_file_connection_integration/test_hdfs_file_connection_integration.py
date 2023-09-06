@@ -17,7 +17,7 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert hdfs.check() == hdfs
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
@@ -25,14 +25,14 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
     assert "keytab =" not in caplog.text
     assert "password =" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
     from onetl.connection import HDFS
-    from onetl.connection.file_connection import hdfs
+    from onetl.connection.file_connection.hdfs import connection
 
-    mocker.patch.object(hdfs, "kinit")
+    mocker.patch.object(connection, "kinit")
 
     folder: Path = tmp_path_factory.mktemp("keytab")
     folder.mkdir(exist_ok=True, parents=True)
@@ -50,7 +50,7 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert f"user = '{hdfs.user}'" in caplog.text
@@ -58,21 +58,21 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
     assert f"keytab = '{keytab}' (kind='file'" in caplog.text
     assert "password =" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     from onetl.connection import HDFS
-    from onetl.connection.file_connection import hdfs
+    from onetl.connection.file_connection.hdfs import connection
 
-    mocker.patch.object(hdfs, "kinit")
+    mocker.patch.object(connection, "kinit")
 
     hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), password="somepass")
 
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
 
-    assert "type = HDFS" in caplog.text
+    assert "|HDFS|" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"webhdfs_port = {hdfs.webhdfs_port}" in caplog.text
     assert "timeout = 10" in caplog.text
@@ -81,7 +81,7 @@ def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     assert "password = SecretStr('**********')" in caplog.text
     assert "somepass" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_failed():

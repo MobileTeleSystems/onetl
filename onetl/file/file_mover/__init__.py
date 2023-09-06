@@ -13,4 +13,5 @@
 #  limitations under the License.
 
 from onetl.file.file_mover.file_mover import FileMover
-from onetl.file.file_mover.move_result import MoveResult
+from onetl.file.file_mover.options import FileMoverOptions
+from onetl.file.file_mover.result import MoveResult

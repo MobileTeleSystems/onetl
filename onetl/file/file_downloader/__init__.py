@@ -12,5 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from onetl.file.file_downloader.download_result import DownloadResult
 from onetl.file.file_downloader.file_downloader import FileDownloader
+from onetl.file.file_downloader.options import FileDownloaderOptions
+from onetl.file.file_downloader.result import DownloadResult

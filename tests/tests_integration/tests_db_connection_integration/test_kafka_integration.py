@@ -20,7 +20,7 @@ def test_kafka_check_plaintext_anonymous(spark, caplog):
     with caplog.at_level(logging.INFO):
         assert kafka.check() == kafka
 
-    assert "type = Kafka" in caplog.text
+    assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.port}'" in caplog.text
     assert "cluster = 'cluster'" in caplog.text
@@ -28,7 +28,7 @@ def test_kafka_check_plaintext_anonymous(spark, caplog):
     assert "auth = None" in caplog.text
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_kafka_check_plaintext_basic_auth(spark, caplog):
@@ -48,7 +48,7 @@ def test_kafka_check_plaintext_basic_auth(spark, caplog):
     with caplog.at_level(logging.INFO):
         assert kafka.check() == kafka
 
-    assert "type = Kafka" in caplog.text
+    assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.sasl_port}'" in caplog.text
     assert "cluster = 'cluster'" in caplog.text
@@ -56,7 +56,7 @@ def test_kafka_check_plaintext_basic_auth(spark, caplog):
     assert f"auth = KafkaBasicAuth(user='{kafka_processing.user}', password=SecretStr('**********'))" in caplog.text
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 @pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
@@ -78,7 +78,7 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
     with caplog.at_level(logging.INFO):
         assert kafka.check() == kafka
 
-    assert "type = Kafka" in caplog.text
+    assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.sasl_port}'" in caplog.text
     assert "cluster = 'cluster'" in caplog.text
@@ -89,7 +89,7 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
     )
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_kafka_check_error(spark):

@@ -321,7 +321,7 @@ Read data from MSSQL, transform & write to Hive.
         extra={"ApplicationIntent": "ReadOnly"},
     ).check()
 
-    # >>> INFO:|MSSQL| Connection is available.
+    # >>> INFO:|MSSQL| Connection is available
 
     # Initialize DB reader
     reader = DBReader(
@@ -408,7 +408,7 @@ Download files from SFTP & upload them to HDFS.
         password="somepassword",
     ).check()
 
-    # >>> INFO:|SFTP| Connection is available.
+    # >>> INFO:|SFTP| Connection is available
 
     # Initialize downloader
     file_downloader = FileDownloader(
@@ -546,7 +546,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         spark=spark,
     ).check()
 
-    # >>> INFO:|SparkS3| Connection is available.
+    # >>> INFO:|SparkS3| Connection is available
 
     # Describe file format and parsing options
     csv = CSV(
@@ -577,7 +577,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         ],
     )
 
-    # Initialize file reader
+    # Initialize file df reader
     reader = FileDFReader(
         connection=spark_s3,
         source_path="/remote/tests/Report",  # path on S3 there *.csv files are located

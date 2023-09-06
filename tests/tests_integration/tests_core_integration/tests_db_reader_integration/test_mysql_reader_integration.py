@@ -1,7 +1,6 @@
 import pytest
 
 from onetl.connection import MySQL
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.mysql
@@ -31,7 +30,15 @@ def test_mysql_reader_snapshot(spark, processing, load_table_data):
     )
 
 
-def test_mysql_reader_snapshot_partitioning_mode_mod(spark, processing, load_table_data):
+@pytest.mark.parametrize(
+    "mode, column",
+    [
+        ("range", "id_int"),
+        ("hash", "text_string"),
+        ("mod", "id_int"),
+    ],
+)
+def test_mysql_reader_snapshot_partitioning_mode(mode, column, spark, processing, load_table_data):
     mysql = MySQL(
         host=processing.host,
         port=processing.port,
@@ -44,9 +51,9 @@ def test_mysql_reader_snapshot_partitioning_mode_mod(spark, processing, load_tab
     reader = DBReader(
         connection=mysql,
         source=load_table_data.full_name,
-        options=mysql.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
-            partition_column="id_int",
+        options=MySQL.ReadOptions(
+            partitioning_mode=mode,
+            partition_column=column,
             num_partitions=5,
         ),
     )
@@ -60,35 +67,7 @@ def test_mysql_reader_snapshot_partitioning_mode_mod(spark, processing, load_tab
         order_by="id_int",
     )
 
-
-def test_mysql_reader_snapshot_partitioning_mode_hash(spark, processing, load_table_data):
-    mysql = MySQL(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=mysql,
-        source=load_table_data.full_name,
-        options=mysql.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
-            partition_column="text_string",
-            num_partitions=5,
-        ),
-    )
-
-    table_df = reader.run()
-
-    processing.assert_equal_df(
-        schema=load_table_data.schema,
-        table=load_table_data.table,
-        df=table_df,
-        order_by="id_int",
-    )
+    assert table_df.rdd.getNumPartitions() == 5
 
 
 def test_mysql_reader_snapshot_with_not_set_database(spark, processing, load_table_data):

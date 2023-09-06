@@ -10,7 +10,7 @@ def test_webdav_file_connection_check_success(webdav_file_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert webdav.check() == webdav
 
-    assert "type = WebDAV" in caplog.text
+    assert "|WebDAV|" in caplog.text
     assert f"host = '{webdav.host}'" in caplog.text
     assert f"port = {webdav.port}" in caplog.text
     assert f"protocol = '{webdav.protocol}'" in caplog.text
@@ -19,7 +19,7 @@ def test_webdav_file_connection_check_success(webdav_file_connection, caplog):
     assert "password = SecretStr('**********')" in caplog.text
     assert webdav.password.get_secret_value() not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_webdav_file_connection_check_failed(webdav_server):

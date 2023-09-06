@@ -33,7 +33,7 @@ services:
     - onetl
 
   clickhouse:
-    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest}
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}
     restart: unless-stopped
     ports:
     - 8123:8123
@@ -101,7 +101,7 @@ services:
     - onetl
 
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:15.2}
+    image: ${POSTGRES_IMAGE:-postgres:15.2-alpine}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

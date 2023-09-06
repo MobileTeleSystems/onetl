@@ -22,10 +22,10 @@ def dataframe_schema():
 
     return StructType(
         [
-            StructField("id_int", LongType(), True),
-            StructField("text_string", StringType(), True),
-            StructField("hwm_int", LongType(), True),
-            StructField("float_value", FloatType(), True),
+            StructField("id_int", LongType(), nullable=True),
+            StructField("text_string", StringType(), nullable=True),
+            StructField("hwm_int", LongType(), nullable=True),
+            StructField("float_value", FloatType(), nullable=True),
         ],
     )
 
@@ -88,6 +88,7 @@ def kafka_schema_with_headers():
                         ],
                     ),
                 ),
+                nullable=True,
             ),
         ],
     )
@@ -112,10 +113,8 @@ def create_kafka_data(spark):
 
 
 def test_kafka_reader(spark, kafka_processing, schema):
-    # Arrange
     topic, processing, expected_df = kafka_processing
 
-    # Act
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
@@ -128,7 +127,6 @@ def test_kafka_reader(spark, kafka_processing, schema):
     )
     df = reader.run()
 
-    # Assert
     processing.assert_equal_df(processing.json_deserialize(df, df_schema=schema), other_frame=expected_df)
 
 
@@ -167,9 +165,27 @@ def test_kafka_reader_columns_and_types_with_headers(spark, kafka_processing, ka
     reader = DBReader(
         connection=kafka,
         source=topic,
-        options=kafka.ReadOptions(includeHeaders=True),
+        options=Kafka.ReadOptions(includeHeaders=True),
     )
 
     df = reader.run()
 
     assert df.schema == kafka_schema_with_headers
+
+
+def test_kafka_reader_topic_does_not_exist(spark, kafka_processing):
+    _, processing, _ = kafka_processing
+
+    kafka = Kafka(
+        spark=spark,
+        addresses=[f"{processing.host}:{processing.port}"],
+        cluster="cluster",
+    )
+
+    reader = DBReader(
+        connection=kafka,
+        source="missing",
+    )
+
+    with pytest.raises(ValueError, match="Topic 'missing' doesn't exist"):
+        reader.run()

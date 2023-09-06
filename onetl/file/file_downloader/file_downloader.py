@@ -24,13 +24,14 @@ from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities import HWM, FileHWM, RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, root_validator, validator
+from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
-from onetl.file.file_downloader.download_result import DownloadResult
+from onetl.file.file_downloader.options import FileDownloaderOptions
+from onetl.file.file_downloader.result import DownloadResult
 from onetl.file.file_set import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
 from onetl.hooks import slot, support_hooks
@@ -39,7 +40,6 @@ from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
     FrozenModel,
-    GenericOptions,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -209,48 +209,6 @@ class FileDownloader(FrozenModel):
 
     """
 
-    class Options(GenericOptions):
-        """File downloading options"""
-
-        if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
-        """
-        How to handle existing files in the local directory.
-
-        Possible values:
-            * ``error`` (default) - do nothing, mark file as failed
-            * ``ignore`` - do nothing, mark file as ignored
-            * ``overwrite`` - replace existing file with a new one
-            * ``delete_all`` - delete local directory content before downloading files
-        """
-
-        delete_source: bool = False
-        """
-        If ``True``, remove source file after successful download.
-
-        If download failed, file will left intact.
-        """
-
-        workers: int = Field(default=1, ge=1)
-        """
-        Number of workers to create for parallel file download.
-
-        1 (default) means files will me downloaded sequentially.
-        2 or more means files will be downloaded in parallel workers.
-
-        Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
-        """
-
-        @root_validator(pre=True)
-        def mode_is_deprecated(cls, values):
-            if "mode" in values:
-                warnings.warn(
-                    "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
-                    "Use `FileDownloader.Options(if_exists=...)` instead",
-                    category=UserWarning,
-                    stacklevel=3,
-                )
-            return values
-
     connection: BaseFileConnection
 
     local_path: LocalPath
@@ -262,7 +220,9 @@ class FileDownloader(FrozenModel):
 
     hwm_type: Optional[Type[FileHWM]] = None
 
-    options: Options = Options()
+    options: FileDownloaderOptions = FileDownloaderOptions()
+
+    Options = FileDownloaderOptions
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
@@ -676,7 +636,7 @@ class FileDownloader(FrozenModel):
         log.info("|%s| Files to be downloaded:", self.__class__.__name__)
         log_lines(log, str(files))
         log_with_indent(log, "")
-        log.info("|%s| Starting the download process ...", self.__class__.__name__)
+        log.info("|%s| Starting the download process...", self.__class__.__name__)
 
         self._create_dirs(to_download)
 
@@ -715,11 +675,23 @@ class FileDownloader(FrozenModel):
         to_download: DOWNLOAD_ITEMS_TYPE,
     ) -> list[tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]]:
         workers = self.options.workers
+        files_count = len(to_download)
         result = []
 
-        if workers > 1:
+        real_workers = workers
+        if files_count < workers:
+            log.debug(
+                "|%s| Asked for %d workers, but there are only %d files",
+                self.__class__.__name__,
+                workers,
+                files_count,
+            )
+            real_workers = files_count
+
+        if real_workers > 1:
+            log.debug("|%s| Using ThreadPoolExecutor with %d workers", self.__class__.__name__, real_workers)
             with ThreadPoolExecutor(
-                max_workers=min(workers, len(to_download)),
+                max_workers=real_workers,
                 thread_name_prefix=self.__class__.__name__,
             ) as executor:
                 futures = [
@@ -729,6 +701,7 @@ class FileDownloader(FrozenModel):
                 for future in as_completed(futures):
                     result.append(future.result())
         else:
+            log.debug("|%s| Using plain old for-loop", self.__class__.__name__)
             for source_file, target_file, tmp_file in to_download:
                 result.append(
                     self._download_file(

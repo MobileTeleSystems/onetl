@@ -1,0 +1,28 @@
+0.9.2 (2023-09-06)
+==================
+
+Features
+--------
+
+- Add ``if_exists="ignore"`` and ``error`` to ``Greenplum.WriteOptions`` (:github:pull:`142`)
+
+
+Improvements
+------------
+
+- Improve validation messages while writing dataframe to Kafka. (:github:pull:`131`)
+- Improve documentation:
+
+  * Add notes about reading and writing to database connections documentation
+  * Add notes about executing statements in JDBC and Greenplum connections
+
+
+Bug Fixes
+---------
+
+- Fixed validation of ``headers`` column is written to Kafka with default ``Kafka.WriteOptions()`` - default value was ``False``,
+  but instead of raising an exception, column value was just ignored. (:github:pull:`131`)
+- Fix reading data from Oracle with ``partitioningMode="range"`` without explicitly set ``lowerBound`` / ``upperBound``. (:github:pull:`133`)
+- Update Kafka documentation with SSLProtocol usage. (:github:pull:`136`)
+- Raise exception if someone tries to read data from Kafka topic which does not exist. (:github:pull:`138`)
+- Allow to pass Kafka topics with name like ``some.topic.name`` to DBReader. Same for MongoDB collections. (:github:pull:`139`)

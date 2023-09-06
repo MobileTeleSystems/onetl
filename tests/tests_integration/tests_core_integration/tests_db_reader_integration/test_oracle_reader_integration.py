@@ -1,7 +1,6 @@
 import pytest
 
 from onetl.connection import Oracle
-from onetl.connection.db_connection.jdbc_connection import PartitioningMode
 from onetl.db import DBReader
 
 pytestmark = pytest.mark.oracle
@@ -31,7 +30,15 @@ def test_oracle_reader_snapshot(spark, processing, load_table_data):
     )
 
 
-def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_table_data):
+@pytest.mark.parametrize(
+    "mode, column",
+    [
+        ("range", "id_int"),
+        ("hash", "text_string"),
+        ("mod", "id_int"),
+    ],
+)
+def test_oracle_reader_snapshot_partitioning_mode(mode, column, spark, processing, load_table_data):
     oracle = Oracle(
         host=processing.host,
         port=processing.port,
@@ -45,9 +52,9 @@ def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_ta
     reader = DBReader(
         connection=oracle,
         source=load_table_data.full_name,
-        options=oracle.ReadOptions(
-            partitioning_mode=PartitioningMode.mod,
-            partition_column="id_int",
+        options=Oracle.ReadOptions(
+            partitioning_mode=mode,
+            partition_column=column,
             num_partitions=5,
         ),
     )
@@ -61,36 +68,7 @@ def test_oracle_reader_snapshot_partitioning_mode_mod(spark, processing, load_ta
         order_by="id_int",
     )
 
-
-def test_oracle_reader_snapshot_partitioning_mode_hash(spark, processing, load_table_data):
-    oracle = Oracle(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        spark=spark,
-        sid=processing.sid,
-        service_name=processing.service_name,
-    )
-
-    reader = DBReader(
-        connection=oracle,
-        source=load_table_data.full_name,
-        options=oracle.ReadOptions(
-            partitioning_mode=PartitioningMode.hash,
-            partition_column="text_string",
-            num_partitions=5,
-        ),
-    )
-
-    table_df = reader.run()
-
-    processing.assert_equal_df(
-        schema=load_table_data.schema,
-        table=load_table_data.table,
-        df=table_df,
-        order_by="id_int",
-    )
+    assert table_df.rdd.getNumPartitions() == 5
 
 
 def test_oracle_reader_snapshot_with_columns(spark, processing, load_table_data):

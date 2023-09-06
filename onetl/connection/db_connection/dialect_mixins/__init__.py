@@ -25,11 +25,11 @@ from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_none i
 from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_str import (
     SupportHWMExpressionStr,
 )
-from onetl.connection.db_connection.dialect_mixins.support_table_with_dbschema import (
-    SupportTableWithDBSchema,
+from onetl.connection.db_connection.dialect_mixins.support_name_any import (
+    SupportNameAny,
 )
-from onetl.connection.db_connection.dialect_mixins.support_table_without_dbschema import (
-    SupportTableWithoutDBSchema,
+from onetl.connection.db_connection.dialect_mixins.support_name_with_schema_only import (
+    SupportNameWithSchemaOnly,
 )
 from onetl.connection.db_connection.dialect_mixins.support_where_none import (
     SupportWhereNone,

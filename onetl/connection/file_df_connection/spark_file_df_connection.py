@@ -81,7 +81,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         if root:
             log.info("|%s| Reading data from '%s' ...", self.__class__.__name__, root)
         else:
-            log.info("|%s| Reading data ...", self.__class__.__name__)
+            log.info("|%s| Reading data...", self.__class__.__name__)
 
         reader: DataFrameReader = self.spark.read
         with ExitStack() as stack:
@@ -138,7 +138,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
             url = self._convert_to_url(path)
             writer.save(url)
 
-        log.info("|%s| Data is successfully saved to '%s'", self.__class__.__name__, path)
+        log.info("|%s| Data is successfully saved to '%s'.", self.__class__.__name__, path)
 
     @abstractmethod
     def _convert_to_url(self, path: PurePathProtocol) -> str:
@@ -183,8 +183,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         return refs
 
     def _log_parameters(self):
-        log.info("|Spark| Using connection parameters:")
-        log_with_indent(log, "type = %s", self.__class__.__name__)
+        log.info("|%s| Using connection parameters:", self.__class__.__name__)
         parameters = self.dict(exclude_none=True, exclude={"spark"})
-        for attr, value in sorted(parameters.items()):
+        for attr, value in parameters.items():
             log_with_indent(log, "%s = %r", attr, value)

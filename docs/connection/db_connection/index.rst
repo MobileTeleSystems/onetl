@@ -7,13 +7,13 @@ DB Connections
     :maxdepth: 1
     :caption: DB Connections
 
-    Clickhouse <clickhouse>
+    Clickhouse <clickhouse/index>
     Greenplum <greenplum/index>
     Kafka <kafka/index>
-    Hive <hive>
-    MongoDB <mongodb>
-    MSSQL <mssql>
-    MySQL <mysql>
-    Oracle <oracle>
-    Postgres <postgres>
-    Teradata <teradata>
+    Hive <hive/index>
+    MongoDB <mongodb/index>
+    MSSQL <mssql/index>
+    MySQL <mysql/index>
+    Oracle <oracle/index>
+    Postgres <postgres/index>
+    Teradata <teradata/index>

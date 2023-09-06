@@ -110,7 +110,7 @@ def test_mssql_with_extra(spark_mock):
 
 
 def test_mssql_with_extra_prohibited(spark_mock):
-    with pytest.raises(ValueError, match=r"Options \['databaseName'\] are not allowed to use in a Extra"):
+    with pytest.raises(ValueError, match=r"Options \['databaseName'\] are not allowed to use in a MSSQLExtra"):
         MSSQL(
             host="some_host",
             user="user",

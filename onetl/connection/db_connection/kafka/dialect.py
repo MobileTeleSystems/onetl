@@ -18,13 +18,14 @@ from __future__ import annotations
 import logging
 
 from onetl._util.spark import get_spark_version
-from onetl.connection.db_connection.db_connection import BaseDBConnection, DBConnection
+from onetl.base import BaseDBConnection
+from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaNone,
     SupportHintNone,
     SupportHWMExpressionNone,
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
     SupportWhereNone,
 )
 
@@ -36,9 +37,9 @@ class KafkaDialect(  # noqa: WPS215
     SupportDfSchemaNone,
     SupportHintNone,
     SupportWhereNone,
-    SupportTableWithoutDBSchema,
+    SupportNameAny,
     SupportHWMExpressionNone,
-    DBConnection.Dialect,
+    DBDialect,
 ):
     valid_hwm_columns = {"offset", "timestamp"}
 

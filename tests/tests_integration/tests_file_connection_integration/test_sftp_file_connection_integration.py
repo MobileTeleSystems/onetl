@@ -10,7 +10,7 @@ def test_sftp_file_connection_check_success(sftp_file_connection, caplog):
     with caplog.at_level(logging.INFO):
         assert sftp.check() == sftp
 
-    assert "type = SFTP" in caplog.text
+    assert "|SFTP|" in caplog.text
     assert f"host = '{sftp.host}'" in caplog.text
     assert f"port = {sftp.port}" in caplog.text
     assert f"user = '{sftp.user}'" in caplog.text
@@ -21,7 +21,7 @@ def test_sftp_file_connection_check_success(sftp_file_connection, caplog):
     assert "password = SecretStr('**********')" in caplog.text
     assert sftp.password.get_secret_value() not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_sftp_file_connection_check_failed(sftp_server):
