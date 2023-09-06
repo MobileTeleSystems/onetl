@@ -7,7 +7,8 @@ For reading data from Kafka, use :obj:`DBReader <onetl.db.db_reader.db_reader.DB
 
 .. warning::
 
-    Currently, Kafka does not support :ref:`strategy`. You can only read the whole topic.
+    Currently, Kafka does not support :ref:`strategy`. You can only read the whole topic, or use ``group.id`` / ``groupIdPrefix`` so Kafka
+    will return only messages added to topic since last read.
 
 .. note::
 
