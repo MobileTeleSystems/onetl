@@ -1,0 +1,7 @@
+0.9.3 (2023-09-06)
+==================
+
+Bug Fixes
+---------
+
+- Fix documentation build

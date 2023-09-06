@@ -176,7 +176,7 @@ To extract data you can use classes:
 +--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`FileDFReader <file-df-reader>` | Read data from a file or set of files     | Any :ref:`FileDFConnection <file-df-connections>` | No input, or List[File path on FileSystem]        | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  |
 +--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`FileDownloader <db-reader>`    | Download files from remote FS to local FS | Any :ref:`FileConnection <file-connections>`      | No input, or List[File path on remote FileSystem] | :ref:`DownloadResult <download-result>`                                                                                              |
+| :ref:`FileDownloader <db-reader>`    | Download files from remote FS to local FS | Any :ref:`FileConnection <file-connections>`      | No input, or List[File path on remote FileSystem] | :ref:`DownloadResult <file-downloader-result>`                                                                                       |
 +--------------------------------------+-------------------------------------------+---------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 Load data
@@ -184,26 +184,26 @@ Load data
 
 To load data you can use classes:
 
-+-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-|                                     | Use case                                     | Connection                                        | ``run()`` gets                                                                                                                       | ``run()`` returns                   |
-+=====================================+==============================================+===================================================+======================================================================================================================================+=====================================+
-| :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`          | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
-+-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-| :ref:`FileDFWriter <db-writer>`     | Writing data from a DataFrame to a folder    | Any :ref:`FileDFConnection <file-df-connections>` | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                |
-+-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
-| :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>`      | List[File path on local FileSystem]                                                                                                  | :ref:`UploadResult <upload-result>` |
-+-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------+
++-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------+
+|                                     | Use case                                     | Connection                                        | ``run()`` gets                                                                                                                       | ``run()`` returns                          |
++=====================================+==============================================+===================================================+======================================================================================================================================+============================================+
+| :ref:`DBWriter <db-writer>`         | Writing data from a DataFrame to a database  | Any :ref:`DBConnection <db-connections>`          | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                       |
++-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------+
+| :ref:`FileDFWriter <db-writer>`     | Writing data from a DataFrame to a folder    | Any :ref:`FileDFConnection <file-df-connections>` | `Spark DataFrame <https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.DataFrame.html#pyspark.sql.DataFrame>`_  | None                                       |
++-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------+
+| :ref:`FileUploader <file-uploader>` | Uploading files from a local FS to remote FS | Any :ref:`FileConnection <file-connections>`      | List[File path on local FileSystem]                                                                                                  | :ref:`UploadResult <file-uploader-result>` |
++-------------------------------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------+
 
 Manipulate data
 ---------------
 
 To manipulate data you can use classes:
 
-+-------------------------------+---------------------------------------------+----------------------------------------------+--------------------------------------+---------------------------------+
-|                               | Use case                                    | Connection                                   | ``run()`` gets                       | ``run()`` returns               |
-+===============================+=============================================+==============================================+======================================+=================================+
-| :ref:`FileMover <file-mover>` | Move files between directories in remote FS | Any :ref:`FileConnection <file-connections>` | List[File path on remote FileSystem] | :ref:`MoveResult <move-result>` |
-+-------------------------------+---------------------------------------------+----------------------------------------------+--------------------------------------+---------------------------------+
++-------------------------------+---------------------------------------------+----------------------------------------------+--------------------------------------+---------------------------------------+
+|                               | Use case                                    | Connection                                   | ``run()`` gets                       | ``run()`` returns                     |
++===============================+=============================================+==============================================+======================================+=======================================+
+| :ref:`FileMover <file-mover>` | Move files between directories in remote FS | Any :ref:`FileConnection <file-connections>` | List[File path on remote FileSystem] | :ref:`MoveResult <file-mover-result>` |
++-------------------------------+---------------------------------------------+----------------------------------------------+--------------------------------------+---------------------------------------+
 
 Options
 -------
@@ -294,7 +294,7 @@ Extract and load classes have a ``options`` parameter, which has a special meani
         options=FileDFWriter.Options(if_exists="replace_entire_directory"),
     )
 
-More information about ``options`` could be found on :ref:`DB connection <db-connection>`. and
+More information about ``options`` could be found on :ref:`DB connection <db-connections>`. and
 :ref:`file-downloader` / :ref:`file-uploader` / :ref:`file-mover` / :ref:`file-df-reader` / :ref:`file-df-writer` documentation
 
 Read Strategies
