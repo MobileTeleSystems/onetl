@@ -390,7 +390,7 @@ class MongoDB(DBConnection):
             jvm = self.spark._jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e

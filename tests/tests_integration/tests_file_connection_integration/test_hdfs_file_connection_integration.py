@@ -25,7 +25,7 @@ def test_hdfs_file_connection_check_anonymous(hdfs_file_connection, caplog):
     assert "keytab =" not in caplog.text
     assert "password =" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, request, tmp_path_factory):
@@ -58,7 +58,7 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
     assert f"keytab = '{keytab}' (kind='file'" in caplog.text
     assert "password =" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
@@ -81,7 +81,7 @@ def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
     assert "password = SecretStr('**********')" in caplog.text
     assert "somepass" not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_hdfs_file_connection_check_failed():

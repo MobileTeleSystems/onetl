@@ -40,7 +40,7 @@ def test_teradata_connection_check(spark, mocker, caplog):
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_teradata_connection_check_fail(spark):

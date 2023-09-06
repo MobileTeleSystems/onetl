@@ -250,7 +250,7 @@ class Kafka(DBConnection):
 
         try:
             self._get_topics()
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
@@ -276,7 +276,7 @@ class Kafka(DBConnection):
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
         df = self.spark.read.format("kafka").options(**result_options).load()
-        log.info("|%s| Dataframe is successfully created", self.__class__.__name__)
+        log.info("|%s| Dataframe is successfully created.", self.__class__.__name__)
         return df
 
     @slot
@@ -325,7 +325,7 @@ class Kafka(DBConnection):
 
         log.info("|%s| Saving data to a topic %r", self.__class__.__name__, target)
         df.write.format("kafka").mode(mode).options(**write_options).save()
-        log.info("|%s| Data is successfully written to topic %r", self.__class__.__name__, target)
+        log.info("|%s| Data is successfully written to topic %r.", self.__class__.__name__, target)
 
     @slot
     def get_df_schema(

@@ -17,7 +17,7 @@ def test_ftps_file_connection_check_success(ftps_file_connection, caplog):
     assert "password = SecretStr('**********')" in caplog.text
     assert ftps.password.get_secret_value() not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_ftps_file_connection_check_anonymous(ftps_server, caplog):
@@ -34,7 +34,7 @@ def test_ftps_file_connection_check_anonymous(ftps_server, caplog):
     assert "user = " not in caplog.text
     assert "password = " not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_ftps_file_connection_check_failed(ftps_server):

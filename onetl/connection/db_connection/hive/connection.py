@@ -208,7 +208,7 @@ class Hive(DBConnection):
 
         try:
             self._execute_sql(self._CHECK_QUERY)
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e
@@ -382,7 +382,7 @@ class Hive(DBConnection):
         log_lines(log, query, level=logging.DEBUG)
 
         df = self._execute_sql(query)
-        log.info("|%s| Schema fetched", self.__class__.__name__)
+        log.info("|%s| Schema fetched.", self.__class__.__name__)
         return df.schema
 
     @slot
@@ -499,8 +499,6 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        log.info("|%s| Inserting data into existing table %r", self.__class__.__name__, table)
-
         unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
         if unsupported_options:
             log.warning(
@@ -519,9 +517,11 @@ class Hive(DBConnection):
         # so using a workaround with patching Spark config and then setting up the previous value
         with inject_spark_param(self.spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic"):
             overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
+
+            log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
             writer.insertInto(table, overwrite=overwrite)
 
-        log.info("|%s| Data is successfully inserted into table %r", self.__class__.__name__, table)
+        log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
     def _save_as_table(
         self,
@@ -530,8 +530,6 @@ class Hive(DBConnection):
         options: HiveWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-
-        log.info("|%s| Saving data to a table %r", self.__class__.__name__, table)
 
         writer = df.write
         for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
@@ -546,6 +544,8 @@ class Hive(DBConnection):
                 writer = writer.option(method, value)
 
         mode = "append" if write_options.if_exists == HiveTableExistBehavior.APPEND else "overwrite"
+
+        log.info("|%s| Saving data to a table %r ...", self.__class__.__name__, table)
         writer.mode(mode).saveAsTable(table)
 
-        log.info("|%s| Table %r is successfully created", self.__class__.__name__, table)
+        log.info("|%s| Table %r is successfully created.", self.__class__.__name__, table)

@@ -28,7 +28,7 @@ def test_kafka_check_plaintext_anonymous(spark, caplog):
     assert "auth = None" in caplog.text
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_kafka_check_plaintext_basic_auth(spark, caplog):
@@ -56,7 +56,7 @@ def test_kafka_check_plaintext_basic_auth(spark, caplog):
     assert f"auth = KafkaBasicAuth(user='{kafka_processing.user}', password=SecretStr('**********'))" in caplog.text
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 @pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
@@ -89,7 +89,7 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
     )
     assert "extra = {}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_kafka_check_error(spark):

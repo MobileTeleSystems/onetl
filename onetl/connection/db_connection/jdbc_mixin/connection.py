@@ -138,7 +138,7 @@ class JDBCMixin(FrozenModel):
 
         try:
             self._query_optional_on_driver(self._CHECK_QUERY, self.JDBCOptions(fetchsize=1))  # type: ignore
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from e

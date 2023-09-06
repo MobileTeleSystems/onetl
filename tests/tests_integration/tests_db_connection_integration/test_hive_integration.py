@@ -23,7 +23,7 @@ def test_hive_check(spark, caplog):
     assert "|Hive|" in caplog.text
     assert "spark = " not in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])

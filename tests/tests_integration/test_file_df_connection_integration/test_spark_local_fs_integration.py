@@ -15,4 +15,4 @@ def test_spark_local_fs_check(spark, caplog):
 
     assert "|SparkLocalFS|" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text

@@ -239,7 +239,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log_lines(log, query, level=logging.DEBUG)
 
         df = self._query_on_driver(query, read_options)
-        log.info("|%s| Schema fetched", self.__class__.__name__)
+        log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
 

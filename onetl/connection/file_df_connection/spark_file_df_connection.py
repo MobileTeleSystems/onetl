@@ -58,7 +58,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         try:
             fs = self._get_spark_fs()
             fs.exists(path)
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             raise RuntimeError("Connection is unavailable") from e
         return self
@@ -138,7 +138,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
             url = self._convert_to_url(path)
             writer.save(url)
 
-        log.info("|%s| Data is successfully saved to '%s'", self.__class__.__name__, path)
+        log.info("|%s| Data is successfully saved to '%s'.", self.__class__.__name__, path)
 
     @abstractmethod
     def _convert_to_url(self, path: PurePathProtocol) -> str:

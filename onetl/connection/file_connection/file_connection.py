@@ -129,7 +129,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         try:
             self.list_dir("/")
-            log.info("|%s| Connection is available", self.__class__.__name__)
+            log.info("|%s| Connection is available.", self.__class__.__name__)
         except (RuntimeError, ValueError):
             # left validation errors intact
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)

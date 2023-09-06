@@ -27,7 +27,7 @@ def test_spark_s3_check(s3_file_df_connection, caplog):
     assert "extra = {" in caplog.text
     assert "'path.style.access': True" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_spark_s3_check_failed(spark, s3_server):

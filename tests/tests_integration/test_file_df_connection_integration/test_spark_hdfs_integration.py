@@ -20,7 +20,7 @@ def test_spark_hdfs_check(hdfs_file_df_connection, caplog):
     assert f"host = '{hdfs.host}'" in caplog.text
     assert f"ipc_port = {hdfs.ipc_port}" in caplog.text
 
-    assert "Connection is available" in caplog.text
+    assert "Connection is available." in caplog.text
 
 
 def test_spark_hdfs_file_connection_check_failed(spark):
