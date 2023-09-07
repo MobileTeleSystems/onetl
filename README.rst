@@ -229,7 +229,7 @@ so some connections require additional setup to work properly.
   It also uses ``kinit`` executable to generate Kerberos ticket.
 
 * ``Hive`` and ``SparkHDFS``
-  Requires Kerberos ticket to exist before creating Spark session.
+  require Kerberos ticket to exist before creating Spark session.
 
 So you need to install OS packages with:
 
