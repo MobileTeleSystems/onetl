@@ -266,6 +266,8 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
     [
         ({}, JDBCTableExistBehavior.APPEND),
         ({"if_exists": "append"}, JDBCTableExistBehavior.APPEND),
+        ({"if_exists": "ignore"}, JDBCTableExistBehavior.IGNORE),
+        ({"if_exists": "error"}, JDBCTableExistBehavior.ERROR),
         ({"if_exists": "replace_entire_table"}, JDBCTableExistBehavior.REPLACE_ENTIRE_TABLE),
     ],
 )
@@ -294,6 +296,18 @@ def test_jdbc_write_options_if_exists(options, value):
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),
+        (
+            {"mode": "ignore"},
+            JDBCTableExistBehavior.IGNORE,
+            "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "error"},
+            JDBCTableExistBehavior.ERROR,
+            "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `WriteOptions(if_exists=...)` instead",
+        ),
     ],
 )
 def test_jdbc_write_options_mode_deprecated(options, value, message):
@@ -305,10 +319,6 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-        # wrong mode
         {"mode": "wrong_mode"},
     ],
 )
