@@ -225,6 +225,8 @@ def test_hive_writer_default_not_partitioned(spark, processing, get_schema_table
     "options",
     [
         Hive.WriteOptions(if_exists="append"),
+        Hive.WriteOptions(if_exists="ignore"),
+        Hive.WriteOptions(if_exists="error"),
         Hive.WriteOptions(if_exists="replace_entire_table"),
         Hive.WriteOptions(if_exists="replace_overlapping_partitions"),
     ],
@@ -359,6 +361,102 @@ def test_hive_writer_insert_into_append(spark, processing, get_schema_table, ori
         schema=get_schema_table.schema,
         table=get_schema_table.table,
         df=df1.union(df1).union(df2).union(df3),
+        order_by="id_int",
+    )
+
+
+@pytest.mark.parametrize(
+    "original_options, new_options",
+    [
+        pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
+        pytest.param({"partitionBy": "text_string"}, {}, id="table_partitioned_dataframe_is_not"),
+        pytest.param({"partitionBy": "text_string"}, {"partitionBy": "id_int"}, id="different_partitioning_schema"),
+        pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
+    ],
+)
+def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, original_options, new_options, caplog):
+    df = processing.create_spark_df(spark=spark)
+
+    df1 = df[df.id_int <= 25]
+    df2 = df.where("id_int > 25 AND id_int <= 50")
+    df3 = df[df.id_int > 50]
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    writer1 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=original_options,
+    )
+    # create & fill up the table with some data
+    writer1.run(df1.union(df2))
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    writer2 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=Hive.WriteOptions(if_exists="ignore", **new_options),
+    )
+
+    with caplog.at_level(logging.INFO):
+        writer2.run(df1.union(df3))
+
+        assert "|Hive| No further action is taken due to if_exists is set to 'ignore'" in caplog.text
+
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    # table DDL remains the same
+    assert new_ddl == old_ddl
+
+    # table should only contain old data, because 'ignore' should not have added new data
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df1.union(df2),
+        order_by="id_int",
+    )
+
+
+@pytest.mark.parametrize(
+    "original_options, new_options",
+    [
+        pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
+        pytest.param({"partitionBy": "text_string"}, {}, id="table_partitioned_dataframe_is_not"),
+        pytest.param({"partitionBy": "text_string"}, {"partitionBy": "id_int"}, id="different_partitioning_schema"),
+        pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
+    ],
+)
+def test_hive_writer_insert_into_error(spark, processing, get_schema_table, original_options, new_options, caplog):
+    df = processing.create_spark_df(spark=spark)
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    writer1 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=original_options,
+    )
+
+    # Create & fill up the table with some data
+    writer1.run(df)
+    old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+
+    writer2 = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=Hive.WriteOptions(if_exists="error", **new_options),
+    )
+
+    with pytest.raises(ValueError, match="Operation stopped due to if_exists set to 'error'."):
+        writer2.run(df)
+
+    # table DDL remains the same
+    new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
+    assert new_ddl == old_ddl
+
+    # validate that the table contains only old data
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df,
         order_by="id_int",
     )
 

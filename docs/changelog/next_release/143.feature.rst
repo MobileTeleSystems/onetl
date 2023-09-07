@@ -1,0 +1,1 @@
+Add ``if_exists="ignore"`` and ``error`` to ``Hive.WriteOptions``

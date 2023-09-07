@@ -499,6 +499,16 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
+        if write_options.if_exists == HiveTableExistBehavior.ERROR:
+            log.error("|%s| If_exists is set to 'error'", self.__class__.__name__)
+            raise ValueError("Operation stopped due to if_exists set to 'error'.")
+        elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
+            log.info(
+                "|%s| No further action is taken due to if_exists is set to 'ignore'",
+                self.__class__.__name__,
+            )
+            return
+
         unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
         if unsupported_options:
             log.warning(
