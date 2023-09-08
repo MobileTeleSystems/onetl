@@ -129,6 +129,12 @@ def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table, cap
     with pytest.raises(ValueError, match="Operation stopped due to if_exists set to 'error'."):
         writer.run(df)
 
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df,
+    )
+
 
 def test_mongodb_writer_if_exists_ignore(spark, processing, get_schema_table, caplog):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
