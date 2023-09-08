@@ -545,7 +545,7 @@ class MongoDB(DBConnection):
         return spark
 
     def _collection_exists(self, source: str) -> bool:
-        jvm = self.spark._jvm  # type: ignore
+        jvm = self.spark._jvm
         client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
         collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
         if source in collections:
