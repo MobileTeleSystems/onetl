@@ -545,19 +545,11 @@ class MongoDB(DBConnection):
         return spark
 
     def _collection_exists(self, source: str) -> bool:
-        # Read with limit 1 to minimize resource usage
-        df = (
-            self.spark.read.format("mongodb")
-            .option("connection.uri", self.connection_url)
-            .option(
-                "collection",
-                source,
-            )
-            .option("pipeline", '[{"$limit": 1}]')
-            .load()
-        )
-        if df.rdd.isEmpty():
-            log.info("|%s| Collection %r does not exist", self.__class__.__name__, source)
-            return False
-        log.info("|%s| Collection %r exists", self.__class__.__name__, source)
-        return True
+        jvm = self.spark._jvm  # type: ignore
+        client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
+        collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
+        if source in collections:
+            log.info("|%s| Collection %r exists", self.__class__.__name__, source)
+            return True
+        log.info("|%s| Collection %r does not exist", self.__class__.__name__, source)
+        return False
