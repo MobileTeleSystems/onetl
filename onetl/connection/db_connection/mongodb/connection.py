@@ -504,6 +504,16 @@ class MongoDB(DBConnection):
             else "append"
         )
 
+        if self._collection_exists(target):
+            if write_options.if_exists == MongoDBCollectionExistBehavior.ERROR:
+                raise ValueError("Operation stopped due to if_exists set to 'error'.")
+            elif write_options.if_exists == MongoDBCollectionExistBehavior.IGNORE:
+                log.info(
+                    "|%s| No further action is taken due to if_exists is set to 'ignore'",
+                    self.__class__.__name__,
+                )
+                return
+
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
         df.write.format("mongodb").mode(mode).options(**write_options_dict).save()
         log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
@@ -533,3 +543,21 @@ class MongoDB(DBConnection):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
+
+    def _collection_exists(self, source: str) -> bool:
+        # Read with limit 1 to minimize resource usage
+        df = (
+            self.spark.read.format("mongodb")
+            .option("connection.uri", self.connection_url)
+            .option(
+                "collection",
+                source,
+            )
+            .option("pipeline", '[{"$limit": 1}]')
+            .load()
+        )
+        if df.rdd.isEmpty():
+            log.info("|%s| Collection %r does not exist", self.__class__.__name__, source)
+            return False
+        log.info("|%s| Collection %r exists", self.__class__.__name__, source)
+        return True
