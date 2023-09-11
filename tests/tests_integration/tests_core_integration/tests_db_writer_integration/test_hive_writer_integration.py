@@ -448,7 +448,7 @@ def test_hive_writer_insert_into_error(spark, processing, get_schema_table, orig
 
     with pytest.raises(
         ValueError,
-        match=re.escape("Operation stopped due to Hive.WriteOptions(if_exists=...) is set to 'error'."),
+        match=re.escape("Operation stopped due to Hive.WriteOptions(if_exists='error')"),
     ):
         writer2.run(df)
 
