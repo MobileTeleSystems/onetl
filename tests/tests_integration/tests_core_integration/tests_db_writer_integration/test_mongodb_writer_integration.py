@@ -1,4 +1,5 @@
 import logging
+import re
 
 import pytest
 
@@ -126,7 +127,10 @@ def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table, cap
     )
     writer.run(df)
 
-    with pytest.raises(ValueError, match="Operation stopped due to if_exists set to 'error'."):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Operation stopped due to MongoDB.WriteOptions(if_exists=...) is set to 'error'."),
+    ):
         writer.run(df)
 
     processing.assert_equal_df(
@@ -161,7 +165,10 @@ def test_mongodb_writer_if_exists_ignore(spark, processing, get_schema_table, ca
         writer.run(df2)  # The write operation is ignored
 
         assert f"|MongoDB| Collection '{get_schema_table.table}' exists" in caplog.text
-        assert "|MongoDB| No further action is taken due to if_exists is set to 'ignore'" in caplog.text
+        assert (
+            "|MongoDB| No further action is taken due to MongoDB.WriteOptions(if_exists=...) is set to 'ignore'"
+            in caplog.text
+        )
 
     processing.assert_equal_df(
         schema=get_schema_table.schema,

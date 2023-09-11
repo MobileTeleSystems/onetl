@@ -506,10 +506,10 @@ class MongoDB(DBConnection):
 
         if self._collection_exists(target):
             if write_options.if_exists == MongoDBCollectionExistBehavior.ERROR:
-                raise ValueError("Operation stopped due to if_exists set to 'error'.")
+                raise ValueError("Operation stopped due to MongoDB.WriteOptions(if_exists=...) is set to 'error'.")
             elif write_options.if_exists == MongoDBCollectionExistBehavior.IGNORE:
                 log.info(
-                    "|%s| No further action is taken due to if_exists is set to 'ignore'",
+                    "|%s| No further action is taken due to MongoDB.WriteOptions(if_exists=...) is set to 'ignore'",
                     self.__class__.__name__,
                 )
                 return
