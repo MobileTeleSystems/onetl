@@ -1,4 +1,5 @@
 import logging
+import re
 import textwrap
 
 import pytest
@@ -400,7 +401,10 @@ def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, ori
     with caplog.at_level(logging.INFO):
         writer2.run(df1.union(df3))
 
-        assert "|Hive| No further action is taken due to if_exists is set to 'ignore'" in caplog.text
+        assert (
+            "|Hive| No further action is taken due to Hive.WriteOptions(if_exists=...) is set to 'ignore'"
+            in caplog.text
+        )
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -445,7 +449,10 @@ def test_hive_writer_insert_into_error(spark, processing, get_schema_table, orig
         options=Hive.WriteOptions(if_exists="error", **new_options),
     )
 
-    with pytest.raises(ValueError, match="Operation stopped due to if_exists set to 'error'."):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Operation stopped due to Hive.WriteOptions(if_exists=...) is set to 'error'."),
+    ):
         writer2.run(df)
 
     # table DDL remains the same

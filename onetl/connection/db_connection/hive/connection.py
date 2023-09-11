@@ -341,10 +341,10 @@ class Hive(DBConnection):
         # https://stackoverflow.com/a/72747050
         if table_exists and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
             if write_options.if_exists == HiveTableExistBehavior.ERROR:
-                raise ValueError("Operation stopped due to if_exists set to 'error'.")
+                raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists=...) is set to 'error'.")
             elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
                 log.info(
-                    "|%s| No further action is taken due to if_exists is set to 'ignore'",
+                    "|%s| No further action is taken due to Hive.WriteOptions(if_exists=...) is set to 'ignore'",
                     self.__class__.__name__,
                 )
                 return
