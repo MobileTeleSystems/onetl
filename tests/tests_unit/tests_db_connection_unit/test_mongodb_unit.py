@@ -233,6 +233,8 @@ def test_mongodb_convert_dict_to_str():
     [
         ({}, MongoDBCollectionExistBehavior.APPEND),
         ({"if_exists": "append"}, MongoDBCollectionExistBehavior.APPEND),
+        ({"if_exists": "ignore"}, MongoDBCollectionExistBehavior.IGNORE),
+        ({"if_exists": "error"}, MongoDBCollectionExistBehavior.ERROR),
         ({"if_exists": "replace_entire_collection"}, MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION),
     ],
 )
@@ -261,6 +263,18 @@ def test_mongodb_write_options_if_exists(options, value):
             "Mode `overwrite` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_collection` instead",
         ),
+        (
+            {"mode": "ignore"},
+            MongoDBCollectionExistBehavior.IGNORE,
+            "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "error"},
+            MongoDBCollectionExistBehavior.ERROR,
+            "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `MongoDB.WriteOptions(if_exists=...)` instead",
+        ),
     ],
 )
 def test_mongodb_write_options_mode_deprecated(options, value, message):
@@ -272,10 +286,6 @@ def test_mongodb_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-        # wrong mode
         {"mode": "wrong_mode"},
     ],
 )
