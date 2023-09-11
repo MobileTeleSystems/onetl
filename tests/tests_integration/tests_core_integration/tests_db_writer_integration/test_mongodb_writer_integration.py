@@ -129,7 +129,7 @@ def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table, cap
 
     with pytest.raises(
         ValueError,
-        match=re.escape("Operation stopped due to MongoDB.WriteOptions(if_exists=...) is set to 'error'."),
+        match=re.escape("Operation stopped due to MongoDB.WriteOptions(if_exists='error')"),
     ):
         writer.run(df)
 
