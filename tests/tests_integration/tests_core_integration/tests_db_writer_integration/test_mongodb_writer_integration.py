@@ -166,7 +166,7 @@ def test_mongodb_writer_if_exists_ignore(spark, processing, get_schema_table, ca
 
         assert f"|MongoDB| Collection '{get_schema_table.table}' exists" in caplog.text
         assert (
-            "|MongoDB| No further action is taken due to MongoDB.WriteOptions(if_exists=...) is set to 'ignore'"
+            "|MongoDB| Skip writing to existing collection because of MongoDB.WriteOptions(if_exists='ignore')"
             in caplog.text
         )
 
