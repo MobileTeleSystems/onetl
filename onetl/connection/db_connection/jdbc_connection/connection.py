@@ -218,7 +218,11 @@ class JDBCConnection(JDBCMixin, DBConnection):
         write_options = self.WriteOptions.parse(options)
         jdbc_params = self.options_to_jdbc_params(write_options)
 
-        mode = "append" if write_options.if_exists == JDBCTableExistBehavior.APPEND else "overwrite"
+        mode = (
+            "overwrite"
+            if write_options.if_exists == JDBCTableExistBehavior.REPLACE_ENTIRE_TABLE
+            else write_options.if_exists.value
+        )
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
         df.write.jdbc(table=target, mode=mode, **jdbc_params)
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
