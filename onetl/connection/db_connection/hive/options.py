@@ -26,6 +26,8 @@ from onetl.impl import GenericOptions
 
 class HiveTableExistBehavior(str, Enum):
     APPEND = "append"
+    IGNORE = "ignore"
+    ERROR = "error"
     REPLACE_ENTIRE_TABLE = "replace_entire_table"
     REPLACE_OVERLAPPING_PARTITIONS = "replace_overlapping_partitions"
 
@@ -173,9 +175,30 @@ class HiveWriteOptions(GenericOptions):
                 Table is recreated using options provided by user (``format``, ``compression``, etc)
                 **instead of using original table options**. Be careful
 
-    .. note::
+        * ``ignore``
+            Ignores the write operation if the table/partition already exists.
 
-        ``error`` and ``ignore`` modes are not supported.
+            .. dropdown:: Behavior in details
+
+                * Table does not exist
+                    Table is created using options provided by user (``format``, ``compression``, etc).
+
+                * Table exists
+                    If the table exists, **no further action is taken**. This is true whether or not new partition
+                    values are present and whether the partitioning scheme differs or not
+
+        * ``error``
+            Raises an error if the table/partition already exists.
+
+            .. dropdown:: Behavior in details
+
+                * Table does not exist
+                    Table is created using options provided by user (``format``, ``compression``, etc).
+
+                * Table exists
+                    If the table exists, **raises an error**. This is true whether or not new partition
+                    values are present and whether the partitioning scheme differs or not
+
 
     .. note::
 

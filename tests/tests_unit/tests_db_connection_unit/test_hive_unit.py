@@ -153,6 +153,8 @@ def test_hive_write_options_unsupported_insert_into(insert_into):
         ({"if_exists": "append"}, HiveTableExistBehavior.APPEND),
         ({"if_exists": "replace_overlapping_partitions"}, HiveTableExistBehavior.REPLACE_OVERLAPPING_PARTITIONS),
         ({"if_exists": "replace_entire_table"}, HiveTableExistBehavior.REPLACE_ENTIRE_TABLE),
+        ({"if_exists": "error"}, HiveTableExistBehavior.ERROR),
+        ({"if_exists": "ignore"}, HiveTableExistBehavior.IGNORE),
     ],
 )
 def test_hive_write_options_if_exists(options, value):
@@ -198,6 +200,18 @@ def test_hive_write_options_if_exists(options, value):
             "Mode `overwrite_table` is deprecated since v0.9.0 and will be removed in v1.0.0. "
             "Use `replace_entire_table` instead",
         ),
+        (
+            {"mode": "error"},
+            HiveTableExistBehavior.ERROR,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
+        (
+            {"mode": "ignore"},
+            HiveTableExistBehavior.IGNORE,
+            "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
+            "Use `Hive.WriteOptions(if_exists=...)` instead",
+        ),
     ],
 )
 def test_hive_write_options_mode_deprecated(options, value, message):
@@ -209,10 +223,6 @@ def test_hive_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options",
     [
-        # disallowed modes
-        {"mode": "error"},
-        {"mode": "ignore"},
-        # wrong mode
         {"mode": "wrong_mode"},
     ],
 )

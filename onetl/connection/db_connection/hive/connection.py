@@ -340,6 +340,14 @@ class Hive(DBConnection):
 
         # https://stackoverflow.com/a/72747050
         if table_exists and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
+            if write_options.if_exists == HiveTableExistBehavior.ERROR:
+                raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists='error')")
+            elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
+                log.info(
+                    "|%s| Skip writing to existing table because of Hive.WriteOptions(if_exists='ignore')",
+                    self.__class__.__name__,
+                )
+                return
             # using saveAsTable on existing table does not handle
             # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
             self._insert_into(df, target, options)
