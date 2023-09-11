@@ -504,6 +504,16 @@ class MongoDB(DBConnection):
             else "append"
         )
 
+        if self._collection_exists(target):
+            if write_options.if_exists == MongoDBCollectionExistBehavior.ERROR:
+                raise ValueError("Operation stopped due to MongoDB.WriteOptions(if_exists='error')")
+            elif write_options.if_exists == MongoDBCollectionExistBehavior.IGNORE:
+                log.info(
+                    "|%s| Skip writing to existing collection because of MongoDB.WriteOptions(if_exists='ignore')",
+                    self.__class__.__name__,
+                )
+                return
+
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
         df.write.format("mongodb").mode(mode).options(**write_options_dict).save()
         log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
@@ -533,3 +543,13 @@ class MongoDB(DBConnection):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
+
+    def _collection_exists(self, source: str) -> bool:
+        jvm = self.spark._jvm
+        client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
+        collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
+        if source in collections:
+            log.info("|%s| Collection %r exists", self.__class__.__name__, source)
+            return True
+        log.info("|%s| Collection %r does not exist", self.__class__.__name__, source)
+        return False
