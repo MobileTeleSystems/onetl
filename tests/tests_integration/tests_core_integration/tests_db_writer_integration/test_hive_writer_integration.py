@@ -401,10 +401,7 @@ def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, ori
     with caplog.at_level(logging.INFO):
         writer2.run(df1.union(df3))
 
-        assert (
-            "|Hive| No further action is taken due to Hive.WriteOptions(if_exists=...) is set to 'ignore'"
-            in caplog.text
-        )
+        assert "|Hive| Skip writing to existing table because of Hive.WriteOptions(if_exists='ignore')" in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 

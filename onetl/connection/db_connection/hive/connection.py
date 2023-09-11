@@ -344,7 +344,7 @@ class Hive(DBConnection):
                 raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists=...) is set to 'error'.")
             elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
                 log.info(
-                    "|%s| No further action is taken due to Hive.WriteOptions(if_exists=...) is set to 'ignore'",
+                    "|%s| Skip writing to existing table because of Hive.WriteOptions(if_exists='ignore')",
                     self.__class__.__name__,
                 )
                 return
