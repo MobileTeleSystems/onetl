@@ -124,7 +124,7 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MongoDB connector loaded
-        maven_packages = Greenplum.get_packages(spark_version="3.2")
+        maven_packages = MongoDB.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
