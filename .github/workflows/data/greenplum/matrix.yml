@@ -7,7 +7,7 @@ min: &min
 
 max: &max
   # test Greenplum connector with Spark 3.3+
-  spark-version: 3.3.1
+  spark-version: 3.3.2
   python-version: '3.10'
   java-version: 11
   os: ubuntu-latest
