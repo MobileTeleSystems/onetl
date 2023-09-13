@@ -87,6 +87,12 @@ def maven_packages():
 def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages):
     from pyspark.sql import SparkSession
 
+    from onetl.connection import Greenplum
+
+    # Add the new Maven package for commons-lang
+    maven_packages.append("commons-lang:commons-lang:2.6")
+    maven_packages.extend(Greenplum.get_packages(spark_version="3.2"))
+
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
