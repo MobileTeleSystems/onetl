@@ -53,7 +53,7 @@ log = getLogger(__name__)
 
 @support_hooks
 class Samba(FileConnection):
-    """Samba file connection. |support_hooks|
+    """Samba file connection.
 
     Based on `pysmb library <https://pypi.org/project/pysmb/>`_.
 
@@ -146,7 +146,7 @@ class Samba(FileConnection):
                     str(path),
                 )
                 if entry.filename not in {".", ".."}  # Filter out '.' and '..'
-            ]  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+            ]  # pysmb replaces '/', not works with <RemotePath> type
         return [self.client.getAttributes(self.share, (os.fspath(path)))]
 
     def _extract_name_from_entry(self, entry) -> str:
@@ -201,7 +201,7 @@ class Samba(FileConnection):
                 str(remote_file_path),
                 local_file,
                 show_progress=True,
-            )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+            )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
         info = self.client.getAttributes(self.share, (os.fspath(path)))
@@ -219,7 +219,7 @@ class Samba(FileConnection):
         self.client.deleteFiles(
             self.share,
             str(remote_file_path),
-        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _create_dir(self, path: RemotePath) -> None:
         path_parts = str(path).strip("/").split("/")
@@ -238,26 +238,25 @@ class Samba(FileConnection):
                 self.share,
                 str(remote_file_path),
                 file_obj,
-            )  # pysmb do .replace('/', '\\'), works with <RemotePath> type
+            )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(
             self.share,
             str(source),
             str(target),
-        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _remove_dir(self, path: RemotePath) -> None:
         files = self.client.listPath(self.share, str(path))
 
         for f in files:
-            if f.filename not in {".", ".."}:  # Skip current and parent directory entries
+            if f.filename not in {".", ".."}:  # skip current and parent directory entries
                 full_path = f"{path}/{f.filename}"
                 if f.isDirectory:
-                    # Recursively delete subdirectory
+                    # recursively delete subdirectory
                     self._remove_dir(full_path)
                 else:
-                    # Delete file
                     self.client.deleteFiles(self.share, full_path)
 
         self.client.deleteDirectory(self.share, str(path))
@@ -268,7 +267,7 @@ class Samba(FileConnection):
             self.share,
             str(path),
             file_obj,
-        )  # pysmb do .replace('/', '\\'), works with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
         file_obj.seek(0)
         return file_obj.read().decode(encoding)
 
@@ -278,7 +277,7 @@ class Samba(FileConnection):
             self.share,
             str(path),
             file_obj,
-        )  # pysmb replaces '/', works with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
         file_obj.seek(0)
         return file_obj.read()
 
@@ -289,7 +288,7 @@ class Samba(FileConnection):
             self.share,
             str(path),
             file_obj,
-        )  # pysmb replaces '/', works with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _write_bytes(self, path: RemotePath, content: bytes) -> None:
         file_obj = BytesIO(content)
@@ -298,7 +297,7 @@ class Samba(FileConnection):
             self.share,
             str(path),
             file_obj,
-        )  # pysmb replaces '/', works with <RemotePath> type
+        )  # pysmb replaces '/', not works with <RemotePath> type
 
     def _is_dir(self, path: RemotePath) -> bool:
         return self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
