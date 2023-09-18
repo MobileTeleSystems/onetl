@@ -14,10 +14,13 @@ from argparse import ArgumentParser
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
+from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Iterator, TextIO
+from zipfile import ZipFile
 
 if TYPE_CHECKING:
     from avro.schema import Schema as AvroSchema
+    from pandas import DataFrame as PandasDataFrame
     from pyarrow import Schema as ArrowSchema
     from pyarrow import Table as ArrowTable
 
@@ -83,6 +86,12 @@ def get_data() -> list[dict]:
             "float_value": 7.89,
         },
     ]
+
+
+def get_pandas_dataframe(data: list[dict]) -> PandasDataFrame:
+    import pandas as pd
+
+    return pd.DataFrame(data)
 
 
 def get_pyarrow_schema() -> ArrowSchema:
@@ -382,6 +391,87 @@ def save_as_avro(data: list[dict], path: Path) -> None:
     save_as_avro_snappy(data, root / "with_compression")
 
 
+def save_as_xls_with_options(
+    data: list[dict],
+    path: Path,
+    index: bool = False,
+    **kwargs,
+) -> None:
+    # required to register xlwt writer which supports generating .xls files
+    import pandas_xlwt
+
+    path.mkdir(parents=True, exist_ok=True)
+    file = path / "file.xls"
+
+    df = get_pandas_dataframe(data)
+    df["datetime_value"] = df.datetime_value.dt.tz_localize(None)
+    df.to_excel(file, index=index, engine="xlwt", **kwargs)
+
+
+def make_zip_deterministic(path: Path) -> None:
+    temp_dir = gettempdir()
+    file_copy = Path(shutil.copy(path, temp_dir))
+
+    with ZipFile(file_copy, "r") as original_file:
+        with ZipFile(path, "w") as new_file:
+            for item in original_file.infolist():
+                if item.filename == "docProps/core.xml":
+                    # this file contains modification time, which produces files with different hashes
+                    continue
+                # reset modification time of all files
+                item.date_time = (1980, 1, 1, 0, 0, 0)
+                new_file.writestr(item, original_file.read(item.filename))
+
+
+def save_as_xlsx_with_options(
+    data: list[dict],
+    path: Path,
+    index: bool = False,
+    **kwargs,
+) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    file = path / "file.xls"
+
+    df = get_pandas_dataframe(data)
+    df["datetime_value"] = df.datetime_value.dt.tz_localize(None)
+    df.to_excel(file, index=index, engine="openpyxl", **kwargs)
+    make_zip_deterministic(file)
+
+
+def save_as_xlsx(data: list[dict], path: Path) -> None:
+    root = path / "xlsx"
+    shutil.rmtree(root, ignore_errors=True)
+    root.mkdir(parents=True, exist_ok=True)
+
+    save_as_xlsx_with_options(data, root / "without_header", header=False)
+    save_as_xlsx_with_options(data, root / "with_header", header=True)
+    save_as_xlsx_with_options(
+        data,
+        root / "with_data_address",
+        header=False,
+        sheet_name="ABC",
+        startcol=10,
+        startrow=5,
+    )
+
+
+def save_as_xls(data: list[dict], path: Path) -> None:
+    root = path / "xls"
+    shutil.rmtree(root, ignore_errors=True)
+    root.mkdir(parents=True, exist_ok=True)
+
+    save_as_xls_with_options(data, root / "without_header", header=False)
+    save_as_xls_with_options(data, root / "with_header", header=True)
+    save_as_xls_with_options(
+        data,
+        root / "with_data_address",
+        header=False,
+        sheet_name="ABC",
+        startcol=10,
+        startrow=5,
+    )
+
+
 format_mapping = {
     "csv": save_as_csv,
     "json": save_as_json,
@@ -389,6 +479,8 @@ format_mapping = {
     "orc": save_as_orc,
     "parquet": save_as_parquet,
     "avro": save_as_avro,
+    "xlsx": save_as_xlsx,
+    "xls": save_as_xls,
 }
 
 

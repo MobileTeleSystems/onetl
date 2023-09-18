@@ -63,6 +63,7 @@ class SparkS3(SparkFileDFConnection):
 
         * Spark versions: 3.2.x - 3.4.x (only with Hadoop 3.x libraries)
         * Java versions: 8 - 20
+        * Scala versions: 2.11 - 2.13
 
     .. warning::
 
@@ -263,6 +264,7 @@ class SparkS3(SparkFileDFConnection):
             raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
 
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 
     @slot
