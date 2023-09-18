@@ -661,7 +661,9 @@ def test_file_downloader_mode_replace_entire_directory(
     assert download_result.successful
 
     # folder contains only downloaded files
-    assert sorted(item for item in local_path.glob("**/*") if item.is_file()) == sorted(download_result.successful)
+    assert sorted(item.resolve() for item in local_path.glob("**/*") if item.is_file()) == sorted(
+        path.resolve() for path in download_result.successful
+    )
     assert not temp_file.exists()
 
 
@@ -755,7 +757,10 @@ def test_file_downloader_local_path_not_a_directory(request, file_connection):
             local_path=file.name,
         )
 
-        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
+        with pytest.raises(
+            NotADirectoryError,
+            match=rf"'(/private)?{file.name}' \(kind='file', .*\) is not a directory",
+        ):
             downloader.run()
 
 

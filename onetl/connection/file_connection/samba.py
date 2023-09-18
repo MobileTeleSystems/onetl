@@ -60,20 +60,20 @@ class Samba(FileConnection):
     Parameters
     ----------
     host : str
-        Host of Samba source. For example: ``msk.mts.ru``. This is a required field.
+        Host of Samba source. For example: ``msk.mts.ru``.
 
     share : str
-        The name of the share on the Samba server. This is a required field.
+        The name of the share on the Samba server.
 
     protocol : str, default: ``SMB``
         The protocol to use for the connection. Either ``SMB`` or ``NetBIOS``.
         Affects the default port and the `is_direct_tcp` flag in `SMBConnection`.
 
-    port : int, default: None
-        Port of Samba source. Can be overridden.
+    port : int, default: 445
+        Port of Samba source.
 
     domain : str, default: ``
-        Domain name for the Samba connection. Defaults to the same as `host`.
+        Domain name for the Samba connection.
 
     auth_type : str, default: ``NTLMv2``
         The authentication type to use. Either ``NTLMv2`` or ``NTLMv1``.
@@ -138,10 +138,35 @@ class Samba(FileConnection):
             return False
 
     def _scan_entries(self, path: RemotePath) -> list:
-        return self.client.listPath(
-            self.share,
-            str(path),
-        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+        if self._is_dir(path):
+            return [
+                entry
+                for entry in self.client.listPath(
+                    self.share,
+                    str(path),
+                )
+                if entry.filename not in {".", ".."}  # Filter out '.' and '..'
+            ]  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+        return [self.client.getAttributes(self.share, (os.fspath(path)))]
+
+    def _extract_name_from_entry(self, entry) -> str:
+        return entry.filename
+
+    def _is_dir_entry(self, top: RemotePath, entry) -> bool:
+        return entry.isDirectory
+
+    def _is_file_entry(self, top: RemotePath, entry) -> bool:
+        return not entry.isDirectory
+
+    def _extract_stat_from_entry(self, top: RemotePath, entry) -> RemotePathStat:
+        if entry.isDirectory:
+            return RemotePathStat(st_mode=stat.S_IFDIR)
+
+        return RemotePathStat(
+            st_size=entry.file_size,
+            st_mtime=entry.last_write_time,
+            st_uid=entry.filename,
+        )
 
     def _get_client(self) -> SMBConnection:
         is_direct_tcp = self.protocol == "SMB"
@@ -169,40 +194,14 @@ class Samba(FileConnection):
     def _close_client(self, client: SMBConnection) -> None:
         self.client.close()
 
-    def _create_dir(self, path: RemotePath) -> None:
-        self.client.createDirectory(
-            self.share,
-            str(path),
-        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
-
-    def _upload_file(self, local_file_path: LocalPath, remote_file_path: str | RemotePath) -> None:
-        with open(local_file_path, "rb") as file_obj:
-            self.client.storeFile(
+    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
+        with open(local_file_path, "wb") as local_file:
+            self.client.retrieveFile(
                 self.share,
                 str(remote_file_path),
-                file_obj,
-            )  # pysmb do .replace('/', '\\'), works with <RemotePath> type
-
-    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
-        # Implement your logic here
-        pass
-
-    def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
-        pass
-
-    def _remove_dir(self, path: RemotePath) -> None:
-        # Implement your logic here
-        pass
-
-    def _remove_file(self, remote_file_path: RemotePath) -> None:
-        # Implement your logic here
-        pass
-
-    def _is_dir(self, path: RemotePath) -> bool:
-        return self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
-
-    def _is_file(self, path: RemotePath) -> bool:
-        return not self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
+                local_file,
+                show_progress=True,
+            )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
         info = self.client.getAttributes(self.share, (os.fspath(path)))
@@ -216,6 +215,53 @@ class Samba(FileConnection):
             st_uid=info.filename,
         )
 
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
+        self.client.deleteFiles(
+            self.share,
+            str(remote_file_path),
+        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+
+    def _create_dir(self, path: RemotePath) -> None:
+        path_parts = str(path).strip("/").split("/")
+        current_path_parts = []
+        for part in path_parts:  # create dirs sequentially as .createDirectory(...) cannot create nested dirs
+            current_path_parts.append(part)
+            current_path = "/".join(current_path_parts)
+            try:
+                self.client.createDirectory(self.share, current_path)
+            except OperationFailure:
+                pass
+
+    def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
+        with open(local_file_path, "rb") as file_obj:
+            self.client.storeFile(
+                self.share,
+                str(remote_file_path),
+                file_obj,
+            )  # pysmb do .replace('/', '\\'), works with <RemotePath> type
+
+    def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
+        self.client.rename(
+            self.share,
+            str(source),
+            str(target),
+        )  # pysmb do .replace('/', '\\'), doesn't work with <RemotePath> type
+
+    def _remove_dir(self, path: RemotePath) -> None:
+        files = self.client.listPath(self.share, str(path))
+
+        for f in files:
+            if f.filename not in {".", ".."}:  # Skip current and parent directory entries
+                full_path = f"{path}/{f.filename}"
+                if f.isDirectory:
+                    # Recursively delete subdirectory
+                    self._remove_dir(full_path)
+                else:
+                    # Delete file
+                    self.client.deleteFiles(self.share, full_path)
+
+        self.client.deleteDirectory(self.share, str(path))
+
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         file_obj = BytesIO()
         self.client.retrieveFile(
@@ -226,26 +272,36 @@ class Samba(FileConnection):
         file_obj.seek(0)
         return file_obj.read().decode(encoding)
 
-    def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
-        # Implement your logic here
-        pass
+    def _read_bytes(self, path: RemotePath) -> bytes:
+        file_obj = BytesIO()
+        self.client.retrieveFile(
+            self.share,
+            str(path),
+            file_obj,
+        )  # pysmb replaces '/', works with <RemotePath> type
+        file_obj.seek(0)
+        return file_obj.read()
 
-    def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
-        # Implement your logic here
-        pass
+    def _write_text(self, path: RemotePath, content: str, encoding: str) -> None:
+        file_obj = BytesIO(content.encode(encoding))
 
-    def _extract_name_from_entry(self, entry) -> str:
-        pass
+        self.client.storeFile(
+            self.share,
+            str(path),
+            file_obj,
+        )  # pysmb replaces '/', works with <RemotePath> type
 
-    def _extract_stat_from_entry(self, top: RemotePath, entry) -> RemotePathStat:
-        pass
+    def _write_bytes(self, path: RemotePath, content: bytes) -> None:
+        file_obj = BytesIO(content)
 
-    def _is_dir_entry(self, top: RemotePath, entry) -> bool:
-        pass
+        self.client.storeFile(
+            self.share,
+            str(path),
+            file_obj,
+        )  # pysmb replaces '/', works with <RemotePath> type
 
-    def _is_file_entry(self, top: RemotePath, entry) -> bool:
-        pass
+    def _is_dir(self, path: RemotePath) -> bool:
+        return self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
 
-    def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
-        # Implement your logic here
-        pass
+    def _is_file(self, path: RemotePath) -> bool:
+        return not self.client.getAttributes(self.share, (os.fspath(path))).isDirectory

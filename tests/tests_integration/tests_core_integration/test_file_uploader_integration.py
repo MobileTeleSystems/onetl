@@ -490,7 +490,10 @@ def test_file_uploader_run_local_path_not_a_directory(file_connection):
     with tempfile.NamedTemporaryFile() as file:
         uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
 
-        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
+        with pytest.raises(
+            NotADirectoryError,
+            match=rf"'(/private)?{file.name}' \(kind='file', .*\) is not a directory",
+        ):  # On macOS, /var is a symlink to /private/var
             uploader.run()
 
 

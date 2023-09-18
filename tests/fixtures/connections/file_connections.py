@@ -27,6 +27,7 @@ def file_connection(request):
         lazy_fixture("hdfs_file_connection_with_path"),
         lazy_fixture("s3_file_connection_with_path"),
         lazy_fixture("sftp_file_connection_with_path"),
+        lazy_fixture("samba_file_connection_with_path"),
         lazy_fixture("webdav_file_connection_with_path"),
     ],
 )
@@ -41,6 +42,7 @@ def file_connection_with_path(request):
         lazy_fixture("hdfs_file_connection_with_path_and_files"),
         lazy_fixture("s3_file_connection_with_path_and_files"),
         lazy_fixture("sftp_file_connection_with_path_and_files"),
+        lazy_fixture("samba_file_connection_with_path_and_files"),
         lazy_fixture("webdav_file_connection_with_path_and_files"),
     ],
 )
