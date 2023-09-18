@@ -12,6 +12,7 @@ from pytest_lazyfixture import lazy_fixture
         lazy_fixture("hdfs_file_connection"),
         lazy_fixture("s3_file_connection"),
         lazy_fixture("sftp_file_connection"),
+        lazy_fixture("samba_file_connection"),
         lazy_fixture("webdav_file_connection"),
     ],
 )

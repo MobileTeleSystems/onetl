@@ -33,6 +33,7 @@ requirements_core = parse_requirements(here / "requirements" / "core.txt")
 
 requirements_ftp = parse_requirements(here / "requirements" / "ftp.txt")
 requirements_sftp = parse_requirements(here / "requirements" / "sftp.txt")
+requirements_samba = parse_requirements(here / "requirements" / "samba.txt")
 requirements_hdfs = parse_requirements(here / "requirements" / "hdfs.txt")
 requirements_s3 = parse_requirements(here / "requirements" / "s3.txt")
 requirements_webdav = parse_requirements(here / "requirements" / "webdav.txt")
@@ -90,6 +91,7 @@ setup(
         "ftp": requirements_ftp,
         "ftps": requirements_ftp,
         "sftp": requirements_sftp,
+        "samba": requirements_samba,
         "hdfs": requirements_hdfs,
         "s3": requirements_s3,
         "webdav": requirements_webdav,
