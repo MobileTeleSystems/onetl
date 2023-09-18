@@ -56,7 +56,7 @@ def test_avro_reader(
     """Reading Avro files working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
     if spark_version < (2, 4):
-        pytest.skip("Avro only supported on Spark 2.4+")
+        pytest.skip("Avro files are supported on Spark 3.2+ only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -76,10 +76,10 @@ def test_avro_reader(
 
 
 @pytest.mark.parametrize(
-    "path, options",
+    "options",
     [
-        ("without_compression", {}),
-        ("with_compression", {"compression": "snappy"}),
+        {},
+        {"compression": "snappy"},
     ],
     ids=["without_compression", "with_compression"],
 )
@@ -88,13 +88,12 @@ def test_avro_writer(
     local_fs_file_df_connection_with_path,
     file_df_dataframe,
     avro_schema,
-    path,
     options,
 ):
     """Written files can be read by Spark"""
     spark_version = get_spark_version(spark)
     if spark_version < (2, 4):
-        pytest.skip("Avro only supported on Spark 2.4+")
+        pytest.skip("Avro files are supported on Spark 3.2+ only")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe

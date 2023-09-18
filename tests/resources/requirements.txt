@@ -1,2 +1,5 @@
 avro[snappy]
+openpyxl
+pandas
 pyarrow
+pandas-xlwt

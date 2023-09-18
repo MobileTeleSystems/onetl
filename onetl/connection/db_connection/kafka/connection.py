@@ -72,6 +72,7 @@ class Kafka(DBConnection):
 
         * Apache Kafka versions: 0.10 or higher
         * Spark versions: 2.4.x - 3.4.x
+        * Scala versions: 2.11 - 2.13
 
     Parameters
     ----------
@@ -380,6 +381,9 @@ class Kafka(DBConnection):
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
+
+        See `Maven package index <https://mvnrepository.com/artifact/org.apache.spark/spark-sql-kafka-0-10>`_
+        for all available packages.
 
         Parameters
         ----------

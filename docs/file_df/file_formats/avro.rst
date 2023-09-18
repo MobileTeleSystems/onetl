@@ -1,7 +1,7 @@
 .. _avro-file-format:
 
 Avro
-========
+====
 
 .. currentmodule:: onetl.file.format.avro
 

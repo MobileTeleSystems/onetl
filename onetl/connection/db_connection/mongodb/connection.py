@@ -65,6 +65,7 @@ class MongoDB(DBConnection):
         * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
         * Java versions: 8 - 20
+        * Scala versions: 2.11 - 2.13
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
@@ -206,6 +207,7 @@ class MongoDB(DBConnection):
         if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
             raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
+        # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
 
     @classproperty

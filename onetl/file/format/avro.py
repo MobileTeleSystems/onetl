@@ -73,6 +73,7 @@ class Avro(ReadWriteFileFormat):
 
         * Spark versions: 2.4.x - 3.4.x
         * Java versions: 8 - 20
+        * Scala versions: 2.11 - 2.13
 
         See documentation from link above.
 
@@ -130,6 +131,9 @@ class Avro(ReadWriteFileFormat):
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
+
+        See `Maven package index <https://mvnrepository.com/artifact/org.apache.spark/spark-avro>`_
+        for all available packages.
 
         Parameters
         ----------

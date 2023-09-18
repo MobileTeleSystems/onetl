@@ -1,4 +1,4 @@
-"""Integration tests for CSV file format.
+"""Integration tests for Excel file format.
 
 Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
@@ -8,7 +8,7 @@ import pytest
 
 from onetl._util.spark import get_spark_version
 from onetl.file import FileDFReader, FileDFWriter
-from onetl.file.format import CSV
+from onetl.file.format import Excel
 
 try:
     from pyspark.sql.functions import col
@@ -22,36 +22,36 @@ except ImportError:
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
 
-def test_csv_reader_with_infer_schema(
+@pytest.mark.parametrize("format", ["xlsx", "xls"])
+def test_excel_reader_with_infer_schema(
     spark,
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
+    format,
 ):
     """Reading CSV files with inferSchema=True working as expected on any Spark, Python and Java versions"""
+    spark_version = get_spark_version(spark)
+    if spark_version < (3, 2):
+        pytest.skip("Excel files are supported on Spark 3.2+ only")
+
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
-    csv_root = source_path / "csv/without_header"
+    excel_root = source_path / format / "without_header"
 
     reader = FileDFReader(
         connection=file_df_connection,
-        format=CSV(inferSchema=True),
-        source_path=csv_root,
+        format=Excel(inferSchema=True),
+        source_path=excel_root,
     )
     read_df = reader.run()
 
     assert read_df.count()
 
     expected_df = df
+    # Spark infers "date_value" as timestamp instead of date
+    expected_df = df.withColumn("date_value", col("date_value").cast("timestamp"))
 
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        # Spark 2 infers "date_value" as timestamp instead of date
-        expected_df = df.withColumn("date_value", col("date_value").cast("timestamp"))
-    elif spark_version < (3, 3):
-        # Spark 3.2 cannot infer "date_value", and return it as string
-        expected_df = df.withColumn("date_value", col("date_value").cast("string"))
-
-    # csv does not have header, so columns are named like "_c0", "_c1", etc
+    # excel does not have header, so columns are named like "_c0", "_c1", etc
     expected_df = reset_column_names(expected_df)
 
     assert read_df.schema != df.schema
@@ -59,31 +59,38 @@ def test_csv_reader_with_infer_schema(
     assert_equal_df(read_df, expected_df)
 
 
+@pytest.mark.parametrize("format", ["xlsx", "xls"])
 @pytest.mark.parametrize(
-    "option, value",
+    "path, options",
     [
-        ("header", True),
-        ("delimiter", ";"),
-        ("compression", "gzip"),
+        ("without_header", {}),
+        ("with_header", {"header": True}),
+        ("with_data_address", {"dataAddress": "'ABC'!K6"}),
     ],
-    ids=["with_header", "with_delimiter", "with_compression"],
+    ids=["without_header", "with_header", "with_data_address"],
 )
-def test_csv_reader_with_options(
+def test_excel_reader_with_options(
+    spark,
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
-    option,
-    value,
+    format,
+    path,
+    options,
 ):
-    """Reading CSV files working as expected on any Spark, Python and Java versions"""
+    """Reading Excel files working as expected on any Spark, Python and Java versions"""
+    spark_version = get_spark_version(spark)
+    if spark_version < (3, 2):
+        pytest.skip("Excel files are supported on Spark 3.2+ only")
+
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
-    csv_root = source_path / f"csv/with_{option}"
+    excel_root = source_path / format / path
 
     reader = FileDFReader(
         connection=local_fs,
-        format=CSV.parse({option: value}),
+        format=Excel.parse(options),
         df_schema=df.schema,
-        source_path=csv_root,
+        source_path=excel_root,
     )
     read_df = reader.run()
 
@@ -93,38 +100,39 @@ def test_csv_reader_with_options(
 
 
 @pytest.mark.parametrize(
-    "option, value",
+    "options",
     [
-        ("header", "True"),
-        ("delimiter", ";"),
-        ("compression", "gzip"),
+        {},
+        {"header": True},
     ],
-    ids=["with_header", "with_delimiter", "with_compression"],
+    ids=["without_header", "with_header"],
 )
-def test_csv_writer_with_options(
+def test_excel_writer(
+    spark,
     local_fs_file_df_connection_with_path,
     file_df_dataframe,
-    option,
-    value,
+    options,
 ):
     """Written files can be read by Spark"""
+    spark_version = get_spark_version(spark)
+    if spark_version < (3, 2):
+        pytest.skip("Excel files are supported on Spark 3.2+ only")
+
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe
-    csv_root = source_path / "csv"
-
-    csv = CSV.parse({option: value})
+    excel_root = source_path / "excel"
 
     writer = FileDFWriter(
         connection=file_df_connection,
-        format=csv,
-        target_path=csv_root,
+        format=Excel.parse(options),
+        target_path=excel_root,
     )
     writer.run(df)
 
     reader = FileDFReader(
         connection=file_df_connection,
-        format=csv,
-        source_path=csv_root,
+        format=Excel.parse(options),
+        source_path=excel_root,
         df_schema=df.schema,
     )
     read_df = reader.run()

@@ -22,7 +22,7 @@ You can install PySpark as follows:
 
 .. code:: bash
 
-    pip install onetl pyspark=3.2.3  # pass specific PySpark version
+    pip install onetl pyspark=3.2.4  # pass specific PySpark version
 
 See :ref:`spark-install` instruction for more details.
 
@@ -158,7 +158,7 @@ Inserting ``.jar`` file to Spark jars folder
 Can be used to embed ``.jar`` files to a default Spark classpath.
 
 * Download ``greenplum-connector-apache-spark-scala_2.12-2.1.4.jar`` file.
-* Move it to ``$SPARK_HOME/jars/`` folder, e.g. ``~/.local/lib/python3.7/site-packages/pyspark/jars/`` or ``/opt/spark/3.2.3/jars/``.
+* Move it to ``$SPARK_HOME/jars/`` folder, e.g. ``~/.local/lib/python3.7/site-packages/pyspark/jars/`` or ``/opt/spark/3.2.4/jars/``.
 * Create Spark session **WITHOUT** passing Greenplum package name to ``spark.jars.packages``
 
 
