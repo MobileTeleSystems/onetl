@@ -219,9 +219,9 @@ class Samba(FileConnection):
         for parent in reversed(path_obj.parents):
             # create dirs sequentially as .createDirectory(...) cannot create nested dirs
             try:
-                self.client.createDirectory(self.share, os.fspath(parent))
+                self.client.getAttributes(self.share, os.fspath(parent))
             except OperationFailure:
-                pass
+                self.client.createDirectory(self.share, os.fspath(parent))
 
         self.client.createDirectory(self.share, os.fspath(path))
 
