@@ -166,13 +166,13 @@ services:
 
   samba:
     image: elswork/samba
+    restart: unless-stopped
     ports:
     - "139:139"
     - "445:445"
-    restart: unless-stopped
     volumes:
-    - /path/to/share:/share/folder
-    command: '-u "1000:1000:onetl:d:awd123fd1" -s "SmbShare:/share/folder:rw:onetl"'
+    - ./docker/samba:/share/folder
+    command: '-u "${ONETL_SAMBA_UID}:${ONETL_SAMBA_GID}:${ONETL_SAMBA_USER}:${ONETL_SAMBA_USER}:${ONETL_SAMBA_PASSWORD}" -s "${ONETL_SAMBA_SHARE}:/share/folder:rw:${ONETL_SAMBA_USER}"'
     networks:
     - onetl
 
