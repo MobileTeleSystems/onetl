@@ -182,7 +182,7 @@ class Samba(FileConnection):
             is_direct_tcp=is_direct_tcp,
         )
         conn.connect(self.host, port=self.port)
-        return conn  # noqa: WPS331
+        return conn
 
     def _is_client_closed(self, client: SMBConnection) -> bool:
         try:
