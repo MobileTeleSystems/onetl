@@ -178,8 +178,6 @@ class Samba(FileConnection):
         return conn
 
     def _is_client_closed(self, client: SMBConnection) -> bool:
-        if client is None:
-            return True
         try:
             socket_fileno = client.sock.fileno()
         except (AttributeError, OSError):
