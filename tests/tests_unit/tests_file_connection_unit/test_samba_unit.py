@@ -14,7 +14,6 @@ def test_samba_connection():
     assert samba.protocol == "SMB"
     assert samba.domain == ""
     assert samba.auth_type == "NTLMv2"
-    assert samba.timeout == 10
     assert samba.port == 445
     assert samba.user == "some_user"
     assert samba.password != "pwd"

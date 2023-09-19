@@ -19,7 +19,8 @@ import stat
 import textwrap
 from io import BytesIO
 from logging import getLogger
-from typing import Optional
+from pathlib import Path
+from typing import Literal, Optional, Union
 
 from etl_entities.instance import Host
 from pydantic import SecretStr, validator
@@ -29,7 +30,6 @@ from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath, RemotePath, RemotePathStat
 
 try:
-    from smb.base import NotConnectedError
     from smb.smb_structs import OperationFailure
     from smb.SMBConnection import SMBConnection
 except (ImportError, NameError) as e:
@@ -38,7 +38,7 @@ except (ImportError, NameError) as e:
             """
             Cannot import module "pysmb".
 
-            Since onETL v0.7.0 you should install package as follows:
+            You should install package as follows:
                 pip install onetl[samba]
 
             or
@@ -60,7 +60,7 @@ class Samba(FileConnection):
     Parameters
     ----------
     host : str
-        Host of Samba source. For example: ``msk.mts.ru``.
+        Host of Samba source. For example: ``mydomain.com``.
 
     share : str
         The name of the share on the Samba server.
@@ -73,7 +73,7 @@ class Samba(FileConnection):
         Port of Samba source.
 
     domain : str, default: ``
-        Domain name for the Samba connection.
+        Domain name for the Samba connection. Empty strings means use ``host`` as domain name.
 
     auth_type : str, default: ``NTLMv2``
         The authentication type to use. Either ``NTLMv2`` or ``NTLMv1``.
@@ -85,29 +85,20 @@ class Samba(FileConnection):
     password : str, default: None
         Password for file source connection. Can be `None` for anonymous connection.
 
-    timeout : int, default: ``10``
-        How long to wait for the server to send data before giving up.
     """
 
     host: Host
     share: str
-    protocol: str = "SMB"
+    protocol: Union[Literal["SMB"], Literal["NetBIOS"]] = "SMB"
     port: Optional[int] = None
     domain: Optional[str] = ""
-    auth_type: str = "NTLMv2"
+    auth_type: Union[Literal["NTLMv1"], Literal["NTLMv2"]] = "NTLMv2"
     user: Optional[str] = None
     password: Optional[SecretStr] = None
-    timeout: int = 10
 
     @property
     def instance_url(self) -> str:
         return f"smb://{self.host}:{self.port}"
-
-    @validator("port", pre=True, always=True)
-    def set_port_based_on_protocol(cls, port, values):
-        if port is None:
-            return 445 if values.get("protocol") == "SMB" else 139
-        return port
 
     @slot
     def check(self):
@@ -118,11 +109,13 @@ class Samba(FileConnection):
             if self.share in available_shares:
                 log.info("|%s| Connection is available.", self.__class__.__name__)
             else:
+                log.error(
+                    "|%s| Share: %s not found among existing shares: %s",
+                    self.__class__.__name__,
+                    self.share,
+                    available_shares,
+                )
                 raise ConnectionError("Failed to connect to the Samba server.")
-        except (RuntimeError, ValueError):
-            # left validation errors intact
-            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
-            raise
         except Exception as exc:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
             raise RuntimeError("Connection is unavailable") from exc
@@ -143,11 +136,11 @@ class Samba(FileConnection):
                 entry
                 for entry in self.client.listPath(
                     self.share,
-                    str(path),
+                    os.fspath(path),
                 )
                 if entry.filename not in {".", ".."}  # Filter out '.' and '..'
-            ]  # pysmb replaces '/', not works with <RemotePath> type
-        return [self.client.getAttributes(self.share, (os.fspath(path)))]
+            ]
+        return [self.client.getAttributes(self.share, os.fspath(path))]
 
     def _extract_name_from_entry(self, entry) -> str:
         return entry.filename
@@ -185,11 +178,14 @@ class Samba(FileConnection):
         return conn
 
     def _is_client_closed(self, client: SMBConnection) -> bool:
-        try:
-            client.listShares()
-        except NotConnectedError:
+        if client is None:
             return True
-        return False
+        try:
+            socket_fileno = client.sock.fileno()
+        except (AttributeError, OSError):
+            return True
+
+        return socket_fileno == -1
 
     def _close_client(self, client: SMBConnection) -> None:
         self.client.close()
@@ -198,13 +194,12 @@ class Samba(FileConnection):
         with open(local_file_path, "wb") as local_file:
             self.client.retrieveFile(
                 self.share,
-                str(remote_file_path),
+                os.fspath(remote_file_path),
                 local_file,
-                show_progress=True,
-            )  # pysmb replaces '/', not works with <RemotePath> type
+            )
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
-        info = self.client.getAttributes(self.share, (os.fspath(path)))
+        info = self.client.getAttributes(self.share, os.fspath(path))
 
         if self.is_dir(os.fspath(path)):
             return RemotePathStat(st_mode=stat.S_IFDIR)
@@ -218,89 +213,84 @@ class Samba(FileConnection):
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         self.client.deleteFiles(
             self.share,
-            str(remote_file_path),
-        )  # pysmb replaces '/', not works with <RemotePath> type
+            os.fspath(remote_file_path),
+        )
 
     def _create_dir(self, path: RemotePath) -> None:
-        path_parts = str(path).strip("/").split("/")
-        current_path_parts = []
-        for part in path_parts:  # create dirs sequentially as .createDirectory(...) cannot create nested dirs
-            current_path_parts.append(part)
-            current_path = "/".join(current_path_parts)
+        path_obj = Path(path)
+        for parent in reversed(path_obj.parents):
+            # create dirs sequentially as .createDirectory(...) cannot create nested dirs
             try:
-                self.client.createDirectory(self.share, current_path)
+                self.client.createDirectory(self.share, os.fspath(parent))
             except OperationFailure:
                 pass
+        try:
+            self.client.createDirectory(self.share, os.fspath(path))
+        except OperationFailure:
+            pass
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         with open(local_file_path, "rb") as file_obj:
             self.client.storeFile(
                 self.share,
-                str(remote_file_path),
+                os.fspath(remote_file_path),
                 file_obj,
-            )  # pysmb replaces '/', not works with <RemotePath> type
+            )
 
     def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(
             self.share,
-            str(source),
-            str(target),
-        )  # pysmb replaces '/', not works with <RemotePath> type
+            os.fspath(source),
+            os.fspath(target),
+        )
 
     def _remove_dir(self, path: RemotePath) -> None:
-        files = self.client.listPath(self.share, str(path))
+        files = self.client.listPath(self.share, os.fspath(path))
 
-        for f in files:
-            if f.filename not in {".", ".."}:  # skip current and parent directory entries
-                full_path = f"{path}/{f.filename}"
-                if f.isDirectory:
+        for item in files:
+            if item.filename not in {".", ".."}:  # skip current and parent directory entries
+                full_path = path / item.filename
+                if item.isDirectory:
                     # recursively delete subdirectory
                     self._remove_dir(full_path)
                 else:
-                    self.client.deleteFiles(self.share, full_path)
+                    self.client.deleteFiles(self.share, os.fspath(full_path))
 
-        self.client.deleteDirectory(self.share, str(path))
+        self.client.deleteDirectory(self.share, os.fspath(path))
 
-    def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
-        file_obj = BytesIO()
-        self.client.retrieveFile(
-            self.share,
-            str(path),
-            file_obj,
-        )  # pysmb replaces '/', not works with <RemotePath> type
-        file_obj.seek(0)
-        return file_obj.read().decode(encoding)
+    def _read_text(self, path: RemotePath, encoding: str) -> str:
+        return self._read_bytes(path).decode(encoding)
 
     def _read_bytes(self, path: RemotePath) -> bytes:
         file_obj = BytesIO()
         self.client.retrieveFile(
             self.share,
-            str(path),
+            os.fspath(path),
             file_obj,
-        )  # pysmb replaces '/', not works with <RemotePath> type
+        )
         file_obj.seek(0)
         return file_obj.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str) -> None:
-        file_obj = BytesIO(content.encode(encoding))
-
-        self.client.storeFile(
-            self.share,
-            str(path),
-            file_obj,
-        )  # pysmb replaces '/', not works with <RemotePath> type
+        self._write_bytes(path, bytes(content, encoding))
 
     def _write_bytes(self, path: RemotePath, content: bytes) -> None:
         file_obj = BytesIO(content)
 
         self.client.storeFile(
             self.share,
-            str(path),
+            os.fspath(path),
             file_obj,
-        )  # pysmb replaces '/', not works with <RemotePath> type
+        )
 
     def _is_dir(self, path: RemotePath) -> bool:
-        return self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
+        return self.client.getAttributes(self.share, os.fspath(path)).isDirectory
 
     def _is_file(self, path: RemotePath) -> bool:
-        return not self.client.getAttributes(self.share, (os.fspath(path))).isDirectory
+        return not self.client.getAttributes(self.share, os.fspath(path)).isDirectory
+
+    @validator("port", pre=True, always=True)
+    def _set_port_based_on_protocol(cls, port, values):
+        if port is None:
+            return 445 if values.get("protocol") == "SMB" else 139
+        return port
