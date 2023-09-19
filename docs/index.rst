@@ -14,7 +14,7 @@
     :hidden:
 
     self
-    install
+    install/index
     quickstart
     concepts
 
