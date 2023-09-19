@@ -110,7 +110,7 @@ class Samba(FileConnection):
                 log.info("|%s| Connection is available.", self.__class__.__name__)
             else:
                 log.error(
-                    "|%s| Share: %s not found among existing shares: %s",
+                    "|%s| Share %r not found among existing shares %r",
                     self.__class__.__name__,
                     self.share,
                     available_shares,
