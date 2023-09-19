@@ -114,7 +114,7 @@ See https://onetl.readthedocs.io/
 How to install
 ---------------
 
-.. _minimal-install:
+.. minimal-install
 
 Minimal installation
 ~~~~~~~~~~~~~~~~~~~~
