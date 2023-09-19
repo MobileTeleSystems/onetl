@@ -39,7 +39,7 @@ def test_samba_file_connection_check_not_existing_share_failed(samba_server, cap
         with pytest.raises(RuntimeError, match="Connection is unavailable"):
             samba.check()
 
-    assert f"Share: {not_existing_share} not found among existing shares" in caplog.text
+    assert f"Share {not_existing_share} not found among existing shares" in caplog.text
 
 
 def test_samba_file_connection_check_runtime_failed(samba_server):

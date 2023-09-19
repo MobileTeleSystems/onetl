@@ -222,10 +222,8 @@ class Samba(FileConnection):
                 self.client.createDirectory(self.share, os.fspath(parent))
             except OperationFailure:
                 pass
-        try:
-            self.client.createDirectory(self.share, os.fspath(path))
-        except OperationFailure:
-            pass
+
+        self.client.createDirectory(self.share, os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         with open(local_file_path, "rb") as file_obj:
