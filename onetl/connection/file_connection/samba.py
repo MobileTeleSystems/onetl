@@ -125,7 +125,7 @@ class Samba(FileConnection):
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         try:
-            self.client.getAttributes(self.share, str(path))
+            self.client.getAttributes(self.share, os.fspath(path))
             return True
         except OperationFailure:
             return False
