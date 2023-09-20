@@ -303,6 +303,21 @@ jobs:
       os: ${{ matrix.os }}
       with-cache: false
 
+  tests-samba:
+    name: Run Samba tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-samba) }}
+
+    uses: ./.github/workflows/test-samba.yml
+    with:
+      openssh-version: ${{ matrix.openssh-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      with-cache: false
+
   tests-webdav:
     name: Run WebDAV tests (server=${{ matrix.openwebdavssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -338,6 +353,7 @@ jobs:
     - tests-hdfs
     - tests-s3
     - tests-sftp
+    - tests-samba
     - tests-webdav
 
     steps:
