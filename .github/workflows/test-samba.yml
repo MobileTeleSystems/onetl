@@ -29,6 +29,9 @@ jobs:
           ONETL_SAMBA_SHARE: SmbShare
           ONETL_SAMBA_USER: onetl
           ONETL_SAMBA_PASSWORD: awd123fd1
+        volumes:
+        - ./docker/samba:/share/folder
+        command: '-u "1000:1000:onetl:onetl:awd123fd1" -s "SmbShare:/share/folder:rw:onetl"'
         ports:
         - "445:445"
 
