@@ -635,10 +635,11 @@ def test_file_downloader_mode_replace_entire_directory(
     caplog,
 ):
     file_connection, remote_path, _ = file_connection_with_path_and_files
+    # Reason for using .resolve(): https://stackoverflow.com/a/58719476
     if local_dir_exist:
-        local_path = tmp_path_factory.mktemp("local_path")
+        local_path = tmp_path_factory.mktemp("local_path").resolve()
     else:
-        local_path = Path(tempfile.gettempdir()) / secrets.token_hex()
+        local_path = Path(tempfile.gettempdir()).resolve() / secrets.token_hex()
 
     temp_file = local_path / secrets.token_hex(5)
     if local_dir_exist:
@@ -755,7 +756,11 @@ def test_file_downloader_local_path_not_a_directory(request, file_connection):
             local_path=file.name,
         )
 
-        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
+        # Reason for .realpath(): https://stackoverflow.com/a/58719476
+        with pytest.raises(
+            NotADirectoryError,
+            match=rf"'{os.path.realpath(file.name)}' \(kind='file', .*\) is not a directory",
+        ):
             downloader.run()
 
 

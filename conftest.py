@@ -19,5 +19,6 @@ pytest_plugins = [
     "tests.fixtures.connections.local_fs",
     "tests.fixtures.connections.s3",
     "tests.fixtures.connections.sftp",
+    "tests.fixtures.connections.samba",
     "tests.fixtures.connections.webdav",
 ]

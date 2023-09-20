@@ -490,7 +490,11 @@ def test_file_uploader_run_local_path_not_a_directory(file_connection):
     with tempfile.NamedTemporaryFile() as file:
         uploader = FileUploader(connection=file_connection, target_path=target_path, local_path=file.name)
 
-        with pytest.raises(NotADirectoryError, match=rf"'{file.name}' \(kind='file', .*\) is not a directory"):
+        # Reason for .realpath(): https://stackoverflow.com/a/58719476
+        with pytest.raises(
+            NotADirectoryError,
+            match=rf"'{os.path.realpath(file.name)}' \(kind='file', .*\) is not a directory",
+        ):
             uploader.run()
 
 

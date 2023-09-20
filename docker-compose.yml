@@ -164,6 +164,18 @@ services:
     networks:
     - onetl
 
+  samba:
+    image: elswork/samba
+    restart: unless-stopped
+    ports:
+    - "139:139"
+    - "445:445"
+    volumes:
+    - ./docker/samba:/share/folder
+    command: '-u "1000:1000:onetl:onetl:awd123fd1" -s "SmbShare:/share/folder:rw:onetl"'
+    networks:
+    - onetl
+
   s3:
     image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped

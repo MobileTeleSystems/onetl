@@ -57,6 +57,7 @@ RUN pip install \
     -r /app/requirements/hdfs.txt \
     -r /app/requirements/s3.txt \
     -r /app/requirements/sftp.txt \
+    -r /app/requirements/samba.txt \
     -r /app/requirements/webdav.txt \
     -r /app/requirements/kerberos.txt \
     -r /app/requirements/docs.txt \
