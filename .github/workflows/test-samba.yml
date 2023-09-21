@@ -20,14 +20,6 @@ jobs:
   test-samba:
     name: Run Samba tests (server=${{ inputs.openssh-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      samba:
-        image: elswork/samba
-        ports:
-        - 445:445
-        options: >-
-          -u "1000:1000:onetl:onetl:awd123fd1"
-          -s "SmbShare:/share/folder:rw:onetl"
 
     steps:
     - name: Checkout code
@@ -54,6 +46,14 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt
+
+    # Replace with Github Actions' because of custom parameter for samba container start
+    - name: Start Samba
+      run: |
+        docker compose down -v --remove-orphans
+        docker compose up -d samba
+      env:
+        SAMBA_IMAGE: elswork/samba
 
     - name: Wait for Samba to be ready
       run: |
