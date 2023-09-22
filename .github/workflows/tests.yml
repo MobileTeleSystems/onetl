@@ -288,7 +288,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-samba:
-    name: Run Samba tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Samba tests (server=${{ matrix.server-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false

@@ -18,7 +18,7 @@ on:
 
 jobs:
   test-samba:
-    name: Run Samba tests (server=${{ inputs.openssh-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run Samba tests (server=${{ inputs.server-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -77,5 +77,5 @@ jobs:
     - name: Upload coverage results
       uses: actions/upload-artifact@v3
       with:
-        name: samba-${{ inputs.openssh-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+        name: samba-${{ inputs.server-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*
