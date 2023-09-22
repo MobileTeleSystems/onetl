@@ -297,7 +297,7 @@ jobs:
 
     uses: ./.github/workflows/test-samba.yml
     with:
-      openssh-version: ${{ matrix.openssh-version }}
+      server-version: ${{ matrix.server-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
