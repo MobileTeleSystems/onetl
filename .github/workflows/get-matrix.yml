@@ -71,7 +71,7 @@ jobs:
       matrix-hdfs: ${{ toJson(fromJson(steps.matrix-hdfs.outputs.result)[steps.key-hdfs.outputs.key]) }}
       matrix-s3: ${{ toJson(fromJson(steps.matrix-s3.outputs.result)[steps.key-s3.outputs.key]) }}
       matrix-sftp: ${{ toJson(fromJson(steps.matrix-sftp.outputs.result)[steps.key-sftp.outputs.key]) }}
-      matrix-samba: ${{ toJson(fromJson(steps.matrix-sftp.outputs.result)[steps.key-samba.outputs.key]) }}
+      matrix-samba: ${{ toJson(fromJson(steps.matrix-samba.outputs.result)[steps.key-samba.outputs.key]) }}
       matrix-webdav: ${{ toJson(fromJson(steps.matrix-webdav.outputs.result)[steps.key-webdav.outputs.key]) }}
     steps:
     - name: Checkout code
