@@ -171,8 +171,8 @@ services:
     - "139:139"
     - "445:445"
     volumes:
-    - ./docker/samba:/share/folder
-    entrypoint: ["/share/folder/on_post_init.sh"]
+    - ./docker/samba/on_post_init.sh:/on_post_init.sh
+    entrypoint: ["/on_post_init.sh"]
     networks:
     - onetl
 

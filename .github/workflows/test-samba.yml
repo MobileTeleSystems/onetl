@@ -2,7 +2,7 @@ name: Tests for Samba
 on:
   workflow_call:
     inputs:
-      openssh-version:
+      server-version:
         required: true
         type: string
       python-version:
@@ -54,6 +54,7 @@ jobs:
         docker compose up -d samba
       env:
         SAMBA_IMAGE: elswork/samba
+        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
     - name: Wait for Samba to be ready
       run: |
@@ -65,6 +66,13 @@ jobs:
         sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
         source ./env
         ./pytest_runner.sh -m samba
+
+    - name: Shutdown Samba
+      if: always()
+      run: |
+        docker compose down -v --remove-orphans
+      env:
+        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.samba-version }}
 
     - name: Upload coverage results
       uses: actions/upload-artifact@v3
