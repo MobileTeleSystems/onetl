@@ -53,7 +53,7 @@ jobs:
         docker compose down -v --remove-orphans
         docker compose up -d samba
       env:
-        SAMBA_IMAGE: elswork/samba
+        SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
         COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
     - name: Wait for Samba to be ready
