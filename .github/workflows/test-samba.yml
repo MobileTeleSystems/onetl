@@ -72,7 +72,7 @@ jobs:
       run: |
         docker compose down -v --remove-orphans
       env:
-        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.samba-version }}
+        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
     - name: Upload coverage results
       uses: actions/upload-artifact@v3
