@@ -1,9 +1,32 @@
+.. _install-spark:
+
+Spark
+=====
+
+.. include:: ../../README.rst
+    :start-after: .. _spark-install:
+    :end-before: .. _java-install:
+
+Installing Java
+---------------
+
+.. include:: ../../README.rst
+    :start-after: .. _java-install:
+    :end-before: .. _pyspark-install:
+
+Installing PySpark
+------------------
+
+.. include:: ../../README.rst
+    :start-after: .. _pyspark-install:
+    :end-before: With File connections
+
 .. _java-packages:
 
-Java packages
-==============
+Injecting Java packages
+-----------------------
 
-``DB`` and ``FileDF`` connection classes require specific packages to be inserted to ``CLASSPATH`` of Spark session,
+Some DB and FileDF connection classes require specific packages to be inserted to ``CLASSPATH`` of Spark session,
 like JDBC drivers.
 
 This is usually done by setting up ``spark.jars.packages`` option while creating Spark session:
@@ -11,7 +34,11 @@ This is usually done by setting up ``spark.jars.packages`` option while creating
 .. code:: python
 
     # here is a list of packages to be downloaded:
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    maven_packages = (
+        Greenplum.get_packages(spark_version="3.2")
+        + MySQL.get_packages()
+        + Teradata.get_packages()
+    )
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
@@ -33,7 +60,7 @@ But sometimes it is required to:
 There are several ways to do that.
 
 Using ``spark.jars``
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 The most simple solution, but this requires to store raw ``.jar`` files somewhere on filesystem or web server.
 
@@ -67,7 +94,7 @@ The most simple solution, but this requires to store raw ``.jar`` files somewher
         )
 
 Using ``spark.jars.repositories``
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -84,7 +111,12 @@ Can be used if you have access both to public repos (like Maven) and a private A
 
 .. code:: python
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    maven_packages = (
+        Greenplum.get_packages(spark_version="3.2")
+        + MySQL.get_packages()
+        + Teradata.get_packages()
+    )
+
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.repositories", "http://nexus.mydomain.com/private-repo/")
@@ -94,7 +126,7 @@ Can be used if you have access both to public repos (like Maven) and a private A
 
 
 Using ``spark.jars.ivySettings``
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Same as above, but can be used even if there is no network access to public repos like Maven.
 
@@ -194,7 +226,12 @@ Same as above, but can be used even if there is no network access to public repo
 .. code-block:: python
     :caption: script.py
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    maven_packages = (
+        Greenplum.get_packages(spark_version="3.2")
+        + MySQL.get_packages()
+        + Teradata.get_packages()
+    )
+
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.ivySettings", "/path/to/ivysettings.xml")
@@ -203,7 +240,7 @@ Same as above, but can be used even if there is no network access to public repo
     )
 
 Place ``.jar`` file to ``-/.ivy2/jars/``
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Can be used to pass already downloaded file to Ivy, and skip resolving package from Maven.
 
@@ -213,7 +250,12 @@ Can be used to pass already downloaded file to Ivy, and skip resolving package f
 
 .. code:: python
 
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    maven_packages = (
+        Greenplum.get_packages(spark_version="3.2")
+        + MySQL.get_packages()
+        + Teradata.get_packages()
+    )
+
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")
         .config("spark.jars.packages", ",".join(maven_packages))
@@ -221,7 +263,7 @@ Can be used to pass already downloaded file to Ivy, and skip resolving package f
     )
 
 Place ``.jar`` file to Spark jars folder
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -235,7 +277,7 @@ Place ``.jar`` file to Spark jars folder
 Can be used to embed ``.jar`` files to a default Spark classpath.
 
 * Download ``package.jar`` file (it's usually something like ``some-package_1.0.0.jar``). Local file name does not matter, but it should be unique.
-* Move it to ``$SPARK_HOME/jars/`` folder, e.g. ``~/.local/lib/python3.7/site-packages/pyspark/jars/`` or ``/opt/spark/3.2.3/jars/``.
+* Move it to ``$SPARK_HOME/jars/`` folder, e.g. ``^/.local/lib/python3.7/site-packages/pyspark/jars/`` or ``/opt/spark/3.2.3/jars/``.
 * Create Spark session **WITHOUT** passing Package name to ``spark.jars.packages``
 .. code:: python
 
@@ -246,7 +288,7 @@ Can be used to embed ``.jar`` files to a default Spark classpath.
 
 
 Manually adding ``.jar`` files to ``CLASSPATH``
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 

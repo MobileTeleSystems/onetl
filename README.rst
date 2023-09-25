@@ -54,7 +54,7 @@ Requirements
 * **Python 3.7 - 3.11**
 * PySpark 2.3.x - 3.4.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
-* Kerberos libs & GCC (required by ``Hive`` and ``HDFS`` connectors)
+* Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
 
 Supported storages
 ------------------
@@ -109,15 +109,15 @@ Documentation
 
 See https://onetl.readthedocs.io/
 
-.. install
-
 How to install
 ---------------
 
-.. minimal-install
+.. _install:
 
 Minimal installation
 ~~~~~~~~~~~~~~~~~~~~
+
+.. _minimal-install:
 
 Base ``onetl`` package contains:
 
@@ -140,14 +140,16 @@ It can be installed via:
     This method is recommended for use in third-party libraries which require for ``onetl`` to be installed,
     but do not use its connection classes.
 
-.. _spark-install:
-
 With DB and FileDF connections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _spark-install:
+
 All DB connection classes (``Clickhouse``, ``Greenplum``, ``Hive`` and others)
 and all FileDF connection classes (``SparkHDFS``, ``SparkLocalFS``, ``SparkS3``)
-require PySpark to be installed.
+require Spark to be installed.
+
+.. _java-install:
 
 Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:
 
@@ -176,6 +178,8 @@ Compatibility matrix
 | `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
+.. _pyspark-install:
+
 Then you should install PySpark via passing ``spark`` to ``extras``:
 
 .. code:: bash
@@ -191,11 +195,10 @@ or install PySpark explicitly:
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise connection object cannot be created.**
 
-
-.. _files-install:
-
 With File connections
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. _files-install:
 
 All File (but not *FileDF*) connection classes (``FTP``,  ``SFTP``, ``HDFS`` and so on) requires specific Python clients to be installed.
 
@@ -214,18 +217,17 @@ To install all file connectors at once you can pass ``files`` to ``extras``:
 
 **Otherwise class import will fail.**
 
-
-.. _kerberos-install:
-
 With Kerberos support
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. _kerberos-install:
 
 Most of Hadoop instances set up with Kerberos support,
 so some connections require additional setup to work properly.
 
 * ``HDFS``
   Uses `requests-kerberos <https://pypi.org/project/requests-kerberos/>`_ and
-  `GSSApi <https://pypi.org/project/gssapi/>`_ for authentication in WebHDFS.
+  `GSSApi <https://pypi.org/project/gssapi/>`_ for authentication.
   It also uses ``kinit`` executable to generate Kerberos ticket.
 
 * ``Hive`` and ``SparkHDFS``
@@ -250,11 +252,10 @@ Also you should pass ``kerberos`` to ``extras`` to install required Python packa
 
     pip install onetl[kerberos]
 
-
-.. _full-install:
-
 Full bundle
 ~~~~~~~~~~~
+
+.. _full-bundle:
 
 To install all connectors and dependencies, you can pass ``all`` into ``extras``:
 
@@ -269,7 +270,7 @@ To install all connectors and dependencies, you can pass ``all`` into ``extras``
 
     This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.
 
-.. quick-start
+.. _quick-start:
 
 Quick start
 ------------
