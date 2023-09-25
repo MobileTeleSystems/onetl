@@ -17,6 +17,7 @@ from __future__ import annotations
 import os
 import threading
 from abc import abstractmethod
+from contextlib import suppress
 from logging import getLogger
 from typing import Any, Iterable, Iterator
 
@@ -72,8 +73,10 @@ class FileConnection(BaseFileConnection, FrozenModel):
             if client and not self._is_client_closed(client):
                 return client
         except AttributeError:
-            self._clients_cache.client = self._get_client()
-            return self._clients_cache.client
+            pass
+
+        self._clients_cache.client = self._get_client()
+        return self._clients_cache.client
 
     @slot
     def close(self):
@@ -112,14 +115,24 @@ class FileConnection(BaseFileConnection, FrozenModel):
         except AttributeError:
             return self
 
-        self._close_client(client)
-        del self._clients_cache.client
+        with suppress(Exception):
+            # exceptions while closing client should be ignored
+            self._close_client(client)
+
+        with suppress(Exception):
+            # .close() could be called from destructor, and modifying self is not allowed here
+            del self._clients_cache.client
+
         return self
 
     def __enter__(self):
         return self
 
     def __exit__(self, _exc_type, _exc_value, _traceback):
+        self.close()
+
+    def __del__(self):  # noqa: WPS603
+        # If current object is collected by GC, close opened connection
         self.close()
 
     @slot

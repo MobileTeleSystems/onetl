@@ -462,6 +462,10 @@ class Kafka(DBConnection):
             self.auth.cleanup(self)
         return self
 
+    # Do not all __del__ with calling .close(), like other connections,
+    # because this can influence dataframes created by this connection.
+    # For example, .close() deletes local keytab copy.
+
     @property
     def instance_url(self):
         return "kafka://" + self.cluster
