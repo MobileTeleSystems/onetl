@@ -56,6 +56,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
+    "sphinxcontrib.plantuml",
 ]
 numpydoc_show_class_members = True
 autodoc_pydantic_model_show_config = False

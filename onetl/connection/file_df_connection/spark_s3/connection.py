@@ -161,9 +161,17 @@ class SparkS3(SparkFileDFConnection):
 
         # Create Spark session with Hadoop AWS libraries loaded
         maven_packages = SparkS3.get_packages(spark_version="3.4.1")
+        # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
+        excluded_packages = [
+            "com.google.cloud.bigdataoss:gcs-connector",
+            "org.apache.hadoop:hadoop-aliyun",
+            "org.apache.hadoop:hadoop-azure-datalake",
+            "org.apache.hadoop:hadoop-azure",
+        ]
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.jars.excludes", ",".join(excluded_packages))
             .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
             .config("spark.hadoop.fs.s3a.committer.name", "magic")
             .config(

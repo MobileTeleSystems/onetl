@@ -124,34 +124,24 @@ class Greenplum(JDBCMixin, DBConnection):
         from onetl.connection import Greenplum
         from pyspark.sql import SparkSession
 
-        # Please ask your DevOps and Greenplum admin what port range
-        # on Spark side can be used to accept requests from Greenplum segments
-
-        extra = {
-            "server.port": "49152-65535",
-        }
-
         # Create Spark session with Greenplum connector loaded
-        # See Prerequisites page for more details
         maven_packages = Greenplum.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.executor.allowSparkContext", "true")
+            # IMPORTANT!!!
+            # Set number of executors according to "Prerequisites" -> "Number of executors"
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
             .getOrCreate()
         )
 
         # IMPORTANT!!!
-        # Each job on the Spark executor make its own connection to Greenplum master node,
-        # so we need to limit number of connections to avoid opening too many of them.
-        #
-        # Table size ~20Gb requires about 10 executors * cores,
-        # ~50Gb requires ~ 20 executors * cores,
-        # 100Gb+ requires 30 executors * cores.
-        #
-        # Cores number can be increased, but executors count should be reduced
-        # to keep the same number of executors * cores.
+        # Set port range of executors according to "Prerequisites" -> "Network ports"
+        extra = {
+            "server.port": "41000-42000",
+        }
 
         # Create connection
         greenplum = Greenplum(

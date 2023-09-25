@@ -107,7 +107,9 @@ class GreenplumReadOptions(JDBCOptions):
 
     .. warning::
 
-        You should not change this option, unless you know what you're doing
+        You should not change this option, unless you know what you're doing.
+
+        It's preferable to use default values to read data parallel by number of segments in Greenplum cluster.
 
     Possible values:
         * ``None`` (default):
