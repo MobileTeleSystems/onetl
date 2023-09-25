@@ -186,7 +186,7 @@ class Samba(FileConnection):
         conn = SMBConnection(
             username=self.user,
             password=self.password.get_secret_value() if self.password else None,
-            my_name="optional_client_name",
+            my_name="onetl",
             remote_name=self.host,
             domain=self.domain,
             use_ntlm_v2=use_ntlm_v2,
