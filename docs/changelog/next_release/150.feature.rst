@@ -1,2 +1,2 @@
 Add ``Samba`` file connection.
-It is now possible to download and upload files to Microsoft Windows Server domains using base ``FileDownloader``/``FileUploader`` classes with Samba ("SMB" networking protocol) as ``connection`` parameter
+It is now possible to download and upload files to Microsoft Windows Server domains using base ``FileDownloader``/``FileUploader`` classes with Samba as ``connection`` parameter ("SMB" networking protocol by default).
