@@ -56,6 +56,8 @@ class Samba(FileConnection):
     """Samba file connection. |support_hooks|
 
     Based on `pysmb library <https://pypi.org/project/pysmb/>`_.
+    
+    .. versionadded:: 0.9.4
 
     Parameters
     ----------
