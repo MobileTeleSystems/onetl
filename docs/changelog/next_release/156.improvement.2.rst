@@ -1,0 +1,1 @@
+Call ``.close()`` on FileConnection then it is removed by garbage collector.

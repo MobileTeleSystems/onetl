@@ -1,0 +1,1 @@
+Fix issue while stopping Python interpreter calls ``JDBCMixin.close()`` and prints exceptions to log.

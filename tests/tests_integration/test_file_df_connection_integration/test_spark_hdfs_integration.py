@@ -26,13 +26,16 @@ def test_spark_hdfs_check(hdfs_file_df_connection, caplog):
 def test_spark_hdfs_file_connection_check_failed(spark):
     from onetl.connection import SparkHDFS
 
-    with pytest.raises(RuntimeError, match="Connection is unavailable"):
-        SparkHDFS(
-            cluster="rnd-dwh",
-            host="hive1",
-            port=1234,
-            spark=spark,
-        ).check()
+    wrong_hdfs = SparkHDFS(
+        cluster="rnd-dwh",
+        host="hive1",
+        port=1234,
+        spark=spark,
+    )
+
+    with wrong_hdfs:
+        with pytest.raises(RuntimeError, match="Connection is unavailable"):
+            wrong_hdfs.check()
 
 
 def test_spark_hdfs_file_connection_check_with_hooks(spark, request, hdfs_server):

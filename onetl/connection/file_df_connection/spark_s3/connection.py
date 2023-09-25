@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from etl_entities.instance import Host
@@ -313,8 +314,12 @@ class SparkS3(SparkFileDFConnection):
             connection.close()
 
         """
-        self._reset_hadoop_conf()
+        with suppress(Exception):
+            self._reset_hadoop_conf()
         return self
+
+    # Do not all __del__ with calling .close(), like other connections,
+    # because this can influence dataframes created by this connection
 
     @slot
     def check(self):

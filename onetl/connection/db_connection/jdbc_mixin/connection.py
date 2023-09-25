@@ -15,10 +15,11 @@
 from __future__ import annotations
 
 import logging
+import threading
 from abc import abstractmethod
 from contextlib import closing, suppress
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
 
 from pydantic import Field, PrivateAttr, SecretStr, validator
 
@@ -76,7 +77,7 @@ class JDBCMixin(FrozenModel):
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
     # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
-    _last_connection_and_options: Optional[Tuple[Any, JDBCMixinOptions]] = PrivateAttr(default=None)
+    _last_connection_and_options: Optional[threading.local] = PrivateAttr(default=None)
 
     @property
     @abstractmethod
@@ -126,6 +127,7 @@ class JDBCMixin(FrozenModel):
 
     def __del__(self):  # noqa: WPS603
         # If current object is collected by GC, close all opened connections
+        # This is safe because closing connection on Spark driver does not influence Spark executors
         self.close()
 
     @slot
@@ -459,8 +461,14 @@ class JDBCMixin(FrozenModel):
         return jdbc_options.asConnectionProperties()
 
     def _get_jdbc_connection(self, options: JDBCMixinOptions):
+        if not self._last_connection_and_options:
+            # connection class can be used in multiple threads.
+            # each Python thread creates its own thread in JVM
+            # so we need local variable to create per-thread persistent connection
+            self._last_connection_and_options = threading.local()
+
         with suppress(Exception):  # nothing cached, or JVM failed
-            last_connection, last_options = self._last_connection_and_options
+            last_connection, last_options = self._last_connection_and_options.data
             if options == last_options and not last_connection.isClosed():
                 return last_connection
 
@@ -471,15 +479,18 @@ class JDBCMixin(FrozenModel):
         driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
         new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
 
-        self._last_connection_and_options = (new_connection, options)
+        self._last_connection_and_options.data = (new_connection, options)
         return new_connection
 
     def _close_connections(self):
         with suppress(Exception):
-            last_connection, _ = self._last_connection_and_options
+            # connection maybe not opened yet
+            last_connection, _ = self._last_connection_and_options.data
             last_connection.close()
 
-        self._last_connection_and_options = None
+        with suppress(Exception):
+            # connection maybe not opened yet
+            del self._last_connection_and_options.data
 
     def _get_statement_args(self) -> tuple[int, ...]:
         resultset = self.spark._jvm.java.sql.ResultSet  # type: ignore
