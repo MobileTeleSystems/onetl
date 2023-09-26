@@ -21,7 +21,7 @@ Improvements
       * Added interaction schemas for reading, writing and executing statements in Greenplum.
       * Added recommendations about reading data from views and ``JOIN`` results from Greenplum. (:github:pull:`154`)
 - Make ``.fetch`` and ``.execute`` methods of DB connections thread-safe. Each thread works with its own connection. (:github:pull:`156`)
-- Call ``.close()`` on FileConnection then it is removed by garbage collector. (:github:pull:`156`)
+- Call ``.close()`` on ``FileConnection`` then it is removed by garbage collector. (:github:pull:`156`)
 
 
 Bug Fixes
