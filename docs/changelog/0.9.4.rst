@@ -4,12 +4,12 @@
 Features
 --------
 
-- Add ``if_exists="ignore"`` and ``error`` to ``Hive.WriteOptions`` (:github:pull:`143`)
-- Add ``if_exists="ignore"`` and ``error`` to ``JDBC.WriteOptions`` (:github:pull:`144`)
-- Add ``if_exists="ignore"`` and ``error`` to ``MongoDB.WriteOptions`` (:github:pull:`145`)
 - Add ``Excel`` file format support. (:github:pull:`148`)
 - Add ``Samba`` file connection.
   It is now possible to download and upload files to Samba shared folders using ``FileDownloader``/``FileUploader``. (:github:pull:`150`)
+- Add ``if_exists="ignore"`` and ``error`` to ``Hive.WriteOptions`` (:github:pull:`143`)
+- Add ``if_exists="ignore"`` and ``error`` to ``JDBC.WriteOptions`` (:github:pull:`144`)
+- Add ``if_exists="ignore"`` and ``error`` to ``MongoDB.WriteOptions`` (:github:pull:`145`)
 
 
 Improvements
