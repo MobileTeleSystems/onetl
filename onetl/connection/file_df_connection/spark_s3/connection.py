@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from etl_entities.instance import Host
@@ -63,6 +64,7 @@ class SparkS3(SparkFileDFConnection):
 
         * Spark versions: 3.2.x - 3.4.x (only with Hadoop 3.x libraries)
         * Java versions: 8 - 20
+        * Scala versions: 2.11 - 2.13
 
     .. warning::
 
@@ -82,7 +84,7 @@ class SparkS3(SparkFileDFConnection):
             # or
             pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
-        See :ref:`spark-install` instruction for more details.
+        See :ref:`install-spark` installation instruction for more details.
 
     .. note::
 
@@ -160,9 +162,17 @@ class SparkS3(SparkFileDFConnection):
 
         # Create Spark session with Hadoop AWS libraries loaded
         maven_packages = SparkS3.get_packages(spark_version="3.4.1")
+        # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
+        excluded_packages = [
+            "com.google.cloud.bigdataoss:gcs-connector",
+            "org.apache.hadoop:hadoop-aliyun",
+            "org.apache.hadoop:hadoop-azure-datalake",
+            "org.apache.hadoop:hadoop-azure",
+        ]
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.jars.excludes", ",".join(excluded_packages))
             .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
             .config("spark.hadoop.fs.s3a.committer.name", "magic")
             .config(
@@ -263,6 +273,7 @@ class SparkS3(SparkFileDFConnection):
             raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
 
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 
     @slot
@@ -311,8 +322,12 @@ class SparkS3(SparkFileDFConnection):
             connection.close()
 
         """
-        self._reset_hadoop_conf()
+        with suppress(Exception):
+            self._reset_hadoop_conf()
         return self
+
+    # Do not all __del__ with calling .close(), like other connections,
+    # because this can influence dataframes created by this connection
 
     @slot
     def check(self):

@@ -71,7 +71,7 @@ class SFTP(FileConnection, RenameDirMixin):
             # or
             pip install onetl[files]
 
-        See :ref:`files-install` instruction for more details.
+        See :ref:`install-files` installation instruction for more details.
 
     Parameters
     ----------

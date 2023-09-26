@@ -164,6 +164,18 @@ services:
     networks:
     - onetl
 
+  samba:
+    image: elswork/samba
+    restart: unless-stopped
+    ports:
+    - "139:139"
+    - "445:445"
+    volumes:
+    - ./docker/samba/custom_entrypoint.sh:/custom_entrypoint.sh
+    entrypoint: ["/custom_entrypoint.sh"]
+    networks:
+    - onetl
+
   s3:
     image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped

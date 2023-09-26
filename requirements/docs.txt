@@ -3,10 +3,10 @@ furo
 importlib-resources<6
 numpydoc
 pygments-csv-lexer
-# https://github.com/sphinx-doc/sphinx/issues/11662
-sphinx<7.2.5
+sphinx
 sphinx-copybutton
 sphinx-design
+sphinx-plantuml
 sphinx-tabs
 sphinx-toolbox
 sphinx_substitution_extensions

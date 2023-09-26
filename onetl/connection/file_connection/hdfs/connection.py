@@ -72,14 +72,14 @@ class HDFS(FileConnection, RenameDirMixin):
             # or
             pip install onetl[files]
 
-        See :ref:`files-install` instruction for more details.
+        See :ref:`install-files` installation instruction for more details.
 
     .. note::
 
         To access Hadoop cluster with Kerberos installed, you should have ``kinit`` executable
         in some path in ``PATH`` environment variable.
 
-        See onETL :ref:`kerberos-install` instruction for more details.
+        See :ref:`install-kerberos` instruction for more details.
 
     Parameters
     ----------

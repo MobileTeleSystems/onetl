@@ -1,7 +1,7 @@
 .. _orc-file-format:
 
 ORC
-========
+===
 
 .. currentmodule:: onetl.file.format.orc
 

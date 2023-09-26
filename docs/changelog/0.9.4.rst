@@ -1,0 +1,30 @@
+0.9.4 (2023-09-26)
+==================
+
+Features
+--------
+
+- Add ``if_exists="ignore"`` and ``error`` to ``Hive.WriteOptions`` (:github:pull:`143`)
+- Add ``if_exists="ignore"`` and ``error`` to ``JDBC.WriteOptions`` (:github:pull:`144`)
+- Add ``if_exists="ignore"`` and ``error`` to ``MongoDB.WriteOptions`` (:github:pull:`145`)
+- Add ``Excel`` file format support. (:github:pull:`148`)
+- Add ``Samba`` file connection.
+  It is now possible to download and upload files to Samba shared folders using ``FileDownloader``/``FileUploader``. (:github:pull:`150`)
+
+
+Improvements
+------------
+
+- Add documentation about different ways of passing packages to Spark session. (:github:pull:`151`)
+- Drastically improve ``Greenplum`` documentation:
+      * Added information about network ports, grants, ``pg_hba.conf`` and so on.
+      * Added interaction schemas for reading, writing and executing statements in Greenplum.
+      * Added recommendations about reading data from views and ``JOIN`` results from Greenplum. (:github:pull:`154`)
+- Make ``.fetch`` and ``.execute`` methods of DB connections thread-safe. Each thread works with its own connection. (:github:pull:`156`)
+- Call ``.close()`` on FileConnection then it is removed by garbage collector. (:github:pull:`156`)
+
+
+Bug Fixes
+---------
+
+- Fix issue while stopping Python interpreter calls ``JDBCMixin.close()`` and prints exceptions to log. (:github:pull:`156`)

@@ -1,6 +1,6 @@
 min: &min
   # MongoDB connector does not support Spark 2
-  spark-version: 3.2.3
+  spark-version: 3.2.4
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest

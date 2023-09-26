@@ -27,6 +27,7 @@ def test_csv_reader_with_infer_schema(
     local_fs_file_df_connection_with_path_and_files,
     file_df_dataframe,
 ):
+    """Reading CSV files with inferSchema=True working as expected on any Spark, Python and Java versions"""
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
     csv_root = source_path / "csv/without_header"
@@ -42,9 +43,13 @@ def test_csv_reader_with_infer_schema(
 
     expected_df = df
 
-    if get_spark_version(spark).major < 3:
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
         # Spark 2 infers "date_value" as timestamp instead of date
         expected_df = df.withColumn("date_value", col("date_value").cast("timestamp"))
+    elif spark_version < (3, 3):
+        # Spark 3.2 cannot infer "date_value", and return it as string
+        expected_df = df.withColumn("date_value", col("date_value").cast("string"))
 
     # csv does not have header, so columns are named like "_c0", "_c1", etc
     expected_df = reset_column_names(expected_df)

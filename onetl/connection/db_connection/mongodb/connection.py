@@ -65,6 +65,7 @@ class MongoDB(DBConnection):
         * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
         * Java versions: 8 - 20
+        * Scala versions: 2.11 - 2.13
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
@@ -82,7 +83,7 @@ class MongoDB(DBConnection):
             # or
             pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
-        See :ref:`spark-install` instruction for more details.
+        See :ref:`install-spark` installation instruction for more details.
 
     Parameters
     ----------
@@ -124,7 +125,7 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MongoDB connector loaded
-        maven_packages = Greenplum.get_packages(spark_version="3.2")
+        maven_packages = MongoDB.get_packages(spark_version="3.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -206,6 +207,7 @@ class MongoDB(DBConnection):
         if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
             raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
+        # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
 
     @classproperty
@@ -504,6 +506,16 @@ class MongoDB(DBConnection):
             else "append"
         )
 
+        if self._collection_exists(target):
+            if write_options.if_exists == MongoDBCollectionExistBehavior.ERROR:
+                raise ValueError("Operation stopped due to MongoDB.WriteOptions(if_exists='error')")
+            elif write_options.if_exists == MongoDBCollectionExistBehavior.IGNORE:
+                log.info(
+                    "|%s| Skip writing to existing collection because of MongoDB.WriteOptions(if_exists='ignore')",
+                    self.__class__.__name__,
+                )
+                return
+
         log.info("|%s| Saving data to a collection %r", self.__class__.__name__, target)
         df.write.format("mongodb").mode(mode).options(**write_options_dict).save()
         log.info("|%s| Collection %r is successfully written", self.__class__.__name__, target)
@@ -533,3 +545,13 @@ class MongoDB(DBConnection):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
+
+    def _collection_exists(self, source: str) -> bool:
+        jvm = self.spark._jvm
+        client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
+        collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
+        if source in collections:
+            log.info("|%s| Collection %r exists", self.__class__.__name__, source)
+            return True
+        log.info("|%s| Collection %r does not exist", self.__class__.__name__, source)
+        return False

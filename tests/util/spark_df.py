@@ -10,7 +10,7 @@ def reset_column_names(df: SparkDataFrame, columns: list[str] | None = None) -> 
     """
     Reset columns to ``_c0`` format.
 
-    If `columns` is None, reset all columns names.
+    If `columns` is None, apply to all columns in df.
     """
     columns = columns or df.columns
     for i, column in enumerate(columns):

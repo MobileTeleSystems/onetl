@@ -17,6 +17,7 @@ from __future__ import annotations
 import getpass
 import logging
 import os
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -58,12 +59,12 @@ class SparkHDFS(SparkFileDFConnection):
             # or
             pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
-        See :ref:`spark-install` instruction for more details.
+        See :ref:`install-spark` installation instruction for more details.
 
     .. note::
 
         Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
-        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`kerberos-install`.
+        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`install-kerberos`.
 
         In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
         to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
@@ -224,9 +225,15 @@ class SparkHDFS(SparkFileDFConnection):
 
         """
         log.debug("Reset FileSystem cache")
-        self._get_spark_fs().close()
-        object.__setattr__(self, "_active_host", None)  # noqa: WPS609
+        with suppress(Exception):
+            self._get_spark_fs().close()
+
+        with suppress(Exception):
+            self._active_host = None
         return self
+
+    # Do not all __del__ with calling .close(), like other connections,
+    # because this can influence dataframes created by this connection
 
     @slot
     @classmethod
@@ -360,7 +367,7 @@ class SparkHDFS(SparkFileDFConnection):
         else:
             host = self._get_host()
             # cache value to avoid getting active namenode for every path
-            object.__setattr__(self, "_active_host", host)  # noqa: WPS609
+            self._active_host = host
         return f"hdfs://{host}:{self.ipc_port}" + path.as_posix()
 
     def _get_default_path(self):

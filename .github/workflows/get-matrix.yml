@@ -41,6 +41,8 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-s3 }}
       matrix-sftp:
         value: ${{ jobs.get-matrix.outputs.matrix-sftp }}
+      matrix-samba:
+        value: ${{ jobs.get-matrix.outputs.matrix-samba }}
       matrix-webdav:
         value: ${{ jobs.get-matrix.outputs.matrix-webdav }}
 
@@ -69,6 +71,7 @@ jobs:
       matrix-hdfs: ${{ toJson(fromJson(steps.matrix-hdfs.outputs.result)[steps.key-hdfs.outputs.key]) }}
       matrix-s3: ${{ toJson(fromJson(steps.matrix-s3.outputs.result)[steps.key-s3.outputs.key]) }}
       matrix-sftp: ${{ toJson(fromJson(steps.matrix-sftp.outputs.result)[steps.key-sftp.outputs.key]) }}
+      matrix-samba: ${{ toJson(fromJson(steps.matrix-samba.outputs.result)[steps.key-samba.outputs.key]) }}
       matrix-webdav: ${{ toJson(fromJson(steps.matrix-webdav.outputs.result)[steps.key-webdav.outputs.key]) }}
     steps:
     - name: Checkout code
@@ -634,6 +637,36 @@ jobs:
       uses: mikefarah/yq@v4.33.3
       with:
         cmd: yq -o=json '.matrix' .github/workflows/data/sftp/matrix.yml
+
+    - name: Check if Samba files are changed
+      id: changed-samba
+      uses: tj-actions/changed-files@v35
+      with:
+        files_from_source_file: .github/workflows/data/samba/tracked.txt
+        files_ignore_from_source_file: .github/workflows/data/samba/ignored.txt
+
+    - name: Print Samba files changed
+      run: |
+        echo '${{ steps.changed-samba.outputs.all_changed_files }}'
+
+    - name: Calculate Samba matrix key
+      id: key-samba
+      run: |
+        if ${{ inputs.nightly }}; then
+          key=nightly
+        elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-file.outputs.any_changed }} || ${{ steps.changed-samba.outputs.any_changed }}; then
+          key=full
+        else
+          key=small
+        fi
+        echo key=$key
+        echo key=$key >> $GITHUB_OUTPUT
+
+    - name: Get Samba matrix
+      id: matrix-samba
+      uses: mikefarah/yq@v4.33.3
+      with:
+        cmd: yq -o=json '.matrix' .github/workflows/data/samba/matrix.yml
 
     - name: Check if WebDAV files are changed
       id: changed-webdav

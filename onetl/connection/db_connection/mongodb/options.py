@@ -81,6 +81,8 @@ KNOWN_WRITE_OPTIONS = frozenset(
 
 class MongoDBCollectionExistBehavior(str, Enum):
     APPEND = "append"
+    IGNORE = "ignore"
+    ERROR = "error"
     REPLACE_ENTIRE_COLLECTION = "replace_entire_collection"
 
     def __str__(self) -> str:
@@ -207,33 +209,52 @@ class MongoDBWriteOptions(GenericOptions):
 
             .. dropdown:: Behavior in details
 
-            * Collection does not exist
-                Collection is created using options provided by user
-                (``shardkey`` and others).
+                * Collection does not exist
+                    Collection is created using options provided by user
+                    (``shardkey`` and others).
 
-            * Collection exists
-                Data is appended to a collection.
+                * Collection exists
+                    Data is appended to a collection.
 
-                .. warning::
+                    .. warning::
 
-                    This mode does not check whether collection already contains
-                    objects from dataframe, so duplicated objects can be created.
+                        This mode does not check whether collection already contains
+                        objects from dataframe, so duplicated objects can be created.
 
         * ``replace_entire_collection``
             **Collection is deleted and then created**.
 
             .. dropdown:: Behavior in details
 
-            * Collection does not exist
-                Collection is created using options provided by user
-                (``shardkey`` and others).
+                * Collection does not exist
+                    Collection is created using options provided by user
+                    (``shardkey`` and others).
 
-            * Collection exists
-                Collection content is replaced with dataframe content.
+                * Collection exists
+                    Collection content is replaced with dataframe content.
 
-    .. note::
+        * ``ignore``
+            Ignores the write operation if the collection already exists.
 
-        ``error`` and ``ignore`` modes are not supported.
+            .. dropdown:: Behavior in details
+
+                * Collection does not exist
+                    Collection is created using options provided by user
+
+                * Collection exists
+                    The write operation is ignored, and no data is written to the collection.
+
+        * ``error``
+            Raises an error if the collection already exists.
+
+            .. dropdown:: Behavior in details
+
+                * Collection does not exist
+                    Collection is created using options provided by user
+
+                * Collection exists
+                    An error is raised, and no data is written to the collection.
+
     """
 
     class Config:

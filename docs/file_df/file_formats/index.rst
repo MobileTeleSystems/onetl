@@ -9,6 +9,7 @@ File Formats
 
     avro
     csv
+    excel
     json
     jsonline
     orc

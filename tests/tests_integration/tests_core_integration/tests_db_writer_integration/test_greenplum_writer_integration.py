@@ -137,6 +137,14 @@ def test_greenplum_writer_if_exists_error(spark, processing, prepare_schema_tabl
     ):
         writer.run(df)
 
+    empty_df = spark.createDataFrame([], df.schema)
+
+    processing.assert_equal_df(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        df=empty_df,
+    )
+
 
 def test_greenplum_writer_if_exists_ignore(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)

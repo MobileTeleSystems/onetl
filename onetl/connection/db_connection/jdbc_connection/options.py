@@ -84,6 +84,8 @@ READ_OPTIONS = frozenset(
 
 class JDBCTableExistBehavior(str, Enum):
     APPEND = "append"
+    IGNORE = "ignore"
+    ERROR = "error"
     REPLACE_ENTIRE_TABLE = "replace_entire_table"
 
     def __str__(self) -> str:
@@ -413,44 +415,65 @@ class JDBCWriteOptions(JDBCOptions):
 
             .. dropdown:: Behavior in details
 
-            * Table does not exist
-                Table is created using options provided by user
-                (``createTableOptions``, ``createTableColumnTypes``, etc).
+                * Table does not exist
+                    Table is created using options provided by user
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
 
-            * Table exists
-                Data is appended to a table. Table has the same DDL as before writing data
+                * Table exists
+                    Data is appended to a table. Table has the same DDL as before writing data
 
-                .. warning::
+                    .. warning::
 
-                    This mode does not check whether table already contains
-                    rows from dataframe, so duplicated rows can be created.
+                        This mode does not check whether table already contains
+                        rows from dataframe, so duplicated rows can be created.
 
-                    Also Spark does not support passing custom options to
-                    insert statement, like ``ON CONFLICT``, so don't try to
-                    implement deduplication using unique indexes or constraints.
+                        Also Spark does not support passing custom options to
+                        insert statement, like ``ON CONFLICT``, so don't try to
+                        implement deduplication using unique indexes or constraints.
 
-                    Instead, write to staging table and perform deduplication
-                    using :obj:`~execute` method.
+                        Instead, write to staging table and perform deduplication
+                        using :obj:`~execute` method.
 
         * ``replace_entire_table``
             **Table is dropped and then created, or truncated**.
 
             .. dropdown:: Behavior in details
 
-            * Table does not exist
-                Table is created using options provided by user
-                (``createTableOptions``, ``createTableColumnTypes``, etc).
+                * Table does not exist
+                    Table is created using options provided by user
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
 
-            * Table exists
-                Table content is replaced with dataframe content.
+                * Table exists
+                    Table content is replaced with dataframe content.
 
-                After writing completed, target table could either have the same DDL as
-                before writing data (``truncate=True``), or can be recreated (``truncate=False``
-                or source does not support truncation).
+                    After writing completed, target table could either have the same DDL as
+                    before writing data (``truncate=True``), or can be recreated (``truncate=False``
+                    or source does not support truncation).
 
-    .. note::
+        * ``ignore``
+            Ignores the write operation if the table already exists.
 
-        ``error`` and ``ignore`` modes are not supported.
+            .. dropdown:: Behavior in details
+
+                * Table does not exist
+                    Table is created using options provided by user
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    The write operation is ignored, and no data is written to the table.
+
+        * ``error``
+            Raises an error if the table already exists.
+
+            .. dropdown:: Behavior in details
+
+                * Table does not exist
+                    Table is created using options provided by user
+                    (``createTableOptions``, ``createTableColumnTypes``, etc).
+
+                * Table exists
+                    An error is raised, and no data is written to the table.
+
     """
 
     batchsize: int = 20_000

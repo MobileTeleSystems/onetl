@@ -44,7 +44,7 @@ def maven_packages():
         SparkS3,
         Teradata,
     )
-    from onetl.file.format import Avro
+    from onetl.file.format import Avro, Excel
 
     pyspark_version = get_pyspark_version()
     packages = (
@@ -74,7 +74,21 @@ def maven_packages():
         # There is no MongoDB connector for Spark less than 3.2
         packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
 
+        # There is no Excel files support for Spark less than 3.2
+        packages.extend(Excel.get_packages(spark_version=pyspark_version))
+
     return packages
+
+
+@pytest.fixture(scope="session")
+def excluded_packages():
+    # These packages are a part of org.apache.spark:spark-hadoop-cloud, but not used in tests
+    return [
+        "com.google.cloud.bigdataoss:gcs-connector",
+        "org.apache.hadoop:hadoop-aliyun",
+        "org.apache.hadoop:hadoop-azure-datalake",
+        "org.apache.hadoop:hadoop-azure",
+    ]
 
 
 @pytest.fixture(
@@ -84,13 +98,14 @@ def maven_packages():
         pytest.param("real-spark", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
-def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages):
+def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, excluded_packages):
     from pyspark.sql import SparkSession
 
     spark = (
         SparkSession.builder.config("spark.app.name", "onetl")  # noqa: WPS221
         .config("spark.master", "local[*]")
         .config("spark.jars.packages", ",".join(maven_packages))
+        .config("spark.jars.excludes", ",".join(excluded_packages))
         .config("spark.jars.ivySettings", os.fspath(ivysettings_path))
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
