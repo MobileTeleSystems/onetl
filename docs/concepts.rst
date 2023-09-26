@@ -113,6 +113,10 @@ Class diagram
     }
     WebDAV --|> FileConnection
 
+    class Samba <<FileConnection>>{
+    }
+    Samba --|> FileConnection
+
     class SFTP <<FileConnection>>{
     }
     SFTP --|> FileConnection
@@ -120,10 +124,6 @@ Class diagram
     class S3 <<FileConnection>>{
     }
     S3 --|> FileConnection
-
-    class Samba <<FileConnection>>{
-    }
-    Samba --|> FileConnection
 
     class FileDFConnection <<FileDFConnection>>{
     }
