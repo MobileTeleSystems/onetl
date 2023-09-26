@@ -1,0 +1,18 @@
+min: &min
+  python-version: '3.7'
+  os: ubuntu-latest
+
+max: &max
+  python-version: '3.11'
+  os: ubuntu-latest
+
+matrix:
+  small:
+  - server-version: latest
+    <<: *max
+  full: &full
+  - server-version: latest
+    <<: *min
+  - server-version: latest
+    <<: *max
+  nightly: *full
