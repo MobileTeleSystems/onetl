@@ -20,10 +20,11 @@ import textwrap
 from io import BytesIO
 from logging import getLogger
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 from etl_entities.instance import Host
 from pydantic import SecretStr, validator
+from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.hooks import slot, support_hooks
