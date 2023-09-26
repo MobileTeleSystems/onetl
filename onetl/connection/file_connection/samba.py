@@ -60,6 +60,19 @@ class Samba(FileConnection):
 
     .. versionadded:: 0.9.4
 
+    .. warning::
+
+        To use Samba connector you should install package as follows:
+
+        .. code:: bash
+
+            pip install onetl[samba]
+
+            # or
+            pip install onetl[files]
+
+        See :ref:`install-files` instruction for more details.
+
     Parameters
     ----------
     host : str
