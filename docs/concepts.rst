@@ -40,6 +40,9 @@ Class diagram
         BackgroundColor<<DBConnection>> LightGreen
         BackgroundColor<<FileConnection>> Khaki
         BackgroundColor<<FileDFConnection>> LightBlue
+        StereotypeFontColor<<FileDFConnection>> Transparent
+        StereotypeFontColor<<DBConnection>> Transparent
+        StereotypeFontColor<<FileConnection>> Transparent
     }
 
     class BaseConnection {
