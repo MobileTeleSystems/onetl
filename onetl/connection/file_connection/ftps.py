@@ -69,7 +69,7 @@ class FTPS(FTP):
             # or
             pip install onetl[files]
 
-        See :ref:`install-files` instruction for more details.
+        See :ref:`install-files` installation instruction for more details.
 
     Parameters
     ----------
