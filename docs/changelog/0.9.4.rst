@@ -27,4 +27,4 @@ Improvements
 Bug Fixes
 ---------
 
-- Fix issue while stopping Python interpreter calls ``JDBCMixin.close()`` and prints exceptions to log. (:github:pull:`156`)
+- Fix issue when stopping Python interpreter calls ``JDBCMixin.close()``, but it is finished with exceptions. (:github:pull:`156`)
