@@ -1,1 +1,0 @@
-Add ``Excel`` file format support.

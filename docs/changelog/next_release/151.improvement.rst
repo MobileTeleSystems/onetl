@@ -1,1 +1,0 @@
-Add documentation about different ways of passing packages to Spark session.

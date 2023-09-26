@@ -1,4 +1,0 @@
-Drastically improve ``Greenplum`` documentation:
-    * Added information about network ports, grants, ``pg_hba.conf`` and so on.
-    * Added interaction schemas for reading, writing and executing statements in Greenplum.
-    * Added recommendations about reading data from views and ``JOIN`` results from Greenplum.

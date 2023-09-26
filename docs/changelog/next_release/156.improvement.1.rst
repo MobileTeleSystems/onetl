@@ -1,1 +1,0 @@
-Make ``.fetch`` and ``.execute`` methods of DB connections thread-safe. Each thread works with its own connection.
