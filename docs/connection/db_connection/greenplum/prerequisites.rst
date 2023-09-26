@@ -18,12 +18,6 @@ Installing PySpark
 To use Greenplum connector you should have PySpark installed (or injected to ``sys.path``)
 BEFORE creating the connector instance.
 
-You can install PySpark as follows:
-
-.. code:: bash
-
-    pip install onetl pyspark=3.2.4  # pass specific PySpark version
-
 See :ref:`install-spark` installation instruction for more details.
 
 Downloading Pivotal package
