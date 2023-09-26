@@ -29,7 +29,7 @@ and then pass it to Spark session.
 
 .. warning::
 
-    Please pay attention to :ref:`Spark <-> Scala version compatibility <spark-compatibility-matrix>`.
+    Please pay attention to :ref:`Spark & Scala version compatibility <spark-compatibility-matrix>`.
 
 There are several ways to do that. See :ref:`java-packages` for details.
 
