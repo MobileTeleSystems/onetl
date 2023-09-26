@@ -37,9 +37,9 @@ Class diagram
     left to right direction
     skinparam classFontSize 20
     skinparam class {
-    BackgroundColor<<DBConnection>> LightGreen
-    BackgroundColor<<FileConnection>> Khaki
-    BackgroundColor<<FileDFConnection>> LightBlue
+        BackgroundColor<<DBConnection>> LightGreen
+        BackgroundColor<<FileConnection>> Khaki
+        BackgroundColor<<FileDFConnection>> LightBlue
     }
 
     class BaseConnection {
