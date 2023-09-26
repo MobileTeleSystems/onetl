@@ -24,7 +24,7 @@ You can install PySpark as follows:
 
     pip install onetl pyspark=3.2.4  # pass specific PySpark version
 
-See :ref:`spark-install` instruction for more details.
+See :ref:`install-spark` instruction for more details.
 
 Downloading Pivotal package
 ---------------------------

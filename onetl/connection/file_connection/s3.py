@@ -67,7 +67,7 @@ class S3(FileConnection):
             # or
             pip install onetl[files]
 
-        See :ref:`files-install` instruction for more details.
+        See :ref:`install-files` instruction for more details.
 
     Parameters
     ----------

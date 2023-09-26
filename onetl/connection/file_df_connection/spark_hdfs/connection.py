@@ -58,12 +58,12 @@ class SparkHDFS(SparkFileDFConnection):
             # or
             pip install onetl pyspark=3.4.1  # pass specific PySpark version
 
-        See :ref:`spark-install` instruction for more details.
+        See :ref:`install-spark` instruction for more details.
 
     .. note::
 
         Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
-        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`kerberos-install`.
+        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`install-kerberos`.
 
         In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
         to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
