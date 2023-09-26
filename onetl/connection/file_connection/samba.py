@@ -54,9 +54,11 @@ log = getLogger(__name__)
 
 @support_hooks
 class Samba(FileConnection):
-    """Samba file connection.
+    """Samba file connection. |support_hooks|
 
     Based on `pysmb library <https://pypi.org/project/pysmb/>`_.
+
+    .. versionadded:: 0.9.4
 
     Parameters
     ----------
@@ -85,6 +87,25 @@ class Samba(FileConnection):
 
     password : str, default: None
         Password for file source connection. Can be `None` for anonymous connection.
+
+    Examples
+    --------
+
+    Samba file connection initialization
+
+    .. code:: python
+
+        from onetl.connection import Samba
+
+        samba = Samba(
+            host="mydomain.com",
+            share="share_name",
+            protocol="SMB",
+            port=445,
+            user="user",
+            password="password",
+        )
+
 
     """
 
@@ -168,7 +189,7 @@ class Samba(FileConnection):
         conn = SMBConnection(
             username=self.user,
             password=self.password.get_secret_value() if self.password else None,
-            my_name="optional_client_name",
+            my_name="onetl",
             remote_name=self.host,
             domain=self.domain,
             use_ntlm_v2=use_ntlm_v2,

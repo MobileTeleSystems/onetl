@@ -93,6 +93,8 @@ Supported storages
 |                    | FTPS         |                                                                                                                      |
 +                    +--------------+----------------------------------------------------------------------------------------------------------------------+
 |                    | WebDAV       | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_                                                   |
++                    +--------------+----------------------------------------------------------------------------------------------------------------------+
+|                    | Samba        | `pysmb library <https://pypi.org/project/pysmb/>`_                                                                   |
 +--------------------+--------------+----------------------------------------------------------------------------------------------------------------------+
 | Files as DataFrame | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-generic-options.html>`_         |
 |                    +--------------+                                                                                                                      +
@@ -204,7 +206,7 @@ Each client can be installed explicitly by passing connector name (in lowercase)
 .. code:: bash
 
     pip install onetl[ftp]  # specific connector
-    pip install onetl[ftp,ftps,sftp,hdfs,s3,webdav]  # multiple connectors
+    pip install onetl[ftp,ftps,sftp,hdfs,s3,webdav,samba]  # multiple connectors
 
 To install all file connectors at once you can pass ``files`` to ``extras``:
 
