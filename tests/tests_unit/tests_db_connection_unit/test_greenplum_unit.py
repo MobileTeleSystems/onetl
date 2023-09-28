@@ -31,6 +31,7 @@ def test_greenplum_get_packages_no_input():
         "2.2",
         "3.3",
         "3.4",
+        "3.5",
     ],
 )
 def test_greenplum_get_packages_spark_version_not_supported(spark_version):

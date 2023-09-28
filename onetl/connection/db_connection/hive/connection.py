@@ -52,7 +52,7 @@ class Hive(DBConnection):
     .. dropdown:: Version compatibility
 
         * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
-        * Spark versions: 2.3.x - 3.4.x
+        * Spark versions: 2.3.x - 3.5.x
         * Java versions: 8 - 20
 
     .. warning::
@@ -67,7 +67,7 @@ class Hive(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+            pip install onetl pyspark=3.5.0  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 
