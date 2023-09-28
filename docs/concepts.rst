@@ -31,7 +31,120 @@ All connection types are inherited from the parent class ``BaseConnection``.
 Class diagram
 -------------
 
-.. image:: static/connections.svg
+.. plantuml::
+
+    @startuml
+    left to right direction
+    skinparam classFontSize 20
+    skinparam class {
+        BackgroundColor<<DBConnection>> LightGreen
+        BackgroundColor<<FileConnection>> Khaki
+        BackgroundColor<<FileDFConnection>> LightBlue
+        StereotypeFontColor<<FileDFConnection>> Transparent
+        StereotypeFontColor<<DBConnection>> Transparent
+        StereotypeFontColor<<FileConnection>> Transparent
+    }
+
+    class BaseConnection {
+    }
+
+    class DBConnection <<DBConnection>>{
+    }
+    DBConnection --|> BaseConnection
+
+    class Hive <<DBConnection>>{
+    }
+    Hive --|> DBConnection
+
+    class Greenplum <<DBConnection>>{
+    }
+    Greenplum --|> DBConnection
+
+    class MongoDB <<DBConnection>>{
+    }
+    MongoDB --|> DBConnection
+
+    class Kafka <<DBConnection>>{
+    }
+    Kafka --|> DBConnection
+
+    class JDBCConnection <<DBConnection>>{
+    }
+    JDBCConnection --|> DBConnection
+
+    class Clickhouse <<DBConnection>>{
+    }
+    Clickhouse --|> JDBCConnection
+
+    class MSSQL <<DBConnection>>{
+    }
+    MSSQL --|> JDBCConnection
+
+    class MySQL <<DBConnection>>{
+    }
+    MySQL --|> JDBCConnection
+
+    class Postgres <<DBConnection>>{
+    }
+    Postgres --|> JDBCConnection
+
+    class Oracle <<DBConnection>>{
+    }
+    Oracle --|> JDBCConnection
+
+    class Teradata <<DBConnection>>{
+    }
+    Teradata --|> JDBCConnection
+
+    class FileConnection <<FileConnection>>{
+    }
+    FileConnection --|> BaseConnection
+
+    class FTP <<FileConnection>>{
+    }
+    FTP --|> FileConnection
+
+    class FTPS <<FileConnection>>{
+    }
+    FTPS --|> FileConnection
+
+    class HDFS <<FileConnection>>{
+    }
+    HDFS --|> FileConnection
+
+    class WebDAV <<FileConnection>>{
+    }
+    WebDAV --|> FileConnection
+
+    class Samba <<FileConnection>>{
+    }
+    Samba --|> FileConnection
+
+    class SFTP <<FileConnection>>{
+    }
+    SFTP --|> FileConnection
+
+    class S3 <<FileConnection>>{
+    }
+    S3 --|> FileConnection
+
+    class FileDFConnection <<FileDFConnection>>{
+    }
+    FileDFConnection --|> BaseConnection
+
+    class SparkHDFS <<FileDFConnection>>{
+    }
+    SparkHDFS --|> FileDFConnection
+
+    class SparkLocalFS <<FileDFConnection>>{
+    }
+    SparkLocalFS --|> FileDFConnection
+
+    class SparkS3 <<FileDFConnection>>{
+    }
+    SparkS3 --|> FileDFConnection
+
+    @enduml
 
 DBConnection
 ------------
