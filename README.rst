@@ -52,7 +52,7 @@ Non-goals
 Requirements
 ------------
 * **Python 3.7 - 3.11**
-* PySpark 2.3.x - 3.4.x (depends on used connector)
+* PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
 
@@ -96,7 +96,7 @@ Supported storages
 +                    +--------------+----------------------------------------------------------------------------------------------------------------------+
 |                    | Samba        | `pysmb library <https://pypi.org/project/pysmb/>`_                                                                   |
 +--------------------+--------------+----------------------------------------------------------------------------------------------------------------------+
-| Files as DataFrame | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/3.4.1/sql-data-sources-generic-options.html>`_         |
+| Files as DataFrame | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_        |
 |                    +--------------+                                                                                                                      +
 |                    | SparkHDFS    |                                                                                                                      |
 |                    +--------------+----------------------------------------------------------------------------------------------------------------------+
@@ -179,6 +179,8 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
+| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.11  | 8u371 - 20  | 2.12  |
++--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
 
@@ -192,7 +194,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.4.1  # install a specific PySpark version
+    pip install onetl pyspark==3.5.0  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise connection object cannot be created.**
@@ -530,7 +532,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(spark_version="3.4.1") + Postgres.get_packages()
+    maven_packages = SparkS3.get_packages(spark_version="3.5.0") + Postgres.get_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))
