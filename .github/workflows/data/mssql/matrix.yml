@@ -6,13 +6,13 @@ min: &min
 
 max: &max
   spark-version: 3.5.0
-  python-version: '3.11'
+  python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
   spark-version: latest
-  python-version: '3.11'
+  python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
