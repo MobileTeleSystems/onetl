@@ -33,8 +33,6 @@ def test_excel_reader_with_infer_schema(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -83,8 +81,6 @@ def test_excel_reader_with_options(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -121,8 +117,6 @@ def test_excel_writer(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe

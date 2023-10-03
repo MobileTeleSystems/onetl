@@ -16,12 +16,6 @@ min_excel: &min_excel
   java-version: 8
   os: ubuntu-latest
 
-max_excel: &max_excel
-  spark-version: 3.4.1
-  python-version: '3.11'
-  java-version: 20
-  os: ubuntu-latest
-
 max: &max
   spark-version: 3.5.0
   python-version: '3.11'
@@ -36,13 +30,11 @@ latest: &latest
 
 matrix:
   small:
-  - <<: *max_excel
   - <<: *max
   full:
   - <<: *min
   - <<: *min_avro
   - <<: *min_excel
-  - <<: *max_excel
   - <<: *max
   nightly:
   - <<: *min

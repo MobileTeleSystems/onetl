@@ -1,0 +1,1 @@
+Update ``Excel`` package version to 0.20.2.
