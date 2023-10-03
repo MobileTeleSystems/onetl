@@ -43,7 +43,7 @@ def test_hive_reader_wrong_table_name(spark_mock, table):
     with pytest.raises(ValueError):
         DBReader(
             connection=hive,
-            table=table,  # Required format: table="shema.table"
+            table=table,  # Required format: table="schema.table"
         )
 
 
