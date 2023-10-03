@@ -43,7 +43,7 @@ def test_mysql_reader_wrong_table_name(spark_mock, table):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBReader(
             connection=mysql,
-            table=table,  # Required format: table="shema.table"
+            table=table,  # Required format: table="schema.table"
         )
 
 
