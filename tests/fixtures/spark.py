@@ -44,7 +44,7 @@ def maven_packages():
         SparkS3,
         Teradata,
     )
-    from onetl.file.format import Avro, Excel
+    from onetl.file.format import XML, Avro, Excel
 
     pyspark_version = get_pyspark_version()
     packages = (
@@ -54,6 +54,7 @@ def maven_packages():
         + Oracle.get_packages()
         + Postgres.get_packages()
         + Teradata.get_packages()
+        + XML.get_packages(pyspark_version)
     )
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"

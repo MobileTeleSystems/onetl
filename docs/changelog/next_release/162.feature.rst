@@ -1,0 +1,1 @@
+Add ``XML`` file format support.

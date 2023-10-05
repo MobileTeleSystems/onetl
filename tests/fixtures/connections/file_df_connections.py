@@ -56,13 +56,62 @@ def file_df_schema_str_value_last():
 @pytest.fixture()
 def file_df_dataframe(spark, file_df_schema):
     data = [
-        [1, "val1", 123, datetime.date(2021, 1, 1), datetime.datetime(2021, 1, 1, 1, 1, 1), 1.23],
-        [2, "val1", 234, datetime.date(2022, 2, 2), datetime.datetime(2022, 2, 2, 2, 2, 2), 2.34],
-        [3, "val2", 345, datetime.date(2023, 3, 3), datetime.datetime(2023, 3, 3, 3, 3, 3), 3.45],
-        [4, "val2", 456, datetime.date(2024, 4, 4), datetime.datetime(2024, 4, 4, 4, 4, 4), 4.56],
-        [5, "val3", 567, datetime.date(2025, 5, 5), datetime.datetime(2025, 5, 5, 5, 5, 5), 5.67],
-        [6, "val3", 678, datetime.date(2026, 6, 6), datetime.datetime(2026, 6, 6, 6, 6, 6), 6.78],
-        [7, "val3", 789, datetime.date(2027, 7, 7), datetime.datetime(2027, 7, 7, 7, 7, 7), 7.89],
+        [
+            1,
+            "val1",
+            123,
+            datetime.date(2021, 1, 1),
+            datetime.datetime(2021, 1, 1, 1, 1, 1, tzinfo=datetime.timezone.utc),
+            1.23,
+        ],
+        [
+            2,
+            "val1",
+            234,
+            datetime.date(2022, 2, 2),
+            datetime.datetime(2022, 2, 2, 2, 2, 2, tzinfo=datetime.timezone.utc),
+            2.34,
+        ],
+        [
+            3,
+            "val2",
+            345,
+            datetime.date(2023, 3, 3),
+            datetime.datetime(2023, 3, 3, 3, 3, 3, tzinfo=datetime.timezone.utc),
+            3.45,
+        ],
+        [
+            4,
+            "val2",
+            456,
+            datetime.date(2024, 4, 4),
+            datetime.datetime(2024, 4, 4, 4, 4, 4, tzinfo=datetime.timezone.utc),
+            4.56,
+        ],
+        [
+            5,
+            "val3",
+            567,
+            datetime.date(2025, 5, 5),
+            datetime.datetime(2025, 5, 5, 5, 5, 5, tzinfo=datetime.timezone.utc),
+            5.67,
+        ],
+        [
+            6,
+            "val3",
+            678,
+            datetime.date(2026, 6, 6),
+            datetime.datetime(2026, 6, 6, 6, 6, 6, tzinfo=datetime.timezone.utc),
+            6.78,
+        ],
+        [
+            7,
+            "val3",
+            789,
+            datetime.date(2027, 7, 7),
+            datetime.datetime(2027, 7, 7, 7, 7, 7, tzinfo=datetime.timezone.utc),
+            7.89,
+        ],
     ]
     return spark.createDataFrame(data, schema=file_df_schema)
 

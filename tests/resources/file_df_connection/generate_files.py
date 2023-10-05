@@ -16,6 +16,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Iterator, TextIO
+from xml.etree import ElementTree  # noqa: S405
 from zipfile import ZipFile
 
 if TYPE_CHECKING:
@@ -472,6 +473,61 @@ def save_as_xls(data: list[dict], path: Path) -> None:
     )
 
 
+def save_as_xml_plain(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    root = ElementTree.Element("root")
+
+    for record in data:
+        item = ElementTree.SubElement(root, "item")
+        for key, value in record.items():
+            child = ElementTree.SubElement(item, key)
+            child.text = str(value)
+
+    tree = ElementTree.ElementTree(root)
+    tree.write(path / "file.xml")
+
+
+def save_as_xml_with_attributes(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    root = ElementTree.Element("root")
+
+    for record in data:
+        str_attributes = {key: str(value) for key, value in record.items()}
+        item = ElementTree.SubElement(root, "item", attrib=str_attributes)
+        for key, value in record.items():
+            child = ElementTree.SubElement(item, key)
+            child.text = str(value)
+
+    tree = ElementTree.ElementTree(root)
+    tree.write(str(path / "file_with_attributes.xml"))
+
+
+def save_as_xml_gz(data: list[dict], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    root = ElementTree.Element("root")
+
+    for record in data:
+        item = ElementTree.SubElement(root, "item")
+        for key, value in record.items():
+            child = ElementTree.SubElement(item, key)
+            child.text = str(value)
+
+    ElementTree.ElementTree(root)
+    xml_string = ElementTree.tostring(root, encoding="utf-8")
+
+    with gzip.open(path / "file.xml.gz", "wb", compresslevel=9) as f:
+        f.write(xml_string)
+
+
+def save_as_xml(data: list[dict], path: Path) -> None:
+    root = path / "xml"
+    shutil.rmtree(root, ignore_errors=True)
+
+    save_as_xml_plain(data, root / "without_compression")
+    save_as_xml_with_attributes(data, root / "with_attributes")
+    save_as_xml_gz(data, root / "with_compression")
+
+
 format_mapping = {
     "csv": save_as_csv,
     "json": save_as_json,
@@ -481,6 +537,7 @@ format_mapping = {
     "avro": save_as_avro,
     "xlsx": save_as_xlsx,
     "xls": save_as_xls,
+    "xml": save_as_xml,
 }
 
 
