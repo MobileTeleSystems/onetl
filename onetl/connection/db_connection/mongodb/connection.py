@@ -507,6 +507,7 @@ class MongoDB(DBConnection):
         )
 
         if self._collection_exists(target):
+            # MongoDB connector does not support mode=ignore and mode=error
             if write_options.if_exists == MongoDBCollectionExistBehavior.ERROR:
                 raise ValueError("Operation stopped due to MongoDB.WriteOptions(if_exists='error')")
             elif write_options.if_exists == MongoDBCollectionExistBehavior.IGNORE:

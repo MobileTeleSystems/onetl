@@ -23,3 +23,9 @@ def test_spark_local_fs_spark_non_local(spark_mock, master):
     msg = re.escape("Currently supports only spark.master='local'")
     with pytest.raises(ValueError, match=msg):
         SparkLocalFS(spark=spark_mock)
+
+
+def test_spark_local_fs_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        SparkLocalFS(spark=spark_stopped)

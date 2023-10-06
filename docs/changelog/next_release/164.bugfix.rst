@@ -1,0 +1,1 @@
+Fix ``Hive.check()`` behavior when Hive Metastore is not available.

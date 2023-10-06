@@ -1,0 +1,1 @@
+Add check to all DB and FileDF connections that Spark session is alive.

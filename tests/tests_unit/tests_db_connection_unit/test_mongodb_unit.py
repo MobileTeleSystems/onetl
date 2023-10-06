@@ -79,6 +79,18 @@ def test_mongodb_missing_package(spark_no_packages):
         )
 
 
+def test_mongodb_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        MongoDB(
+            host="host",
+            user="user",
+            password="password",
+            database="database",
+            spark=spark_stopped,
+        )
+
+
 def test_mongodb(spark_mock):
     conn = MongoDB(
         host="host",

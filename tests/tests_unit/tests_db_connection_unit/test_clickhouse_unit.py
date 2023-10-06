@@ -33,6 +33,18 @@ def test_clickhouse_missing_package(spark_no_packages):
         )
 
 
+def test_clickhouse_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Clickhouse(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_clickhouse(spark_mock):
     conn = Clickhouse(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 

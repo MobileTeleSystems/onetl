@@ -17,7 +17,7 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-from pydantic import Field
+from pydantic import Field, validator
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseDBConnection
@@ -47,6 +47,19 @@ class DBConnection(BaseDBConnection, FrozenModel):
         refs = super()._forward_refs()
         refs["SparkSession"] = SparkSession
         return refs
+
+    @validator("spark")
+    def _check_spark_session_alive(cls, spark):
+        # https://stackoverflow.com/a/36044685
+        msg = "Spark session is stopped. Please recreate Spark session."
+        try:
+            if not spark._jsc.sc().isStopped():
+                return spark
+        except Exception as e:
+            # None has no attribute "something"
+            raise ValueError(msg) from e
+
+        raise ValueError(msg)
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)

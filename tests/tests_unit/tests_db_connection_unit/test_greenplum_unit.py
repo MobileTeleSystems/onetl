@@ -83,6 +83,18 @@ def test_greenplum_missing_package(spark_no_packages):
         )
 
 
+def test_greenplum_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Greenplum(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_greenplum(spark_mock):
     conn = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 

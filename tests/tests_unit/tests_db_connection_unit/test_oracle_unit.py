@@ -53,6 +53,18 @@ def test_oracle_missing_package(spark_no_packages):
         )
 
 
+def test_oracle_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Oracle(
+            host="some_host",
+            user="user",
+            sid="sid",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_oracle(spark_mock):
     conn = Oracle(host="some_host", user="user", sid="sid", password="passwd", spark=spark_mock)
 
