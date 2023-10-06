@@ -8,12 +8,6 @@ from onetl.file.format import XML
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version, expected_packages",
     [
-        ("2.4.8", None, None, ["com.databricks:spark-xml_2.11:0.13.0"]),
-        ("2.4.8", "2.11", "0.13.0", ["com.databricks:spark-xml_2.11:0.13.0"]),
-        ("2.3.4", None, None, ["com.databricks:spark-xml_2.11:0.13.0"]),
-        ("2.3.4", "2.11", "0.12.0", ["com.databricks:spark-xml_2.11:0.12.0"]),
-        ("2.2.3", None, None, ["com.databricks:spark-xml_2.11:0.13.0"]),
-        ("2.2.3", "2.11", "0.11.0", ["com.databricks:spark-xml_2.11:0.11.0"]),
         ("3.2.4", None, None, ["com.databricks:spark-xml_2.12:0.17.0"]),
         ("3.4.1", "2.12", "0.18.0", ["com.databricks:spark-xml_2.12:0.18.0"]),
         ("3.0.0", None, None, ["com.databricks:spark-xml_2.12:0.17.0"]),
@@ -33,6 +27,26 @@ def test_xml_get_packages(spark_version, scala_version, package_version, expecte
         package_version=package_version,
     )
     assert result == expected_packages
+
+
+@pytest.mark.parametrize(
+    "spark_version, scala_version, package_version",
+    [
+        ("2.4.8", None, None),
+        ("2.4.8", "2.11", "0.13.0"),
+        ("2.3.4", None, None),
+        ("2.3.4", "2.11", "0.12.0"),
+        ("2.2.3", None, None),
+        ("2.2.3", "2.11", "0.11.0"),
+    ],
+)
+def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version, package_version):
+    with pytest.raises(ValueError, match=r"Spark version must be 3.x, got \d+\.\d+"):
+        XML.get_packages(
+            spark_version=spark_version,
+            scala_version=scala_version,
+            package_version=package_version,
+        )
 
 
 @pytest.mark.parametrize(

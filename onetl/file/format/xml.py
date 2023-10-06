@@ -84,7 +84,7 @@ class XML(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 2.x.x - 3.4.x.
+        * Spark versions: 3.x.x - 3.4.x.
 
             .. warning::
 
@@ -92,10 +92,9 @@ class XML(ReadWriteFileFormat):
                 See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
                 and `official documentation <https://github.com/databricks/spark-xml>`_.
 
-                Note that spark-xml is planned to become a part of Apache Spark 4.0, and this library will remain in maintenance mode for previous Spark versions.
+                Note that spark-xml is planned to become a part of Apache Spark 4.0, and this library will remain in maintenance mode for Spark 3.x versions.
 
         * Scala versions:
-            - Spark 2.0.x - 2.4.x: Scala 2.11
             - Spark 3.0.x - 3.1.x: Scala 2.12
             - Spark 3.2.x - 3.4.x: Scala 2.12, 2.13
         * Java versions: 8 - 20
@@ -127,7 +126,7 @@ class XML(ReadWriteFileFormat):
             .getOrCreate()
         )
 
-        xml = XML(row_tag="item", compression="gzip")
+        xml = XML(row_tag="item")
 
     """
 
@@ -169,7 +168,11 @@ class XML(ReadWriteFileFormat):
             If ``None``, ``spark_version`` is used to determine Scala version.
 
         version: str, optional
-            Package version in format ``major.minor.patch``. Default is ``0.17.0`` with Spark 3.x.x and ``0.13.0`` with Spark 2.x.x.
+            Package version in format ``major.minor.patch``. Default is ``0.17.0``.
+
+            .. warning::
+
+                Version ``0.13`` and below are not supported.
 
             .. note::
 
@@ -193,35 +196,21 @@ class XML(ReadWriteFileFormat):
 
         """
 
+        if package_version:
+            version = Version.parse(package_version)
+            log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
+        else:
+            version = Version.parse("0.17.0")
+
         spark_ver = Version.parse(spark_version)
+        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
 
         # Ensure compatibility with Spark and Scala versions
         if spark_ver < (3, 0):
-            if not package_version:
-                version = Version.parse("0.13.0")  # Last version supporting Spark 2.x
-            else:
-                log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
-                version = Version.parse(package_version)
+            raise ValueError(f"Spark version must be 3.x, got {spark_ver}")
 
-            if not scala_version:
-                scala_ver = Version.parse("2.11")
-            else:
-                scala_ver = Version.parse(scala_version)
-                if scala_ver < (2, 11) or scala_ver > (2, 11):
-                    raise ValueError(f"For Spark 2.x, Scala version must be 2.11, got {scala_ver}")
-        else:
-            if not package_version:
-                version = Version.parse("0.17.0")
-            else:
-                log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
-                version = Version.parse(package_version)
-
-            if not scala_version:
-                scala_ver = get_default_scala_version(spark_ver)
-            else:
-                scala_ver = Version.parse(scala_version)
-                if scala_ver < (2, 12) or scala_ver > (2, 13):
-                    raise ValueError(f"For Spark 3.x, Scala version must be 2.12 or 2.13, got {scala_ver}")
+        if scala_ver < (2, 12) or scala_ver > (2, 13):
+            raise ValueError(f"Scala version must be 2.12 or 2.13, got {scala_ver}")
 
         return [f"com.databricks:spark-xml_{scala_ver.digits(2)}:{version.digits(3)}"]
 
