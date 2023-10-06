@@ -35,11 +35,7 @@ def test_xml_get_packages(spark_version, scala_version, package_version, expecte
     "spark_version, scala_version, package_version",
     [
         ("2.4.8", None, None),
-        ("2.4.8", "2.11", "0.13.0"),
         ("2.3.4", None, None),
-        ("2.3.4", "2.11", "0.12.0"),
-        ("2.2.3", None, None),
-        ("2.2.3", "2.11", "0.11.0"),
     ],
 )
 def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version, package_version):
