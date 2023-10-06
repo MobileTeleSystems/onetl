@@ -54,7 +54,6 @@ def maven_packages():
         + Oracle.get_packages()
         + Postgres.get_packages()
         + Teradata.get_packages()
-        + XML.get_packages(pyspark_version)
     )
 
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
@@ -71,6 +70,9 @@ def maven_packages():
     if pyspark_version >= (3, 2):
         # There is no SparkS3 connector for Spark less than 3
         packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
+
+        # There is no XML files support for Spark less than 3
+        packages.extend(XML.get_packages(pyspark_version))
 
         # There is no MongoDB connector for Spark less than 3.2
         packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
