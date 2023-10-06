@@ -190,6 +190,8 @@ class XML(ReadWriteFileFormat):
 
         if package_version:
             version = Version.parse(package_version)
+            if version <= Version.parse(version):
+                raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
             version = Version.parse("0.17.0")
