@@ -63,6 +63,36 @@ def test_xml_reader(
     assert_equal_df(read_df, df)
 
 
+def test_xml_reader_with_infer_schema(
+    spark,
+    local_fs_file_df_connection_with_path_and_files,
+    expected_xml_attributes_df,
+    file_df_dataframe,
+):
+    """Reading XML files with inferSchema=True working as expected on any Spark, Python and Java versions"""
+    spark_version = get_spark_version(spark)
+    if spark_version < (3, 0):
+        pytest.skip("XML files are supported on Spark 3.x only")
+
+    file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
+    df = file_df_dataframe
+    xml_root = source_path / "xml" / "with_attributes"
+
+    reader = FileDFReader(
+        connection=file_df_connection,
+        format=XML(rowTag="item", inferSchema=True, timestampFormat="yyyy-MM-dd HH:mm:ssXXX"),
+        source_path=xml_root,
+    )
+    read_df = reader.run()
+
+    assert read_df.count()
+    assert read_df.schema != df.schema
+    assert set(read_df.columns) == set(
+        expected_xml_attributes_df.columns,
+    )  # "DataFrames have different column types: StructField('id', IntegerType(), True), StructField('id', LongType(), True), etc."
+    assert_equal_df(read_df, expected_xml_attributes_df)
+
+
 @pytest.mark.parametrize(
     "options",
     [
