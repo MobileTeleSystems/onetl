@@ -52,6 +52,38 @@ def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version,
 
 
 @pytest.mark.parametrize(
+    "spark_version, scala_version, package_version",
+    [
+        ("3.2.4", "2.11", None),
+        ("3.4.1", "2.14", None),
+    ],
+)
+def test_xml_get_packages_scala_version_error(spark_version, scala_version, package_version):
+    with pytest.raises(ValueError, match=r"Scala version must be 2.12 or 2.13, got \d+\.\d+"):
+        XML.get_packages(
+            spark_version=spark_version,
+            scala_version=scala_version,
+            package_version=package_version,
+        )
+
+
+@pytest.mark.parametrize(
+    "spark_version, scala_version, package_version",
+    [
+        ("3.2.4", "2.12", "0.13.0"),
+        ("3.4.1", "2.12", "0.10.0"),
+    ],
+)
+def test_xml_get_packages_package_version_error(spark_version, scala_version, package_version):
+    with pytest.raises(ValueError, match=r"Package version must be above 0.13, got \d+\.\d+\.\d+"):
+        XML.get_packages(
+            spark_version=spark_version,
+            scala_version=scala_version,
+            package_version=package_version,
+        )
+
+
+@pytest.mark.parametrize(
     "known_option",
     [
         "samplingRatio",
