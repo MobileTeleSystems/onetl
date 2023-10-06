@@ -19,6 +19,13 @@ except ImportError:
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
 
+@pytest.fixture()
+def expected_xml_attributes_df(file_df_dataframe):
+    col_names = file_df_dataframe.columns
+    exprs = [f"{col} as _{col}" for col in col_names] + col_names
+    return file_df_dataframe.selectExpr(*exprs)
+
+
 @pytest.mark.parametrize(
     "path, options",
     [
@@ -97,3 +104,36 @@ def test_xml_writer(
     assert read_df.count()
     assert read_df.schema == df.schema
     assert_equal_df(read_df, df)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"rowTag": "item", "timestampFormat": "yyyy-MM-dd HH:mm:ssXXX", "attributePrefix": "_"},
+    ],
+    ids=["read_attributes"],
+)
+def test_xml_reader_with_attributes(
+    spark,
+    local_fs_file_df_connection_with_path_and_files,
+    expected_xml_attributes_df,
+    options,
+):
+    """Reading XML files with attributes works as expected"""
+    spark_version = get_spark_version(spark)
+    if spark_version < (3, 0):
+        pytest.skip("XML files are supported on Spark 3.x only")
+
+    local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
+    xml_root = source_path / "xml" / "with_attributes"
+
+    reader = FileDFReader(
+        connection=local_fs,
+        format=XML.parse(options),
+        df_schema=expected_xml_attributes_df.schema,
+        source_path=xml_root,
+    )
+    read_df = reader.run()
+    assert read_df.count()
+    assert read_df.schema == expected_xml_attributes_df.schema
+    assert_equal_df(read_df, expected_xml_attributes_df)

@@ -31,6 +31,14 @@ if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
 
+PROHIBITED_OPTIONS = frozenset(
+    (
+        # filled by onETL classes
+        "path",
+    ),
+)
+
+
 READ_OPTIONS = frozenset(
     (
         "rowTag",
@@ -84,19 +92,10 @@ class XML(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.x.x - 3.4.x.
+        * Spark versions: 3.2.x - 3.4.x.
 
-            .. warning::
+        * Scala versions: 2.12 - 2.13
 
-                Not all combinations of Spark version and package version are supported.
-                See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
-                and `official documentation <https://github.com/databricks/spark-xml>`_.
-
-                Note that spark-xml is planned to become a part of Apache Spark 4.0, and this library will remain in maintenance mode for Spark 3.x versions.
-
-        * Scala versions:
-            - Spark 3.0.x - 3.1.x: Scala 2.12
-            - Spark 3.2.x - 3.4.x: Scala 2.12, 2.13
         * Java versions: 8 - 20
 
 
@@ -136,6 +135,7 @@ class XML(ReadWriteFileFormat):
 
     class Config:
         known_options = READ_OPTIONS | WRITE_OPTIONS
+        prohibited_options = PROHIBITED_OPTIONS
         extra = "allow"
 
     @slot
@@ -148,14 +148,6 @@ class XML(ReadWriteFileFormat):
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
-
-        .. warning::
-
-            Not all combinations of Spark version and package version are supported.
-            See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
-            and `official documentation <https://github.com/databricks/spark-xml>`_.
-
-            Note that spark-xml is planned to become a part of Apache Spark 4.0, and this library will remain in maintenance mode for Spark 3.x versions.
 
         Parameters
         ----------
