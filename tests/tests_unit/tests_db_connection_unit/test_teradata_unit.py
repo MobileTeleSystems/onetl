@@ -33,6 +33,18 @@ def test_teradata_missing_package(spark_no_packages):
         )
 
 
+def test_teradata_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Teradata(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_teradata(spark_mock):
     conn = Teradata(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 

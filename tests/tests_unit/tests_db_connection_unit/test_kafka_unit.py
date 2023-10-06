@@ -70,6 +70,16 @@ def test_kafka_missing_package(spark_no_packages):
         )
 
 
+def test_kafka_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Kafka(
+            cluster="some_cluster",
+            addresses=["192.168.1.1"],
+            spark=spark_stopped,
+        )
+
+
 @pytest.mark.parametrize(
     "option, value",
     [

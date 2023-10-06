@@ -26,6 +26,12 @@ def test_hive_instance_url(spark_mock):
     assert hive.instance_url == "some-cluster"
 
 
+def test_hive_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Hive(cluster="some-cluster", spark=spark_stopped)
+
+
 def test_hive_get_known_clusters_hook(request, spark_mock):
     # no exception
     Hive(cluster="unknown", spark=spark_mock)
@@ -60,8 +66,6 @@ def test_hive_known_normalize_cluster_name_hook(request, spark_mock):
 
 
 def test_hive_known_get_current_cluster_hook(request, spark_mock, mocker):
-    mocker.patch.object(Hive, "_execute_sql", return_value=None)
-
     # no exception
     Hive(cluster="rnd-prod", spark=spark_mock).check()
     Hive(cluster="rnd-dwh", spark=spark_mock).check()
