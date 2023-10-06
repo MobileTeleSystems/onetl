@@ -16,6 +16,8 @@ from onetl.file.format import XML
         ("3.1.2", "2.12", "0.16.0", ["com.databricks:spark-xml_2.12:0.16.0"]),
         ("3.2.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.17.0"]),
         ("3.2.0", "2.12", "0.15.0", ["com.databricks:spark-xml_2.12:0.15.0"]),
+        ("3.2.4", "2.13", None, ["com.databricks:spark-xml_2.13:0.17.0"]),
+        ("3.4.1", "2.13", "0.18.0", ["com.databricks:spark-xml_2.13:0.18.0"]),
         ("3.3.0", None, "0.16.0", ["com.databricks:spark-xml_2.12:0.16.0"]),
         ("3.3.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.17.0"]),
     ],
@@ -77,6 +79,12 @@ def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version,
 def test_xml_options_known(known_option):
     xml = XML.parse({known_option: "value", "row_tag": "item"})
     assert getattr(xml, known_option) == "value"
+
+
+def test_xml_option_path_error(caplog):
+    msg = r"Options \['path'\] are not allowed to use in a XML"
+    with pytest.raises(ValueError, match=msg):
+        XML(row_tag="item", path="/path")
 
 
 def test_xml_options_unknown(caplog):
