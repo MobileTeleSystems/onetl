@@ -108,6 +108,8 @@ class XML(ReadWriteFileFormat):
 
         The set of supported options depends on Spark version. See link above.
 
+        **Important**: When **reading** files with timestamps, it may be necessary to specify the ``timestampFormat`` option to ensure dates are parsed correctly. Without it, date parsing may return ``null`` values. Example: ``timestampFormat="yyyy-MM-dd HH:mm:ssXXX"``.
+
     Examples
     --------
     Describe options how to read from/write to XML file with specific options:
