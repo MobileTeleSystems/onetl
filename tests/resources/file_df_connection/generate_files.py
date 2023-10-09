@@ -481,7 +481,10 @@ def save_as_xml_plain(data: list[dict], path: Path) -> None:
         item = ElementTree.SubElement(root, "item")
         for key, value in record.items():
             child = ElementTree.SubElement(item, key)
-            child.text = str(value)
+            if isinstance(value, datetime):
+                child.text = value.isoformat()
+            else:
+                child.text = str(value)
 
     tree = ElementTree.ElementTree(root)
     tree.write(path / "file.xml")
@@ -492,11 +495,16 @@ def save_as_xml_with_attributes(data: list[dict], path: Path) -> None:
     root = ElementTree.Element("root")
 
     for record in data:
-        str_attributes = {key: str(value) for key, value in record.items()}
+        str_attributes = {
+            key: value.isoformat() if isinstance(value, datetime) else str(value) for key, value in record.items()
+        }
         item = ElementTree.SubElement(root, "item", attrib=str_attributes)
         for key, value in record.items():
             child = ElementTree.SubElement(item, key)
-            child.text = str(value)
+            if isinstance(value, datetime):
+                child.text = value.isoformat()
+            else:
+                child.text = str(value)
 
     tree = ElementTree.ElementTree(root)
     tree.write(str(path / "file_with_attributes.xml"))
@@ -510,7 +518,10 @@ def save_as_xml_gz(data: list[dict], path: Path) -> None:
         item = ElementTree.SubElement(root, "item")
         for key, value in record.items():
             child = ElementTree.SubElement(item, key)
-            child.text = str(value)
+            if isinstance(value, datetime):
+                child.text = value.isoformat()
+            else:
+                child.text = str(value)
 
     ElementTree.ElementTree(root)
     xml_string = ElementTree.tostring(root, encoding="utf-8")
