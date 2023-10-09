@@ -87,6 +87,10 @@ class XML(ReadWriteFileFormat):
     Based on `Databricks Spark XML <https://github.com/databricks/spark-xml>`_ file format.
 
     Supports reading/writing files with ``.xml`` extension.
+    
+    .. warning::
+    
+      Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
 
     .. versionadded:: 0.9.5
 
