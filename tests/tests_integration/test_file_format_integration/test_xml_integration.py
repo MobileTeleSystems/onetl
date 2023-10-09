@@ -29,9 +29,9 @@ def expected_xml_attributes_df(file_df_dataframe):
 @pytest.mark.parametrize(
     "path, options",
     [
-        ("without_compression", {"rowTag": "item", "timestampFormat": "yyyy-MM-dd HH:mm:ssXXX"}),
-        ("with_compression", {"rowTag": "item", "timestampFormat": "yyyy-MM-dd HH:mm:ssXXX", "compression": "gzip"}),
-        ("with_attributes", {"rowTag": "item", "timestampFormat": "yyyy-MM-dd HH:mm:ssXXX", "attributePrefix": "_"}),
+        ("without_compression", {"rowTag": "item"}),
+        ("with_compression", {"rowTag": "item", "compression": "gzip"}),
+        ("with_attributes", {"rowTag": "item", "attributePrefix": "_"}),
     ],
     ids=["without_compression", "with_compression", "with_attributes"],
 )
@@ -80,7 +80,7 @@ def test_xml_reader_with_infer_schema(
 
     reader = FileDFReader(
         connection=file_df_connection,
-        format=XML(rowTag="item", inferSchema=True, timestampFormat="yyyy-MM-dd HH:mm:ssXXX"),
+        format=XML(rowTag="item", inferSchema=True),
         source_path=xml_root,
     )
     read_df = reader.run()
@@ -139,7 +139,7 @@ def test_xml_writer(
 @pytest.mark.parametrize(
     "options",
     [
-        {"rowTag": "item", "timestampFormat": "yyyy-MM-dd HH:mm:ssXXX", "attributePrefix": "_"},
+        {"rowTag": "item", "attributePrefix": "_"},
     ],
     ids=["read_attributes"],
 )
