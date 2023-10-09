@@ -87,10 +87,10 @@ class XML(ReadWriteFileFormat):
     Based on `Databricks Spark XML <https://github.com/databricks/spark-xml>`_ file format.
 
     Supports reading/writing files with ``.xml`` extension.
-    
+
     .. warning::
-    
-      Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
+
+       Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
 
     .. versionadded:: 0.9.5
 
@@ -114,11 +114,10 @@ class XML(ReadWriteFileFormat):
 
     .. warning::
 
-        When interacting with files with timestamps, it may be necessary to specify the ``timestampFormat`` option to
-        ensure that dates are parsed correctly. Without it, date parsing may return ``null`` values.
-        Example: ``timestampFormat="yyyy-MM-ddTHH:mm:ss.SSSXXX"``. This warning applies to columns of all data types.
-        By default, ``mode=PERMISSIVE`` replaces improperly parsed values with ``null``.
-        Using ``mode=FAILFAST`` will throw an exception upon parsing errors.
+        By default, reading is done using ``mode=PERMISSIVE`` which replaces columns with wrong data type or format with ``null`` values.
+        Be careful while parsing values like timestamps, they should match the ``timestampFormat`` option.
+        Using ``mode=FAILFAST`` will throw an exception instead of producing ``null`` values.
+        `Follow <https://github.com/databricks/spark-xml/issues/662>`_
 
     Examples
     --------
