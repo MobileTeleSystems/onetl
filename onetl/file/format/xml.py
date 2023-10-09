@@ -112,7 +112,9 @@ class XML(ReadWriteFileFormat):
 
         When interacting with files with timestamps, it may be necessary to specify the ``timestampFormat`` option to
         ensure that dates are parsed correctly. Without it, date parsing may return ``null`` values.
-        Example: ``timestampFormat="yyyy-MM-ddTHH:mm:ss.SSSXXX"``.
+        Example: ``timestampFormat="yyyy-MM-ddTHH:mm:ss.SSSXXX"``. This warning applies to columns of all data types.
+        By default, ``mode=PERMISSIVE`` replaces improperly parsed values with ``null``.
+        Using ``mode=FAILFAST`` will throw an exception upon parsing errors.
 
     Examples
     --------
@@ -138,8 +140,6 @@ class XML(ReadWriteFileFormat):
     name: ClassVar[str] = "xml"
 
     row_tag: str = Field(alias="rowTag")
-    # Unable to use default timestamp_format due to a source code bug causing an UnsupportedTemporalTypeException (Unsupported field: <field_name>).
-    # timestamp_format: str = Field(default="yyyy-MM-ddTHH:mm:ss.SSSXXX", alias="timestampFormat")
 
     class Config:
         known_options = READ_OPTIONS | WRITE_OPTIONS
