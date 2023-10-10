@@ -90,18 +90,15 @@ class XML(ReadWriteFileFormat):
 
     .. warning::
 
-       Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
+        Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
 
     .. versionadded:: 0.9.5
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.4.x.
-
+        * Spark versions: 3.2.x - 3.5.x.
         * Scala versions: 2.12 - 2.13
-
         * Java versions: 8 - 20
-
 
         See documentation from link above.
 
@@ -129,7 +126,7 @@ class XML(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with XML package loaded
-        maven_packages = XML.get_packages(spark_version="3.4.1")
+        maven_packages = XML.get_packages(spark_version="3.5.0")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -173,6 +170,9 @@ class XML(ReadWriteFileFormat):
         version: str, optional
             Package version in format ``major.minor.patch``. Default is ``0.17.0``.
 
+            See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
+            for list of available versions.
+
             .. warning::
 
                 Version ``0.13`` and below are not supported.
@@ -189,10 +189,10 @@ class XML(ReadWriteFileFormat):
 
             from onetl.file.format import XML
 
-            XML.get_packages(spark_version="3.4.1")
-            XML.get_packages(spark_version="3.4.1", scala_version="2.12")
+            XML.get_packages(spark_version="3.5.0")
+            XML.get_packages(spark_version="3.5.0", scala_version="2.12")
             XML.get_packages(
-                spark_version="3.4.1",
+                spark_version="3.5.0",
                 scala_version="2.12",
                 package_version="0.17.0",
             )
