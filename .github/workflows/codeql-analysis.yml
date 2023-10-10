@@ -14,6 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # flake8-commas and bandit's ssh_no_host_key_verification are failing on Python 3.12
   DEFAULT_PYTHON: '3.11'
 
 jobs:

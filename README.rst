@@ -51,7 +51,7 @@ Non-goals
 
 Requirements
 ------------
-* **Python 3.7 - 3.11**
+* **Python 3.7 - 3.12**
 * PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
@@ -177,9 +177,9 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.3.x <https://spark.apache.org/docs/3.3.3/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 20  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.11  | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
