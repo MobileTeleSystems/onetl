@@ -1,0 +1,20 @@
+0.9.5 (2023-10-10)
+==================
+
+Features
+--------
+
+- Add ``XML`` file format support. (:github:pull:`163`)
+- Tested compatibility with Spark 3.5.0. ``MongoDB`` and ``Excel`` are not supported yet, but other packages do. (:github:pull:`159`)
+
+
+Improvements
+------------
+
+- Add check to all DB and FileDF connections that Spark session is alive. (:github:pull:`164`)
+
+
+Bug Fixes
+---------
+
+- Fix ``Hive.check()`` behavior when Hive Metastore is not available. (:github:pull:`164`)
