@@ -31,8 +31,8 @@ class FileMoverOptions(GenericOptions):
     Possible values:
         * ``error`` (default) - do nothing, mark file as failed
         * ``ignore`` - do nothing, mark file as ignored
-        * ``overwrite`` - replace existing file with a new one
-        * ``delete_all`` - delete directory content before moving files
+        * ``replace_file`` - replace existing file with a new one
+        * ``replace_entire_directory`` - delete directory content before moving files
     """
 
     workers: int = Field(default=1, ge=1)
