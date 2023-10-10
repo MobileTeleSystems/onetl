@@ -189,3 +189,27 @@ def test_kafka_reader_topic_does_not_exist(spark, kafka_processing):
 
     with pytest.raises(ValueError, match="Topic 'missing' doesn't exist"):
         reader.run()
+
+
+@pytest.mark.parametrize("group_id_option", ["group.id", "groupIdPrefix"])
+def test_kafka_reader_with_group_id(group_id_option, spark, kafka_processing, schema):
+    topic, processing, expected_df = kafka_processing
+
+    kafka = Kafka(
+        spark=spark,
+        addresses=[f"{processing.host}:{processing.port}"],
+        cluster="cluster",
+        extra={group_id_option: "test"},
+    )
+
+    reader = DBReader(
+        connection=kafka,
+        source=topic,
+    )
+    df = reader.run()
+    processing.assert_equal_df(processing.json_deserialize(df, df_schema=schema), other_frame=expected_df)
+
+    # Spark does not report to Kafka which messages were read, so Kafka does not remember latest offsets for groupId
+    # https://stackoverflow.com/a/64003569
+    df = reader.run()
+    processing.assert_equal_df(processing.json_deserialize(df, df_schema=schema), other_frame=expected_df)
