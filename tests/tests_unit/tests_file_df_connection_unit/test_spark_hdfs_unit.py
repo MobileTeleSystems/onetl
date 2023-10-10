@@ -5,14 +5,13 @@ import re
 import pytest
 
 from onetl.base import BaseFileDFConnection
+from onetl.connection import SparkHDFS
 from onetl.hooks import hook
 
 pytestmark = [pytest.mark.hdfs, pytest.mark.file_df_connection, pytest.mark.connection]
 
 
-def test_spark_hdfs_connection_with_cluster(spark_mock):
-    from onetl.connection import SparkHDFS
-
+def test_spark_hdfs_with_cluster(spark_mock):
     hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark_mock)
     assert isinstance(hdfs, BaseFileDFConnection)
     assert hdfs.cluster == "rnd-dwh"
@@ -21,9 +20,7 @@ def test_spark_hdfs_connection_with_cluster(spark_mock):
     assert hdfs.instance_url == "rnd-dwh"
 
 
-def test_spark_hdfs_connection_with_cluster_and_host(spark_mock):
-    from onetl.connection import SparkHDFS
-
+def test_spark_hdfs_with_cluster_and_host(spark_mock):
     hdfs = SparkHDFS(cluster="rnd-dwh", host="some-host.domain.com", spark=spark_mock)
     assert isinstance(hdfs, BaseFileDFConnection)
     assert hdfs.cluster == "rnd-dwh"
@@ -31,9 +28,7 @@ def test_spark_hdfs_connection_with_cluster_and_host(spark_mock):
     assert hdfs.instance_url == "rnd-dwh"
 
 
-def test_spark_hdfs_connection_with_port(spark_mock):
-    from onetl.connection import SparkHDFS
-
+def test_spark_hdfs_with_port(spark_mock):
     hdfs = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
     assert isinstance(hdfs, BaseFileDFConnection)
     assert hdfs.cluster == "rnd-dwh"
@@ -41,9 +36,7 @@ def test_spark_hdfs_connection_with_port(spark_mock):
     assert hdfs.instance_url == "rnd-dwh"
 
 
-def test_spark_hdfs_connection_without_cluster(spark_mock):
-    from onetl.connection import SparkHDFS
-
+def test_spark_hdfs_without_cluster(spark_mock):
     with pytest.raises(ValueError):
         SparkHDFS(spark=spark_mock)
 
@@ -51,9 +44,13 @@ def test_spark_hdfs_connection_without_cluster(spark_mock):
         SparkHDFS(host="some", spark=spark_mock)
 
 
-def test_spark_hdfs_get_known_clusters_hook(request, spark_mock):
-    from onetl.connection import SparkHDFS
+def test_spark_hdfs_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        SparkHDFS(cluster="rnd-dwh", host="some-host.domain.com", spark=spark_stopped)
 
+
+def test_spark_hdfs_get_known_clusters_hook(request, spark_mock):
     @SparkHDFS.Slots.get_known_clusters.bind
     @hook
     def get_known_clusters() -> set[str]:
@@ -71,8 +68,6 @@ def test_spark_hdfs_get_known_clusters_hook(request, spark_mock):
 
 
 def test_spark_hdfs_known_normalize_cluster_name_hook(request, spark_mock):
-    from onetl.connection import SparkHDFS
-
     @SparkHDFS.Slots.normalize_cluster_name.bind
     @hook
     def normalize_cluster_name(cluster: str) -> str:
@@ -86,8 +81,6 @@ def test_spark_hdfs_known_normalize_cluster_name_hook(request, spark_mock):
 
 
 def test_spark_hdfs_get_cluster_namenodes_hook(request, spark_mock):
-    from onetl.connection import SparkHDFS
-
     @SparkHDFS.Slots.get_cluster_namenodes.bind
     @hook
     def get_cluster_namenodes(cluster: str) -> set[str]:
@@ -106,8 +99,6 @@ def test_spark_hdfs_get_cluster_namenodes_hook(request, spark_mock):
 
 
 def test_spark_hdfs_normalize_namenode_host_hook(request, spark_mock):
-    from onetl.connection import SparkHDFS
-
     @SparkHDFS.Slots.normalize_namenode_host.bind
     @hook
     def normalize_namenode_host(host: str, cluster: str) -> str:
@@ -124,8 +115,6 @@ def test_spark_hdfs_normalize_namenode_host_hook(request, spark_mock):
 
 
 def test_spark_hdfs_get_ipc_port_hook(request, spark_mock):
-    from onetl.connection import SparkHDFS
-
     @SparkHDFS.Slots.get_ipc_port.bind
     @hook
     def get_ipc_port(cluster: str) -> int | None:
@@ -140,8 +129,6 @@ def test_spark_hdfs_get_ipc_port_hook(request, spark_mock):
 
 
 def test_spark_hdfs_known_get_current(request, spark_mock):
-    from onetl.connection import SparkHDFS
-
     # no hooks bound to SparkHDFS.Slots.get_current_cluster
     error_msg = re.escape(
         "SparkHDFS.get_current() can be used only if there are some hooks bound to SparkHDFS.Slots.get_current_cluster",

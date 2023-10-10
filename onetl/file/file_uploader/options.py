@@ -31,8 +31,8 @@ class FileUploaderOptions(GenericOptions):
     Possible values:
         * ``error`` (default) - do nothing, mark file as failed
         * ``ignore`` - do nothing, mark file as ignored
-        * ``overwrite`` - replace existing file with a new one
-        * ``delete_all`` - delete local directory content before downloading files
+        * ``replace_file`` - replace existing file with a new one
+        * ``replace_entire_directory`` - delete local directory content before downloading files
     """
 
     delete_local: bool = False

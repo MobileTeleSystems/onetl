@@ -19,3 +19,4 @@ exclude_lines =
     if pyspark_version
     spark = SparkSession._instantiatedSession
     if log.isEnabledFor(logging.DEBUG):
+    if sys.version_info

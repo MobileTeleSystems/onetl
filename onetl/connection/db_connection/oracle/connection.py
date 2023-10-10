@@ -84,7 +84,7 @@ class Oracle(JDBCConnection):
     .. dropdown:: Version compatibility
 
         * Oracle Server versions: 23c, 21c, 19c, 18c, 12.2 and probably 11.2 (tested, but that's not official).
-        * Spark versions: 2.3.x - 3.4.x
+        * Spark versions: 2.3.x - 3.5.x
         * Java versions: 8 - 20
 
         See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
@@ -101,7 +101,7 @@ class Oracle(JDBCConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+            pip install onetl pyspark=3.5.0  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 

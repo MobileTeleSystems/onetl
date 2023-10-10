@@ -52,7 +52,7 @@ class Hive(DBConnection):
     .. dropdown:: Version compatibility
 
         * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
-        * Spark versions: 2.3.x - 3.4.x
+        * Spark versions: 2.3.x - 3.5.x
         * Java versions: 8 - 20
 
     .. warning::
@@ -67,7 +67,7 @@ class Hive(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+            pip install onetl pyspark=3.5.0  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 
@@ -146,7 +146,7 @@ class Hive(DBConnection):
     # TODO: remove in v1.0.0
     slots = HiveSlots
 
-    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
+    _CHECK_QUERY: ClassVar[str] = "SHOW DATABASES"
 
     @slot
     @classmethod
@@ -207,7 +207,7 @@ class Hive(DBConnection):
         log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._execute_sql(self._CHECK_QUERY)
+            self._execute_sql(self._CHECK_QUERY).limit(1).collect()
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)

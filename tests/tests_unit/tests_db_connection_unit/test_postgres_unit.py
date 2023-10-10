@@ -33,6 +33,18 @@ def test_oracle_missing_package(spark_no_packages):
         )
 
 
+def test_postgres_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Postgres(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_postgres(spark_mock):
     conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 

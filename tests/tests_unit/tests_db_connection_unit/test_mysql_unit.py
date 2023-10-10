@@ -33,6 +33,18 @@ def test_mysql_missing_package(spark_no_packages):
         )
 
 
+def test_mysql_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        MySQL(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
+        )
+
+
 def test_mysql(spark_mock):
     conn = MySQL(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 

@@ -62,7 +62,7 @@ class SparkS3(SparkFileDFConnection):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.4.x (only with Hadoop 3.x libraries)
+        * Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
         * Java versions: 8 - 20
         * Scala versions: 2.11 - 2.13
 
@@ -82,7 +82,7 @@ class SparkS3(SparkFileDFConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+            pip install onetl pyspark=3.5.0  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 
@@ -161,7 +161,7 @@ class SparkS3(SparkFileDFConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(spark_version="3.4.1")
+        maven_packages = SparkS3.get_packages(spark_version="3.5.0")
         # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
         excluded_packages = [
             "com.google.cloud.bigdataoss:gcs-connector",
@@ -262,8 +262,8 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.4.1")
-            SparkS3.get_packages(spark_version="3.4.1", scala_version="2.12")
+            SparkS3.get_packages(spark_version="3.5.0")
+            SparkS3.get_packages(spark_version="3.5.0", scala_version="2.12")
 
         """
 

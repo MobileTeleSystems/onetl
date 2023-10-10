@@ -20,3 +20,4 @@ from onetl.file.format.json import JSON
 from onetl.file.format.jsonline import JSONLine
 from onetl.file.format.orc import ORC
 from onetl.file.format.parquet import Parquet
+from onetl.file.format.xml import XML

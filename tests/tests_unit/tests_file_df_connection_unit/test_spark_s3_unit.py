@@ -10,9 +10,9 @@ pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connec
 @pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
-        ("3.4.1", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.4.1"),
-        ("3.4.1", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.4.1"),
-        ("3.4.1", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.4.1"),
+        ("3.5.0", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.0"),
+        ("3.5.0", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.0"),
+        ("3.5.0", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.0"),
     ],
 )
 def test_spark_s3_get_packages(spark_version, scala_version, package):
@@ -32,7 +32,7 @@ def test_spark_s3_get_packages_spark_2_error(spark_version):
 
 
 @pytest.mark.parametrize("hadoop_version", ["2.7.3", "2.8.0", "2.10.1"])
-def test_spark_s3_connection_with_hadoop_2_error(spark_mock, hadoop_version):
+def test_spark_s3_with_hadoop_2_error(spark_mock, hadoop_version):
     spark_mock._jvm = Mock()
     spark_mock._jvm.org.apache.hadoop.util.VersionInfo.getVersion = Mock(return_value=hadoop_version)
 
@@ -47,7 +47,7 @@ def test_spark_s3_connection_with_hadoop_2_error(spark_mock, hadoop_version):
         )
 
 
-def test_spark_s3_connection_missing_package(spark_no_packages):
+def test_spark_s3_missing_package(spark_no_packages):
     spark_no_packages._jvm = Mock()
     spark_no_packages._jvm.org.apache.hadoop.util.VersionInfo.getVersion = Mock(return_value="3.3.6")
 
@@ -63,6 +63,19 @@ def test_spark_s3_connection_missing_package(spark_no_packages):
         )
 
 
+def test_spark_s3_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        SparkS3(
+            host="some_host",
+            access_key="access_key",
+            secret_key="some key",
+            session_token="some token",
+            bucket="bucket",
+            spark=spark_stopped,
+        )
+
+
 @pytest.fixture()
 def spark_mock_hadoop_3(spark_mock):
     spark_mock._jvm = Mock()
@@ -70,7 +83,7 @@ def spark_mock_hadoop_3(spark_mock):
     return spark_mock
 
 
-def test_spark_s3_connection(spark_mock_hadoop_3):
+def test_spark_s3(spark_mock_hadoop_3):
     s3 = SparkS3(
         host="some_host",
         access_key="access key",
@@ -91,7 +104,7 @@ def test_spark_s3_connection(spark_mock_hadoop_3):
     assert "some key" not in repr(s3)
 
 
-def test_spark_s3_connection_with_protocol_https(spark_mock_hadoop_3):
+def test_spark_s3_with_protocol_https(spark_mock_hadoop_3):
     s3 = SparkS3(
         host="some_host",
         access_key="access_key",
@@ -106,7 +119,7 @@ def test_spark_s3_connection_with_protocol_https(spark_mock_hadoop_3):
     assert s3.instance_url == "s3://some_host:443"
 
 
-def test_spark_s3_connection_with_protocol_http(spark_mock_hadoop_3):
+def test_spark_s3_with_protocol_http(spark_mock_hadoop_3):
     s3 = SparkS3(
         host="some_host",
         access_key="access_key",
@@ -122,7 +135,7 @@ def test_spark_s3_connection_with_protocol_http(spark_mock_hadoop_3):
 
 
 @pytest.mark.parametrize("protocol", ["http", "https"])
-def test_spark_s3_connection_with_port(spark_mock_hadoop_3, protocol):
+def test_spark_s3_with_port(spark_mock_hadoop_3, protocol):
     s3 = SparkS3(
         host="some_host",
         port=9000,

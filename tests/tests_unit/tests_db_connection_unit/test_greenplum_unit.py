@@ -31,6 +31,7 @@ def test_greenplum_get_packages_no_input():
         "2.2",
         "3.3",
         "3.4",
+        "3.5",
     ],
 )
 def test_greenplum_get_packages_spark_version_not_supported(spark_version):
@@ -79,6 +80,18 @@ def test_greenplum_missing_package(spark_no_packages):
             database="database",
             password="passwd",
             spark=spark_no_packages,
+        )
+
+
+def test_greenplum_spark_stopped(spark_stopped):
+    msg = "Spark session is stopped. Please recreate Spark session."
+    with pytest.raises(ValueError, match=msg):
+        Greenplum(
+            host="some_host",
+            user="user",
+            database="database",
+            password="passwd",
+            spark=spark_stopped,
         )
 
 

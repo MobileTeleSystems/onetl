@@ -44,7 +44,7 @@ def maven_packages():
         SparkS3,
         Teradata,
     )
-    from onetl.file.format import Avro, Excel
+    from onetl.file.format import XML, Avro, Excel
 
     pyspark_version = get_pyspark_version()
     packages = (
@@ -71,11 +71,16 @@ def maven_packages():
         # There is no SparkS3 connector for Spark less than 3
         packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
 
+        # There is no XML files support for Spark less than 3
+        packages.extend(XML.get_packages(pyspark_version))
+
         # There is no MongoDB connector for Spark less than 3.2
         packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
 
-        # There is no Excel files support for Spark less than 3.2
-        packages.extend(Excel.get_packages(spark_version=pyspark_version))
+        if pyspark_version < (3, 5):
+            # There is no Excel files support for Spark less than 3.2
+            # And there is still no package released for 3.5.0 https://github.com/crealytics/spark-excel/issues/787
+            packages.extend(Excel.get_packages(spark_version=pyspark_version))
 
     return packages
 
