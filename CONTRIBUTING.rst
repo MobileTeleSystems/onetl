@@ -70,7 +70,7 @@ Create virtualenv and install dependencies:
         -r requirements/tests/mysql.txt \
         -r requirements/tests/postgres.txt \
         -r requirements/tests/oracle.txt \
-        -r requirements/tests/spark-3.4.1.txt
+        -r requirements/tests/spark-3.5.0.txt
 
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~

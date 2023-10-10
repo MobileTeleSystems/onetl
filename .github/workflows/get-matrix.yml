@@ -47,7 +47,7 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-webdav }}
 
 env:
-  DEFAULT_PYTHON: '3.11'
+  DEFAULT_PYTHON: '3.12'
 
 jobs:
   get-matrix:
