@@ -193,6 +193,9 @@ def test_kafka_reader_topic_does_not_exist(spark, kafka_processing):
 
 @pytest.mark.parametrize("group_id_option", ["group.id", "groupIdPrefix"])
 def test_kafka_reader_with_group_id(group_id_option, spark, kafka_processing, schema):
+    if get_spark_version(spark).major < 3:
+        pytest.skip("Spark 3.x or later is required to pas group.id")
+
     topic, processing, expected_df = kafka_processing
 
     kafka = Kafka(
