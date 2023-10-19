@@ -83,7 +83,7 @@ class Oracle(JDBCConnection):
 
     .. dropdown:: Version compatibility
 
-        * Oracle Server versions: 23c, 21c, 19c, 18c, 12.2 and probably 11.2 (tested, but that's not official).
+        * Oracle Server versions: 23, 21, 19, 18, 12.2 and probably 11.2 (tested, but that's not official).
         * Spark versions: 2.3.x - 3.5.x
         * Java versions: 8 - 20
 

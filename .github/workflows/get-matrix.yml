@@ -375,7 +375,7 @@ jobs:
         files_from_source_file: .github/workflows/data/mysql/tracked.txt
         files_ignore_from_source_file: .github/workflows/data/mysql/ignored.txt
 
-    - name: Print MSSQL MySQL changed
+    - name: Print MSSQL files changed
       run: |
         echo '${{ steps.changed-mysql.outputs.all_changed_files }}'
 
@@ -405,7 +405,7 @@ jobs:
         files_from_source_file: .github/workflows/data/oracle/tracked.txt
         files_ignore_from_source_file: .github/workflows/data/oracle/ignored.txt
 
-    - name: Print Oracle MySQL changed
+    - name: Print Oracle files changed
       run: |
         echo '${{ steps.changed-oracle.outputs.all_changed_files }}'
 

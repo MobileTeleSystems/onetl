@@ -183,6 +183,7 @@ jobs:
 
     uses: ./.github/workflows/test-oracle.yml
     with:
+      oracle-image: ${{ matrix.oracle-image }}
       oracle-version: ${{ matrix.oracle-version }}
       db-name: ${{ matrix.db-name }}
       spark-version: ${{ matrix.spark-version }}

@@ -2,13 +2,16 @@ name: Tests for Oracle
 on:
   workflow_call:
     inputs:
+      oracle-image:
+        required: true
+        type: string
       oracle-version:
         required: true
         type: string
       db-name:
         required: false
         type: string
-        default: XEPDB1
+        default: FREEPDB1
       spark-version:
         required: true
         type: string
@@ -32,7 +35,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     services:
       oracle:
-        image: gvenzl/oracle-xe:${{ inputs.oracle-version }}
+        image: "${{ inputs.oracle-image }}:${{ inputs.oracle-version }}"
         env:
           TZ: UTC
           ORACLE_PASSWORD: maaxohmiGe9eep5x
