@@ -64,7 +64,7 @@ repos:
   - id: pyupgrade
     args: [--py37-plus, --keep-runtime-typing]
 - repo: https://github.com/psf/black
-  rev: 23.9.1
+  rev: 23.10.0
   hooks:
   - id: black
     language_version: python3
