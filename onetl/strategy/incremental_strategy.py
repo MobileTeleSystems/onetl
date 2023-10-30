@@ -482,7 +482,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
-        from onetl.strategy import IncrementalStrategy
+        from onetl.strategy import IncrementalBatchStrategy
 
         from pyspark.sql import SparkSession
 
