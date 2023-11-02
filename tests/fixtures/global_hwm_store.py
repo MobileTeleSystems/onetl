@@ -1,6 +1,5 @@
 import pytest
-
-from onetl.hwm.store import MemoryHWMStore
+from etl_entities.hwm_store import MemoryHWMStore
 
 
 @pytest.fixture(scope="function", autouse=True)

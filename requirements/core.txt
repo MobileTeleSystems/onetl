@@ -1,5 +1,5 @@
 deprecated
-etl-entities>=1.4,<1.5
+etl-entities>=2.0.0,<2.1
 evacuator>=1.0,<1.1
 frozendict
 humanize

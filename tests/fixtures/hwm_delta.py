@@ -2,15 +2,8 @@ import secrets
 from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities import (
-    Column,
-    DateHWM,
-    DateTimeHWM,
-    FileListHWM,
-    IntHWM,
-    RemoteFolder,
-    Table,
-)
+from etl_entities.old_hwm import DateHWM, DateTimeHWM, FileListHWM, IntHWM
+from etl_entities.source import Column, RemoteFolder, Table
 
 
 @pytest.fixture(

@@ -19,9 +19,9 @@ import operator
 import os
 from typing import Any, Callable, Collection, Optional
 
-from etl_entities import HWM
+from etl_entities.hwm_store import HWMStoreStackManager
+from etl_entities.old_hwm import HWM
 
-from onetl.hwm.store import HWMStoreManager
 from onetl.log import log_collection, log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
 
@@ -59,15 +59,15 @@ class HWMStrategy(BaseStrategy):
         class_name = self.__class__.__name__
 
         if self.hwm is not None:
-            hwm_store = HWMStoreManager.get_current()
+            hwm_store = HWMStoreStackManager.get_current()
 
             log.info("|%s| Loading HWM from %s:", class_name, hwm_store.__class__.__name__)
             log_with_indent(log, "qualified_name = %r", self.hwm.qualified_name)
 
-            result = hwm_store.get(self.hwm.qualified_name)
+            result = hwm_store.get_hwm(self.hwm.qualified_name)
 
             if result is not None:
-                self.hwm = result
+                self.hwm = result  # type: ignore
                 log.info("|%s| Got HWM:", class_name)
                 self._log_hwm(self.hwm)
             else:
@@ -88,13 +88,13 @@ class HWMStrategy(BaseStrategy):
         class_name = self.__class__.__name__
 
         if self.hwm is not None:
-            hwm_store = HWMStoreManager.get_current()
+            hwm_store = HWMStoreStackManager.get_current()
 
             log.info("|%s| Saving HWM to %r:", class_name, hwm_store.__class__.__name__)
             self._log_hwm(self.hwm)
             log_with_indent(log, "qualified_name = %r", self.hwm.qualified_name)
 
-            location = hwm_store.save(self.hwm)
+            location = hwm_store.set_hwm(self.hwm)  # type: ignore
             log.info("|%s| HWM has been saved", class_name)
 
             if location:

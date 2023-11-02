@@ -17,7 +17,7 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
-from etl_entities import Table
+from etl_entities.source import Table
 from pydantic import Field, validator
 
 from onetl.base import BaseDBConnection

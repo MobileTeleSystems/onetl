@@ -3,7 +3,7 @@ import textwrap
 from unittest.mock import Mock
 
 import pytest
-from etl_entities import HWM, ColumnHWM, DateHWM, DateTimeHWM, IntHWM
+from etl_entities.old_hwm import HWM, ColumnHWM, DateHWM, DateTimeHWM, IntHWM
 
 from onetl.base import BaseFileConnection
 from onetl.core import FileFilter, FileLimit
@@ -32,7 +32,7 @@ def test_file_downloader_deprecated_import():
 
 
 def test_file_downloader_unknown_hwm_type():
-    with pytest.raises(KeyError, match="Unknown HWM type 'abc'"):
+    with pytest.raises(KeyError, match="Unknown HWM Store type 'abc'"):
         FileDownloader(
             connection=Mock(),
             local_path="/path",
@@ -44,12 +44,6 @@ def test_file_downloader_unknown_hwm_type():
 @pytest.mark.parametrize(
     "hwm_type, hwm_type_name",
     [
-        ("byte", "IntHWM"),
-        ("integer", "IntHWM"),
-        ("short", "IntHWM"),
-        ("long", "IntHWM"),
-        ("date", "DateHWM"),
-        ("timestamp", "DateTimeHWM"),
         (IntHWM, "IntHWM"),
         (DateHWM, "DateHWM"),
         (DateTimeHWM, "DateTimeHWM"),

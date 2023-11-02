@@ -4,7 +4,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional
 
 import frozendict
-from etl_entities import Column, Table
+from etl_entities.source import Column, Table
 from pydantic import Field, root_validator, validator
 
 from onetl._internal import uniq_ignore_case

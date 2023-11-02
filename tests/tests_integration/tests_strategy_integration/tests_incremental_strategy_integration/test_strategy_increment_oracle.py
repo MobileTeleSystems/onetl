@@ -1,5 +1,5 @@
 import pytest
-from etl_entities import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Oracle
 from onetl.db import DBReader

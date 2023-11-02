@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from etl_entities import HWM
+from etl_entities.old_hwm import HWM
 
 from onetl.impl import BaseModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy

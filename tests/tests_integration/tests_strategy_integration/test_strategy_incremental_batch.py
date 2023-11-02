@@ -3,7 +3,7 @@ import secrets
 from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 try:
     import pandas
@@ -13,9 +13,10 @@ except ImportError:
     # pandas can be missing if someone runs tests for file connections only
     pass
 
+from etl_entities.hwm_store import HWMStoreStackManager
+
 from onetl.connection import Postgres
 from onetl.db import DBReader
-from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalBatchStrategy, IncrementalStrategy
 
 pytestmark = pytest.mark.postgres
@@ -519,7 +520,7 @@ def test_postgres_strategy_incremental_batch(
     span_gap,
     span_length,
 ):
-    store = HWMStoreManager.get_current()
+    store = HWMStoreStackManager.get_current()
 
     postgres = Postgres(
         host=processing.host,
@@ -555,7 +556,7 @@ def test_postgres_strategy_incremental_batch(
     )
 
     # hwm is not in the store
-    assert store.get(hwm.qualified_name) is None
+    assert store.get_hwm(hwm.qualified_name) is None
 
     # fill up hwm storage with last value, e.g. 100
     first_df = None
@@ -578,7 +579,7 @@ def test_postgres_strategy_incremental_batch(
         processing.assert_subset_df(df=first_df, other_frame=first_span)
 
     # hwm is set
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm.qualified_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -595,7 +596,7 @@ def test_postgres_strategy_incremental_batch(
     second_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            hwm = store.get(hwm.qualified_name)
+            hwm = store.get_hwm(hwm.qualified_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
@@ -608,12 +609,12 @@ def test_postgres_strategy_incremental_batch(
             else:
                 second_df = second_df.union(next_df)
 
-            hwm = store.get(hwm.qualified_name)
+            hwm = store.get_hwm(hwm.qualified_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
 
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm.qualified_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == second_span_max
