@@ -22,7 +22,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type
 
-from etl_entities.hwm_store import HWMStoreClassRegistry
 from etl_entities.old_hwm import HWM, FileHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
@@ -37,6 +36,7 @@ from onetl.file.file_downloader.result import DownloadResult
 from onetl.file.file_set import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
 from onetl.hooks import slot, support_hooks
+from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
@@ -472,7 +472,7 @@ class FileDownloader(FrozenModel):
                 raise ValueError("If `hwm_type` is passed, `source_path` must be specified")
 
             if isinstance(hwm_type, str):
-                hwm_type = HWMStoreClassRegistry.get(hwm_type)
+                hwm_type = HWMClassRegistry.get(hwm_type)
 
             cls._check_hwm_type(hwm_type)
 
