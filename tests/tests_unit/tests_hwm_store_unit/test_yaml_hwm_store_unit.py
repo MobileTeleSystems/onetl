@@ -176,3 +176,20 @@ def test_hwm_store_yaml_context_manager_with_encoding(caplog, request, tmp_path_
 )
 def test_hwm_store_yaml_cleanup_file_name(qualified_name, file_name):
     assert YAMLHWMStore.cleanup_file_name(qualified_name) == file_name
+
+
+def test_hwm_store_no_deprecation_warning_yaml_hwm_store():
+    with pytest.warns(None) as record:
+        from onetl.hwm.store import YAMLHWMStore
+
+        YAMLHWMStore()
+        assert not record
+
+
+def test_hwm_store_deprecation_warning_memory_hwm_store():
+    with pytest.warns(DeprecationWarning) as record:
+        from onetl.hwm.store import MemoryHWMStore
+
+        MemoryHWMStore()
+        assert record
+        assert "Deprecation warning: 'onetl.hwm.store.MemoryHWMStore' is deprecated" in str(record[0].message)
