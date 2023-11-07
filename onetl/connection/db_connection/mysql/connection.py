@@ -93,7 +93,7 @@ class MySQL(JDBCConnection):
         For example: ``{"useSSL": "false"}``
 
         See `MySQL JDBC driver properties documentation
-        <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html>`_
+        <https://dev.mysql.com/doc/connector-j/en/connector-j-reference-configuration-properties.html>`_
         for more details
 
     Examples
