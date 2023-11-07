@@ -35,7 +35,9 @@ jobs:
         python-version: ${{ env.DEFAULT_PYTHON }}
 
     - name: Install Kerberos headers
-      run: sudo apt-get install --no-install-recommends libkrb5-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends libkrb5-dev
 
     - name: Cache pip
       uses: actions/cache@v3

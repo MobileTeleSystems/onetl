@@ -45,7 +45,8 @@ jobs:
     - name: Set up Kerberos libs
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update && sudo apt-get install --no-install-recommends libkrb5-dev gcc
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends libkrb5-dev gcc
 
     - name: Cache Ivy
       uses: actions/cache@v3
