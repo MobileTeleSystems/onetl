@@ -13,6 +13,14 @@
 #  limitations under the License.
 import warnings
 
+from etl_entities.hwm_store import (
+    BaseHWMStore,
+    HWMStoreClassRegistry,
+    HWMStoreStackManager,
+    detect_hwm_store,
+    register_hwm_store_class,
+)
+
 from onetl.hwm.store.hwm_class_registry import HWMClassRegistry, register_hwm_class
 from onetl.hwm.store.yaml_hwm_store import YAMLHWMStore, default_hwm_store_class
 

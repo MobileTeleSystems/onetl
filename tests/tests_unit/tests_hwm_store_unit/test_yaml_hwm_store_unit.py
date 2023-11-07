@@ -188,8 +188,10 @@ def test_hwm_store_no_deprecation_warning_yaml_hwm_store():
 
 def test_hwm_store_deprecation_warning_memory_hwm_store():
     with pytest.warns(DeprecationWarning) as record:
+        from etl_entities.hwm_store import MemoryHWMStore as OriginalMemoryHWMStore
+
         from onetl.hwm.store import MemoryHWMStore
 
-        MemoryHWMStore()
+        assert MemoryHWMStore is OriginalMemoryHWMStore
         assert record
         assert "Deprecation warning: 'onetl.hwm.store.MemoryHWMStore' is deprecated" in str(record[0].message)
