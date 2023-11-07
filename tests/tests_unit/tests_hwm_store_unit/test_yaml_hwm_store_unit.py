@@ -1,10 +1,21 @@
 import logging
 import secrets
 import shutil
+import textwrap
 from pathlib import Path
 
 import pytest
+from etl_entities.hwm_store import BaseHWMStore as OriginalBaseHWMStore
+from etl_entities.hwm_store import (
+    HWMStoreClassRegistry as OriginalHWMStoreClassRegistry,
+)
 from etl_entities.hwm_store import HWMStoreStackManager
+from etl_entities.hwm_store import HWMStoreStackManager as OriginalHWMStoreManager
+from etl_entities.hwm_store import MemoryHWMStore as OriginalMemoryHWMStore
+from etl_entities.hwm_store import detect_hwm_store as original_detect_hwm_store
+from etl_entities.hwm_store import (
+    register_hwm_store_class as original_register_hwm_store_class,
+)
 
 from onetl.hwm.store import YAMLHWMStore
 
@@ -186,12 +197,34 @@ def test_hwm_store_no_deprecation_warning_yaml_hwm_store():
         assert not record
 
 
-def test_hwm_store_deprecation_warning_memory_hwm_store():
-    with pytest.warns(DeprecationWarning) as record:
-        from etl_entities.hwm_store import MemoryHWMStore as OriginalMemoryHWMStore
+@pytest.mark.parametrize(
+    "import_name, original_import",
+    [
+        ("MemoryHWMStore", OriginalMemoryHWMStore),
+        ("BaseHWMStore", OriginalBaseHWMStore),
+        ("HWMStoreClassRegistry", OriginalHWMStoreClassRegistry),
+        ("HWMStoreManager", OriginalHWMStoreManager),
+        ("detect_hwm_store", original_detect_hwm_store),
+        ("register_hwm_store_class", original_register_hwm_store_class),
+    ],
+)
+def test_hwm_store_deprecation_warning_matching_cases(import_name, original_import):
+    msg = textwrap.dedent(
+        f"""
+        This import is deprecated since v0.10.0:
 
-        from onetl.hwm.store import MemoryHWMStore
+            from onetl.hwm.store import {import_name}
 
-        assert MemoryHWMStore is OriginalMemoryHWMStore
+        Please use instead:
+
+            from etl_entities.hwm_store import {import_name}
+        """,
+    )
+
+    with pytest.warns(UserWarning) as record:
+        from onetl.hwm.store import __getattr__
+
+        assert __getattr__(import_name) is original_import
+
         assert record
-        assert "Deprecation warning: 'onetl.hwm.store.MemoryHWMStore' is deprecated" in str(record[0].message)
+        assert msg in str(record[0].message)
