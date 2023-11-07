@@ -32,7 +32,7 @@ def test_file_downloader_deprecated_import():
 
 
 def test_file_downloader_unknown_hwm_type():
-    with pytest.raises(KeyError, match="Unknown HWM Store type 'abc'"):
+    with pytest.raises(KeyError, match="Unknown HWM type 'abc'"):
         FileDownloader(
             connection=Mock(),
             local_path="/path",
