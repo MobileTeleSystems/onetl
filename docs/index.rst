@@ -51,7 +51,6 @@
     :caption: HWM and incremental reads
     :hidden:
 
-    hwm/index
     strategy/index
     hwm_store/index
 

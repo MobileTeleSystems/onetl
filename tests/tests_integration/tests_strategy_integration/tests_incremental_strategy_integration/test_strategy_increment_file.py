@@ -1,8 +1,9 @@
 import contextlib
 import secrets
 
-from etl_entities import FileListHWM, RemoteFolder
 from etl_entities.instance import RelativePath
+from etl_entities.old_hwm import FileListHWM
+from etl_entities.source import RemoteFolder
 
 from onetl.file import FileDownloader
 from onetl.hwm.store import YAMLHWMStore
@@ -40,7 +41,7 @@ def test_file_downloader_increment(
     file_hwm_name = file_hwm.qualified_name
 
     source_files = {RelativePath(file.relative_to(remote_path)) for file in uploaded_files}
-    assert source_files == hwm_store.get(file_hwm_name).value
+    assert source_files == hwm_store.get_hwm(file_hwm_name).value
 
     for _ in "first_inc", "second_inc":
         new_file_name = f"{secrets.token_hex(5)}.txt"
@@ -63,7 +64,7 @@ def test_file_downloader_increment(
         assert downloaded.failed_count == 0
 
         source_files.add(RelativePath(new_file_name))
-        assert source_files == hwm_store.get(file_hwm_name).value
+        assert source_files == hwm_store.get_hwm(file_hwm_name).value
 
 
 def test_file_downloader_increment_fail(
@@ -97,7 +98,7 @@ def test_file_downloader_increment_fail(
 
             # HWM is updated in HWMStore
             source_files = {RelativePath(file.relative_to(remote_path)) for file in uploaded_files}
-            assert source_files == hwm_store.get(file_hwm_name).value
+            assert source_files == hwm_store.get_hwm(file_hwm_name).value
 
             for _ in "first_inc", "second_inc":
                 new_file_name = f"{secrets.token_hex(5)}.txt"
@@ -122,7 +123,7 @@ def test_file_downloader_increment_fail(
 
                 # HWM is saved after downloading each file, not after exiting from .run
                 source_files.add(RelativePath(new_file_name))
-                assert source_files == hwm_store.get(file_hwm_name).value
+                assert source_files == hwm_store.get_hwm(file_hwm_name).value
 
 
 def test_file_downloader_increment_hwm_is_ignored_for_user_input(

@@ -11,15 +11,46 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import textwrap
+import warnings
+from importlib import import_module
 
-from onetl.hwm.store.base_hwm_store import BaseHWMStore
 from onetl.hwm.store.hwm_class_registry import HWMClassRegistry, register_hwm_class
-from onetl.hwm.store.hwm_store_class_registry import (
-    HWMStoreClassRegistry,
-    default_hwm_store_class,
-    detect_hwm_store,
-    register_hwm_store_class,
-)
-from onetl.hwm.store.hwm_store_manager import HWMStoreManager
-from onetl.hwm.store.memory_hwm_store import MemoryHWMStore
-from onetl.hwm.store.yaml_hwm_store import YAMLHWMStore
+from onetl.hwm.store.yaml_hwm_store import YAMLHWMStore, default_hwm_store_class
+
+deprecated_imports = {
+    "MemoryHWMStore",
+    "BaseHWMStore",
+    "HWMStoreClassRegistry",
+    "HWMStoreManager",
+    "detect_hwm_store",
+    "register_hwm_store_class",
+}
+
+
+def __getattr__(name: str):
+    if name in deprecated_imports:
+        msg = f"""
+        This import is deprecated since v0.10.0:
+
+            from onetl.hwm.store import {name}
+
+        Please use instead:
+
+            from etl_entities.hwm_store import {name}
+        """
+
+        warnings.warn(
+            textwrap.dedent(msg),
+            UserWarning,
+            stacklevel=2,
+        )
+
+        if name == "HWMStoreManager":
+            from etl_entities.hwm_store import HWMStoreStackManager
+
+            return HWMStoreStackManager
+
+        return getattr(import_module("etl_entities.hwm_store"), name)
+
+    raise ImportError(f"cannot import name {name!r} from {__name__!r}")

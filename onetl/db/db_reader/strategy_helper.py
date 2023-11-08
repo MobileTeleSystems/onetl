@@ -17,7 +17,8 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
 
-from etl_entities import HWM, Column, ColumnHWM
+from etl_entities.old_hwm import HWM, ColumnHWM
+from etl_entities.source import Column
 from pydantic import Field, root_validator, validator
 from typing_extensions import Protocol
 

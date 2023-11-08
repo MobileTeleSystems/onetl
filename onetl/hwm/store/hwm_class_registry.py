@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar, Iterator, Optional
 
-from etl_entities import HWM, DateHWM, DateTimeHWM, FileListHWM, IntHWM
+from etl_entities.old_hwm import HWM, DateHWM, DateTimeHWM, FileListHWM, IntHWM
 from pydantic import StrictInt
 
 
@@ -28,7 +28,7 @@ class HWMClassRegistry:
 
     .. code:: python
 
-        from etl_entities import IntHWM, DateHWM
+        from etl_entities.old_hwm import IntHWM, DateHWM
         from onetl.hwm.store import HWMClassRegistry
 
         HWMClassRegistry.get("int") == IntHWM

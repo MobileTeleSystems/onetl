@@ -1,7 +1,8 @@
 import sys
 
+from etl_entities.hwm_store import HWMStoreClassRegistry
+
 import onetl
-from onetl.hwm.store import HWMStoreClassRegistry
 
 
 def test_autoimport_success(request):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from etl_entities import Table
+from etl_entities.source import Table
 
 from onetl.base import BaseDBConnection
 

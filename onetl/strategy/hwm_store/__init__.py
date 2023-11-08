@@ -20,17 +20,19 @@ from importlib import import_module
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from onetl.hwm.store import (
-        BaseHWMStore,
-        HWMClassRegistry,
-        HWMStoreClassRegistry,
-        HWMStoreManager,
+    from etl_entities.hwm_store import BaseHWMStore, HWMStoreClassRegistry
+    from etl_entities.hwm_store import HWMStoreStackManager as HWMStoreManager
+    from etl_entities.hwm_store import (
         MemoryHWMStore,
+        detect_hwm_store,
+        register_hwm_store_class,
+    )
+
+    from onetl.hwm.store import (
+        HWMClassRegistry,
         YAMLHWMStore,
         default_hwm_store_class,
-        detect_hwm_store,
         register_hwm_class,
-        register_hwm_store_class,
     )
 
 __all__ = [  # noqa: WPS410

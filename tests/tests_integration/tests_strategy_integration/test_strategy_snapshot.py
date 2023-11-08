@@ -4,7 +4,8 @@ from contextlib import suppress
 from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
+from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 try:
     import pandas
@@ -16,7 +17,6 @@ except ImportError:
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
-from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy, SnapshotBatchStrategy, SnapshotStrategy
 
 pytestmark = pytest.mark.postgres
@@ -366,7 +366,7 @@ def test_postgres_strategy_snapshot_batch(
     span_gap,
     span_length,
 ):
-    store = HWMStoreManager.get_current()
+    store = HWMStoreStackManager.get_current()
 
     postgres = Postgres(
         host=processing.host,
@@ -381,7 +381,7 @@ def test_postgres_strategy_snapshot_batch(
     hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # hwm is not in the store
-    assert store.get(hwm.qualified_name) is None
+    assert store.get_hwm(hwm.qualified_name) is None
 
     # there are 2 spans with a gap between
     # 0..100
@@ -413,7 +413,7 @@ def test_postgres_strategy_snapshot_batch(
     with SnapshotBatchStrategy(step=step) as batches:
         for _ in batches:
             # no hwm saves on each iteration
-            assert store.get(hwm.qualified_name) is None
+            assert store.get_hwm(hwm.qualified_name) is None
 
             next_df = reader.run()
             assert next_df.count() <= per_iter
@@ -423,10 +423,10 @@ def test_postgres_strategy_snapshot_batch(
             else:
                 total_df = total_df.union(next_df)
 
-            assert store.get(hwm.qualified_name) is None
+            assert store.get_hwm(hwm.qualified_name) is None
 
     # no hwm saves after exiting the context
-    assert store.get(hwm.qualified_name) is None
+    assert store.get_hwm(hwm.qualified_name) is None
 
     # all the rows will be read
     total_span = pandas.concat([first_span, second_span], ignore_index=True)

@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from etl_entities import FileHWM
+from etl_entities.old_hwm import FileHWM
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel

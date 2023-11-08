@@ -1,10 +1,11 @@
 import tempfile
 
 import pytest
+from etl_entities.hwm_store import MemoryHWMStore
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
-from onetl.hwm.store import MemoryHWMStore, YAMLHWMStore
+from onetl.hwm.store import YAMLHWMStore
 from onetl.strategy import IncrementalStrategy
 
 hwm_store = [

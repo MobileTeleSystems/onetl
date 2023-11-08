@@ -22,7 +22,7 @@ import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from etl_entities import ProcessStackManager
+from etl_entities.process import ProcessStackManager
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ def generate_temp_path(root: PurePath) -> PurePath:
 
     .. code:: python
 
-        from etl_entities import Process
+        from etl_entities.process import Process
 
         from pathlib import Path
 

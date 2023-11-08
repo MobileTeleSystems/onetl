@@ -1,9 +1,9 @@
 import pytest
-from etl_entities import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
+from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
-from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
 pytestmark = pytest.mark.postgres
@@ -34,7 +34,7 @@ def test_postgres_strategy_incremental(
     span_gap,
     span_length,
 ):
-    store = HWMStoreManager.get_current()
+    store = HWMStoreStackManager.get_current()
 
     postgres = Postgres(
         host=processing.host,
@@ -72,13 +72,13 @@ def test_postgres_strategy_incremental(
     )
 
     # hwm is not in the store
-    assert store.get(hwm.qualified_name) is None
+    assert store.get_hwm(hwm.qualified_name) is None
 
     # incremental run
     with IncrementalStrategy():
         first_df = reader.run()
 
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm.qualified_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -96,7 +96,7 @@ def test_postgres_strategy_incremental(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    assert store.get(hwm.qualified_name).value == second_span_max
+    assert store.get_hwm(hwm.qualified_name).value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read

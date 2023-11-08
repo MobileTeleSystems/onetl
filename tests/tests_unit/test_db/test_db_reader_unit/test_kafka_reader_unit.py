@@ -1,5 +1,5 @@
 import pytest
-from etl_entities import Column
+from etl_entities.source import Column
 
 from onetl.connection import Kafka
 from onetl.db import DBReader

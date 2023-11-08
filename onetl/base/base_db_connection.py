@@ -17,7 +17,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable
 
-from etl_entities import Table
+from etl_entities.source import Table
 
 from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Statement
