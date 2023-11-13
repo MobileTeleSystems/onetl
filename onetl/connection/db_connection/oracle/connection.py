@@ -144,7 +144,7 @@ class Oracle(JDBCConnection):
         For example: ``{"defaultBatchValue": 100}``
 
         See `Oracle JDBC driver properties documentation
-        <https://docs.oracle.com/cd/E11882_01/appdev.112/e13995/oracle/jdbc/OracleDriver.html>`_
+        <https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html>`_
         for more details
 
     Examples
