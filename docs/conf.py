@@ -122,7 +122,7 @@ pygments_style = "sphinx"
 
 # Create an alias for etl-entities lib in onetl documentation
 extlinks = {
-    "etl-entities": ("https://etl-entities.readthedocs.io/en/latest/%s", None),
+    "etl-entities": ("https://etl-entities.readthedocs.io/en/stable/%s", None),
 }
 
 
