@@ -47,7 +47,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             SELECT id, data FROM mydata;
 
-        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to :ref:`yaml-hwm-store`.
+        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to :ref:`hwm-store`.
 
         Next incremental run will read only new data from the source:
 
@@ -94,7 +94,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
                     ]
                 )
 
-            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`yaml-hwm-store`:
+            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`hwm-store`:
 
             .. code:: python
 
@@ -123,7 +123,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
                     ]
                 )
 
-            New files will be added to the ``FileListHWM`` and saved to :ref:`yaml-hwm-store`:
+            New files will be added to the ``FileListHWM`` and saved to :ref:`hwm-store`:
 
             .. code:: python
 
@@ -359,7 +359,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     .. warning::
 
         Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
-        it **saves** current HWM value after **each batch** into :ref:`yaml-hwm-store`.
+        it **saves** current HWM value after **each batch** into :ref:`hwm-store`.
 
         So if code inside the context manager raised an exception, like:
 
