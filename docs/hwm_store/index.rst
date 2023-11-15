@@ -5,7 +5,7 @@ HWM
 
 Since ``onetl>=0.10.0`` version, the HWM Store and HWM classes have been moved to a separate library :etl-entities:`etl-entities <>`.
 
-Below is the **default HWM store** in onETL - YAML HWM Store:
+The only class was left intact is YamlHWMStore, **which is default** in onETL:
 
 .. toctree::
     :maxdepth: 2
