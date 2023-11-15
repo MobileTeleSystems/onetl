@@ -48,11 +48,11 @@
 
 .. toctree::
     :maxdepth: 2
-    :caption: HWM and incremental reads
+    :caption: Read strategies and YAML HWM store
     :hidden:
 
     strategy/index
-    hwm_store/index
+    hwm_store/yaml_hwm_store
 
 .. toctree::
     :maxdepth: 2
