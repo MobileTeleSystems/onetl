@@ -48,7 +48,7 @@
 
 .. toctree::
     :maxdepth: 2
-    :caption: HWM and incremental reads
+    :caption: Read strategies and HWM
     :hidden:
 
     strategy/index

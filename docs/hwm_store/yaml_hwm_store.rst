@@ -1,6 +1,6 @@
 .. _yaml-hwm-store:
 
-YAML HWM Store (local, default)
+YAML HWM Store
 =================================================================
 
 .. currentmodule:: onetl.hwm.store.yaml_hwm_store

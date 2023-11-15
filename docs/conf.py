@@ -57,6 +57,7 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
     "sphinxcontrib.plantuml",
+    "sphinx.ext.extlinks",
 ]
 numpydoc_show_class_members = True
 autodoc_pydantic_model_show_config = False
@@ -118,6 +119,12 @@ language = "en"
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+# Create an alias for etl-entities lib in onetl documentation
+extlinks = {
+    "etl-entities": ("https://etl-entities.readthedocs.io/en/latest/%s", None),
+}
+
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
