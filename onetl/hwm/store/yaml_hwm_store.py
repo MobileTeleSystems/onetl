@@ -67,7 +67,7 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 @register_hwm_store_class("yaml")
 @support_hooks
 class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML local store for HWM values. Used as default HWM store. |support_hooks|
+    r"""YAML **local store** for HWM values. Used as default HWM store. |support_hooks|
 
     Parameters
     ----------
