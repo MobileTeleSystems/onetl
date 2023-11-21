@@ -12,4 +12,3 @@ sphinx-toolbox
 sphinx_substitution_extensions
 sphinxcontrib-towncrier
 towncrier
-urllib3
