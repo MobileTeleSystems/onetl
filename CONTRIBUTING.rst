@@ -324,7 +324,7 @@ Examples for adding changelog entries to your Pull Requests
 
 .. tip::
 
-    See `pyproject.toml <../../pyproject.toml>`_ for all available categories
+    See `pyproject.toml <pyproject.toml>`_ for all available categories
     (``tool.towncrier.type``).
 
 .. _Towncrier philosophy:
