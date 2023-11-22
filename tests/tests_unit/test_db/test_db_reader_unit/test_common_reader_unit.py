@@ -157,25 +157,6 @@ def test_reader_invalid_hwm_column(spark_mock, hwm_column):
 
 
 @pytest.mark.parametrize(
-    "hwm_column, real_hwm_column, real_hwm_expression",
-    [
-        ("hwm_column", "hwm_column", None),
-        (("hwm_column", "expression"), "hwm_column", "expression"),
-        (("hwm_column", "hwm_column"), "hwm_column", "hwm_column"),
-    ],
-)
-def test_reader_valid_hwm_column(spark_mock, hwm_column, real_hwm_column, real_hwm_expression):
-    reader = DBReader(
-        connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-        table="schema.table",
-        hwm_column=hwm_column,
-    )
-
-    assert reader.hwm_column.name == real_hwm_column
-    assert reader.hwm_expression == real_hwm_expression
-
-
-@pytest.mark.parametrize(
     "columns, hwm_column",
     [
         (["a", "b", "c", "d"], "d"),

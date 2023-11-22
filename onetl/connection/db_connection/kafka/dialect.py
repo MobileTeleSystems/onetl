@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import logging
 
+from etl_entities.hwm import HWM
+
 from onetl._util.spark import get_spark_version
 from onetl.base import BaseDBConnection
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
@@ -44,20 +46,22 @@ class KafkaDialect(  # noqa: WPS215
     valid_hwm_columns = {"offset", "timestamp"}
 
     @classmethod
-    def validate_hwm_column(
+    def validate_hwm(
         cls,
         connection: BaseDBConnection,
-        hwm_column: str | None,
-    ) -> str | None:
+        hwm: HWM,
+    ) -> HWM:
+        hwm_column = hwm.entity
+
         if not isinstance(hwm_column, str):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'hwm_column' parameter type to be 'str', "
+                f"{connection.__class__.__name__} requires 'hwm.column' parameter type to be 'str', "
                 f"got {type(hwm_column)}",
             )
 
         cls.validate_column(connection, hwm_column)
 
-        return hwm_column
+        return hwm
 
     @classmethod
     def validate_column(cls, connection: BaseDBConnection, column: str) -> None:

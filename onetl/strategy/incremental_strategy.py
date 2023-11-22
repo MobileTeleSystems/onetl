@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from etl_entities.old_hwm import HWM
+from etl_entities.hwm import HWM
 
 from onetl.impl import BaseModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
@@ -30,7 +30,7 @@ class OffsetMixin(BaseModel):
     def fetch_hwm(self) -> None:
         super().fetch_hwm()
 
-        if self.hwm and self.offset is not None:
+        if self.hwm is not None and self.hwm.value is not None and self.offset is not None:
             self.hwm -= self.offset
 
 

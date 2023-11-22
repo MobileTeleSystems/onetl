@@ -19,8 +19,8 @@ import operator
 import os
 from typing import Any, Callable, Collection, Optional
 
+from etl_entities.hwm import HWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.old_hwm import HWM
 
 from onetl.log import log_collection, log_with_indent
 from onetl.strategy.base_strategy import BaseStrategy
@@ -33,7 +33,7 @@ class HWMStrategy(BaseStrategy):
 
     @property
     def current_value(self) -> Any:
-        if self.hwm:
+        if self.hwm is not None:
             return self.hwm.value
 
         return super().current_value

@@ -159,7 +159,7 @@ class BatchHWMStrategy(HWMStrategy):
 
     @property
     def current_value_comparator(self) -> Callable:
-        if not self.hwm:
+        if self.hwm is None or self.hwm.value is None:
             # if start == 0 and hwm is not set
             # SQL should be `hwm_column >= 0` instead of `hwm_column > 0`
             return operator.ge

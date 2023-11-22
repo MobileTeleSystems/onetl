@@ -1,6 +1,6 @@
 import pytest
+from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
@@ -13,9 +13,9 @@ pytestmark = pytest.mark.postgres
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
-        (IntHWM, "hwm_int"),
-        (DateHWM, "hwm_date"),
-        (DateTimeHWM, "hwm_datetime"),
+        (ColumnIntHWM, "hwm_int"),
+        (ColumnDateHWM, "hwm_date"),
+        (ColumnDateTimeHWM, "hwm_datetime"),
     ],
 )
 @pytest.mark.parametrize(
@@ -44,9 +44,14 @@ def test_postgres_strategy_incremental(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoHWM(name="some_hwm_name_unique_for_specific_process_and_source", entity=hwm_column),
+    )
+
+    hwm = hwm_type(name=reader.hwm.name, column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -114,21 +119,21 @@ def test_postgres_strategy_incremental(
             "hwm_int",
             "hwm1_int",
             "text_string::int",
-            IntHWM,
+            ColumnIntHWM,
             str,
         ),
         (
             "hwm_date",
             "hwm1_date",
             "text_string::date",
-            DateHWM,
+            ColumnDateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
             "HWM1_DATETIME",
             "text_string::timestamp",
-            DateTimeHWM,
+            ColumnDateTimeHWM,
             lambda x: x.isoformat(),
         ),
     ],
@@ -207,7 +212,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    if issubclass(hwm_type, IntHWM):
+    if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
         processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
     else:

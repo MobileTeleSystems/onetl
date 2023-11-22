@@ -1,5 +1,5 @@
 import pytest
-from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
 from onetl.connection import Hive
 from onetl.db import DBReader
@@ -104,13 +104,13 @@ def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_
 @pytest.mark.parametrize(
     "hwm_source, hwm_expr, hwm_column, hwm_type, func",
     [
-        ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", IntHWM, str),
-        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", DateHWM, lambda x: x.isoformat()),
+        ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", ColumnIntHWM, str),
+        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", ColumnDateHWM, lambda x: x.isoformat()),
         (
             "hwm_datetime",
             "CAST(text_string AS TIMESTAMP)",
             "HWM1_DATETIME",
-            DateTimeHWM,
+            ColumnDateTimeHWM,
             lambda x: x.isoformat(),
         ),
     ],
@@ -180,7 +180,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    if issubclass(hwm_type, IntHWM):
+    if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
         processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
     else:

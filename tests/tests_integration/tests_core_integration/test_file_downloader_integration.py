@@ -7,7 +7,7 @@ from datetime import timedelta
 from pathlib import Path, PurePosixPath
 
 import pytest
-from etl_entities.old_hwm import FileListHWM
+from etl_entities.hwm import FileListHWM
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileDownloader

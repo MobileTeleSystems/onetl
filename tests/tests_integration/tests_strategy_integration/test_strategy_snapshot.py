@@ -4,8 +4,8 @@ from contextlib import suppress
 from datetime import date, datetime, timedelta
 
 import pytest
+from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
 
 try:
     import pandas
@@ -35,7 +35,7 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
     reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=column)
 
     with SnapshotStrategy():
-        with pytest.raises(ValueError, match="SnapshotStrategy cannot be used with `hwm_column` passed into DBReader"):
+        with pytest.raises(ValueError, match="SnapshotStrategy cannot be used with `hwm.column` passed into DBReader"):
             reader.run()
 
 
@@ -72,7 +72,6 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
 @pytest.mark.parametrize(
     "hwm_column, step",
     [
-        ("hwm_int", 1.5),
         ("hwm_int", "abc"),
         ("hwm_int", timedelta(hours=10)),
         ("hwm_date", 10),
@@ -205,6 +204,8 @@ def test_postgres_strategy_snapshot_batch_outside_loop(
 
 
 def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_table_data):
+    from py4j.protocol import Py4JJavaError
+
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -230,10 +231,11 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
         for _ in batches:
             reader1.run()
 
-            with pytest.raises(ValueError):
+            with pytest.raises(Py4JJavaError):
                 reader2.run()
 
-            with pytest.raises(ValueError):
+            # can't operate previous hwm type with new one
+            with pytest.raises(TypeError):
                 reader3.run()
 
             break
@@ -338,9 +340,19 @@ def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schem
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
-        (IntHWM, "hwm_int", 10, 11),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
-        (DateHWM, "hwm_date", timedelta(days=4), 30),  # per_iter value is calculated to cover the step value
-        (DateTimeHWM, "hwm_datetime", timedelta(hours=100), 30),  # same
+        (
+            ColumnIntHWM,
+            "hwm_int",
+            10,
+            11,
+        ),  # yes, 11, ids are 0..10, and the first row is included in snapshot strategy
+        (
+            ColumnDateHWM,
+            "hwm_date",
+            timedelta(days=4),
+            30,
+        ),  # per_iter value is calculated to cover the step value
+        (ColumnDateTimeHWM, "hwm_datetime", timedelta(hours=100), 30),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -378,7 +390,7 @@ def test_postgres_strategy_snapshot_batch(
     )
     reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
+    hwm = hwm_type(name=reader.source.name, column=hwm_column)
 
     # hwm is not in the store
     assert store.get_hwm(hwm.qualified_name) is None

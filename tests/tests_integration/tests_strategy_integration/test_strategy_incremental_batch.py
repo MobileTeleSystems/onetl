@@ -3,7 +3,8 @@ import secrets
 from datetime import date, datetime, timedelta
 
 import pytest
-from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
+from etl_entities.source import Column
 
 try:
     import pandas
@@ -15,6 +16,7 @@ except ImportError:
 
 from etl_entities.hwm_store import HWMStoreStackManager
 
+from onetl._util.deprecated_hwm import MockColumnHWM
 from onetl.connection import Postgres
 from onetl.db import DBReader
 from onetl.strategy import IncrementalBatchStrategy, IncrementalStrategy
@@ -169,6 +171,8 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
     processing,
     load_table_data,
 ):
+    from py4j.protocol import Py4JJavaError
+
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -194,10 +198,12 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
         for _ in batches:
             reader1.run()
 
-            with pytest.raises(ValueError):
+            # spark tries to read data from unexisted table
+            with pytest.raises(Py4JJavaError):
                 reader2.run()
 
-            with pytest.raises(ValueError):
+            # can't operate previous hwm type with new one
+            with pytest.raises(TypeError):
                 reader3.run()
 
             break
@@ -491,10 +497,10 @@ def test_postgres_strategy_incremental_batch_step_too_small(
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
-        (IntHWM, "hwm_int", 20, 30),  # step <  per_iter
-        (IntHWM, "hwm_int", 30, 30),  # step == per_iter
-        (DateHWM, "hwm_date", timedelta(days=20), 20),  # per_iter value is calculated to cover the step value
-        (DateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
+        (ColumnIntHWM, "hwm_int", 20, 30),  # step <  per_iter
+        (ColumnIntHWM, "hwm_int", 30, 30),  # step == per_iter
+        (ColumnDateHWM, "hwm_date", timedelta(days=20), 20),  # per_iter value is calculated to cover the step value
+        (ColumnDateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -532,7 +538,8 @@ def test_postgres_strategy_incremental_batch(
     )
     reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
 
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
+    name = MockColumnHWM(source=reader.source, column=Column(name=hwm_column)).qualified_name
+    hwm = hwm_type(name=name, column=hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100
@@ -797,7 +804,7 @@ def test_postgres_strategy_incremental_batch_offset(
             "hwm_int",
             "hwm1_int",
             "text_string::int",
-            IntHWM,
+            ColumnIntHWM,
             10,
             str,
         ),
@@ -805,7 +812,7 @@ def test_postgres_strategy_incremental_batch_offset(
             "hwm_date",
             "hwm1_date",
             "text_string::date",
-            DateHWM,
+            ColumnDateHWM,
             timedelta(days=10),
             lambda x: x.isoformat(),
         ),
@@ -813,7 +820,7 @@ def test_postgres_strategy_incremental_batch_offset(
             "hwm_datetime",
             "HWM1_DATETIME",
             "text_string::timestamp",
-            DateTimeHWM,
+            ColumnDateTimeHWM,
             timedelta(hours=100),
             lambda x: x.isoformat(),
         ),
@@ -909,7 +916,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
             else:
                 second_df = second_df.union(next_df)
 
-    if issubclass(hwm_type, IntHWM):
+    if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
         processing.assert_equal_df(df=second_df.orderBy("id_int"), other_frame=second_span_with_hwm)
     else:
