@@ -23,11 +23,13 @@ from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type
 
 from etl_entities.hwm import HWM, FileHWM
+from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path
+from onetl._util.deprecated_hwm import old_file_hwm_to_new_file_hwm
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
@@ -219,6 +221,7 @@ class FileDownloader(FrozenModel):
     filters: List[BaseFileFilter] = Field(default_factory=list, alias="filter")
     limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
+    hwm: Optional[HWM] = None
     hwm_type: Optional[Type[FileHWM]] = None
 
     options: FileDownloaderOptions = FileDownloaderOptions()
@@ -373,7 +376,7 @@ class FileDownloader(FrozenModel):
                 shutil.rmtree(self.local_path)
             self.local_path.mkdir()
 
-        if self.hwm_type is not None:
+        if self.hwm is not None:
             result = self._download_files_incremental(to_download)
         else:
             result = self._download_files(to_download)
@@ -466,6 +469,7 @@ class FileDownloader(FrozenModel):
     @validator("hwm_type", pre=True, always=True)
     def _validate_hwm_type(cls, hwm_type, values):
         source_path = values.get("source_path")
+        connection = values.get("connection")
 
         if hwm_type:
             if not source_path:
@@ -473,6 +477,14 @@ class FileDownloader(FrozenModel):
 
             if isinstance(hwm_type, str):
                 hwm_type = HWMClassRegistry.get(hwm_type)
+
+            if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM) or issubclass(hwm_type, FileHWM):
+                remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
+
+                old_hwm = OldFileListHWM(source=remote_file_folder)
+                hwm = old_file_hwm_to_new_file_hwm(old_hwm)
+                hwm_type = type(hwm)
+                values["hwm"] = hwm
 
             cls._check_hwm_type(hwm_type)
 
@@ -535,10 +547,9 @@ class FileDownloader(FrozenModel):
         strategy: HWMStrategy = StrategyManager.get_current()
 
         if strategy.hwm is None:
-            remote_file_folder = RemoteFolder(name=self.source_path, instance=self.connection.instance_url)
-            strategy.hwm = self.hwm_type(source=remote_file_folder)
+            strategy.hwm = self.hwm
 
-        if not strategy.hwm:
+        if not strategy.hwm.value:
             strategy.fetch_hwm()
 
         file_hwm = strategy.hwm
