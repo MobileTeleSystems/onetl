@@ -1,4 +1,6 @@
+from etl_entities.hwm import FileListHWM
 from etl_entities.old_hwm import ColumnHWM as OldColumnHWM
+from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 
 from onetl.hwm.auto_hwm import AutoHWM
 
@@ -12,6 +14,17 @@ def old_hwm_to_new_hwm(old_hwm: OldColumnHWM) -> AutoHWM:
         modified_time=old_hwm.modified_time,
     )
     return hwm  # noqa: WPS331
+
+
+def old_file_hwm_to_new_file_hwm(old_file_hwm: OldFileListHWM) -> FileListHWM:
+    file_hwm = FileListHWM(
+        name=old_file_hwm.qualified_name,
+        directory=old_file_hwm.source.full_name,
+        value=old_file_hwm.value,
+        modified_time=old_file_hwm.modified_time,
+    )
+
+    return file_hwm  # noqa: WPS331
 
 
 # ColumnHWM has abstract method serialize_value, so it's not possible to create a class instance

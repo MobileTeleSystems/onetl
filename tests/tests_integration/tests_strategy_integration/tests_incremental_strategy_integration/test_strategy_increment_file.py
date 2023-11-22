@@ -1,10 +1,11 @@
 import contextlib
 import secrets
 
-from etl_entities.hwm import FileListHWM
 from etl_entities.instance import RelativePath
+from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 
+from onetl._util.deprecated_hwm import old_file_hwm_to_new_file_hwm
 from onetl.file import FileDownloader
 from onetl.hwm.store import YAMLHWMStore
 from onetl.strategy import IncrementalStrategy
@@ -37,7 +38,8 @@ def test_file_downloader_increment(
         assert sorted(available) == sorted(uploaded_files)
 
     remote_file_folder = RemoteFolder(name=remote_path, instance=file_connection.instance_url)
-    file_hwm = FileListHWM(source=remote_file_folder)
+    old_file_hwm = OldFileListHWM(source=remote_file_folder)
+    file_hwm = old_file_hwm_to_new_file_hwm(old_file_hwm)
     file_hwm_name = file_hwm.qualified_name
 
     source_files = {RelativePath(file.relative_to(remote_path)) for file in uploaded_files}
@@ -93,7 +95,8 @@ def test_file_downloader_increment_fail(
             assert sorted(available) == sorted(uploaded_files)
 
             remote_file_folder = RemoteFolder(name=remote_path, instance=file_connection.instance_url)
-            file_hwm = FileListHWM(source=remote_file_folder)
+            old_file_hwm = OldFileListHWM(source=remote_file_folder)
+            file_hwm = old_file_hwm_to_new_file_hwm(old_file_hwm)
             file_hwm_name = file_hwm.qualified_name
 
             # HWM is updated in HWMStore
