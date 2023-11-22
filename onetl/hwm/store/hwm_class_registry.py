@@ -16,7 +16,13 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar, Iterator, Optional
 
-from etl_entities.old_hwm import HWM, DateHWM, DateTimeHWM, FileListHWM, IntHWM
+from etl_entities.hwm import (
+    HWM,
+    ColumnDateHWM,
+    ColumnDateTimeHWM,
+    ColumnIntHWM,
+    FileListHWM,
+)
 from pydantic import StrictInt
 
 
@@ -28,7 +34,7 @@ class HWMClassRegistry:
 
     .. code:: python
 
-        from etl_entities.old_hwm import IntHWM, DateHWM
+        from etl_entities.hwm import ColumnIntHWM, ColumnDateHWM
         from onetl.hwm.store import HWMClassRegistry
 
         HWMClassRegistry.get("int") == IntHWM
@@ -41,12 +47,12 @@ class HWMClassRegistry:
     """
 
     _mapping: ClassVar[dict[str, type[HWM]]] = {
-        "byte": IntHWM,
-        "integer": IntHWM,
-        "short": IntHWM,
-        "long": IntHWM,
-        "date": DateHWM,
-        "timestamp": DateTimeHWM,
+        "byte": ColumnIntHWM,
+        "integer": ColumnIntHWM,
+        "short": ColumnIntHWM,
+        "long": ColumnIntHWM,
+        "date": ColumnDateHWM,
+        "timestamp": ColumnDateTimeHWM,
         "file_list": FileListHWM,
     }
 
@@ -108,7 +114,7 @@ class Decimal(StrictInt):
 
 
 @register_hwm_class("float", "double", "fractional", "decimal", "numeric")
-class DecimalHWM(IntHWM):
+class DecimalHWM(ColumnIntHWM):
     """Same as IntHWM, but allows to pass values like 123.000 (float without fractional part)"""
 
     value: Optional[Decimal] = None

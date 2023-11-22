@@ -1,5 +1,5 @@
 import pytest
-from etl_entities.old_hwm import DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
 from onetl.connection import Oracle
 from onetl.db import DBReader
@@ -133,21 +133,21 @@ def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_s
             "hwm_int",
             "HWM1_INT",
             "TO_NUMBER(TEXT_STRING)",
-            IntHWM,
+            ColumnIntHWM,
             str,
         ),
         (
             "hwm_date",
             "HWM1_DATE",
             "TO_DATE(TEXT_STRING, 'YYYY-MM-DD')",
-            DateHWM,
+            ColumnDateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
             "hwm1_datetime",
             "TO_DATE(TEXT_STRING, 'YYYY-MM-DD HH24:MI:SS')",
-            DateTimeHWM,
+            ColumnDateTimeHWM,
             lambda x: x.strftime("%Y-%m-%d %H:%M:%S"),
         ),
     ],
@@ -225,7 +225,7 @@ def test_oracle_strategy_incremental_with_hwm_expr(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    if issubclass(hwm_type, IntHWM):
+    if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
         processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
     else:

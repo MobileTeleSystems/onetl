@@ -1,9 +1,11 @@
 from datetime import timedelta
 
 import pytest
+from etl_entities.hwm import ColumnDateTimeHWM, ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.old_hwm import DateTimeHWM, IntHWM
+from etl_entities.source import Column
 
+from onetl._util.deprecated_hwm import MockColumnHWM
 from onetl.connection import MongoDB
 from onetl.db import DBReader
 from onetl.strategy import IncrementalBatchStrategy
@@ -37,9 +39,9 @@ def df_schema():
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
-        (IntHWM, "hwm_int", 20, 30),  # step <  per_iter
-        (IntHWM, "hwm_int", 30, 30),  # step == per_iter
-        (DateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
+        (ColumnIntHWM, "hwm_int", 20, 30),  # step <  per_iter
+        (ColumnIntHWM, "hwm_int", 30, 30),  # step == per_iter
+        (ColumnDateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -78,7 +80,8 @@ def test_mongodb_strategy_incremental_batch(
     )
     reader = DBReader(connection=mongodb, table=prepare_schema_table.table, hwm_column=hwm_column, df_schema=df_schema)
 
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
+    name = MockColumnHWM(source=reader.source, column=Column(name=hwm_column)).qualified_name
+    hwm = hwm_type(name=name, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100

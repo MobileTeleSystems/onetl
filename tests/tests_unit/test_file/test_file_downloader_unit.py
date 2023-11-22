@@ -3,7 +3,13 @@ import textwrap
 from unittest.mock import Mock
 
 import pytest
-from etl_entities.old_hwm import HWM, ColumnHWM, DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm import (
+    HWM,
+    ColumnDateHWM,
+    ColumnDateTimeHWM,
+    ColumnHWM,
+    ColumnIntHWM,
+)
 
 from onetl.base import BaseFileConnection
 from onetl.core import FileFilter, FileLimit
@@ -44,9 +50,9 @@ def test_file_downloader_unknown_hwm_type():
 @pytest.mark.parametrize(
     "hwm_type, hwm_type_name",
     [
-        (IntHWM, "IntHWM"),
-        (DateHWM, "DateHWM"),
-        (DateTimeHWM, "DateTimeHWM"),
+        (ColumnIntHWM, "ColumnIntHWM"),
+        (ColumnDateHWM, "ColumnDateHWM"),
+        (ColumnDateTimeHWM, "ColumnDateTimeHWM"),
         (HWM, "HWM"),
         (ColumnHWM, "ColumnHWM"),
     ],

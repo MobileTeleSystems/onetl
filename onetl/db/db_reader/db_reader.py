@@ -4,10 +4,12 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional
 
 import frozendict
+from etl_entities.hwm import HWM
 from etl_entities.source import Column, Table
 from pydantic import Field, root_validator, validator
 
 from onetl._internal import uniq_ignore_case
+from onetl._util.deprecated_hwm import MockColumnHWM, old_hwm_to_new_hwm
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
@@ -15,6 +17,7 @@ from onetl.base import (
     ContainsGetMinMaxBounds,
 )
 from onetl.hooks import slot, support_hooks
+from onetl.hwm import AutoHWM
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
@@ -331,10 +334,13 @@ class DBReader(FrozenModel):
             df = reader.run()
     """
 
+    AutoHWM = AutoHWM
+
     connection: BaseDBConnection
     source: Table = Field(alias="table")
     columns: Optional[List[str]] = None
-    hwm_column: Optional[Column] = None
+    hwm: Optional[HWM] = None
+    hwm_column: Optional[Column | str | tuple] = None
     hwm_expression: Optional[str] = None
     where: Optional[Any] = None
     hint: Optional[Any] = None
@@ -375,38 +381,52 @@ class DBReader(FrozenModel):
         dialect = connection.Dialect
         return dialect.validate_df_schema(connection, df_schema)
 
-    @root_validator(pre=True)  # noqa: WPS231
-    def validate_hwm_column(cls, values: dict) -> dict:
+    @root_validator(pre=True)
+    def validate_hwm(cls, values: dict) -> dict:  # noqa: WPS231
         hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
-        df_schema: StructType | None = values.get("df_schema")
         hwm_expression: str | None = values.get("hwm_expression")
+        df_schema: StructType | None = values.get("df_schema")
         connection: BaseDBConnection = values["connection"]
+        source: Table = values.get("source") or values["table"]
+        hwm: Optional[HWM] = values.get("hwm")
 
-        if hwm_column is None or isinstance(hwm_column, Column):
+        if hwm_column is not None:
+            if not hwm_column:
+                raise ValueError
+
+            if not hwm_expression and isinstance(hwm_column, tuple):
+                hwm_column, hwm_expression = hwm_column  # noqa: WPS434
+
+                if not hwm_expression:
+                    raise ValueError(
+                        "When the 'hwm_column' field is a tuple, then it must be "
+                        "specified as tuple('column_name', 'expression'). Otherwise, "
+                        "the 'hwm_column' field should be a string.",
+                    )
+
+            if not isinstance(hwm_column, Column):
+                hwm_column = Column(name=hwm_column)  # type: ignore
+
+            if isinstance(source, str):
+                # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
+                source = Table(name=source, instance=connection.instance_url)
+            hwm = old_hwm_to_new_hwm(MockColumnHWM(source=source, column=hwm_column))
+            object.__setattr__(hwm, "expression", hwm_expression)  # noqa: WPS609
+
+        if hwm is None:
             return values
 
-        if not hwm_expression and not isinstance(hwm_column, str):
-            # ("new_hwm_column", "cast(hwm_column as date)")  noqa: E800
-            hwm_column, hwm_expression = hwm_column  # noqa: WPS434
-
-            if not hwm_expression:
-                raise ValueError(
-                    "When the 'hwm_column' field is a tuple, then it must be "
-                    "specified as tuple('column_name', 'expression'). Otherwise, "
-                    "the 'hwm_column' field should be a string.",
-                )
-
-        if df_schema is not None and hwm_column not in df_schema.fieldNames():
+        if df_schema is not None and hwm.entity not in df_schema.fieldNames():
             raise ValueError(
-                "'df_schema' struct must contain column specified in 'hwm_column'. "
+                "'df_schema' struct must contain column specified in 'hwm.entity'. "
                 "Otherwise DBReader cannot determine HWM type for this column",
             )
 
         dialect = connection.Dialect
-        dialect.validate_hwm_column(connection, hwm_column)  # type: ignore
+        dialect.validate_hwm_expression(connection, hwm)
+        dialect.validate_hwm(connection, hwm)
 
-        values["hwm_column"] = Column(name=hwm_column)  # type: ignore
-        values["hwm_expression"] = hwm_expression
+        values["hwm"] = hwm
 
         return values
 
@@ -429,8 +449,11 @@ class DBReader(FrozenModel):
         if not columns_list:
             raise ValueError("Parameter 'columns' can not be an empty list")
 
-        hwm_column = values.get("hwm_column")
-        hwm_expression = values.get("hwm_expression")
+        hwm: HWM = values.get("hwm")  # type: ignore
+        if hwm:
+            hwm_column, hwm_expression = hwm.entity, hwm.expression
+        else:
+            hwm_column, hwm_expression = None, None
 
         result: list[str] = []
         already_visited: set[str] = set()
@@ -444,7 +467,7 @@ class DBReader(FrozenModel):
             if column.casefold() in already_visited:
                 raise ValueError(f"Duplicated column name {item!r}")
 
-            if hwm_expression and hwm_column and hwm_column.name.casefold() == column.casefold():
+            if hwm_expression and hwm_column and hwm_column.casefold() == column.casefold():
                 raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as 'columns' name")
 
             result.append(column)
@@ -466,12 +489,6 @@ class DBReader(FrozenModel):
             )
 
         return None
-
-    @validator("hwm_expression", pre=True, always=True)  # noqa: WPS238, WPS231
-    def validate_hwm_expression(cls, hwm_expression, values):
-        connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
-        return dialect.validate_hwm_expression(connection=connection, value=hwm_expression)
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:
@@ -545,8 +562,8 @@ class DBReader(FrozenModel):
         self.connection.check()
 
         helper: StrategyHelper
-        if self.hwm_column:
-            helper = HWMStrategyHelper(reader=self, hwm_column=self.hwm_column, hwm_expression=self.hwm_expression)
+        if self.hwm is not None:
+            helper = HWMStrategyHelper(reader=self, hwm=self.hwm)
         else:
             helper = NonHWMStrategyHelper(reader=self)
 
@@ -580,6 +597,9 @@ class DBReader(FrozenModel):
 
         if self.where:
             log_json(log, self.where, "where")
+
+        if self.hwm:
+            log_with_indent(log, "HWM = '%s'", self.hwm)
 
         if self.hwm_column:
             log_with_indent(log, "hwm_column = '%s'", self.hwm_column)
@@ -625,15 +645,15 @@ class DBReader(FrozenModel):
         if not self.hwm_column:
             return columns
 
-        hwm_statement = self.hwm_column.name
-        if self.hwm_expression:
+        hwm_statement = self.hwm.entity  # type: ignore
+        if self.hwm.expression:  # type: ignore
             hwm_statement = self.connection.Dialect._expression_with_alias(  # noqa: WPS437
-                self.hwm_expression,
-                self.hwm_column.name,
+                self.hwm.expression,  # type: ignore
+                self.hwm.entity,  # type: ignore
             )
 
         columns_normalized = [column_name.casefold() for column_name in columns]
-        hwm_column_name = self.hwm_column.name.casefold()
+        hwm_column_name = self.hwm.entity.casefold()  # type: ignore
 
         if hwm_column_name in columns_normalized:
             column_index = columns_normalized.index(hwm_column_name)

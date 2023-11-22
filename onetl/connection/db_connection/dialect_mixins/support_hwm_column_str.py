@@ -1,19 +1,23 @@
 from __future__ import annotations
 
+from etl_entities.hwm import HWM
+
 from onetl.base import BaseDBConnection
 
 
 class SupportHWMColumnStr:
     @classmethod
-    def validate_hwm_column(
+    def validate_hwm(
         cls,
         connection: BaseDBConnection,
-        hwm_column: str | None,
-    ) -> str | None:
+        hwm: HWM,
+    ) -> HWM:
+        hwm_column = hwm.entity
+
         if not isinstance(hwm_column, str):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'hwm_column' parameter type to be 'str', "
+                f"{connection.__class__.__name__} requires 'hwm.column' parameter type to be 'str', "
                 f"got {type(hwm_column)}",
             )
 
-        return hwm_column
+        return hwm

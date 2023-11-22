@@ -19,13 +19,12 @@ import re
 from typing import ClassVar
 
 import yaml
-from etl_entities.hwm.hwm_type_registry import HWMTypeRegistry
+from etl_entities.hwm import HWM, HWMTypeRegistry
 from etl_entities.hwm_store import (
     BaseHWMStore,
     HWMStoreClassRegistry,
     register_hwm_store_class,
 )
-from etl_entities.old_hwm import HWM
 from platformdirs import user_data_dir
 from pydantic import validator
 

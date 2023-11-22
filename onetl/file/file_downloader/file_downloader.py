@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type
 
-from etl_entities.old_hwm import HWM, FileHWM
+from etl_entities.hwm import HWM, FileHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import Field, validator

@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from etl_entities.old_hwm import FileHWM
+from etl_entities.hwm import FileHWM
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel
@@ -30,7 +30,7 @@ class FileHWMFilter(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    hwm : :obj:`etl_entities.FileHWM`
+    hwm : :obj:`etl_entities.hwm.FileHWM`
 
         File HWM instance
     """

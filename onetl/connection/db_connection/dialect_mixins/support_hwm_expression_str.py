@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
+from etl_entities.hwm import HWM
 
 from onetl.base import BaseDBConnection
 
 
 class SupportHWMExpressionStr:
     @classmethod
-    def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-        if value is None:
+    def validate_hwm_expression(cls, connection: BaseDBConnection, hwm: HWM) -> HWM | None:
+        hwm_expression = hwm.expression
+        if hwm_expression is None:
             return None
 
-        if not isinstance(value, str):
+        if not isinstance(hwm_expression, str):
             raise TypeError(
-                f"{connection.__class__.__name__} requires 'hwm_expression' parameter type to be 'str', "
-                f"got {value.__class__.__name__!r}",
+                f"{connection.__class__.__name__} requires 'hwm.expression' parameter type to be 'str', "
+                f"got {hwm_expression.__class__.__name__!r}",
             )
 
-        return value
+        return hwm

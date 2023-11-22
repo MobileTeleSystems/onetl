@@ -145,7 +145,7 @@ def test_mongodb_reader_error_pass_hwm_expression(spark_mock, df_schema):
 
     with pytest.raises(
         ValueError,
-        match="'hwm_expression' parameter is not supported by MongoDB",
+        match="'hwm.expression' parameter is not supported by MongoDB",
     ):
         DBReader(connection=mongo, table="table", df_schema=df_schema, hwm_column=("hwm_int", "expr"))
 
@@ -177,6 +177,6 @@ def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock, df_schema):
 
     with pytest.raises(
         ValueError,
-        match="'df_schema' struct must contain column specified in 'hwm_column'.*",
+        match="'df_schema' struct must contain column specified in 'hwm.entity'.*",
     ):
         DBReader(connection=mongo, table="table", hwm_column="_id2", df_schema=df_schema)

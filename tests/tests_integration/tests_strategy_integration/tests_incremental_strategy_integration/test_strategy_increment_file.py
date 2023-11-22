@@ -1,8 +1,8 @@
 import contextlib
 import secrets
 
+from etl_entities.hwm import FileListHWM
 from etl_entities.instance import RelativePath
-from etl_entities.old_hwm import FileListHWM
 from etl_entities.source import RemoteFolder
 
 from onetl.file import FileDownloader

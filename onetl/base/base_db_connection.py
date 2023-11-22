@@ -23,6 +23,7 @@ from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Statement
 
 if TYPE_CHECKING:
+    from etl_entities.hwm import HWM
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
 
@@ -60,19 +61,15 @@ class BaseDBDialect(ABC):
 
     @classmethod
     @abstractmethod
-    def validate_hwm_column(
-        cls,
-        connection: BaseDBConnection,
-        hwm_column: str | None,
-    ) -> str | None:
-        """Check if ``hwm_column`` value is valid.
+    def validate_hwm(cls, connection: BaseDBConnection, hwm: HWM) -> HWM:
+        """Check if ``hwm`` class is valid.
 
         Raises
         ------
         TypeError
-            If value type is invalid
+            If hwm type is invalid
         ValueError
-            If value is invalid
+            If hwm is invalid
         """
 
     @classmethod
