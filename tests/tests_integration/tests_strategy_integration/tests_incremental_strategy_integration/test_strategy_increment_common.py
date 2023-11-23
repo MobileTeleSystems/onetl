@@ -20,7 +20,7 @@ pytestmark = pytest.mark.postgres
 @pytest.mark.parametrize(
     "hwm_column, new_type",
     [
-        # ("hwm_int", "date"),  # TODO: create solution for such cases
+        ("hwm_int", "date"),
         ("hwm_date", "integer"),
         ("hwm_datetime", "integer"),
     ],
@@ -85,7 +85,7 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
         with pytest.raises(Py4JJavaError):
             reader2.run()
 
-        with pytest.raises(Py4JJavaError):
+        with pytest.raises(ValueError):
             reader3.run()
 
 

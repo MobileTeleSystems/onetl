@@ -15,9 +15,9 @@ pytestmark = pytest.mark.mssql
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
-        (ColumnIntHWM, "column_hwm_int"),
-        (ColumnDateHWM, "column_hwm_date"),
-        (ColumnDateTimeHWM, "column_hwm_datetime"),
+        (ColumnIntHWM, "hwm_int"),
+        (ColumnDateHWM, "hwm_date"),
+        (ColumnDateTimeHWM, "hwm_datetime"),
     ],
 )
 @pytest.mark.parametrize(
