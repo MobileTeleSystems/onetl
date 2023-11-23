@@ -1013,3 +1013,19 @@ def test_file_downloader_with_temp_path(file_connection_with_path_and_files, tem
         # temp_path is not removed after download is finished,
         # because this may conflict with processes running in parallel
         assert Path(temp_path).is_dir()
+
+
+def test_hwm_type_deprecation_warning(caplog, file_connection_with_path):
+    file_connection, remote_path = file_connection_with_path
+    with caplog.at_level(logging.WARNING):
+        FileDownloader(
+            connection=file_connection,
+            local_path="/path",
+            source_path=remote_path,
+            hwm_type="file_list",
+        )
+
+    assert (
+        'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM(name="...") class instead.'
+        in caplog.text
+    )

@@ -202,8 +202,7 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
             with pytest.raises(Py4JJavaError):
                 reader2.run()
 
-            # can't operate previous hwm type with new one
-            with pytest.raises(TypeError):
+            with pytest.raises(ValueError):
                 reader3.run()
 
             break

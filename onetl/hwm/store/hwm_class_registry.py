@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, ClassVar, Iterator, Optional
+from typing import Any, Callable, ClassVar, Iterator
 
 from etl_entities.hwm import (
     HWM,
@@ -111,10 +111,3 @@ class Decimal(StrictInt):
         if round(float(value)) != float(value):
             raise ValueError(f"{cls.__name__} cannot have fraction part")
         return int(value)
-
-
-@register_hwm_class("float", "double", "fractional", "decimal", "numeric")
-class DecimalHWM(ColumnIntHWM):
-    """Same as IntHWM, but allows to pass values like 123.000 (float without fractional part)"""
-
-    value: Optional[Decimal] = None

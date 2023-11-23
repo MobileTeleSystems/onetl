@@ -1,3 +1,4 @@
+import logging
 import re
 import textwrap
 
@@ -211,3 +212,17 @@ def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_
             columns=columns,
             hwm_column=hwm_column,
         )
+
+
+def test_hwm_column_deprecation_warning(spark_mock, caplog):
+    with caplog.at_level(logging.WARNING):
+        DBReader(
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
+            table="schema.table",
+            hwm_column="hwm_column",
+        )
+
+    assert (
+        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=AutoHWM(...) class instead.'
+        in caplog.text
+    )

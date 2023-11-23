@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
 from etl_entities.hwm import HWM
@@ -340,7 +340,7 @@ class DBReader(FrozenModel):
     source: Table = Field(alias="table")
     columns: Optional[List[str]] = None
     hwm: Optional[HWM] = None
-    hwm_column: Optional[Column | str | tuple] = None
+    hwm_column: Optional[Union[Column, str, tuple]] = None
     hwm_expression: Optional[str] = None
     where: Optional[Any] = None
     hint: Optional[Any] = None
