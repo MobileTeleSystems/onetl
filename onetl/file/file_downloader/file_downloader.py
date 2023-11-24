@@ -221,7 +221,7 @@ class FileDownloader(FrozenModel):
     filters: List[BaseFileFilter] = Field(default_factory=list, alias="filter")
     limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
-    hwm: Optional[HWM] = None
+    hwm: Optional[FileHWM] = None
     hwm_type: Optional[Type[FileHWM]] = None
 
     options: FileDownloaderOptions = FileDownloaderOptions()

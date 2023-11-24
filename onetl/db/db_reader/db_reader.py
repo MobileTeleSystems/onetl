@@ -4,7 +4,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
-from etl_entities.hwm import HWM
+from etl_entities.hwm import HWM, ColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, root_validator, validator
 
@@ -339,7 +339,7 @@ class DBReader(FrozenModel):
     connection: BaseDBConnection
     source: Table = Field(alias="table")
     columns: Optional[List[str]] = None
-    hwm: Optional[HWM] = None
+    hwm: Optional[ColumnHWM] = None
     hwm_column: Optional[Union[Column, str, tuple]] = None
     hwm_expression: Optional[str] = None
     where: Optional[Any] = None
@@ -489,6 +489,13 @@ class DBReader(FrozenModel):
             )
 
         return None
+
+    def detect_hwm(self, hwm: HWM) -> HWM:
+        schema = {field.name.casefold(): field for field in self.get_df_schema()}
+        column = hwm.entity.casefold()
+        hwm_column_type = schema[column].dataType.typeName()
+        detected_hwm_class = self.connection.Dialect.detect_hwm_column_type(hwm_column_type)
+        return detected_hwm_class.parse_obj(hwm)
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:

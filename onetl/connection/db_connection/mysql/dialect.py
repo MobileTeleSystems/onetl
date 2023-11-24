@@ -15,11 +15,23 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from onetl.connection.db_connection.jdbc_connection import JDBCDialect
+from onetl.hwm import DecimalHWM
+from onetl.hwm.store import HWMClassRegistry
+
+if TYPE_CHECKING:
+    from etl_entities.hwm import ColumnHWM
 
 
 class MySQLDialect(JDBCDialect):
+    @classmethod
+    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
+        if hwm_column_type in {"float", "double", "fractional", "decimal", "numeric"}:
+            return DecimalHWM  # type: ignore
+        return HWMClassRegistry.get(hwm_column_type)  # type: ignore
+
     @classmethod
     def _escape_column(cls, value: str) -> str:
         return f"`{value}`"
