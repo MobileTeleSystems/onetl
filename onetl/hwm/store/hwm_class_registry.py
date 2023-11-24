@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, ClassVar, Iterator
+from typing import ClassVar
 
 from etl_entities.hwm import (
     HWM,
@@ -23,7 +23,6 @@ from etl_entities.hwm import (
     ColumnIntHWM,
     FileListHWM,
 )
-from pydantic import StrictInt
 
 
 class HWMClassRegistry:
@@ -99,15 +98,3 @@ def register_hwm_class(*type_names: str):
         return cls
 
     return wrapper
-
-
-class Decimal(StrictInt):
-    @classmethod
-    def __get_validators__(cls) -> Iterator[Callable]:
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any) -> int:
-        if round(float(value)) != float(value):
-            raise ValueError(f"{cls.__name__} cannot have fraction part")
-        return int(value)

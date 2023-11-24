@@ -23,7 +23,7 @@ from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Statement
 
 if TYPE_CHECKING:
-    from etl_entities.hwm import HWM
+    from etl_entities.hwm import HWM, ColumnHWM
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
 
@@ -122,6 +122,13 @@ class BaseDBDialect(ABC):
             If value type is invalid
         ValueError
             If value is invalid
+        """
+
+    @classmethod
+    @abstractmethod
+    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
+        """
+        Detects hwm column type based on specific data types in connections data stores
         """
 
     @classmethod

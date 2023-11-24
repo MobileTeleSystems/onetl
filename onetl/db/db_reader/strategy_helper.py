@@ -21,9 +21,8 @@ from etl_entities.hwm import HWM, ColumnHWM
 from pydantic import Field, root_validator, validator
 from typing_extensions import Protocol
 
-from onetl.db.db_reader.db_reader import AutoHWM, DBReader
+from onetl.db.db_reader import DBReader
 from onetl.hwm import Statement
-from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import FrozenModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -94,18 +93,15 @@ class HWMStrategyHelper(FrozenModel):
         if strategy.hwm is None:
             strategy.hwm = hwm
 
+        if strategy.hwm.entity != hwm.entity:
+            # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
+            # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
+            raise ValueError
+
         if strategy.hwm.value is None:
             strategy.fetch_hwm()
 
-        if isinstance(hwm, AutoHWM):
-            detected_hwm_type = cls.detect_hwm_column_type(reader, hwm.entity)
-            strategy.hwm = detected_hwm_type(
-                name=strategy.hwm.name,
-                entity=strategy.hwm.entity,
-                value=strategy.hwm.value,
-                expression=strategy.hwm.expression,
-                description=strategy.hwm.description,
-            )
+        strategy.hwm = reader.detect_hwm(strategy.hwm)
 
         return strategy
 
@@ -143,13 +139,6 @@ class HWMStrategyHelper(FrozenModel):
         raise ValueError(
             f"{hwm_type.__name__} cannot be used with {reader.__class__.__name__}",
         )
-
-    @staticmethod
-    def detect_hwm_column_type(reader: DBReader, hwm_column: str) -> type[HWM]:
-        schema = {field.name.casefold(): field for field in reader.get_df_schema()}
-        column = hwm_column.casefold()
-        hwm_column_type = schema[column].dataType.typeName()
-        return HWMClassRegistry.get(hwm_column_type)
 
     def save(self, df: DataFrame) -> DataFrame:
         from pyspark.sql import functions as F  # noqa: N812

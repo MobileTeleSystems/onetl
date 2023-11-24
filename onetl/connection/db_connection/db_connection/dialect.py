@@ -16,10 +16,14 @@ from __future__ import annotations
 
 import operator
 from datetime import date, datetime
-from typing import Any, Callable, ClassVar, Dict
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict
 
 from onetl.base import BaseDBDialect
 from onetl.hwm import Statement
+from onetl.hwm.store import HWMClassRegistry
+
+if TYPE_CHECKING:
+    from etl_entities.hwm import ColumnHWM
 
 
 class DBDialect(BaseDBDialect):
@@ -31,6 +35,10 @@ class DBDialect(BaseDBDialect):
         operator.eq: "{} == {}",
         operator.ne: "{} != {}",
     }
+
+    @classmethod
+    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
+        return HWMClassRegistry.get(hwm_column_type)  # type: ignore
 
     @classmethod
     def _escape_column(cls, value: str) -> str:
