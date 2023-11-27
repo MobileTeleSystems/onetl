@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class MySQLDialect(JDBCDialect):
     @classmethod
     def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
-        if hwm_column_type in {"float", "double", "fractional", "decimal", "numeric"}:
+        if hwm_column_type == "double":
             return DecimalHWM  # type: ignore
         return HWMClassRegistry.get(hwm_column_type)  # type: ignore
 
