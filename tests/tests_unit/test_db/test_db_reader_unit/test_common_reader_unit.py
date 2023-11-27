@@ -223,6 +223,6 @@ def test_hwm_column_deprecation_warning(spark_mock, caplog):
         )
 
     assert (
-        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=AutoHWM(...) class instead.'
+        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoHWM(...) class instead.'
         in caplog.text
     )

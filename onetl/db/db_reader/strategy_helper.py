@@ -67,7 +67,7 @@ class NonHWMStrategyHelper(FrozenModel):
 
 class HWMStrategyHelper(FrozenModel):
     reader: DBReader
-    hwm: HWM
+    hwm: ColumnHWM
     strategy: HWMStrategy = Field(default_factory=StrategyManager.get_current)
 
     class Config:

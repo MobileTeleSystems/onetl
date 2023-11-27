@@ -112,8 +112,30 @@ class DBReader(FrozenModel):
 
             Some sources does not support data filtering.
 
+    hwm : type[HWM] | None, default: ``None``
+        HWM class to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
+
+        If you want to use some SQL expression as HWM value, you can pass into ``hwm`` class
+        ``hwm.expression="expression"``, like:
+
+        .. code:: python
+
+            from onetl.hwm import AutoHWM
+
+            hwm = AutoHWM(
+                name="...", column="hwm_column", expression="cast(hwm_column_orig as date)"
+            )
+
+        HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
+
+        .. note::
+
+            Some sources does not support ``hwm.expression``.
+
     hwm_column : str or tuple[str, any], default: ``None``
-        Column to be used as :ref:`column-hwm` value.
+        This field is deprecated since v0.10.0, use ``hwm`` instead.
+
+        Column to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
 
         If you want to use some SQL expression as HWM value, you can pass it as tuple
         ``("column_name", "expression")``, like:
@@ -305,6 +327,7 @@ class DBReader(FrozenModel):
         from onetl.db import DBReader
         from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
+        from onetl.hwm import AutoHWM
         from pyspark.sql import SparkSession
 
         maven_packages = Postgres.get_packages()
@@ -325,7 +348,9 @@ class DBReader(FrozenModel):
         reader = DBReader(
             connection=postgres,
             source="fiddle.dummy",
-            hwm_column="d_age",  # mandatory for IncrementalStrategy
+            hwm=DBReader.AutoHWM(
+                name="...", column="d_age"
+            ),  # mandatory for IncrementalStrategy
         )
 
         # read data from table "fiddle.dummy"
@@ -449,11 +474,8 @@ class DBReader(FrozenModel):
         if not columns_list:
             raise ValueError("Parameter 'columns' can not be an empty list")
 
-        hwm: HWM = values.get("hwm")  # type: ignore
-        if hwm:
-            hwm_column, hwm_expression = hwm.entity, hwm.expression
-        else:
-            hwm_column, hwm_expression = None, None
+        hwm: ColumnHWM = values.get("hwm")  # type: ignore
+        hwm_column, hwm_expression = (hwm.entity, hwm.expression) if hwm else (None, None)
 
         result: list[str] = []
         already_visited: set[str] = set()
@@ -652,21 +674,24 @@ class DBReader(FrozenModel):
         if not self.hwm_column:
             return columns
 
-        hwm_statement = self.hwm.entity  # type: ignore
-        if self.hwm.expression:  # type: ignore
-            hwm_statement = self.connection.Dialect._expression_with_alias(  # noqa: WPS437
-                self.hwm.expression,  # type: ignore
-                self.hwm.entity,  # type: ignore
+        if self.hwm:
+            hwm_statement = (
+                self.hwm.entity
+                if not self.hwm.expression
+                else self.connection.Dialect._expression_with_alias(  # noqa: WPS437
+                    self.hwm.expression,
+                    self.hwm.entity,
+                )
             )
 
-        columns_normalized = [column_name.casefold() for column_name in columns]
-        hwm_column_name = self.hwm.entity.casefold()  # type: ignore
+            columns_normalized = [column_name.casefold() for column_name in columns]
+            hwm_column_name = self.hwm.entity.casefold()
 
-        if hwm_column_name in columns_normalized:
-            column_index = columns_normalized.index(hwm_column_name)
-            columns[column_index] = hwm_statement
-        else:
-            columns.append(hwm_statement)
+            if hwm_column_name in columns_normalized:
+                column_index = columns_normalized.index(hwm_column_name)
+                columns[column_index] = hwm_statement
+            else:
+                columns.append(hwm_statement)
 
         return columns
 

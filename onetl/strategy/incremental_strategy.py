@@ -220,6 +220,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
+        from onetl.hwm import AutoHWM
 
         from pyspark.sql import SparkSession
 
@@ -242,7 +243,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -289,7 +290,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="business_dt"),
         )
 
         with IncrementalStrategy(offset=timedelta(days=1)):
@@ -312,6 +313,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
+        from etl_entities import FileListHWM
 
         sftp = SFTP(
             host="sftp.domain.com",
@@ -323,7 +325,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=sftp,
             source_path="/remote",
             local_path="/local",
-            hwm_type="file_list",
+            hwm_type=FileListHWM(name="some_hwm_name", directory="/remote"),
         )
 
         with IncrementalStrategy():
@@ -483,6 +485,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
         from onetl.strategy import IncrementalBatchStrategy
+        from onetl.hwm import AutoHWM
 
         from pyspark.sql import SparkSession
 
@@ -507,7 +510,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -611,7 +614,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="business_dt"),
         )
 
         with IncrementalBatchStrategy(

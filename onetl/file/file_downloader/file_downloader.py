@@ -130,8 +130,17 @@ class FileDownloader(FrozenModel):
     options : :obj:`~FileDownloader.Options`  | dict | None, default: ``None``
         File downloading options. See :obj:`~FileDownloader.Options`
 
+    hwm : type[HWM] | None, default: ``None``
+
+        HWM class to detect changes in incremental run. See :etl-entities:`File HWM <hwm/file/index.html>`
+
+        .. warning ::
+            Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
+
     hwm_type : str | type[HWM] | None, default: ``None``
-        HWM type to detect changes in incremental run. See :ref:`file-hwm`
+        This field is deprecated since v0.10.0, use ``hwm`` instead.
+
+        HWM type to detect changes in incremental run. See :etl-entities:`File HWM <hwm/file/index.html>`
 
         .. warning ::
             Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
@@ -195,6 +204,7 @@ class FileDownloader(FrozenModel):
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import IncrementalStrategy
+        from etl_entities.hwm import FileListHWM
 
         sftp = SFTP(...)
 
@@ -203,7 +213,9 @@ class FileDownloader(FrozenModel):
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            hwm_type="file_list",  # mandatory for IncrementalStrategy
+            hwm=FileListHWM(
+                name="...", directory="/path/to/remote/source"
+            ),  # mandatory for IncrementalStrategy
         )
 
         # download files to "/path/to/local", but only new ones
@@ -480,7 +492,6 @@ class FileDownloader(FrozenModel):
 
             if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM) or issubclass(hwm_type, FileHWM):
                 remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
-
                 old_hwm = OldFileListHWM(source=remote_file_folder)
                 hwm = old_file_hwm_to_new_file_hwm(old_hwm)
                 hwm_type = type(hwm)
