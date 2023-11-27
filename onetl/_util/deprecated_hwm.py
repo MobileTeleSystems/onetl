@@ -26,11 +26,11 @@ log = logging.getLogger(__name__)
 def old_hwm_to_new_hwm(old_hwm: OldColumnHWM) -> AutoHWM:
     log.warning(
         'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
-        " in future versions. Use hwm=AutoHWM(...) class instead.",
+        " in future versions. Use hwm=DBReader.AutoHWM(...) class instead.",
     )
     hwm = AutoHWM(
         name=old_hwm.qualified_name,
-        entity=old_hwm.column.name,
+        column=old_hwm.column.name,
         value=old_hwm.value,
         modified_time=old_hwm.modified_time,
     )

@@ -67,6 +67,7 @@ class SnapshotStrategy(BaseStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import SnapshotStrategy
+        from onetl.hwm import AutoHWM
 
         from pyspark.sql import SparkSession
 
@@ -89,7 +90,7 @@ class SnapshotStrategy(BaseStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -238,6 +239,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
         from onetl.strategy import SnapshotBatchStrategy
+        from onetl.hwm import AutoHWM
 
         from pyspark.sql import SparkSession
 
@@ -262,7 +264,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -387,7 +389,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoHWM(name="some_hwm_name", column="business_dt"),
         )
 
         with SnapshotBatchStrategy(
