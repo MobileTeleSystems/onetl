@@ -16,16 +16,10 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from etl_entities.hwm import (
-    HWM,
-    ColumnDateHWM,
-    ColumnDateTimeHWM,
-    ColumnIntHWM,
-    FileListHWM,
-)
+from etl_entities.hwm import HWM, ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
 
-class HWMClassRegistry:
+class SparkTypeToHWM:
     """Registry class for HWM types
 
     Examples
@@ -34,14 +28,14 @@ class HWMClassRegistry:
     .. code:: python
 
         from etl_entities.hwm import ColumnIntHWM, ColumnDateHWM
-        from onetl.hwm.store import HWMClassRegistry
+        from onetl.hwm.store import SparkTypeToHWM
 
-        HWMClassRegistry.get("int") == IntHWM
-        HWMClassRegistry.get("integer") == IntHWM  # multiple type names are supported
+        SparkTypeToHWM.get("int") == IntHWM
+        SparkTypeToHWM.get("integer") == IntHWM  # multiple type names are supported
 
-        HWMClassRegistry.get("date") == DateHWM
+        SparkTypeToHWM.get("date") == DateHWM
 
-        HWMClassRegistry.get("unknown")  # raise KeyError
+        SparkTypeToHWM.get("unknown")  # raise KeyError
 
     """
 
@@ -52,7 +46,6 @@ class HWMClassRegistry:
         "long": ColumnIntHWM,
         "date": ColumnDateHWM,
         "timestamp": ColumnDateTimeHWM,
-        "file_list": FileListHWM,
     }
 
     @classmethod
@@ -77,8 +70,8 @@ def register_hwm_class(*type_names: str):
     .. code:: python
 
         from etl_entities import HWM
-        from onetl.hwm.store import HWMClassRegistry
-        from onetl.hwm.store import HWMClassRegistry, register_hwm_class
+        from onetl.hwm.store import SparkTypeToHWM
+        from onetl.hwm.store import SparkTypeToHWM, register_hwm_class
 
 
         @register_hwm_class("somename", "anothername")
@@ -86,14 +79,14 @@ def register_hwm_class(*type_names: str):
             ...
 
 
-        HWMClassRegistry.get("somename") == MyClass
-        HWMClassRegistry.get("anothername") == MyClass
+        SparkTypeToHWM.get("somename") == MyClass
+        SparkTypeToHWM.get("anothername") == MyClass
 
     """
 
     def wrapper(cls: type[HWM]):
         for type_name in type_names:
-            HWMClassRegistry.add(type_name, cls)
+            SparkTypeToHWM.add(type_name, cls)
 
         return cls
 

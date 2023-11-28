@@ -1,6 +1,5 @@
 import re
 import textwrap
-import warnings
 
 import pytest
 
@@ -215,14 +214,10 @@ def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_
 
 
 def test_hwm_column_deprecation_warning(spark_mock):
-    with warnings.catch_warnings(record=True) as w:
+    msg = 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM(...) class instead.'
+    with pytest.warns(DeprecationWarning, match=re.escape(msg)):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             hwm_column="hwm_column",
         )
-
-    assert (
-        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM(...) class instead.'
-        in str(w[-1].message)  # noqa: WPS441
-    )
