@@ -1,4 +1,4 @@
-| Update way of passing ``hwm`` to ``DBReader`` and ``FileDownloader`` classes:
+| Change the way of passing ``hwm`` to ``DBReader`` and ``FileDownloader`` classes:
 | **DBReader** before:
 
 .. code-block:: python
@@ -46,4 +46,6 @@ after:
     )
 
 | Now user can pass custom hwm classes into ``hwm`` field in ``DBReader`` or ``FileDownloader``
-| Mark usage classes from etl_entities.old_hwm as **deprecated**
+| Classes from etl_entities.old_hwm are marked as **deprecated**
+| Raise deprecation warning if user passes "hwm_column" (in ``DBReader``), "hwm_type" (in ``FileDownloader``):
+> "... class is deprecated since version 0.10.0. It will be removed in future versions..."

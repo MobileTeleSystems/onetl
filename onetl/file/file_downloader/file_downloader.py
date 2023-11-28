@@ -22,14 +22,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type
 
-from etl_entities.hwm import HWM, FileHWM
+from etl_entities.hwm import HWM, FileHWM, FileListHWM
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
 from pydantic import Field, validator
 
 from onetl._internal import generate_temp_path
-from onetl._util.deprecated_hwm import old_file_hwm_to_new_file_hwm
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
@@ -138,7 +137,9 @@ class FileDownloader(FrozenModel):
             Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
 
     hwm_type : str | type[HWM] | None, default: ``None``
-        This field is deprecated since v0.10.0, use ``hwm`` instead.
+        .. deprecated:: 0.10.0
+
+            Use :obj:`~hwm` instead.
 
         HWM type to detect changes in incremental run. See :etl-entities:`File HWM <hwm/file/index.html>`
 
@@ -493,7 +494,16 @@ class FileDownloader(FrozenModel):
             if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM) or issubclass(hwm_type, FileHWM):
                 remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
                 old_hwm = OldFileListHWM(source=remote_file_folder)
-                hwm = old_file_hwm_to_new_file_hwm(old_hwm)
+                log.warning(
+                    'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed'
+                    ' in future versions. Use hwm=FileListHWM(name="...") class instead.',
+                )
+                hwm = FileListHWM(
+                    name=old_hwm.qualified_name,
+                    directory=old_hwm.source.full_name,
+                    value=old_hwm.value,
+                    modified_time=old_hwm.modified_time,
+                )
                 hwm_type = type(hwm)
                 values["hwm"] = hwm
 
