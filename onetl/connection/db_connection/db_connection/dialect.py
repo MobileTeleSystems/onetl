@@ -23,7 +23,9 @@ from onetl.hwm import Statement
 from onetl.hwm.store import HWMClassRegistry
 
 if TYPE_CHECKING:
-    from etl_entities.hwm import ColumnHWM
+    from etl_entities.hwm import HWM, ColumnHWM
+
+    from onetl.connection.db_connection.db_connection.connection import BaseDBConnection
 
 
 class DBDialect(BaseDBDialect):
@@ -35,6 +37,12 @@ class DBDialect(BaseDBDialect):
         operator.eq: "{} == {}",
         operator.ne: "{} != {}",
     }
+
+    @classmethod
+    def validate_hwm(cls, connection: BaseDBConnection, hwm: HWM) -> HWM:
+        if hasattr(cls, "validate_hwm_expression"):
+            cls.validate_hwm_expression(connection, hwm)
+        return hwm
 
     @classmethod
     def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:

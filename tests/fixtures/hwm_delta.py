@@ -9,7 +9,7 @@ from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM, Fil
     params=[
         (
             ColumnIntHWM(
-                name="some_hwm_name_unique_for_specific_process_and_source",
+                name=secrets.token_hex(5),
                 column=secrets.token_hex(5),
                 value=10,
             ),
@@ -17,7 +17,7 @@ from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM, Fil
         ),
         (
             ColumnDateHWM(
-                name="some_hwm_name_unique_for_specific_process_and_source",
+                name=secrets.token_hex(5),
                 column=secrets.token_hex(5),
                 value=date(year=2023, month=8, day=15),
             ),
@@ -25,7 +25,7 @@ from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM, Fil
         ),
         (
             ColumnDateTimeHWM(
-                name="some_hwm_name_unique_for_specific_process_and_source",
+                name=secrets.token_hex(5),
                 column=secrets.token_hex(5),
                 value=datetime(year=2023, month=8, day=15, hour=11, minute=22, second=33),
             ),
@@ -33,7 +33,7 @@ from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM, Fil
         ),
         (
             FileListHWM(
-                name="some_hwm_name_unique_for_specific_process_and_source",
+                name=secrets.token_hex(5),
                 directory=f"/absolute/{secrets.token_hex(5)}",
                 value=["some/path", "another.file"],
             ),

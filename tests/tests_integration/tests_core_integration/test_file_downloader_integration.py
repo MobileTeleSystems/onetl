@@ -3,6 +3,7 @@ import os
 import re
 import secrets
 import tempfile
+import warnings
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 
@@ -1015,9 +1016,9 @@ def test_file_downloader_with_temp_path(file_connection_with_path_and_files, tem
         assert Path(temp_path).is_dir()
 
 
-def test_hwm_type_deprecation_warning(caplog, file_connection_with_path):
+def test_hwm_type_deprecation_warning(file_connection_with_path):
     file_connection, remote_path = file_connection_with_path
-    with caplog.at_level(logging.WARNING):
+    with warnings.catch_warnings(record=True) as w:
         FileDownloader(
             connection=file_connection,
             local_path="/path",
@@ -1027,5 +1028,5 @@ def test_hwm_type_deprecation_warning(caplog, file_connection_with_path):
 
     assert (
         'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM(name="...") class instead.'
-        in caplog.text
+        in str(w[-1].message)  # noqa: WPS441
     )

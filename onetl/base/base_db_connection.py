@@ -113,19 +113,6 @@ class BaseDBDialect(ABC):
 
     @classmethod
     @abstractmethod
-    def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-        """Check if ``hwm_expression`` value is valid.
-
-        Raises
-        ------
-        TypeError
-            If value type is invalid
-        ValueError
-            If value is invalid
-        """
-
-    @classmethod
-    @abstractmethod
     def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
         """
         Detects hwm column type based on specific data types in connections data stores
