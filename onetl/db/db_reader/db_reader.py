@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
 from etl_entities.hwm import HWM, ColumnHWM
+from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, root_validator, validator
 
 from onetl._internal import uniq_ignore_case
-from onetl._util.deprecated_hwm import MockColumnHWM, old_hwm_to_new_hwm
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
@@ -133,7 +133,9 @@ class DBReader(FrozenModel):
             Some sources does not support ``hwm.expression``.
 
     hwm_column : str or tuple[str, any], default: ``None``
-        This field is deprecated since v0.10.0, use ``hwm`` instead.
+        .. deprecated:: 0.10.0
+
+            Use :obj:`~hwm` instead.
 
         Column to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
 
@@ -416,9 +418,6 @@ class DBReader(FrozenModel):
         hwm: Optional[HWM] = values.get("hwm")
 
         if hwm_column is not None:
-            if not hwm_column:
-                raise ValueError
-
             if not hwm_expression and isinstance(hwm_column, tuple):
                 hwm_column, hwm_expression = hwm_column  # noqa: WPS434
 
@@ -435,7 +434,17 @@ class DBReader(FrozenModel):
             if isinstance(source, str):
                 # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
                 source = Table(name=source, instance=connection.instance_url)
-            hwm = old_hwm_to_new_hwm(MockColumnHWM(source=source, column=hwm_column))
+            old_hwm = OldColumnHWM(source=source, column=hwm_column)
+            log.warning(
+                'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
+                " in future versions. Use hwm=DBReader.AutoHWM(...) class instead.",
+            )
+            hwm = AutoHWM(
+                name=old_hwm.qualified_name,
+                column=old_hwm.column.name,
+                value=old_hwm.value,
+                modified_time=old_hwm.modified_time,
+            )
             object.__setattr__(hwm, "expression", hwm_expression)  # noqa: WPS609
 
         if hwm is None:
@@ -671,27 +680,26 @@ class DBReader(FrozenModel):
 
         columns = uniq_ignore_case(columns)
 
-        if not self.hwm_column:
+        if not self.hwm:
             return columns
 
-        if self.hwm:
-            hwm_statement = (
-                self.hwm.entity
-                if not self.hwm.expression
-                else self.connection.Dialect._expression_with_alias(  # noqa: WPS437
-                    self.hwm.expression,
-                    self.hwm.entity,
-                )
+        hwm_statement = (
+            self.hwm.entity
+            if not self.hwm.expression
+            else self.connection.Dialect._expression_with_alias(  # noqa: WPS437
+                self.hwm.expression,
+                self.hwm.entity,
             )
+        )
 
-            columns_normalized = [column_name.casefold() for column_name in columns]
-            hwm_column_name = self.hwm.entity.casefold()
+        columns_normalized = [column_name.casefold() for column_name in columns]
+        hwm_column_name = self.hwm.entity.casefold()
 
-            if hwm_column_name in columns_normalized:
-                column_index = columns_normalized.index(hwm_column_name)
-                columns[column_index] = hwm_statement
-            else:
-                columns.append(hwm_statement)
+        if hwm_column_name in columns_normalized:
+            column_index = columns_normalized.index(hwm_column_name)
+            columns[column_index] = hwm_statement
+        else:
+            columns.append(hwm_statement)
 
         return columns
 

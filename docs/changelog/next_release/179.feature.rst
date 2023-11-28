@@ -1,2 +1,1 @@
-* Add ``DBReader.AutoHWM`` class for auto-detecting hwm class by **source column type** and get needed class in ``HWMClassRegistry``
-* Move custom hwm class detection into ``DBReader.Dialect.detect_hwm_column_type`` method, examples: ``MySQL`` and ``Oracle`` connections
+ Add ``DBReader.AutoHWM`` class for auto-detecting hwm class by **source column type** and get needed class in ``HWMClassRegistry``

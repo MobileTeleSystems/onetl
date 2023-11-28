@@ -1,9 +1,9 @@
+import secrets
+
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.source import Column
 
-from onetl._util.deprecated_hwm import MockColumnHWM
 from onetl.connection import MSSQL
 from onetl.db import DBReader
 from onetl.strategy import IncrementalStrategy
@@ -47,10 +47,14 @@ def test_mssql_strategy_incremental(
         spark=spark,
         extra={"trustServerCertificate": "true"},
     )
-    reader = DBReader(connection=mssql, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    hwm_name = secrets.token_hex(5)
+    reader = DBReader(
+        connection=mssql,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoHWM(name=hwm_name, column=hwm_column),
+    )
 
-    name = MockColumnHWM(source=reader.source, column=Column(name=hwm_column)).qualified_name
-    hwm = hwm_type(name=name, column=hwm_column)
+    hwm = hwm_type(name=hwm_name, column=hwm_column)
 
     # there are 2 spans with a gap between
 

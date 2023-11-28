@@ -141,7 +141,7 @@ def test_reader_valid_columns(spark_mock, columns, real_columns):
         {"wrong#name", "statement", "too", "many"},
         (None, "statement"),
         [None, "statement"],
-        # this is the same as hwm_column="name",
+        # this is the same as hwm=DBReader.AutoHWM(name=secrets.token_hex(5), column="name"),
         # but if user implicitly passed a tuple
         # both of values should be set to avoid unexpected errors
         ("name", None),
