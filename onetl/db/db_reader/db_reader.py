@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
@@ -17,7 +18,7 @@ from onetl.base import (
     ContainsGetMinMaxBounds,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import AutoHWM
+from onetl.hwm import AutoDetectHWM
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
@@ -120,10 +121,12 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            from onetl.hwm import AutoHWM
+            from onetl.hwm import AutoDetectHWM
 
-            hwm = AutoHWM(
-                name="...", column="hwm_column", expression="cast(hwm_column_orig as date)"
+            hwm = AutoDetectHWM(
+                name="some_unique_hwm_name",
+                column="hwm_column",
+                expression="cast(hwm_column_orig as date)",
             )
 
         HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
@@ -329,7 +332,7 @@ class DBReader(FrozenModel):
         from onetl.db import DBReader
         from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
-        from onetl.hwm import AutoHWM
+        from onetl.hwm import AutoDetectHWM
         from pyspark.sql import SparkSession
 
         maven_packages = Postgres.get_packages()
@@ -350,9 +353,10 @@ class DBReader(FrozenModel):
         reader = DBReader(
             connection=postgres,
             source="fiddle.dummy",
-            hwm=DBReader.AutoHWM(
-                name="...", column="d_age"
-            ),  # mandatory for IncrementalStrategy
+            hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
+                name="some_unique_hwm_name",
+                column="d_age",
+            ),
         )
 
         # read data from table "fiddle.dummy"
@@ -361,7 +365,7 @@ class DBReader(FrozenModel):
             df = reader.run()
     """
 
-    AutoHWM = AutoHWM
+    AutoDetectHWM = AutoDetectHWM
 
     connection: BaseDBConnection
     source: Table = Field(alias="table")
@@ -435,11 +439,13 @@ class DBReader(FrozenModel):
                 # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
                 source = Table(name=source, instance=connection.instance_url)
             old_hwm = OldColumnHWM(source=source, column=hwm_column)
-            log.warning(
+            warnings.warn(
                 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
-                " in future versions. Use hwm=DBReader.AutoHWM(...) class instead.",
+                " in future versions. Use hwm=DBReader.AutoDetectHWM(...) class instead.",
+                DeprecationWarning,
+                stacklevel=2,
             )
-            hwm = AutoHWM(
+            hwm = AutoDetectHWM(
                 name=old_hwm.qualified_name,
                 column=old_hwm.column.name,
                 value=old_hwm.value,
@@ -447,7 +453,7 @@ class DBReader(FrozenModel):
             )
             object.__setattr__(hwm, "expression", hwm_expression)  # noqa: WPS609
 
-        if hwm is None:
+        if not hwm:
             return values
 
         if df_schema is not None and hwm.entity not in df_schema.fieldNames():
@@ -457,7 +463,6 @@ class DBReader(FrozenModel):
             )
 
         dialect = connection.Dialect
-        dialect.validate_hwm_expression(connection, hwm)
         dialect.validate_hwm(connection, hwm)
 
         values["hwm"] = hwm
@@ -600,7 +605,7 @@ class DBReader(FrozenModel):
         self.connection.check()
 
         helper: StrategyHelper
-        if self.hwm is not None:
+        if self.hwm:
             helper = HWMStrategyHelper(reader=self, hwm=self.hwm)
         else:
             helper = NonHWMStrategyHelper(reader=self)

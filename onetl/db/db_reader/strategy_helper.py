@@ -90,7 +90,7 @@ class HWMStrategyHelper(FrozenModel):
         reader = values.get("reader")
         hwm = values.get("hwm")
 
-        if strategy.hwm is None:
+        if not strategy.hwm:
             strategy.hwm = hwm
 
         if strategy.hwm.entity != hwm.entity:
@@ -101,7 +101,8 @@ class HWMStrategyHelper(FrozenModel):
         if strategy.hwm.value is None:
             strategy.fetch_hwm()
 
-        strategy.hwm = reader.detect_hwm(strategy.hwm)
+        if isinstance(hwm, reader.AutoDetectHWM):
+            strategy.hwm = reader.detect_hwm(strategy.hwm)
 
         return strategy
 
@@ -157,7 +158,7 @@ class HWMStrategyHelper(FrozenModel):
         end_at: Statement | None = None
         hwm: ColumnHWM | None = self.strategy.hwm  # type: ignore
 
-        if hwm is None:
+        if not hwm:
             return None, None
 
         if self.strategy.current_value is not None:

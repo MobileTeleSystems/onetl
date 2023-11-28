@@ -16,5 +16,5 @@
 from etl_entities.hwm import ColumnHWM
 
 
-class AutoHWM(ColumnHWM):
+class AutoDetectHWM(ColumnHWM):
     ...

@@ -81,7 +81,7 @@ def test_mongodb_strategy_incremental_batch(
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm=DBReader.AutoHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
         df_schema=df_schema,
     )
 

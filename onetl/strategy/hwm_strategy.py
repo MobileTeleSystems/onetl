@@ -33,7 +33,7 @@ class HWMStrategy(BaseStrategy):
 
     @property
     def current_value(self) -> Any:
-        if self.hwm is not None:
+        if self.hwm:
             return self.hwm.value
 
         return super().current_value
@@ -58,7 +58,7 @@ class HWMStrategy(BaseStrategy):
     def fetch_hwm(self) -> None:
         class_name = self.__class__.__name__
 
-        if self.hwm is not None:
+        if self.hwm:
             hwm_store = HWMStoreStackManager.get_current()
 
             log.info("|%s| Loading HWM from %s:", class_name, hwm_store.__class__.__name__)
@@ -87,7 +87,7 @@ class HWMStrategy(BaseStrategy):
     def save_hwm(self) -> None:
         class_name = self.__class__.__name__
 
-        if self.hwm is not None:
+        if self.hwm:
             hwm_store = HWMStoreStackManager.get_current()
 
             log.info("|%s| Saving HWM to %r:", class_name, hwm_store.__class__.__name__)

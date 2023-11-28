@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
@@ -48,7 +50,7 @@ def test_postgres_strategy_incremental(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoHWM(name="some_hwm_name_unique_for_specific_process_and_source", entity=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), entity=hwm_column),
     )
 
     hwm = hwm_type(name=reader.hwm.name, column=hwm_column)

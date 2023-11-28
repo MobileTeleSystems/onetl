@@ -20,4 +20,7 @@ class SupportHWMColumnStr:
                 f"got {type(hwm_column)}",
             )
 
+        # call the base logic that validates hwm.expression (may be defined in separate mixins)
+        super().validate_hwm(connection, hwm)
+
         return hwm

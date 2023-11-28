@@ -1,6 +1,6 @@
-import logging
 import re
 import textwrap
+import warnings
 
 import pytest
 
@@ -141,7 +141,7 @@ def test_reader_valid_columns(spark_mock, columns, real_columns):
         {"wrong#name", "statement", "too", "many"},
         (None, "statement"),
         [None, "statement"],
-        # this is the same as hwm=DBReader.AutoHWM(name=secrets.token_hex(5), column="name"),
+        # this is the same as HWM(name=..., column="name"),
         # but if user implicitly passed a tuple
         # both of values should be set to avoid unexpected errors
         ("name", None),
@@ -214,8 +214,8 @@ def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_
         )
 
 
-def test_hwm_column_deprecation_warning(spark_mock, caplog):
-    with caplog.at_level(logging.WARNING):
+def test_hwm_column_deprecation_warning(spark_mock):
+    with warnings.catch_warnings(record=True) as w:
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
@@ -223,6 +223,6 @@ def test_hwm_column_deprecation_warning(spark_mock, caplog):
         )
 
     assert (
-        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoHWM(...) class instead.'
-        in caplog.text
+        'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM(...) class instead.'
+        in str(w[-1].message)  # noqa: WPS441
     )

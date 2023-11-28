@@ -389,7 +389,7 @@ class FileDownloader(FrozenModel):
                 shutil.rmtree(self.local_path)
             self.local_path.mkdir()
 
-        if self.hwm is not None:
+        if self.hwm:
             result = self._download_files_incremental(to_download)
         else:
             result = self._download_files(to_download)
@@ -494,9 +494,11 @@ class FileDownloader(FrozenModel):
             if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM) or issubclass(hwm_type, FileHWM):
                 remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
                 old_hwm = OldFileListHWM(source=remote_file_folder)
-                log.warning(
+                warnings.warn(
                     'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed'
                     ' in future versions. Use hwm=FileListHWM(name="...") class instead.',
+                    DeprecationWarning,
+                    stacklevel=2,
                 )
                 hwm = FileListHWM(
                     name=old_hwm.qualified_name,
@@ -567,7 +569,7 @@ class FileDownloader(FrozenModel):
     def _init_hwm(self) -> FileHWM:
         strategy: HWMStrategy = StrategyManager.get_current()
 
-        if strategy.hwm is None:
+        if not strategy.hwm:
             strategy.hwm = self.hwm
 
         if not strategy.hwm.value:

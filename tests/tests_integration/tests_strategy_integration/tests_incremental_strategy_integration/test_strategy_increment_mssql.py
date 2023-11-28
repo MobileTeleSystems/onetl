@@ -51,7 +51,7 @@ def test_mssql_strategy_incremental(
     reader = DBReader(
         connection=mssql,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
     )
 
     hwm = hwm_type(name=hwm_name, column=hwm_column)
