@@ -881,7 +881,7 @@ def test_file_downloader_detect_hwm_type_snapshot_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
     with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
@@ -900,7 +900,7 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
     with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
@@ -922,7 +922,7 @@ def test_file_downloader_detect_hwm_type_snapshot_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
     with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
@@ -941,7 +941,7 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
     with pytest.raises(ValueError, match="If `hwm_type` is passed you can't specify an `offset`"):
@@ -952,17 +952,9 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         downloader.run()
 
 
-@pytest.mark.parametrize(
-    "hwm_type",
-    [
-        "file_list",
-        FileListHWM,
-    ],
-)
 def test_file_downloader_file_hwm_strategy(
     file_connection_with_path_and_files,
     tmp_path_factory,
-    hwm_type,
 ):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
@@ -970,8 +962,8 @@ def test_file_downloader_file_hwm_strategy(
     downloader = FileDownloader(
         connection=file_connection,
         local_path=local_path,
-        hwm_type=hwm_type,
         source_path=remote_path,
+        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
     with IncrementalStrategy():
