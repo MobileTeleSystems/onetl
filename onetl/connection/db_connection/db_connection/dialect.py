@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict
 
 from onetl.base import BaseDBDialect
 from onetl.hwm import Statement
-from onetl.hwm.store import HWMClassRegistry
+from onetl.hwm.store import SparkTypeToHWM
 
 if TYPE_CHECKING:
     from etl_entities.hwm import HWM, ColumnHWM
@@ -46,7 +46,7 @@ class DBDialect(BaseDBDialect):
 
     @classmethod
     def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
-        return HWMClassRegistry.get(hwm_column_type)  # type: ignore
+        return SparkTypeToHWM.get(hwm_column_type)  # type: ignore
 
     @classmethod
     def _escape_column(cls, value: str) -> str:

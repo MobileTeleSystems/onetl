@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     )
 
     from onetl.hwm.store import (
-        HWMClassRegistry,
+        SparkTypeToHWM,
         YAMLHWMStore,
         default_hwm_store_class,
         register_hwm_class,
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 __all__ = [  # noqa: WPS410
     "BaseHWMStore",
-    "HWMClassRegistry",
+    "SparkTypeToHWM",
     "register_hwm_class",
     "HWMStoreClassRegistry",
     "default_hwm_store_class",

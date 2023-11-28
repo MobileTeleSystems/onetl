@@ -15,7 +15,7 @@ import textwrap
 import warnings
 from importlib import import_module
 
-from onetl.hwm.store.hwm_class_registry import HWMClassRegistry, register_hwm_class
+from onetl.hwm.store.hwm_class_registry import SparkTypeToHWM, register_hwm_class
 from onetl.hwm.store.yaml_hwm_store import YAMLHWMStore, default_hwm_store_class
 
 deprecated_imports = {

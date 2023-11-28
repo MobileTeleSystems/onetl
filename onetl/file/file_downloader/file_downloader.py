@@ -20,7 +20,7 @@ import shutil
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Iterable, List, Optional, Tuple, Type
+from typing import Iterable, List, Optional, Tuple, Type, Union
 
 from etl_entities.hwm import HWM, FileHWM, FileListHWM
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
@@ -37,7 +37,6 @@ from onetl.file.file_downloader.result import DownloadResult
 from onetl.file.file_set import FileSet
 from onetl.file.filter.file_hwm import FileHWMFilter
 from onetl.hooks import slot, support_hooks
-from onetl.hwm.store import HWMClassRegistry
 from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
@@ -215,7 +214,7 @@ class FileDownloader(FrozenModel):
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
             hwm=FileListHWM(
-                name="...", directory="/path/to/remote/source"
+                name="my_unique_hwm_name", directory="/path/to/remote/source"
             ),  # mandatory for IncrementalStrategy
         )
 
@@ -235,7 +234,7 @@ class FileDownloader(FrozenModel):
     limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
     hwm: Optional[FileHWM] = None
-    hwm_type: Optional[Type[FileHWM]] = None
+    hwm_type: Optional[Union[Type[OldFileListHWM], Type[FileHWM], str]] = None
 
     options: FileDownloaderOptions = FileDownloaderOptions()
 
@@ -452,7 +451,7 @@ class FileDownloader(FrozenModel):
         result = FileSet()
 
         filters = self.filters.copy()
-        if self.hwm_type:
+        if self.hwm:
             filters.append(FileHWMFilter(hwm=self._init_hwm()))
 
         try:
@@ -488,10 +487,7 @@ class FileDownloader(FrozenModel):
             if not source_path:
                 raise ValueError("If `hwm_type` is passed, `source_path` must be specified")
 
-            if isinstance(hwm_type, str):
-                hwm_type = HWMClassRegistry.get(hwm_type)
-
-            if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM) or issubclass(hwm_type, FileHWM):
+            if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM):
                 remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
                 old_hwm = OldFileListHWM(source=remote_file_folder)
                 warnings.warn(
@@ -556,7 +552,7 @@ class FileDownloader(FrozenModel):
     def _check_strategy(self):
         strategy = StrategyManager.get_current()
 
-        if self.hwm_type:
+        if self.hwm:
             if not isinstance(strategy, HWMStrategy):
                 raise ValueError("`hwm_type` cannot be used in snapshot strategy.")
             elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
@@ -801,7 +797,7 @@ class FileDownloader(FrozenModel):
                 # Direct download
                 self.connection.download_file(remote_file, local_file, replace=replace)
 
-            if self.hwm_type:
+            if self.hwm:
                 strategy = StrategyManager.get_current()
                 strategy.hwm.update(remote_file)
                 strategy.save_hwm()
