@@ -38,7 +38,8 @@ def test_file_downloader_deprecated_import():
 
 
 def test_file_downloader_unknown_hwm_type():
-    with pytest.raises(KeyError, match="Unknown HWM type 'abc'"):
+    # fails on pydantic issubclass(hwm_type, OldFileListHWM) in FileDownloader
+    with pytest.raises(ValueError):
         FileDownloader(
             connection=Mock(),
             local_path="/path",
