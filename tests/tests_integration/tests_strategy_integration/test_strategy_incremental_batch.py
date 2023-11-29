@@ -300,7 +300,10 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
     new_fields[hwm_column] = new_type
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r"Data type mismatch detected for target column .* Please ensure consistency across target and HWM store.",  # noqa:  WPS360
+    ):
         with IncrementalBatchStrategy(step=step) as batches:
             for _ in batches:
                 reader.run()
