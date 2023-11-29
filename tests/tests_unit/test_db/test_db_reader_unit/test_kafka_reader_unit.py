@@ -1,5 +1,6 @@
+import secrets
+
 import pytest
-from etl_entities.source import Column
 
 from onetl.connection import Kafka
 from onetl.db import DBReader
@@ -65,7 +66,7 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
         )
 
 
-@pytest.mark.parametrize("hwm_column", ["offset", Column(name="offset")])
+@pytest.mark.parametrize("hwm_column", ["offset"])
 def test_kafka_reader_valid_hwm_column(spark_mock, hwm_column):
     kafka = Kafka(
         addresses=["localhost:9092"],
@@ -76,7 +77,7 @@ def test_kafka_reader_valid_hwm_column(spark_mock, hwm_column):
     DBReader(
         connection=kafka,
         table="table",
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
     )
 
 
@@ -90,7 +91,7 @@ def test_kafka_reader_hwm_column_by_version(spark_mock, mocker):
     DBReader(
         connection=kafka,
         table="table",
-        hwm_column="timestamp",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="timestamp"),
     )
 
     mocker.patch.object(spark_mock, "version", new="2.4.0")
@@ -98,7 +99,7 @@ def test_kafka_reader_hwm_column_by_version(spark_mock, mocker):
         DBReader(
             connection=kafka,
             table="table",
-            hwm_column="timestamp",
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="timestamp"),
         )
 
 
@@ -117,5 +118,5 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_column):
         DBReader(
             connection=kafka,
             table="table",
-            hwm_column=hwm_column,
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
         )

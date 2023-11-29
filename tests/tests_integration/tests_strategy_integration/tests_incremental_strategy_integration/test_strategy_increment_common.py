@@ -41,7 +41,11 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, source=load_table_data.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     with IncrementalStrategy():
         reader.run()
@@ -73,9 +77,21 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
     hwm_column1 = "hwm_int"
     hwm_column2 = "hwm_datetime"
 
-    reader1 = DBReader(connection=postgres, table=table1, hwm_column=hwm_column1)
-    reader2 = DBReader(connection=postgres, table=table2, hwm_column=hwm_column1)
-    reader3 = DBReader(connection=postgres, table=table1, hwm_column=hwm_column2)
+    reader1 = DBReader(
+        connection=postgres,
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+    )
+    reader2 = DBReader(
+        connection=postgres,
+        table=table2,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+    )
+    reader3 = DBReader(
+        connection=postgres,
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column2),
+    )
 
     with IncrementalStrategy():
         reader1.run()
@@ -110,7 +126,10 @@ def test_postgres_strategy_incremental_unknown_hwm_column(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm_column="unknown_column",  # there is no such column in a table
+        hwm=DBReader.AutoDetectHWM(
+            name=secrets.token_hex(5),
+            column="unknown_column",
+        ),  # there is no such column in a table
     )
 
     with pytest.raises(Exception):
@@ -136,7 +155,7 @@ def test_postgres_strategy_incremental_duplicated_hwm_column(
         connection=postgres,
         source=prepare_schema_table.full_name,
         columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
-        hwm_column="hwm_int",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
     with pytest.raises(Exception):
@@ -160,7 +179,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         connection=postgres,
         source=prepare_schema_table.full_name,
         where="id_int < 1000 OR id_int = 1000",
-        hwm_column="hwm_int",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
     # there are 2 spans with a gap between
@@ -236,7 +255,7 @@ def test_postgres_strategy_incremental_offset(
         connection=postgres,
         source=prepare_schema_table.full_name,
         columns=["*", hwm_column],
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -288,8 +307,14 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
         spark=spark,
     )
 
+    hwm_name = secrets.token_hex(5)
+
     hwm_column = "hwm_int"
-    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+    )
 
     span_gap = 10
     span_length = 50
@@ -333,7 +358,11 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
 
     # and then process is retried
     with IncrementalStrategy():
-        reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+        reader = DBReader(
+            connection=postgres,
+            source=prepare_schema_table.full_name,
+            hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        )
 
         second_df = reader.run()
 

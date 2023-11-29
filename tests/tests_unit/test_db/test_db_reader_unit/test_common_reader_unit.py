@@ -1,4 +1,5 @@
 import re
+import secrets
 import textwrap
 
 import pytest
@@ -228,5 +229,5 @@ def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             columns=columns,
-            hwm_column=hwm_column,
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
         )
