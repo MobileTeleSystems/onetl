@@ -51,15 +51,13 @@ class KafkaDialect(  # noqa: WPS215
         connection: BaseDBConnection,
         hwm: HWM,
     ) -> HWM:
-        hwm_column = hwm.entity
-
-        if not isinstance(hwm_column, str):
+        if not isinstance(hwm.entity, str):
             raise ValueError(
                 f"{connection.__class__.__name__} requires 'hwm.column' parameter type to be 'str', "
-                f"got {type(hwm_column)}",
+                f"got {type(hwm.entity)}",
             )
 
-        cls.validate_column(connection, hwm_column)
+        cls.validate_column(connection, hwm.entity)
 
         return hwm
 

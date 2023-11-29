@@ -62,7 +62,7 @@ class BaseDBDialect(ABC):
     @classmethod
     @abstractmethod
     def validate_hwm(cls, connection: BaseDBConnection, hwm: HWM) -> HWM:
-        """Check if ``hwm`` class is valid.
+        """Check if ``HWM`` class is valid.
 
         Raises
         ------
