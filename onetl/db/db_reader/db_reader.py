@@ -529,9 +529,19 @@ class DBReader(FrozenModel):
     def detect_hwm(self, hwm: HWM) -> HWM:
         schema = {field.name.casefold(): field for field in self.get_df_schema()}
         column = hwm.entity.casefold()
-        hwm_column_type = schema[column].dataType.typeName()
-        detected_hwm_class = self.connection.Dialect.detect_hwm_column_type(hwm_column_type)
-        return detected_hwm_class.parse_obj(hwm)
+        target_column_data_type = schema[column].dataType.typeName()
+        hwm_class_for_target = self.connection.Dialect.detect_hwm_column_type(target_column_data_type)
+        if hwm.value:
+            try:
+                hwm_class_for_target.parse_obj(hwm)
+            except ValueError as e:
+                error_message = (
+                    f"Data type mismatch detected for target column '{column}' - '{target_column_data_type}' "
+                    f"and passed HWM value type: '{type(hwm.value).__name__}'. "
+                    "Please ensure consistency across target and HWM store."
+                )
+                raise ValueError(error_message) from e
+        return hwm_class_for_target.parse_obj(hwm)
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:
