@@ -58,8 +58,6 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
 
 
 def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_table_data):
-    from py4j.protocol import Py4JJavaError
-
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -82,10 +80,16 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
     with IncrementalStrategy():
         reader1.run()
 
-        with pytest.raises(Py4JJavaError):
+        with pytest.raises(
+            ValueError,
+            match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+        ):
             reader2.run()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+        ):
             reader3.run()
 
 
@@ -337,3 +341,37 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     # like there was no exception
     second_df = second_df.sort(second_df.id_int.asc())
     processing.assert_equal_df(df=second_df, other_frame=second_span)
+
+
+@pytest.mark.parametrize(
+    "hwm_param",
+    [
+        {"hwm_column": "hwm_int"},
+        {"hwm_column": "hwm_int", "hwm_expression": "cast(hwm_int as varchar)"},
+    ],
+)
+def test_postgres_hwm_column_deprecated(
+    spark,
+    processing,
+    load_table_data,
+    hwm_param,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    msg = rf'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM\(name="unique_hwm_name", column={hwm_param.get("hwm_column")}\) class instead.'
+    with pytest.warns(DeprecationWarning, match=msg):
+        reader = DBReader(
+            connection=postgres,
+            source=load_table_data.full_name,
+            **hwm_param,
+        )
+
+    assert isinstance(reader.hwm, reader.AutoDetectHWM)
+    assert reader.hwm.entity == hwm_param.get("hwm_column")
+    assert reader.hwm.expression == hwm_param.get("hwm_expression")

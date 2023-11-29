@@ -204,8 +204,6 @@ def test_postgres_strategy_snapshot_batch_outside_loop(
 
 
 def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_table_data):
-    from py4j.protocol import Py4JJavaError
-
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -231,10 +229,16 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
         for _ in batches:
             reader1.run()
 
-            with pytest.raises(Py4JJavaError):
+            with pytest.raises(
+                ValueError,
+                match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+            ):
                 reader2.run()
 
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                ValueError,
+                match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+            ):
                 reader3.run()
 
             break

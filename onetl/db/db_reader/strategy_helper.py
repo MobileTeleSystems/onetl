@@ -93,10 +93,17 @@ class HWMStrategyHelper(FrozenModel):
         if not strategy.hwm:
             strategy.hwm = hwm
 
-        if strategy.hwm.entity != hwm.entity:
+        if (
+            strategy.hwm.entity != hwm.entity  # noqa:  WPS408
+            or strategy.hwm.name != hwm.name
+            or strategy.hwm.entity != hwm.entity
+            or strategy.hwm.expression != hwm.expression
+        ):
             # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
             # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
-            raise ValueError
+            raise ValueError(
+                "Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+            )
 
         if strategy.hwm.value is None:
             strategy.fetch_hwm()

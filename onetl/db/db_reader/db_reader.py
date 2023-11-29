@@ -441,7 +441,7 @@ class DBReader(FrozenModel):
             old_hwm = OldColumnHWM(source=source, column=hwm_column)
             warnings.warn(
                 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
-                " in future versions. Use hwm=DBReader.AutoDetectHWM(...) class instead.",
+                f' in future versions. Use hwm=DBReader.AutoDetectHWM(name="unique_hwm_name", column={hwm_column}) class instead.',
                 DeprecationWarning,
                 stacklevel=2,
             )
