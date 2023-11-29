@@ -21,7 +21,6 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintNone,
-    SupportHWMColumnStr,
     SupportHWMExpressionStr,
     SupportNameWithSchemaOnly,
     SupportWhereStr,
@@ -35,7 +34,6 @@ class GreenplumDialect(  # noqa: WPS215
     SupportWhereStr,
     SupportHintNone,
     SupportHWMExpressionStr,
-    SupportHWMColumnStr,
     DBDialect,
 ):
     @classmethod

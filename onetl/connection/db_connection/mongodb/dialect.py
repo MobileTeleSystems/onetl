@@ -24,7 +24,6 @@ from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsNone,
     SupportDfSchemaStruct,
-    SupportHWMColumnStr,
     SupportHWMExpressionNone,
     SupportNameAny,
 )
@@ -78,7 +77,6 @@ class MongoDBDialect(  # noqa: WPS215
     SupportHWMExpressionNone,
     SupportColumnsNone,
     SupportDfSchemaStruct,
-    SupportHWMColumnStr,
     DBDialect,
 ):
     _compare_statements: ClassVar[Dict[Callable, str]] = {

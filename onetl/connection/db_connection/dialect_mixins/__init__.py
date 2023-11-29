@@ -16,9 +16,6 @@ from onetl.connection.db_connection.dialect_mixins.support_hint_none import (
 from onetl.connection.db_connection.dialect_mixins.support_hint_str import (
     SupportHintStr,
 )
-from onetl.connection.db_connection.dialect_mixins.support_hwm_column_str import (
-    SupportHWMColumnStr,
-)
 from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_none import (
     SupportHWMExpressionNone,
 )

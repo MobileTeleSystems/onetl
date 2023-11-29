@@ -884,7 +884,7 @@ def test_file_downloader_detect_hwm_type_snapshot_batch_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+    with pytest.raises(ValueError, match="`hwm` cannot be used in batch strategy"):
         with SnapshotBatchStrategy(step=100500):
             downloader.run()
 
@@ -903,7 +903,7 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+    with pytest.raises(ValueError, match="`hwm` cannot be used in batch strategy"):
         with IncrementalBatchStrategy(
             step=timedelta(days=5),
         ):
@@ -925,7 +925,7 @@ def test_file_downloader_detect_hwm_type_snapshot_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
+    with pytest.raises(ValueError, match="`hwm` cannot be used in snapshot strategy"):
         downloader.run()
 
 
@@ -944,7 +944,7 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="If `hwm_type` is passed you can't specify an `offset`"):
+    with pytest.raises(ValueError, match="If `hwm` is passed you can't specify an `offset`"):
         with IncrementalStrategy(offset=1):
             downloader.run()
 
