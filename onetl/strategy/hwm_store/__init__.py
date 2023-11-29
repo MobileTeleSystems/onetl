@@ -32,13 +32,13 @@ if TYPE_CHECKING:
         SparkTypeToHWM,
         YAMLHWMStore,
         default_hwm_store_class,
-        register_hwm_class,
+        register_spark_type_to_hwm_type_mapping,
     )
 
 __all__ = [  # noqa: WPS410
     "BaseHWMStore",
     "SparkTypeToHWM",
-    "register_hwm_class",
+    "register_spark_type_to_hwm_type_mapping",
     "HWMStoreClassRegistry",
     "default_hwm_store_class",
     "detect_hwm_store",

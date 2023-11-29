@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import textwrap
 from logging import getLogger
 from typing import TYPE_CHECKING, NoReturn, Optional, Tuple
 
@@ -94,15 +95,34 @@ class HWMStrategyHelper(FrozenModel):
             strategy.hwm = hwm
 
         if (
-            strategy.hwm.entity != hwm.entity  # noqa:  WPS408
+            strategy.hwm.entity != hwm.entity
             or strategy.hwm.name != hwm.name
-            or strategy.hwm.entity != hwm.entity
             or strategy.hwm.expression != hwm.expression
         ):
             # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
             # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
             raise ValueError(
-                "Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+                textwrap.dedent(
+                    f"""
+                    Incompatible HWM values.
+                    Previous run within the same strategy:
+                        {strategy.hwm!r}
+                    Current run:
+                        {hwm!r}
+
+                    Probably you've executed code which looks like this:
+                        with {strategy.__class__.__name__}(...):
+                           DBReader(hwm=one_hwm, ...).run()
+                           DBReader(hwm=another_hwm, ...).run()
+
+                    Please change it to:
+                        with {strategy.__class__.__name__}(...):
+                            DBReader(hwm=one_hwm, ...).run()
+
+                        with {strategy.__class__.__name__}(...):
+                            DBReader(hwm=another_hwm, ...).run()
+                    """,
+                ),
             )
 
         if strategy.hwm.value is None:

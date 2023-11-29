@@ -492,7 +492,7 @@ class FileDownloader(FrozenModel):
                 old_hwm = OldFileListHWM(source=remote_file_folder)
                 warnings.warn(
                     'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed'
-                    f' in future versions. Use hwm=FileListHWM(name="unique_hwm_name", directory="{source_path}") class instead.',
+                    f' in future versions. Use hwm=FileListHWM(name={old_hwm.qualified_name!r}, directory="{source_path}") class instead.',
                     DeprecationWarning,
                     stacklevel=2,
                 )
