@@ -256,7 +256,7 @@ class FileDownloader(FrozenModel):
             File list to download.
 
             If empty, download files from ``source_path`` to ``local_path``,
-            applying ``filter``, ``limit`` and ``hwm_type`` to each one (if set).
+            applying ``filter``, ``limit`` and ``hwm`` to each one (if set).
 
             If not, download to ``local_path`` **all** input files, **without**
             any filtering, limiting and excluding files covered by :ref:`file-hwm`
@@ -504,8 +504,6 @@ class FileDownloader(FrozenModel):
                 )
                 values["hwm"] = hwm
 
-        return hwm_type
-
     @validator("filters", pre=True)
     def _validate_filters(cls, filters):
         if filters is None:
@@ -551,13 +549,13 @@ class FileDownloader(FrozenModel):
 
         if self.hwm:
             if not isinstance(strategy, HWMStrategy):
-                raise ValueError("`hwm_type` cannot be used in snapshot strategy.")
+                raise ValueError("`hwm` cannot be used in snapshot strategy.")
             elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
                 # but the logic is quite messy
-                raise ValueError("If `hwm_type` is passed you can't specify an `offset`")
+                raise ValueError("If `hwm` is passed you can't specify an `offset`")
 
             if isinstance(strategy, BatchHWMStrategy):
-                raise ValueError("`hwm_type` cannot be used in batch strategy.")
+                raise ValueError("`hwm` cannot be used in batch strategy.")
 
     def _init_hwm(self) -> FileHWM:
         strategy: HWMStrategy = StrategyManager.get_current()
@@ -843,5 +841,5 @@ class FileDownloader(FrozenModel):
     def _check_hwm_type(hwm_type: type[HWM]) -> None:
         if not issubclass(hwm_type, FileHWM):
             raise ValueError(
-                f"`hwm_type` class should be a inherited from FileHWM, got {hwm_type.__name__}",
+                f"`hwm` object should be a inherited from FileHWM, got {hwm_type.__name__}",
             )

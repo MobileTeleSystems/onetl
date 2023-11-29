@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
@@ -531,17 +532,23 @@ class DBReader(FrozenModel):
         column = hwm.entity.casefold()
         target_column_data_type = schema[column].dataType.typeName()
         hwm_class_for_target = self.connection.Dialect.detect_hwm_class(target_column_data_type)
-        if hwm.value:
-            try:
-                hwm_class_for_target.parse_obj(hwm)
-            except ValueError as e:
-                error_message = (
-                    f"Data type mismatch detected for target column '{column}' - '{target_column_data_type}' "
-                    f"and passed HWM value type: '{type(hwm.value).__name__}'. "
-                    "Please ensure consistency across target and HWM store."
-                )
-                raise ValueError(error_message) from e
-        return hwm_class_for_target.parse_obj(hwm)
+        try:
+            return hwm_class_for_target.deserialize(hwm.dict())
+        except ValueError as e:
+            hwm_class_name = hwm_class_for_target.__name__  # type: ignore
+            error_message = textwrap.dedent(
+                f"""
+                Table column {column!r} has Spark type {target_column_data_type!r}
+                which correspond to HWM type {hwm_class_name!r}.
+                But current hwm object has type {type(hwm).__name__!r}, which is not compatible.
+                How to solve this issue:
+                * Check that you set correct HWM name, it should be unique.
+                * Check that your HWM store contains valid value and type for this HWM name.
+                * If you set DBReader(hwm=AutoDetectHWM(...)), check if table schema have not been changed since previous run.
+                * If you set DBReader(hwm=SpecificTypeOfHWM(...)), check it HWM type matches column type.
+                """,
+            )
+            raise ValueError(error_message) from e
 
     def get_df_schema(self) -> StructType:
         if self.df_schema:
@@ -653,12 +660,6 @@ class DBReader(FrozenModel):
 
         if self.hwm:
             log_with_indent(log, "HWM = '%s'", self.hwm)
-
-        if self.hwm_column:
-            log_with_indent(log, "hwm_column = '%s'", self.hwm_column)
-
-        if self.hwm_expression:
-            log_json(log, self.hwm_expression, "hwm_expression")
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore

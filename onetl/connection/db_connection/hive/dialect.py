@@ -19,7 +19,6 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumnsList,
     SupportDfSchemaNone,
     SupportHintStr,
-    SupportHWMColumnStr,
     SupportHWMExpressionStr,
     SupportNameWithSchemaOnly,
     SupportWhereStr,
@@ -33,7 +32,6 @@ class HiveDialect(  # noqa: WPS215
     SupportWhereStr,
     SupportHintStr,
     SupportHWMExpressionStr,
-    SupportHWMColumnStr,
     DBDialect,
 ):
     @classmethod

@@ -302,7 +302,7 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
 
     with pytest.raises(
         ValueError,
-        match=r"Data type mismatch detected for target column .* Please ensure consistency across target and HWM store.",
+        match=rf"Table column {hwm_column!r} has Spark type .*",
     ):
         with IncrementalBatchStrategy(step=step) as batches:
             for _ in batches:
