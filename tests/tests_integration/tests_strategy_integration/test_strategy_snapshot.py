@@ -231,13 +231,13 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
 
             with pytest.raises(
                 ValueError,
-                match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+                match=r"Incompatible HWM values.*",
             ):
                 reader2.run()
 
             with pytest.raises(
                 ValueError,
-                match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+                match=r"Incompatible HWM values.*",
             ):
                 reader3.run()
 

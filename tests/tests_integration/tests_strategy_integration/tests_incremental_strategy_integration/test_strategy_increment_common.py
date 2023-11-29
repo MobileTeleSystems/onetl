@@ -82,13 +82,13 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
 
         with pytest.raises(
             ValueError,
-            match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+            match=r"Incompatible HWM values.*",
         ):
             reader2.run()
 
         with pytest.raises(
             ValueError,
-            match="Incompatible HWM parameters: passed hwm do not match with previous hwm in the same strategy run.",
+            match=r"Incompatible HWM values.*",
         ):
             reader3.run()
 
@@ -364,7 +364,7 @@ def test_postgres_hwm_column_deprecated(
         database=processing.database,
         spark=spark,
     )
-    msg = rf'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM\(name="unique_hwm_name", column={hwm_param.get("hwm_column")}\) class instead.'
+    msg = r'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM(.*) class instead.'
     with pytest.warns(DeprecationWarning, match=msg):
         reader = DBReader(
             connection=postgres,

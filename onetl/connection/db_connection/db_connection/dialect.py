@@ -45,7 +45,7 @@ class DBDialect(BaseDBDialect):
         return hwm
 
     @classmethod
-    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
+    def detect_hwm_class(cls, hwm_column_type: str) -> ColumnHWM:
         return SparkTypeToHWM.get(hwm_column_type)  # type: ignore
 
     @classmethod

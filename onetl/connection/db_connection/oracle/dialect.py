@@ -15,23 +15,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import TYPE_CHECKING
 
 from onetl.connection.db_connection.jdbc_connection import JDBCDialect
-from onetl.hwm import DecimalHWM
-from onetl.hwm.store import SparkTypeToHWM
-
-if TYPE_CHECKING:
-    from etl_entities.hwm import ColumnHWM
 
 
 class OracleDialect(JDBCDialect):
-    @classmethod
-    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
-        if hwm_column_type in {"float", "double", "fractional", "decimal", "numeric"}:
-            return DecimalHWM  # type: ignore
-        return SparkTypeToHWM.get(hwm_column_type)  # type: ignore
-
     @classmethod
     def _get_datetime_value_sql(cls, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")

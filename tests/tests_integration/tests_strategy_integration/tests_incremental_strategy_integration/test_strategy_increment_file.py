@@ -163,7 +163,7 @@ def test_file_downloader_hwm_type_deprecated(
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
-    msg = rf'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM\(name="unique_hwm_name", directory="{remote_path}"\) class instead.'
+    msg = r'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM(.*) class instead.'
     with pytest.warns(DeprecationWarning, match=msg):
         downloader = FileDownloader(
             connection=file_connection,

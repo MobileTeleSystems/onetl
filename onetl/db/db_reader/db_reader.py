@@ -441,7 +441,7 @@ class DBReader(FrozenModel):
             old_hwm = OldColumnHWM(source=source, column=hwm_column)
             warnings.warn(
                 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
-                f' in future versions. Use hwm=DBReader.AutoDetectHWM(name="unique_hwm_name", column={hwm_column}) class instead.',
+                f' in future versions. Use hwm=DBReader.AutoDetectHWM(name="{old_hwm.qualified_name!r}", column={hwm_column}) class instead.',
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -530,7 +530,7 @@ class DBReader(FrozenModel):
         schema = {field.name.casefold(): field for field in self.get_df_schema()}
         column = hwm.entity.casefold()
         target_column_data_type = schema[column].dataType.typeName()
-        hwm_class_for_target = self.connection.Dialect.detect_hwm_column_type(target_column_data_type)
+        hwm_class_for_target = self.connection.Dialect.detect_hwm_class(target_column_data_type)
         if hwm.value:
             try:
                 hwm_class_for_target.parse_obj(hwm)

@@ -113,7 +113,7 @@ class BaseDBDialect(ABC):
 
     @classmethod
     @abstractmethod
-    def detect_hwm_column_type(cls, hwm_column_type: str) -> ColumnHWM:
+    def detect_hwm_class(cls, hwm_column_type: str) -> ColumnHWM:
         """
         Detects hwm column type based on specific data types in connections data stores
         """
