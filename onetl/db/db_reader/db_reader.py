@@ -116,7 +116,7 @@ class DBReader(FrozenModel):
     hwm : type[HWM] | None, default: ``None``
         HWM class to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
 
-        If you want to use some SQL expression as HWM value, you can pass into ``hwm`` class
+        If you want to use some SQL expression as HWM value, you can pass into ``HWM`` class
         ``hwm.expression="expression"``, like:
 
         .. code:: python
@@ -450,8 +450,8 @@ class DBReader(FrozenModel):
                 column=old_hwm.column.name,
                 value=old_hwm.value,
                 modified_time=old_hwm.modified_time,
+                expression=hwm_expression,
             )
-            object.__setattr__(hwm, "expression", hwm_expression)  # noqa: WPS609
 
         if not hwm:
             return values
