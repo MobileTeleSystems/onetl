@@ -1,12 +1,9 @@
 import contextlib
-import re
 import secrets
 
 import pytest
 from etl_entities.hwm import FileListHWM
 from etl_entities.instance import RelativePath
-from etl_entities.old_hwm import FileListHWM as OldFileListHWM
-from etl_entities.source import RemoteFolder
 
 from onetl.file import FileDownloader
 from onetl.hwm.store import YAMLHWMStore
@@ -158,17 +155,16 @@ def test_file_downloader_increment_hwm_is_ignored_for_user_input(
     assert len(download_result.successful) == len(uploaded_files)
 
 
-def test_file_downloader_increment_hwm_type_deprecated(
+def test_file_downloader_hwm_type_deprecated(
     file_connection_with_path_and_files,
     tmp_path_factory,
     tmp_path,
 ):
     file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
-    hwm_store = YAMLHWMStore(path=tmp_path_factory.mktemp("hwmstore"))  # noqa: S306
     local_path = tmp_path_factory.mktemp("local_path")
 
-    msg = 'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM(name="...") class instead.'
-    with pytest.warns(DeprecationWarning, match=re.escape(msg)):
+    msg = rf'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=FileListHWM\(name="unique_hwm_name", directory="{remote_path}"\) class instead.'
+    with pytest.warns(DeprecationWarning, match=msg):
         downloader = FileDownloader(
             connection=file_connection,
             source_path=remote_path,
@@ -176,42 +172,5 @@ def test_file_downloader_increment_hwm_type_deprecated(
             hwm_type="file_list",
         )
 
-    # load first batch of the files
-    with hwm_store:
-        with IncrementalStrategy():
-            available = downloader.view_files()
-            downloaded = downloader.run()
-
-        # without HWM value all the files are shown and uploaded
-        assert len(available) == len(downloaded.successful) == len(uploaded_files)
-        assert sorted(available) == sorted(uploaded_files)
-
-    remote_file_folder = RemoteFolder(name=remote_path, instance=file_connection.instance_url)
-    file_hwm = OldFileListHWM(source=remote_file_folder)
-    file_hwm_name = file_hwm.qualified_name
-
-    source_files = {RelativePath(file.relative_to(remote_path)) for file in uploaded_files}
-    assert source_files == hwm_store.get_hwm(file_hwm_name).value
-
-    for _ in "first_inc", "second_inc":
-        new_file_name = f"{secrets.token_hex(5)}.txt"
-        tmp_file = tmp_path / new_file_name
-        tmp_file.write_text(f"{secrets.token_hex(10)}")
-
-        file_connection.upload_file(tmp_file, remote_path / new_file_name)
-
-        with hwm_store:
-            with IncrementalStrategy():
-                available = downloader.view_files()
-                downloaded = downloader.run()
-
-        # without HWM value all the files are shown and uploaded
-        assert len(available) == len(downloaded.successful) == 1
-        assert downloaded.successful[0].name == tmp_file.name
-        assert downloaded.successful[0].read_text() == tmp_file.read_text()
-        assert downloaded.skipped_count == 0
-        assert downloaded.missing_count == 0
-        assert downloaded.failed_count == 0
-
-        source_files.add(RelativePath(new_file_name))
-        assert source_files == hwm_store.get_hwm(file_hwm_name).value
+    assert isinstance(downloader.hwm, FileListHWM)
+    assert downloader.hwm.entity == remote_path
