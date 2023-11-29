@@ -234,7 +234,7 @@ class FileDownloader(FrozenModel):
     limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
     hwm: Optional[FileHWM] = None
-    hwm_type: Optional[Union[Type[OldFileListHWM], Type[FileHWM], str]] = None
+    hwm_type: Optional[Union[Type[OldFileListHWM], str]] = None
 
     options: FileDownloaderOptions = FileDownloaderOptions()
 
@@ -498,14 +498,11 @@ class FileDownloader(FrozenModel):
                 )
                 hwm = FileListHWM(
                     name=old_hwm.qualified_name,
-                    directory=old_hwm.source.full_name,
+                    directory=source_path,
                     value=old_hwm.value,
                     modified_time=old_hwm.modified_time,
                 )
-                hwm_type = type(hwm)
                 values["hwm"] = hwm
-
-            cls._check_hwm_type(hwm_type)
 
         return hwm_type
 
