@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 
 from onetl.connection import MongoDB
@@ -147,7 +149,12 @@ def test_mongodb_reader_error_pass_hwm_expression(spark_mock, df_schema):
         ValueError,
         match="'hwm.expression' parameter is not supported by MongoDB",
     ):
-        DBReader(connection=mongo, table="table", df_schema=df_schema, hwm_column=("hwm_int", "expr"))
+        DBReader(
+            connection=mongo,
+            table="table",
+            df_schema=df_schema,
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int", expression="expr"),
+        )
 
 
 def test_mongodb_reader_error_pass_columns(spark_mock, df_schema):
@@ -179,4 +186,9 @@ def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock, df_schema):
         ValueError,
         match="'df_schema' struct must contain column specified in 'hwm.entity'.*",
     ):
-        DBReader(connection=mongo, table="table", hwm_column="_id2", df_schema=df_schema)
+        DBReader(
+            connection=mongo,
+            table="table",
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="_id2"),
+            df_schema=df_schema,
+        )

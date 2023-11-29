@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 
 from onetl.connection import Kafka
@@ -27,7 +29,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
                 spark=spark,
             ),
             table="topic",
-            hwm_column="offset",
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="offset"),
         )
         with pytest.raises(ValueError, match="connection does not support batch strategies"):
             reader.run()

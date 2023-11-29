@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
@@ -26,7 +28,11 @@ pytestmark = pytest.mark.hive
 )
 def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
     hive = Hive(cluster="rnd-dwh", spark=spark)
-    reader = DBReader(connection=hive, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=hive,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     # there are 2 spans with a gap between
 
@@ -84,7 +90,11 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
 )
 def test_hive_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
     hive = Hive(cluster="rnd-dwh", spark=spark)
-    reader = DBReader(connection=hive, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=hive,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     data = processing.create_pandas_df()
 
@@ -130,7 +140,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=hive,
         source=prepare_schema_table.full_name,
-        hwm_column=(hwm_column, hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between

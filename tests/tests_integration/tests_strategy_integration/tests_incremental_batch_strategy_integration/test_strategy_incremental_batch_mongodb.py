@@ -195,7 +195,7 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
         connection=mongodb,
         table=prepare_schema_table.table,
         where={"$or": [{"float_value": {"$lt": 51}}, {"float_value": {"$gt": 101, "$lt": 120}}]},
-        hwm_column="hwm_int",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
         df_schema=df_schema,
     )
 

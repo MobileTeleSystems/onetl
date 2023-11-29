@@ -157,7 +157,7 @@ def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_sche
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
         df_schema=df_schema,
     )
 

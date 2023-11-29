@@ -1,3 +1,4 @@
+import secrets
 import tempfile
 
 import pytest
@@ -27,7 +28,11 @@ def test_postgres_hwm_store_integration_with_reader(spark, processing, prepare_s
     )
 
     hwm_column = "hwm_int"
-    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     # there is a span
     span_length = 100

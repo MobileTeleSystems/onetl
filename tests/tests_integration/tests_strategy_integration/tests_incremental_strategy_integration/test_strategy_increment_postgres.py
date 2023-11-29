@@ -164,7 +164,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
         source=prepare_schema_table.full_name,
         # hwm_column is present in the dataframe even if it was not passed in columns list
         columns=[column for column in processing.column_names if column != hwm_column],
-        hwm_column=(hwm_column, hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -239,7 +239,11 @@ def test_postgres_strategy_incremental_wrong_hwm_type(spark, processing, prepare
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     data = processing.create_pandas_df()
 

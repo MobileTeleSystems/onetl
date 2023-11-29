@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
@@ -43,7 +45,11 @@ def test_oracle_strategy_incremental(
         service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=oracle,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     # there are 2 spans with a gap between
 
@@ -109,7 +115,11 @@ def test_oracle_strategy_incremental_wrong_hwm_type(spark, processing, prepare_s
         service_name=processing.service_name,
         spark=spark,
     )
-    reader = DBReader(connection=oracle, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=oracle,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+    )
 
     data = processing.create_pandas_df()
 
@@ -175,7 +185,7 @@ def test_oracle_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=oracle,
         source=prepare_schema_table.full_name,
-        hwm_column=(hwm_column, hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between
