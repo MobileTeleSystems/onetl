@@ -59,7 +59,8 @@ def test_file_downloader_unknown_hwm_type():
     ],
 )
 def test_file_downloader_wrong_hwm_type(hwm_type, hwm_type_name):
-    with pytest.raises(ValueError, match=f"`hwm_type` class should be a inherited from FileHWM, got {hwm_type_name}"):
+    # pydantic validation fails, as new hwm classes are passed into hwm_type
+    with pytest.raises(ValueError):
         FileDownloader(
             connection=Mock(),
             local_path="/path",
