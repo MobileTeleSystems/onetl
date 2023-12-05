@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from etl_entities.source import Table
 
@@ -33,9 +33,11 @@ class BaseDBDialect(ABC):
     Collection of methods used for validating input values before passing them to read_source_as_df/write_df_to_target
     """
 
-    @classmethod
+    def __init__(self, connection: BaseDBConnection) -> None:
+        self.connection = connection
+
     @abstractmethod
-    def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
+    def validate_name(self, value: Table) -> str:
         """Check if ``source`` or ``target`` value is valid.
 
         Raises
@@ -46,9 +48,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
+    def validate_columns(self, columns: list[str] | None) -> list[str] | None:
         """Check if ``columns`` value is valid.
 
         Raises
@@ -59,9 +60,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_hwm(cls, connection: BaseDBConnection, hwm: HWM) -> HWM:
+    def validate_hwm(self, hwm: HWM | None) -> HWM | None:
         """Check if ``HWM`` class is valid.
 
         Raises
@@ -72,9 +72,8 @@ class BaseDBDialect(ABC):
             If hwm is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
+    def validate_df_schema(self, df_schema: StructType | None) -> StructType | None:
         """Check if ``df_schema`` value is valid.
 
         Raises
@@ -85,9 +84,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
+    def validate_where(self, where: Any) -> Any | None:
         """Check if ``where`` value is valid.
 
         Raises
@@ -98,9 +96,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
+    def validate_hint(self, hint: Any) -> Any | None:
         """Check if ``hint`` value is valid.
 
         Raises
@@ -111,32 +108,10 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def detect_hwm_class(cls, hwm_column_type: str) -> ColumnHWM:
+    def detect_hwm_class(self, hwm_column_type: str) -> type[ColumnHWM]:
         """
         Detects hwm column type based on specific data types in connections data stores
-        """
-
-    @classmethod
-    @abstractmethod
-    def _merge_conditions(cls, conditions: list[Any]) -> Any:
-        """
-        Convert multiple WHERE conditions to one
-        """
-
-    @classmethod
-    @abstractmethod
-    def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
-        """
-        Return "expression AS alias" statement
-        """
-
-    @classmethod
-    @abstractmethod
-    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
-        """
-        Return "arg1 COMPARATOR arg2" statement
         """
 
 
@@ -146,6 +121,10 @@ class BaseDBConnection(BaseConnection):
     """
 
     Dialect = BaseDBDialect
+
+    @property
+    def dialect(self):
+        return self.Dialect(self)
 
     @property
     @abstractmethod

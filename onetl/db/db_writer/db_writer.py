@@ -157,12 +157,11 @@ class DBWriter(FrozenModel):
     @validator("target", pre=True, always=True)
     def validate_target(cls, target, values):
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
         if isinstance(target, str):
             # target="dbschema.table" or target="table", If target="dbschema.some.table" in class Table will raise error.
             target = Table(name=target, instance=connection.instance_url)
             # Here Table(name='target', db='dbschema', instance='some_instance')
-        return dialect.validate_name(connection, target)
+        return connection.dialect.validate_name(target)
 
     @validator("options", pre=True, always=True)
     def validate_options(cls, options, values):

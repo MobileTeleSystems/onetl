@@ -359,7 +359,7 @@ class MongoDB(DBConnection):
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        pipeline = self.Dialect.prepare_pipeline(pipeline)
+        pipeline = self.dialect.prepare_pipeline(pipeline)
         log_with_indent(log, "collection = %r", collection)
         log_json(log, pipeline, name="pipeline")
 
@@ -370,7 +370,7 @@ class MongoDB(DBConnection):
         log_options(log, read_options)
 
         read_options["collection"] = collection
-        read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
+        read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
         read_options["connection.uri"] = self.connection_url
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
@@ -418,14 +418,14 @@ class MongoDB(DBConnection):
         if where:
             pipeline.insert(0, {"$match": where})
 
-        pipeline = self.Dialect.prepare_pipeline(pipeline)
+        pipeline = self.dialect.prepare_pipeline(pipeline)
 
         read_options["connection.uri"] = self.connection_url
         read_options["collection"] = source
-        read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
+        read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
 
         if hint:
-            read_options["hint"] = self.Dialect.convert_to_str(hint)
+            read_options["hint"] = self.dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
@@ -456,18 +456,18 @@ class MongoDB(DBConnection):
         options: MongoDBReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        final_where = self.Dialect._condition_assembler(
+        final_where = self.dialect.condition_assembler(
             condition=where,
             start_from=start_from,
             end_at=end_at,
         )
-        pipeline = self.Dialect.prepare_pipeline({"$match": final_where}) if final_where else None
+        pipeline = self.dialect.prepare_pipeline({"$match": final_where}) if final_where else None
 
         if pipeline:
-            read_options["aggregation.pipeline"] = self.Dialect.convert_to_str(pipeline)
+            read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
 
         if hint:
-            read_options["hint"] = self.Dialect.convert_to_str(hint)
+            read_options["hint"] = self.dialect.convert_to_str(hint)
 
         read_options["connection.uri"] = self.connection_url
         read_options["collection"] = source

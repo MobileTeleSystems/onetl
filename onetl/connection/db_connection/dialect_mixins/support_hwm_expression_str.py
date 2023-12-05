@@ -6,14 +6,15 @@ from onetl.base import BaseDBConnection
 
 
 class SupportHWMExpressionStr:
-    @classmethod
-    def validate_hwm_expression(cls, connection: BaseDBConnection, hwm: HWM) -> HWM | None:
-        if hwm.expression is None:
-            return None
+    connection: BaseDBConnection
+
+    def validate_hwm(self, hwm: HWM | None) -> HWM | None:
+        if not hwm or hwm.expression is None:
+            return hwm
 
         if not isinstance(hwm.expression, str):
             raise TypeError(
-                f"{connection.__class__.__name__} requires 'hwm.expression' parameter type to be 'str', "
+                f"{self.connection.__class__.__name__} requires 'hwm.expression' parameter type to be 'str', "
                 f"got {hwm.expression.__class__.__name__!r}",
             )
 

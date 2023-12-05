@@ -367,7 +367,7 @@ class Hive(DBConnection):
         start_from: Statement | None = None,
         end_at: Statement | None = None,
     ) -> DataFrame:
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
+        where = self.dialect.condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         sql_text = get_sql_query(
             table=source,
             columns=columns,
@@ -407,13 +407,13 @@ class Hive(DBConnection):
         sql_text = get_sql_query(
             table=source,
             columns=[
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_min_value_sql(expression or column),
-                    self.Dialect._escape_column("min"),
+                self.dialect.aliased(
+                    self.dialect.get_min_value(expression or column),
+                    self.dialect.escape_column("min"),
                 ),
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_max_value_sql(expression or column),
-                    self.Dialect._escape_column("max"),
+                self.dialect.aliased(
+                    self.dialect.get_max_value(expression or column),
+                    self.dialect.escape_column("max"),
                 ),
             ],
             where=where,

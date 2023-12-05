@@ -382,18 +382,16 @@ class DBReader(FrozenModel):
     @validator("source", pre=True, always=True)
     def validate_source(cls, source, values):
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
         if isinstance(source, str):
             # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
             source = Table(name=source, instance=connection.instance_url)
             # Here Table(name='source', db='dbschema', instance='some_instance')
-        return dialect.validate_name(connection, source)
+        return connection.dialect.validate_name(source)
 
     @validator("where", pre=True, always=True)
     def validate_where(cls, where: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
-        result = dialect.validate_where(connection, where)
+        result = connection.dialect.validate_where(where)
         if isinstance(result, dict):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
@@ -401,8 +399,7 @@ class DBReader(FrozenModel):
     @validator("hint", pre=True, always=True)
     def validate_hint(cls, hint: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
-        result = dialect.validate_hint(connection, hint)
+        result = connection.dialect.validate_hint(hint)
         if isinstance(result, dict):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
@@ -410,8 +407,7 @@ class DBReader(FrozenModel):
     @validator("df_schema", pre=True, always=True)
     def validate_df_schema(cls, df_schema: StructType | None, values: dict) -> StructType | None:
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
-        return dialect.validate_df_schema(connection, df_schema)
+        return connection.dialect.validate_df_schema(df_schema)
 
     @root_validator(pre=True)
     def validate_hwm(cls, values: dict) -> dict:  # noqa: WPS231
@@ -463,17 +459,12 @@ class DBReader(FrozenModel):
                 "Otherwise DBReader cannot determine HWM type for this column",
             )
 
-        dialect = connection.Dialect
-        dialect.validate_hwm(connection, hwm)
-
-        values["hwm"] = hwm
-
+        values["hwm"] = connection.dialect.validate_hwm(hwm)
         return values
 
     @root_validator(pre=True)  # noqa: WPS231
     def validate_columns(cls, values: dict) -> dict:
         connection: BaseDBConnection = values["connection"]
-        dialect = connection.Dialect
 
         columns: list[str] | str | None = values.get("columns")
         columns_list: list[str] | None
@@ -482,7 +473,7 @@ class DBReader(FrozenModel):
         else:
             columns_list = columns
 
-        columns_list = dialect.validate_columns(connection, columns_list)
+        columns_list = connection.dialect.validate_columns(columns_list)
         if columns_list is None:
             return values
 
@@ -531,7 +522,7 @@ class DBReader(FrozenModel):
         schema = {field.name.casefold(): field for field in self.get_df_schema()}
         column = hwm.entity.casefold()
         target_column_data_type = schema[column].dataType.typeName()
-        hwm_class_for_target = self.connection.Dialect.detect_hwm_class(target_column_data_type)
+        hwm_class_for_target = self.connection.dialect.detect_hwm_class(target_column_data_type)
         try:
             return hwm_class_for_target.deserialize(hwm.dict())
         except ValueError as e:
@@ -702,7 +693,7 @@ class DBReader(FrozenModel):
         hwm_statement = (
             self.hwm.entity
             if not self.hwm.expression
-            else self.connection.Dialect._expression_with_alias(  # noqa: WPS437
+            else self.connection.dialect.aliased(  # noqa: WPS437
                 self.hwm.expression,
                 self.hwm.entity,
             )
