@@ -14,10 +14,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, ClassVar, Iterator, Optional
+from typing import ClassVar
 
 from etl_entities.hwm import HWM, ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
-from pydantic import StrictInt
 
 
 class SparkTypeToHWM:
@@ -31,12 +30,12 @@ class SparkTypeToHWM:
         from etl_entities.hwm import ColumnIntHWM, ColumnDateHWM
         from onetl.hwm.store import SparkTypeToHWM
 
-        SparkTypeToHWM.get("int") == IntHWM
-        SparkTypeToHWM.get("integer") == IntHWM  # multiple type names are supported
+        assert SparkTypeToHWM.get("integer") == ColumnIntHWM
+        assert SparkTypeToHWM.get("short") == ColumnIntHWM  # multiple type names are supported
 
-        SparkTypeToHWM.get("date") == DateHWM
+        assert SparkTypeToHWM.get("date") == ColumnDateHWM
 
-        SparkTypeToHWM.get("unknown")  # raise KeyError
+        assert SparkTypeToHWM.get("unknown") is None
 
     """
 
@@ -47,6 +46,12 @@ class SparkTypeToHWM:
         "long": ColumnIntHWM,
         "date": ColumnDateHWM,
         "timestamp": ColumnDateTimeHWM,
+        # for Oracle which does not differ between int and float/double - everything is Decimal
+        "float": ColumnIntHWM,
+        "double": ColumnIntHWM,
+        "fractional": ColumnIntHWM,
+        "decimal": ColumnIntHWM,
+        "numeric": ColumnIntHWM,
     }
 
     @classmethod
@@ -80,34 +85,14 @@ def register_spark_type_to_hwm_type_mapping(*type_names: str):
             ...
 
 
-        SparkTypeToHWM.get("somename") == MyClass
-        SparkTypeToHWM.get("anothername") == MyClass
+        assert SparkTypeToHWM.get("somename") == MyClass
+        assert SparkTypeToHWM.get("anothername") == MyClass
 
     """
 
     def wrapper(cls: type[HWM]):
         for type_name in type_names:
             SparkTypeToHWM.add(type_name, cls)
-
         return cls
 
     return wrapper
-
-
-class Decimal(StrictInt):
-    @classmethod
-    def __get_validators__(cls) -> Iterator[Callable]:
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any) -> int:
-        if round(float(value)) != float(value):
-            raise ValueError(f"{cls.__name__} cannot have fraction part")
-        return int(value)
-
-
-@register_spark_type_to_hwm_type_mapping("float", "double", "fractional", "decimal", "numeric")
-class DecimalHWM(ColumnIntHWM):
-    """Same as IntHWM, but allows to pass values like 123.000 (float without fractional part)"""
-
-    value: Optional[Decimal] = None

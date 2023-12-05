@@ -1,3 +1,4 @@
+import re
 import secrets
 
 import pytest
@@ -114,13 +115,20 @@ def test_mssql_strategy_incremental(
 
 # Fail if HWM is Numeric, or Decimal with fractional part, or string
 @pytest.mark.parametrize(
-    "hwm_column",
+    "hwm_column, exception_type, error_message",
     [
-        "float_value",
-        "text_string",
+        ("float_value", ValueError, "value is not a valid integer"),
+        ("text_string", KeyError, "Unknown HWM type 'string'"),
     ],
 )
-def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, hwm_column):
+def test_mssql_strategy_incremental_wrong_hwm_type(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    exception_type,
+    error_message,
+):
     mssql = MSSQL(
         host=processing.host,
         port=processing.port,
@@ -145,7 +153,7 @@ def test_mssql_strategy_incremental_wrong_type(spark, processing, prepare_schema
         values=data,
     )
 
-    with pytest.raises((KeyError, ValueError)):
+    with pytest.raises(exception_type, match=re.escape(error_message)):
         # incremental run
         with IncrementalStrategy():
             reader.run()
