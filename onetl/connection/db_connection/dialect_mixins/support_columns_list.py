@@ -2,14 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from onetl.base import BaseDBConnection
 
-
-class SupportColumnsList:
-    @classmethod
+class SupportColumns:
     def validate_columns(
-        cls,
-        connection: BaseDBConnection,
+        self,
         columns: Any,
     ) -> list[str] | None:
         if columns is None:

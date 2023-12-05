@@ -20,50 +20,48 @@ import logging
 from etl_entities.hwm import HWM
 
 from onetl._util.spark import get_spark_version
-from onetl.base import BaseDBConnection
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsNone,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportHWMExpressionNone,
+    NotSupportColumns,
+    NotSupportDFSchema,
+    NotSupportHint,
+    NotSupportWhere,
     SupportNameAny,
-    SupportWhereNone,
 )
 
 log = logging.getLogger(__name__)
 
 
 class KafkaDialect(  # noqa: WPS215
-    SupportColumnsNone,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportWhereNone,
+    NotSupportColumns,
+    NotSupportDFSchema,
+    NotSupportHint,
+    NotSupportWhere,
     SupportNameAny,
-    SupportHWMExpressionNone,
     DBDialect,
 ):
-    valid_hwm_columns = {"offset", "timestamp"}
+    SUPPORTED_HWM_COLUMNS = {"offset", "timestamp"}
 
-    @classmethod
     def validate_hwm(
-        cls,
-        connection: BaseDBConnection,
-        hwm: HWM,
-    ) -> HWM:
-        cls.validate_column(connection, hwm.entity)
+        self,
+        hwm: HWM | None,
+    ) -> HWM | None:
+        if not hwm:
+            return None
 
-        return hwm
+        if hwm.entity not in self.SUPPORTED_HWM_COLUMNS:
+            raise ValueError(f"{hwm.entity} is not a valid hwm column. Valid options are: {self.SUPPORTED_HWM_COLUMNS}")
 
-    @classmethod
-    def validate_column(cls, connection: BaseDBConnection, column: str) -> None:
-        if column not in cls.valid_hwm_columns:
-            raise ValueError(f"{column} is not a valid hwm column. Valid options are: {cls.valid_hwm_columns}")
-
-        if column == "timestamp":
+        if hwm.entity == "timestamp":
             # Spark version less 3.x does not support reading from Kafka with the timestamp parameter
-            spark_version = get_spark_version(connection.spark)  # type: ignore[attr-defined]
+            spark_version = get_spark_version(self.connection.spark)  # type: ignore[attr-defined]
             if spark_version.major < 3:
                 raise ValueError(
                     f"Spark version must be 3.x for the timestamp column. Current version is: {spark_version}",
                 )
+
+        if hwm.expression is not None:
+            raise ValueError(
+                f"'hwm.expression' parameter is not supported by {self.connection.__class__.__name__}",
+            )
+        return hwm

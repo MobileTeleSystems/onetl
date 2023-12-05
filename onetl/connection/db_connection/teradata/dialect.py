@@ -20,21 +20,17 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
 class TeradataDialect(JDBCDialect):
-    @classmethod
-    def _get_datetime_value_sql(cls, value: datetime) -> str:
+    # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
+    def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
+        return f"HASHAMP(HASHBUCKET(HASHROW({partition_column}))) mod {num_partitions}"
+
+    def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
+        return f"{partition_column} mod {num_partitions}"
+
+    def _serialize_datetime(self, value: datetime) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS TIMESTAMP)"
 
-    @classmethod
-    def _get_date_value_sql(cls, value: date) -> str:
+    def _serialize_date(self, value: date) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS DATE)"
-
-    # https://docs.teradata.com/r/w4DJnG9u9GdDlXzsTXyItA/lkaegQT4wAakj~K_ZmW1Dg
-    @classmethod
-    def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        return f"HASHAMP(HASHBUCKET(HASHROW({partition_column}))) mod {num_partitions}"
-
-    @classmethod
-    def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} mod {num_partitions}"

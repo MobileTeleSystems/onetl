@@ -20,21 +20,17 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
 class MSSQLDialect(JDBCDialect):
-    @classmethod
-    def _get_datetime_value_sql(cls, value: datetime) -> str:
+    # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
+    def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
+        return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
+
+    def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
+        return f"{partition_column} % {num_partitions}"
+
+    def _serialize_datetime(self, value: datetime) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS datetime2)"
 
-    @classmethod
-    def _get_date_value_sql(cls, value: date) -> str:
+    def _serialize_date(self, value: date) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS date)"
-
-    # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
-    @classmethod
-    def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
-
-    @classmethod
-    def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} % {num_partitions}"

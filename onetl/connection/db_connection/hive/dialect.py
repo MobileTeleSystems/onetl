@@ -16,8 +16,8 @@ from __future__ import annotations
 
 from onetl.connection.db_connection.db_connection import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
+    NotSupportDFSchema,
+    SupportColumns,
     SupportHintStr,
     SupportHWMExpressionStr,
     SupportNameWithSchemaOnly,
@@ -27,13 +27,12 @@ from onetl.connection.db_connection.dialect_mixins import (
 
 class HiveDialect(  # noqa: WPS215
     SupportNameWithSchemaOnly,
-    SupportColumnsList,
-    SupportDfSchemaNone,
+    SupportColumns,
+    NotSupportDFSchema,
     SupportWhereStr,
     SupportHintStr,
     SupportHWMExpressionStr,
     DBDialect,
 ):
-    @classmethod
-    def _escape_column(cls, value: str) -> str:
+    def escape_column(self, value: str) -> str:
         return f"`{value}`"

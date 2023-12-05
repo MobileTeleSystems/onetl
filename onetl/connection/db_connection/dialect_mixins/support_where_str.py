@@ -6,10 +6,10 @@ from onetl.base import BaseDBConnection
 
 
 class SupportWhereStr:
-    @classmethod
+    connection: BaseDBConnection
+
     def validate_where(
-        cls,
-        connection: BaseDBConnection,
+        self,
         where: Any,
     ) -> str | None:
         if where is None:
@@ -17,7 +17,7 @@ class SupportWhereStr:
 
         if not isinstance(where, str):
             raise TypeError(
-                f"{connection.__class__.__name__} requires 'where' parameter type to be 'str', "
+                f"{self.connection.__class__.__name__} requires 'where' parameter type to be 'str', "
                 f"got {where.__class__.__name__!r}",
             )
 

@@ -172,12 +172,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         if read_options.partition_column:
             if read_options.partitioning_mode == JDBCPartitioningMode.MOD:
-                partition_column = self.Dialect._get_partition_column_mod(
+                partition_column = self.dialect.get_partition_column_mod(
                     read_options.partition_column,
                     read_options.num_partitions,
                 )
             elif read_options.partitioning_mode == JDBCPartitioningMode.HASH:
-                partition_column = self.Dialect._get_partition_column_hash(
+                partition_column = self.dialect.get_partition_column_hash(
                     read_options.partition_column,
                     read_options.num_partitions,
                 )
@@ -189,12 +189,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
             # have the same name as the field in the table ( 2.4 version )
             # https://github.com/apache/spark/pull/21379
             alias = "generated_" + secrets.token_hex(5)
-            alias_escaped = self.Dialect._escape_column(alias)
-            aliased_column = self.Dialect._expression_with_alias(partition_column, alias_escaped)
+            alias_escaped = self.dialect.escape_column(alias)
+            aliased_column = self.dialect.aliased(partition_column, alias_escaped)
             read_options = read_options.copy(update={"partition_column": alias_escaped})
             new_columns.append(aliased_column)
 
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
+        where = self.dialect.condition_assembler(condition=where, start_from=start_from, end_at=end_at)
         query = get_sql_query(
             table=source,
             columns=new_columns,
@@ -296,13 +296,13 @@ class JDBCConnection(JDBCMixin, DBConnection):
         query = get_sql_query(
             table=source,
             columns=[
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_min_value_sql(expression or column),
-                    self.Dialect._escape_column("min"),
+                self.dialect.aliased(
+                    self.dialect.get_min_value(expression or column),
+                    self.dialect.escape_column("min"),
                 ),
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_max_value_sql(expression or column),
-                    self.Dialect._escape_column("max"),
+                self.dialect.aliased(
+                    self.dialect.get_max_value(expression or column),
+                    self.dialect.escape_column("max"),
                 ),
             ],
             where=where,

@@ -19,12 +19,12 @@ import operator
 from datetime import datetime
 from typing import Any, Callable, ClassVar, Dict, Iterable, Mapping
 
-from onetl.base.base_db_connection import BaseDBConnection
+from etl_entities.hwm import HWM
+
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsNone,
-    SupportDfSchemaStruct,
-    SupportHWMExpressionNone,
+    NotSupportColumns,
+    RequiresDFSchema,
     SupportNameAny,
 )
 
@@ -74,9 +74,8 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 
 class MongoDBDialect(  # noqa: WPS215
     SupportNameAny,
-    SupportHWMExpressionNone,
-    SupportColumnsNone,
-    SupportDfSchemaStruct,
+    NotSupportColumns,
+    RequiresDFSchema,
     DBDialect,
 ):
     _compare_statements: ClassVar[Dict[Callable, str]] = {
@@ -88,10 +87,8 @@ class MongoDBDialect(  # noqa: WPS215
         operator.ne: "$ne",
     }
 
-    @classmethod
     def validate_where(
-        cls,
-        connection: BaseDBConnection,
+        self,
         where: Any,
     ) -> dict | None:
         if where is None:
@@ -99,18 +96,16 @@ class MongoDBDialect(  # noqa: WPS215
 
         if not isinstance(where, dict):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
+                f"{self.connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
                 f"got {where.__class__.__name__!r}",
             )
 
         for key in where:
-            cls._validate_top_level_keys_in_where_parameter(key)
+            self._validate_top_level_keys_in_where_parameter(key)
         return where
 
-    @classmethod
     def validate_hint(
-        cls,
-        connection: BaseDBConnection,
+        self,
         hint: Any,
     ) -> dict | None:
         if hint is None:
@@ -118,14 +113,20 @@ class MongoDBDialect(  # noqa: WPS215
 
         if not isinstance(hint, dict):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
+                f"{self.connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
                 f"got {hint.__class__.__name__!r}",
             )
         return hint
 
-    @classmethod
+    def validate_hwm(self, hwm: HWM | None) -> HWM | None:
+        if hwm and hwm.expression is not None:
+            raise ValueError(
+                f"'hwm.expression' parameter is not supported by {self.connection.__class__.__name__}",
+            )
+        return hwm
+
     def prepare_pipeline(
-        cls,
+        self,
         pipeline: Any,
     ) -> Any:
         """
@@ -136,33 +137,30 @@ class MongoDBDialect(  # noqa: WPS215
             return {"$date": pipeline.astimezone().isoformat()}
 
         if isinstance(pipeline, Mapping):
-            return {cls.prepare_pipeline(key): cls.prepare_pipeline(value) for key, value in pipeline.items()}
+            return {self.prepare_pipeline(key): self.prepare_pipeline(value) for key, value in pipeline.items()}
 
         if isinstance(pipeline, Iterable) and not isinstance(pipeline, str):
-            return [cls.prepare_pipeline(item) for item in pipeline]
+            return [self.prepare_pipeline(item) for item in pipeline]
 
         return pipeline
 
-    @classmethod
     def convert_to_str(
-        cls,
+        self,
         value: Any,
     ) -> str:
         """
         Converts the given dictionary, list or primitive to a string.
         """
 
-        return json.dumps(cls.prepare_pipeline(value))
+        return json.dumps(self.prepare_pipeline(value))
 
-    @classmethod
-    def _merge_conditions(cls, conditions: list[Any]) -> Any:
+    def _merge_conditions(self, conditions: list[Any]) -> Any:
         if len(conditions) == 1:
             return conditions[0]
 
         return {"$and": conditions}
 
-    @classmethod
-    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> dict:
+    def _get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> dict:
         """
         Returns the comparison statement in MongoDB syntax:
 
@@ -176,12 +174,11 @@ class MongoDBDialect(  # noqa: WPS215
         """
         return {
             arg1: {
-                cls._compare_statements[comparator]: arg2,
+                self._compare_statements[comparator]: arg2,
             },
         }
 
-    @classmethod
-    def _validate_top_level_keys_in_where_parameter(cls, key: str):
+    def _validate_top_level_keys_in_where_parameter(self, key: str):
         """
         Checks the 'where' parameter for illegal operators, such as ``$match``, ``$merge`` or ``$changeStream``.
 
