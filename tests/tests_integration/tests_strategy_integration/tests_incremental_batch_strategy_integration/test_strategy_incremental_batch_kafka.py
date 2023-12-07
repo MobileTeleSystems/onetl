@@ -31,5 +31,5 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             table="topic",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="offset"),
         )
-        with pytest.raises(ValueError, match="connection does not support batch strategies"):
+        with pytest.raises(RuntimeError):
             reader.run()

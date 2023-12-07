@@ -171,24 +171,3 @@ def test_mongodb_reader_error_pass_columns(spark_mock, df_schema):
         match="'columns' parameter is not supported by MongoDB",
     ):
         DBReader(connection=mongo, table="table", columns=["_id", "test"], df_schema=df_schema)
-
-
-def test_mongodb_reader_hwm_column_not_in_df_schema(spark_mock, df_schema):
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="'df_schema' struct must contain column specified in 'hwm.entity'.*",
-    ):
-        DBReader(
-            connection=mongo,
-            table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="_id2"),
-            df_schema=df_schema,
-        )

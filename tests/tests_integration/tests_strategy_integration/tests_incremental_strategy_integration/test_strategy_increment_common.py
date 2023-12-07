@@ -1,8 +1,12 @@
+import re
 import secrets
 from contextlib import suppress
 from datetime import timedelta
 
 import pytest
+from etl_entities.hwm_store import HWMStoreStackManager
+
+from tests.util.rand import rand_str
 
 try:
     import pandas
@@ -50,15 +54,68 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
     with IncrementalStrategy():
         reader.run()
 
-    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
-
+    # change table schema
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     new_fields[hwm_column] = new_type
+
+    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        TypeError,
+        match="HWM type .* fetched from HWM store\ndoes not match current HWM type.*",
+    ):
         with IncrementalStrategy():
             reader.run()
+
+
+@pytest.mark.parametrize(
+    "attribute",
+    [
+        "entity",
+        "expression",
+    ],
+)
+def test_postgres_strategy_incremental_different_hwm_attributes_in_store(
+    spark,
+    processing,
+    load_table_data,
+    attribute,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    hwm_name = secrets.token_hex(5)
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column="hwm_int", expression="hwm_int"),
+    )
+
+    with IncrementalStrategy():
+        reader.run()
+
+    # change some HWM attribute
+    store = HWMStoreStackManager.get_current()
+    hwm = store.get_hwm(name=hwm_name)
+    hwm = hwm.copy(update={attribute: rand_str()})
+    store.set_hwm(hwm)
+
+    with pytest.warns(UserWarning, match="Detected different HWM attributes"):
+        with IncrementalStrategy():
+            reader.run()
+
+    # attributes from DBReader have higher priority, except value
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.entity == "hwm_int"
+    assert hwm.expression == "hwm_int"
 
 
 def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_table_data):
@@ -72,25 +129,22 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
     )
 
     table1 = load_table_data.full_name
-    table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
-
-    hwm_column1 = "hwm_int"
-    hwm_column2 = "hwm_datetime"
+    table2 = f"{secrets.token_hex(5)}.{secrets.token_hex(5)}"
 
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
-        table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
-        table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column2),
+        table=table2,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
     with IncrementalStrategy():
@@ -98,69 +152,15 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
 
         with pytest.raises(
             ValueError,
-            match=r"Incompatible HWM values.*",
+            match="Detected wrong IncrementalStrategy usage.",
         ):
             reader2.run()
 
         with pytest.raises(
             ValueError,
-            match=r"Incompatible HWM values.*",
+            match="Detected wrong IncrementalStrategy usage.",
         ):
             reader3.run()
-
-
-def test_postgres_strategy_incremental_unknown_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(
-            name=secrets.token_hex(5),
-            column="unknown_column",
-        ),  # there is no such column in a table
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalStrategy():
-            reader.run()
-
-
-def test_postgres_strategy_incremental_duplicated_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalStrategy():
-            reader.run()
 
 
 def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_table):
@@ -254,7 +254,6 @@ def test_postgres_strategy_incremental_offset(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        columns=["*", hwm_column],
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
     )
 
@@ -297,7 +296,7 @@ def test_postgres_strategy_incremental_offset(
     processing.assert_equal_df(df=next_df, other_frame=total_span)
 
 
-def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):  # noqa: C812
+def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -363,7 +362,6 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
             source=prepare_schema_table.full_name,
             hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
         )
-
         second_df = reader.run()
 
     # all the data from the second span has been read
@@ -393,8 +391,8 @@ def test_postgres_hwm_column_deprecated(
         database=processing.database,
         spark=spark,
     )
-    msg = r'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed in future versions. Use hwm=DBReader.AutoDetectHWM(.*) class instead.'
-    with pytest.warns(DeprecationWarning, match=msg):
+    msg = 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0'
+    with pytest.warns(DeprecationWarning, match=re.escape(msg)):
         reader = DBReader(
             connection=postgres,
             source=load_table_data.full_name,

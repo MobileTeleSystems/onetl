@@ -15,12 +15,12 @@
 from __future__ import annotations
 
 import logging
-import operator
 from textwrap import dedent
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 from pydantic import validator
 
+from onetl.hwm import Edge
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 log = logging.getLogger(__name__)
@@ -63,26 +63,10 @@ class BatchHWMStrategy(HWMStrategy):
         else:
             log.info("|%s| Next iteration", self.__class__.__name__)
 
-        return self.current_value
+        return self.current, self.next
 
     @property
     def is_first_run(self) -> bool:
-        return self._iteration == 0
-
-    @property
-    def is_finished(self) -> bool:
-        return self.current_value is not None and self.has_upper_limit and self.current_value >= self.stop
-
-    @property
-    def has_lower_limit(self) -> bool:
-        return self.start is not None
-
-    @property
-    def has_upper_limit(self) -> bool:
-        return self.stop is not None
-
-    @property
-    def current_value(self) -> Any:
         if self._iteration < 0:
             raise RuntimeError(
                 dedent(
@@ -98,13 +82,22 @@ class BatchHWMStrategy(HWMStrategy):
                 ),
             )
 
-        result = super().current_value
+        return self._iteration == 0
 
-        if result is None:
-            result = self.start
+    @property
+    def is_finished(self) -> bool:
+        return self.current.is_set() and self.stop is not None and self.current.value >= self.stop
 
-        self.check_argument_is_set("start", result)
+    @property
+    def current(self) -> Edge:
+        result = super().current
+        if not result.is_set():
+            result = Edge(
+                value=self.start,
+                including=True,
+            )
 
+        self.check_argument_is_set("start", result.value)
         return result
 
     def check_argument_is_set(self, name: str, value: Any) -> None:
@@ -112,14 +105,14 @@ class BatchHWMStrategy(HWMStrategy):
             raise ValueError(f"{name!r} argument of {self.__class__.__name__} cannot be empty!")
 
     def check_hwm_increased(self, next_value: Any) -> None:
-        if self.current_value is None:
+        if not self.current.is_set():
             return
 
-        if self.stop is not None and self.current_value == self.stop:
+        if self.stop is not None and self.current.value == self.stop:
             # if rows all have the same hwm_column value, this is not an error, read them all
             return
 
-        if next_value is not None and self.current_value >= next_value:
+        if next_value is not None and self.current.value >= next_value:
             # negative or zero step - exception
             # DateHWM with step value less than one day - exception
             raise ValueError(
@@ -127,7 +120,7 @@ class BatchHWMStrategy(HWMStrategy):
             )
 
         if self.stop is not None:
-            expected_iterations = int((self.stop - self.current_value) / self.step)
+            expected_iterations = int((self.stop - self.current.value) / self.step)
             if expected_iterations >= self.MAX_ITERATIONS:
                 raise ValueError(
                     f"step={self.step!r} parameter of {self.__class__.__name__} leads to "
@@ -135,33 +128,23 @@ class BatchHWMStrategy(HWMStrategy):
                 )
 
     @property
-    def next_value(self) -> Any:
-        if self.current_value is not None:
-            result = self.current_value + self.step
+    def next(self) -> Edge:
+        if self.current.is_set():
+            result = Edge(value=self.current.value + self.step)
         else:
-            result = self.stop
+            result = Edge(value=self.stop)
 
         self.check_argument_is_set("stop", result)
 
-        if self.has_upper_limit:
-            result = min(result, self.stop)
+        if self.stop is not None:
+            result.value = min(result.value, self.stop)
 
-        self.check_hwm_increased(result)
+        self.check_hwm_increased(result.value)
 
         return result
 
     def update_hwm(self, value: Any) -> None:
-        # no rows has been read, going to next iteration
+        # batch strategy ticks determined by step size only,
+        # not by real HWM value read from source
         if self.hwm:
-            self.hwm.update(self.next_value)
-
-        super().update_hwm(value)
-
-    @property
-    def current_value_comparator(self) -> Callable:
-        if self.hwm is None or self.hwm.value is None:
-            # if start == 0 and hwm is not set
-            # SQL should be `hwm_column >= 0` instead of `hwm_column > 0`
-            return operator.ge
-
-        return super().current_value_comparator
+            self.hwm.update(self.next.value)

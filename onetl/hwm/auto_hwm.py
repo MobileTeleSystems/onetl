@@ -14,7 +14,8 @@
 
 
 from etl_entities.hwm import ColumnHWM
+from typing_extensions import Literal
 
 
 class AutoDetectHWM(ColumnHWM):
-    ...
+    value: Literal[None] = None

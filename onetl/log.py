@@ -21,9 +21,10 @@ import sys
 from contextlib import redirect_stdout
 from enum import Enum
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Collection, Iterable
 
 from deprecated import deprecated
+from etl_entities.hwm import HWM
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -459,7 +460,7 @@ def log_options(
         log_with_indent(logger, "%s = %r", name, None, indent=indent, stacklevel=stacklevel, **kwargs)
 
 
-def log_dataframe_schema(logger: logging.Logger, df: DataFrame, stacklevel: int = 1):
+def log_dataframe_schema(logger: logging.Logger, df: DataFrame, indent: int = 0, stacklevel: int = 1):
     """Log dataframe schema in the following format:
 
     Examples
@@ -478,7 +479,7 @@ def log_dataframe_schema(logger: logging.Logger, df: DataFrame, stacklevel: int 
     """
 
     stacklevel += 1
-    log_with_indent(logger, "df_schema:", stacklevel=stacklevel)
+    log_with_indent(logger, "df_schema:", indent=indent, stacklevel=stacklevel)
 
     schema_tree = io.StringIO()
     with redirect_stdout(schema_tree):
@@ -487,4 +488,52 @@ def log_dataframe_schema(logger: logging.Logger, df: DataFrame, stacklevel: int 
         df.printSchema()
 
     for line in schema_tree.getvalue().splitlines():
-        log_with_indent(logger, "%s", line, indent=4, stacklevel=stacklevel)
+        log_with_indent(logger, "%s", line, indent=indent + 4, stacklevel=stacklevel)
+
+
+def log_hwm(logger: logging.Logger, hwm: HWM, with_value: bool = True, indent: int = 0, stacklevel: int = 1):
+    """Log HWM in the following format:
+
+    Examples
+    --------
+
+    .. code:: python
+
+        hwm = ColumnIntHWM(name="my_unique_name", source="my_source", value=123)
+        log_hwm(logger, hwm)
+
+    .. code-block:: text
+
+        INFO  onetl.module        hwm = ColumnIntHWM(
+        INFO  onetl.module            name = "my_unique_name",
+        INFO  onetl.module            entity = "my_source",
+        INFO  onetl.module            expression = None,
+        INFO  onetl.module            value = 123,
+        INFO  onetl.module        )
+
+    .. code-block:: text
+
+        INFO  onetl.module        hwm = FileListHWM(
+        INFO  onetl.module            name = "my_unique_name",
+        INFO  onetl.module            entity = "my_source",
+        INFO  onetl.module            expression = None,
+        INFO  onetl.module            value = [
+        INFO  onetl.module                AbsolutePath("/some/file1.csv"),
+        INFO  onetl.module                AbsolutePath("/some/file2.csv"),
+        INFO  onetl.module                AbsolutePath("/some/file3.csv"),
+        INFO  onetl.module            ]
+        INFO  onetl.module        )
+    """
+    stacklevel += 1
+
+    log_with_indent(logger, "hwm = %s(", type(hwm).__name__, indent=indent, stacklevel=stacklevel)
+    log_with_indent(logger, "name = %r,", hwm.name, indent=indent + 4, stacklevel=stacklevel)
+    log_with_indent(logger, "entity = %r,", hwm.entity, indent=indent + 4, stacklevel=stacklevel)
+    log_with_indent(logger, "expression = %r,", hwm.expression, indent=indent + 4, stacklevel=stacklevel)
+    if with_value:
+        if isinstance(hwm.value, Collection):
+            log_collection(logger, "value", hwm.value, max_items=10, indent=indent + 4, stacklevel=stacklevel)
+        else:
+            log_with_indent(logger, "value = %r,", hwm.value, indent=indent + 4, stacklevel=stacklevel)
+
+    log_with_indent(logger, ")", indent=indent, stacklevel=stacklevel)

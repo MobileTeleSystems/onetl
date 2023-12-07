@@ -1,7 +1,10 @@
+from string import ascii_letters
+
 import pytest
 
 from onetl.connection import Clickhouse
 from onetl.db import DBReader
+from tests.util.rand import rand_str
 
 pytestmark = pytest.mark.clickhouse
 
@@ -139,6 +142,71 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
     # expressions are allowed
     assert count_df.columns == ["abc"]
     assert count_df.collect()[0][0] == table_df.count()
+
+
+def test_clickhouse_reader_snapshot_with_columns_duplicated(spark, processing, prepare_schema_table):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader1 = DBReader(
+        connection=clickhouse,
+        source=prepare_schema_table.full_name,
+    )
+    df1 = reader1.run()
+
+    reader2 = DBReader(
+        connection=clickhouse,
+        source=prepare_schema_table.full_name,
+        columns=[
+            "*",
+            "id_int",
+        ],
+    )
+
+    # Clickhouse can detect that column is already a part of * and does not produce duplicates
+    df2 = reader2.run()
+    assert df1.columns == df2.columns
+
+
+def test_clickhouse_reader_snapshot_with_columns_mixed_naming(spark, processing, get_schema_table):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    # create table with mixed column names, e.g. IdInt
+    full_name, schema, table = get_schema_table
+    column_names = []
+    table_fields = {}
+    for original_name in processing.column_names:
+        column_type = processing.get_column_type(original_name)
+        new_name = rand_str(alphabet=ascii_letters + " _").strip()
+        # wrap column names in DDL with quotes to preserve case
+        table_fields[f'"{new_name}"'] = column_type
+        column_names.append(new_name)
+
+    processing.create_table(schema=schema, table=table, fields=table_fields)
+
+    # before 0.10 this caused errors because * in column names was replaced with real column names,
+    # but they were not escaped
+    reader = DBReader(
+        connection=clickhouse,
+        source=full_name,
+        columns=["*"],
+    )
+
+    df = reader.run()
+    assert df.columns == column_names
 
 
 def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_data):

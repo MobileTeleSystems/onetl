@@ -55,12 +55,8 @@ class SparkTypeToHWM:
     }
 
     @classmethod
-    def get(cls, type_name: str) -> type[HWM]:
-        result = cls._mapping.get(type_name)
-        if not result:
-            raise KeyError(f"Unknown HWM type {type_name!r}")
-
-        return result
+    def get(cls, type_name: str) -> type[HWM] | None:
+        return cls._mapping.get(type_name)
 
     @classmethod
     def add(cls, type_name: str, klass: type[HWM]) -> None:

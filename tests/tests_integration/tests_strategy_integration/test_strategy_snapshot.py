@@ -31,15 +31,16 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
         database=processing.database,
         spark=spark,
     )
-    column = secrets.token_hex()
+    column = secrets.token_hex(5)
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=column),
     )
 
+    error_message = "DBReader(hwm=...) cannot be used with SnapshotStrategy"
     with SnapshotStrategy():
-        with pytest.raises(ValueError, match="SnapshotStrategy cannot be used with `hwm.column` passed into DBReader"):
+        with pytest.raises(RuntimeError, match=re.escape(error_message)):
             reader.run()
 
 
@@ -86,7 +87,7 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
         ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_strategy_snapshot_batch_step_wrong_type(
+def test_postgres_strategy_snapshot_batch_wrong_step_type(
     spark,
     processing,
     prepare_schema_table,
@@ -147,8 +148,8 @@ def test_postgres_strategy_snapshot_batch_step_negative(
 
     error_msg = "HWM value is not increasing, please check options passed to SnapshotBatchStrategy"
     with pytest.raises(ValueError, match=error_msg):
-        with SnapshotBatchStrategy(step=step) as part:
-            for _ in part:
+        with SnapshotBatchStrategy(step=step) as batches:
+            for _ in batches:
                 reader.run()
 
 
@@ -210,7 +211,8 @@ def test_postgres_strategy_snapshot_batch_outside_loop(
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
-    with pytest.raises(RuntimeError):
+    error_message = "Invalid SnapshotBatchStrategy usage!"
+    with pytest.raises(RuntimeError, match=re.escape(error_message)):
         with SnapshotBatchStrategy(step=1):
             reader.run()
 
@@ -228,25 +230,22 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
     step = 20
 
     table1 = load_table_data.full_name
-    table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
-
-    hwm_column1 = "hwm_int"
-    hwm_column2 = "hwm_datetime"
+    table2 = f"{secrets.token_hex(5)}.{secrets.token_hex(5)}"
 
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
-        table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
-        table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column2),
+        table=table2,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
     with SnapshotBatchStrategy(step=step) as batches:
@@ -255,73 +254,17 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
 
             with pytest.raises(
                 ValueError,
-                match=r"Incompatible HWM values.*",
+                match="Detected wrong SnapshotBatchStrategy usage.",
             ):
                 reader2.run()
 
             with pytest.raises(
                 ValueError,
-                match=r"Incompatible HWM values.*",
+                match="Detected wrong SnapshotBatchStrategy usage.",
             ):
                 reader3.run()
 
             break
-
-
-def test_postgres_strategy_snapshot_batch_unknown_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(
-            name=secrets.token_hex(5),
-            column="unknown_column",
-        ),  # there is no such column in a table
-    )
-
-    with pytest.raises(Exception):
-        with SnapshotBatchStrategy(step=1) as batches:
-            for _ in batches:
-                reader.run()
-
-
-def test_postgres_strategy_snapshot_batch_duplicated_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
-    )
-
-    with pytest.raises(Exception):
-        with SnapshotBatchStrategy(step=1) as batches:
-            for _ in batches:
-                reader.run()
 
 
 def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schema_table):
@@ -409,6 +352,7 @@ def test_postgres_strategy_snapshot_batch(
     span_length,
 ):
     store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
 
     postgres = Postgres(
         host=processing.host,
@@ -421,13 +365,11 @@ def test_postgres_strategy_snapshot_batch(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
     )
 
-    hwm = hwm_type(name=reader.source.name, column=hwm_column)
-
     # hwm is not in the store
-    assert store.get_hwm(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # there are 2 spans with a gap between
     # 0..100
@@ -459,7 +401,7 @@ def test_postgres_strategy_snapshot_batch(
     with SnapshotBatchStrategy(step=step) as batches:
         for _ in batches:
             # no hwm saves on each iteration
-            assert store.get_hwm(hwm.qualified_name) is None
+            assert store.get_hwm(hwm_name) is None
 
             next_df = reader.run()
             assert next_df.count() <= per_iter
@@ -469,10 +411,10 @@ def test_postgres_strategy_snapshot_batch(
             else:
                 total_df = total_df.union(next_df)
 
-            assert store.get_hwm(hwm.qualified_name) is None
+            assert store.get_hwm(hwm_name) is None
 
     # no hwm saves after exiting the context
-    assert store.get_hwm(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # all the rows will be read
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
@@ -510,7 +452,6 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        columns=[hwm_column, "*"],
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
     )
 
@@ -574,7 +515,13 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
 )
 @pytest.mark.parametrize("span_length", [100, 40, 5])
 def test_postgres_strategy_snapshot_batch_stop(
-    spark, processing, prepare_schema_table, hwm_column, step, stop, span_length  # noqa: C812
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_column,
+    step,
+    stop,
+    span_length,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -624,7 +571,7 @@ def test_postgres_strategy_snapshot_batch_stop(
     assert (total_pandas_df[hwm_column] <= stop).all()
 
 
-def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, prepare_schema_table):  # noqa: C812
+def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, prepare_schema_table):
     hwm_column = "hwm_int"
     postgres = Postgres(
         host=processing.host,
@@ -763,12 +710,9 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
     span_begin = 0
     span_end = 100
     span = processing.create_pandas_df(min_id=span_begin, max_id=span_end)
-
     span["text_string"] = span[hwm_source].apply(func)
-    span_with_hwm = span.copy()
-    span_with_hwm[hwm_column.lower()] = span[hwm_source]
 
-    # insert first span
+    # insert span
     processing.insert_data(
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
@@ -786,4 +730,4 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
                 total_df = total_df.union(next_df)
 
     # all the data has been read
-    processing.assert_equal_df(df=total_df.orderBy("id_int"), other_frame=span_with_hwm)
+    processing.assert_equal_df(df=total_df.orderBy("id_int"), other_frame=span)

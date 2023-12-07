@@ -884,7 +884,8 @@ def test_file_downloader_detect_hwm_type_snapshot_batch_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm` cannot be used in batch strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with SnapshotBatchStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with SnapshotBatchStrategy(step=100500):
             downloader.run()
 
@@ -903,7 +904,8 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm` cannot be used in batch strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with IncrementalBatchStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with IncrementalBatchStrategy(
             step=timedelta(days=5),
         ):
@@ -925,7 +927,8 @@ def test_file_downloader_detect_hwm_type_snapshot_strategy(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="`hwm` cannot be used in snapshot strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with SnapshotStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         downloader.run()
 
 
@@ -944,7 +947,8 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
     )
 
-    with pytest.raises(ValueError, match="If `hwm` is passed you can't specify an `offset`"):
+    error_message = "FileDownloader(hwm=...) cannot be used with IncrementalStrategy(offset=1, ...)"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with IncrementalStrategy(offset=1):
             downloader.run()
 
@@ -956,7 +960,7 @@ def test_file_downloader_file_hwm_strategy(
     file_connection_with_path_and_files,
     tmp_path_factory,
 ):
-    file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(

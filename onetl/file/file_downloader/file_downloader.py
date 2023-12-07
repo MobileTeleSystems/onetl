@@ -49,6 +49,7 @@ from onetl.impl import (
 from onetl.log import (
     entity_boundary_log,
     log_collection,
+    log_hwm,
     log_lines,
     log_options,
     log_with_indent,
@@ -546,16 +547,19 @@ class FileDownloader(FrozenModel):
 
     def _check_strategy(self):
         strategy = StrategyManager.get_current()
+        class_name = self.__class__.__name__
+        strategy_name = strategy.__class__.__name__
 
         if self.hwm:
             if not isinstance(strategy, HWMStrategy):
-                raise ValueError("`hwm` cannot be used in snapshot strategy.")
-            elif getattr(strategy, "offset", None):  # this check should be somewhere in IncrementalStrategy,
-                # but the logic is quite messy
-                raise ValueError("If `hwm` is passed you can't specify an `offset`")
+                raise ValueError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
+
+            offset = getattr(strategy, "offset", None)
+            if offset is not None:
+                raise ValueError(f"{class_name}(hwm=...) cannot be used with {strategy_name}(offset={offset}, ...)")
 
             if isinstance(strategy, BatchHWMStrategy):
-                raise ValueError("`hwm` cannot be used in batch strategy.")
+                raise ValueError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
 
     def _init_hwm(self) -> FileHWM:
         strategy: HWMStrategy = StrategyManager.get_current()
@@ -585,6 +589,8 @@ class FileDownloader(FrozenModel):
         log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
         log_collection(log, "filters", self.filters)
         log_collection(log, "limits", self.limits)
+        if self.hwm:
+            log_hwm(log, self.hwm, with_value=False)
         log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_source:

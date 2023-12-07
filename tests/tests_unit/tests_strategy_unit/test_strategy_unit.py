@@ -39,7 +39,7 @@ def test_strategy_batch_step_is_empty(step, strategy):
         (SnapshotBatchStrategy, {"step": 1}),
     ],
 )
-def test_strategy_hwm_column_not_set(check, strategy, kwargs, spark_mock):
+def test_strategy_hwm_not_set(check, strategy, kwargs, spark_mock):
     check.return_value = None
 
     with strategy(**kwargs):

@@ -1,7 +1,10 @@
+from string import ascii_letters
+
 import pytest
 
 from onetl.connection import MSSQL
 from onetl.db import DBReader
+from tests.util.rand import rand_str
 
 pytestmark = pytest.mark.mssql
 
@@ -120,6 +123,65 @@ def test_mssql_reader_snapshot_with_columns(spark, processing, load_table_data):
     # expressions are allowed
     assert count_df.columns == ["abc"]
     assert count_df.collect()[0][0] == table_df.count()
+
+
+def test_mssql_reader_snapshot_with_columns_duplicated(spark, processing, prepare_schema_table):
+    mssql = MSSQL(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={"trustServerCertificate": "true"},
+    )
+
+    reader = DBReader(
+        connection=mssql,
+        source=prepare_schema_table.full_name,
+        columns=[
+            "*",
+            "id_int",
+        ],
+    )
+    with pytest.raises(Exception, match="The column 'id_int' was specified multiple times"):
+        reader.run()
+
+
+def test_mssql_reader_snapshot_with_columns_mixed_naming(spark, processing, get_schema_table):
+    mssql = MSSQL(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={"trustServerCertificate": "true"},
+    )
+
+    # create table with mixed column names, e.g. IdInt
+    full_name, schema, table = get_schema_table
+    column_names = []
+    table_fields = {}
+    for original_name in processing.column_names:
+        column_type = processing.get_column_type(original_name)
+        new_name = rand_str(alphabet=ascii_letters + " _").strip()
+        # wrap column names in DDL with quotes to preserve case
+        table_fields[f'"{new_name}"'] = column_type
+        column_names.append(new_name)
+
+    processing.create_table(schema=schema, table=table, fields=table_fields)
+
+    # before 0.10 this caused errors because * in column names was replaced with real column names,
+    # but they were not escaped
+    reader = DBReader(
+        connection=mssql,
+        source=full_name,
+        columns=["*"],
+    )
+
+    df = reader.run()
+    assert df.columns == column_names
 
 
 def test_mssql_reader_snapshot_with_where(spark, processing, load_table_data):

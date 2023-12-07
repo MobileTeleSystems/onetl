@@ -1,4 +1,3 @@
-import re
 import secrets
 
 import pytest
@@ -38,6 +37,7 @@ def test_postgres_strategy_incremental(
     span_length,
 ):
     store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
 
     postgres = Postgres(
         host=processing.host,
@@ -51,10 +51,8 @@ def test_postgres_strategy_incremental(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), entity=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, entity=hwm_column),
     )
-
-    hwm = hwm_type(name=reader.hwm.name, column=hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -80,13 +78,13 @@ def test_postgres_strategy_incremental(
     )
 
     # hwm is not in the store
-    assert store.get_hwm(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # incremental run
     with IncrementalStrategy():
         first_df = reader.run()
 
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -104,7 +102,7 @@ def test_postgres_strategy_incremental(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    assert store.get_hwm(hwm.qualified_name).value == second_span_max
+    assert store.get_hwm(hwm_name).value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
@@ -184,12 +182,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
-    first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column.lower()] = first_span[hwm_source]
-
     second_span["text_string"] = second_span[hwm_source].apply(func)
-    second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column.lower()] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(
@@ -203,7 +196,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span_with_hwm)
+    processing.assert_equal_df(df=first_df, other_frame=first_span)
 
     # insert second span
     processing.insert_data(
@@ -217,22 +210,23 @@ def test_postgres_strategy_incremental_with_hwm_expr(
 
     if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_equal_df(df=second_df, other_frame=second_span)
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
 # Fail if HWM is Numeric, or Decimal with fractional part, or string
 @pytest.mark.parametrize(
     "hwm_column, exception_type, error_message",
     [
-        ("float_value", ValueError, "value is not a valid integer"),
-        ("text_string", KeyError, "Unknown HWM type 'string'"),
+        ("float_value", ValueError, "Expression 'float_value' returned values"),
+        ("text_string", RuntimeError, "Cannot detect HWM type for"),
+        ("unknown_column", Exception, "column .* does not exist"),
     ],
 )
-def test_postgres_strategy_incremental_wrong_hwm_type(
+def test_postgres_strategy_incremental_wrong_hwm(
     spark,
     processing,
     prepare_schema_table,
@@ -262,7 +256,7 @@ def test_postgres_strategy_incremental_wrong_hwm_type(
         values=data,
     )
 
-    with pytest.raises(exception_type, match=re.escape(error_message)):
+    with pytest.raises(exception_type, match=error_message):
         # incremental run
         with IncrementalStrategy():
             reader.run()

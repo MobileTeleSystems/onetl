@@ -1,8 +1,8 @@
-import re
 import secrets
 
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
 
 from onetl.connection import Hive
 from onetl.db import DBReader
@@ -13,11 +13,11 @@ pytestmark = pytest.mark.hive
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize(
-    "hwm_column",
+    "hwm_type, hwm_column",
     [
-        "hwm_int",
-        "hwm_date",
-        "hwm_datetime",
+        (ColumnIntHWM, "hwm_int"),
+        (ColumnDateHWM, "hwm_date"),
+        (ColumnDateTimeHWM, "hwm_datetime"),
     ],
 )
 @pytest.mark.parametrize(
@@ -27,12 +27,23 @@ pytestmark = pytest.mark.hive
         (10, 50),
     ],
 )
-def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_column, span_gap, span_length):
+def test_hive_strategy_incremental(
+    spark,
+    processing,
+    prepare_schema_table,
+    hwm_type,
+    hwm_column,
+    span_gap,
+    span_length,
+):
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
     hive = Hive(cluster="rnd-dwh", spark=spark)
     reader = DBReader(
         connection=hive,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -48,6 +59,9 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
     first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_spant_end)
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
+
     # insert first span
     processing.insert_data(
         schema=prepare_schema_table.schema,
@@ -58,6 +72,11 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
     # incremental run
     with IncrementalStrategy():
         first_df = reader.run()
+
+    hwm = store.get_hwm(hwm_name)
+    assert hwm is not None
+    assert isinstance(hwm, hwm_type)
+    assert hwm.value == first_span_max
 
     # all the data has been read
     processing.assert_equal_df(df=first_df, other_frame=first_span)
@@ -72,6 +91,8 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
     with IncrementalStrategy():
         second_df = reader.run()
 
+    assert store.get_hwm(hwm_name).value == second_span_max
+
     if "int" in hwm_column:
         # only changed data has been read
         processing.assert_equal_df(df=second_df, other_frame=second_span)
@@ -85,11 +106,12 @@ def test_hive_strategy_incremental(spark, processing, prepare_schema_table, hwm_
 @pytest.mark.parametrize(
     "hwm_column, exception_type, error_message",
     [
-        ("float_value", ValueError, "value is not a valid integer"),
-        ("text_string", KeyError, "Unknown HWM type 'string'"),
+        ("float_value", ValueError, "Expression 'float_value' returned values"),
+        ("text_string", RuntimeError, "Cannot detect HWM type for"),
+        ("unknown_column", Exception, r"column .* cannot be resolved|cannot resolve .* given input columns"),
     ],
 )
-def test_hive_strategy_incremental_wrong_hwm_type(
+def test_hive_strategy_incremental_wrong_hwm(
     spark,
     processing,
     prepare_schema_table,
@@ -113,7 +135,7 @@ def test_hive_strategy_incremental_wrong_hwm_type(
         values=data,
     )
 
-    with pytest.raises(exception_type, match=re.escape(error_message)):
+    with pytest.raises(exception_type, match=error_message):
         # incremental run
         with IncrementalStrategy():
             reader.run()
@@ -167,12 +189,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
-    first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column] = first_span[hwm_source]
-
     second_span["text_string"] = second_span[hwm_source].apply(func)
-    second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(
@@ -186,7 +203,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span_with_hwm)
+    processing.assert_equal_df(df=first_df, other_frame=first_span)
 
     # insert second span
     processing.insert_data(
@@ -200,8 +217,8 @@ def test_hive_strategy_incremental_with_hwm_expr(
 
     if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_equal_df(df=second_df, other_frame=second_span)
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_subset_df(df=second_df, other_frame=second_span)
