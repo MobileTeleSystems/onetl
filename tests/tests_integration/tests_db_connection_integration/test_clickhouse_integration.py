@@ -135,7 +135,7 @@ def test_clickhouse_connection_execute_ddl(spark, processing, get_schema_table, 
     assert not clickhouse.execute(
         f"""
         ALTER TABLE {table_name} ADD INDEX {table}_id_int_idx (id_int) TYPE minmax GRANULARITY 8192{suffix}
-    """,
+        """,
     )
 
     assert not clickhouse.execute(f"ALTER TABLE {table_name} DROP INDEX {table}_id_int_idx{suffix}")

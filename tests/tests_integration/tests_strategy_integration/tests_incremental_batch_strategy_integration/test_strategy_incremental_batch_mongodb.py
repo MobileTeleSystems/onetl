@@ -68,6 +68,7 @@ def test_mongodb_strategy_incremental_batch(
     span_length,
 ):
     store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
 
     mongodb = MongoDB(
         host=processing.host,
@@ -77,15 +78,12 @@ def test_mongodb_strategy_incremental_batch(
         database=processing.database,
         spark=spark,
     )
-    hwm_name = secrets.token_hex(5)
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
         hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
         df_schema=df_schema,
     )
-
-    hwm = hwm_type(name=hwm_name, column=hwm_column)
 
     # there are 2 spans with a gap between
     # 0..100
@@ -109,7 +107,7 @@ def test_mongodb_strategy_incremental_batch(
     )
 
     # hwm is not in the store
-    assert store.get_hwm(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # fill up hwm storage with last value, e.g. 100
     first_df = None
@@ -132,7 +130,7 @@ def test_mongodb_strategy_incremental_batch(
         processing.assert_subset_df(df=first_df, other_frame=first_span)
 
     # hwm is set
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -149,7 +147,7 @@ def test_mongodb_strategy_incremental_batch(
     second_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            hwm = store.get_hwm(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
@@ -162,12 +160,12 @@ def test_mongodb_strategy_incremental_batch(
             else:
                 second_df = second_df.union(next_df)
 
-            hwm = store.get_hwm(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
 
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == second_span_max

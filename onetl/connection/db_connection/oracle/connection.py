@@ -34,6 +34,7 @@ from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptio
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
 from onetl.hooks import slot, support_hooks
+from onetl.hwm import Window
 from onetl.impl import GenericOptions
 from onetl.log import BASE_LOG_INDENT, log_lines
 
@@ -247,19 +248,17 @@ class Oracle(JDBCConnection):
         return f"{super().instance_url}/{self.service_name}"
 
     @slot
-    def get_min_max_bounds(
+    def get_min_max_values(
         self,
         source: str,
-        column: str,
-        expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
         options: JDBCReadOptions | None = None,
     ) -> tuple[Any, Any]:
-        min_value, max_value = super().get_min_max_bounds(
+        min_value, max_value = super().get_min_max_values(
             source=source,
-            column=column,
-            expression=expression,
+            window=window,
             hint=hint,
             where=where,
             options=options,

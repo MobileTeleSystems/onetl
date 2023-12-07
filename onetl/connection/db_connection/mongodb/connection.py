@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import warnings
 from typing import TYPE_CHECKING, Any
@@ -37,7 +38,7 @@ from onetl.connection.db_connection.mongodb.options import (
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import Statement
+from onetl.hwm import Window
 from onetl.impl import GenericOptions
 from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
 
@@ -370,7 +371,7 @@ class MongoDB(DBConnection):
         log_options(log, read_options)
 
         read_options["collection"] = collection
-        read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
+        read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
@@ -400,37 +401,44 @@ class MongoDB(DBConnection):
         return self
 
     @slot
-    def get_min_max_bounds(
+    def get_min_max_values(
         self,
         source: str,
-        column: str,
-        expression: str | None = None,  # noqa: U100
-        hint: dict | None = None,  # noqa: U100
-        where: dict | None = None,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
         options: MongoDBReadOptions | dict | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
+        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, window.expression)
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
 
         # The '_id' field must be specified in the request.
-        pipeline = [{"$group": {"_id": 1, "min": {"$min": f"${column}"}, "max": {"$max": f"${column}"}}}]
-        if where:
-            pipeline.insert(0, {"$match": where})
+        pipeline: list[dict[str, Any]] = [
+            {
+                "$group": {
+                    "_id": 1,
+                    "min": {"$min": f"${window.expression}"},
+                    "max": {"$max": f"${window.expression}"},
+                },
+            },
+        ]
+        final_where = self.dialect.apply_window(where, window)
+        if final_where:
+            pipeline.insert(0, {"$match": final_where})
 
         pipeline = self.dialect.prepare_pipeline(pipeline)
-
-        read_options["connection.uri"] = self.connection_url
-        read_options["collection"] = source
-        read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
-
-        if hint:
-            read_options["hint"] = self.dialect.convert_to_str(hint)
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
         log_json(log, pipeline, "pipeline")
         log_json(log, hint, "hint")
+
+        read_options["connection.uri"] = self.connection_url
+        read_options["collection"] = source
+        read_options["aggregation.pipeline"] = json.dumps(pipeline)
+        if hint:
+            read_options["hint"] = json.dumps(hint)
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
         row = df.collect()[0]
@@ -438,8 +446,8 @@ class MongoDB(DBConnection):
         max_value = row["max"]
 
         log.info("|%s| Received values:", self.__class__.__name__)
-        log_with_indent(log, "MIN(%s) = %r", column, min_value)
-        log_with_indent(log, "MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", window.expression, min_value)
+        log_with_indent(log, "MAX(%s) = %r", window.expression, max_value)
 
         return min_value, max_value
 
@@ -451,23 +459,18 @@ class MongoDB(DBConnection):
         hint: dict | None = None,
         where: dict | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
         options: MongoDBReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        final_where = self.dialect.condition_assembler(
-            condition=where,
-            start_from=start_from,
-            end_at=end_at,
-        )
+        final_where = self.dialect.apply_window(where, window)
         pipeline = self.dialect.prepare_pipeline({"$match": final_where}) if final_where else None
 
         if pipeline:
-            read_options["aggregation.pipeline"] = self.dialect.convert_to_str(pipeline)
+            read_options["aggregation.pipeline"] = json.dumps(pipeline)
 
         if hint:
-            read_options["hint"] = self.dialect.convert_to_str(hint)
+            read_options["hint"] = json.dumps(hint)
 
         read_options["connection.uri"] = self.connection_url
         read_options["collection"] = source

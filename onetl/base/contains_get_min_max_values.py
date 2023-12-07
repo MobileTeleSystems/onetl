@@ -12,15 +12,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
+
+from typing_extensions import Protocol, runtime_checkable
+
+from onetl.hwm.window import Window
 
 
-@dataclass
-class Statement:
-    expression: Callable | str
-    operator: Any
-    value: Any
+@runtime_checkable
+class ContainsGetMinMaxValues(Protocol):
+    """
+    Protocol for objects containing ``get_min_max_values`` method
+    """
+
+    def get_min_max_values(
+        self,
+        source: str,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
+    ) -> tuple[Any, Any]:
+        """
+        Get MIN and MAX values for the column in the source. |support_hooks|
+        """

@@ -1,4 +1,3 @@
-import re
 import secrets
 
 import pytest
@@ -79,8 +78,6 @@ def test_mongodb_strategy_incremental(
         df_schema=df_schema,
     )
 
-    hwm = hwm_type(name=hwm_name, column=hwm_column)
-
     # there are 2 spans with a gap between
 
     # 0..100
@@ -108,7 +105,7 @@ def test_mongodb_strategy_incremental(
     with IncrementalStrategy():
         first_df = reader.run()
 
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -126,7 +123,7 @@ def test_mongodb_strategy_incremental(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    assert store.get_hwm(hwm.qualified_name).value == second_span_max
+    assert store.get_hwm(hwm_name).value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
@@ -141,11 +138,12 @@ def test_mongodb_strategy_incremental(
 @pytest.mark.parametrize(
     "hwm_column, exception_type, error_message",
     [
-        ("float_value", ValueError, "value is not a valid integer"),
-        ("text_string", KeyError, "Unknown HWM type 'string'"),
+        ("float_value", ValueError, "Expression 'float_value' returned values"),
+        ("text_string", RuntimeError, "Cannot detect HWM type for"),
+        ("unknown_column", ValueError, "not found in dataframe schema"),
     ],
 )
-def test_mongodb_strategy_incremental_wrong_hwm_type(
+def test_mongodb_strategy_incremental_wrong_hwm(
     spark,
     processing,
     prepare_schema_table,
@@ -179,7 +177,7 @@ def test_mongodb_strategy_incremental_wrong_hwm_type(
         values=data,
     )
 
-    with pytest.raises(exception_type, match=re.escape(error_message)):
+    with pytest.raises(exception_type, match=error_message):
         # incremental run
         with IncrementalStrategy():
             reader.run()

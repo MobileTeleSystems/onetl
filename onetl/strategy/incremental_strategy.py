@@ -30,7 +30,7 @@ class OffsetMixin(BaseModel):
     def fetch_hwm(self) -> None:
         super().fetch_hwm()
 
-        if self.hwm is not None and self.hwm.value is not None and self.offset is not None:
+        if self.hwm and self.hwm.value is not None and self.offset is not None:
             self.hwm -= self.offset
 
 
@@ -651,9 +651,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     def __next__(self):
         result = super().__next__()
-
         self.save_hwm()
-
         return result
 
     @classmethod

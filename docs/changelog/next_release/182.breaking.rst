@@ -1,0 +1,41 @@
+Implementation of read strategies has been drastically improved.
+
+Before 0.10:
+
+- Get table schema by making query ``SELECT * FROM table WHERE 1=0`` (if ``DBReader.columns`` contains ``*``)
+- Append HWM column to list of table columns and remove duplicated columns.
+- Create dataframe from query like ``SELECT hwm.expression AS hwm.column, ...other table columns... FROM table WHERE prev_hwm.expression > prev_hwm.value``.
+- Determine HWM class by ``df.schema[hwm.column].dataType``.
+- Calculate ``df.select(min(hwm.column), max(hwm.column)).collect()`` on Spark side.
+- Use ``max(hwm.column)`` as next HWM value.
+- Return dataframe to user.
+
+This was far from ideal:
+- Dataframe content (all rows or just changed ones) was loaded from the source to Spark only to get min/max values of specific column.
+- Step of fetching table schema and then substituting column names in the following query may cause errors.
+
+  For example, source contains columns with mixed name case, like ``"MyColumn"`` and ``"My column"``.
+  Column names were not escaped during query generation, leading to queries that cannot be executed by database.
+  So users have to explicitly set proper columns list with wrapping them with ``"``.
+
+- Dataframe was created from query with clause like ``WHERE hwm.expression > prev_hwm.value``,
+  not ``WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``.
+
+  So if new rows appeared in the source after HWM value is determined, these rows may be read by DBReader on the first run,
+  and then again on the next run, because they are returned by ``WHERE hwm.expression > prev_hwm.value`` query.
+
+Since 0.10:
+- Get type of HWM expression: ``SELECT hwm.expression FROM table WHERE 1=0``
+- Determine HWM class by ``df.schema[0]``.
+- Get min/max values by querying ``SELECT MIN(hwm.expression), MAX(hwm.expression) FROM table WHERE hwm.expression >= prev_hwm.value``.
+- Use ``max(hwm.column)`` as next HWM value.
+- Create dataframe from query ``SELECT * FROM table WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``, and return it to user.
+
+Improvements:
+- Allow source to calculate min/max instead of loading everything to Spark. This should be *really* fast, and also source can use indexes to speed this up even more.
+- Restrict dataframe content to always match HWM values.
+- Don't mess up with columns list, just pass them to source as-is. So ``DBReader`` does not fail on tables with mixed column naming.
+
+**Breaking change** - HWM column is not being implicitly added to dataframe.
+If it was not just some column value but some expression which then used in your code by accessing dataframe column,
+you should explicitly add same expression to ``DBReader.columns``.

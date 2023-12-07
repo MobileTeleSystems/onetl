@@ -14,29 +14,77 @@
 
 from __future__ import annotations
 
-import operator
+import os
 from datetime import date, datetime
-from typing import Any, Callable, ClassVar, Dict
-
-from etl_entities.hwm import ColumnHWM
+from typing import TYPE_CHECKING, Any
 
 from onetl.base import BaseDBDialect
-from onetl.hwm import Statement
+from onetl.hwm import Edge, Window
 from onetl.hwm.store import SparkTypeToHWM
+
+if TYPE_CHECKING:
+    from etl_entities.hwm import ColumnHWM
+    from pyspark.sql.types import StructField
 
 
 class DBDialect(BaseDBDialect):
-    _compare_statements: ClassVar[Dict[Callable, str]] = {
-        operator.ge: "{} >= {}",
-        operator.gt: "{} > {}",
-        operator.le: "{} <= {}",
-        operator.lt: "{} < {}",
-        operator.eq: "{} == {}",
-        operator.ne: "{} != {}",
-    }
+    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
+        return SparkTypeToHWM.get(field.dataType.typeName())  # type: ignore
 
-    def detect_hwm_class(self, hwm_column_type: str) -> type[ColumnHWM]:
-        return SparkTypeToHWM.get(hwm_column_type)  # type: ignore
+    def get_sql_query(
+        self,
+        table: str,
+        columns: list[str] | None = None,
+        where: str | list[str] | None = None,
+        hint: str | None = None,
+        compact: bool = False,
+    ) -> str:
+        """
+        Generates a SQL query using input arguments
+        """
+
+        if compact:
+            indent = " "
+        else:
+            indent = os.linesep + " " * 7
+
+        hint = f" /*+ {hint} */" if hint else ""
+
+        columns_str = indent + "*"
+        if columns:
+            columns_str = indent + f",{indent}".join(column for column in columns)
+
+        where = where or []
+        if isinstance(where, str):
+            where = [where]
+
+        where_clauses = []
+        if len(where) == 1:
+            where_clauses.append("WHERE" + indent + where[0])
+        else:
+            for i, item in enumerate(where):
+                directive = "WHERE" if i == 0 else "  AND"
+                where_clauses.append(directive + indent + f"({item})")
+
+        query_parts = [
+            f"SELECT{hint}{columns_str}",
+            f"FROM{indent}{table}",
+            *where_clauses,
+        ]
+
+        return os.linesep.join(filter(None, query_parts)).strip()
+
+    def apply_window(
+        self,
+        condition: Any,
+        window: Window | None = None,
+    ) -> Any:
+        conditions = [
+            condition,
+            self._edge_to_where(window.expression, window.start_from, position="start") if window else None,
+            self._edge_to_where(window.expression, window.stop_at, position="end") if window else None,
+        ]
+        return list(filter(None, conditions))
 
     def escape_column(self, value: str) -> str:
         return f'"{value}"'
@@ -58,44 +106,25 @@ class DBDialect(BaseDBDialect):
         result = self._serialize_value(value)
         return f"MIN({result})"
 
-    def condition_assembler(
+    def _edge_to_where(
         self,
-        condition: Any,
-        start_from: Statement | None,
-        end_at: Statement | None,
+        expression: str,
+        edge: Edge,
+        position: str,
     ) -> Any:
-        conditions = [condition]
-
-        if start_from:
-            condition1 = self._get_compare_statement(
-                comparator=start_from.operator,
-                arg1=start_from.expression,
-                arg2=start_from.value,
-            )
-            conditions.append(condition1)
-
-        if end_at:
-            condition2 = self._get_compare_statement(
-                comparator=end_at.operator,
-                arg1=end_at.expression,
-                arg2=end_at.value,
-            )
-            conditions.append(condition2)
-
-        result: list[Any] = list(filter(None, conditions))
-        if not result:
+        if not edge.is_set():
             return None
-        return self._merge_conditions(result)
 
-    def _get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> Any:
-        template = self._compare_statements[comparator]
-        return template.format(arg1, self._serialize_value(arg2))
+        operators: dict[tuple[str, bool], str] = {
+            ("start", True): ">=",
+            ("start", False): "> ",
+            ("end", True): "<=",
+            ("end", False): "< ",
+        }
 
-    def _merge_conditions(self, conditions: list[Any]) -> Any:
-        if len(conditions) == 1:
-            return conditions[0]
-
-        return " AND ".join(f"({item})" for item in conditions)
+        operator = operators[(position, edge.including)]
+        value = self._serialize_value(edge.value)
+        return f"{expression} {operator} {value}"
 
     def _serialize_value(self, value: Any) -> str | int | dict:
         """

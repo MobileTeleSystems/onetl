@@ -17,7 +17,6 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
-from etl_entities.source import Table
 from pydantic import Field, validator
 
 from onetl.base import BaseDBConnection
@@ -151,16 +150,12 @@ class DBWriter(FrozenModel):
     """
 
     connection: BaseDBConnection
-    target: Table = Field(alias="table")
+    target: str = Field(alias="table")
     options: Optional[GenericOptions] = None
 
     @validator("target", pre=True, always=True)
     def validate_target(cls, target, values):
         connection: BaseDBConnection = values["connection"]
-        if isinstance(target, str):
-            # target="dbschema.table" or target="table", If target="dbschema.some.table" in class Table will raise error.
-            target = Table(name=target, instance=connection.instance_url)
-            # Here Table(name='target', db='dbschema', instance='some_instance')
         return connection.dialect.validate_name(target)
 
     @validator("options", pre=True, always=True)

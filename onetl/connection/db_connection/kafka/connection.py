@@ -46,7 +46,7 @@ from onetl.connection.db_connection.kafka.options import (
 from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import Statement
+from onetl.hwm.window import Window
 from onetl.log import log_collection, log_with_indent
 
 if TYPE_CHECKING:
@@ -265,8 +265,7 @@ class Kafka(DBConnection):
         hint: Any | None = None,
         where: Any | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
         log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)

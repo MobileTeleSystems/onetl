@@ -14,10 +14,8 @@
 
 from __future__ import annotations
 
-import json
-import operator
 from datetime import datetime
-from typing import Any, Callable, ClassVar, Dict, Iterable, Mapping
+from typing import Any, Iterable, Mapping
 
 from etl_entities.hwm import HWM
 
@@ -27,6 +25,7 @@ from onetl.connection.db_connection.dialect_mixins import (
     RequiresDFSchema,
     SupportNameAny,
 )
+from onetl.hwm import Edge, Window
 
 _upper_level_operators = frozenset(  # noqa: WPS527
     [
@@ -78,15 +77,6 @@ class MongoDBDialect(  # noqa: WPS215
     RequiresDFSchema,
     DBDialect,
 ):
-    _compare_statements: ClassVar[Dict[Callable, str]] = {
-        operator.ge: "$gte",
-        operator.gt: "$gt",
-        operator.le: "$lte",
-        operator.lt: "$lt",
-        operator.eq: "$eq",
-        operator.ne: "$ne",
-    }
-
     def validate_where(
         self,
         where: Any,
@@ -133,48 +123,57 @@ class MongoDBDialect(  # noqa: WPS215
         Prepares pipeline (list or dict) to MongoDB syntax, but without converting it to string.
         """
 
-        if isinstance(pipeline, datetime):
-            return {"$date": pipeline.astimezone().isoformat()}
-
         if isinstance(pipeline, Mapping):
             return {self.prepare_pipeline(key): self.prepare_pipeline(value) for key, value in pipeline.items()}
 
         if isinstance(pipeline, Iterable) and not isinstance(pipeline, str):
             return [self.prepare_pipeline(item) for item in pipeline]
 
-        return pipeline
+        return self._serialize_value(pipeline)
 
-    def convert_to_str(
+    def apply_window(
         self,
-        value: Any,
-    ) -> str:
+        condition: Any,
+        window: Window | None = None,
+    ) -> Any:
+        result = super().apply_window(condition, window)
+        if not result:
+            return {}
+        if len(result) == 1:
+            return result[0]
+        return {"$and": result}
+
+    def _serialize_value(self, value: Any) -> str | int | dict:
         """
-        Converts the given dictionary, list or primitive to a string.
+        Transform the value into an SQL Dialect-supported form.
         """
 
-        return json.dumps(self.prepare_pipeline(value))
+        if isinstance(value, datetime):
+            return {"$date": value.astimezone().isoformat()}
 
-    def _merge_conditions(self, conditions: list[Any]) -> Any:
-        if len(conditions) == 1:
-            return conditions[0]
+        return value
 
-        return {"$and": conditions}
+    def _edge_to_where(
+        self,
+        expression: str,
+        edge: Edge,
+        position: str,
+    ) -> Any:
+        if not expression or not edge.is_set():
+            return None
 
-    def _get_compare_statement(self, comparator: Callable, arg1: Any, arg2: Any) -> dict:
-        """
-        Returns the comparison statement in MongoDB syntax:
+        operators: dict[tuple[str, bool], str] = {
+            ("start", True): "$gte",
+            ("start", False): "$gt",
+            ("end", True): "$lte",
+            ("end", False): "$lt",
+        }
 
-        .. code::
-
-            {
-                "field": {
-                    "$gt": "some_value",
-                }
-            }
-        """
+        operator = operators[(position, edge.including)]
+        value = self._serialize_value(edge.value)
         return {
-            arg1: {
-                self._compare_statements[comparator]: arg2,
+            expression: {
+                operator: value,
             },
         }
 

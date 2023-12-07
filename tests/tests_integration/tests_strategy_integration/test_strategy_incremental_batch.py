@@ -5,6 +5,8 @@ from datetime import date, datetime, timedelta
 import pytest
 from etl_entities.hwm import ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
 
+from tests.util.rand import rand_str
+
 try:
     import pandas
 
@@ -41,61 +43,10 @@ def test_postgres_strategy_incremental_batch_outside_loop(
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
-    with pytest.raises(RuntimeError):
+    error_msg = "Invalid IncrementalBatchStrategy usage!"
+    with pytest.raises(RuntimeError, match=re.escape(error_msg)):
         with IncrementalBatchStrategy(step=1):
             reader.run()
-
-
-def test_postgres_strategy_incremental_batch_unknown_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="unknown_column"),
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalBatchStrategy(step=1) as batches:
-            for _ in batches:
-                reader.run()
-
-
-def test_postgres_strategy_incremental_batch_duplicated_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-    load_table_data,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalBatchStrategy(step=1) as batches:
-            for _ in batches:
-                reader.run()
 
 
 def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_schema_table):
@@ -116,16 +67,15 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
     )
 
     # there are 2 spans
-    # 0..100
     first_span_begin = 0
     first_span_end = 100
     first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
 
-    # 101..250
     second_span_begin = 101
     second_span_end = 200
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
+    # insert first span
     processing.insert_data(
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
@@ -142,6 +92,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
             else:
                 first_df = first_df.union(next_df)
 
+    # read only rows 0..50 (according to where)
     processing.assert_equal_df(df=first_df, other_frame=first_span[:51])
 
     # insert second span
@@ -161,6 +112,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
             else:
                 second_df = second_df.union(next_df)
 
+    # read only rows 101..119 (according to where)
     processing.assert_equal_df(df=second_df, other_frame=second_span[:19])
 
 
@@ -181,25 +133,22 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
     step = 1
 
     table1 = load_table_data.full_name
-    table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
-
-    hwm_column1 = "hwm_int"
-    hwm_column2 = "hwm_datetime"
+    table2 = f"{secrets.token_hex(5)}.{secrets.token_hex(5)}"
 
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
-        table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column1),
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
-        table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column2),
+        table=table2,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
     )
 
     with IncrementalBatchStrategy(step=step) as batches:
@@ -208,55 +157,15 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
 
             with pytest.raises(
                 ValueError,
-                match=r"Incompatible HWM values.*",
+                match="Detected wrong IncrementalBatchStrategy usage.",
             ):
                 reader2.run()
 
             with pytest.raises(
                 ValueError,
-                match=r"Incompatible HWM values.*",
+                match="Detected wrong IncrementalBatchStrategy usage.",
             ):
                 reader3.run()
-
-            break
-
-
-# Fail if HWM is Numeric, or Decimal with fractional part, or string
-@pytest.mark.parametrize(
-    "hwm_column, step",
-    [
-        ("float_value", 1.0),
-        ("text_string", "abc"),
-    ],
-)
-def test_postgres_strategy_incremental_batch_wrong_hwm_type(spark, processing, prepare_schema_table, hwm_column, step):
-    postgres = Postgres(
-        host=processing.host,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
-    )
-
-    data = processing.create_pandas_df()
-
-    # insert first span
-    processing.insert_data(
-        schema=prepare_schema_table.schema,
-        table=prepare_schema_table.table,
-        values=data,
-    )
-
-    with pytest.raises((KeyError, ValueError)):
-        # incremental run
-        with IncrementalBatchStrategy(step=step) as batches:
-            for _ in batches:
-                reader.run()
 
 
 @pytest.mark.parametrize(
@@ -294,19 +203,71 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
         for _ in batches:
             reader.run()
 
-    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
-
+    # change table schema
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     new_fields[hwm_column] = new_type
+
+    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
     with pytest.raises(
-        ValueError,
-        match=rf"Table column {hwm_column!r} has Spark type .*",
+        TypeError,
+        match="HWM type .* fetched from HWM store\ndoes not match current HWM type.*",
     ):
         with IncrementalBatchStrategy(step=step) as batches:
             for _ in batches:
                 reader.run()
+
+
+@pytest.mark.parametrize(
+    "attribute",
+    [
+        "entity",
+        "expression",
+    ],
+)
+def test_postgres_strategy_incremental_batch_different_hwm_attributes_in_store(
+    spark,
+    processing,
+    load_table_data,
+    attribute,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    hwm_name = secrets.token_hex(5)
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, column="hwm_int", expression="hwm_int"),
+    )
+
+    with IncrementalBatchStrategy(step=50) as batches:
+        for _ in batches:
+            reader.run()
+
+    # change some HWM attribute in HWM store
+    store = HWMStoreStackManager.get_current()
+    hwm = store.get_hwm(name=hwm_name)
+    hwm = hwm.copy(update={attribute: rand_str()})
+    store.set_hwm(hwm)
+
+    with pytest.warns(UserWarning, match="Detected different HWM attributes"):
+        with IncrementalBatchStrategy(step=50) as batches:
+            for _ in batches:
+                reader.run()
+
+    # attributes from DBReader have higher priority, except value
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.entity == "hwm_int"
+    assert hwm.expression == "hwm_int"
 
 
 @pytest.mark.parametrize(
@@ -323,7 +284,7 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
         ("hwm_datetime", "abc"),
     ],
 )
-def test_postgres_strategy_incremental_batch_step_wrong_type(
+def test_postgres_strategy_incremental_batch_wrong_step_type(
     spark,
     processing,
     prepare_schema_table,
@@ -575,8 +536,6 @@ def test_postgres_strategy_incremental_batch(
         hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
     )
 
-    hwm = hwm_type(name=hwm_name, column=hwm_column)
-
     # there are 2 spans with a gap between
     # 0..100
     first_span_begin = 0
@@ -599,7 +558,7 @@ def test_postgres_strategy_incremental_batch(
     )
 
     # hwm is not in the store
-    assert store.get_hwm(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # fill up hwm storage with last value, e.g. 100
     first_df = None
@@ -622,7 +581,7 @@ def test_postgres_strategy_incremental_batch(
         processing.assert_subset_df(df=first_df, other_frame=first_span)
 
     # hwm is set
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -639,7 +598,7 @@ def test_postgres_strategy_incremental_batch(
     second_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            hwm = store.get_hwm(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
@@ -652,12 +611,12 @@ def test_postgres_strategy_incremental_batch(
             else:
                 second_df = second_df.union(next_df)
 
-            hwm = store.get_hwm(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
 
-    hwm = store.get_hwm(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == second_span_max
@@ -911,12 +870,8 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     first_span["text_string"] = first_span[hwm_source].apply(func)
-    first_span_with_hwm = first_span.copy()
-    first_span_with_hwm[hwm_column.lower()] = first_span[hwm_source]
 
     second_span["text_string"] = second_span[hwm_source].apply(func)
-    second_span_with_hwm = second_span.copy()
-    second_span_with_hwm[hwm_column.lower()] = second_span[hwm_source]
 
     # insert first span
     processing.insert_data(
@@ -937,7 +892,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
                 first_df = first_df.union(next_df)
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df.orderBy("id_int"), other_frame=first_span_with_hwm)
+    processing.assert_equal_df(df=first_df.orderBy("id_int"), other_frame=first_span)
 
     # insert second span
     processing.insert_data(
@@ -958,8 +913,8 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
 
     if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df.orderBy("id_int"), other_frame=second_span_with_hwm)
+        processing.assert_equal_df(df=second_df.orderBy("id_int"), other_frame=second_span)
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span_with_hwm)
+        processing.assert_subset_df(df=second_df, other_frame=second_span)

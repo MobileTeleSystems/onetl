@@ -11,30 +11,33 @@ from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, root_validator, validator
 
-from onetl._internal import uniq_ignore_case
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
     ContainsGetDFSchemaMethod,
-    ContainsGetMinMaxBounds,
+    ContainsGetMinMaxValues,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import AutoDetectHWM
+from onetl.hwm import AutoDetectHWM, Edge, Window
 from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
     log_collection,
     log_dataframe_schema,
+    log_hwm,
     log_json,
     log_options,
     log_with_indent,
 )
+from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
+from onetl.strategy.hwm_strategy import HWMStrategy
+from onetl.strategy.strategy_manager import StrategyManager
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
-    from pyspark.sql.types import StructType
+    from pyspark.sql.types import StructField, StructType
 
 
 @support_hooks
@@ -90,7 +93,12 @@ class DBReader(FrozenModel):
 
         .. note::
 
-            Some connections does not have columns.
+            Some sources does not have columns.
+
+        .. note::
+
+            It is recommended to pass column names explicitly to avoid selecting too many columns,
+            and to avoid adding unexpected columns to dataframe if source DDL is changed.
 
     where : Any, default: ``None``
         Custom ``where`` for SQL query or MongoDB pipeline.
@@ -369,24 +377,25 @@ class DBReader(FrozenModel):
     AutoDetectHWM = AutoDetectHWM
 
     connection: BaseDBConnection
-    source: Table = Field(alias="table")
-    columns: Optional[List[str]] = None
-    hwm: Optional[ColumnHWM] = None
-    hwm_column: Optional[Union[Column, str, tuple]] = None
-    hwm_expression: Optional[str] = None
+    source: str = Field(alias="table")
+    columns: Optional[List[str]] = Field(default=None, min_length=1)
     where: Optional[Any] = None
     hint: Optional[Any] = None
     df_schema: Optional[StructType] = None
+    hwm_column: Optional[Union[str, tuple]] = None
+    hwm_expression: Optional[str] = None
+    hwm: Optional[ColumnHWM] = None
     options: Optional[GenericOptions] = None
 
     @validator("source", pre=True, always=True)
     def validate_source(cls, source, values):
         connection: BaseDBConnection = values["connection"]
-        if isinstance(source, str):
-            # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
-            source = Table(name=source, instance=connection.instance_url)
-            # Here Table(name='source', db='dbschema', instance='some_instance')
         return connection.dialect.validate_name(source)
+
+    @validator("columns", pre=True, always=True)  # noqa: WPS231
+    def validate_columns(cls, value: list[str] | None, values: dict) -> list[str] | None:
+        connection: BaseDBConnection = values["connection"]
+        return connection.dialect.validate_columns(value)
 
     @validator("where", pre=True, always=True)
     def validate_where(cls, where: Any, values: dict) -> Any:
@@ -411,97 +420,60 @@ class DBReader(FrozenModel):
 
     @root_validator(pre=True)
     def validate_hwm(cls, values: dict) -> dict:  # noqa: WPS231
-        hwm_column: str | tuple[str, str] | Column | None = values.get("hwm_column")
-        hwm_expression: str | None = values.get("hwm_expression")
-        df_schema: StructType | None = values.get("df_schema")
         connection: BaseDBConnection = values["connection"]
-        source: Table = values.get("source") or values["table"]
-        hwm: Optional[HWM] = values.get("hwm")
+        source: str = values.get("source") or values["table"]
+        hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
+        hwm_expression: str | None = values.get("hwm_expression")
+        hwm: ColumnHWM | None = values.get("hwm")
 
         if hwm_column is not None:
+            if hwm:
+                raise ValueError("Please pass either DBReader(hwm=...) or DBReader(hwm_column=...), not both")
+
             if not hwm_expression and isinstance(hwm_column, tuple):
                 hwm_column, hwm_expression = hwm_column  # noqa: WPS434
 
                 if not hwm_expression:
-                    raise ValueError(
-                        "When the 'hwm_column' field is a tuple, then it must be "
-                        "specified as tuple('column_name', 'expression'). Otherwise, "
-                        "the 'hwm_column' field should be a string.",
+                    error_message = textwrap.dedent(
+                        """
+                        When the 'hwm_column' field is a tuple, then it must be
+                        specified as tuple('column_name', 'expression').
+
+                        Otherwise, the 'hwm_column' field should be a string.
+                        """,
                     )
+                    raise ValueError(error_message)
 
-            if not isinstance(hwm_column, Column):
-                hwm_column = Column(name=hwm_column)  # type: ignore
-
-            if isinstance(source, str):
-                # source="dbschema.table" or source="table", If source="dbschema.some.table" in class Table will raise error.
-                source = Table(name=source, instance=connection.instance_url)
-            old_hwm = OldColumnHWM(source=source, column=hwm_column)
+            # convert old parameters to new one
+            old_hwm = OldColumnHWM(
+                source=Table(name=source, instance=connection.instance_url),  # type: ignore[arg-type]
+                column=Column(name=hwm_column),  # type: ignore[arg-type]
+            )
             warnings.warn(
-                'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0. It will be removed'
-                f' in future versions. Use hwm=DBReader.AutoDetectHWM(name="{old_hwm.qualified_name!r}", column={hwm_column}) class instead.',
+                textwrap.dedent(
+                    f"""
+                    Passing "hwm_column" in DBReader class is deprecated since version 0.10.0.
+                    It will be removed in future versions.
+
+                    Instead use:
+                        hwm=DBReader.AutoDetectHWM(
+                            name="{old_hwm.qualified_name!r}",
+                            entity={hwm_column},
+                        )
+                    """,
+                ),
                 DeprecationWarning,
                 stacklevel=2,
             )
             hwm = AutoDetectHWM(
                 name=old_hwm.qualified_name,
-                column=old_hwm.column.name,
-                value=old_hwm.value,
-                modified_time=old_hwm.modified_time,
+                column=hwm_column,  # type: ignore[arg-type]
                 expression=hwm_expression,
             )
 
-        if not hwm:
-            return values
-
-        if df_schema is not None and hwm.entity not in df_schema.fieldNames():
-            raise ValueError(
-                "'df_schema' struct must contain column specified in 'hwm.entity'. "
-                "Otherwise DBReader cannot determine HWM type for this column",
-            )
-
         values["hwm"] = connection.dialect.validate_hwm(hwm)
-        return values
-
-    @root_validator(pre=True)  # noqa: WPS231
-    def validate_columns(cls, values: dict) -> dict:
-        connection: BaseDBConnection = values["connection"]
-
-        columns: list[str] | str | None = values.get("columns")
-        columns_list: list[str] | None
-        if isinstance(columns, str):
-            columns_list = columns.split(",")
-        else:
-            columns_list = columns
-
-        columns_list = connection.dialect.validate_columns(columns_list)
-        if columns_list is None:
-            return values
-
-        if not columns_list:
-            raise ValueError("Parameter 'columns' can not be an empty list")
-
-        hwm: ColumnHWM = values.get("hwm")  # type: ignore
-        hwm_column, hwm_expression = (hwm.entity, hwm.expression) if hwm else (None, None)
-
-        result: list[str] = []
-        already_visited: set[str] = set()
-
-        for item in columns_list:
-            column = item.strip()
-
-            if not column:
-                raise ValueError(f"Column name cannot be empty string, got {item!r}")
-
-            if column.casefold() in already_visited:
-                raise ValueError(f"Duplicated column name {item!r}")
-
-            if hwm_expression and hwm_column and hwm_column.casefold() == column.casefold():
-                raise ValueError(f"{item!r} is an alias for HWM, it cannot be used as 'columns' name")
-
-            result.append(column)
-            already_visited.add(column.casefold())
-
-        values["columns"] = result
+        values["hwm_expression"] = None
+        values["hwm_column"] = None
         return values
 
     @validator("options", pre=True, always=True)
@@ -517,58 +489,6 @@ class DBReader(FrozenModel):
             )
 
         return None
-
-    def detect_hwm(self, hwm: HWM) -> HWM:
-        schema = {field.name.casefold(): field for field in self.get_df_schema()}
-        column = hwm.entity.casefold()
-        target_column_data_type = schema[column].dataType.typeName()
-        hwm_class_for_target = self.connection.dialect.detect_hwm_class(target_column_data_type)
-        try:
-            return hwm_class_for_target.deserialize(hwm.dict())
-        except ValueError as e:
-            hwm_class_name = hwm_class_for_target.__name__  # type: ignore
-            error_message = textwrap.dedent(
-                f"""
-                Table column {column!r} has Spark type {target_column_data_type!r}
-                which correspond to HWM type {hwm_class_name!r}.
-                But current hwm object has type {type(hwm).__name__!r}, which is not compatible.
-                How to solve this issue:
-                * Check that you set correct HWM name, it should be unique.
-                * Check that your HWM store contains valid value and type for this HWM name.
-                * If you set DBReader(hwm=AutoDetectHWM(...)), check if table schema have not been changed since previous run.
-                * If you set DBReader(hwm=SpecificTypeOfHWM(...)), check it HWM type matches column type.
-                """,
-            )
-            raise ValueError(error_message) from e
-
-    def get_df_schema(self) -> StructType:
-        if self.df_schema:
-            return self.df_schema
-
-        if not self.df_schema and isinstance(self.connection, ContainsGetDFSchemaMethod):
-            return self.connection.get_df_schema(
-                source=str(self.source),
-                columns=self._resolve_all_columns(),
-                **self._get_read_kwargs(),
-            )
-
-        raise ValueError(
-            "|DBReader| You should specify `df_schema` field to use DBReader with "
-            f"{self.connection.__class__.__name__} connection",
-        )
-
-    def get_min_max_bounds(self, column: str, expression: str | None = None) -> tuple[Any, Any]:
-        if isinstance(self.connection, ContainsGetMinMaxBounds):
-            return self.connection.get_min_max_bounds(
-                source=str(self.source),
-                column=column,
-                expression=expression,
-                hint=self.hint,
-                where=self.where,
-                **self._get_read_kwargs(),
-            )
-
-        raise ValueError(f"{self.connection.__class__.__name__} connection does not support batch strategies")
 
     @slot
     def run(self) -> DataFrame:
@@ -600,41 +520,209 @@ class DBReader(FrozenModel):
             df = reader.run()
         """
 
-        # avoid circular imports
-        from onetl.db.db_reader.strategy_helper import (
-            HWMStrategyHelper,
-            NonHWMStrategyHelper,
-            StrategyHelper,
-        )
-
         entity_boundary_log(log, msg="DBReader starts")
 
         self._log_parameters()
         self.connection.check()
+        self._check_strategy()
 
-        helper: StrategyHelper
-        if self.hwm:
-            helper = HWMStrategyHelper(reader=self, hwm=self.hwm)
-        else:
-            helper = NonHWMStrategyHelper(reader=self)
-
-        start_from, end_at = helper.get_boundaries()
-
+        window = self._detect_window()
         df = self.connection.read_source_as_df(
             source=str(self.source),
-            columns=self._resolve_all_columns(),
+            columns=self.columns,
             hint=self.hint,
             where=self.where,
             df_schema=self.df_schema,
-            start_from=start_from,
-            end_at=end_at,
+            window=window,
             **self._get_read_kwargs(),
         )
 
-        df = helper.save(df)
         entity_boundary_log(log, msg="DBReader ends", char="-")
-
         return df
+
+    def _check_strategy(self):
+        strategy = StrategyManager.get_current()
+        class_name = type(self).__name__
+        strategy_name = type(strategy).__name__
+
+        if self.hwm:
+            if not isinstance(strategy, HWMStrategy):
+                raise RuntimeError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
+            self._prepare_hwm(strategy, self.hwm)
+
+        elif isinstance(strategy, HWMStrategy):
+            raise RuntimeError(f"{strategy_name} cannot be used without {class_name}(hwm=...)")
+
+    def _prepare_hwm(self, strategy: HWMStrategy, hwm: ColumnHWM):
+        if not strategy.hwm:
+            # first run within the strategy
+            if isinstance(hwm, AutoDetectHWM):
+                strategy.hwm = self._autodetect_hwm(hwm)
+            else:
+                strategy.hwm = hwm
+            strategy.fetch_hwm()
+            return
+
+        if strategy.hwm.name != hwm.name:
+            # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
+            # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
+            error_message = textwrap.dedent(
+                f"""
+                Detected wrong {type(strategy).__name__} usage.
+
+                Previous run:
+                    {strategy.hwm!r}
+                Current run:
+                    {hwm!r}
+
+                Probably you've executed code which looks like this:
+                    with {strategy.__class__.__name__}(...):
+                        DBReader(hwm=one_hwm, ...).run()
+                        DBReader(hwm=another_hwm, ...).run()
+
+                Please change it to:
+                    with {strategy.__class__.__name__}(...):
+                        DBReader(hwm=one_hwm, ...).run()
+
+                    with {strategy.__class__.__name__}(...):
+                        DBReader(hwm=another_hwm, ...).run()
+                """,
+            )
+            raise ValueError(error_message)
+
+        strategy.validate_hwm_attributes(hwm)
+
+    def _autodetect_hwm(self, hwm: HWM) -> HWM:
+        field = self._get_hwm_field(hwm)
+        field_type = field.dataType
+        detected_hwm_type = self.connection.dialect.detect_hwm_class(field)
+
+        if detected_hwm_type:
+            log.info(
+                "|%s| Detected HWM type: %r",
+                self.__class__.__name__,
+                type(detected_hwm_type).__name__,
+            )
+            return detected_hwm_type.deserialize(hwm.dict())
+
+        error_message = textwrap.dedent(
+            f"""
+            Cannot detect HWM type for field {hwm.expression or hwm.entity!r} of type {field_type!r}
+
+            Check that column or expression type is supported by {self.connection.__class__.__name__}.
+            """,
+        )
+        raise RuntimeError(error_message)
+
+    def _get_hwm_field(self, hwm: HWM) -> StructField:
+        log.info(
+            "|%s| Getting Spark type for HWM expression: %r",
+            self.__class__.__name__,
+            hwm.expression or hwm.entity,
+        )
+
+        result: StructField
+        if self.df_schema:
+            schema = {field.name.casefold(): field for field in self.df_schema}
+            column = hwm.entity.casefold()
+            if column not in schema:
+                raise ValueError(f"HWM column {column!r} not found in dataframe schema")
+
+            result = schema[column]
+        elif isinstance(self.connection, ContainsGetDFSchemaMethod):
+            df_schema = self.connection.get_df_schema(
+                source=self.source,
+                columns=[hwm.expression or hwm.entity],
+                **self._get_read_kwargs(),
+            )
+            result = df_schema[0]
+        else:
+            raise ValueError(
+                "You should specify `df_schema` field to use DBReader with "
+                f"{self.connection.__class__.__name__} connection",
+            )
+
+        log.info("|%s| Got Spark field: %s", self.__class__.__name__, result)
+        return result
+
+    def _detect_window(self) -> Window | None:
+        if not self.hwm:
+            # SnapshotStrategy - always select all the data from source
+            return None
+
+        strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
+        hwm_expression: str = self.hwm.expression or self.hwm.entity
+
+        start_value = strategy.current.value
+        stop_value = strategy.stop if isinstance(strategy, BatchHWMStrategy) else None
+
+        if start_value is not None and stop_value is not None:
+            # we already have start and stop values, nothing to do
+            window = Window(hwm_expression, start_from=strategy.current, stop_at=strategy.next)
+            strategy.update_hwm(window.stop_at.value)
+            return window
+
+        if not isinstance(self.connection, ContainsGetMinMaxValues):
+            raise ValueError(
+                f"{self.connection.__class__.__name__} connection does not support {strategy.__class__.__name__}",
+            )
+
+        # strategy does not have start/stop/current value - use min/max values from source to fill them up
+        min_value, max_value = self.connection.get_min_max_values(
+            source=self.source,
+            window=Window(
+                hwm_expression,
+                # always include both edges, > vs >= are applied only to final dataframe
+                start_from=Edge(value=start_value),
+                stop_at=Edge(value=stop_value),
+            ),
+            hint=self.hint,
+            where=self.where,
+            **self._get_read_kwargs(),
+        )
+
+        if min_value is None or max_value is None:
+            log.warning("|%s| No data in source %r", self.__class__.__name__, self.source)
+            return None
+
+        # returned value type may not always be the same type as expected, force cast to HWM type
+        hwm = strategy.hwm.copy()  # type: ignore[union-attr]
+
+        try:
+            min_value = hwm.set_value(min_value).value
+            max_value = hwm.set_value(max_value).value
+        except ValueError as e:
+            hwm_class_name = type(hwm).__name__
+            error_message = textwrap.dedent(
+                f"""
+                Expression {hwm.expression or hwm.entity!r} returned values:
+                    min: {min_value!r} of type {type(min_value).__name__!r}
+                    max: {max_value!r} of type {type(min_value).__name__!r}
+                which are not compatible with {hwm_class_name}.
+
+                Please check if selected combination of HWM class and expression is valid.
+                """,
+            )
+            raise ValueError(error_message) from e
+
+        if isinstance(strategy, BatchHWMStrategy):
+            if strategy.start is None:
+                strategy.start = min_value
+
+            if strategy.stop is None:
+                strategy.stop = max_value
+
+            window = Window(hwm_expression, start_from=strategy.current, stop_at=strategy.next)
+        else:
+            # for IncrementalStrategy fix only max value to avoid difference between real dataframe content and HWM value
+            window = Window(
+                hwm_expression,
+                start_from=strategy.current,
+                stop_at=Edge(value=max_value),
+            )
+
+        strategy.update_hwm(window.stop_at.value)
+        return window
 
     def _log_parameters(self) -> None:
         log.info("|%s| -> |Spark| Reading DataFrame from source using parameters:", self.connection.__class__.__name__)
@@ -649,66 +737,15 @@ class DBReader(FrozenModel):
         if self.where:
             log_json(log, self.where, "where")
 
-        if self.hwm:
-            log_with_indent(log, "HWM = '%s'", self.hwm)
-
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore
             log_dataframe_schema(log, empty_df)
 
+        if self.hwm:
+            log_hwm(log, self.hwm, with_value=False)
+
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
         log_options(log, options)
-
-    def _resolve_all_columns(self) -> list[str] | None:
-        """
-        Unwraps "*" in columns list to real column names from existing table.
-
-        Also adds 'hwm_column' to the result if it is not present.
-        """
-
-        if not isinstance(self.connection, ContainsGetDFSchemaMethod):
-            # Some databases have no `get_df_schema` method
-            return self.columns
-
-        columns: list[str] = []
-        original_columns = self.columns or ["*"]
-
-        for column in original_columns:
-            if column == "*":
-                schema = self.connection.get_df_schema(
-                    source=str(self.source),
-                    columns=["*"],
-                    **self._get_read_kwargs(),
-                )
-                field_names = schema.fieldNames()
-                columns.extend(field_names)
-            else:
-                columns.append(column)
-
-        columns = uniq_ignore_case(columns)
-
-        if not self.hwm:
-            return columns
-
-        hwm_statement = (
-            self.hwm.entity
-            if not self.hwm.expression
-            else self.connection.dialect.aliased(  # noqa: WPS437
-                self.hwm.expression,
-                self.hwm.entity,
-            )
-        )
-
-        columns_normalized = [column_name.casefold() for column_name in columns]
-        hwm_column_name = self.hwm.entity.casefold()
-
-        if hwm_column_name in columns_normalized:
-            column_index = columns_normalized.index(hwm_column_name)
-            columns[column_index] = hwm_statement
-        else:
-            columns.append(hwm_statement)
-
-        return columns
 
     def _get_read_kwargs(self) -> dict:
         if self.options:

@@ -17,15 +17,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from etl_entities.source import Table
-
 from onetl.base.base_connection import BaseConnection
-from onetl.hwm import Statement
+from onetl.hwm import Window
 
 if TYPE_CHECKING:
     from etl_entities.hwm import HWM, ColumnHWM
     from pyspark.sql import DataFrame
-    from pyspark.sql.types import StructType
+    from pyspark.sql.types import StructField, StructType
 
 
 class BaseDBDialect(ABC):
@@ -37,7 +35,7 @@ class BaseDBDialect(ABC):
         self.connection = connection
 
     @abstractmethod
-    def validate_name(self, value: Table) -> str:
+    def validate_name(self, value: str) -> str:
         """Check if ``source`` or ``target`` value is valid.
 
         Raises
@@ -109,7 +107,7 @@ class BaseDBDialect(ABC):
         """
 
     @abstractmethod
-    def detect_hwm_class(self, hwm_column_type: str) -> type[ColumnHWM]:
+    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
         """
         Detects hwm column type based on specific data types in connections data stores
         """
@@ -141,8 +139,7 @@ class BaseDBConnection(BaseConnection):
         hint: Any | None = None,
         where: Any | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
     ) -> DataFrame:
         """
         Reads the source to dataframe. |support_hooks|

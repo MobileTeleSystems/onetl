@@ -12,27 +12,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any
 
-from typing_extensions import Protocol, runtime_checkable
+
+@dataclass
+class Edge:
+    value: Any = None
+    including: bool = True
+
+    def is_set(self) -> bool:
+        return self.value is not None
 
 
-@runtime_checkable
-class ContainsGetMinMaxBounds(Protocol):
-    """
-    Protocol for objects containing ``get_min_max_bounds`` method
-    """
-
-    def get_min_max_bounds(
-        self,
-        source: str,
-        column: str,
-        expression: str | None = None,
-        hint: Any | None = None,
-        where: Any | None = None,
-    ) -> tuple[Any, Any]:
-        """
-        Get MIN and MAX values for the column in the source. |support_hooks|
-        """
+@dataclass
+class Window:
+    expression: str
+    start_from: Edge = field(default_factory=Edge)
+    stop_at: Edge = field(default_factory=Edge)
