@@ -43,7 +43,7 @@ def test_hive_strategy_incremental(
     reader = DBReader(
         connection=hive,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -123,7 +123,7 @@ def test_hive_strategy_incremental_wrong_hwm(
     reader = DBReader(
         connection=hive,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     data = processing.create_pandas_df()
@@ -155,7 +155,7 @@ def test_hive_strategy_incremental_explicit_hwm_type(
         connection=hive,
         source=prepare_schema_table.full_name,
         # tell DBReader that text_string column contains integer values, and can be used for HWM
-        hwm=ColumnIntHWM(name=hwm_name, column="text_string"),
+        hwm=ColumnIntHWM(name=hwm_name, expression="text_string"),
     )
 
     data = processing.create_pandas_df()
@@ -182,14 +182,13 @@ def test_hive_strategy_incremental_explicit_hwm_type(
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_expr, hwm_column, hwm_type, func",
+    "hwm_source, hwm_expr, hwm_type, func",
     [
-        ("hwm_int", "CAST(text_string AS INT)", "hwm1_int", ColumnIntHWM, str),
-        ("hwm_date", "CAST(text_string AS DATE)", "hwm1_date", ColumnDateHWM, lambda x: x.isoformat()),
+        ("hwm_int", "CAST(text_string AS INT)", ColumnIntHWM, str),
+        ("hwm_date", "CAST(text_string AS DATE)", ColumnDateHWM, lambda x: x.isoformat()),
         (
             "hwm_datetime",
             "CAST(text_string AS TIMESTAMP)",
-            "HWM1_DATETIME",
             ColumnDateTimeHWM,
             lambda x: x.isoformat(),
         ),
@@ -201,7 +200,6 @@ def test_hive_strategy_incremental_with_hwm_expr(
     prepare_schema_table,
     hwm_source,
     hwm_expr,
-    hwm_column,
     hwm_type,
     func,
 ):
@@ -210,7 +208,7 @@ def test_hive_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=hive,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between

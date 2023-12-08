@@ -49,19 +49,17 @@ class KafkaDialect(  # noqa: WPS215
         if not hwm:
             return None
 
-        if hwm.entity not in self.SUPPORTED_HWM_COLUMNS:
-            raise ValueError(f"{hwm.entity} is not a valid hwm column. Valid options are: {self.SUPPORTED_HWM_COLUMNS}")
+        if hwm.expression not in self.SUPPORTED_HWM_COLUMNS:
+            raise ValueError(
+                f"hwm.expression={hwm.expression!r} is not supported by {self.connection.__class__.__name__}. "
+                f"Valid values are: {self.SUPPORTED_HWM_COLUMNS}",
+            )
 
-        if hwm.entity == "timestamp":
+        if hwm.expression == "timestamp":
             # Spark version less 3.x does not support reading from Kafka with the timestamp parameter
             spark_version = get_spark_version(self.connection.spark)  # type: ignore[attr-defined]
             if spark_version.major < 3:
                 raise ValueError(
                     f"Spark version must be 3.x for the timestamp column. Current version is: {spark_version}",
                 )
-
-        if hwm.expression is not None:
-            raise ValueError(
-                f"'hwm.expression' parameter is not supported by {self.connection.__class__.__name__}",
-            )
         return hwm

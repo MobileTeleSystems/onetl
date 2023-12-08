@@ -119,7 +119,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_unique_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -209,9 +209,9 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
 
     @slot
     def set_hwm(self, hwm: HWM) -> LocalPath:  # type: ignore
-        data = self._load(hwm.qualified_name)
-        self._dump(hwm.qualified_name, [hwm.serialize()] + data)
-        return self.get_file_path(hwm.qualified_name)
+        data = self._load(hwm.name)
+        self._dump(hwm.name, [hwm.serialize()] + data)
+        return self.get_file_path(hwm.name)
 
     @classmethod
     def cleanup_file_name(cls, name: str) -> str:

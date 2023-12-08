@@ -35,7 +35,7 @@ def test_postgres_strategy_snapshot_hwm_column_present(spark, processing, prepar
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=column),
     )
 
     error_message = "DBReader(hwm=...) cannot be used with SnapshotStrategy"
@@ -106,7 +106,7 @@ def test_postgres_strategy_snapshot_batch_wrong_step_type(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     with pytest.raises((TypeError, ValueError)):
@@ -143,7 +143,7 @@ def test_postgres_strategy_snapshot_batch_step_negative(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     error_msg = "HWM value is not increasing, please check options passed to SnapshotBatchStrategy"
@@ -181,7 +181,7 @@ def test_postgres_strategy_snapshot_batch_step_too_small(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     error_msg = f"step={step!r} parameter of SnapshotBatchStrategy leads to generating too many iterations"
@@ -208,7 +208,7 @@ def test_postgres_strategy_snapshot_batch_outside_loop(
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     error_message = "Invalid SnapshotBatchStrategy usage!"
@@ -235,17 +235,17 @@ def test_postgres_strategy_snapshot_batch_hwm_set_twice(spark, processing, load_
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
         table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     with SnapshotBatchStrategy(step=step) as batches:
@@ -281,7 +281,7 @@ def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schem
         connection=postgres,
         source=prepare_schema_table.full_name,
         where="float_value < 50 OR float_value = 50.50",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     # there is a span 0..100
@@ -365,7 +365,7 @@ def test_postgres_strategy_snapshot_batch(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # hwm is not in the store
@@ -452,7 +452,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -534,7 +534,7 @@ def test_postgres_strategy_snapshot_batch_stop(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there is a span 0..100
@@ -584,7 +584,7 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     step = 10
@@ -655,25 +655,22 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_column, hwm_expr, step, func",
+    "hwm_source, hwm_expr, step, func",
     [
         (
             "hwm_int",
-            "hwm1_int",
             "text_string::int",
             10,
             str,
         ),
         (
             "hwm_date",
-            "hwm1_date",
             "text_string::date",
             timedelta(days=10),
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "HWM1_DATETIME",
             "text_string::timestamp",
             timedelta(hours=100),
             lambda x: x.isoformat(),
@@ -685,7 +682,6 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
     processing,
     prepare_schema_table,
     hwm_source,
-    hwm_column,
     hwm_expr,
     step,
     func,
@@ -703,7 +699,7 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
         connection=postgres,
         source=prepare_schema_table.full_name,
         columns=processing.column_names,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
     )
 
     # there is a span 0..100

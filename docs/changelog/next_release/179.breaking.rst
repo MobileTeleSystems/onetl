@@ -16,10 +16,9 @@ after:
     reader = DBReader(
         connection=...,
         source=...,
-        hwm=DBReader.AutoHWM(
-            entity="col1",
-            expression="cast(col1 as date)",
+        hwm=DBReader.AutoDetectHWM(
             name="my_unique_hwm_name",
+            expression="cast(col1 as date)",
         ),
     )
 
@@ -42,7 +41,7 @@ after:
         connection=...,
         source_path=...,
         target_path=...,
-        hwm=FileListHWM(name="another_mandatory_unique_hwm_name", directory=source_path),
+        hwm=FileListHWM(name="another_mandatory_unique_hwm_name"),
     )
 
 | Now user can pass custom hwm classes into ``HWM`` field in ``DBReader`` or ``FileDownloader``

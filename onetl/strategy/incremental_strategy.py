@@ -72,9 +72,9 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             This allows to resume reading process from the *last successful run*.
 
     For :ref:`file-downloader`:
-        Behavior depends on ``hwm_type`` parameter.
+        Behavior depends on ``hwm`` type.
 
-        ``hwm_type="file_list"``:
+        ``hwm=FileListHWM(...)``:
             First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy` - all
             files are downloaded:
 
@@ -202,7 +202,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. warning::
 
-            Cannot be used with :ref:`file-downloader` and ``hwm_type="file_list"``
+            Cannot be used with :ref:`file-downloader` and ``hwm=FileListHWM(...)``
 
         .. note::
 
@@ -243,7 +243,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", column="id"),
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -280,7 +280,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         FROM public.mydata
         WHERE id > 900; --- from HWM-offset (EXCLUDING first row)
 
-    ``hwm_column`` can be a date or datetime, not only integer:
+    ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
@@ -290,7 +290,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", column="business_dt"),
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
 
         with IncrementalStrategy(offset=timedelta(days=1)):
@@ -306,7 +306,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         FROM public.mydata
         WHERE business_dt > CAST('2021-01-09' AS DATE);
 
-    Incremental run with :ref:`file-downloader` and ``hwm_type="file_list"``:
+    Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
 
     .. code:: python
 
@@ -325,7 +325,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=sftp,
             source_path="/remote",
             local_path="/local",
-            hwm_type=FileListHWM(name="some_hwm_name", directory="/remote"),
+            hwm=FileListHWM(name="some_hwm_name"),
         )
 
         with IncrementalStrategy():
@@ -408,7 +408,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     stop : Any, default: ``None``
 
-        If passed, the value will be used for generating WHERE clauses with ``hwm_column`` filter,
+        If passed, the value will be used for generating WHERE clauses with ``hwm.expression`` filter,
         as a stop value for the last batch.
 
         If not set, the value is determined by a separated query:
@@ -421,7 +421,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         .. note::
 
-            ``stop`` should be the same type as ``hwm_column`` value,
+            ``stop`` should be the same type as ``hwm.expression`` value,
             e.g. :obj:`datetime.datetime` for ``TIMESTAMP`` column, :obj:`datetime.date` for ``DATE``, and so on
 
     offset : Any, default: ``None``
@@ -510,7 +510,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", column="id"),
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -604,7 +604,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         ...
         N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    ``hwm_column`` can be a date or datetime, not only integer:
+    ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
@@ -614,7 +614,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", column="business_dt"),
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
 
         with IncrementalBatchStrategy(

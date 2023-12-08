@@ -17,16 +17,18 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import textwrap
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Iterable, List, Optional, Tuple, Type, Union
 
-from etl_entities.hwm import HWM, FileHWM, FileListHWM
+from etl_entities.hwm import FileHWM, FileListHWM
+from etl_entities.instance import AbsolutePath
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
@@ -225,6 +227,8 @@ class FileDownloader(FrozenModel):
 
     """
 
+    Options = FileDownloaderOptions
+
     connection: BaseFileConnection
 
     local_path: LocalPath
@@ -238,8 +242,6 @@ class FileDownloader(FrozenModel):
     hwm_type: Optional[Union[Type[OldFileListHWM], str]] = None
 
     options: FileDownloaderOptions = FileDownloaderOptions()
-
-    Options = FileDownloaderOptions
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
@@ -390,7 +392,7 @@ class FileDownloader(FrozenModel):
             self.local_path.mkdir()
 
         if self.hwm:
-            result = self._download_files_incremental(to_download)
+            result = self._download_files_incremental(to_download, self.hwm)
         else:
             result = self._download_files(to_download)
 
@@ -453,7 +455,7 @@ class FileDownloader(FrozenModel):
 
         filters = self.filters.copy()
         if self.hwm:
-            filters.append(FileHWMFilter(hwm=self._init_hwm()))
+            filters.append(FileHWMFilter(hwm=self._init_hwm(self.hwm)))
 
         try:
             for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
@@ -479,31 +481,59 @@ class FileDownloader(FrozenModel):
     def _validate_temp_path(cls, temp_path):
         return LocalPath(temp_path).resolve() if temp_path else None
 
-    @validator("hwm_type", pre=True, always=True)
-    def _validate_hwm_type(cls, hwm_type, values):
+    @root_validator(skip_on_failure=True)
+    def _validate_hwm(cls, values):
+        connection = values["connection"]
         source_path = values.get("source_path")
-        connection = values.get("connection")
+        hwm_type = values.get("hwm_type")
+        hwm = values.get("hwm")
 
-        if hwm_type:
-            if not source_path:
-                raise ValueError("If `hwm_type` is passed, `source_path` must be specified")
+        if (hwm or hwm_type) and not source_path:
+            raise ValueError("If `hwm` is passed, `source_path` must be specified")
 
-            if hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM):
-                remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
-                old_hwm = OldFileListHWM(source=remote_file_folder)
-                warnings.warn(
-                    'Passing "hwm_type" in FileDownloader class is deprecated since version 0.10.0. It will be removed'
-                    f' in future versions. Use hwm=FileListHWM(name={old_hwm.qualified_name!r}, directory="{source_path}") class instead.',
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-                hwm = FileListHWM(
-                    name=old_hwm.qualified_name,
-                    directory=source_path,
-                    value=old_hwm.value,
-                    modified_time=old_hwm.modified_time,
-                )
-                values["hwm"] = hwm
+        if hwm_type and (hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM)):
+            remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
+            old_hwm = OldFileListHWM(source=remote_file_folder)
+            warnings.warn(
+                textwrap.dedent(
+                    f"""
+                    Passing "hwm_type" to FileDownloader class is deprecated since version 0.10.0.
+                    It will be removed in future versions.
+
+                    Instead use:
+                        hwm=FileListHWM(name={old_hwm.qualified_name!r})
+                    """,
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
+            hwm = FileListHWM(
+                name=old_hwm.qualified_name,
+                directory=source_path,
+            )
+
+        if hwm and not hwm.entity:
+            hwm = hwm.copy(update={"entity": AbsolutePath(source_path)})
+
+        if hwm and hwm.entity != source_path:
+            error_message = textwrap.dedent(
+                f"""
+                Passed `hwm.directory` is different from `source_path`.
+
+                `hwm`:
+                    {hwm!r}
+
+                `source_path`:
+                    {source_path!r}
+
+                This is not allowed.
+                """,
+            )
+            raise ValueError(error_message)
+
+        values["hwm"] = hwm
+        values["hwm_type"] = None
+        return values
 
     @validator("filters", pre=True)
     def _validate_filters(cls, filters):
@@ -561,23 +591,46 @@ class FileDownloader(FrozenModel):
             if isinstance(strategy, BatchHWMStrategy):
                 raise ValueError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
 
-    def _init_hwm(self) -> FileHWM:
+    def _init_hwm(self, hwm: FileHWM) -> FileHWM:
         strategy: HWMStrategy = StrategyManager.get_current()
 
         if not strategy.hwm:
             strategy.hwm = self.hwm
-
-        if not strategy.hwm.value:
             strategy.fetch_hwm()
+            return strategy.hwm
 
-        file_hwm = strategy.hwm
+        if not isinstance(strategy.hwm, FileHWM) or strategy.hwm.name != hwm.name:
+            # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
+            # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
+            error_message = textwrap.dedent(
+                f"""
+                Detected wrong {type(strategy).__name__} usage.
 
-        # to avoid issues when HWM store returned HWM with unexpected type
-        self._check_hwm_type(file_hwm.__class__)
-        return file_hwm
+                Previous run:
+                    {strategy.hwm!r}
+                Current run:
+                    {self.hwm!r}
 
-    def _download_files_incremental(self, to_download: DOWNLOAD_ITEMS_TYPE) -> DownloadResult:
-        self._init_hwm()
+                Probably you've executed code which looks like this:
+                    with {strategy.__class__.__name__}(...):
+                        FileDownloader(hwm=one_hwm, ...).run()
+                        FileDownloader(hwm=another_hwm, ...).run()
+
+                Please change it to:
+                    with {strategy.__class__.__name__}(...):
+                        FileDownloader(hwm=one_hwm, ...).run()
+
+                    with {strategy.__class__.__name__}(...):
+                        FileDownloader(hwm=another_hwm, ...).run()
+                """,
+            )
+            raise ValueError(error_message)
+
+        strategy.validate_hwm_attributes(hwm, strategy.hwm, origin=self.__class__.__name__)
+        return strategy.hwm
+
+    def _download_files_incremental(self, to_download: DOWNLOAD_ITEMS_TYPE, hwm: FileHWM) -> DownloadResult:
+        self._init_hwm(hwm)
         return self._download_files(to_download)
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
@@ -590,7 +643,7 @@ class FileDownloader(FrozenModel):
         log_collection(log, "filters", self.filters)
         log_collection(log, "limits", self.limits)
         if self.hwm:
-            log_hwm(log, self.hwm, with_value=False)
+            log_hwm(log, self.hwm)
         log_options(log, self.options.dict(by_alias=True))
 
         if self.options.delete_source:
@@ -842,10 +895,3 @@ class FileDownloader(FrozenModel):
         log.info("|%s| Download result:", self.__class__.__name__)
         log_lines(log, str(result))
         entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")
-
-    @staticmethod
-    def _check_hwm_type(hwm_type: type[HWM]) -> None:
-        if not issubclass(hwm_type, FileHWM):
-            raise ValueError(
-                f"`hwm` object should be a inherited from FileHWM, got {hwm_type.__name__}",
-            )

@@ -47,7 +47,7 @@ class FileHWMFilter(BaseFileFilter, FrozenModel):
         return not self.hwm.covers(path)
 
     def __str__(self):
-        return self.hwm.qualified_name
+        return self.hwm.name
 
     def __repr__(self):
-        return f"{self.hwm.__class__.__name__}(qualified_name={self.hwm.qualified_name!r})"
+        return f"{self.hwm.__class__.__name__}(name={self.hwm.name!r})"

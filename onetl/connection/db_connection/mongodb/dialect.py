@@ -17,12 +17,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Iterable, Mapping
 
-from etl_entities.hwm import HWM
-
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
     NotSupportColumns,
     RequiresDFSchema,
+    SupportHWMExpressionStr,
     SupportNameAny,
 )
 from onetl.hwm import Edge, Window
@@ -75,6 +74,7 @@ class MongoDBDialect(  # noqa: WPS215
     SupportNameAny,
     NotSupportColumns,
     RequiresDFSchema,
+    SupportHWMExpressionStr,
     DBDialect,
 ):
     def validate_where(
@@ -107,13 +107,6 @@ class MongoDBDialect(  # noqa: WPS215
                 f"got {hint.__class__.__name__!r}",
             )
         return hint
-
-    def validate_hwm(self, hwm: HWM | None) -> HWM | None:
-        if hwm and hwm.expression is not None:
-            raise ValueError(
-                f"'hwm.expression' parameter is not supported by {self.connection.__class__.__name__}",
-            )
-        return hwm
 
     def prepare_pipeline(
         self,

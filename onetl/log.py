@@ -491,7 +491,7 @@ def log_dataframe_schema(logger: logging.Logger, df: DataFrame, indent: int = 0,
         log_with_indent(logger, "%s", line, indent=indent + 4, stacklevel=stacklevel)
 
 
-def log_hwm(logger: logging.Logger, hwm: HWM, with_value: bool = True, indent: int = 0, stacklevel: int = 1):
+def log_hwm(logger: logging.Logger, hwm: HWM, indent: int = 0, stacklevel: int = 1):
     """Log HWM in the following format:
 
     Examples
@@ -528,9 +528,11 @@ def log_hwm(logger: logging.Logger, hwm: HWM, with_value: bool = True, indent: i
 
     log_with_indent(logger, "hwm = %s(", type(hwm).__name__, indent=indent, stacklevel=stacklevel)
     log_with_indent(logger, "name = %r,", hwm.name, indent=indent + 4, stacklevel=stacklevel)
+    if hwm.description:
+        log_with_indent(logger, "description = %r,", hwm.name, indent=indent + 4, stacklevel=stacklevel)
     log_with_indent(logger, "entity = %r,", hwm.entity, indent=indent + 4, stacklevel=stacklevel)
     log_with_indent(logger, "expression = %r,", hwm.expression, indent=indent + 4, stacklevel=stacklevel)
-    if with_value:
+    if hwm.value is not None:
         if isinstance(hwm.value, Collection):
             log_collection(logger, "value", hwm.value, max_items=10, indent=indent + 4, stacklevel=stacklevel)
         else:

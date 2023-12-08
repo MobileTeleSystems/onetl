@@ -51,7 +51,7 @@ def test_postgres_strategy_incremental(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, entity=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -114,25 +114,22 @@ def test_postgres_strategy_incremental(
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_column, hwm_expr, hwm_type, func",
+    "hwm_source, hwm_expr, hwm_type, func",
     [
         (
             "hwm_int",
-            "hwm1_int",
             "text_string::int",
             ColumnIntHWM,
             str,
         ),
         (
             "hwm_date",
-            "hwm1_date",
             "text_string::date",
             ColumnDateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "HWM1_DATETIME",
             "text_string::timestamp",
             ColumnDateTimeHWM,
             lambda x: x.isoformat(),
@@ -144,7 +141,6 @@ def test_postgres_strategy_incremental_with_hwm_expr(
     processing,
     prepare_schema_table,
     hwm_source,
-    hwm_column,
     hwm_expr,
     hwm_type,
     func,
@@ -161,9 +157,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        # hwm_column is present in the dataframe even if it was not passed in columns list
-        columns=[column for column in processing.column_names if column != hwm_column],
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between
@@ -244,7 +238,7 @@ def test_postgres_strategy_incremental_wrong_hwm(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     data = processing.create_pandas_df()
@@ -278,7 +272,7 @@ def test_postgres_strategy_incremental_explicit_hwm_type(
         connection=postgres,
         source=prepare_schema_table.full_name,
         # tell DBReader that text_string column contains integer values, and can be used for HWM
-        hwm=ColumnIntHWM(name=secrets.token_hex(5), column="text_string"),
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), expression="text_string"),
     )
 
     data = processing.create_pandas_df()
