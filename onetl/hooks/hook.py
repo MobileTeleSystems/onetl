@@ -8,14 +8,13 @@ from enum import Enum
 from functools import wraps
 from typing import Callable, Generator, Generic, TypeVar
 
-from typing_extensions import ParamSpec, Protocol, runtime_checkable
+from typing_extensions import Protocol, runtime_checkable
 
 from onetl.log import NOTICE
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
-P = ParamSpec("P")
 
 
 class HookPriority(int, Enum):
@@ -36,7 +35,7 @@ class HookPriority(int, Enum):
 
 
 @dataclass  # noqa: WPS338
-class Hook(Generic[P, T]):  # noqa: WPS338
+class Hook(Generic[T]):  # noqa: WPS338
     """
     Hook representation.
 
@@ -70,7 +69,7 @@ class Hook(Generic[P, T]):  # noqa: WPS338
         hook = Hook(callback=some_func, enabled=True, priority=HookPriority.FIRST)
     """
 
-    callback: Callable[P, T]
+    callback: Callable[..., T]
     enabled: bool = True
     priority: HookPriority = HookPriority.NORMAL
 
@@ -198,7 +197,7 @@ class Hook(Generic[P, T]):  # noqa: WPS338
             )
             self.enabled = True
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T | ContextDecorator:
+    def __call__(self, *args, **kwargs) -> T | ContextDecorator:
         """
         Calls the original callback with passed args.
 
@@ -361,7 +360,7 @@ class ContextDecorator:
         return None
 
 
-def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
+def hook(inp: Callable[..., T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
     """
     Initialize hook from callable/context manager.
 
@@ -423,7 +422,7 @@ def hook(inp: Callable[P, T] | None = None, enabled: bool = True, priority: Hook
                 ...
     """
 
-    def inner_wrapper(callback: Callable[P, T]):  # noqa: WPS430
+    def inner_wrapper(callback: Callable[..., T]):  # noqa: WPS430
         if isinstance(callback, Hook):
             raise TypeError("@hook decorator can be applied only once")
 

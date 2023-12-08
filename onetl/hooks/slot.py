@@ -8,7 +8,7 @@ from contextlib import ExitStack, suppress
 from functools import partial, wraps
 from typing import Any, Callable, ContextManager, TypeVar
 
-from typing_extensions import ParamSpec, Protocol
+from typing_extensions import Protocol
 
 from onetl.exception import SignatureError
 from onetl.hooks.hook import CanProcessResult, Hook, HookPriority
@@ -17,13 +17,12 @@ from onetl.hooks.hooks_state import HooksState
 from onetl.hooks.method_inheritance_stack import MethodInheritanceStack
 from onetl.log import NOTICE
 
+Method = TypeVar("Method", bound=Callable[..., Any])
+
 logger = logging.getLogger(__name__)
 
-P = ParamSpec("P")
-T = TypeVar("T")
 
-
-def _unwrap_method(method: Callable[P, T]) -> Callable[P, T]:
+def _unwrap_method(method: Method) -> Method:
     """Unwrap @classmethod and @staticmethod to get original function"""
     return getattr(method, "__func__", method)
 
@@ -624,7 +623,7 @@ class Slot(Protocol):
         ...
 
 
-def slot(method: Callable[P, T]) -> Callable[P, T]:
+def slot(method: Method) -> Method:
     """
     Decorator which enables hooks functionality on a specific class method.
 
