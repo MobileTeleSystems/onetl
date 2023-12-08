@@ -153,6 +153,42 @@ def test_clickhouse_strategy_incremental_wrong_hwm(
             reader.run()
 
 
+def test_clickhouse_strategy_incremental_explicit_hwm_type(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=prepare_schema_table.full_name,
+        # tell DBReader that text_string column contains integer values, and can be used for HWM
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), column="text_string"),
+    )
+
+    data = processing.create_pandas_df()
+    data["text_string"] = data["hwm_int"].apply(str)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    # incremental run
+    with pytest.raises(Exception, match="There is no supertype for types String, UInt8 because"):
+        with IncrementalStrategy():
+            reader.run()
+
+
 @pytest.mark.parametrize(
     "hwm_source, hwm_column, hwm_expr, hwm_type, func",
     [

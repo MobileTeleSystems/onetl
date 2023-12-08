@@ -157,6 +157,53 @@ def test_greenplum_strategy_incremental_wrong_wm_type(
             reader.run()
 
 
+def test_greenplum_strategy_incremental_explicit_hwm_type(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+    reader = DBReader(
+        connection=greenplum,
+        source=prepare_schema_table.full_name,
+        # tell DBReader that text_string column contains integer values, and can be used for HWM
+        hwm=ColumnIntHWM(name=hwm_name, column="text_string"),
+    )
+
+    data = processing.create_pandas_df()
+    data["text_string"] = data["hwm_int"].apply(str)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    # incremental run
+    with IncrementalStrategy():
+        df = reader.run()
+
+    hwm = store.get_hwm(name=hwm_name)
+    # type is exactly as set by user
+    assert isinstance(hwm, ColumnIntHWM)
+
+    # due to alphabetic sort min=0 and max=99
+    assert hwm.value == 99
+    processing.assert_equal_df(df=df, other_frame=data[data.hwm_int < 100], order_by="id_int")
+
+
 @pytest.mark.parametrize(
     "hwm_source, hwm_column, hwm_expr, hwm_type, func",
     [

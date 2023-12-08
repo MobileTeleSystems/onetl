@@ -181,3 +181,54 @@ def test_mongodb_strategy_incremental_wrong_hwm(
         # incremental run
         with IncrementalStrategy():
             reader.run()
+
+
+def test_mongodb_strategy_incremental_explicit_hwm_type(
+    spark,
+    processing,
+    df_schema,
+    prepare_schema_table,
+):
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    mongodb = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(
+        connection=mongodb,
+        source=prepare_schema_table.table,
+        df_schema=df_schema,
+        # tell DBReader that text_string column contains integer values, and can be used for HWM
+        hwm=ColumnIntHWM(name=hwm_name, column="text_string"),
+    )
+
+    data = processing.create_pandas_df()
+    data["text_string"] = data["hwm_int"].apply(str)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    # incremental run
+    with IncrementalStrategy():
+        df = reader.run()
+
+    hwm = store.get_hwm(name=hwm_name)
+    # type is exactly as set by user
+    assert isinstance(hwm, ColumnIntHWM)
+
+    # MongoDB does not support comparison str < int
+    assert not df.count()
+
+    # but HWM is updated to max value from the source. yes, that's really weird case.
+    # garbage in (wrong HWM type for specific expression) - garbage out (wrong dataframe content)
+    assert hwm.value == 99

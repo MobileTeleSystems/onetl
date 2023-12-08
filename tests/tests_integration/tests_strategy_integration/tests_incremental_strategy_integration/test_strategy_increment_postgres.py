@@ -260,3 +260,38 @@ def test_postgres_strategy_incremental_wrong_hwm(
         # incremental run
         with IncrementalStrategy():
             reader.run()
+
+
+def test_postgres_strategy_incremental_explicit_hwm_type(
+    spark,
+    processing,
+    prepare_schema_table,
+):
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        # tell DBReader that text_string column contains integer values, and can be used for HWM
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), column="text_string"),
+    )
+
+    data = processing.create_pandas_df()
+    data["text_string"] = data["hwm_int"].apply(str)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    # incremental run
+    with pytest.raises(Exception, match="operator does not exist: text <= integer"):
+        with IncrementalStrategy():
+            reader.run()
