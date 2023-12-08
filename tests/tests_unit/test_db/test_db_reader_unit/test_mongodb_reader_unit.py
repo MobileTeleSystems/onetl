@@ -1,5 +1,3 @@
-import secrets
-
 import pytest
 
 from onetl.connection import MongoDB
@@ -133,27 +131,6 @@ def test_mongodb_reader_without_df_schema(spark_mock):
         DBReader(
             connection=mongo,
             table="table",
-        )
-
-
-def test_mongodb_reader_error_pass_hwm_expression(spark_mock, df_schema):
-    mongo = MongoDB(
-        host="host",
-        user="user",
-        password="password",
-        database="database",
-        spark=spark_mock,
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="'hwm.expression' parameter is not supported by MongoDB",
-    ):
-        DBReader(
-            connection=mongo,
-            table="table",
-            df_schema=df_schema,
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int", expression="expr"),
         )
 
 

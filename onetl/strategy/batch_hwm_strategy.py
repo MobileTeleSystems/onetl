@@ -109,7 +109,7 @@ class BatchHWMStrategy(HWMStrategy):
             return
 
         if self.stop is not None and self.current.value == self.stop:
-            # if rows all have the same hwm_column value, this is not an error, read them all
+            # if rows all have the same expression value, this is not an error, read them all
             return
 
         if next_value is not None and self.current.value >= next_value:

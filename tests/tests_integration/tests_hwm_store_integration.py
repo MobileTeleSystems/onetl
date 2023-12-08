@@ -28,10 +28,12 @@ def test_postgres_hwm_store_integration_with_reader(spark, processing, prepare_s
     )
 
     hwm_column = "hwm_int"
+    hwm_name = secrets.token_hex(5)
+
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # there is a span
@@ -52,11 +54,10 @@ def test_postgres_hwm_store_integration_with_reader(spark, processing, prepare_s
 
     with hwm_store:
         # incremental run
-        with IncrementalStrategy() as strategy:
+        with IncrementalStrategy():
             reader.run()
-            strategy_hwm = strategy.hwm
 
         # HWM value was saved into the storage
-        saved_hwm = hwm_store.get(strategy_hwm.qualified_name)
+        saved_hwm = hwm_store.get(hwm_name)
 
         assert saved_hwm.value == span[hwm_column].max()

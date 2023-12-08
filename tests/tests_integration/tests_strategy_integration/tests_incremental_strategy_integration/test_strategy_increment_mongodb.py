@@ -74,7 +74,7 @@ def test_mongodb_strategy_incremental(
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
         df_schema=df_schema,
     )
 
@@ -164,7 +164,7 @@ def test_mongodb_strategy_incremental_wrong_hwm(
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
         df_schema=df_schema,
     )
 
@@ -205,7 +205,7 @@ def test_mongodb_strategy_incremental_explicit_hwm_type(
         source=prepare_schema_table.table,
         df_schema=df_schema,
         # tell DBReader that text_string column contains integer values, and can be used for HWM
-        hwm=ColumnIntHWM(name=hwm_name, column="text_string"),
+        hwm=ColumnIntHWM(name=hwm_name, expression="text_string"),
     )
 
     data = processing.create_pandas_df()

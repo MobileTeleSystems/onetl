@@ -881,7 +881,7 @@ def test_file_downloader_detect_hwm_type_snapshot_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     error_message = "FileDownloader(hwm=...) cannot be used with SnapshotBatchStrategy"
@@ -901,7 +901,7 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     error_message = "FileDownloader(hwm=...) cannot be used with IncrementalBatchStrategy"
@@ -924,7 +924,7 @@ def test_file_downloader_detect_hwm_type_snapshot_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     error_message = "FileDownloader(hwm=...) cannot be used with SnapshotStrategy"
@@ -944,7 +944,7 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     error_message = "FileDownloader(hwm=...) cannot be used with IncrementalStrategy(offset=1, ...)"
@@ -967,7 +967,7 @@ def test_file_downloader_file_hwm_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm=FileListHWM(name=secrets.token_hex(5), directory=remote_path),
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     with IncrementalStrategy():

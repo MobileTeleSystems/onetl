@@ -1,9 +1,9 @@
-import re
 import secrets
 from contextlib import suppress
 from datetime import timedelta
 
 import pytest
+from etl_entities.hwm import ColumnIntHWM
 from etl_entities.hwm_store import HWMStoreStackManager
 
 from tests.util.rand import rand_str
@@ -48,7 +48,7 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     with IncrementalStrategy():
@@ -61,27 +61,19 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
     processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
-    with pytest.raises(
-        TypeError,
-        match="HWM type .* fetched from HWM store\ndoes not match current HWM type.*",
-    ):
+    with pytest.raises(TypeError, match="Cannot cast HWM of type .* as .*"):
         with IncrementalStrategy():
             reader.run()
 
 
-@pytest.mark.parametrize(
-    "attribute",
-    [
-        "entity",
-        "expression",
-    ],
-)
-def test_postgres_strategy_incremental_different_hwm_attributes_in_store(
+def test_postgres_strategy_incremental_different_hwm_source_in_store(
     spark,
     processing,
     load_table_data,
-    attribute,
 ):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -91,31 +83,58 @@ def test_postgres_strategy_incremental_different_hwm_attributes_in_store(
         spark=spark,
     )
 
-    hwm_name = secrets.token_hex(5)
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
+    # change HWM entity in HWM store
+    fake_hwm = old_hwm.copy(update={"entity": rand_str()})
+    hwm_store.set_hwm(fake_hwm)
 
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column="hwm_int", expression="hwm_int"),
+        hwm=old_hwm,
+    )
+    with pytest.raises(ValueError, match="Detected HWM with different `entity` attribute"):
+        with IncrementalStrategy():
+            reader.run()
+
+
+@pytest.mark.parametrize("attribute", ["expression", "description"])
+def test_postgres_strategy_incremental_different_hwm_optional_attribute_in_store(
+    spark,
+    processing,
+    load_table_data,
+    attribute,
+):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
     )
 
-    with IncrementalStrategy():
-        reader.run()
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
 
-    # change some HWM attribute
-    store = HWMStoreStackManager.get_current()
-    hwm = store.get_hwm(name=hwm_name)
-    hwm = hwm.copy(update={attribute: rand_str()})
-    store.set_hwm(hwm)
+    # change attribute value in HWM store
+    fake_hwm = old_hwm.copy(update={attribute: rand_str()})
+    hwm_store.set_hwm(fake_hwm)
 
-    with pytest.warns(UserWarning, match="Detected different HWM attributes"):
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=old_hwm,
+    )
+    with pytest.warns(UserWarning, match=f"Detected HWM with different `{attribute}` attribute"):
         with IncrementalStrategy():
             reader.run()
 
     # attributes from DBReader have higher priority, except value
-    hwm = store.get_hwm(name=hwm_name)
-    assert hwm.entity == "hwm_int"
-    assert hwm.expression == "hwm_int"
+    new_hwm = hwm_store.get_hwm(name=hwm_name)
+    assert new_hwm.dict(exclude={"value", "modified_time"}) == old_hwm.dict(exclude={"value", "modified_time"})
 
 
 def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_table_data):
@@ -134,17 +153,17 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
         table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     with IncrementalStrategy():
@@ -179,7 +198,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         connection=postgres,
         source=prepare_schema_table.full_name,
         where="id_int < 1000 OR id_int = 1000",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     # there are 2 spans with a gap between
@@ -254,7 +273,7 @@ def test_postgres_strategy_incremental_offset(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -312,7 +331,7 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     span_gap = 10
@@ -360,7 +379,7 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
         reader = DBReader(
             connection=postgres,
             source=prepare_schema_table.full_name,
-            hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+            hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
         )
         second_df = reader.run()
 
@@ -368,37 +387,3 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
     # like there was no exception
     second_df = second_df.sort(second_df.id_int.asc())
     processing.assert_equal_df(df=second_df, other_frame=second_span)
-
-
-@pytest.mark.parametrize(
-    "hwm_param",
-    [
-        {"hwm_column": "hwm_int"},
-        {"hwm_column": "hwm_int", "hwm_expression": "cast(hwm_int as varchar)"},
-    ],
-)
-def test_postgres_hwm_column_deprecated(
-    spark,
-    processing,
-    load_table_data,
-    hwm_param,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-    msg = 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0'
-    with pytest.warns(DeprecationWarning, match=re.escape(msg)):
-        reader = DBReader(
-            connection=postgres,
-            source=load_table_data.full_name,
-            **hwm_param,
-        )
-
-    assert isinstance(reader.hwm, reader.AutoDetectHWM)
-    assert reader.hwm.entity == hwm_param.get("hwm_column")
-    assert reader.hwm.expression == hwm_param.get("hwm_expression")

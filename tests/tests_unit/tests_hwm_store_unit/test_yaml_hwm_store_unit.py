@@ -77,7 +77,7 @@ def test_hwm_store_yaml_path_no_access(request, tmp_path_factory, hwm_delta):
     store = YAMLHWMStore(path=path)
 
     with pytest.raises(OSError):
-        store.get_hwm(hwm.qualified_name)
+        store.get_hwm(hwm.name)
 
     with pytest.raises(OSError):
         store.set_hwm(hwm)

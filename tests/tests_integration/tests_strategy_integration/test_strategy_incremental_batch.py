@@ -40,7 +40,7 @@ def test_postgres_strategy_incremental_batch_outside_loop(
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     error_msg = "Invalid IncrementalBatchStrategy usage!"
@@ -63,7 +63,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
         connection=postgres,
         source=prepare_schema_table.full_name,
         where="float_value < 51 OR float_value BETWEEN 101 AND 120",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     # there are 2 spans
@@ -138,17 +138,17 @@ def test_postgres_strategy_incremental_batch_hwm_set_twice(
     reader1 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader2 = DBReader(
         connection=postgres,
         table=table1,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
     reader3 = DBReader(
         connection=postgres,
         table=table2,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="hwm_int"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     with IncrementalBatchStrategy(step=step) as batches:
@@ -196,7 +196,7 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     with IncrementalBatchStrategy(step=step) as batches:
@@ -210,28 +210,20 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
     processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
-    with pytest.raises(
-        TypeError,
-        match="HWM type .* fetched from HWM store\ndoes not match current HWM type.*",
-    ):
+    with pytest.raises(TypeError, match="Cannot cast HWM of type .* as .*"):
         with IncrementalBatchStrategy(step=step) as batches:
             for _ in batches:
                 reader.run()
 
 
-@pytest.mark.parametrize(
-    "attribute",
-    [
-        "entity",
-        "expression",
-    ],
-)
-def test_postgres_strategy_incremental_batch_different_hwm_attributes_in_store(
+def test_postgres_strategy_incremental_batch_different_hwm_source_in_store(
     spark,
     processing,
     load_table_data,
-    attribute,
 ):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -241,33 +233,60 @@ def test_postgres_strategy_incremental_batch_different_hwm_attributes_in_store(
         spark=spark,
     )
 
-    hwm_name = secrets.token_hex(5)
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
+    # change HWM entity in HWM store
+    fake_hwm = old_hwm.copy(update={"entity": rand_str()})
+    hwm_store.set_hwm(fake_hwm)
 
     reader = DBReader(
         connection=postgres,
         source=load_table_data.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column="hwm_int", expression="hwm_int"),
+        hwm=old_hwm,
+    )
+    with pytest.raises(ValueError, match="Detected HWM with different `entity` attribute"):
+        with IncrementalBatchStrategy(step=50) as batches:
+            for _ in batches:
+                reader.run()
+
+
+@pytest.mark.parametrize("attribute", ["expression", "description"])
+def test_postgres_strategy_incremental_batch_different_hwm_optional_attribute_in_store(
+    spark,
+    processing,
+    load_table_data,
+    attribute,
+):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
     )
 
-    with IncrementalBatchStrategy(step=50) as batches:
-        for _ in batches:
-            reader.run()
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
 
-    # change some HWM attribute in HWM store
-    store = HWMStoreStackManager.get_current()
-    hwm = store.get_hwm(name=hwm_name)
-    hwm = hwm.copy(update={attribute: rand_str()})
-    store.set_hwm(hwm)
+    # change attribute value in HWM store
+    fake_hwm = old_hwm.copy(update={attribute: rand_str()})
+    hwm_store.set_hwm(fake_hwm)
 
-    with pytest.warns(UserWarning, match="Detected different HWM attributes"):
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=old_hwm,
+    )
+    with pytest.warns(UserWarning, match=f"Detected HWM with different `{attribute}` attribute"):
         with IncrementalBatchStrategy(step=50) as batches:
             for _ in batches:
                 reader.run()
 
     # attributes from DBReader have higher priority, except value
-    hwm = store.get_hwm(name=hwm_name)
-    assert hwm.entity == "hwm_int"
-    assert hwm.expression == "hwm_int"
+    new_hwm = hwm_store.get_hwm(name=hwm_name)
+    assert new_hwm.dict(exclude={"value", "modified_time"}) == old_hwm.dict(exclude={"value", "modified_time"})
 
 
 @pytest.mark.parametrize(
@@ -302,7 +321,7 @@ def test_postgres_strategy_incremental_batch_wrong_step_type(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -371,7 +390,7 @@ def test_postgres_strategy_incremental_batch_step_negative(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -441,7 +460,7 @@ def test_postgres_strategy_incremental_batch_step_too_small(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -533,7 +552,7 @@ def test_postgres_strategy_incremental_batch(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -662,7 +681,7 @@ def test_postgres_strategy_incremental_batch_stop(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there is a span 0..100
@@ -738,7 +757,7 @@ def test_postgres_strategy_incremental_batch_offset(
         source=prepare_schema_table.full_name,
         # the error is raised if hwm_expr is set, and hwm_column in the columns list
         # but if columns list is not passed, this is not an error
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -797,11 +816,10 @@ def test_postgres_strategy_incremental_batch_offset(
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_column, hwm_expr, hwm_type, step, func",
+    "hwm_source, hwm_expr, hwm_type, step, func",
     [
         (
             "hwm_int",
-            "hwm1_int",
             "text_string::int",
             ColumnIntHWM,
             10,
@@ -809,7 +827,6 @@ def test_postgres_strategy_incremental_batch_offset(
         ),
         (
             "hwm_date",
-            "hwm1_date",
             "text_string::date",
             ColumnDateHWM,
             timedelta(days=10),
@@ -817,7 +834,6 @@ def test_postgres_strategy_incremental_batch_offset(
         ),
         (
             "hwm_datetime",
-            "HWM1_DATETIME",
             "text_string::timestamp",
             ColumnDateTimeHWM,
             timedelta(hours=100),
@@ -830,7 +846,6 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
     processing,
     prepare_schema_table,
     hwm_source,
-    hwm_column,
     hwm_expr,
     hwm_type,
     step,
@@ -848,10 +863,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        # the error is raised if hwm_expr is set, and hwm_column in the columns list
-        # but here hwm_column is not in the columns list, no error
-        columns=["*"],
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between

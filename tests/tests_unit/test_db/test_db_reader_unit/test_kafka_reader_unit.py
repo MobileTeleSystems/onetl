@@ -78,7 +78,7 @@ def test_kafka_reader_hwm_offset_is_valid(spark_mock):
     DBReader(
         connection=kafka,
         table="table",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="offset"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
     )
 
 
@@ -92,7 +92,7 @@ def test_kafka_reader_hwm_timestamp_depends_on_spark_version(spark_mock, mocker)
     DBReader(
         connection=kafka,
         table="table",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="timestamp"),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="timestamp"),
     )
 
     mocker.patch.object(spark_mock, "version", new="2.4.0")
@@ -100,7 +100,7 @@ def test_kafka_reader_hwm_timestamp_depends_on_spark_version(spark_mock, mocker)
         DBReader(
             connection=kafka,
             table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="timestamp"),
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="timestamp"),
         )
 
 
@@ -113,28 +113,10 @@ def test_kafka_reader_invalid_hwm_column(spark_mock):
 
     with pytest.raises(
         ValueError,
-        match="is not a valid hwm column",
+        match="hwm.expression='unknown' is not supported by Kafka",
     ):
         DBReader(
             connection=kafka,
             table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="unknown"),
-        )
-
-
-def test_kafka_reader_hwm_expression_unsupported(spark_mock):
-    kafka = Kafka(
-        addresses=["localhost:9092"],
-        cluster="my_cluster",
-        spark=spark_mock,
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="'hwm.expression' parameter is not supported by Kafka",
-    ):
-        DBReader(
-            connection=kafka,
-            table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="offset", expression="some"),
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="unknown"),
         )

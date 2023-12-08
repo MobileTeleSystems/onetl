@@ -29,7 +29,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
                 spark=spark,
             ),
             table="topic",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column="offset"),
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
         with pytest.raises(RuntimeError):
             reader.run()

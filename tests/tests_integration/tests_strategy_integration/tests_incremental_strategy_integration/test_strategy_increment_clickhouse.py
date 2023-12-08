@@ -49,7 +49,7 @@ def test_clickhouse_strategy_incremental(
     reader = DBReader(
         connection=clickhouse,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=hwm_name, column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -135,7 +135,7 @@ def test_clickhouse_strategy_incremental_wrong_hwm(
     reader = DBReader(
         connection=clickhouse,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     data = processing.create_pandas_df()
@@ -170,7 +170,7 @@ def test_clickhouse_strategy_incremental_explicit_hwm_type(
         connection=clickhouse,
         source=prepare_schema_table.full_name,
         # tell DBReader that text_string column contains integer values, and can be used for HWM
-        hwm=ColumnIntHWM(name=secrets.token_hex(5), column="text_string"),
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), expression="text_string"),
     )
 
     data = processing.create_pandas_df()
@@ -190,25 +190,22 @@ def test_clickhouse_strategy_incremental_explicit_hwm_type(
 
 
 @pytest.mark.parametrize(
-    "hwm_source, hwm_column, hwm_expr, hwm_type, func",
+    "hwm_source, hwm_expr, hwm_type, func",
     [
         (
             "hwm_int",
-            "hwm1_int",
             "CAST(text_string AS Integer)",
             ColumnIntHWM,
             str,
         ),
         (
             "hwm_date",
-            "hwm1_date",
             "CAST(text_string AS Date)",
             ColumnDateHWM,
             lambda x: x.isoformat(),
         ),
         (
             "hwm_datetime",
-            "HWM1_DATETIME",
             "CAST(text_string AS DateTime)",
             ColumnDateTimeHWM,
             lambda x: x.isoformat(),
@@ -220,7 +217,6 @@ def test_clickhouse_strategy_incremental_with_hwm_expr(
     processing,
     prepare_schema_table,
     hwm_source,
-    hwm_column,
     hwm_expr,
     hwm_type,
     func,
@@ -236,7 +232,7 @@ def test_clickhouse_strategy_incremental_with_hwm_expr(
     reader = DBReader(
         connection=clickhouse,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), column=hwm_column, expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
     )
 
     # there are 2 spans with a gap between

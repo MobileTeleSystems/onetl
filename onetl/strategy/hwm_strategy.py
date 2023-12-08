@@ -61,9 +61,9 @@ class HWMStrategy(BaseStrategy):
 
         hwm_store = HWMStoreStackManager.get_current()
         log.info("|%s| Fetching HWM from %s:", class_name, hwm_store.__class__.__name__)
-        log_with_indent(log, "name = %r", self.hwm.qualified_name)
+        log_with_indent(log, "name = %r", self.hwm.name)
 
-        result = hwm_store.get_hwm(self.hwm.qualified_name)
+        result = hwm_store.get_hwm(self.hwm.name)
         if result is None:
             log.warning(
                 "|%s| HWM does not exist in %r. ALL ROWS/FILES WILL BE READ!",
@@ -74,21 +74,23 @@ class HWMStrategy(BaseStrategy):
 
         log.info("|%s| Fetched HWM:", class_name)
         log_hwm(log, result)
-        self.validate_hwm_type(result)
-        self.validate_hwm_attributes(result)
 
+        self.validate_hwm_type(self.hwm, result)
+        self.validate_hwm_attributes(self.hwm, result, origin=hwm_store.__class__.__name__)
+
+        hwm_before = self.hwm.copy()
         self.hwm.set_value(result.value)
-        log.info("|%s| Final HWM:", class_name)
-        log_hwm(log, self.hwm)
+        if self.hwm != hwm_before:
+            log.info("|%s| Final HWM:", class_name)
+            log_hwm(log, self.hwm)
 
-    def validate_hwm_type(self, other_hwm: HWM):
-        hwm_type = type(self.hwm)
+    def validate_hwm_type(self, current_hwm: HWM, new_hwm: HWM):
+        hwm_type = type(current_hwm)
 
-        if not isinstance(other_hwm, hwm_type):
+        if not isinstance(new_hwm, hwm_type):
             message = textwrap.dedent(
                 f"""
-                HWM type {type(other_hwm).__name__!r} fetched from HWM store
-                does not match current HWM type {hwm_type.__name__!r}.
+                Cannot cast HWM of type {type(new_hwm).__name__!r} as {hwm_type.__name__!r}.
 
                 Please:
                 * Check that you set correct HWM name, it should be unique.
@@ -97,27 +99,31 @@ class HWMStrategy(BaseStrategy):
             )
             raise TypeError(message)
 
-    def validate_hwm_attributes(self, other_hwm: HWM):
-        if self.hwm.entity != other_hwm.entity or self.hwm.expression != other_hwm.expression:  # type: ignore[union-attr]
-            # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
-            # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
-            warning = textwrap.dedent(
-                f"""
-                Detected different HWM attributes.
+    def validate_hwm_attributes(self, current_hwm: HWM, new_hwm: HWM, origin: str):
+        attributes = [("entity", True), ("expression", False), ("description", False)]
 
-                Current HWM:
-                    {self.hwm!r}
-                Fetched from HWM store:
-                    {other_hwm!r}
+        for attribute, mandatory in attributes:
+            if getattr(current_hwm, attribute) != getattr(new_hwm, attribute):
+                # exception raised when inside one strategy >1 processes on the same table but with different entities
+                # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
+                message = textwrap.dedent(
+                    f"""
+                    Detected HWM with different `{attribute}` attribute.
 
-                Current HWM attributes have higher priority, and will override HWM store.
+                    Current HWM:
+                        {current_hwm!r}
+                    HWM in {origin}:
+                        {new_hwm!r}
 
-                Please:
-                * Check that you set correct HWM name, it should be unique.
-                * Check that attributes are consistent in both code and HWM Store.
-                """,
-            )
-            warnings.warn(warning, UserWarning, stacklevel=5)
+                    Please:
+                    * Check that you set correct HWM name, it should be unique.
+                    * Check that attributes are consistent in both code and HWM Store.
+                    """,
+                )
+                if mandatory:
+                    raise ValueError(message)
+
+                warnings.warn(message, UserWarning, stacklevel=2)
 
     def exit_hook(self, failed: bool = False) -> None:
         if not failed:

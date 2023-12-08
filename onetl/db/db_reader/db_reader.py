@@ -125,8 +125,18 @@ class DBReader(FrozenModel):
     hwm : type[HWM] | None, default: ``None``
         HWM class to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
 
-        If you want to use some SQL expression as HWM value, you can pass into ``hwm`` object
-        ``hwm.expression="expression"``, like:
+        .. code:: python
+
+            from onetl.hwm import AutoDetectHWM
+
+            hwm = AutoDetectHWM(
+                name="some_unique_hwm_name",
+                expression="hwm_column",
+            )
+
+        HWM value will be fetched using ``hwm_column`` SQL query.
+
+        If you want to use some SQL expression as HWM value, you can use it as well:
 
         .. code:: python
 
@@ -134,35 +144,13 @@ class DBReader(FrozenModel):
 
             hwm = AutoDetectHWM(
                 name="some_unique_hwm_name",
-                column="hwm_column",
                 expression="cast(hwm_column_orig as date)",
             )
 
-        HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
-
         .. note::
 
-            Some sources does not support ``hwm.expression``.
-
-    hwm_column : str or tuple[str, any], default: ``None``
-        .. deprecated:: 0.10.0
-
-            Use :obj:`~hwm` instead.
-
-        Column to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
-
-        If you want to use some SQL expression as HWM value, you can pass it as tuple
-        ``("column_name", "expression")``, like:
-
-        .. code:: python
-
-            hwm_column = ("hwm_column", "cast(hwm_column_orig as date)")
-
-        HWM value will be fetched using ``max(cast(hwm_column_orig as date)) as hwm_column`` SQL query.
-
-        .. note::
-
-            Some sources does not support ``("column_name", "expression")`` syntax.
+            Some sources does not support passing expressions and can be used only with column/field
+            names which present in the source.
 
     hint : Any, default: ``None``
         Hint expression used for querying the data.
@@ -364,7 +352,7 @@ class DBReader(FrozenModel):
             source="fiddle.dummy",
             hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
                 name="some_unique_hwm_name",
-                column="d_age",
+                expression="d_age",
             ),
         )
 
@@ -378,7 +366,7 @@ class DBReader(FrozenModel):
 
     connection: BaseDBConnection
     source: str = Field(alias="table")
-    columns: Optional[List[str]] = Field(default=None, min_length=1)
+    columns: Optional[List[str]] = Field(default=None, min_items=1)
     where: Optional[Any] = None
     hint: Optional[Any] = None
     df_schema: Optional[StructType] = None
@@ -387,17 +375,17 @@ class DBReader(FrozenModel):
     hwm: Optional[ColumnHWM] = None
     options: Optional[GenericOptions] = None
 
-    @validator("source", pre=True, always=True)
+    @validator("source", always=True)
     def validate_source(cls, source, values):
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(source)
 
-    @validator("columns", pre=True, always=True)  # noqa: WPS231
+    @validator("columns", always=True)  # noqa: WPS231
     def validate_columns(cls, value: list[str] | None, values: dict) -> list[str] | None:
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_columns(value)
 
-    @validator("where", pre=True, always=True)
+    @validator("where", always=True)
     def validate_where(cls, where: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
         result = connection.dialect.validate_where(where)
@@ -405,7 +393,7 @@ class DBReader(FrozenModel):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("hint", pre=True, always=True)
+    @validator("hint", always=True)
     def validate_hint(cls, hint: Any, values: dict) -> Any:
         connection: BaseDBConnection = values["connection"]
         result = connection.dialect.validate_hint(hint)
@@ -413,15 +401,15 @@ class DBReader(FrozenModel):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("df_schema", pre=True, always=True)
+    @validator("df_schema", always=True)
     def validate_df_schema(cls, df_schema: StructType | None, values: dict) -> StructType | None:
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_df_schema(df_schema)
 
-    @root_validator(pre=True)
+    @root_validator(skip_on_failure=True)
     def validate_hwm(cls, values: dict) -> dict:  # noqa: WPS231
         connection: BaseDBConnection = values["connection"]
-        source: str = values.get("source") or values["table"]
+        source: str = values["source"]
         hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
         hwm_expression: str | None = values.get("hwm_expression")
         hwm: ColumnHWM | None = values.get("hwm")
@@ -457,23 +445,44 @@ class DBReader(FrozenModel):
 
                     Instead use:
                         hwm=DBReader.AutoDetectHWM(
-                            name="{old_hwm.qualified_name!r}",
-                            entity={hwm_column},
+                            name={old_hwm.qualified_name!r},
+                            expression={hwm_column!r},
                         )
                     """,
                 ),
-                DeprecationWarning,
+                UserWarning,
                 stacklevel=2,
             )
             hwm = AutoDetectHWM(
                 name=old_hwm.qualified_name,
-                column=hwm_column,  # type: ignore[arg-type]
-                expression=hwm_expression,
+                expression=hwm_expression or hwm_column,
             )
 
+        if hwm and not hwm.expression:
+            raise ValueError("`hwm.expression` cannot be None")
+
+        if hwm and not hwm.entity:
+            hwm = hwm.copy(update={"entity": source})
+
+        if hwm and hwm.entity != source:
+            error_message = textwrap.dedent(
+                f"""
+                Passed `hwm.source` is different from `source`.
+
+                `hwm`:
+                    {hwm!r}
+
+                `source`:
+                    {source!r}
+
+                This is not allowed.
+                """,
+            )
+            raise ValueError(error_message)
+
         values["hwm"] = connection.dialect.validate_hwm(hwm)
-        values["hwm_expression"] = None
         values["hwm_column"] = None
+        values["hwm_expression"] = None
         return values
 
     @validator("options", pre=True, always=True)
@@ -563,7 +572,7 @@ class DBReader(FrozenModel):
             strategy.fetch_hwm()
             return
 
-        if strategy.hwm.name != hwm.name:
+        if not isinstance(strategy.hwm, ColumnHWM) or strategy.hwm.name != hwm.name:
             # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
             # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
             error_message = textwrap.dedent(
@@ -590,7 +599,7 @@ class DBReader(FrozenModel):
             )
             raise ValueError(error_message)
 
-        strategy.validate_hwm_attributes(hwm)
+        strategy.validate_hwm_attributes(hwm, strategy.hwm, origin=self.__class__.__name__)
 
     def _autodetect_hwm(self, hwm: HWM) -> HWM:
         field = self._get_hwm_field(hwm)
@@ -601,13 +610,13 @@ class DBReader(FrozenModel):
             log.info(
                 "|%s| Detected HWM type: %r",
                 self.__class__.__name__,
-                type(detected_hwm_type).__name__,
+                detected_hwm_type.__name__,
             )
             return detected_hwm_type.deserialize(hwm.dict())
 
         error_message = textwrap.dedent(
             f"""
-            Cannot detect HWM type for field {hwm.expression or hwm.entity!r} of type {field_type!r}
+            Cannot detect HWM type for field {hwm.expression!r} of type {field_type!r}
 
             Check that column or expression type is supported by {self.connection.__class__.__name__}.
             """,
@@ -618,13 +627,13 @@ class DBReader(FrozenModel):
         log.info(
             "|%s| Getting Spark type for HWM expression: %r",
             self.__class__.__name__,
-            hwm.expression or hwm.entity,
+            hwm.expression,
         )
 
         result: StructField
         if self.df_schema:
             schema = {field.name.casefold(): field for field in self.df_schema}
-            column = hwm.entity.casefold()
+            column = hwm.expression.casefold()
             if column not in schema:
                 raise ValueError(f"HWM column {column!r} not found in dataframe schema")
 
@@ -632,7 +641,7 @@ class DBReader(FrozenModel):
         elif isinstance(self.connection, ContainsGetDFSchemaMethod):
             df_schema = self.connection.get_df_schema(
                 source=self.source,
-                columns=[hwm.expression or hwm.entity],
+                columns=[hwm.expression],
                 **self._get_read_kwargs(),
             )
             result = df_schema[0]
@@ -651,14 +660,13 @@ class DBReader(FrozenModel):
             return None
 
         strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
-        hwm_expression: str = self.hwm.expression or self.hwm.entity
 
         start_value = strategy.current.value
         stop_value = strategy.stop if isinstance(strategy, BatchHWMStrategy) else None
 
         if start_value is not None and stop_value is not None:
             # we already have start and stop values, nothing to do
-            window = Window(hwm_expression, start_from=strategy.current, stop_at=strategy.next)
+            window = Window(self.hwm.expression, start_from=strategy.current, stop_at=strategy.next)
             strategy.update_hwm(window.stop_at.value)
             return window
 
@@ -671,7 +679,7 @@ class DBReader(FrozenModel):
         min_value, max_value = self.connection.get_min_max_values(
             source=self.source,
             window=Window(
-                hwm_expression,
+                self.hwm.expression,
                 # always include both edges, > vs >= are applied only to final dataframe
                 start_from=Edge(value=start_value),
                 stop_at=Edge(value=stop_value),
@@ -695,7 +703,7 @@ class DBReader(FrozenModel):
             hwm_class_name = type(hwm).__name__
             error_message = textwrap.dedent(
                 f"""
-                Expression {hwm.expression or hwm.entity!r} returned values:
+                Expression {hwm.expression!r} returned values:
                     min: {min_value!r} of type {type(min_value).__name__!r}
                     max: {max_value!r} of type {type(min_value).__name__!r}
                 which are not compatible with {hwm_class_name}.
@@ -712,11 +720,11 @@ class DBReader(FrozenModel):
             if strategy.stop is None:
                 strategy.stop = max_value
 
-            window = Window(hwm_expression, start_from=strategy.current, stop_at=strategy.next)
+            window = Window(self.hwm.expression, start_from=strategy.current, stop_at=strategy.next)
         else:
             # for IncrementalStrategy fix only max value to avoid difference between real dataframe content and HWM value
             window = Window(
-                hwm_expression,
+                self.hwm.expression,
                 start_from=strategy.current,
                 stop_at=Edge(value=max_value),
             )
@@ -742,7 +750,7 @@ class DBReader(FrozenModel):
             log_dataframe_schema(log, empty_df)
 
         if self.hwm:
-            log_hwm(log, self.hwm, with_value=False)
+            log_hwm(log, self.hwm)
 
         options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
         log_options(log, options)
