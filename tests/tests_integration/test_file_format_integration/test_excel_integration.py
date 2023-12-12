@@ -52,10 +52,11 @@ def test_excel_reader_with_infer_schema(
 
     # excel does not have header, so columns are named like "_c0", "_c1", etc
     expected_df = reset_column_names(expected_df)
+    first_column = expected_df.schema[0].name
 
     assert read_df.schema != df.schema
     assert read_df.schema == expected_df.schema
-    assert_equal_df(read_df, expected_df, order_by="id")
+    assert_equal_df(read_df, expected_df, order_by=first_column)
 
 
 @pytest.mark.parametrize("format", ["xlsx", "xls"])
