@@ -12,8 +12,7 @@ try:
 
     from tests.util.to_pandas import to_pandas
 except ImportError:
-    # pandas can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 from etl_entities.hwm_store import HWMStoreStackManager
 

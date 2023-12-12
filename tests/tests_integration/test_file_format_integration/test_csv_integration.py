@@ -16,8 +16,7 @@ try:
     from tests.util.assert_df import assert_equal_df
     from tests.util.spark_df import reset_column_names
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
@@ -56,7 +55,7 @@ def test_csv_reader_with_infer_schema(
 
     assert read_df.schema != df.schema
     assert read_df.schema == expected_df.schema
-    assert_equal_df(read_df, expected_df)
+    assert_equal_df(read_df, expected_df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -89,7 +88,7 @@ def test_csv_reader_with_options(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -131,4 +130,4 @@ def test_csv_writer_with_options(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")

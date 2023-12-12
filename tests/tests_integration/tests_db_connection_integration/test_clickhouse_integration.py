@@ -6,8 +6,7 @@ import pytest
 try:
     import pandas
 except ImportError:
-    # pandas can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 from onetl.connection import Clickhouse
 

@@ -15,8 +15,7 @@ from onetl.file.format import CSV
 try:
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 
 @pytest.mark.parametrize(

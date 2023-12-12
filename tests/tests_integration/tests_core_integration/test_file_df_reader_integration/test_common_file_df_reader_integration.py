@@ -28,8 +28,7 @@ try:
 
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 
 def test_file_df_reader_run(

@@ -12,8 +12,7 @@ try:
 
     from tests.util.to_pandas import to_pandas
 except ImportError:
-    # pandas can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
