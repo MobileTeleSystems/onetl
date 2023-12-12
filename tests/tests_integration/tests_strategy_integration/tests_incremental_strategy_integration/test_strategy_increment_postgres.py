@@ -90,7 +90,7 @@ def test_postgres_strategy_incremental(
     assert hwm.value == first_span_max
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -106,7 +106,7 @@ def test_postgres_strategy_incremental(
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -190,7 +190,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -204,7 +204,7 @@ def test_postgres_strategy_incremental_with_hwm_expr(
 
     if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed

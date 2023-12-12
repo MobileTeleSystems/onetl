@@ -228,7 +228,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -241,7 +241,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         second_df = reader.run()
 
     # only changed data has been read
-    processing.assert_equal_df(df=second_df, other_frame=second_span)
+    processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -312,7 +312,7 @@ def test_postgres_strategy_incremental_offset(
         next_df = reader.run()
 
     total_span = pandas.concat([second_span, first_span], ignore_index=True)
-    processing.assert_equal_df(df=next_df, other_frame=total_span)
+    processing.assert_equal_df(df=next_df, other_frame=total_span, order_by="id_int")
 
 
 def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):
@@ -385,5 +385,4 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
 
     # all the data from the second span has been read
     # like there was no exception
-    second_df = second_df.sort(second_df.id_int.asc())
-    processing.assert_equal_df(df=second_df, other_frame=second_span)
+    processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")

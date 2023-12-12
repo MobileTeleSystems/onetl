@@ -93,7 +93,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
                 first_df = first_df.union(next_df)
 
     # read only rows 0..50 (according to where)
-    processing.assert_equal_df(df=first_df, other_frame=first_span[:51])
+    processing.assert_equal_df(df=first_df, other_frame=first_span[:51], order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -113,7 +113,7 @@ def test_postgres_strategy_incremental_batch_where(spark, processing, prepare_sc
                 second_df = second_df.union(next_df)
 
     # read only rows 101..119 (according to where)
-    processing.assert_equal_df(df=second_df, other_frame=second_span[:19])
+    processing.assert_equal_df(df=second_df, other_frame=second_span[:19], order_by="id_int")
 
 
 def test_postgres_strategy_incremental_batch_hwm_set_twice(
@@ -593,7 +593,7 @@ def test_postgres_strategy_incremental_batch(
     # same behavior as SnapshotBatchStrategy, no rows skipped
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=first_df, other_frame=first_span)
+        processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -642,7 +642,7 @@ def test_postgres_strategy_incremental_batch(
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -806,9 +806,8 @@ def test_postgres_strategy_incremental_batch_offset(
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
     if full:
-        total_df = total_df.sort(total_df.id_int.asc())
         # all the data has been read
-        processing.assert_equal_df(df=total_df, other_frame=total_span)
+        processing.assert_equal_df(df=total_df, other_frame=total_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -904,7 +903,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
                 first_df = first_df.union(next_df)
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df.orderBy("id_int"), other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -925,7 +924,7 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
 
     if issubclass(hwm_type, ColumnIntHWM):
         # only changed data has been read
-        processing.assert_equal_df(df=second_df.orderBy("id_int"), other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed

@@ -29,6 +29,7 @@ def test_clickhouse_reader_snapshot(spark, processing, load_table_data):
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -91,6 +92,7 @@ def test_clickhouse_reader_snapshot_without_set_database(spark, processing, load
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -130,7 +132,11 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
     assert table_df.columns != table_df_with_columns.columns
     assert table_df_with_columns.columns == columns
     # dataframe content is unchanged
-    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+    processing.assert_equal_df(
+        table_df_with_columns,
+        other_frame=table_df,
+        order_by="id_int",
+    )
 
     reader3 = DBReader(
         connection=clickhouse,
@@ -246,6 +252,7 @@ def test_clickhouse_reader_snapshot_with_where(spark, processing, load_table_dat
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=table_df1,
+        order_by="id_int",
     )
 
     reader3 = DBReader(

@@ -20,6 +20,7 @@ def test_hive_reader(spark, processing, load_table_data):
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -52,7 +53,11 @@ def test_hive_reader_snapshot_with_columns(spark, processing, load_table_data):
     assert table_df.columns != table_df_with_columns.columns
     assert table_df_with_columns.columns == columns
     # dataframe content is unchanged
-    processing.assert_equal_df(table_df_with_columns, other_frame=table_df)
+    processing.assert_equal_df(
+        table_df_with_columns,
+        other_frame=table_df,
+        order_by="id_int",
+    )
 
     reader3 = DBReader(
         connection=hive,
@@ -131,6 +136,7 @@ def test_hive_reader_snapshot_with_where(spark, processing, load_table_data):
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=table_df,
+        order_by="id_int",
     )
 
     reader2 = DBReader(

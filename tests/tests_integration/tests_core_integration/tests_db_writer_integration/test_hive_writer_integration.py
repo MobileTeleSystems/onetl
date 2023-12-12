@@ -39,6 +39,7 @@ def test_hive_writer_target_does_not_exist(spark, processing, get_schema_table, 
         schema=get_schema_table.schema,
         table=get_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 

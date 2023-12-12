@@ -71,7 +71,7 @@ def test_postgres_strategy_snapshot(spark, processing, prepare_schema_table):
     with SnapshotStrategy():
         total_df = reader.run()
 
-    processing.assert_equal_df(df=total_df, other_frame=span)
+    processing.assert_equal_df(df=total_df, other_frame=span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -306,7 +306,7 @@ def test_postgres_strategy_snapshot_batch_where(spark, processing, prepare_schem
             else:
                 df = df.union(next_df)
 
-    processing.assert_equal_df(df=df, other_frame=span[:51])
+    processing.assert_equal_df(df=df, other_frame=span[:51], order_by="id_int")
 
 
 @pytest.mark.flaky(reruns=5)
@@ -419,8 +419,7 @@ def test_postgres_strategy_snapshot_batch(
     # all the rows will be read
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
-    total_df = total_df.sort(total_df.id_int.asc())
-    processing.assert_equal_df(df=total_df, other_frame=total_span)
+    processing.assert_equal_df(df=total_df, other_frame=total_span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -498,9 +497,7 @@ def test_postgres_strategy_snapshot_batch_ignores_hwm_value(
     # init hwm value will be ignored
     # all the rows will be read
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
-
-    total_df = total_df.sort(total_df.id_int.asc())
-    processing.assert_equal_df(df=total_df, other_frame=total_span)
+    processing.assert_equal_df(df=total_df, other_frame=total_span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -649,9 +646,7 @@ def test_postgres_strategy_snapshot_batch_handle_exception(spark, processing, pr
 
     # all the rows will be read
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
-    total_df = total_df.sort(total_df.id_int.asc())
-
-    processing.assert_equal_df(df=total_df, other_frame=total_span)
+    processing.assert_equal_df(df=total_df, other_frame=total_span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -726,4 +721,4 @@ def test_postgres_strategy_snapshot_batch_with_hwm_expr(
                 total_df = total_df.union(next_df)
 
     # all the data has been read
-    processing.assert_equal_df(df=total_df.orderBy("id_int"), other_frame=span)
+    processing.assert_equal_df(df=total_df, other_frame=span, order_by="id_int")

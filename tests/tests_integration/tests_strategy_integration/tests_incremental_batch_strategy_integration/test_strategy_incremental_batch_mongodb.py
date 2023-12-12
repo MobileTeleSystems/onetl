@@ -123,7 +123,7 @@ def test_mongodb_strategy_incremental_batch(
     # same behavior as SnapshotBatchStrategy, no rows skipped
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=first_df, other_frame=first_span)
+        processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -172,7 +172,7 @@ def test_mongodb_strategy_incremental_batch(
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -224,7 +224,7 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
             else:
                 first_df = first_df.union(next_df)
 
-    processing.assert_equal_df(df=first_df, other_frame=first_span[:51])
+    processing.assert_equal_df(df=first_df, other_frame=first_span[:51], order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -243,4 +243,4 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
             else:
                 second_df = second_df.union(next_df)
 
-    processing.assert_equal_df(df=second_df, other_frame=second_span[:19])
+    processing.assert_equal_df(df=second_df, other_frame=second_span[:19], order_by="id_int")

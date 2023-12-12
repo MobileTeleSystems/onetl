@@ -40,6 +40,7 @@ def test_postgres_writer_snapshot(spark, processing, get_schema_table, options):
         schema=get_schema_table.schema,
         table=get_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -67,6 +68,7 @@ def test_postgres_writer_snapshot_with_dict_options(spark, processing, prepare_s
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -94,6 +96,7 @@ def test_postgres_writer_snapshot_with_pydantic_options(spark, processing, prepa
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -124,6 +127,7 @@ def test_postgres_writer_if_exists_append(spark, processing, prepare_schema_tabl
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         df=df,
+        order_by="id_int",
     )
 
 
@@ -217,4 +221,5 @@ def test_postgres_writer_if_exists_replace_entire_table(spark, processing, prepa
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         df=df2,
+        order_by="id_int",
     )

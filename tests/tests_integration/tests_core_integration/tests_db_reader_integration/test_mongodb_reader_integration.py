@@ -52,6 +52,7 @@ def test_mongodb_reader_snapshot(spark, processing, load_table_data, df_schema):
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=df,
+        order_by="_id",
     )
 
 
@@ -98,6 +99,7 @@ def test_mongodb_reader_snapshot_with_where(spark, processing, load_table_data, 
         schema=load_table_data.schema,
         table=load_table_data.table,
         df=table_df1,
+        order_by="_id",
     )
 
     one_reader = DBReader(
