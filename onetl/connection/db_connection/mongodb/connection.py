@@ -82,7 +82,7 @@ class MongoDB(DBConnection):
             pip install onetl[spark]  # latest PySpark version
 
             # or
-            pip install onetl pyspark=3.4.1  # pass specific PySpark version
+            pip install onetl pyspark=3.4.2  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 
