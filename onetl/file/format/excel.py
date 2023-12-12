@@ -69,7 +69,7 @@ class Excel(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.4.x.
+        * Spark versions: 3.2.x - 3.5.x.
 
             .. warning::
 
@@ -150,7 +150,7 @@ class Excel(ReadWriteFileFormat):
             If ``None``, ``spark_version`` is used to determine Scala version.
 
         version: str, optional
-            Package version in format ``major.minor.patch``. Default is ``0.20.2``.
+            Package version in format ``major.minor.patch``. Default is ``0.20.3``.
 
             .. warning::
 
@@ -173,7 +173,7 @@ class Excel(ReadWriteFileFormat):
             Excel.get_packages(
                 spark_version="3.5.0",
                 scala_version="2.13",
-                package_version="0.20.2",
+                package_version="0.20.3",
             )
 
         """
@@ -187,7 +187,7 @@ class Excel(ReadWriteFileFormat):
                 raise ValueError(f"Package version should be at least 0.15, got {package_version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version.parse("0.20.2")
+            version = Version.parse("0.20.3")
 
         spark_ver = Version.parse(spark_version)
         if spark_ver < (3, 2):
