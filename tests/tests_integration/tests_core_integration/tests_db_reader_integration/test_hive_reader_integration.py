@@ -1,5 +1,10 @@
 import pytest
 
+try:
+    import pandas
+except ImportError:
+    pytest.skip("Missing pandas", allow_module_level=True)
+
 from onetl.connection import Hive
 from onetl.db import DBReader
 from tests.util.rand import rand_str
@@ -190,3 +195,60 @@ def test_hive_reader_non_existing_table(spark, get_schema_table):
     with pytest.raises(AnalysisException) as excinfo:
         reader.run()
         assert "does not exists" in str(excinfo.value)
+
+
+def test_hive_reader_snapshot_nothing_to_read(spark, processing, prepare_schema_table):
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    reader = DBReader(
+        connection=hive,
+        source=prepare_schema_table.full_name,
+    )
+
+    span_gap = 10
+    span_length = 50
+
+    # there are 2 spans with a gap between
+
+    # 0..50
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 60..110
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    # no data yet, nothing to read
+    df = reader.run()
+    assert not df.count()
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # .run() is not called, but dataframes are lazy, so it now contains all data from the source
+    processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")
+
+    # read data explicitly
+    df = reader.run()
+    processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+    total_span = pandas.concat([first_span, second_span], ignore_index=True)
+
+    # .run() is not called, but dataframes are lazy, so it now contains all data from the source
+    processing.assert_equal_df(df=df, other_frame=total_span, order_by="id_int")
+
+    # read data explicitly
+    df = reader.run()
+    processing.assert_equal_df(df=df, other_frame=total_span, order_by="id_int")

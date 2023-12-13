@@ -86,7 +86,23 @@ class BatchHWMStrategy(HWMStrategy):
 
     @property
     def is_finished(self) -> bool:
-        return self.current.is_set() and self.stop is not None and self.current.value >= self.stop
+        if self._iteration >= self.MAX_ITERATIONS:
+            # prevent possible infinite loops in unexpected cases
+            return True
+
+        if self.current.is_set() and self.stop is not None:
+            return self.current.value >= self.stop
+
+        return False
+
+    def check_has_data(self, value: Any):
+        if not self.is_first_run and value is None:
+            log.info(
+                "|%s| No start or stop values are set, exiting after %s iteration(s)",
+                self.__class__.__name__,
+                self._iteration,
+            )
+            raise StopIteration
 
     @property
     def current(self) -> Edge:
@@ -97,12 +113,8 @@ class BatchHWMStrategy(HWMStrategy):
                 including=True,
             )
 
-        self.check_argument_is_set("start", result.value)
+        self.check_has_data(result.value)
         return result
-
-    def check_argument_is_set(self, name: str, value: Any) -> None:
-        if value is None and not self.is_first_run:
-            raise ValueError(f"{name!r} argument of {self.__class__.__name__} cannot be empty!")
 
     def check_hwm_increased(self, next_value: Any) -> None:
         if not self.current.is_set():
@@ -134,13 +146,12 @@ class BatchHWMStrategy(HWMStrategy):
         else:
             result = Edge(value=self.stop)
 
-        self.check_argument_is_set("stop", result)
+        self.check_has_data(result.value)
 
         if self.stop is not None:
             result.value = min(result.value, self.stop)
 
         self.check_hwm_increased(result.value)
-
         return result
 
     def update_hwm(self, value: Any) -> None:

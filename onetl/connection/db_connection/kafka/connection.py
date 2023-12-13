@@ -266,6 +266,7 @@ class Kafka(DBConnection):
         where: Any | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
         options: KafkaReadOptions = KafkaReadOptions(),  # noqa: B008, WPS404
     ) -> DataFrame:
         log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)

@@ -26,6 +26,7 @@ class OracleDialect(JDBCDialect):
         columns: list[str] | None = None,
         where: str | list[str] | None = None,
         hint: str | None = None,
+        limit: int | None = None,
         compact: bool = False,
     ) -> str:
         # https://stackoverflow.com/questions/27965130/how-to-select-column-from-table-in-oracle
@@ -37,6 +38,7 @@ class OracleDialect(JDBCDialect):
             columns=new_columns,
             where=where,
             hint=hint,
+            limit=limit,
             compact=compact,
         )
 

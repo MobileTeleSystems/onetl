@@ -1,0 +1,2 @@
+``SnapshotBatchStagy`` and ``IncrementalBatchStrategy`` does no raise exceptions if source does not contain any data.
+Instead they stop at first iteration and return empty dataframe.

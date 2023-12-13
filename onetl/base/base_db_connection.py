@@ -140,6 +140,7 @@ class BaseDBConnection(BaseConnection):
         where: Any | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
     ) -> DataFrame:
         """
         Reads the source to dataframe. |support_hooks|

@@ -157,6 +157,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         where: str | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
         options: JDBCReadOptions | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
@@ -199,6 +200,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             columns=new_columns,
             where=where,
             hint=hint,
+            limit=limit,
         )
 
         result = self.sql(query, read_options)
@@ -235,7 +237,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
-        query = self.dialect.get_sql_query(source, columns=columns, where="1=0", compact=True)
+        query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
         read_options = self._exclude_partition_options(self.ReadOptions.parse(options), fetchsize=0)
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)

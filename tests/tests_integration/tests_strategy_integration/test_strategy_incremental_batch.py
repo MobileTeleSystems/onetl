@@ -813,42 +813,7 @@ def test_postgres_strategy_incremental_batch_offset(
         processing.assert_subset_df(df=total_df, other_frame=total_span)
 
 
-@pytest.mark.parametrize(
-    "hwm_source, hwm_expr, hwm_type, step, func",
-    [
-        (
-            "hwm_int",
-            "text_string::int",
-            ColumnIntHWM,
-            10,
-            str,
-        ),
-        (
-            "hwm_date",
-            "text_string::date",
-            ColumnDateHWM,
-            timedelta(days=10),
-            lambda x: x.isoformat(),
-        ),
-        (
-            "hwm_datetime",
-            "text_string::timestamp",
-            ColumnDateTimeHWM,
-            timedelta(hours=100),
-            lambda x: x.isoformat(),
-        ),
-    ],
-)
-def test_postgres_strategy_incremental_batch_with_hwm_expr(
-    spark,
-    processing,
-    prepare_schema_table,
-    hwm_source,
-    hwm_expr,
-    hwm_type,
-    step,
-    func,
-):
+def test_postgres_strategy_incremental_batch_nothing_to_read(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -858,30 +823,54 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
         spark=spark,
     )
 
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+    hwm_column = "hwm_int"
+    step = 10
+
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expr),
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
     )
 
-    # there are 2 spans with a gap between
     span_gap = 10
     span_length = 50
 
-    # 0..100
+    # there are 2 spans with a gap between
+
+    # 0..50
     first_span_begin = 0
     first_span_end = first_span_begin + span_length
 
-    # 110..210
+    # 60..110
     second_span_begin = first_span_end + span_gap
     second_span_end = second_span_begin + span_length
 
     first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
-    first_span["text_string"] = first_span[hwm_source].apply(func)
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
 
-    second_span["text_string"] = second_span[hwm_source].apply(func)
+    # no data yet, nothing to read
+    df = None
+    counter = 0
+    with IncrementalBatchStrategy(step=step) as batches:
+        for _ in batches:
+            next_df = reader.run()
+            counter += 1
+
+            if df is None:
+                df = next_df
+            else:
+                df = df.union(next_df)
+
+    # exactly 1 batch with empty result
+    assert counter == 1
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
 
     # insert first span
     processing.insert_data(
@@ -890,19 +879,43 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
         values=first_span,
     )
 
-    # incremental run
-    first_df = None
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
+
+    df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
             next_df = reader.run()
 
-            if first_df is None:
-                first_df = next_df
+            if df is None:
+                df = next_df
             else:
-                first_df = first_df.union(next_df)
+                df = df.union(next_df)
 
-    # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
+    processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # no new data yet, nothing to read
+    df = None
+    counter = 0
+    with IncrementalBatchStrategy(step=step) as batches:
+        for _ in batches:
+            next_df = reader.run()
+            counter += 1
+
+            if df is None:
+                df = next_df
+            else:
+                df = df.union(next_df)
+
+    # exactly 1 batch with empty result
+    assert counter == 1
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
 
     # insert second span
     processing.insert_data(
@@ -911,20 +924,23 @@ def test_postgres_strategy_incremental_batch_with_hwm_expr(
         values=second_span,
     )
 
-    second_df = None
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # read data
+    df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
             next_df = reader.run()
+            counter += 1
 
-            if second_df is None:
-                second_df = next_df
+            if df is None:
+                df = next_df
             else:
-                second_df = second_df.union(next_df)
+                df = df.union(next_df)
 
-    if issubclass(hwm_type, ColumnIntHWM):
-        # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
-    else:
-        # date and datetime values have a random part
-        # so instead of checking the whole dataframe a partial comparison should be performed
-        processing.assert_subset_df(df=second_df, other_frame=second_span)
+    processing.assert_equal_df(df=df, other_frame=second_span, order_by="id_int")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == second_span_max

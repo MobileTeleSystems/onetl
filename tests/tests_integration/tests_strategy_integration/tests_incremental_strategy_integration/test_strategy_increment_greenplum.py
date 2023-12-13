@@ -110,6 +110,104 @@ def test_greenplum_strategy_incremental(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
+def test_greenplum_strategy_incremental_nothing_to_read(spark, processing, prepare_schema_table):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+    hwm_column = "hwm_int"
+
+    reader = DBReader(
+        connection=greenplum,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
+    )
+
+    span_gap = 10
+    span_length = 50
+
+    # there are 2 spans with a gap between
+
+    # 0..50
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 60..110
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
+
+    # no data yet, nothing to read
+    with IncrementalStrategy():
+        df = reader.run()
+
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
+
+    # set hwm value to 50
+    with IncrementalStrategy():
+        df = reader.run()
+
+    processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # no new data yet, nothing to read
+    with IncrementalStrategy():
+        df = reader.run()
+
+    assert not df.count()
+    # HWM value is unchanged
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # read data
+    with IncrementalStrategy():
+        df = reader.run()
+
+    processing.assert_equal_df(df=df, other_frame=second_span, order_by="id_int")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == second_span_max
+
+
 # Fail if HWM is Numeric, or Decimal with fractional part, or string
 @pytest.mark.parametrize(
     "hwm_column, exception_type, error_message",

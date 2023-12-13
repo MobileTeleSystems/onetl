@@ -365,12 +365,14 @@ class Hive(DBConnection):
         where: str | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
     ) -> DataFrame:
         query = self.dialect.get_sql_query(
             table=source,
             columns=columns,
             where=self.dialect.apply_window(where, window),
             hint=hint,
+            limit=limit,
         )
 
         return self.sql(query)

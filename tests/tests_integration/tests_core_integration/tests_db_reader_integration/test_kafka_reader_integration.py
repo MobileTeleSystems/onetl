@@ -3,6 +3,11 @@ import secrets
 
 import pytest
 
+try:
+    import pandas
+except ImportError:
+    pytest.skip("Missing pandas", allow_module_level=True)
+
 from onetl._util.spark import get_spark_version
 from onetl.connection import Kafka
 from onetl.db import DBReader
