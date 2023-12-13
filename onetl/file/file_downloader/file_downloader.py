@@ -21,7 +21,7 @@ import textwrap
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Iterable, List, Optional, Tuple, Type, Union
+from typing import Generator, Iterable, List, Optional, Tuple, Type, Union
 
 from etl_entities.hwm import FileHWM, FileListHWM
 from etl_entities.instance import AbsolutePath
@@ -32,8 +32,7 @@ from pydantic import Field, root_validator, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
-from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
-from onetl.base.pure_path_protocol import PurePathProtocol
+from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_downloader.options import FileDownloaderOptions
 from onetl.file.file_downloader.result import DownloadResult
 from onetl.file.file_set import FileSet
@@ -713,7 +712,7 @@ class FileDownloader(FrozenModel):
 
         self.local_path.mkdir(exist_ok=True, parents=True)
 
-    def _download_files(
+    def _download_files(  # noqa: WPS231
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
     ) -> DownloadResult:
@@ -725,17 +724,25 @@ class FileDownloader(FrozenModel):
 
         self._create_dirs(to_download)
 
+        strategy = StrategyManager.get_current()
         result = DownloadResult()
-        for status, file in self._bulk_download(to_download):
-            if status == FileDownloadStatus.SUCCESSFUL:
-                result.successful.add(file)
-            elif status == FileDownloadStatus.FAILED:
-                result.failed.add(file)
-            elif status == FileDownloadStatus.SKIPPED:
-                result.skipped.add(file)
-            elif status == FileDownloadStatus.MISSING:
-                result.missing.add(file)
-
+        source_files: list[RemotePath] = []
+        try:  # noqa: WPS501
+            for status, source_file, target_file in self._bulk_download(to_download):
+                if status == FileDownloadStatus.SUCCESSFUL:
+                    result.successful.add(target_file)
+                    source_files.append(source_file)
+                elif status == FileDownloadStatus.FAILED:
+                    result.failed.add(source_file)
+                elif status == FileDownloadStatus.SKIPPED:
+                    result.skipped.add(source_file)
+                elif status == FileDownloadStatus.MISSING:
+                    result.missing.add(source_file)
+        finally:
+            if self.hwm:
+                # always update HWM in HWM store, even if downloader is interrupted
+                strategy.update_hwm(source_files)
+                strategy.save_hwm()
         return result
 
     def _create_dirs(
@@ -758,10 +765,9 @@ class FileDownloader(FrozenModel):
     def _bulk_download(
         self,
         to_download: DOWNLOAD_ITEMS_TYPE,
-    ) -> list[tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]]:
+    ) -> Generator[tuple[FileDownloadStatus, RemotePath, LocalPath | None], None, None]:
         workers = self.options.workers
         files_count = len(to_download)
-        result = []
 
         real_workers = workers
         if files_count < workers:
@@ -783,27 +789,20 @@ class FileDownloader(FrozenModel):
                     executor.submit(self._download_file, source_file, target_file, tmp_file)
                     for source_file, target_file, tmp_file in to_download
                 ]
-                for future in as_completed(futures):
-                    result.append(future.result())
+                yield from (future.result() for future in as_completed(futures))
         else:
             log.debug("|%s| Using plain old for-loop", self.__class__.__name__)
-            for source_file, target_file, tmp_file in to_download:
-                result.append(
-                    self._download_file(
-                        source_file,
-                        target_file,
-                        tmp_file,
-                    ),
-                )
-
-        return result
+            yield from (
+                self._download_file(source_file, target_file, tmp_file)
+                for source_file, target_file, tmp_file in to_download
+            )
 
     def _download_file(  # noqa: WPS231, WPS213
         self,
         source_file: RemotePath,
         local_file: LocalPath,
         tmp_file: LocalPath | None,
-    ) -> tuple[FileDownloadStatus, PurePathProtocol | PathWithStatsProtocol]:
+    ) -> tuple[FileDownloadStatus, RemotePath, LocalPath | None]:
         if tmp_file:
             log.info(
                 "|%s| Downloading file '%s' to '%s' (via tmp '%s')",
@@ -817,7 +816,7 @@ class FileDownloader(FrozenModel):
 
         if not self.connection.path_exists(source_file):
             log.warning("|%s| Missing file '%s', skipping", self.__class__.__name__, source_file)
-            return FileDownloadStatus.MISSING, source_file
+            return FileDownloadStatus.MISSING, source_file, None
 
         try:
             remote_file = self.connection.resolve_file(source_file)
@@ -829,7 +828,7 @@ class FileDownloader(FrozenModel):
 
                 if self.options.if_exists == FileExistBehavior.IGNORE:
                     log.warning("|Local FS| File %s already exists, skipping", path_repr(local_file))
-                    return FileDownloadStatus.SKIPPED, remote_file
+                    return FileDownloadStatus.SKIPPED, remote_file, None
 
                 replace = True
 
@@ -851,16 +850,11 @@ class FileDownloader(FrozenModel):
                 # Direct download
                 self.connection.download_file(remote_file, local_file, replace=replace)
 
-            if self.hwm:
-                strategy = StrategyManager.get_current()
-                strategy.hwm.update(remote_file)
-                strategy.save_hwm()
-
             # Delete Remote
             if self.options.delete_source:
                 self.connection.remove_file(remote_file)
 
-            return FileDownloadStatus.SUCCESSFUL, local_file
+            return FileDownloadStatus.SUCCESSFUL, remote_file, local_file
 
         except Exception as e:
             if log.isEnabledFor(logging.DEBUG):
@@ -876,11 +870,12 @@ class FileDownloader(FrozenModel):
                     e,
                     exc_info=False,
                 )
-            return FileDownloadStatus.FAILED, FailedRemoteFile(
+            failed_file = FailedRemoteFile(
                 path=remote_file.path,
                 stats=remote_file.stats,
                 exception=e,
             )
+            return FileDownloadStatus.FAILED, failed_file, None
 
     def _remove_temp_dir(self, temp_dir: LocalPath) -> None:
         log.info("|Local FS| Removing temp directory '%s'", temp_dir)

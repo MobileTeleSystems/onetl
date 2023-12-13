@@ -1,0 +1,4 @@
+``FileDownloader.run()`` now updates HWM in HWM Store not after each file is being successfully downloaded,
+but after all files are finished. This is because:
+* FileDownloader can be used with ``DownloadOptions(workers=N)``, which could lead to race condition - one thread can reset HWM value which is updated by another thread at the same time.
+* FileDownloader can download hundreds and thousands of files, and issuing a request to HWM Store for each file could potentially DDoS HWM Store.

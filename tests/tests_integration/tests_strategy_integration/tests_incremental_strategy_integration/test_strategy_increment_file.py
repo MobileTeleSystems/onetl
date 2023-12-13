@@ -119,7 +119,7 @@ def test_file_downloader_incremental_strategy_fail(
             assert downloaded.missing_count == 0
             assert downloaded.failed_count == 0
 
-            # HWM is saved after downloading each file, not after exiting from .run
+            # HWM is saved at the end of `FileDownloader.run()` call`, not after exiting from strategy
             source_files.add(AbsolutePath(target_file))
             assert source_files == hwm_store.get_hwm(hwm_name).value
 
