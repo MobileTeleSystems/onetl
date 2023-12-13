@@ -441,9 +441,12 @@ class MongoDB(DBConnection):
             read_options["hint"] = json.dumps(hint)
 
         df = self.spark.read.format("mongodb").options(**read_options).load()
-        row = df.collect()[0]
-        min_value = row["min"]
-        max_value = row["max"]
+        data = df.collect()
+        if data:
+            min_value = data[0]["min"]
+            max_value = data[0]["max"]
+        else:
+            min_value = max_value = None
 
         log.info("|%s| Received values:", self.__class__.__name__)
         log_with_indent(log, "MIN(%s) = %r", window.expression, min_value)
@@ -460,6 +463,7 @@ class MongoDB(DBConnection):
         where: dict | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
         options: MongoDBReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
@@ -488,6 +492,9 @@ class MongoDB(DBConnection):
 
         if columns:
             df = df.select(*columns)
+
+        if limit is not None:
+            df = df.limit(limit)
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df

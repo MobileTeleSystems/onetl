@@ -37,6 +37,7 @@ class DBDialect(BaseDBDialect):
         columns: list[str] | None = None,
         where: str | list[str] | None = None,
         hint: str | None = None,
+        limit: int | None = None,
         compact: bool = False,
     ) -> str:
         """
@@ -58,6 +59,10 @@ class DBDialect(BaseDBDialect):
         if isinstance(where, str):
             where = [where]
 
+        if limit == 0:
+            # LIMIT 0 not valid in some databases
+            where = ["1 = 0"]
+
         where_clauses = []
         if len(where) == 1:
             where_clauses.append("WHERE" + indent + where[0])
@@ -70,6 +75,7 @@ class DBDialect(BaseDBDialect):
             f"SELECT{hint}{columns_str}",
             f"FROM{indent}{table}",
             *where_clauses,
+            f"LIMIT{indent}{limit}" if limit else "",
         ]
 
         return os.linesep.join(filter(None, query_parts)).strip()

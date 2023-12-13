@@ -163,6 +163,50 @@ def test_db_dialect_get_sql_query_hint(spark_mock):
     assert result == expected
 
 
+def test_db_dialect_get_sql_query_limit(spark_mock):
+    conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
+
+    result = conn.dialect.get_sql_query(
+        table="default.test",
+        limit=5,
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT
+               *
+        FROM
+               default.test
+        LIMIT
+               5
+        """,
+    ).strip()
+
+    assert result == expected
+
+
+def test_db_dialect_get_sql_query_limit_0(spark_mock):
+    conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
+
+    result = conn.dialect.get_sql_query(
+        table="default.test",
+        limit=0,
+    )
+
+    expected = textwrap.dedent(
+        """
+        SELECT
+               *
+        FROM
+               default.test
+        WHERE
+               1 = 0
+        """,
+    ).strip()
+
+    assert result == expected
+
+
 def test_db_dialect_get_sql_query_compact_false(spark_mock):
     conn = Postgres(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
@@ -171,6 +215,7 @@ def test_db_dialect_get_sql_query_compact_false(spark_mock):
         hint="NOWAIT",
         columns=["d_id", "d_name", "d_age"],
         where=["d_id > 100", "d_id < 200"],
+        limit=5,
         compact=False,
     )
 
@@ -186,6 +231,8 @@ def test_db_dialect_get_sql_query_compact_false(spark_mock):
                (d_id > 100)
           AND
                (d_id < 200)
+        LIMIT
+               5
         """,
     ).strip()
 
@@ -200,6 +247,7 @@ def test_db_dialect_get_sql_query_compact_true(spark_mock):
         hint="NOWAIT",
         columns=["d_id", "d_name", "d_age"],
         where=["d_id > 100", "d_id < 200"],
+        limit=5,
         compact=True,
     )
 
@@ -209,6 +257,7 @@ def test_db_dialect_get_sql_query_compact_true(spark_mock):
         FROM default.test
         WHERE (d_id > 100)
           AND (d_id < 200)
+        LIMIT 5
         """,
     ).strip()
 

@@ -50,6 +50,8 @@ def test_mongodb_writer_snapshot(spark, processing, get_schema_table, options, c
     )
 
 
+# old MongoDB versions sometimes is missing some part of data during insert
+@pytest.mark.flaky(reruns=2)
 def test_mongodb_writer_if_exists_append(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
     df1 = df[df._id < 1001]
@@ -80,6 +82,8 @@ def test_mongodb_writer_if_exists_append(spark, processing, get_schema_table):
     )
 
 
+# old MongoDB versions sometimes is missing some part of data during insert
+@pytest.mark.flaky(reruns=2)
 def test_mongodb_writer_if_exists_replace_entire_collection(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
     df1 = df[df._id < 1001]
@@ -110,7 +114,9 @@ def test_mongodb_writer_if_exists_replace_entire_collection(spark, processing, g
     )
 
 
-def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table, caplog):
+# old MongoDB versions sometimes is missing some part of data during insert
+@pytest.mark.flaky(reruns=2)
+def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
 
     mongo = MongoDB(
@@ -143,6 +149,8 @@ def test_mongodb_writer_if_exists_error(spark, processing, get_schema_table, cap
     )
 
 
+# old MongoDB versions sometimes is missing some part of data during insert
+@pytest.mark.flaky(reruns=2)
 def test_mongodb_writer_if_exists_ignore(spark, processing, get_schema_table, caplog):
     df = processing.create_spark_df(spark=spark, min_id=1, max_id=1500)
     df1 = df[df._id < 1001]

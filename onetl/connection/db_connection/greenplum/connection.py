@@ -267,13 +267,14 @@ class Greenplum(JDBCMixin, DBConnection):
         where: str | None = None,
         df_schema: StructType | None = None,
         window: Window | None = None,
+        limit: int | None = None,
         options: GreenplumReadOptions | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.dialect.apply_window(where, window)
-        fake_log_query = self.dialect.get_sql_query(table=source, columns=columns, where=where)
-        log_lines(log, fake_log_query)
+        fake_query_for_log = self.dialect.get_sql_query(table=source, columns=columns, where=where, limit=limit)
+        log_lines(log, fake_query_for_log)
 
         df = self.spark.read.format("greenplum").options(**self._connector_params(source), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
@@ -284,6 +285,9 @@ class Greenplum(JDBCMixin, DBConnection):
 
         if columns:
             df = df.selectExpr(*columns)
+
+        if limit is not None:
+            df = df.limit(limit)
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
@@ -322,7 +326,7 @@ class Greenplum(JDBCMixin, DBConnection):
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
-        query = self.dialect.get_sql_query(source, columns=columns, where="1=0", compact=True)
+        query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)

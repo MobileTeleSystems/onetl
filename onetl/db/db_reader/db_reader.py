@@ -535,7 +535,7 @@ class DBReader(FrozenModel):
         self.connection.check()
         self._check_strategy()
 
-        window = self._detect_window()
+        window, limit = self._calculate_window_and_limit()
         df = self.connection.read_source_as_df(
             source=str(self.source),
             columns=self.columns,
@@ -543,6 +543,7 @@ class DBReader(FrozenModel):
             where=self.where,
             df_schema=self.df_schema,
             window=window,
+            limit=limit,
             **self._get_read_kwargs(),
         )
 
@@ -654,10 +655,10 @@ class DBReader(FrozenModel):
         log.info("|%s| Got Spark field: %s", self.__class__.__name__, result)
         return result
 
-    def _detect_window(self) -> Window | None:
+    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:
         if not self.hwm:
             # SnapshotStrategy - always select all the data from source
-            return None
+            return None, None
 
         strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
 
@@ -668,7 +669,7 @@ class DBReader(FrozenModel):
             # we already have start and stop values, nothing to do
             window = Window(self.hwm.expression, start_from=strategy.current, stop_at=strategy.next)
             strategy.update_hwm(window.stop_at.value)
-            return window
+            return window, None
 
         if not isinstance(self.connection, ContainsGetMinMaxValues):
             raise ValueError(
@@ -691,7 +692,9 @@ class DBReader(FrozenModel):
 
         if min_value is None or max_value is None:
             log.warning("|%s| No data in source %r", self.__class__.__name__, self.source)
-            return None
+            # return limit=0 to always return empty dataframe from the source.
+            # otherwise dataframe may start returning some data whether HWM is not being set
+            return None, 0
 
         # returned value type may not always be the same type as expected, force cast to HWM type
         hwm = strategy.hwm.copy()  # type: ignore[union-attr]
@@ -730,7 +733,7 @@ class DBReader(FrozenModel):
             )
 
         strategy.update_hwm(window.stop_at.value)
-        return window
+        return window, None
 
     def _log_parameters(self) -> None:
         log.info("|%s| -> |Spark| Reading DataFrame from source using parameters:", self.connection.__class__.__name__)
