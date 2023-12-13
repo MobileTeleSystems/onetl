@@ -135,22 +135,10 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. warning::
 
-            FileDownload updates HWM in HWM Store after downloading **each** file, because files are downloading
-            one after another, not in one batch.
+            FileDownload updates HWM in HWM Store at the end of ``.run()`` call,
+            **NOT** while exiting strategy context. This is because:
 
-        .. warning::
-
-            If code inside the context manager raised an exception, like:
-
-            .. code:: python
-
-                with IncrementalStrategy():
-                    download_result = downloader.run()  # something went wrong here
-                    uploader.run(download_result.success)  # or here
-                    # or here...
-
-            When FileDownloader **will** update HWM in HWM Store, because:
-
+            * FileDownloader does not raise exceptions if some file cannot be downloaded.
             * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode>`.
             * It can remove files from the source if :obj:`delete_source <onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
 
