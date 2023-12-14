@@ -19,7 +19,7 @@ import os
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from ordered_set import OrderedSet
-from pydantic import validator
+from pydantic import PrivateAttr, validator
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
@@ -116,6 +116,8 @@ class FileDFReader(FrozenModel):
     df_schema: Optional[StructType] = None
     options: FileDFReaderOptions = FileDFReaderOptions()
 
+    _connection_checked: bool = PrivateAttr(default=False)
+
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DataFrame:
         """
@@ -205,10 +207,13 @@ class FileDFReader(FrozenModel):
             )
         """
 
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
+
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_parameters(files)
+        if not self._connection_checked:
+            self._log_parameters(files)
 
         paths: FileSet[PurePathProtocol] = FileSet()
         if files is not None:
@@ -216,10 +221,14 @@ class FileDFReader(FrozenModel):
         elif self.source_path:
             paths = FileSet([self.source_path])
 
-        self.connection.check()
-        log_with_indent(log, "")
+        if not self._connection_checked:
+            self.connection.check()
+            log_with_indent(log, "")
+            self._connection_checked = True
 
-        return self._read_files(paths)
+        df = self._read_files(paths)
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
+        return df
 
     def _read_files(self, paths: FileSet[PurePathProtocol]) -> DataFrame:
         log.info("|%s| Paths to be read:", self.__class__.__name__)
@@ -235,8 +244,6 @@ class FileDFReader(FrozenModel):
         )
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(log, msg=f"{self.__class__.__name__} starts")
-
         log.info("|%s| -> |Spark| Reading files using parameters:", self.connection.__class__.__name__)
         log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
         log_with_indent(log, "format = %r", self.format)

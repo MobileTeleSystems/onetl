@@ -17,7 +17,7 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, validator
+from pydantic import Field, PrivateAttr, validator
 
 from onetl.base import BaseDBConnection
 from onetl.hooks import slot, support_hooks
@@ -153,6 +153,8 @@ class DBWriter(FrozenModel):
     target: str = Field(alias="table")
     options: Optional[GenericOptions] = None
 
+    _connection_checked: bool = PrivateAttr(default=False)
+
     @validator("target", pre=True, always=True)
     def validate_target(cls, target, values):
         connection: BaseDBConnection = values["connection"]
@@ -196,18 +198,21 @@ class DBWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        entity_boundary_log(log, msg="DBWriter starts")
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
 
-        self._log_parameters()
-        log_dataframe_schema(log, df)
-        self.connection.check()
+        if not self._connection_checked:
+            self._log_parameters()
+            log_dataframe_schema(log, df)
+            self.connection.check()
+            self._connection_checked = True
+
         self.connection.write_df_to_target(
             df=df,
             target=str(self.target),
             **self._get_write_kwargs(),
         )
 
-        entity_boundary_log(log, msg="DBWriter ends", char="-")
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
 
     def _log_parameters(self) -> None:
         log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)

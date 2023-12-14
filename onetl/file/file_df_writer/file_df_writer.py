@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pydantic import validator
+from pydantic import PrivateAttr, validator
 
 from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
 from onetl.file.file_df_writer.options import FileDFWriterOptions
@@ -99,6 +99,8 @@ class FileDFWriter(FrozenModel):
     target_path: PurePathProtocol
     options: FileDFWriterOptions = FileDFWriterOptions()
 
+    _connection_checked: bool = PrivateAttr(default=False)
+
     @slot
     def run(self, df: DataFrame) -> None:
         """
@@ -122,13 +124,16 @@ class FileDFWriter(FrozenModel):
             writer.run(df)
         """
 
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        entity_boundary_log(log, f"{self.__class__.__name__} starts")
+        if not self._connection_checked:
+            self._log_parameters(df)
+            self.connection.check()
+            self._connection_checked = True
 
-        self._log_parameters(df)
-        self.connection.check()
         self.connection.write_df_as_files(
             df=df,
             path=self.target_path,
@@ -136,7 +141,7 @@ class FileDFWriter(FrozenModel):
             options=self.options,
         )
 
-        entity_boundary_log(log, f"{self.__class__.__name__} ends", char="-")
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
 
     def _log_parameters(self, df: DataFrame) -> None:
         log.info("|Spark| -> |%s| Writing dataframe using parameters:", self.connection.__class__.__name__)

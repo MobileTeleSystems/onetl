@@ -638,9 +638,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     """
 
     def __next__(self):
-        result = super().__next__()
         self.save_hwm()
-        return result
+        return super().__next__()
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:
