@@ -9,7 +9,7 @@ import frozendict
 from etl_entities.hwm import HWM, ColumnHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
-from pydantic import Field, root_validator, validator
+from pydantic import Field, PrivateAttr, root_validator, validator
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
@@ -375,6 +375,8 @@ class DBReader(FrozenModel):
     hwm: Optional[ColumnHWM] = None
     options: Optional[GenericOptions] = None
 
+    _connection_checked: bool = PrivateAttr(default=False)
+
     @validator("source", always=True)
     def validate_source(cls, source, values):
         connection: BaseDBConnection = values["connection"]
@@ -529,11 +531,14 @@ class DBReader(FrozenModel):
             df = reader.run()
         """
 
-        entity_boundary_log(log, msg="DBReader starts")
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
 
-        self._log_parameters()
-        self.connection.check()
         self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+            self._connection_checked = True
 
         window, limit = self._calculate_window_and_limit()
         df = self.connection.read_source_as_df(
@@ -547,7 +552,7 @@ class DBReader(FrozenModel):
             **self._get_read_kwargs(),
         )
 
-        entity_boundary_log(log, msg="DBReader ends", char="-")
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df
 
     def _check_strategy(self):

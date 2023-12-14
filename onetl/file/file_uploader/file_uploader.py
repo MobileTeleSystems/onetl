@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Iterable, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import validator
+from pydantic import PrivateAttr, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection
@@ -141,6 +141,8 @@ class FileUploader(FrozenModel):
 
     """
 
+    Options = FileUploaderOptions
+
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -150,7 +152,7 @@ class FileUploader(FrozenModel):
 
     options: FileUploaderOptions = FileUploaderOptions()
 
-    Options = FileUploaderOptions
+    _connection_checked: bool = PrivateAttr(default=False)
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
@@ -269,22 +271,23 @@ class FileUploader(FrozenModel):
             assert not uploaded_files.missing
         """
 
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+
         if files is None and not self.local_path:
             raise ValueError("Neither file list nor `local_path` are passed")
 
-        self._log_parameters(files)
+        if not self._connection_checked:
+            self._log_parameters(files)
 
-        # Check everything
-        if self.local_path:
-            self._check_local_path()
-
-        self.connection.check()
-        log_with_indent(log, "")
+            if self.local_path:
+                self._check_local_path()
+            self.connection.check()
+            self._connection_checked = True
 
         self.connection.create_dir(self.target_path)
 
         if files is None:
-            log.info("|%s| File list is not passed to `run` method", self.__class__.__name__)
+            log.debug("|%s| File list is not passed to `run` method", self.__class__.__name__)
             files = self.view_files()
 
         if not files:
@@ -311,6 +314,7 @@ class FileUploader(FrozenModel):
             self._remove_temp_dir(current_temp_dir)
 
         self._log_result(result)
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
         return result
 
     @slot
@@ -354,9 +358,14 @@ class FileUploader(FrozenModel):
             }
         """
 
+        if not self.local_path:
+            raise ValueError("Cannot call `.view_files()` without `local_path`")
+
         log.debug("|Local FS| Getting files list from path '%s'", self.local_path)
 
-        self._check_local_path()
+        if not self._connection_checked:
+            self._check_local_path()
+
         result = FileSet()
 
         try:
@@ -383,8 +392,6 @@ class FileUploader(FrozenModel):
         return RemotePath(temp_path) if temp_path else None
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(log, msg="FileUploader starts")
-
         log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
         log_with_indent(log, "local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
         log_with_indent(log, "target_path = '%s'", self.target_path)
@@ -605,4 +612,3 @@ class FileUploader(FrozenModel):
         log.info("")
         log.info("|%s| Upload result:", self.__class__.__name__)
         log_lines(log, str(result))
-        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")

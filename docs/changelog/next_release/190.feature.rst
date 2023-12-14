@@ -1,0 +1,1 @@
+Cache result of ``connection.check()`` in high-level classes like ``DBReader``, ``FileDownloader`` and so on. This makes logs less verbose.

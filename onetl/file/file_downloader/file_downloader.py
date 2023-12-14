@@ -28,7 +28,7 @@ from etl_entities.instance import AbsolutePath
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, root_validator, validator
+from pydantic import Field, PrivateAttr, root_validator, validator
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
@@ -242,6 +242,8 @@ class FileDownloader(FrozenModel):
 
     options: FileDownloaderOptions = FileDownloaderOptions()
 
+    _connection_checked: bool = PrivateAttr(default=False)
+
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: WPS231
         """
@@ -354,24 +356,28 @@ class FileDownloader(FrozenModel):
             assert not downloaded_files.missing
         """
 
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+
+        if not self._connection_checked:
+            self._log_parameters(files)
+
         self._check_strategy()
 
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_parameters(files)
-
         # Check everything
-        self._check_local_path()
-        self.connection.check()
-        log_with_indent(log, "")
+        if not self._connection_checked:
+            self._check_local_path()
+            self.connection.check()
 
-        if self.source_path:
-            self._check_source_path()
+            if self.source_path:
+                self._check_source_path()
+
+            self._connection_checked = True
 
         if files is None:
-            log.info("|%s| File list is not passed to `run` method", self.__class__.__name__)
-
+            log.debug("|%s| File list is not passed to `run` method", self.__class__.__name__)
             files = self.view_files()
 
         if not files:
@@ -391,14 +397,14 @@ class FileDownloader(FrozenModel):
             self.local_path.mkdir()
 
         if self.hwm:
-            result = self._download_files_incremental(to_download, self.hwm)
-        else:
-            result = self._download_files(to_download)
+            self._init_hwm(self.hwm)
 
+        result = self._download_files(to_download)
         if current_temp_dir:
             self._remove_temp_dir(current_temp_dir)
 
         self._log_result(result)
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
         return result
 
     @slot
@@ -447,9 +453,14 @@ class FileDownloader(FrozenModel):
             }
         """
 
+        if not self.source_path:
+            raise ValueError("Cannot call `.view_files()` without `source_path`")
+
         log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
-        self._check_source_path()
+        if not self._connection_checked:
+            self._check_source_path()
+
         result = FileSet()
 
         filters = self.filters.copy()
@@ -628,13 +639,7 @@ class FileDownloader(FrozenModel):
         strategy.validate_hwm_attributes(hwm, strategy.hwm, origin=self.__class__.__name__)
         return strategy.hwm
 
-    def _download_files_incremental(self, to_download: DOWNLOAD_ITEMS_TYPE, hwm: FileHWM) -> DownloadResult:
-        self._init_hwm(hwm)
-        return self._download_files(to_download)
-
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(log, msg="FileDownloader starts")
-
         log.info("|%s| -> |Local FS| Downloading files using parameters:", self.connection.__class__.__name__)
         log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
         log_with_indent(log, "local_path = '%s'", self.local_path)
@@ -889,4 +894,3 @@ class FileDownloader(FrozenModel):
         log_with_indent(log, "")
         log.info("|%s| Download result:", self.__class__.__name__)
         log_lines(log, str(result))
-        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")
