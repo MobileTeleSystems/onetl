@@ -78,9 +78,8 @@ class HWMStrategy(BaseStrategy):
         self.validate_hwm_type(self.hwm, result)
         self.validate_hwm_attributes(self.hwm, result, origin=hwm_store.__class__.__name__)
 
-        hwm_before = self.hwm.copy()
         self.hwm.set_value(result.value)
-        if self.hwm != hwm_before:
+        if self.hwm != result:
             log.info("|%s| Final HWM:", class_name)
             log_hwm(log, self.hwm)
 
