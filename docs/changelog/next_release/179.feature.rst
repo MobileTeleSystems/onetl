@@ -1,1 +1,0 @@
- Add ``DBReader.AutoHWM`` class for auto-detecting hwm class by **source column type** and get needed class in ``HWMClassRegistry``

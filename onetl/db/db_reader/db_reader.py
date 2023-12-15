@@ -442,8 +442,8 @@ class DBReader(FrozenModel):
             warnings.warn(
                 textwrap.dedent(
                     f"""
-                    Passing "hwm_column" in DBReader class is deprecated since version 0.10.0.
-                    It will be removed in future versions.
+                    Passing "hwm_column" in DBReader class is deprecated since version 0.10.0,
+                    and will be removed in v1.0.0.
 
                     Instead use:
                         hwm=DBReader.AutoDetectHWM(

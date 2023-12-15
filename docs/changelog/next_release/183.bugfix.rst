@@ -1,1 +1,0 @@
-Fix ``@slot`` and ``@hook`` decorators returning methods with missing arguments in signature (Pylance, VS Code).

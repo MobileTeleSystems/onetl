@@ -1,0 +1,142 @@
+0.10.0 (2023-12-18)
+===================
+
+Breaking Changes
+----------------
+
+- | Upgrade ``etl-entities`` from v1 to v2.
+  | Move ``onetl.hwm.store`` classes:
+  * ``BaseHWMStore``
+  * ``HWMStoreClassRegistry``
+  * ``register_hwm_store_class``
+  * ``HWMStoreManager``
+  * ``MemoryHWMStore``
+  * ``detect_hwm_store``
+  to ``etl-entities.hwm_store`` (:github:pull:`172`)
+
+  Classes still can be imported from old module, but this is deprecated and will be removed in v1.0.0 release.
+
+- | Change the way of passing ``HWM`` to ``DBReader`` and ``FileDownloader`` classes:
+  | **DBReader** before:
+
+  .. code-block:: python
+
+      reader = DBReader(
+          connection=...,
+          source=...,
+          hwm_column=("col1", "cast(col1 as date)"),
+      )
+
+  after:
+
+  .. code-block:: python
+
+      reader = DBReader(
+          connection=...,
+          source=...,
+          hwm=DBReader.AutoDetectHWM(
+              name="my_unique_hwm_name",
+              expression="cast(col1 as date)",
+          ),
+      )
+
+  | **FileDownloader** before:
+
+  .. code-block:: python
+
+      downloader = FileDownloader(
+          connection=...,
+          source_path=...,
+          target_path=...,
+          hwm_type="file_list",
+      )
+
+  after:
+
+  .. code-block:: python
+
+      downloader = FileDownloader(
+          connection=...,
+          source_path=...,
+          target_path=...,
+          hwm=FileListHWM(name="another_mandatory_unique_hwm_name"),
+      )
+
+  HWM name should be passed explicitly instead of generating if automatically under the hood.
+  Automatic generation using the old ``hwm_column`` / ``hwm_type`` syntax is still here, but will be removed in v1.0.0 release.
+
+  Classes from etl_entities.old_hwm are marked as **deprecated**
+
+  The use of ``DBReader.hwm_column`` and ``FileDownloader.hwm_type`` parameters is deprecated since version 0.10.0,
+  and will be removed in v1.0.0 (:github:pull:`179`)
+
+- Implementation of read strategies has been drastically improved.
+
+  Before 0.10:
+
+  - Get table schema by making query ``SELECT * FROM table WHERE 1=0`` (if ``DBReader.columns`` has ``*``)
+  - Append HWM column to list of table columns and remove duplicated columns.
+  - Create dataframe from query like ``SELECT hwm.expression AS hwm.column, ...other table columns... FROM table WHERE prev_hwm.expression > prev_hwm.value``.
+  - Determine HWM class by ``df.schema[hwm.column].dataType``.
+  - Calculate ``df.select(min(hwm.column), max(hwm.column)).collect()`` on Spark side.
+  - Use ``max(hwm.column)`` as next HWM value.
+  - Return dataframe to user.
+
+  This was far from ideal:
+
+  - Dataframe content (all rows or just changed ones) was loaded from the source to Spark only to get min/max values of specific column.
+  - Step of fetching table schema and then substituting column names in the following query may cause errors.
+    For example, source contains columns with mixed name case, like ``"MyColumn"`` and ``"My column"``.
+    Column names were not escaped during query generation, leading to queries that cannot be executed by database.
+    So users have to explicitly set proper columns list with wrapping them with ``"``.
+
+  - Dataframe was created from query with clause like ``WHERE hwm.expression > prev_hwm.value``,
+    not ``WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``.
+    So if new rows appeared in the source after HWM value is determined, these rows may be read by DBReader on the first run,
+    and then again on the next run, because they are returned by ``WHERE hwm.expression > prev_hwm.value`` query.
+
+  Since 0.10:
+
+  - Get type of HWM expression: ``SELECT hwm.expression FROM table WHERE 1=0``
+  - Determine HWM class by ``df.schema[0]``.
+  - Get min/max values by querying ``SELECT MIN(hwm.expression), MAX(hwm.expression) FROM table WHERE hwm.expression >= prev_hwm.value``.
+  - Use ``max(hwm.column)`` as next HWM value.
+  - Create dataframe from query ``SELECT * FROM table WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``, and return it to user.
+
+  Improvements:
+
+  - Allow source to calculate min/max instead of loading everything to Spark. This should be *really* fast, and also source can use indexes to speed this up even more.
+  - Restrict dataframe content to always match HWM values.
+  - Don't mess up with columns list, just pass them to source as-is. So ``DBReader`` does not fail on tables with mixed column naming.
+
+  **Breaking change** - HWM column is not being implicitly added to dataframe.
+
+  So if it was not just some column value but some expression which then used in your code by accessing dataframe column,
+  you should explicitly add same expression to ``DBReader.columns``. (:github:pull:`182`)
+
+- ``FileDownloader.run()`` now updates HWM in HWM Store not after each file is being successfully downloaded,
+  but after all files are finished.
+
+  This is because:
+
+  * FileDownloader can be used with ``DownloadOptions(workers=N)``, which could lead to race condition - one thread can reset HWM value which is updated by another thread at the same time.
+  * FileDownloader can download hundreds and thousands of files, and issuing a request to HWM Store for each file could potentially DDoS HWM Store. (:github:pull:`189`)
+
+
+Features
+--------
+
+- Add Python 3.12 compatibility. (:github:pull:`167`)
+- Add ``DBReader.AutoHWM`` class for auto-detecting hwm class by source column type (:github:pull:`179`)
+- Update ``Excel`` package version to 0.20.3. (:github:pull:`187`)
+- ``SnapshotBatchStagy`` and ``IncrementalBatchStrategy`` does no raise exceptions if source does not contain any data.
+  Instead they stop at first iteration and return empty dataframe. (:github:pull:`188`)
+- Cache result of ``connection.check()`` in high-level classes like ``DBReader``, ``FileDownloader`` and so on. This makes logs less verbose. (:github:pull:`190`)
+
+Bug Fixes
+---------
+
+- Fix ``@slot`` and ``@hook`` decorators returning methods with missing arguments in signature (Pylance, VS Code). (:github:pull:`183`)
+- Kafka connector documentation said that it does support reading topic data incrementally by passing ``group.id`` or ``groupIdPrefix``.
+  Actually, this is not true, because Spark does not send information to Kafka which messages were consumed.
+  So currently users can only read the whole topic, no incremental reads are supported.

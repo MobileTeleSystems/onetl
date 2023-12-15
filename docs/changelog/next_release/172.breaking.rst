@@ -1,9 +1,0 @@
-| Upgrade ``etl-entities`` from v1 to v2.
-| Move ``onetl.hwm.store`` classes:
-* ``BaseHWMStore``
-* ``HWMStoreClassRegistry``
-* ``register_hwm_store_class``
-* ``HWMStoreManager``
-* ``MemoryHWMStore``
-* ``detect_hwm_store``
-to ``etl-entities.hwm_store``

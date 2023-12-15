@@ -1,3 +1,0 @@
-Kafka connector documentation said that it does support reading topic data incrementally by passing ``group.id`` or ``groupIdPrefix``.
-Actually, this is not true, because Spark does not send information to Kafka which messages were consumed.
-So currently users can only read the whole topic, no incremental reads are supported.
