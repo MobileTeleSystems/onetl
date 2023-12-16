@@ -1,7 +1,7 @@
 .. _db-reader:
 
-DB Reader
-=========
+DBReader
+========
 
 .. currentmodule:: onetl.db.db_reader.db_reader
 

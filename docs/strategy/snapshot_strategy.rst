@@ -1,7 +1,7 @@
 .. _snapshot-strategy:
 
-Snapshot strategy
-=================================================================
+Snapshot Strategy
+=================
 
 .. currentmodule:: onetl.strategy.snapshot_strategy
 

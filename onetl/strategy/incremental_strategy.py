@@ -41,7 +41,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     by filtering items not covered by the previous :ref:`HWM` value.
 
     For :ref:`db-reader`:
-        First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`:
+        First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>`:
 
         .. code:: sql
 
@@ -75,8 +75,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         Behavior depends on ``hwm`` type.
 
         ``hwm=FileListHWM(...)``:
-            First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy` - all
-            files are downloaded:
+            First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
+            all files are downloaded:
 
             .. code:: bash
 
@@ -266,7 +266,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         SELECT id, data
         FROM public.mydata
-        WHERE id > 900; --- from HWM-offset (EXCLUDING first row)
+        WHERE id > 900; -- from HWM-offset (EXCLUDING first row)
 
     ``hwm.expression`` can be a date or datetime, not only integer:
 
@@ -292,7 +292,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         SELECT business_dt, data
         FROM public.mydata
-        WHERE business_dt > CAST('2021-01-09' AS DATE);
+        WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
 
     Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
 
@@ -330,7 +330,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         Cannot be used with :ref:`file-downloader`
 
-    Same as :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`,
+    Same as :obj:`IncrementalStrategy <onetl.strategy.incremental_strategy.IncrementalStrategy>`,
     but reads data from the source in sequential batches (1..N) like:
 
     .. code:: sql
@@ -348,7 +348,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     .. warning::
 
-        Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
+        Unlike :obj:`SnapshotBatchStrategy <onetl.strategy.snapshot_strategy.SnapshotBatchStrategy>`,
         it **saves** current HWM value after **each batch** into :ref:`hwm-store`.
 
         So if code inside the context manager raised an exception, like:

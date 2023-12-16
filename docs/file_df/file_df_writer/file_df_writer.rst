@@ -1,7 +1,7 @@
 .. _file-df-writer:
 
-FileDF Writer
-=============
+FileDFWriter
+============
 
 .. currentmodule:: onetl.file.file_df_writer.file_df_writer
 

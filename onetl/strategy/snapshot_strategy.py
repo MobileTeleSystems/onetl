@@ -137,7 +137,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         Cannot be used with :ref:`file-downloader`
 
-    Same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`,
+    Same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>`,
     but reads data from the source in sequential batches (1..N) like:
 
     .. code:: sql

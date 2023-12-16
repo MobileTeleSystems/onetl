@@ -1,7 +1,7 @@
 .. _file-df-reader:
 
-FileDF Reader
-=============
+FileDFReader
+============
 
 .. currentmodule:: onetl.file.file_df_reader.file_df_reader
 

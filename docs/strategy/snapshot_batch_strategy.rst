@@ -1,7 +1,7 @@
 .. _snapshot-batch-strategy:
 
-Snapshot batch strategy
-=================================================================
+Snapshot Batch Strategy
+=======================
 
 .. currentmodule:: onetl.strategy.snapshot_strategy
 

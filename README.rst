@@ -44,7 +44,7 @@ Goals
 Non-goals
 ---------
 
-* onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and simplifies UX for end users.
+* onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and improves UX for end users.
 * onETL is not a framework, as it does not have requirements to project structure, naming, the way of running ETL/ELT processes, configuration, etc. All of that should be implemented in some other tool.
 * onETL is deliberately developed without any integration with scheduling software like Apache Airflow. All integrations should be implemented as separated tools.
 * Only batch operations, no streaming. For streaming prefer `Apache Flink <https://flink.apache.org/>`_.
@@ -328,7 +328,7 @@ Read data from MSSQL, transform & write to Hive.
 
     # >>> INFO:|MSSQL| Connection is available
 
-    # Initialize DB reader
+    # Initialize DBReader
     reader = DBReader(
         connection=mssql,
         source="dbo.demo_table",
@@ -365,7 +365,7 @@ Read data from MSSQL, transform & write to Hive.
     # Initialize Hive connection
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
-    # Initialize DB writer
+    # Initialize DBWriter
     db_writer = DBWriter(
         connection=hive,
         target="dl_sb.demo_table",
@@ -626,7 +626,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         spark=spark,
     )
 
-    # Initialize DB writer
+    # Initialize DBWriter
     db_writer = DBWriter(
         connection=postgres,
         # write to specific table

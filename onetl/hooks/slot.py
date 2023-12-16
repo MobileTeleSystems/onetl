@@ -82,20 +82,20 @@ def bind_hook(method: Callable, inp=None):
 
         @MyClass.method.bind
         @hook
-        def hook(self, arg):
+        def callable(self, arg):
             if arg == "some":
                 do_something()
 
 
         @MyClass.method.bind
         @hook(priority=HookPriority.FIRST, enabled=True)
-        def another_hook(self, arg):
+        def another_callable(self, arg):
             if arg == "another":
                 raise NotAllowed()
 
 
         obj = MyClass()
-        obj.method(1)  # will call both hook(obj, 1) and another_hook(obj, 1)
+        obj.method(1)  # will call both callable(obj, 1) and another_callable(obj, 1)
     """
 
     def inner_wrapper(hook):  # noqa: WPS430

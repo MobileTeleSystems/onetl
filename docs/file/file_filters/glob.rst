@@ -1,7 +1,7 @@
 .. _glob-filter:
 
 Glob
-=====
+====
 
 .. currentmodule:: onetl.file.filter.glob
 
