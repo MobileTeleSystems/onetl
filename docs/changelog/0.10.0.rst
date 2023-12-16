@@ -285,12 +285,12 @@ Breaking Changes
                     "col1",
                     "col2",
                 ],
-                hwm_column="id",
+                hwm_column="hwm_col",
             )
 
             df = reader.run()
             # hwm_column value is in the dataframe
-            assert df.columns == ["id", "col1", "col2"]
+            assert df.columns == ["col1", "col2", "hwm_col"]
 
       -
         .. code-block:: python
@@ -299,18 +299,18 @@ Breaking Changes
                 connection=...,
                 source=...,
                 columns=[
-                    # add hwm_column explicitly
-                    "id",
                     "col1",
                     "col2",
+                    # add hwm_column explicitly
+                    "hwm_col",
                 ],
-                hwm_column="id",
+                hwm_column="hwm_col",
             )
 
             df = reader.run()
             # if columns list is not updated,
             # this fill fail
-            assert df.columns == ["id", "col1", "col2"]
+            assert df.columns == ["col1", "col2", "hwm_col"]
 
     * -
         .. code-block:: python
@@ -323,14 +323,14 @@ Breaking Changes
                     "col2",
                 ],
                 hwm_column=(
-                    "id",
-                    "cast(id as int)",
+                    "hwm_col",
+                    "cast(hwm_col as int)",
                 ),
             )
 
             df = reader.run()
             # hwm_expression value is in the dataframe
-            assert df.columns == ["id", "col1", "col2"]
+            assert df.columns == ["col1", "col2", "hwm_col"]
       -
         .. code-block:: python
 
@@ -338,21 +338,21 @@ Breaking Changes
                 connection=...,
                 source=...,
                 columns=[
-                    # add hwm_expression explicitly
-                    "cast(id as int) as id",
                     "col1",
                     "col2",
+                    # add hwm_expression explicitly
+                    "cast(hwm_col as int) as hwm_col",
                 ],
                 hwm_column=(
-                    "id",
-                    "cast(id as int)",
+                    "hwm_col",
+                    "cast(hwm_col as int)",
                 ),
             )
 
             df = reader.run()
             # if columns list is not updated,
             # this fill fail
-            assert df.columns == ["id", "col1", "col2"]
+            assert df.columns == ["col1", "col2", "hwm_col"]
 
   But most users just use ``columns=["*"]`` anyway, they won't see any changes.
 
