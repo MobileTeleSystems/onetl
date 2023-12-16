@@ -1,7 +1,7 @@
-.. _hwm-store:
+.. _hwm:
 
 HWM
-=========
+===
 
 Since ``onetl>=0.10.0`` version, the HWM Store and HWM classes have been moved to a separate library :etl-entities:`etl-entities <>`.
 

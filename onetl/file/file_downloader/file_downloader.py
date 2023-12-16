@@ -135,17 +135,7 @@ class FileDownloader(FrozenModel):
         HWM class to detect changes in incremental run. See :etl-entities:`File HWM <hwm/file/index.html>`
 
         .. warning ::
-            Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
-
-    hwm_type : str | type[HWM] | None, default: ``None``
-        .. deprecated:: 0.10.0
-
-            Use :obj:`~hwm` instead.
-
-        HWM type to detect changes in incremental run. See :etl-entities:`File HWM <hwm/file/index.html>`
-
-        .. warning ::
-            Used only in :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`.
+            Used only in :obj:`IncrementalStrategy <onetl.strategy.incremental_strategy.IncrementalStrategy>`.
 
     Examples
     --------
@@ -262,8 +252,8 @@ class FileDownloader(FrozenModel):
             If empty, download files from ``source_path`` to ``local_path``,
             applying ``filter``, ``limit`` and ``hwm`` to each one (if set).
 
-            If not, download to ``local_path`` **all** input files, **without**
-            any filtering, limiting and excluding files covered by :ref:`file-hwm`
+            If not, download to ``local_path`` **all** input files, **ignoring**
+            filters, limits and HWM.
 
         Returns
         -------
@@ -272,7 +262,7 @@ class FileDownloader(FrozenModel):
             Download result object
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
@@ -418,7 +408,7 @@ class FileDownloader(FrozenModel):
             This method can return different results depending on :ref:`strategy`
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found

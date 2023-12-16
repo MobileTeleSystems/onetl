@@ -156,7 +156,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. note::
 
         This strategy uses HWM column value to filter data for each batch,
-        but **does not** save it into :ref:`hwm-store`.
+        but does **NOT** save it into :ref:`HWM Store <hwm>`.
         So every run starts from the beginning, not from the previous HWM value.
 
     .. note::

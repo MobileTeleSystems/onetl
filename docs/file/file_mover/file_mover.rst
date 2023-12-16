@@ -1,7 +1,7 @@
 .. _file-mover:
 
-FileMover
-=========
+File Mover
+==========
 
 .. currentmodule:: onetl.file.file_mover.file_mover
 

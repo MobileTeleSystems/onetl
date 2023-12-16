@@ -83,7 +83,7 @@ class BaseFileDFConnection(BaseConnection):
         Validate if specific file format is supported. |support_hooks|
 
         Raises
-        -------
+        ------
         RuntimeError
             If file format is not supported.
         """

@@ -174,7 +174,7 @@ class FileUploader(FrozenModel):
             Upload result object
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``local_path`` does not found
@@ -323,7 +323,7 @@ class FileUploader(FrozenModel):
         Get file list in the ``local_path``. |support_hooks|
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``local_path`` does not found

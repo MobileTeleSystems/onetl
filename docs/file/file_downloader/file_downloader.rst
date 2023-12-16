@@ -1,7 +1,7 @@
 .. _file-downloader:
 
-FileDownloader
-==============
+File Downloader
+===============
 
 .. currentmodule:: onetl.file.file_downloader.file_downloader
 

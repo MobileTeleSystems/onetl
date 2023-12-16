@@ -1,7 +1,7 @@
 .. _db-writer:
 
-DBWriter
-========
+DB Writer
+=========
 
 .. currentmodule:: onetl.db.db_writer.db_writer
 

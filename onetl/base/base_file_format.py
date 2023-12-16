@@ -32,7 +32,7 @@ class BaseReadableFileFormat(ABC):
         Check if Spark session does support this file format. |support_hooks|
 
         Raises
-        -------
+        ------
         RuntimeError
             If file format is not supported.
         """
@@ -64,7 +64,7 @@ class BaseWritableFileFormat(ABC):
         Check if Spark session does support this file format. |support_hooks|
 
         Raises
-        -------
+        ------
         RuntimeError
             If file format is not supported.
         """

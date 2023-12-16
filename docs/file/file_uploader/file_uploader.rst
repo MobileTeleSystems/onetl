@@ -1,7 +1,7 @@
 .. _file-uploader:
 
-FileUploader
-============
+File Uploader
+=============
 
 .. currentmodule:: onetl.file.file_uploader.file_uploader
 

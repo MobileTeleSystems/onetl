@@ -190,7 +190,7 @@ class FileMover(FrozenModel):
             Move result object
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
@@ -318,7 +318,7 @@ class FileMover(FrozenModel):
         after ``filter`` and ``limit`` applied (if any). |support_hooks|
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
