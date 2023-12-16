@@ -1,7 +1,7 @@
 .. include:: ../README.rst
     :end-before: |Logo|
 
-.. image:: static/logo_wide.svg
+.. image:: _static/logo_wide.svg
     :alt: onETL logo
 
 .. include:: ../README.rst

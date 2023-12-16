@@ -42,6 +42,10 @@ jobs:
     - name: Upgrade pip
       run: python -m pip install --upgrade pip setuptools wheel
 
+    - name: Fix logo in Readme
+      run: |
+        sed -i "s#image:: docs/#image:: https://github.com/MobileTeleSystems/onetl/raw/$GITHUB_SHA/docs/#g" README.rst
+
     - name: Build package
       run: python setup.py sdist bdist_wheel
 

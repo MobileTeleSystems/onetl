@@ -23,7 +23,7 @@ onETL
 
 |Logo|
 
-.. |Logo| image:: docs/static/logo_wide.svg
+.. |Logo| image:: docs/_static/logo_wide.svg
     :alt: onETL logo
     :target: https://github.com/MobileTeleSystems/onetl
 

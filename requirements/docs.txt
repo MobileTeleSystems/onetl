@@ -6,6 +6,7 @@ pygments-csv-lexer
 sphinx
 sphinx-copybutton
 sphinx-design
+sphinx-favicon
 sphinx-plantuml
 sphinx-tabs
 sphinx-toolbox
