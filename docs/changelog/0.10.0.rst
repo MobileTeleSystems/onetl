@@ -37,45 +37,79 @@ Breaking Changes
         value=123,
     )
 
-  **Breaking changes:**
+  **Breaking change:** If you used HWM classes from ``etl_entities`` module, you should rewrite your code to make it compatible with new version.
 
-  - If you used HWM classes from ``etl_entities`` module, you should rewrite your code to make it compatible with new version.
+  .. dropdown:: More details
 
-    .. dropdown:: More details
+    - ``HWM`` classes used by previous onETL versions were moved from ``etl_entities`` to ``etl_entities.old_hwm`` submodule. They are here for compatibility reasons, but are planned to be removed in ``etl-entities`` v3 release.
+    - New ``HWM`` classes have flat structure instead of nested.
+    - New ``HWM`` classes have mandatory ``name`` attribute (it was known as ``qualified_name`` before).
+    - Type aliases used while serializing and deserializing ``HWM`` objects to ``dict`` representation were changed too: ``int`` -> ``column_int``.
+    - HWM Store implementations now can handle only new ``HWM`` classes, old ones are **NOT** supported.
 
-        - ``HWM`` classes used by previous onETL versions were moved from ``etl_entities`` to ``etl_entities.old_hwm`` submodule. They are here for compatibility reasons, but are planned to be removed in ``etl-entities`` 3.0 release.
-        - New ``HWM`` classes have flat structure instead of nested.
-        - New ``HWM`` classes have mandatory ``name`` attribute (it was known as ``qualified_name`` before).
-        - Type aliases used while serializing and deserializing ``HWM`` objects to ``dict`` representation were changed too: ``int`` -> ``column_int``.
-        - HWM Store implementations now can handle only new ``HWM`` classes, old ones are **NOT** supported.
+  To make migration simpler, you can use new method:
 
-        To make migration simpler, you can use new method:
+  .. code-block:: python
 
-        .. code-block:: python
+    old_hwm = OldIntHWM(...)
+    new_hwm = old_hwm.as_new_hwm()
 
-            old_hwm = OldIntHWM(...)
-            new_hwm = old_hwm.as_new_hwm()
+  Which automatically converts all fields from old structure to new one, including ``qualified_name`` -> ``name``.
 
-        Which automatically converts all fields from old structure to new one, including ``qualified_name`` -> ``name``.
+- **Breaking changes:**
 
-  - **YAMLHWMStore** CANNOT read files created by older onETL versions (0.9.x or older).
-
-- Classes:
-
-  * ``BaseHWMStore``
-  * ``HWMStoreClassRegistry``
-  * ``register_hwm_store_class``
-  * ``HWMStoreManager``
-  * ``MemoryHWMStore``
-  * ``detect_hwm_store``
-
-  were moved from ``onetl.hwm.store`` to ``etl_entities.hwm_store`` module.
-
-  They still can be imported from old module, but this is deprecated and will be removed in v1.0.0 release.
-
-  **Breaking change:** methods ``BaseHWMStore.get()`` and ``BaseHWMStore.save()`` were renamed to ``get_hwm()`` and ``set_hwm``.
+  * Methods ``BaseHWMStore.get()`` and ``BaseHWMStore.save()`` were renamed to ``get_hwm()`` and ``set_hwm()``.
+  * They now can be used only with new HWM classes from ``etl_entities.hwm``, **old HWM classes are not supported**.
 
   If you used them in your code, please update it accordingly.
+
+- YAMLHWMStore **CANNOT read files created by older onETL versions** (0.9.x or older).
+
+  If you use it, please:
+
+  * Find ``.yml`` file for specific HWM. Path can be found in logs, it is usually in form ``/home/USERNAME/.local/share/onETL/yml_hwm_store/QUALIFIED_NAME.yml`` (on Linux).
+  * Take latest ``value`` from file content.
+  * Delete the file.
+  * Update ``DBReader(where=...)`` value to include filter like ``hwm_column >= old_value``.
+  * Run your code. ``DBReader.run()`` will get new HWM value, and save it to ``.yml`` file with new structure.
+  * Undo changes of ``DBReader(where=...)``.
+
+  But most of users use other HWM store implementations which do not have such issues.
+
+- Several classes and functions were moved from ``onetl`` to ``etl_entities``:
+
+  .. list-table::
+    :header-rows: 1
+    :widths: 30 30
+
+    * - onETL ``0.9.x`` and older
+      - onETL ``0.10.x`` and newer
+
+    * -
+        .. code-block:: python
+
+            from onetl.hwm.store import (
+                detect_hwm_store,
+                BaseHWMStore,
+                HWMStoreClassRegistry,
+                register_hwm_store_class,
+                HWMStoreManager,
+                MemoryHWMStore,
+            )
+
+      -
+        .. code-block:: python
+
+            from etl_entities.hwm_store import (
+                detect_hwm_store,
+                BaseHWMStore,
+                HWMStoreClassRegistry,
+                register_hwm_store_class,
+                HWMStoreManager,
+                MemoryHWMStore,
+            )
+
+  They still can be imported from old module, but this is deprecated and will be removed in v1.0.0 release.
 
 - Change the way of passing ``HWM`` to ``DBReader`` and ``FileDownloader`` classes:
 
