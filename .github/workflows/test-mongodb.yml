@@ -90,7 +90,7 @@ jobs:
         ./pytest_runner.sh -m mongodb
 
     - name: Upload coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mongodb-${{ inputs.mongodb-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*

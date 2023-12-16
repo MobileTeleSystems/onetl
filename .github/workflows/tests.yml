@@ -362,7 +362,7 @@ jobs:
       run: pip install -I coverage pytest
 
     - name: Download all coverage reports
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: reports
 

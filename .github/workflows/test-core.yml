@@ -72,7 +72,7 @@ jobs:
         ./run_tests.sh onetl/_util
 
     - name: Upload coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: core-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*
