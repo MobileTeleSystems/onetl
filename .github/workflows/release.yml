@@ -50,7 +50,7 @@ jobs:
 
     - name: Fix logo in Readme
       run: |
-        sed -i "s#image:: docs/#image:: https://github.com/MobileTeleSystems/onetl/raw/$GITHUB_REF_NAME/docs/#g" README.rst
+        sed -i "s#image:: docs/#image:: https://raw.githubusercontent.com/MobileTeleSystems/onetl/$GITHUB_REF_NAME/docs/#g" README.rst
 
     - name: Build package
       run: python setup.py sdist bdist_wheel
