@@ -16,10 +16,10 @@ Breaking Changes
     from etl_entities.source import Column, Table
     from etl_entities.process import Process
 
-    OldIntHWM(
-        column=Column(name="col1"),
-        source=Table(name="schema.table", instance="postgres://host:5432/db"),
+    hwm = OldIntHWM(
         process=Process(name="myprocess", task="abc", dag="cde", host="myhost"),
+        source=Table(name="schema.table", instance="postgres://host:5432/db"),
+        column=Column(name="col1"),
         value=123,
     )
 
@@ -29,11 +29,11 @@ Breaking Changes
 
     from etl_entities.hwm import ColumnIntHWM
 
-    ColumnIntHWM(
+    hwm = ColumnIntHWM(
         name="some_unique_name",
         description="any value you want",
+        source="schema.table",
         expression="col1",
-        entity="schema.table",
         value=123,
     )
 
