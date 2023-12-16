@@ -73,7 +73,7 @@ Breaking Changes
 
   They still can be imported from old module, but this is deprecated and will be removed in v1.0.0 release.
 
-  **Breaking change:** - methods ``BaseHWMStore.get()`` and ``BaseHWMStore.save()`` were renamed to ``get_hwm()`` and ``set_hwm``.
+  **Breaking change:** methods ``BaseHWMStore.get()`` and ``BaseHWMStore.save()`` were renamed to ``get_hwm()`` and ``set_hwm``.
 
   If you used them in your code, please update it accordingly.
 
