@@ -340,7 +340,6 @@ Features
 --------
 
 - Add Python 3.12 compatibility. (:github:pull:`167`)
-- Add ``DBReader.AutoHWM`` class for auto-detecting hwm class by source column type (:github:pull:`179`)
 - ``Excel`` file format now can be used with Spark 3.5.0. (:github:pull:`187`)
 - ``SnapshotBatchStagy`` and ``IncrementalBatchStrategy`` does no raise exceptions if source does not contain any data.
   Instead they stop at first iteration and return empty dataframe. (:github:pull:`188`)
