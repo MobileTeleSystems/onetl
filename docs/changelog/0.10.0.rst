@@ -196,25 +196,25 @@ Breaking Changes
   Automatic ``name`` generation using the old ``DBReader.hwm_column`` / ``FileDownloader.hwm_type``
   syntax is still supported, but will be removed in v1.0.0 release. (:github:pull:`179`)
 
-- Implementation of read strategies has been drastically improved. (:github:pull:`182`).
+- Performance of read Incremental abd Batch strategies has been drastically improved. (:github:pull:`182`).
 
-  ``DBReader.run()`` + incremental/batch strategy behavior in versions 0.9.x and older:
+  .. dropdown:: Before and after in details
 
-  - Get table schema by making query ``SELECT * FROM table WHERE 1=0`` (if ``DBReader.columns`` has ``*``)
-  - Expand ``*`` to real column names from table, add here ``hwm_column``, remove duplicates (as some RDBMS does not allow that).
-  - Create dataframe from query like ``SELECT hwm_expression AS hwm_column, ...other table columns... FROM table WHERE hwm_expression > prev_hwm.value``.
-  - Determine HWM class using dataframe schema: ``df.schema[hwm_column].dataType``.
-  - Determine x HWM column value using Spark: ``df.select(max(hwm_column)).collect()``.
-  - Use ``max(hwm_column)`` as next HWM value, and save it to HWM Store.
-  - Return dataframe to user.
+    ``DBReader.run()`` + incremental/batch strategy behavior in versions 0.9.x and older:
 
-  This was far from ideal:
+    - Get table schema by making query ``SELECT * FROM table WHERE 1=0`` (if ``DBReader.columns`` has ``*``)
+    - Expand ``*`` to real column names from table, add here ``hwm_column``, remove duplicates (as some RDBMS does not allow that).
+    - Create dataframe from query like ``SELECT hwm_expression AS hwm_column, ...other table columns... FROM table WHERE hwm_expression > prev_hwm.value``.
+    - Determine HWM class using dataframe schema: ``df.schema[hwm_column].dataType``.
+    - Determine x HWM column value using Spark: ``df.select(max(hwm_column)).collect()``.
+    - Use ``max(hwm_column)`` as next HWM value, and save it to HWM Store.
+    - Return dataframe to user.
 
-  - Dataframe content (all rows or just changed ones) was loaded from the source to Spark only to get min/max values of specific column.
+    This was far from ideal:
 
-  - Step of fetching table schema and then substituting column names in the next query caused some unexpected errors.
+    - Dataframe content (all rows or just changed ones) was loaded from the source to Spark only to get min/max values of specific column.
 
-    .. dropdown:: Explanation
+    - Step of fetching table schema and then substituting column names in the next query caused some unexpected errors.
 
         For example, source contains columns with mixed name case, like ``"CamelColumn"`` or ``"spaced column"``.
 
@@ -235,9 +235,7 @@ Breaking Changes
                 ],
             )
 
-  - Using ``DBReader`` with ``IncrementalStrategy`` could lead to reading rows already read before.
-
-    .. dropdown:: Explanation
+    - Using ``DBReader`` with ``IncrementalStrategy`` could lead to reading rows already read before.
 
         Dataframe was created from query with WHERE clause like ``hwm.expression > prev_hwm.value``,
         not ``hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``.
@@ -249,14 +247,14 @@ Breaking Changes
         This may lead to issues then ``DBReader.run()`` read some data, updated HWM value, and next call of ``DBReader.run()``
         will read rows that were already read in previous run.
 
-  ``DBReader.run()`` + incremental/batch strategy behavior in versions 0.10.x and newer:
+    ``DBReader.run()`` + incremental/batch strategy behavior in versions 0.10.x and newer:
 
-  - Detect type of HWM expression: ``SELECT hwm.expression FROM table WHERE 1=0``.
-  - Determine corresponding Spark type ``df.schema[0]`` and when determine matching HWM class (if ``DReader.AutoDetectHWM`` is used).
-  - Get min/max values by querying the source: ``SELECT MAX(hwm.expression) FROM table WHERE hwm.expression >= prev_hwm.value``.
-  - Use ``max(hwm.expression)`` as next HWM value, and save it to HWM Store.
-  - Create dataframe from query ``SELECT ... table columns ... FROM table WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``, baking new HWM value into the query.
-  - Return dataframe to user.
+    - Detect type of HWM expression: ``SELECT hwm.expression FROM table WHERE 1=0``.
+    - Determine corresponding Spark type ``df.schema[0]`` and when determine matching HWM class (if ``DReader.AutoDetectHWM`` is used).
+    - Get min/max values by querying the source: ``SELECT MAX(hwm.expression) FROM table WHERE hwm.expression >= prev_hwm.value``.
+    - Use ``max(hwm.expression)`` as next HWM value, and save it to HWM Store.
+    - Create dataframe from query ``SELECT ... table columns ... FROM table WHERE hwm.expression > prev_hwm.value AND hwm.expression <= current_hwm.value``, baking new HWM value into the query.
+    - Return dataframe to user.
 
   Improvements:
 
