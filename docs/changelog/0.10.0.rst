@@ -70,7 +70,7 @@ Breaking Changes
   * Find ``.yml`` file for specific HWM. Path can be found in logs, it is usually in form ``/home/USERNAME/.local/share/onETL/yml_hwm_store/QUALIFIED_NAME.yml`` (on Linux).
   * Take latest ``value`` from file content.
   * Delete the file.
-  * Update ``DBReader(where=...)`` value to include filter like ``hwm_column >= old_value``.
+  * Update ``DBReader(where=...)`` value to include filter like ``hwm_column >= old_value`` (it should match column type).
   * Run your code. ``DBReader.run()`` will get new HWM value, and save it to ``.yml`` file with new structure.
   * Undo changes of ``DBReader(where=...)``.
 
