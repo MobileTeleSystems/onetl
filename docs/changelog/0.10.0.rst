@@ -45,7 +45,6 @@ Breaking Changes
     - New ``HWM`` classes have flat structure instead of nested.
     - New ``HWM`` classes have mandatory ``name`` attribute (it was known as ``qualified_name`` before).
     - Type aliases used while serializing and deserializing ``HWM`` objects to ``dict`` representation were changed too: ``int`` -> ``column_int``.
-    - HWM Store implementations now can handle only new ``HWM`` classes, old ones are **NOT** supported.
 
   To make migration simpler, you can use new method:
 
@@ -196,7 +195,7 @@ Breaking Changes
   Automatic ``name`` generation using the old ``DBReader.hwm_column`` / ``FileDownloader.hwm_type``
   syntax is still supported, but will be removed in v1.0.0 release. (:github:pull:`179`)
 
-- Performance of read Incremental abd Batch strategies has been drastically improved. (:github:pull:`182`).
+- Performance of read Incremental and Batch strategies has been drastically improved. (:github:pull:`182`).
 
   .. dropdown:: Before and after in details
 
