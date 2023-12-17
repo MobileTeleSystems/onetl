@@ -15,16 +15,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable
-
-from etl_entities import Table
+from typing import TYPE_CHECKING, Any
 
 from onetl.base.base_connection import BaseConnection
-from onetl.hwm import Statement
+from onetl.hwm import Window
 
 if TYPE_CHECKING:
+    from etl_entities.hwm import HWM, ColumnHWM
     from pyspark.sql import DataFrame
-    from pyspark.sql.types import StructType
+    from pyspark.sql.types import StructField, StructType
 
 
 class BaseDBDialect(ABC):
@@ -32,9 +31,11 @@ class BaseDBDialect(ABC):
     Collection of methods used for validating input values before passing them to read_source_as_df/write_df_to_target
     """
 
-    @classmethod
+    def __init__(self, connection: BaseDBConnection) -> None:
+        self.connection = connection
+
     @abstractmethod
-    def validate_name(cls, connection: BaseDBConnection, value: Table) -> Table:
+    def validate_name(self, value: str) -> str:
         """Check if ``source`` or ``target`` value is valid.
 
         Raises
@@ -45,9 +46,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_columns(cls, connection: BaseDBConnection, columns: list[str] | None) -> list[str] | None:
+    def validate_columns(self, columns: list[str] | None) -> list[str] | None:
         """Check if ``columns`` value is valid.
 
         Raises
@@ -58,26 +58,20 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_hwm_column(
-        cls,
-        connection: BaseDBConnection,
-        hwm_column: str | None,
-    ) -> str | None:
-        """Check if ``hwm_column`` value is valid.
+    def validate_hwm(self, hwm: HWM | None) -> HWM | None:
+        """Check if ``HWM`` class is valid.
 
         Raises
         ------
         TypeError
-            If value type is invalid
+            If hwm type is invalid
         ValueError
-            If value is invalid
+            If hwm is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_df_schema(cls, connection: BaseDBConnection, df_schema: StructType | None) -> StructType | None:
+    def validate_df_schema(self, df_schema: StructType | None) -> StructType | None:
         """Check if ``df_schema`` value is valid.
 
         Raises
@@ -88,9 +82,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_where(cls, connection: BaseDBConnection, where: Any) -> Any | None:
+    def validate_where(self, where: Any) -> Any | None:
         """Check if ``where`` value is valid.
 
         Raises
@@ -101,9 +94,8 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_hint(cls, connection: BaseDBConnection, hint: Any) -> Any | None:
+    def validate_hint(self, hint: Any) -> Any | None:
         """Check if ``hint`` value is valid.
 
         Raises
@@ -114,38 +106,10 @@ class BaseDBDialect(ABC):
             If value is invalid
         """
 
-    @classmethod
     @abstractmethod
-    def validate_hwm_expression(cls, connection: BaseDBConnection, value: Any) -> str | None:
-        """Check if ``hwm_expression`` value is valid.
-
-        Raises
-        ------
-        TypeError
-            If value type is invalid
-        ValueError
-            If value is invalid
+    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
         """
-
-    @classmethod
-    @abstractmethod
-    def _merge_conditions(cls, conditions: list[Any]) -> Any:
-        """
-        Convert multiple WHERE conditions to one
-        """
-
-    @classmethod
-    @abstractmethod
-    def _expression_with_alias(cls, expression: Any, alias: str) -> Any:
-        """
-        Return "expression AS alias" statement
-        """
-
-    @classmethod
-    @abstractmethod
-    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
-        """
-        Return "arg1 COMPARATOR arg2" statement
+        Detects hwm column type based on specific data types in connections data stores
         """
 
 
@@ -155,6 +119,10 @@ class BaseDBConnection(BaseConnection):
     """
 
     Dialect = BaseDBDialect
+
+    @property
+    def dialect(self):
+        return self.Dialect(self)
 
     @property
     @abstractmethod
@@ -171,8 +139,8 @@ class BaseDBConnection(BaseConnection):
         hint: Any | None = None,
         where: Any | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
+        limit: int | None = None,
     ) -> DataFrame:
         """
         Reads the source to dataframe. |support_hooks|

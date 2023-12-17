@@ -78,7 +78,8 @@ jobs:
     - name: Set up Postgres client
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update && sudo apt-get install --no-install-recommends postgresql-client
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends postgresql-client
 
     - name: Upgrade pip
       run: python -m pip install --upgrade pip setuptools wheel
@@ -110,7 +111,7 @@ jobs:
         GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 
     - name: Upload coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: greenplum-${{ inputs.greenplum-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*

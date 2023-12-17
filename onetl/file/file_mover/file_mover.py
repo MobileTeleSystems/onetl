@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, validator
+from pydantic import Field, PrivateAttr, validator
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol
@@ -152,6 +152,8 @@ class FileMover(FrozenModel):
 
     """
 
+    Options = FileMoverOptions
+
     connection: BaseFileConnection
 
     target_path: RemotePath
@@ -162,7 +164,7 @@ class FileMover(FrozenModel):
 
     options: FileMoverOptions = FileMoverOptions()
 
-    Options = FileMoverOptions
+    _connection_checked: bool = PrivateAttr(default=False)
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231
@@ -188,7 +190,7 @@ class FileMover(FrozenModel):
             Move result object
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
@@ -272,22 +274,25 @@ class FileMover(FrozenModel):
             assert not moved_files.missing
         """
 
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+
         if files is None and not self.source_path:
             raise ValueError("Neither file list nor `source_path` are passed")
 
-        self._log_parameters(files)
+        if not self._connection_checked:
+            self._log_parameters(files)
 
-        # Check everything
-        self.connection.check()
-        self._check_target_path()
-        log_with_indent(log, "")
+            self.connection.check()
+            self._check_target_path()
+            log_with_indent(log, "")
 
-        if self.source_path:
-            self._check_source_path()
+            if self.source_path:
+                self._check_source_path()
+
+            self._connection_checked = True
 
         if files is None:
-            log.info("|%s| File list is not passed to `run` method", self.__class__.__name__)
-
+            log.debug("|%s| File list is not passed to `run` method", self.__class__.__name__)
             files = self.view_files()
 
         if not files:
@@ -303,6 +308,7 @@ class FileMover(FrozenModel):
 
         result = self._move_files(to_move)
         self._log_result(result)
+        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
         return result
 
     @slot
@@ -312,7 +318,7 @@ class FileMover(FrozenModel):
         after ``filter`` and ``limit`` applied (if any). |support_hooks|
 
         Raises
-        -------
+        ------
         :obj:`onetl.exception.DirectoryNotFoundError`
 
             ``source_path`` does not found
@@ -347,9 +353,14 @@ class FileMover(FrozenModel):
             }
         """
 
+        if not self.source_path:
+            raise ValueError("Cannot call `.view_files()` without `source_path`")
+
         log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
-        self._check_source_path()
+        if not self._connection_checked:
+            self._check_source_path()
+
         result = FileSet()
 
         try:
@@ -365,8 +376,6 @@ class FileMover(FrozenModel):
         return result
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
-        entity_boundary_log(log, msg="FileMover starts")
-
         connection_class = self.connection.__class__.__name__
         log.info("|%s| -> |%s| Moving files using parameters:", connection_class, connection_class)
         log_with_indent(log, "source_path = %s", f"'{self.source_path}'" if self.source_path else "None")
@@ -566,4 +575,3 @@ class FileMover(FrozenModel):
         log_with_indent(log, "")
         log.info("|%s| Move result:", self.__class__.__name__)
         log_lines(log, str(result))
-        entity_boundary_log(log, msg=f"{self.__class__.__name__} ends", char="-")

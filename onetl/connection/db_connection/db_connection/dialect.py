@@ -14,117 +14,147 @@
 
 from __future__ import annotations
 
-import operator
+import os
 from datetime import date, datetime
-from typing import Any, Callable, ClassVar, Dict
+from typing import TYPE_CHECKING, Any
 
 from onetl.base import BaseDBDialect
-from onetl.hwm import Statement
+from onetl.hwm import Edge, Window
+from onetl.hwm.store import SparkTypeToHWM
+
+if TYPE_CHECKING:
+    from etl_entities.hwm import ColumnHWM
+    from pyspark.sql.types import StructField
 
 
 class DBDialect(BaseDBDialect):
-    _compare_statements: ClassVar[Dict[Callable, str]] = {
-        operator.ge: "{} >= {}",
-        operator.gt: "{} > {}",
-        operator.le: "{} <= {}",
-        operator.lt: "{} < {}",
-        operator.eq: "{} == {}",
-        operator.ne: "{} != {}",
-    }
+    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
+        return SparkTypeToHWM.get(field.dataType.typeName())  # type: ignore
 
-    @classmethod
-    def _escape_column(cls, value: str) -> str:
+    def get_sql_query(
+        self,
+        table: str,
+        columns: list[str] | None = None,
+        where: str | list[str] | None = None,
+        hint: str | None = None,
+        limit: int | None = None,
+        compact: bool = False,
+    ) -> str:
+        """
+        Generates a SQL query using input arguments
+        """
+
+        if compact:
+            indent = " "
+        else:
+            indent = os.linesep + " " * 7
+
+        hint = f" /*+ {hint} */" if hint else ""
+
+        columns_str = indent + "*"
+        if columns:
+            columns_str = indent + f",{indent}".join(column for column in columns)
+
+        where = where or []
+        if isinstance(where, str):
+            where = [where]
+
+        if limit == 0:
+            # LIMIT 0 not valid in some databases
+            where = ["1 = 0"]
+
+        where_clauses = []
+        if len(where) == 1:
+            where_clauses.append("WHERE" + indent + where[0])
+        else:
+            for i, item in enumerate(where):
+                directive = "WHERE" if i == 0 else "  AND"
+                where_clauses.append(directive + indent + f"({item})")
+
+        query_parts = [
+            f"SELECT{hint}{columns_str}",
+            f"FROM{indent}{table}",
+            *where_clauses,
+            f"LIMIT{indent}{limit}" if limit else "",
+        ]
+
+        return os.linesep.join(filter(None, query_parts)).strip()
+
+    def apply_window(
+        self,
+        condition: Any,
+        window: Window | None = None,
+    ) -> Any:
+        conditions = [
+            condition,
+            self._edge_to_where(window.expression, window.start_from, position="start") if window else None,
+            self._edge_to_where(window.expression, window.stop_at, position="end") if window else None,
+        ]
+        return list(filter(None, conditions))
+
+    def escape_column(self, value: str) -> str:
         return f'"{value}"'
 
-    @classmethod
-    def _expression_with_alias(cls, expression: str, alias: str) -> str:
+    def aliased(self, expression: str, alias: str) -> str:
         return f"{expression} AS {alias}"
 
-    @classmethod
-    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> Any:
-        template = cls._compare_statements[comparator]
-        return template.format(arg1, cls._serialize_datetime_value(arg2))
+    def get_max_value(self, value: Any) -> str:
+        """
+        Generate `MAX(value)` clause for given value
+        """
+        result = self._serialize_value(value)
+        return f"MAX({result})"
 
-    @classmethod
-    def _merge_conditions(cls, conditions: list[Any]) -> Any:
-        if len(conditions) == 1:
-            return conditions[0]
+    def get_min_value(self, value: Any) -> str:
+        """
+        Generate `MIN(value)` clause for given value
+        """
+        result = self._serialize_value(value)
+        return f"MIN({result})"
 
-        return " AND ".join(f"({item})" for item in conditions)
-
-    @classmethod
-    def _condition_assembler(
-        cls,
-        condition: Any,
-        start_from: Statement | None,
-        end_at: Statement | None,
+    def _edge_to_where(
+        self,
+        expression: str,
+        edge: Edge,
+        position: str,
     ) -> Any:
-        conditions = [condition]
-
-        if start_from:
-            condition1 = cls._get_compare_statement(
-                comparator=start_from.operator,
-                arg1=start_from.expression,
-                arg2=start_from.value,
-            )
-            conditions.append(condition1)
-
-        if end_at:
-            condition2 = cls._get_compare_statement(
-                comparator=end_at.operator,
-                arg1=end_at.expression,
-                arg2=end_at.value,
-            )
-            conditions.append(condition2)
-
-        result: list[Any] = list(filter(None, conditions))
-        if not result:
+        if not edge.is_set():
             return None
 
-        return cls._merge_conditions(result)
+        operators: dict[tuple[str, bool], str] = {
+            ("start", True): ">=",
+            ("start", False): "> ",
+            ("end", True): "<=",
+            ("end", False): "< ",
+        }
 
-    @classmethod
-    def _serialize_datetime_value(cls, value: Any) -> str | int | dict:
+        operator = operators[(position, edge.including)]
+        value = self._serialize_value(edge.value)
+        return f"{expression} {operator} {value}"
+
+    def _serialize_value(self, value: Any) -> str | int | dict:
         """
         Transform the value into an SQL Dialect-supported form.
         """
 
         if isinstance(value, datetime):
-            return cls._get_datetime_value_sql(value)
+            return self._serialize_datetime(value)
 
         if isinstance(value, date):
-            return cls._get_date_value_sql(value)
+            return self._serialize_date(value)
 
         return str(value)
 
-    @classmethod
-    def _get_datetime_value_sql(cls, value: datetime) -> str:
+    def _serialize_datetime(self, value: datetime) -> str:
         """
         Transform the datetime value into supported by SQL Dialect
         """
         result = value.isoformat()
         return repr(result)
 
-    @classmethod
-    def _get_date_value_sql(cls, value: date) -> str:
+    def _serialize_date(self, value: date) -> str:
         """
         Transform the date value into supported by SQL Dialect
         """
         result = value.isoformat()
         return repr(result)
-
-    @classmethod
-    def _get_max_value_sql(cls, value: Any) -> str:
-        """
-        Generate `MAX(value)` clause for given value
-        """
-        result = cls._serialize_datetime_value(value)
-        return f"MAX({result})"
-
-    @classmethod
-    def _get_min_value_sql(cls, value: Any) -> str:
-        """
-        Generate `MIN(value)` clause for given value
-        """
-        result = cls._serialize_datetime_value(value)
-        return f"MIN({result})"

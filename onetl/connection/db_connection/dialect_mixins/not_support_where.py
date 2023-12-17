@@ -19,12 +19,12 @@ from typing import Any
 from onetl.base import BaseDBConnection
 
 
-class SupportWhereNone:
-    @classmethod
+class NotSupportWhere:
+    connection: BaseDBConnection
+
     def validate_where(
-        cls,
-        connection: BaseDBConnection,
+        self,
         where: Any,
     ) -> None:
         if where is not None:
-            raise TypeError(f"'where' parameter is not supported by {connection.__class__.__name__}")
+            raise TypeError(f"'where' parameter is not supported by {self.connection.__class__.__name__}")

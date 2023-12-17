@@ -126,7 +126,7 @@ jobs:
         ./pytest_runner.sh -m kafka
 
     - name: Upload coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: kafka-${{ inputs.kafka-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*

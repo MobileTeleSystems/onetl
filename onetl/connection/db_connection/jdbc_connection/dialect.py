@@ -18,10 +18,9 @@ from abc import abstractmethod
 
 from onetl.connection.db_connection.db_connection import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
+    NotSupportDFSchema,
+    SupportColumns,
     SupportHintStr,
-    SupportHWMColumnStr,
     SupportHWMExpressionStr,
     SupportNameWithSchemaOnly,
     SupportWhereStr,
@@ -30,20 +29,17 @@ from onetl.connection.db_connection.dialect_mixins import (
 
 class JDBCDialect(  # noqa: WPS215
     SupportNameWithSchemaOnly,
-    SupportColumnsList,
-    SupportDfSchemaNone,
+    SupportColumns,
+    NotSupportDFSchema,
     SupportWhereStr,
     SupportHintStr,
     SupportHWMExpressionStr,
-    SupportHWMColumnStr,
     DBDialect,
 ):
-    @classmethod
     @abstractmethod
-    def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
+    def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
         ...
 
-    @classmethod
     @abstractmethod
-    def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
+    def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         ...

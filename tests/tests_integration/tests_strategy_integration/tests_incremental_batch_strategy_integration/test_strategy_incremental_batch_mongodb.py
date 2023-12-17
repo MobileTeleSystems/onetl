@@ -1,11 +1,12 @@
+import secrets
 from datetime import timedelta
 
 import pytest
-from etl_entities import DateTimeHWM, IntHWM
+from etl_entities.hwm import ColumnDateTimeHWM, ColumnIntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
 
 from onetl.connection import MongoDB
 from onetl.db import DBReader
-from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalBatchStrategy
 
 pytestmark = pytest.mark.mongodb
@@ -37,9 +38,9 @@ def df_schema():
 @pytest.mark.parametrize(
     "hwm_type, hwm_column, step, per_iter",
     [
-        (IntHWM, "hwm_int", 20, 30),  # step <  per_iter
-        (IntHWM, "hwm_int", 30, 30),  # step == per_iter
-        (DateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
+        (ColumnIntHWM, "hwm_int", 20, 30),  # step <  per_iter
+        (ColumnIntHWM, "hwm_int", 30, 30),  # step == per_iter
+        (ColumnDateTimeHWM, "hwm_datetime", timedelta(weeks=2), 20),  # same
     ],
 )
 @pytest.mark.parametrize(
@@ -66,7 +67,8 @@ def test_mongodb_strategy_incremental_batch(
     span_gap,
     span_length,
 ):
-    store = HWMStoreManager.get_current()
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
 
     mongodb = MongoDB(
         host=processing.host,
@@ -76,9 +78,12 @@ def test_mongodb_strategy_incremental_batch(
         database=processing.database,
         spark=spark,
     )
-    reader = DBReader(connection=mongodb, table=prepare_schema_table.table, hwm_column=hwm_column, df_schema=df_schema)
-
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
+    reader = DBReader(
+        connection=mongodb,
+        table=prepare_schema_table.table,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
+        df_schema=df_schema,
+    )
 
     # there are 2 spans with a gap between
     # 0..100
@@ -102,7 +107,7 @@ def test_mongodb_strategy_incremental_batch(
     )
 
     # hwm is not in the store
-    assert store.get(hwm.qualified_name) is None
+    assert store.get_hwm(hwm_name) is None
 
     # fill up hwm storage with last value, e.g. 100
     first_df = None
@@ -118,14 +123,14 @@ def test_mongodb_strategy_incremental_batch(
     # same behavior as SnapshotBatchStrategy, no rows skipped
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=first_df, other_frame=first_span)
+        processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="_id")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
         processing.assert_subset_df(df=first_df, other_frame=first_span)
 
     # hwm is set
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
@@ -142,7 +147,7 @@ def test_mongodb_strategy_incremental_batch(
     second_df = None
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            hwm = store.get(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
@@ -155,19 +160,19 @@ def test_mongodb_strategy_incremental_batch(
             else:
                 second_df = second_df.union(next_df)
 
-            hwm = store.get(hwm.qualified_name)
+            hwm = store.get_hwm(hwm_name)
             assert hwm is not None
             assert isinstance(hwm, hwm_type)
             assert first_span_max <= hwm.value <= second_span_max
 
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="_id")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
@@ -188,7 +193,7 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
         connection=mongodb,
         table=prepare_schema_table.table,
         where={"$or": [{"float_value": {"$lt": 51}}, {"float_value": {"$gt": 101, "$lt": 120}}]},
-        hwm_column="hwm_int",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
         df_schema=df_schema,
     )
 
@@ -219,7 +224,7 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
             else:
                 first_df = first_df.union(next_df)
 
-    processing.assert_equal_df(df=first_df, other_frame=first_span[:51])
+    processing.assert_equal_df(df=first_df, other_frame=first_span[:51], order_by="_id")
 
     # insert second span
     processing.insert_data(
@@ -238,4 +243,4 @@ def test_mongodb_strategy_incremental_batch_where(spark, processing, prepare_sch
             else:
                 second_df = second_df.union(next_df)
 
-    processing.assert_equal_df(df=second_df, other_frame=second_span[:19])
+    processing.assert_equal_df(df=second_df, other_frame=second_span[:19], order_by="_id")

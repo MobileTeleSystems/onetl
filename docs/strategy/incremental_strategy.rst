@@ -1,7 +1,7 @@
 .. _incremental-strategy:
 
-Incremental strategy
-=================================================================
+Incremental Strategy
+====================
 
 .. currentmodule:: onetl.strategy.incremental_strategy
 

@@ -6,6 +6,8 @@ import pytest
 from onetl.connection import Hive
 from onetl.db import DBReader
 
+pytestmark = pytest.mark.hive
+
 
 def test_reader_deprecated_import():
     msg = textwrap.dedent(
@@ -54,23 +56,7 @@ def test_reader_hive_with_read_options(spark_mock):
         (),
         {},
         set(),
-        " \t\n",
-        [""],
-        [" \t\n"],
-        ["", "abc"],
-        [" \t\n", "abc"],
-        "",
-        " \t\n",
-        ",abc",
-        "abc,",
-        "cde,,abc",
-        "cde, ,abc",
-        "*,*,cde",
-        "abc,abc,cde",
-        "abc,ABC,cde",
-        ["*", "*", "cde"],
-        ["abc", "abc", "cde"],
-        ["abc", "ABC", "cde"],
+        "any,string",
     ],
 )
 def test_reader_invalid_columns(spark_mock, columns):
@@ -85,9 +71,6 @@ def test_reader_invalid_columns(spark_mock, columns):
 @pytest.mark.parametrize(
     "columns, real_columns",
     [
-        ("*", ["*"]),
-        ("abc, cde", ["abc", "cde"]),
-        ("*, abc", ["*", "abc"]),
         (["*"], ["*"]),
         (["abc", "cde"], ["abc", "cde"]),
         (["*", "abc"], ["*", "abc"]),
@@ -104,129 +87,74 @@ def test_reader_valid_columns(spark_mock, columns, real_columns):
 
 
 @pytest.mark.parametrize(
-    "hwm_column",
+    "hwm_column, real_hwm_expression",
     [
-        "wrong/name",
-        "wrong@name",
-        "wrong=name",
-        "wrong#name",
-        [],
-        {},
-        (),
-        set(),
-        frozenset(),
-        ("name",),
-        ["name"],
-        {"name"},
-        ("wrong/name", "statement"),
-        ("wrong@name", "statement"),
-        ("wrong=name", "statement"),
-        ("wrong#name", "statement"),
-        ["wrong/name", "statement"],
-        ["wrong@name", "statement"],
-        ["wrong=name", "statement"],
-        ["wrong#name", "statement"],
-        ("wrong/name", "statement", "too", "many"),
-        ("wrong@name", "statement", "too", "many"),
-        ("wrong=name", "statement", "too", "many"),
-        ("wrong#name", "statement", "too", "many"),
-        ["wrong/name", "statement", "too", "many"],
-        ["wrong@name", "statement", "too", "many"],
-        ["wrong=name", "statement", "too", "many"],
-        ["wrong#name", "statement", "too", "many"],
-        {"wrong/name", "statement", "too", "many"},
-        {"wrong@name", "statement", "too", "many"},
-        {"wrong=name", "statement", "too", "many"},
-        {"wrong#name", "statement", "too", "many"},
-        (None, "statement"),
-        [None, "statement"],
-        # this is the same as hwm_column="name",
-        # but if user implicitly passed a tuple
-        # both of values should be set to avoid unexpected errors
-        ("name", None),
-        ["name", None],
+        ("hwm_column", "hwm_column"),
+        (("hwm_column", "expression"), "expression"),
+        (("hwm_column", "hwm_column"), "hwm_column"),
     ],
 )
-def test_reader_invalid_hwm_column(spark_mock, hwm_column):
-    with pytest.raises(ValueError):
-        DBReader(
+def test_reader_deprecated_hwm_column(spark_mock, hwm_column, real_hwm_expression):
+    error_msg = 'Passing "hwm_column" in DBReader class is deprecated since version 0.10.0'
+    with pytest.warns(UserWarning, match=error_msg):
+        reader = DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
             hwm_column=hwm_column,
         )
 
+    assert isinstance(reader.hwm, reader.AutoDetectHWM)
+    assert reader.hwm.entity == "schema.table"
+    assert reader.hwm.expression == real_hwm_expression
 
-@pytest.mark.parametrize(
-    "hwm_column, real_hwm_column, real_hwm_expression",
-    [
-        ("hwm_column", "hwm_column", None),
-        (("hwm_column", "expression"), "hwm_column", "expression"),
-        (("hwm_column", "hwm_column"), "hwm_column", "hwm_column"),
-    ],
-)
-def test_reader_valid_hwm_column(spark_mock, hwm_column, real_hwm_column, real_hwm_expression):
+
+def test_reader_autofill_hwm_source(spark_mock):
     reader = DBReader(
         connection=Hive(cluster="rnd-dwh", spark=spark_mock),
         table="schema.table",
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(
+            name="some_name",
+            expression="some_expression",
+        ),
     )
 
-    assert reader.hwm_column.name == real_hwm_column
-    assert reader.hwm_expression == real_hwm_expression
+    assert reader.hwm.entity == "schema.table"
+    assert reader.hwm.expression == "some_expression"
 
 
-@pytest.mark.parametrize(
-    "columns, hwm_column",
-    [
-        (["a", "b", "c", "d"], "d"),
-        (["a", "b", "c", "d"], "D"),
-        (["a", "b", "c", "D"], "d"),
-        ("a, b, c, d", "d"),
-        ("a, b, c, d", "D"),
-        ("a, b, c, D", "d"),
-        (["*", "d"], "d"),
-        (["*", "d"], "D"),
-        (["*", "D"], "d"),
-        ("*, d", "d"),
-        ("*, d", "D"),
-        ("*, D", "d"),
-        (["*"], "d"),
-        (["*"], "D"),
-        (["*"], ("d", "cast")),
-        (["*"], ("D", "cast")),
-    ],
-)
-def test_reader_hwm_column_and_columns_are_not_in_conflict(spark_mock, columns, hwm_column):
-    DBReader(
+def test_reader_hwm_has_same_source(spark_mock):
+    reader = DBReader(
         connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-        table="schema.table",
-        columns=columns,
-        hwm_column=hwm_column,
+        source="schema.table",
+        hwm=DBReader.AutoDetectHWM(
+            name="some_name",
+            source="schema.table",
+            expression="some_expression",
+        ),
     )
 
+    assert reader.hwm.entity == "schema.table"
+    assert reader.hwm.expression == "some_expression"
 
-@pytest.mark.parametrize(
-    "columns, hwm_column",
-    [
-        (["a", "b", "c", "d"], ("d", "cast")),
-        (["a", "b", "c", "d"], ("D", "cast")),
-        (["a", "b", "c", "D"], ("d", "cast")),
-        ("a, b, c, d", ("d", "cast")),
-        ("a, b, c, d", ("D", "cast")),
-        ("a, b, c, D", ("d", "cast")),
-        (["*", "d"], ("d", "cast")),
-        (["*", "d"], ("D", "cast")),
-        (["*", "D"], ("d", "cast")),
-        ("*, d", ("d", "cast")),
-        ("*, d", ("D", "cast")),
-        ("*, D", ("d", "cast")),
-    ],
-)
-def test_reader_hwm_column_and_columns_are_in_conflict(spark_mock, columns, hwm_column):
-    with pytest.raises(ValueError):
+
+def test_reader_hwm_has_different_source(spark_mock):
+    error_msg = "Passed `hwm.source` is different from `source`"
+    with pytest.raises(ValueError, match=error_msg):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
             table="schema.table",
-            columns=columns,
-            hwm_column=hwm_column,
+            hwm=DBReader.AutoDetectHWM(
+                name="some_name",
+                source="another.table",
+                expression="some_expression",
+            ),
+        )
+
+
+def test_reader_no_hwm_expression(spark_mock):
+    with pytest.raises(ValueError, match="`hwm.expression` cannot be None"):
+        DBReader(
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
+            table="schema.table",
+            hwm=DBReader.AutoDetectHWM(name="some_name"),
         )

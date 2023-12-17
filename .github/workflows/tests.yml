@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DEFAULT_PYTHON: '3.11'
+  DEFAULT_PYTHON: '3.12'
 
 jobs:
   get-matrix:
@@ -175,6 +175,7 @@ jobs:
 
     uses: ./.github/workflows/test-oracle.yml
     with:
+      oracle-image: ${{ matrix.oracle-image }}
       oracle-version: ${{ matrix.oracle-version }}
       db-name: ${{ matrix.db-name }}
       spark-version: ${{ matrix.spark-version }}
@@ -361,7 +362,7 @@ jobs:
       run: pip install -I coverage pytest
 
     - name: Download all coverage reports
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: reports
 

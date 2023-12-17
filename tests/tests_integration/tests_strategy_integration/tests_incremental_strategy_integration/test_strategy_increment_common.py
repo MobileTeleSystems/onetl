@@ -3,12 +3,15 @@ from contextlib import suppress
 from datetime import timedelta
 
 import pytest
+from etl_entities.hwm import ColumnIntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
+
+from tests.util.rand import rand_str
 
 try:
     import pandas
 except ImportError:
-    # pandas can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 from onetl.connection import Postgres
 from onetl.db import DBReader
@@ -41,20 +44,96 @@ def test_postgres_strategy_incremental_different_hwm_type_in_store(
         spark=spark,
     )
 
-    reader = DBReader(connection=postgres, source=load_table_data.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
+    )
 
     with IncrementalStrategy():
         reader.run()
 
-    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
-
+    # change table schema
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
     new_fields[hwm_column] = new_type
+
+    processing.drop_table(schema=load_table_data.schema, table=load_table_data.table)
     processing.create_table(schema=load_table_data.schema, table=load_table_data.table, fields=new_fields)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError, match="Cannot cast HWM of type .* as .*"):
         with IncrementalStrategy():
             reader.run()
+
+
+def test_postgres_strategy_incremental_different_hwm_source_in_store(
+    spark,
+    processing,
+    load_table_data,
+):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
+    # change HWM entity in HWM store
+    fake_hwm = old_hwm.copy(update={"entity": rand_str()})
+    hwm_store.set_hwm(fake_hwm)
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=old_hwm,
+    )
+    with pytest.raises(ValueError, match="Detected HWM with different `entity` attribute"):
+        with IncrementalStrategy():
+            reader.run()
+
+
+@pytest.mark.parametrize("attribute", ["expression", "description"])
+def test_postgres_strategy_incremental_different_hwm_optional_attribute_in_store(
+    spark,
+    processing,
+    load_table_data,
+    attribute,
+):
+    hwm_store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    old_hwm = ColumnIntHWM(name=hwm_name, source=load_table_data.full_name, expression="hwm_int", description="abc")
+
+    # change attribute value in HWM store
+    fake_hwm = old_hwm.copy(update={attribute: rand_str()})
+    hwm_store.set_hwm(fake_hwm)
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        hwm=old_hwm,
+    )
+    with pytest.warns(UserWarning, match=f"Detected HWM with different `{attribute}` attribute"):
+        with IncrementalStrategy():
+            reader.run()
+
+    # attributes from DBReader have higher priority, except value
+    new_hwm = hwm_store.get_hwm(name=hwm_name)
+    assert new_hwm.dict(exclude={"value", "modified_time"}) == old_hwm.dict(exclude={"value", "modified_time"})
 
 
 def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_table_data):
@@ -68,74 +147,38 @@ def test_postgres_strategy_incremental_hwm_set_twice(spark, processing, load_tab
     )
 
     table1 = load_table_data.full_name
-    table2 = f"{secrets.token_hex()}.{secrets.token_hex()}"
+    table2 = f"{secrets.token_hex(5)}.{secrets.token_hex(5)}"
 
-    hwm_column1 = "hwm_int"
-    hwm_column2 = "hwm_datetime"
-
-    reader1 = DBReader(connection=postgres, table=table1, hwm_column=hwm_column1)
-    reader2 = DBReader(connection=postgres, table=table2, hwm_column=hwm_column1)
-    reader3 = DBReader(connection=postgres, table=table1, hwm_column=hwm_column2)
+    reader1 = DBReader(
+        connection=postgres,
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
+    )
+    reader2 = DBReader(
+        connection=postgres,
+        table=table1,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
+    )
+    reader3 = DBReader(
+        connection=postgres,
+        table=table2,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
+    )
 
     with IncrementalStrategy():
         reader1.run()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="Detected wrong IncrementalStrategy usage.",
+        ):
             reader2.run()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="Detected wrong IncrementalStrategy usage.",
+        ):
             reader3.run()
-
-
-def test_postgres_strategy_incremental_unknown_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        hwm_column="unknown_column",  # there is no such column in a table
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalStrategy():
-            reader.run()
-
-
-def test_postgres_strategy_incremental_duplicated_hwm_column(
-    spark,
-    processing,
-    prepare_schema_table,
-):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=prepare_schema_table.full_name,
-        columns=["id_int AS hwm_int"],  # previous HWM cast implementation is not supported anymore
-        hwm_column="hwm_int",
-    )
-
-    with pytest.raises(Exception):
-        with IncrementalStrategy():
-            reader.run()
 
 
 def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_table):
@@ -154,7 +197,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         connection=postgres,
         source=prepare_schema_table.full_name,
         where="id_int < 1000 OR id_int = 1000",
-        hwm_column="hwm_int",
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="hwm_int"),
     )
 
     # there are 2 spans with a gap between
@@ -184,7 +227,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         first_df = reader.run()
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
     processing.insert_data(
@@ -197,7 +240,7 @@ def test_postgres_strategy_incremental_where(spark, processing, prepare_schema_t
         second_df = reader.run()
 
     # only changed data has been read
-    processing.assert_equal_df(df=second_df, other_frame=second_span)
+    processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")
 
 
 @pytest.mark.parametrize(
@@ -229,8 +272,7 @@ def test_postgres_strategy_incremental_offset(
     reader = DBReader(
         connection=postgres,
         source=prepare_schema_table.full_name,
-        columns=["*", hwm_column],
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
     )
 
     # there are 2 spans with a gap between
@@ -269,10 +311,10 @@ def test_postgres_strategy_incremental_offset(
         next_df = reader.run()
 
     total_span = pandas.concat([second_span, first_span], ignore_index=True)
-    processing.assert_equal_df(df=next_df, other_frame=total_span)
+    processing.assert_equal_df(df=next_df, other_frame=total_span, order_by="id_int")
 
 
-def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):  # noqa: C812
+def test_postgres_strategy_incremental_handle_exception(spark, processing, prepare_schema_table):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -282,8 +324,14 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
         spark=spark,
     )
 
+    hwm_name = secrets.token_hex(5)
+
     hwm_column = "hwm_int"
-    reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
+    )
 
     span_gap = 10
     span_length = 50
@@ -327,11 +375,13 @@ def test_postgres_strategy_incremental_handle_exception(spark, processing, prepa
 
     # and then process is retried
     with IncrementalStrategy():
-        reader = DBReader(connection=postgres, source=prepare_schema_table.full_name, hwm_column=hwm_column)
-
+        reader = DBReader(
+            connection=postgres,
+            source=prepare_schema_table.full_name,
+            hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
+        )
         second_df = reader.run()
 
     # all the data from the second span has been read
     # like there was no exception
-    second_df = second_df.sort(second_df.id_int.asc())
-    processing.assert_equal_df(df=second_df, other_frame=second_span)
+    processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="id_int")

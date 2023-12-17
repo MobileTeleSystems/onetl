@@ -70,7 +70,7 @@ Create virtualenv and install dependencies:
         -r requirements/tests/mysql.txt \
         -r requirements/tests/postgres.txt \
         -r requirements/tests/oracle.txt \
-        -r requirements/tests/spark-3.4.1.txt
+        -r requirements/tests/spark-3.5.0.txt
 
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -324,35 +324,7 @@ Examples for adding changelog entries to your Pull Requests
 
 .. tip::
 
-    See `pyproject.toml <../../pyproject.toml>`_ for all available categories
-    (``tool.towncrier.type``).
-
-.. _Towncrier philosophy:
-    https://towncrier.readthedocs.io/en/stable/#philosophy
-
-
-Examples for adding changelog entries to your Pull Requests
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: rst
-    :caption: docs/changelog/next_release/1234.doc.1.rst
-
-    Added a ``:github:user:`` role to Sphinx config -- by :github:user:`someuser`
-
-.. code-block:: rst
-    :caption: docs/changelog/next_release/2345.bugfix.rst
-
-    Fixed behavior of ``WebDAV`` connector -- by :github:user:`someuser`
-
-.. code-block:: rst
-    :caption: docs/changelog/next_release/3456.feature.rst
-
-    Added support of ``timeout`` in ``S3`` connector
-    -- by :github:user:`someuser`, :github:user:`anotheruser` and :github:user:`otheruser`
-
-.. tip::
-
-    See `pyproject.toml <../../pyproject.toml>`_ for all available categories
+    See `pyproject.toml <pyproject.toml>`_ for all available categories
     (``tool.towncrier.type``).
 
 .. _Towncrier philosophy:

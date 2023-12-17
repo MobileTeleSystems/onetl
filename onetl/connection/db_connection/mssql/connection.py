@@ -94,7 +94,7 @@ class MSSQL(JDBCConnection):
         For example: ``{"connectRetryCount": 3, "connectRetryInterval": 10}``
 
         See `MSSQL JDBC driver properties documentation
-        <https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties>`_
+        <https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties#properties>`_
         for more details
 
     Examples

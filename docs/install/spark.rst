@@ -279,6 +279,7 @@ Can be used to embed ``.jar`` files to a default Spark classpath.
 * Download ``package.jar`` file (it's usually something like ``some-package_1.0.0.jar``). Local file name does not matter, but it should be unique.
 * Move it to ``$SPARK_HOME/jars/`` folder, e.g. ``^/.local/lib/python3.7/site-packages/pyspark/jars/`` or ``/opt/spark/3.2.3/jars/``.
 * Create Spark session **WITHOUT** passing Package name to ``spark.jars.packages``
+
 .. code:: python
 
     # no need to set spark.jars.packages or any other spark.jars.* option

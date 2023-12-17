@@ -1,7 +1,7 @@
 .. _file-filters:
 
 File Filters
-===============
+============
 
 .. toctree::
     :maxdepth: 1

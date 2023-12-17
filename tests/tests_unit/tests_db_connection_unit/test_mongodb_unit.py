@@ -202,7 +202,16 @@ def test_mongodb_with_extra(spark_mock):
     assert mongo.connection_url == "mongodb://user:password@host:27017/database?opt1=value1&tls=true"
 
 
-def test_mongodb_convert_list_to_str():
+def test_mongodb_convert_list_to_str(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        extra={"tls": "true", "opt1": "value1"},
+        spark=spark_mock,
+    )
+
     where = [
         {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
         {
@@ -213,13 +222,27 @@ def test_mongodb_convert_list_to_str():
         },
     ]
 
-    assert MongoDB.Dialect.convert_to_str(where) == (
-        '[{"$or": [{"col_1": {"$gt": 1, "$eq": true}}, {"col_2": {"$eq": null}}]}, '
-        '{"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}}]}]'
+    assert mongo.dialect.prepare_pipeline(where) == [
+        {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
+        {
+            "$and": [
+                {"col_3": {"$eq": "Hello"}},
+                {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}},
+            ],
+        },
+    ]
+
+
+def test_mongodb_convert_dict_to_str(spark_mock):
+    mongo = MongoDB(
+        host="host",
+        user="user",
+        password="password",
+        database="database",
+        extra={"tls": "true", "opt1": "value1"},
+        spark=spark_mock,
     )
 
-
-def test_mongodb_convert_dict_to_str():
     where = {
         "$and": [
             {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
@@ -232,12 +255,17 @@ def test_mongodb_convert_dict_to_str():
         ],
     }
 
-    assert MongoDB.Dialect.convert_to_str(where) == (
-        '{"$and": '
-        '[{"$or": [{"col_1": {"$gt": 1, "$eq": true}}, {"col_2": {"$eq": null}}]}, '
-        '{"$and": [{"col_3": {"$eq": "Hello"}}, {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}}]}]'
-        "}"
-    )
+    assert mongo.dialect.prepare_pipeline(where) == {
+        "$and": [
+            {"$or": [{"col_1": {"$gt": 1, "$eq": True}}, {"col_2": {"$eq": None}}]},
+            {
+                "$and": [
+                    {"col_3": {"$eq": "Hello"}},
+                    {"col_4": {"$eq": {"$date": "2022-12-23T08:22:33.456000+00:00"}}},
+                ],
+            },
+        ],
+    }
 
 
 @pytest.mark.parametrize(

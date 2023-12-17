@@ -18,18 +18,19 @@ from typing import Any
 
 from typing_extensions import Protocol, runtime_checkable
 
+from onetl.hwm.window import Window
+
 
 @runtime_checkable
-class ContainsGetMinMaxBounds(Protocol):
+class ContainsGetMinMaxValues(Protocol):
     """
-    Protocol for objects containing ``get_min_max_bounds`` method
+    Protocol for objects containing ``get_min_max_values`` method
     """
 
-    def get_min_max_bounds(
+    def get_min_max_values(
         self,
         source: str,
-        column: str,
-        expression: str | None = None,
+        window: Window,
         hint: Any | None = None,
         where: Any | None = None,
     ) -> tuple[Any, Any]:

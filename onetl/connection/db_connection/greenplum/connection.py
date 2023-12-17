@@ -23,7 +23,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from etl_entities.instance import Host
 from pydantic import validator
 
-from onetl._internal import get_sql_query
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -43,7 +42,7 @@ from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import Statement
+from onetl.hwm import Window
 from onetl.impl import GenericOptions
 from onetl.log import log_lines, log_with_indent
 
@@ -267,24 +266,28 @@ class Greenplum(JDBCMixin, DBConnection):
         hint: str | None = None,
         where: str | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
+        limit: int | None = None,
         options: GreenplumReadOptions | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
-        query = get_sql_query(table=source, columns=columns, where=where)
-        log_lines(log, query)
+        where = self.dialect.apply_window(where, window)
+        fake_query_for_log = self.dialect.get_sql_query(table=source, columns=columns, where=where, limit=limit)
+        log_lines(log, fake_query_for_log)
 
         df = self.spark.read.format("greenplum").options(**self._connector_params(source), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
 
         if where:
-            df = df.filter(where)
+            for item in where:
+                df = df.filter(item)
 
         if columns:
             df = df.selectExpr(*columns)
+
+        if limit is not None:
+            df = df.limit(limit)
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
@@ -323,7 +326,7 @@ class Greenplum(JDBCMixin, DBConnection):
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
-        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
+        query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -335,32 +338,30 @@ class Greenplum(JDBCMixin, DBConnection):
         return df.schema
 
     @slot
-    def get_min_max_bounds(
+    def get_min_max_values(
         self,
         source: str,
-        column: str,
-        expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
         options: JDBCOptions | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
-
+        log.info("|%s| Getting min and max values for %r ...", self.__class__.__name__, window.expression)
         jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
 
-        query = get_sql_query(
+        query = self.dialect.get_sql_query(
             table=source,
             columns=[
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_min_value_sql(expression or column),
-                    self.Dialect._escape_column("min"),
+                self.dialect.aliased(
+                    self.dialect.get_min_value(window.expression),
+                    self.dialect.escape_column("min"),
                 ),
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_max_value_sql(expression or column),
-                    self.Dialect._escape_column("max"),
+                self.dialect.aliased(
+                    self.dialect.get_max_value(window.expression),
+                    self.dialect.escape_column("max"),
                 ),
             ],
-            where=where,
+            where=self.dialect.apply_window(where, window),
         )
 
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -372,8 +373,8 @@ class Greenplum(JDBCMixin, DBConnection):
         max_value = row["max"]
 
         log.info("|%s| Received values:", self.__class__.__name__)
-        log_with_indent(log, "MIN(%r) = %r", column, min_value)
-        log_with_indent(log, "MAX(%r) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", window.expression, min_value)
+        log_with_indent(log, "MAX(%s) = %r", window.expression, max_value)
 
         return min_value, max_value
 

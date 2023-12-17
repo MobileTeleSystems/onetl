@@ -16,8 +16,7 @@ try:
     from tests.util.assert_df import assert_equal_df
     from tests.util.spark_df import reset_column_names
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
@@ -33,8 +32,6 @@ def test_excel_reader_with_infer_schema(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -55,10 +52,11 @@ def test_excel_reader_with_infer_schema(
 
     # excel does not have header, so columns are named like "_c0", "_c1", etc
     expected_df = reset_column_names(expected_df)
+    first_column = expected_df.schema[0].name
 
     assert read_df.schema != df.schema
     assert read_df.schema == expected_df.schema
-    assert_equal_df(read_df, expected_df)
+    assert_equal_df(read_df, expected_df, order_by=first_column)
 
 
 @pytest.mark.parametrize("format", ["xlsx", "xls"])
@@ -83,8 +81,6 @@ def test_excel_reader_with_options(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -100,7 +96,7 @@ def test_excel_reader_with_options(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -121,8 +117,6 @@ def test_excel_writer(
     spark_version = get_spark_version(spark)
     if spark_version < (3, 2):
         pytest.skip("Excel files are supported on Spark 3.2+ only")
-    if spark_version >= (3, 5):
-        pytest.skip("Excel files are not supported on Spark 3.5+ yet")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe
@@ -145,4 +139,4 @@ def test_excel_writer(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")

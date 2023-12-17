@@ -7,7 +7,7 @@ from datetime import timedelta
 from pathlib import Path, PurePosixPath
 
 import pytest
-from etl_entities import FileListHWM
+from etl_entities.hwm import FileListHWM
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileDownloader
@@ -881,10 +881,11 @@ def test_file_downloader_detect_hwm_type_snapshot_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with SnapshotBatchStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with SnapshotBatchStrategy(step=100500):
             downloader.run()
 
@@ -900,10 +901,11 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in batch strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with IncrementalBatchStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with IncrementalBatchStrategy(
             step=timedelta(days=5),
         ):
@@ -922,10 +924,11 @@ def test_file_downloader_detect_hwm_type_snapshot_strategy(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
-    with pytest.raises(ValueError, match="`hwm_type` cannot be used in snapshot strategy"):
+    error_message = "FileDownloader(hwm=...) cannot be used with SnapshotStrategy"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         downloader.run()
 
 
@@ -941,10 +944,11 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         connection=file_connection,
         local_path=local_path,
         source_path=remote_path,
-        hwm_type="file_list",
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
-    with pytest.raises(ValueError, match="If `hwm_type` is passed you can't specify an `offset`"):
+    error_message = "FileDownloader(hwm=...) cannot be used with IncrementalStrategy(offset=1, ...)"
+    with pytest.raises(ValueError, match=re.escape(error_message)):
         with IncrementalStrategy(offset=1):
             downloader.run()
 
@@ -952,26 +956,18 @@ def test_file_downloader_file_hwm_strategy_with_wrong_parameters(
         downloader.run()
 
 
-@pytest.mark.parametrize(
-    "hwm_type",
-    [
-        "file_list",
-        FileListHWM,
-    ],
-)
 def test_file_downloader_file_hwm_strategy(
     file_connection_with_path_and_files,
     tmp_path_factory,
-    hwm_type,
 ):
-    file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
         connection=file_connection,
         local_path=local_path,
-        hwm_type=hwm_type,
         source_path=remote_path,
+        hwm=FileListHWM(name=secrets.token_hex(5)),
     )
 
     with IncrementalStrategy():

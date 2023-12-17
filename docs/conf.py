@@ -57,6 +57,8 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
     "sphinxcontrib.plantuml",
+    "sphinx.ext.extlinks",
+    "sphinx_favicon",
 ]
 numpydoc_show_class_members = True
 autodoc_pydantic_model_show_config = False
@@ -104,8 +106,11 @@ html_theme_options = {}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["static"]
-html_logo = "./static/logo.svg"
+html_static_path = ["_static"]
+html_logo = "./_static/logo.svg"
+favicons = [
+    {"rel": "icon", "href": "icon.svg", "type": "image/svg+xml"},
+]
 # The master toctree document.
 master_doc = "index"
 
@@ -118,6 +123,12 @@ language = "en"
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+# Create an alias for etl-entities lib in onetl documentation
+extlinks = {
+    "etl-entities": ("https://etl-entities.readthedocs.io/en/stable/%s", None),
+}
+
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False

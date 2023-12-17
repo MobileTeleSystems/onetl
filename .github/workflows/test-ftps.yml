@@ -77,7 +77,7 @@ jobs:
         COMPOSE_PROJECT_NAME: ${{ github.run_id }}-ftps${{ inputs.ftps-version }}
 
     - name: Upload coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ftps-${{ inputs.ftps-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
         path: reports/*

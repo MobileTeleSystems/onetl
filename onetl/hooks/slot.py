@@ -8,7 +8,7 @@ from contextlib import ExitStack, suppress
 from functools import partial, wraps
 from typing import Any, Callable, ContextManager, TypeVar
 
-from typing_extensions import ParamSpec, Protocol
+from typing_extensions import Protocol
 
 from onetl.exception import SignatureError
 from onetl.hooks.hook import CanProcessResult, Hook, HookPriority
@@ -17,13 +17,12 @@ from onetl.hooks.hooks_state import HooksState
 from onetl.hooks.method_inheritance_stack import MethodInheritanceStack
 from onetl.log import NOTICE
 
+Method = TypeVar("Method", bound=Callable[..., Any])
+
 logger = logging.getLogger(__name__)
 
-P = ParamSpec("P")
-T = TypeVar("T")
 
-
-def _unwrap_method(method: Callable[P, T]) -> Callable[P, T]:
+def _unwrap_method(method: Method) -> Method:
     """Unwrap @classmethod and @staticmethod to get original function"""
     return getattr(method, "__func__", method)
 
@@ -83,20 +82,20 @@ def bind_hook(method: Callable, inp=None):
 
         @MyClass.method.bind
         @hook
-        def hook(self, arg):
+        def callable(self, arg):
             if arg == "some":
                 do_something()
 
 
         @MyClass.method.bind
         @hook(priority=HookPriority.FIRST, enabled=True)
-        def another_hook(self, arg):
+        def another_callable(self, arg):
             if arg == "another":
                 raise NotAllowed()
 
 
         obj = MyClass()
-        obj.method(1)  # will call both hook(obj, 1) and another_hook(obj, 1)
+        obj.method(1)  # will call both callable(obj, 1) and another_callable(obj, 1)
     """
 
     def inner_wrapper(hook):  # noqa: WPS430
@@ -624,7 +623,7 @@ class Slot(Protocol):
         ...
 
 
-def slot(method: Callable[P, T]) -> Callable[P, T]:
+def slot(method: Method) -> Method:
     """
     Decorator which enables hooks functionality on a specific class method.
 

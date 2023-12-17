@@ -13,8 +13,7 @@ from onetl.file.format import XML
 try:
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
@@ -60,7 +59,7 @@ def test_xml_reader(
     read_df = reader.run()
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
 
 
 def test_xml_reader_with_infer_schema(
@@ -90,7 +89,7 @@ def test_xml_reader_with_infer_schema(
     assert set(read_df.columns) == set(
         expected_xml_attributes_df.columns,
     )  # "DataFrames have different column types: StructField('id', IntegerType(), True), StructField('id', LongType(), True), etc."
-    assert_equal_df(read_df, expected_xml_attributes_df)
+    assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -133,7 +132,7 @@ def test_xml_writer(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -166,4 +165,4 @@ def test_xml_reader_with_attributes(
     read_df = reader.run()
     assert read_df.count()
     assert read_df.schema == expected_xml_attributes_df.schema
-    assert_equal_df(read_df, expected_xml_attributes_df)
+    assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")

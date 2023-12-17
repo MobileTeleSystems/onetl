@@ -6,7 +6,7 @@ on:
     - '[0-9]+.[0-9]+.[0-9]+'
 
 env:
-  DEFAULT_PYTHON: '3.11'
+  DEFAULT_PYTHON: '3.12'
 
 jobs:
   release:
@@ -46,8 +46,11 @@ jobs:
       run: python -m pip install --upgrade pip setuptools wheel
 
     - name: Install dependencies
+      run: pip install -I  -r requirements/core.txt -r requirements/docs.txt
+
+    - name: Fix logo in Readme
       run: |
-        pip install -I  -r requirements/core.txt -r requirements/docs.txt
+        sed -i "s#image:: docs/#image:: https://raw.githubusercontent.com/MobileTeleSystems/onetl/$GITHUB_REF_NAME/docs/#g" README.rst
 
     - name: Build package
       run: python setup.py sdist bdist_wheel
@@ -57,7 +60,7 @@ jobs:
 
     - name: Get changelog
       run: |
-        cat docs/changelog/${{ github.ref_name }}.rst > changelog.rst
+        cat docs/changelog/$GITHUB_REF_NAME.rst > changelog.rst
 
     - name: Fix Github links
       run: |

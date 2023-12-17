@@ -14,20 +14,17 @@
 
 from __future__ import annotations
 
-import json
-import operator
 from datetime import datetime
-from typing import Any, Callable, ClassVar, Dict, Iterable, Mapping
+from typing import Any, Iterable, Mapping
 
-from onetl.base.base_db_connection import BaseDBConnection
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsNone,
-    SupportDfSchemaStruct,
-    SupportHWMColumnStr,
-    SupportHWMExpressionNone,
+    NotSupportColumns,
+    RequiresDFSchema,
+    SupportHWMExpressionStr,
     SupportNameAny,
 )
+from onetl.hwm import Edge, Window
 
 _upper_level_operators = frozenset(  # noqa: WPS527
     [
@@ -75,25 +72,13 @@ _upper_level_operators = frozenset(  # noqa: WPS527
 
 class MongoDBDialect(  # noqa: WPS215
     SupportNameAny,
-    SupportHWMExpressionNone,
-    SupportColumnsNone,
-    SupportDfSchemaStruct,
-    SupportHWMColumnStr,
+    NotSupportColumns,
+    RequiresDFSchema,
+    SupportHWMExpressionStr,
     DBDialect,
 ):
-    _compare_statements: ClassVar[Dict[Callable, str]] = {
-        operator.ge: "$gte",
-        operator.gt: "$gt",
-        operator.le: "$lte",
-        operator.lt: "$lt",
-        operator.eq: "$eq",
-        operator.ne: "$ne",
-    }
-
-    @classmethod
     def validate_where(
-        cls,
-        connection: BaseDBConnection,
+        self,
         where: Any,
     ) -> dict | None:
         if where is None:
@@ -101,18 +86,16 @@ class MongoDBDialect(  # noqa: WPS215
 
         if not isinstance(where, dict):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
+                f"{self.connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
                 f"got {where.__class__.__name__!r}",
             )
 
         for key in where:
-            cls._validate_top_level_keys_in_where_parameter(key)
+            self._validate_top_level_keys_in_where_parameter(key)
         return where
 
-    @classmethod
     def validate_hint(
-        cls,
-        connection: BaseDBConnection,
+        self,
         hint: Any,
     ) -> dict | None:
         if hint is None:
@@ -120,70 +103,74 @@ class MongoDBDialect(  # noqa: WPS215
 
         if not isinstance(hint, dict):
             raise ValueError(
-                f"{connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
+                f"{self.connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
                 f"got {hint.__class__.__name__!r}",
             )
         return hint
 
-    @classmethod
     def prepare_pipeline(
-        cls,
+        self,
         pipeline: Any,
     ) -> Any:
         """
         Prepares pipeline (list or dict) to MongoDB syntax, but without converting it to string.
         """
 
-        if isinstance(pipeline, datetime):
-            return {"$date": pipeline.astimezone().isoformat()}
-
         if isinstance(pipeline, Mapping):
-            return {cls.prepare_pipeline(key): cls.prepare_pipeline(value) for key, value in pipeline.items()}
+            return {self.prepare_pipeline(key): self.prepare_pipeline(value) for key, value in pipeline.items()}
 
         if isinstance(pipeline, Iterable) and not isinstance(pipeline, str):
-            return [cls.prepare_pipeline(item) for item in pipeline]
+            return [self.prepare_pipeline(item) for item in pipeline]
 
-        return pipeline
+        return self._serialize_value(pipeline)
 
-    @classmethod
-    def convert_to_str(
-        cls,
-        value: Any,
-    ) -> str:
+    def apply_window(
+        self,
+        condition: Any,
+        window: Window | None = None,
+    ) -> Any:
+        result = super().apply_window(condition, window)
+        if not result:
+            return {}
+        if len(result) == 1:
+            return result[0]
+        return {"$and": result}
+
+    def _serialize_value(self, value: Any) -> str | int | dict:
         """
-        Converts the given dictionary, list or primitive to a string.
+        Transform the value into an SQL Dialect-supported form.
         """
 
-        return json.dumps(cls.prepare_pipeline(value))
+        if isinstance(value, datetime):
+            return {"$date": value.astimezone().isoformat()}
 
-    @classmethod
-    def _merge_conditions(cls, conditions: list[Any]) -> Any:
-        if len(conditions) == 1:
-            return conditions[0]
+        return value
 
-        return {"$and": conditions}
+    def _edge_to_where(
+        self,
+        expression: str,
+        edge: Edge,
+        position: str,
+    ) -> Any:
+        if not expression or not edge.is_set():
+            return None
 
-    @classmethod
-    def _get_compare_statement(cls, comparator: Callable, arg1: Any, arg2: Any) -> dict:
-        """
-        Returns the comparison statement in MongoDB syntax:
+        operators: dict[tuple[str, bool], str] = {
+            ("start", True): "$gte",
+            ("start", False): "$gt",
+            ("end", True): "$lte",
+            ("end", False): "$lt",
+        }
 
-        .. code::
-
-            {
-                "field": {
-                    "$gt": "some_value",
-                }
-            }
-        """
+        operator = operators[(position, edge.including)]
+        value = self._serialize_value(edge.value)
         return {
-            arg1: {
-                cls._compare_statements[comparator]: arg2,
+            expression: {
+                operator: value,
             },
         }
 
-    @classmethod
-    def _validate_top_level_keys_in_where_parameter(cls, key: str):
+    def _validate_top_level_keys_in_where_parameter(self, key: str):
         """
         Checks the 'where' parameter for illegal operators, such as ``$match``, ``$merge`` or ``$changeStream``.
 

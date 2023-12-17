@@ -9,7 +9,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.4.1
+        SPARK_VERSION: 3.5.0
     env_file: .env.docker
     volumes:
     - ./:/app/
@@ -124,13 +124,18 @@ services:
     - onetl
 
   oracle:
-    image: ${ORACLE_IMAGE:-gvenzl/oracle-xe:21.3.0-slim-faststart}
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.3-slim-faststart}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
     - 1522:1521
     networks:
     - onetl
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   ftp:
     image: ${FTP_IMAGE:-chonjay21/ftps:latest}

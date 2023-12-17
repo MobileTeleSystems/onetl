@@ -23,7 +23,7 @@ onETL
 
 |Logo|
 
-.. |Logo| image:: docs/static/logo_wide.svg
+.. |Logo| image:: docs/_static/logo_wide.svg
     :alt: onETL logo
     :target: https://github.com/MobileTeleSystems/onetl
 
@@ -44,14 +44,14 @@ Goals
 Non-goals
 ---------
 
-* onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and simplifies UX for end users.
+* onETL is not a Spark replacement. It just provides additional functionality that Spark does not have, and improves UX for end users.
 * onETL is not a framework, as it does not have requirements to project structure, naming, the way of running ETL/ELT processes, configuration, etc. All of that should be implemented in some other tool.
 * onETL is deliberately developed without any integration with scheduling software like Apache Airflow. All integrations should be implemented as separated tools.
 * Only batch operations, no streaming. For streaming prefer `Apache Flink <https://flink.apache.org/>`_.
 
 Requirements
 ------------
-* **Python 3.7 - 3.11**
+* **Python 3.7 - 3.12**
 * PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
@@ -177,9 +177,9 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.3.x <https://spark.apache.org/docs/3.3.3/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.11  | 8u362 - 20  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.11  | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
@@ -328,7 +328,7 @@ Read data from MSSQL, transform & write to Hive.
 
     # >>> INFO:|MSSQL| Connection is available
 
-    # Initialize DB reader
+    # Initialize DBReader
     reader = DBReader(
         connection=mssql,
         source="dbo.demo_table",
@@ -365,7 +365,7 @@ Read data from MSSQL, transform & write to Hive.
     # Initialize Hive connection
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
-    # Initialize DB writer
+    # Initialize DBWriter
     db_writer = DBWriter(
         connection=hive,
         target="dl_sb.demo_table",
@@ -626,7 +626,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         spark=spark,
     )
 
-    # Initialize DB writer
+    # Initialize DBWriter
     db_writer = DBWriter(
         connection=postgres,
         # write to specific table

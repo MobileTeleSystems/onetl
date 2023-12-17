@@ -1,2 +1,1 @@
-# https://github.com/pymssql/pymssql/issues/832
-pymssql<2.2.8
+pymssql

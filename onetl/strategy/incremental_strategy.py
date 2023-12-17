@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from etl_entities import HWM
+from etl_entities.hwm import HWM
 
 from onetl.impl import BaseModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
@@ -30,7 +30,7 @@ class OffsetMixin(BaseModel):
     def fetch_hwm(self) -> None:
         super().fetch_hwm()
 
-        if self.hwm and self.offset is not None:
+        if self.hwm and self.hwm.value is not None and self.offset is not None:
             self.hwm -= self.offset
 
 
@@ -41,13 +41,13 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
     by filtering items not covered by the previous :ref:`HWM` value.
 
     For :ref:`db-reader`:
-        First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`:
+        First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>`:
 
         .. code:: sql
 
             SELECT id, data FROM mydata;
 
-        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``ColumnHWM`` subclass to :ref:`hwm-store`.
+        Then the max value of ``id`` column (e.g. ``1000``) will be saved as ``HWM`` to :ref:`HWM Store <hwm>`.
 
         Next incremental run will read only new data from the source:
 
@@ -72,11 +72,11 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             This allows to resume reading process from the *last successful run*.
 
     For :ref:`file-downloader`:
-        Behavior depends on ``hwm_type`` parameter.
+        Behavior depends on ``hwm`` type.
 
-        ``hwm_type="file_list"``:
-            First incremental run is just the same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy` - all
-            files are downloaded:
+        ``hwm=FileListHWM(...)``:
+            First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
+            all files are downloaded:
 
             .. code:: bash
 
@@ -94,7 +94,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
                     ]
                 )
 
-            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`hwm-store`:
+            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
@@ -123,7 +123,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
                     ]
                 )
 
-            New files will be added to the ``FileListHWM`` and saved to :ref:`hwm-store`:
+            New files will be added to the ``FileListHWM`` and saved to :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
@@ -135,22 +135,10 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. warning::
 
-            FileDownload updates HWM in HWM Store after downloading **each** file, because files are downloading
-            one after another, not in one batch.
+            FileDownload updates HWM in HWM Store at the end of ``.run()`` call,
+            **NOT** while exiting strategy context. This is because:
 
-        .. warning::
-
-            If code inside the context manager raised an exception, like:
-
-            .. code:: python
-
-                with IncrementalStrategy():
-                    download_result = downloader.run()  # something went wrong here
-                    uploader.run(download_result.success)  # or here
-                    # or here...
-
-            When FileDownloader **will** update HWM in HWM Store, because:
-
+            * FileDownloader does not raise exceptions if some file cannot be downloaded.
             * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode>`.
             * It can remove files from the source if :obj:`delete_source <onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
 
@@ -202,7 +190,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         .. warning::
 
-            Cannot be used with :ref:`file-downloader` and ``hwm_type="file_list"``
+            Cannot be used with :ref:`file-downloader` and ``hwm=FileListHWM(...)``
 
         .. note::
 
@@ -220,6 +208,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
+        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -242,7 +231,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -277,9 +266,9 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         SELECT id, data
         FROM public.mydata
-        WHERE id > 900; --- from HWM-offset (EXCLUDING first row)
+        WHERE id > 900; -- from HWM-offset (EXCLUDING first row)
 
-    ``hwm_column`` can be a date or datetime, not only integer:
+    ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
@@ -289,7 +278,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
 
         with IncrementalStrategy(offset=timedelta(days=1)):
@@ -303,15 +292,16 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
         SELECT business_dt, data
         FROM public.mydata
-        WHERE business_dt > CAST('2021-01-09' AS DATE);
+        WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
 
-    Incremental run with :ref:`file-downloader` and ``hwm_type="file_list"``:
+    Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
 
     .. code:: python
 
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
+        from etl_entities import FileListHWM
 
         sftp = SFTP(
             host="sftp.domain.com",
@@ -323,7 +313,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             connection=sftp,
             source_path="/remote",
             local_path="/local",
-            hwm_type="file_list",
+            hwm=FileListHWM(name="some_hwm_name"),
         )
 
         with IncrementalStrategy():
@@ -340,7 +330,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         Cannot be used with :ref:`file-downloader`
 
-    Same as :obj:`onetl.strategy.incremental_strategy.IncrementalStrategy`,
+    Same as :obj:`IncrementalStrategy <onetl.strategy.incremental_strategy.IncrementalStrategy>`,
     but reads data from the source in sequential batches (1..N) like:
 
     .. code:: sql
@@ -358,8 +348,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     .. warning::
 
-        Unlike :obj:`onetl.strategy.snapshot_strategy.SnapshotBatchStrategy`,
-        it **saves** current HWM value after **each batch** into :ref:`hwm-store`.
+        Unlike :obj:`SnapshotBatchStrategy <onetl.strategy.snapshot_strategy.SnapshotBatchStrategy>`,
+        it **saves** current HWM value after **each batch** into :ref:`HWM Store <hwm>`.
 
         So if code inside the context manager raised an exception, like:
 
@@ -406,7 +396,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
     stop : Any, default: ``None``
 
-        If passed, the value will be used for generating WHERE clauses with ``hwm_column`` filter,
+        If passed, the value will be used for generating WHERE clauses with ``hwm.expression`` filter,
         as a stop value for the last batch.
 
         If not set, the value is determined by a separated query:
@@ -419,7 +409,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         .. note::
 
-            ``stop`` should be the same type as ``hwm_column`` value,
+            ``stop`` should be the same type as ``hwm.expression`` value,
             e.g. :obj:`datetime.datetime` for ``TIMESTAMP`` column, :obj:`datetime.date` for ``DATE``, and so on
 
     offset : Any, default: ``None``
@@ -482,7 +472,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
 
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
-        from onetl.strategy import IncrementalStrategy
+        from onetl.strategy import IncrementalBatchStrategy
+        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -507,7 +498,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -601,7 +592,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         ...
         N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    ``hwm_column`` can be a date or datetime, not only integer:
+    ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
@@ -611,7 +602,7 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
 
         with IncrementalBatchStrategy(
@@ -647,11 +638,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
     """
 
     def __next__(self):
-        result = super().__next__()
-
         self.save_hwm()
-
-        return result
+        return super().__next__()
 
     @classmethod
     def _log_exclude_fields(cls) -> set[str]:

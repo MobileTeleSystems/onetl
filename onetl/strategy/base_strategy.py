@@ -15,8 +15,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
+from onetl.hwm import Edge
 from onetl.impl import BaseModel
 from onetl.log import log_with_indent
 
@@ -51,12 +51,12 @@ class BaseStrategy(BaseModel):
         return False
 
     @property
-    def current_value(self) -> Any:
-        pass
+    def current(self) -> Edge:
+        return Edge()
 
     @property
-    def next_value(self) -> Any:
-        pass
+    def next(self) -> Edge:
+        return Edge()
 
     def enter_hook(self) -> None:
         pass

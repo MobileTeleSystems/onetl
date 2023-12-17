@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from etl_entities.instance import Host
 
-from onetl._internal import clear_statement, get_sql_query
+from onetl._internal import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
 from onetl.connection.db_connection.jdbc_connection.options import (
@@ -33,7 +33,7 @@ from onetl.connection.db_connection.jdbc_connection.options import (
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import Statement
+from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
@@ -156,8 +156,8 @@ class JDBCConnection(JDBCMixin, DBConnection):
         hint: str | None = None,
         where: str | None = None,
         df_schema: StructType | None = None,
-        start_from: Statement | None = None,
-        end_at: Statement | None = None,
+        window: Window | None = None,
+        limit: int | None = None,
         options: JDBCReadOptions | None = None,
     ) -> DataFrame:
         read_options = self._set_lower_upper_bound(
@@ -172,12 +172,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         if read_options.partition_column:
             if read_options.partitioning_mode == JDBCPartitioningMode.MOD:
-                partition_column = self.Dialect._get_partition_column_mod(
+                partition_column = self.dialect.get_partition_column_mod(
                     read_options.partition_column,
                     read_options.num_partitions,
                 )
             elif read_options.partitioning_mode == JDBCPartitioningMode.HASH:
-                partition_column = self.Dialect._get_partition_column_hash(
+                partition_column = self.dialect.get_partition_column_hash(
                     read_options.partition_column,
                     read_options.num_partitions,
                 )
@@ -189,17 +189,18 @@ class JDBCConnection(JDBCMixin, DBConnection):
             # have the same name as the field in the table ( 2.4 version )
             # https://github.com/apache/spark/pull/21379
             alias = "generated_" + secrets.token_hex(5)
-            alias_escaped = self.Dialect._escape_column(alias)
-            aliased_column = self.Dialect._expression_with_alias(partition_column, alias_escaped)
+            alias_escaped = self.dialect.escape_column(alias)
+            aliased_column = self.dialect.aliased(partition_column, alias_escaped)
             read_options = read_options.copy(update={"partition_column": alias_escaped})
             new_columns.append(aliased_column)
 
-        where = self.Dialect._condition_assembler(condition=where, start_from=start_from, end_at=end_at)
-        query = get_sql_query(
+        where = self.dialect.apply_window(where, window)
+        query = self.dialect.get_sql_query(
             table=source,
             columns=new_columns,
             where=where,
             hint=hint,
+            limit=limit,
         )
 
         result = self.sql(query, read_options)
@@ -236,7 +237,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
-        query = get_sql_query(source, columns=columns, where="1=0", compact=True)
+        query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
         read_options = self._exclude_partition_options(self.ReadOptions.parse(options), fetchsize=0)
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
@@ -280,32 +281,30 @@ class JDBCConnection(JDBCMixin, DBConnection):
         return result
 
     @slot
-    def get_min_max_bounds(
+    def get_min_max_values(
         self,
         source: str,
-        column: str,
-        expression: str | None = None,
-        hint: str | None = None,
-        where: str | None = None,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
         options: JDBCReadOptions | None = None,
     ) -> tuple[Any, Any]:
-        log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, column)
-
+        log.info("|%s| Getting min and max values for expression %r ...", self.__class__.__name__, window.expression)
         read_options = self._exclude_partition_options(self.ReadOptions.parse(options), fetchsize=1)
 
-        query = get_sql_query(
+        query = self.dialect.get_sql_query(
             table=source,
             columns=[
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_min_value_sql(expression or column),
-                    self.Dialect._escape_column("min"),
+                self.dialect.aliased(
+                    self.dialect.get_min_value(window.expression),
+                    self.dialect.escape_column("min"),
                 ),
-                self.Dialect._expression_with_alias(
-                    self.Dialect._get_max_value_sql(expression or column),
-                    self.Dialect._escape_column("max"),
+                self.dialect.aliased(
+                    self.dialect.get_max_value(window.expression),
+                    self.dialect.escape_column("max"),
                 ),
             ],
-            where=where,
+            where=self.dialect.apply_window(where, window),
             hint=hint,
         )
 
@@ -318,8 +317,8 @@ class JDBCConnection(JDBCMixin, DBConnection):
         max_value = row["max"]
 
         log.info("|%s| Received values:", self.__class__.__name__)
-        log_with_indent(log, "MIN(%s) = %r", column, min_value)
-        log_with_indent(log, "MAX(%s) = %r", column, max_value)
+        log_with_indent(log, "MIN(%s) = %r", window.expression, min_value)
+        log_with_indent(log, "MAX(%s) = %r", window.expression, max_value)
 
         return min_value, max_value
 
@@ -377,9 +376,9 @@ class JDBCConnection(JDBCMixin, DBConnection):
             options.partition_column,
         )
 
-        min_partition_value, max_partition_value = self.get_min_max_bounds(
+        min_partition_value, max_partition_value = self.get_min_max_values(
             source=table,
-            column=options.partition_column,
+            window=Window(options.partition_column),
             where=where,
             hint=hint,
             options=options,

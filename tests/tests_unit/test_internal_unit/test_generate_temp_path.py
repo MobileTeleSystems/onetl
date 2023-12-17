@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import PurePath
 
 import pytest
-from etl_entities import Process
+from etl_entities.process import Process
 
 from onetl._internal import generate_temp_path
 

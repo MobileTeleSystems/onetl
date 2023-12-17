@@ -18,10 +18,9 @@ from datetime import date, datetime
 
 from onetl.connection.db_connection.db_connection import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
-    SupportColumnsList,
-    SupportDfSchemaNone,
-    SupportHintNone,
-    SupportHWMColumnStr,
+    NotSupportDFSchema,
+    NotSupportHint,
+    SupportColumns,
     SupportHWMExpressionStr,
     SupportNameWithSchemaOnly,
     SupportWhereStr,
@@ -30,20 +29,17 @@ from onetl.connection.db_connection.dialect_mixins import (
 
 class GreenplumDialect(  # noqa: WPS215
     SupportNameWithSchemaOnly,
-    SupportColumnsList,
-    SupportDfSchemaNone,
+    SupportColumns,
+    NotSupportDFSchema,
     SupportWhereStr,
-    SupportHintNone,
+    NotSupportHint,
     SupportHWMExpressionStr,
-    SupportHWMColumnStr,
     DBDialect,
 ):
-    @classmethod
-    def _get_datetime_value_sql(cls, value: datetime) -> str:
+    def _serialize_datetime(self, value: datetime) -> str:
         result = value.isoformat()
         return f"cast('{result}' as timestamp)"
 
-    @classmethod
-    def _get_date_value_sql(cls, value: date) -> str:
+    def _serialize_date(self, value: date) -> str:
         result = value.isoformat()
         return f"cast('{result}' as date)"

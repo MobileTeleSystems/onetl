@@ -1,9 +1,11 @@
+import secrets
+
 import pytest
-from etl_entities import DateTimeHWM, IntHWM
+from etl_entities.hwm import ColumnDateTimeHWM, ColumnIntHWM
+from etl_entities.hwm_store import HWMStoreStackManager
 
 from onetl.connection import MongoDB
 from onetl.db import DBReader
-from onetl.hwm.store import HWMStoreManager
 from onetl.strategy import IncrementalStrategy
 
 pytestmark = pytest.mark.mongodb
@@ -35,8 +37,8 @@ def df_schema():
 @pytest.mark.parametrize(
     "hwm_type, hwm_column",
     [
-        (IntHWM, "hwm_int"),
-        (DateTimeHWM, "hwm_datetime"),
+        (ColumnIntHWM, "hwm_int"),
+        (ColumnDateTimeHWM, "hwm_datetime"),
     ],
 )
 @pytest.mark.parametrize(
@@ -56,7 +58,7 @@ def test_mongodb_strategy_incremental(
     span_gap,
     span_length,
 ):
-    store = HWMStoreManager.get_current()
+    store = HWMStoreStackManager.get_current()
 
     mongodb = MongoDB(
         host=processing.host,
@@ -67,14 +69,14 @@ def test_mongodb_strategy_incremental(
         spark=spark,
     )
 
+    hwm_name = secrets.token_hex(5)
+
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
         df_schema=df_schema,
     )
-
-    hwm = hwm_type(source=reader.source, column=reader.hwm_column)
 
     # there are 2 spans with a gap between
 
@@ -103,13 +105,13 @@ def test_mongodb_strategy_incremental(
     with IncrementalStrategy():
         first_df = reader.run()
 
-    hwm = store.get(hwm.qualified_name)
+    hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
     assert hwm.value == first_span_max
 
     # all the data has been read
-    processing.assert_equal_df(df=first_df, other_frame=first_span)
+    processing.assert_equal_df(df=first_df, other_frame=first_span, order_by="_id")
 
     # insert second span
     processing.insert_data(
@@ -121,26 +123,138 @@ def test_mongodb_strategy_incremental(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    assert store.get(hwm.qualified_name).value == second_span_max
+    assert store.get_hwm(hwm_name).value == second_span_max
 
     if "int" in hwm_column:
         # only changed data has been read
-        processing.assert_equal_df(df=second_df, other_frame=second_span)
+        processing.assert_equal_df(df=second_df, other_frame=second_span, order_by="_id")
     else:
         # date and datetime values have a random part
         # so instead of checking the whole dataframe a partial comparison should be performed
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
+def test_mongodb_strategy_incremental_nothing_to_read(
+    spark,
+    processing,
+    df_schema,
+    prepare_schema_table,
+):
+    mongodb = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+    hwm_column = "hwm_int"
+
+    reader = DBReader(
+        connection=mongodb,
+        source=prepare_schema_table.table,
+        df_schema=df_schema,
+        hwm=DBReader.AutoDetectHWM(name=hwm_name, expression=hwm_column),
+    )
+
+    span_gap = 10
+    span_length = 50
+
+    # there are 2 spans with a gap between
+
+    # 0..50
+    first_span_begin = 0
+    first_span_end = first_span_begin + span_length
+
+    # 60..110
+    second_span_begin = first_span_end + span_gap
+    second_span_end = second_span_begin + span_length
+
+    first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
+    second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
+
+    first_span_max = first_span[hwm_column].max()
+    second_span_max = second_span[hwm_column].max()
+
+    # no data yet, nothing to read
+    with IncrementalStrategy():
+        df = reader.run()
+
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=first_span,
+    )
+
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value is None
+
+    # set hwm value to 50
+    with IncrementalStrategy():
+        df = reader.run()
+
+    processing.assert_equal_df(df=df, other_frame=first_span, order_by="_id")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # no new data yet, nothing to read
+    with IncrementalStrategy():
+        df = reader.run()
+
+    assert not df.count()
+    # HWM value is unchanged
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # insert second span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=second_span,
+    )
+
+    # .run() is not called - dataframe still empty - HWM not updated
+    assert not df.count()
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == first_span_max
+
+    # read data
+    with IncrementalStrategy():
+        df = reader.run()
+
+    processing.assert_equal_df(df=df, other_frame=second_span, order_by="_id")
+    hwm = store.get_hwm(name=hwm_name)
+    assert hwm.value == second_span_max
+
+
 # Fail if HWM is Numeric, or Decimal with fractional part, or string
 @pytest.mark.parametrize(
-    "hwm_column",
+    "hwm_column, exception_type, error_message",
     [
-        "float_value",
-        "text_string",
+        ("float_value", ValueError, "Expression 'float_value' returned values"),
+        ("text_string", RuntimeError, "Cannot detect HWM type for"),
+        ("unknown_column", ValueError, "not found in dataframe schema"),
     ],
 )
-def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_schema_table, df_schema, hwm_column):
+def test_mongodb_strategy_incremental_wrong_hwm(
+    spark,
+    processing,
+    prepare_schema_table,
+    df_schema,
+    hwm_column,
+    exception_type,
+    error_message,
+):
     mongodb = MongoDB(
         host=processing.host,
         port=processing.port,
@@ -153,7 +267,7 @@ def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_sche
     reader = DBReader(
         connection=mongodb,
         table=prepare_schema_table.table,
-        hwm_column=hwm_column,
+        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_column),
         df_schema=df_schema,
     )
 
@@ -166,7 +280,58 @@ def test_mongodb_strategy_incremental_wrong_type(spark, processing, prepare_sche
         values=data,
     )
 
-    with pytest.raises((KeyError, ValueError)):
+    with pytest.raises(exception_type, match=error_message):
         # incremental run
         with IncrementalStrategy():
             reader.run()
+
+
+def test_mongodb_strategy_incremental_explicit_hwm_type(
+    spark,
+    processing,
+    df_schema,
+    prepare_schema_table,
+):
+    store = HWMStoreStackManager.get_current()
+    hwm_name = secrets.token_hex(5)
+
+    mongodb = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    reader = DBReader(
+        connection=mongodb,
+        source=prepare_schema_table.table,
+        df_schema=df_schema,
+        # tell DBReader that text_string column contains integer values, and can be used for HWM
+        hwm=ColumnIntHWM(name=hwm_name, expression="text_string"),
+    )
+
+    data = processing.create_pandas_df()
+    data["text_string"] = data["hwm_int"].apply(str)
+
+    # insert first span
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=data,
+    )
+
+    # incremental run
+    with IncrementalStrategy():
+        df = reader.run()
+
+    hwm = store.get_hwm(name=hwm_name)
+    # type is exactly as set by user
+    assert isinstance(hwm, ColumnIntHWM)
+
+    # MongoDB does not support comparison str < int
+    assert not df.count()
+
+    # but HWM is updated to max value from the source. yes, that's really weird case.
+    # garbage in (wrong HWM type for specific expression) - garbage out (wrong dataframe content)
+    assert hwm.value == 99

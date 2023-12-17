@@ -28,4 +28,5 @@ def test_clickhouse_writer_snapshot(spark, processing, prepare_schema_table):
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         df=df,
+        order_by="id_int",
     )

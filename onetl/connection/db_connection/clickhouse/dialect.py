@@ -20,20 +20,16 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
 class ClickhouseDialect(JDBCDialect):
-    @classmethod
-    def _get_datetime_value_sql(cls, value: datetime) -> str:
+    def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
+        return f"modulo(halfMD5({partition_column}), {num_partitions})"
+
+    def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
+        return f"{partition_column} % {num_partitions}"
+
+    def _serialize_datetime(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")
         return f"CAST('{result}' AS DateTime)"
 
-    @classmethod
-    def _get_date_value_sql(cls, value: date) -> str:
+    def _serialize_date(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
         return f"CAST('{result}' AS Date)"
-
-    @classmethod
-    def _get_partition_column_hash(cls, partition_column: str, num_partitions: int) -> str:
-        return f"modulo(halfMD5({partition_column}), {num_partitions})"
-
-    @classmethod
-    def _get_partition_column_mod(cls, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} % {num_partitions}"

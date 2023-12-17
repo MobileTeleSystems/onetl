@@ -8,13 +8,13 @@ if TYPE_CHECKING:
 from onetl.base import BaseDBConnection
 
 
-class SupportDfSchemaStruct:
-    @classmethod
+class RequiresDFSchema:
+    connection: BaseDBConnection
+
     def validate_df_schema(
-        cls,
-        connection: BaseDBConnection,
+        self,
         df_schema: StructType | None,
     ) -> StructType:
         if df_schema:
             return df_schema
-        raise ValueError(f"'df_schema' parameter is mandatory for {connection.__class__.__name__}")
+        raise ValueError(f"'df_schema' parameter is mandatory for {self.connection.__class__.__name__}")

@@ -6,10 +6,10 @@ from onetl.base import BaseDBConnection
 
 
 class SupportHintStr:
-    @classmethod
+    connection: BaseDBConnection
+
     def validate_hint(
-        cls,
-        connection: BaseDBConnection,
+        self,
         hint: Any,
     ) -> str | None:
         if hint is None:
@@ -17,7 +17,7 @@ class SupportHintStr:
 
         if not isinstance(hint, str):
             raise TypeError(
-                f"{connection.__class__.__name__} requires 'hint' parameter type to be 'str', "
+                f"{self.connection.__class__.__name__} requires 'hint' parameter type to be 'str', "
                 f"got {hint.__class__.__name__!r}",
             )
 

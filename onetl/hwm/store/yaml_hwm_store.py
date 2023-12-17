@@ -19,26 +19,54 @@ import re
 from typing import ClassVar
 
 import yaml
-from etl_entities import HWM, HWMTypeRegistry
+from etl_entities.hwm import HWM, HWMTypeRegistry
+from etl_entities.hwm_store import (
+    BaseHWMStore,
+    HWMStoreClassRegistry,
+    register_hwm_store_class,
+)
 from platformdirs import user_data_dir
 from pydantic import validator
 
 from onetl.hooks import slot, support_hooks
-from onetl.hwm.store.base_hwm_store import BaseHWMStore
-from onetl.hwm.store.hwm_store_class_registry import (
-    default_hwm_store_class,
-    register_hwm_store_class,
-)
 from onetl.impl import FrozenModel, LocalPath
 
 DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
 
+def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
+    """Decorator for setting up some Store class as default one
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.hwm.store import (
+            HWMStoreClassRegistry,
+            default_hwm_store_class,
+            BaseHWMStore,
+        )
+
+
+        @default_hwm_store_class
+        class MyClass(BaseHWMStore):
+            ...
+
+
+        HWMStoreClassRegistry.get() == MyClass  # default
+
+    """
+
+    HWMStoreClassRegistry.set_default(klass)
+    return klass
+
+
 @default_hwm_store_class
-@register_hwm_store_class("yaml", "yml")
+@register_hwm_store_class("yaml")
 @support_hooks
 class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML local store for HWM values. Used as default HWM store. |support_hooks|
+    r"""YAML **local store** for HWM values. Used as default HWM store. |support_hooks|
 
     Parameters
     ----------
@@ -91,7 +119,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_unique_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -170,20 +198,20 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         return path
 
     @slot
-    def get(self, name: str) -> HWM | None:
+    def get_hwm(self, name: str) -> HWM | None:  # type: ignore
         data = self._load(name)
 
         if not data:
             return None
 
         latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
-        return HWMTypeRegistry.parse(latest)
+        return HWMTypeRegistry.parse(latest)  # type: ignore
 
     @slot
-    def save(self, hwm: HWM) -> LocalPath:
-        data = self._load(hwm.qualified_name)
-        self._dump(hwm.qualified_name, [hwm.serialize()] + data)
-        return self.get_file_path(hwm.qualified_name)
+    def set_hwm(self, hwm: HWM) -> LocalPath:  # type: ignore
+        data = self._load(hwm.name)
+        self._dump(hwm.name, [hwm.serialize()] + data)
+        return self.get_file_path(hwm.name)
 
     @classmethod
     def cleanup_file_name(cls, name: str) -> str:

@@ -67,6 +67,7 @@ class SnapshotStrategy(BaseStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import SnapshotStrategy
+        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -89,7 +90,7 @@ class SnapshotStrategy(BaseStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -136,7 +137,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         Cannot be used with :ref:`file-downloader`
 
-    Same as :obj:`onetl.strategy.snapshot_strategy.SnapshotStrategy`,
+    Same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>`,
     but reads data from the source in sequential batches (1..N) like:
 
     .. code:: sql
@@ -155,7 +156,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     .. note::
 
         This strategy uses HWM column value to filter data for each batch,
-        but **does not** save it into :ref:`hwm-store`.
+        but does **NOT** save it into :ref:`HWM Store <hwm>`.
         So every run starts from the beginning, not from the previous HWM value.
 
     .. note::
@@ -194,7 +195,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     start : Any, default: ``None``
 
-        If passed, the value will be used for generating WHERE clauses with ``hwm_column`` filter,
+        If passed, the value will be used for generating WHERE clauses with ``hwm.expression`` filter,
         as a start value for the first batch.
 
         If not set, the value is determined by a separated query:
@@ -207,12 +208,12 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         .. note::
 
-            ``start`` should be the same type as ``hwm_column`` value,
+            ``start`` should be the same type as ``hwm.expression`` value,
             e.g. :obj:`datetime.datetime` for ``TIMESTAMP`` column, :obj:`datetime.date` for ``DATE``, and so on
 
     stop : Any, default: ``None``
 
-        If passed, the value will be used for generating WHERE clauses with ``hwm_column`` filter,
+        If passed, the value will be used for generating WHERE clauses with ``hwm.expression`` filter,
         as a stop value for the last batch.
 
         If not set, the value is determined by a separated query:
@@ -225,7 +226,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
         .. note::
 
-            ``stop`` should be the same type as ``hwm_column`` value,
+            ``stop`` should be the same type as ``hwm.expression`` value,
             e.g. :obj:`datetime.datetime` for ``TIMESTAMP`` column, :obj:`datetime.date` for ``DATE``, and so on
 
     Examples
@@ -238,6 +239,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
         from onetl.strategy import SnapshotBatchStrategy
+        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -262,7 +264,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["id", "data"],
-            hwm_column="id",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
         writer = DBWriter(connection=hive, target="newtable")
@@ -377,7 +379,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         ...
         N:  WHERE id >  1900 AND id <= 2000; -- until stop
 
-    ``hwm_column`` can be a date or datetime, not only integer:
+    ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
@@ -387,7 +389,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             connection=postgres,
             source="public.mydata",
             columns=["business_dt", "data"],
-            hwm_column="business_dt",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
 
         with SnapshotBatchStrategy(

@@ -1,7 +1,7 @@
 .. _incremental-batch-strategy:
 
-Incremental batch strategy
-=================================================================
+Incremental Batch Strategy
+==========================
 
 .. currentmodule:: onetl.strategy.incremental_strategy
 

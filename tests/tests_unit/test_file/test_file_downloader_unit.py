@@ -3,7 +3,16 @@ import textwrap
 from unittest.mock import Mock
 
 import pytest
-from etl_entities import HWM, ColumnHWM, DateHWM, DateTimeHWM, IntHWM
+from etl_entities.hwm import (
+    HWM,
+    ColumnDateHWM,
+    ColumnDateTimeHWM,
+    ColumnHWM,
+    ColumnIntHWM,
+    FileListHWM,
+)
+from etl_entities.instance import AbsolutePath
+from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 
 from onetl.base import BaseFileConnection
 from onetl.core import FileFilter, FileLimit
@@ -31,55 +40,124 @@ def test_file_downloader_deprecated_import():
         assert OldFileDownloader is FileDownloader
 
 
+@pytest.mark.parametrize(
+    "hwm_type",
+    [
+        "file_list",
+        OldFileListHWM,
+    ],
+)
+def test_file_downloader_hwm_type_deprecated(hwm_type):
+    warning_msg = 'Passing "hwm_type" to FileDownloader class is deprecated since version 0.10.0'
+    connection = Mock(spec=BaseFileConnection)
+    connection.instance_url = "abc"
+
+    with pytest.warns(UserWarning, match=warning_msg):
+        downloader = FileDownloader(
+            connection=connection,
+            local_path="/local/path",
+            source_path="/source/path",
+            hwm_type=hwm_type,
+        )
+
+    assert isinstance(downloader.hwm, FileListHWM)
+    assert downloader.hwm.entity == AbsolutePath("/source/path")
+
+
 def test_file_downloader_unknown_hwm_type():
-    with pytest.raises(KeyError, match="Unknown HWM type 'abc'"):
+    # fails on pydantic issubclass(hwm_type, OldFileListHWM) in FileDownloader
+    with pytest.raises(ValueError):
         FileDownloader(
-            connection=Mock(),
-            local_path="/path",
-            source_path="/path",
+            connection=Mock(spec=BaseFileConnection),
+            local_path="/local/path",
+            source_path="/source/path",
             hwm_type="abc",
         )
 
 
 @pytest.mark.parametrize(
-    "hwm_type, hwm_type_name",
+    "hwm_type",
     [
-        ("byte", "IntHWM"),
-        ("integer", "IntHWM"),
-        ("short", "IntHWM"),
-        ("long", "IntHWM"),
-        ("date", "DateHWM"),
-        ("timestamp", "DateTimeHWM"),
-        (IntHWM, "IntHWM"),
-        (DateHWM, "DateHWM"),
-        (DateTimeHWM, "DateTimeHWM"),
-        (HWM, "HWM"),
-        (ColumnHWM, "ColumnHWM"),
+        ColumnIntHWM,
+        ColumnDateHWM,
+        ColumnDateTimeHWM,
+        ColumnHWM,
+        HWM,
     ],
 )
-def test_file_downloader_wrong_hwm_type(hwm_type, hwm_type_name):
-    with pytest.raises(ValueError, match=f"`hwm_type` class should be a inherited from FileHWM, got {hwm_type_name}"):
+def test_file_downloader_wrong_hwm_type(hwm_type):
+    # pydantic validation fails, as new hwm classes are passed into hwm_type
+    with pytest.raises(ValueError):
         FileDownloader(
-            connection=Mock(),
-            local_path="/path",
-            source_path="/path",
+            connection=Mock(spec=BaseFileConnection),
+            local_path="/local/path",
+            source_path="/source/path",
             hwm_type=hwm_type,
         )
 
 
-def test_file_downloader_hwm_type_without_source_path():
-    with pytest.raises(ValueError, match="If `hwm_type` is passed, `source_path` must be specified"):
+@pytest.mark.parametrize(
+    "hwm_type",
+    [
+        "file_list",
+        OldFileListHWM,
+    ],
+)
+def test_file_downloader_hwm_type_without_source_path(hwm_type):
+    warning_msg = "If `hwm` is passed, `source_path` must be specified"
+    with pytest.raises(ValueError, match=warning_msg):
         FileDownloader(
-            connection=Mock(),
-            local_path="/path",
-            hwm_type="file_list",
+            connection=Mock(spec=BaseFileConnection),
+            local_path="/local/path",
+            hwm_type=hwm_type,
+        )
+
+
+def test_file_downloader_hwm_without_source_path():
+    warning_msg = "If `hwm` is passed, `source_path` must be specified"
+    with pytest.raises(ValueError, match=warning_msg):
+        FileDownloader(
+            connection=Mock(spec=BaseFileConnection),
+            local_path="/local/path",
+            hwm=FileListHWM(name="abc"),
+        )
+
+
+def test_file_downloader_hwm_autofill_directory():
+    downloader = FileDownloader(
+        connection=Mock(spec=BaseFileConnection),
+        local_path="/local/path",
+        source_path="/source/path",
+        hwm=FileListHWM(name="abc"),
+    )
+    assert downloader.hwm.entity == AbsolutePath("/source/path")
+
+
+def test_file_downloader_hwm_with_same_directory():
+    downloader = FileDownloader(
+        connection=Mock(spec=BaseFileConnection),
+        local_path="/local/path",
+        source_path="/source/path",
+        hwm=FileListHWM(name="abc", directory="/source/path"),
+    )
+    assert downloader.hwm.entity == AbsolutePath("/source/path")
+
+
+def test_file_downloader_hwm_with_different_directory_error():
+    error_msg = "Passed `hwm.directory` is different from `source_path`"
+    with pytest.raises(ValueError, match=error_msg):
+        FileDownloader(
+            connection=Mock(spec=BaseFileConnection),
+            local_path="/local/path",
+            source_path="/source/path",
+            hwm=FileListHWM(name="abc", directory="/another/path"),
         )
 
 
 def test_file_downloader_filter_default():
     downloader = FileDownloader(
         connection=Mock(spec=BaseFileConnection),
-        local_path="/path",
+        local_path="/local/path",
     )
 
     assert downloader.filters == []
@@ -89,7 +167,7 @@ def test_file_downloader_filter_none():
     with pytest.warns(UserWarning, match=re.escape("filter=None is deprecated in v0.8.0, use filters=[] instead")):
         downloader = FileDownloader(
             connection=Mock(spec=BaseFileConnection),
-            local_path="/path",
+            local_path="/local/path",
             filter=None,
         )
 
@@ -107,7 +185,7 @@ def test_file_downloader_filter_legacy(file_filter):
     with pytest.warns(UserWarning, match=re.escape("filter=... is deprecated in v0.8.0, use filters=[...] instead")):
         downloader = FileDownloader(
             connection=Mock(spec=BaseFileConnection),
-            local_path="/path",
+            local_path="/local/path",
             filter=file_filter,
         )
 
@@ -117,7 +195,7 @@ def test_file_downloader_filter_legacy(file_filter):
 def test_file_downloader_limit_default():
     downloader = FileDownloader(
         connection=Mock(spec=BaseFileConnection),
-        local_path="/path",
+        local_path="/local/path",
     )
 
     assert downloader.limits == []
@@ -127,7 +205,7 @@ def test_file_downloader_limit_none():
     with pytest.warns(UserWarning, match=re.escape("limit=None is deprecated in v0.8.0, use limits=[] instead")):
         downloader = FileDownloader(
             connection=Mock(spec=BaseFileConnection),
-            local_path="/path",
+            local_path="/local/path",
             limit=None,
         )
 
@@ -145,7 +223,7 @@ def test_file_downloader_limit_legacy(file_limit):
     with pytest.warns(UserWarning, match=re.escape("limit=... is deprecated in v0.8.0, use limits=[...] instead")):
         downloader = FileDownloader(
             connection=Mock(spec=BaseFileConnection),
-            local_path="/path",
+            local_path="/local/path",
             limit=file_limit,
         )
 

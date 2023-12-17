@@ -1,13 +1,12 @@
-import contextlib
 import logging
+from contextlib import suppress
 
 import pytest
 
 try:
     import pandas
 except ImportError:
-    # pandas can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 from onetl.connection import Oracle
 
@@ -86,7 +85,8 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
-    with pytest.raises(Exception):
+    with suppress(Exception):
+        # new syntax in Oracle 23, but fails on older versions
         oracle.sql(f"SELECT 1{suffix}")
 
 
@@ -120,9 +120,9 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
     with pytest.raises(Exception):
         oracle.fetch(f"SHOW TABLES{suffix}")
 
-    # wrong syntax
-    with pytest.raises(Exception):
-        oracle.fetch(f"SELECT 1{suffix}")
+    with suppress(Exception):
+        # new syntax in Oracle 23, but fails on older versions
+        oracle.sql(f"SELECT 1{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
@@ -920,7 +920,7 @@ def test_oracle_connection_execute_function_table(
     selected_df = table_df[table_df.ID_INT < 10]
     processing.assert_equal_df(df=df, other_frame=selected_df, order_by="id_int")
 
-    with contextlib.suppress(Exception):
+    with suppress(Exception):
         # Oracle 11 does not support selecting from pipelined function without TABLE(...), but 18 does
         df = oracle.fetch(f"SELECT * FROM {func}_pkg.func_pipelined(10)")
         processing.assert_equal_df(df=df, other_frame=selected_df, order_by="id_int")

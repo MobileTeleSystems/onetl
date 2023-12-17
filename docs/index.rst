@@ -1,7 +1,7 @@
 .. include:: ../README.rst
     :end-before: |Logo|
 
-.. image:: static/logo_wide.svg
+.. image:: _static/logo_wide.svg
     :alt: onETL logo
 
 .. include:: ../README.rst
@@ -48,10 +48,9 @@
 
 .. toctree::
     :maxdepth: 2
-    :caption: HWM and incremental reads
+    :caption: Read strategies and HWM
     :hidden:
 
-    hwm/index
     strategy/index
     hwm_store/index
 

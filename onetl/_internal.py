@@ -22,7 +22,7 @@ import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from etl_entities import ProcessStackManager
+from etl_entities.process import ProcessStackManager
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ def generate_temp_path(root: PurePath) -> PurePath:
 
     .. code:: python
 
-        from etl_entities import Process
+        from etl_entities.process import Process
 
         from pathlib import Path
 
@@ -180,41 +180,3 @@ def generate_temp_path(root: PurePath) -> PurePath:
     current_process = ProcessStackManager.get_current()
     current_dt = datetime.now().strftime(DATETIME_FORMAT)
     return root / "onetl" / current_process.host / current_process.full_name / current_dt
-
-
-def get_sql_query(
-    table: str,
-    columns: list[str] | None = None,
-    where: str | None = None,
-    hint: str | None = None,
-    compact: bool = False,
-) -> str:
-    """
-    Generates a SQL query using input arguments
-    """
-
-    if compact:
-        indent = " "
-    else:
-        indent = os.linesep + " " * 7
-
-    hint = f" /*+ {hint} */" if hint else ""
-
-    columns_str = "*"
-    if columns:
-        columns_str = indent + f",{indent}".join(column for column in columns)
-
-    if columns_str.strip() == "*":
-        columns_str = indent + "*"
-
-    where_str = ""
-    if where:
-        where_str = "WHERE" + indent + where
-
-    return os.linesep.join(
-        [
-            f"SELECT{hint}{columns_str}",
-            f"FROM{indent}{table}",
-            where_str,
-        ],
-    ).strip()

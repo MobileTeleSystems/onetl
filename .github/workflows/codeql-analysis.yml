@@ -14,6 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # flake8-commas is failing on Python 3.12
+  # as well as bandit https://github.com/PyCQA/bandit/issues/1077
   DEFAULT_PYTHON: '3.11'
 
 jobs:
@@ -35,7 +37,9 @@ jobs:
         python-version: ${{ env.DEFAULT_PYTHON }}
 
     - name: Install Kerberos headers
-      run: sudo apt-get install --no-install-recommends libkrb5-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends libkrb5-dev
 
     - name: Cache pip
       uses: actions/cache@v3

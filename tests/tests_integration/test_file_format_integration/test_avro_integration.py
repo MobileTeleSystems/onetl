@@ -13,8 +13,7 @@ from onetl.file.format import Avro
 try:
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    # pandas and spark can be missing if someone runs tests for file connections only
-    pass
+    pytest.skip("Missing pandas", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
 
@@ -72,7 +71,7 @@ def test_avro_reader(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
 
 
 @pytest.mark.parametrize(
@@ -116,4 +115,4 @@ def test_avro_writer(
 
     assert read_df.count()
     assert read_df.schema == df.schema
-    assert_equal_df(read_df, df)
+    assert_equal_df(read_df, df, order_by="id")
