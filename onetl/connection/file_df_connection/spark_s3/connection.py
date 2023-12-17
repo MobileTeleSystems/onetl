@@ -63,8 +63,8 @@ class SparkS3(SparkFileDFConnection):
     .. dropdown:: Version compatibility
 
         * Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
+        * Scala versions: 2.12 - 2.13
         * Java versions: 8 - 20
-        * Scala versions: 2.11 - 2.13
 
     .. warning::
 

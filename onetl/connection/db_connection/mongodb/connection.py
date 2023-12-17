@@ -65,8 +65,8 @@ class MongoDB(DBConnection):
 
         * MongoDB server versions: 4.0 or higher
         * Spark versions: 3.2.x - 3.4.x
+        * Scala versions: 2.12 - 2.13
         * Java versions: 8 - 20
-        * Scala versions: 2.11 - 2.13
 
         See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
 
