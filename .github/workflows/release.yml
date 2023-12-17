@@ -62,7 +62,7 @@ jobs:
       run: |
         cat docs/changelog/$GITHUB_REF_NAME.rst > changelog.rst
 
-    - name: Fix Github links
+    - name: Prepare rST syntax for conversion to Markdown
       run: |
         # Replace Github links from Sphinx syntax with Markdown
         sed -i -E 's/:github:issue:`(.*)`/#\1/g' changelog.rst
@@ -70,7 +70,7 @@ jobs:
         sed -i -E 's/:github:user:`(.*)`/@\1/g' changelog.rst
         sed -i -E 's/:github:org:`(.*)`/@\1/g' changelog.rst
 
-    - name: Convert changelog to markdown
+    - name: Convert rST to Markdown
       uses: docker://pandoc/core:2.9
       with:
         args: >-
@@ -80,13 +80,16 @@ jobs:
           --wrap=none
           changelog.rst
 
-    - name: Fix Github code blocks
+    - name: Fixing Markdown syntax after conversion
       run: |
         # Replace ``` {.python caption="abc"} with ```python caption="abc"
         sed -i -E 's/``` \{\.(.*)\}/```\1/g' changelog.md
 
         # Replace ``` python with ```python
         sed -i -E 's/``` (\w+)/```\1/g' changelog.md
+
+        # Replace \# with #
+        sed -i -E 's/\\#/#/g' changelog.md
 
     - name: Get release name
       id: release-name
