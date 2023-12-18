@@ -64,14 +64,192 @@ Breaking Changes
 
 - YAMLHWMStore **CANNOT read files created by older onETL versions** (0.9.x or older).
 
-  If you use it, please:
+  .. dropdown:: Update procedure
 
-  * Find ``.yml`` file for specific HWM. Path can be found in logs, it is usually in form ``/home/USERNAME/.local/share/onETL/yml_hwm_store/QUALIFIED_NAME.yml`` (on Linux).
-  * Take latest ``value`` from file content.
-  * Delete the file.
-  * Update ``DBReader(where=...)`` value to include filter like ``hwm_column >= old_value`` (it should match column type).
-  * Run your code. ``DBReader.run()`` will get new HWM value, and save it to ``.yml`` file with new structure.
-  * Undo changes of ``DBReader(where=...)``.
+  .. code-block:: python
+
+    # pip install onetl==0.9.5
+
+    # Get qualified_name for HWM
+
+
+    # Option 1. HWM is built manually
+    from etl_entities import IntHWM, FileListHWM
+    from etl_entities.source import Column, Table, RemoteFolder
+    from etl_entities.process import Process
+
+    # for column HWM
+    old_column_hwm = IntHWM(
+        process=Process(name="myprocess", task="abc", dag="cde", host="myhost"),
+        source=Table(name="schema.table", instance="postgres://host:5432/db"),
+        column=Column(name="col1"),
+    )
+    qualified_name = old_column_hwm.qualified_name
+    # "col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost"
+
+    # for file HWM
+    old_file_hwm = FileListHWM(
+        process=Process(name="myprocess", task="abc", dag="cde", host="myhost"),
+        source=RemoteFolder(name="/absolute/path", instance="ftp://ftp.server:21"),
+    )
+    qualified_name = old_file_hwm.qualified_name
+    # "file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost"
+
+
+    # Option 2. HWM is generated automatically (by DBReader/FileDownloader)
+    # See onETL logs and search for string like qualified_name = '...'
+
+    qualified_name = "col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost"
+
+
+    # Get .yml file path by qualified_name
+
+    import os
+    from pathlib import PurePosixPath
+    from onetl.hwm.store import YAMLHWMStore
+
+    # here you should pass the same arguments as used on production, if any
+    yaml_hwm_store = YAMLHWMStore()
+    hwm_path = yaml_hwm_store.get_file_path(qualified_name)
+    print(hwm_path)
+
+    # for column HWM
+    # LocalPosixPath('/home/maxim/.local/share/onETL/yml_hwm_store/col1__schema.table__postgres_host_5432_db__cde.abc.myprocess__myhost.yml')
+
+    # for file HWM
+    # LocalPosixPath('/home/maxim/.local/share/onETL/yml_hwm_store/file_list__absolute_path__ftp_ftp.server_21__cde.abc.myprocess__myhost.yml')
+
+
+    # Read raw .yml file content
+
+    from yaml import safe_load, dump
+
+    raw_old_hwm_items = safe_load(hwm_path.read_text())
+    print(raw_old_hwm_items)
+
+    # for column HWM
+    # [
+    #   {
+    #     "column": { "name": "col1", "partition": {} },
+    #     "modified_time": "2023-12-18T10: 39: 47.377378",
+    #     "process": { "dag": "cde", "host": "myhost", "name": "myprocess", "task": "abc" },
+    #     "source": { "instance": "postgres: //host:5432/db", "name": "schema.table" },
+    #     "type": "int",
+    #     "value": "123",
+    #   },
+    # ]
+
+    # for file HWM
+    # [
+    #   {
+    #     "modified_time": "2023-12-18T11:15:36.478462",
+    #     "process": { "dag": "cde", "host": "myhost", "name": "myprocess", "task": "abc" },
+    #     "source": { "instance": "ftp://ftp.server:21", "name": "/absolute/path" },
+    #     "type": "file_list",
+    #     "value": ["file1.txt", "file2.txt"],
+    #   },
+    # ]
+
+
+    # Convert file content to new structure, compatible with onETL 0.10.x
+    raw_new_hwm_items = []
+    for old_hwm in raw_old_hwm_items:
+        new_hwm = {"name": qualified_name, "modified_time": old_hwm["modified_time"]}
+
+        if "column" in old_hwm:
+            new_hwm["expression"] = old_hwm["column"]["name"]
+        new_hwm["entity"] = old_hwm["source"]["name"]
+        old_hwm.pop("process", None)
+
+        if old_hwm["type"] == "int":
+            new_hwm["type"] = "column_int"
+            new_hwm["value"] = old_hwm["value"]
+
+        elif old_hwm["type"] == "date":
+            new_hwm["type"] = "column_date"
+            new_hwm["value"] = old_hwm["value"]
+
+        elif old_hwm["type"] == "datetime":
+            new_hwm["type"] = "column_datetime"
+            new_hwm["value"] = old_hwm["value"]
+
+        elif old_hwm["type"] == "file_list":
+            new_hwm["type"] = "file_list"
+            new_hwm["value"] = [
+                os.fspath(PurePosixPath(old_hwm["source"]["name"]).joinpath(path))
+                for path in old_hwm["value"]
+            ]
+
+        else:
+            raise ValueError("WAT?")
+
+        raw_new_hwm_items.append(new_hwm)
+
+
+    print(raw_new_hwm_items)
+    # for column HWM
+    # [
+    #   {
+    #     "name": "col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost",
+    #     "modified_time": "2023-12-18T10:39:47.377378",
+    #     "expression": "col1",
+    #     "source": "schema.table",
+    #     "type": "column_int",
+    #     "value": 123,
+    #   },
+    # ]
+
+    # for file HWM
+    # [
+    #   {
+    #     "name": "file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost",
+    #     "modified_time": "2023-12-18T11:15:36.478462",
+    #     "entity": "/absolute/path",
+    #     "type": "file_list",
+    #     "value": ["/absolute/path/file1.txt", "/absolute/path/file2.txt"],
+    #   },
+    # ]
+
+
+    # Save file with new content
+    with open(hwm_path, "w") as file:
+        dump(raw_new_hwm_items, file)
+
+
+    # Stop Python interpreter and update onETL
+    # pip install onetl==0.10.0
+    # Check that new .yml file can be read
+
+    from onetl.hwm.store import YAMLHWMStore
+
+    qualified_name = ...
+
+    # here you should pass the same arguments as used on production, if any
+    yaml_hwm_store = YAMLHWMStore()
+    yaml_hwm_store.get_hwm(qualified_name)
+
+    # for column HWM
+    # ColumnIntHWM(
+    #     name='col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost',
+    #     description='',
+    #     entity='schema.table',
+    #     value=123,
+    #     expression='col1',
+    #     modified_time=datetime.datetime(2023, 12, 18, 10, 39, 47, 377378),
+    # )
+
+    # for file HWM
+    # FileListHWM(
+    #     name='file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost',
+    #     description='',
+    #     entity=AbsolutePath('/absolute/path'),
+    #     value=frozenset({AbsolutePath('/absolute/path/file1.txt'), AbsolutePath('/absolute/path/file2.txt')}),
+    #     expression=None,
+    #     modified_time=datetime.datetime(2023, 12, 18, 11, 15, 36, 478462)
+    # )
+
+
+    # That's all!
 
   But most of users use other HWM store implementations which do not have such issues.
 
