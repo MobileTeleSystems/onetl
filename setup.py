@@ -85,6 +85,7 @@ setup(
     },
     keywords=["Spark", "ETL", "JDBC", "HWM"],
     packages=find_packages(exclude=["docs", "docs.*", "tests", "tests.*"]),
+    entry_points={"tricoder_package_spy.register": ["onetl=onetl"]},
     python_requires=">=3.7",
     install_requires=requirements_core,
     extras_require={
