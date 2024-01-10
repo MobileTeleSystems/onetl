@@ -16,8 +16,9 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-from etl_entities.hwm import HWM
+from etl_entities.hwm import HWM, KeyValueIntHWM
 
 from onetl._util.spark import get_spark_version
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
@@ -28,6 +29,9 @@ from onetl.connection.db_connection.dialect_mixins import (
     NotSupportWhere,
     SupportNameAny,
 )
+
+if TYPE_CHECKING:
+    from pyspark.sql.types import StructField
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +44,7 @@ class KafkaDialect(  # noqa: WPS215
     SupportNameAny,
     DBDialect,
 ):
-    SUPPORTED_HWM_COLUMNS = {"offset", "timestamp"}
+    SUPPORTED_HWM_COLUMNS = {"offset"}
 
     def validate_hwm(
         self,
@@ -63,3 +67,12 @@ class KafkaDialect(  # noqa: WPS215
                     f"Spark version must be 3.x for the timestamp column. Current version is: {spark_version}",
                 )
         return hwm
+
+    def detect_hwm_class(self, field: StructField) -> type[KeyValueIntHWM]:
+        # mapping of Kafka field names to HWM classes
+        kafka_field_to_hwm_class = {
+            "offset": KeyValueIntHWM,
+            # add "timestamp" in future
+        }
+
+        return kafka_field_to_hwm_class.get(field.name, super().detect_hwm_class(field))

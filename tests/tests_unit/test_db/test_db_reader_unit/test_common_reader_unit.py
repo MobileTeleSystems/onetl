@@ -1,7 +1,9 @@
 import re
+import secrets
 import textwrap
 
 import pytest
+from frozendict import frozendict
 
 from onetl.connection import Hive
 from onetl.db import DBReader
@@ -158,3 +160,29 @@ def test_reader_no_hwm_expression(spark_mock):
             table="schema.table",
             hwm=DBReader.AutoDetectHWM(name="some_name"),
         )
+
+
+@pytest.mark.parametrize(
+    "alias_key, alias_value",
+    [
+        ("source", "test_source"),
+        ("topic", "test_topic"),
+        ("entity", "test_entity"),
+    ],
+)
+def test_auto_detect_hwm_handle_aliases(alias_key, alias_value):
+    values = {alias_key: alias_value}
+    auto_detect_hwm = DBReader.AutoDetectHWM(name=secrets.token_hex(6), **values)
+    assert auto_detect_hwm.entity == alias_value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, 123, "test_string", frozendict({1: 100})],
+)
+def test_auto_detect_hwm_dict_without_value_field(value):
+    hwm = DBReader.AutoDetectHWM(name=secrets.token_hex(6))
+    object.__setattr__(hwm, "value", value)
+    serialized_data = hwm.dict()
+
+    assert "value" not in serialized_data
