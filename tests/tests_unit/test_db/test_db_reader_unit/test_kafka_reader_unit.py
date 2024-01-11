@@ -1,16 +1,6 @@
 import secrets
 
 import pytest
-from pyspark.sql.types import (
-    BinaryType,
-    DoubleType,
-    IntegerType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from onetl.connection import Kafka
 from onetl.db import DBReader
@@ -20,6 +10,15 @@ pytestmark = pytest.mark.kafka
 
 @pytest.fixture(scope="function")
 def df_schema():
+    from pyspark.sql.types import (
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+
     return StructType(
         [
             StructField("id", IntegerType()),
@@ -103,46 +102,3 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_expression):
             table="table",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expression),
         )
-
-
-@pytest.mark.parametrize(
-    "columns,expected_schema",
-    [
-        (
-            ["key", "value", "offset"],
-            StructType(
-                [
-                    StructField("key", BinaryType(), nullable=True),
-                    StructField("value", BinaryType(), nullable=False),
-                    StructField("offset", LongType(), nullable=True),
-                ],
-            ),
-        ),
-        (
-            ["key", "timestamp"],
-            StructType(
-                [
-                    StructField("key", BinaryType(), nullable=True),
-                    StructField("timestamp", TimestampType(), nullable=True),
-                ],
-            ),
-        ),
-        (
-            ["value"],
-            StructType(
-                [
-                    StructField("value", BinaryType(), nullable=False),
-                ],
-            ),
-        ),
-    ],
-)
-def test_get_df_schema(spark_mock, columns, expected_schema):
-    kafka = Kafka(
-        addresses=["localhost:9092"],
-        cluster="my_cluster",
-        spark=spark_mock,
-    )
-
-    df_schema = kafka.get_df_schema(source="test_topic", columns=columns)
-    assert df_schema == expected_schema

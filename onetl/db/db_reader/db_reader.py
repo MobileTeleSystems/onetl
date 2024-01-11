@@ -6,7 +6,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
-from etl_entities.hwm import HWM, ColumnHWM
+from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, PrivateAttr, root_validator, validator
@@ -370,7 +370,7 @@ class DBReader(FrozenModel):
     df_schema: Optional[StructType] = None
     hwm_column: Optional[Union[str, tuple]] = None
     hwm_expression: Optional[str] = None
-    hwm: Optional[HWM] = None
+    hwm: Optional[Union[AutoDetectHWM, ColumnHWM, KeyValueHWM]] = None
     options: Optional[GenericOptions] = None
 
     AutoDetectHWM = AutoDetectHWM

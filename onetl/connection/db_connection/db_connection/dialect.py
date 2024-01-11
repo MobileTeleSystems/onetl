@@ -23,12 +23,12 @@ from onetl.hwm import Edge, Window
 from onetl.hwm.store import SparkTypeToHWM
 
 if TYPE_CHECKING:
-    from etl_entities.hwm import ColumnHWM
+    from etl_entities.hwm import HWM
     from pyspark.sql.types import StructField
 
 
 class DBDialect(BaseDBDialect):
-    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
+    def detect_hwm_class(self, field: StructField) -> type[HWM] | None:
         return SparkTypeToHWM.get(field.dataType.typeName())  # type: ignore
 
     def get_sql_query(

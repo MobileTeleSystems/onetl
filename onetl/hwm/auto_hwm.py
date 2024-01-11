@@ -39,7 +39,7 @@ class AutoDetectHWM(HWM):
 
     def update(self: AutoDetectHWM, value: Any) -> AutoDetectHWM:
         """Update current HWM value with some implementation-specific logic, and return HWM"""
-        return self
+        raise NotImplementedError("update method should be implemented in auto detected subclasses")
 
     def dict(self, **kwargs):
         serialized_data = super().dict(**kwargs)

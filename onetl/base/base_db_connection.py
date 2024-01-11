@@ -21,7 +21,7 @@ from onetl.base.base_connection import BaseConnection
 from onetl.hwm import Window
 
 if TYPE_CHECKING:
-    from etl_entities.hwm import HWM, ColumnHWM
+    from etl_entities.hwm import HWM
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructField, StructType
 
@@ -107,7 +107,7 @@ class BaseDBDialect(ABC):
         """
 
     @abstractmethod
-    def detect_hwm_class(self, field: StructField) -> type[ColumnHWM] | None:
+    def detect_hwm_class(self, field: StructField) -> type[HWM] | None:
         """
         Detects hwm column type based on specific data types in connections data stores
         """

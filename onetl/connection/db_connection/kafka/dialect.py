@@ -68,11 +68,9 @@ class KafkaDialect(  # noqa: WPS215
                 )
         return hwm
 
-    def detect_hwm_class(self, field: StructField) -> type[KeyValueIntHWM]:
-        # mapping of Kafka field names to HWM classes
+    def detect_hwm_class(self, field: StructField) -> type[KeyValueIntHWM] | None:
         kafka_field_to_hwm_class = {
             "offset": KeyValueIntHWM,
             # add "timestamp" in future
         }
-
-        return kafka_field_to_hwm_class.get(field.name, super().detect_hwm_class(field))
+        return kafka_field_to_hwm_class.get(field.name)
