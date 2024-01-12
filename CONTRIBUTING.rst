@@ -334,3 +334,44 @@ How to skip change notes check?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Just add ``ci:skip-changelog`` label to pull request.
+
+Release Process
+^^^^^^^^^^^^^^^
+
+Before making a release from the ``develop`` branch, follow these steps:
+
+1. Backup ``NEXT_RELEASE.rst``
+
+.. code:: bash
+
+    cp docs/changelog/NEXT_RELEASE.rst docs/changelog/temp_NEXT_RELEASE.rst
+
+2. Build the Release notes with Towncrier
+
+.. code:: bash
+
+    export VERSION=$(cat onetl/VERSION)
+    towncrier build  --version=${VERSION}
+
+3. Update Changelog
+
+.. code:: bash
+
+    mv docs/changelog/NEXT_RELEASE.rst docs/changelog/${VERSION}.rst
+
+4. Edit the ``${VERSION}.rst`` file
+Remove content above the version number heading in the ``${VERSION}.rst`` file.
+
+5. Update Changelog Index
+
+.. code:: bash
+
+    awk -v version=${VERSION} '/NEXT_RELEASE/{print;print "    " version;next}1' docs/changelog/index.rst > temp && mv temp docs/changelog/index.rst
+
+6. Reset ``NEXT_RELEASE.rst`` file
+
+.. code:: bash
+
+    mv docs/changelog/temp_NEXT_RELEASE.rst docs/changelog/NEXT_RELEASE.rst
+
+7. Update the patch version in the ``VERSION`` file of ``develop`` branch **after release**.

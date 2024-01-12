@@ -6,7 +6,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
-from etl_entities.hwm import HWM, ColumnHWM
+from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, PrivateAttr, root_validator, validator
@@ -123,7 +123,7 @@ class DBReader(FrozenModel):
             Some sources does not support data filtering.
 
     hwm : type[HWM] | None, default: ``None``
-        HWM class to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
+        HWM class to be used as :etl-entities:`HWM <hwm/index.html>` value.
 
         .. code:: python
 
@@ -362,8 +362,6 @@ class DBReader(FrozenModel):
             df = reader.run()
     """
 
-    AutoDetectHWM = AutoDetectHWM
-
     connection: BaseDBConnection
     source: str = Field(alias="table")
     columns: Optional[List[str]] = Field(default=None, min_items=1)
@@ -372,8 +370,10 @@ class DBReader(FrozenModel):
     df_schema: Optional[StructType] = None
     hwm_column: Optional[Union[str, tuple]] = None
     hwm_expression: Optional[str] = None
-    hwm: Optional[ColumnHWM] = None
+    hwm: Optional[Union[AutoDetectHWM, ColumnHWM, KeyValueHWM]] = None
     options: Optional[GenericOptions] = None
+
+    AutoDetectHWM = AutoDetectHWM
 
     _connection_checked: bool = PrivateAttr(default=False)
 
@@ -414,7 +414,7 @@ class DBReader(FrozenModel):
         source: str = values["source"]
         hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
         hwm_expression: str | None = values.get("hwm_expression")
-        hwm: ColumnHWM | None = values.get("hwm")
+        hwm: HWM | None = values.get("hwm")
 
         if hwm_column is not None:
             if hwm:

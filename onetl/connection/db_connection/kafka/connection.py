@@ -346,31 +346,31 @@ class Kafka(DBConnection):
             TimestampType,
         )
 
-        schema = StructType(
-            [
-                StructField("key", BinaryType(), nullable=True),
-                StructField("value", BinaryType(), nullable=False),
-                StructField("topic", StringType(), nullable=True),
-                StructField("partition", IntegerType(), nullable=True),
-                StructField("offset", LongType(), nullable=True),
-                StructField("timestamp", TimestampType(), nullable=True),
-                StructField("timestampType", IntegerType(), nullable=True),
-                StructField(
-                    "headers",
-                    ArrayType(
-                        StructType(
-                            [
-                                StructField("key", StringType(), nullable=True),
-                                StructField("value", BinaryType(), nullable=True),
-                            ],
-                        ),
+        all_fields = [
+            StructField("key", BinaryType(), nullable=True),
+            StructField("value", BinaryType(), nullable=False),
+            StructField("topic", StringType(), nullable=True),
+            StructField("partition", IntegerType(), nullable=True),
+            StructField("offset", LongType(), nullable=True),
+            StructField("timestamp", TimestampType(), nullable=True),
+            StructField("timestampType", IntegerType(), nullable=True),
+            StructField(
+                "headers",
+                ArrayType(
+                    StructType(
+                        [
+                            StructField("key", StringType(), nullable=True),
+                            StructField("value", BinaryType(), nullable=True),
+                        ],
                     ),
-                    nullable=True,
                 ),
-            ],
-        )
+                nullable=True,
+            ),
+        ]
 
-        return schema  # noqa:  WPS331
+        filtered_fields = [field for field in all_fields if columns is None or field.name in columns]
+
+        return StructType(filtered_fields)
 
     @slot
     @classmethod
