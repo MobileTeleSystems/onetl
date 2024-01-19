@@ -466,6 +466,60 @@ class Kafka(DBConnection):
     # because this can influence dataframes created by this connection.
     # For example, .close() deletes local keytab copy.
 
+    @slot
+    def get_min_max_values(
+        self,
+        source: str,
+        window: Window,
+    ) -> tuple[dict[int, int], dict[int, int]]:
+        log.info("|%s| Getting min and max offset values for topic %r ...", self.__class__.__name__, source)
+
+        consumer = self._get_java_consumer()
+        with closing(consumer):
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#partitionsFor-java.lang.String-
+            partition_infos = consumer.partitionsFor(source)
+
+            jvm = self.spark._jvm
+            topic_partitions = [
+                jvm.org.apache.kafka.common.TopicPartition(source, p.partition())  # type: ignore[union-attr]
+                for p in partition_infos
+            ]
+
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#beginningOffsets-java.util.Collection-
+            beginning_offsets = consumer.beginningOffsets(topic_partitions)
+
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#endOffsets-java.util.Collection-
+            end_offsets = consumer.endOffsets(topic_partitions)
+
+            min_offsets = {}
+            max_offsets = {}
+            for tp in topic_partitions:
+                partition_id = tp.partition()
+                begin_offset = beginning_offsets[tp]
+                end_offset = end_offsets[tp]
+
+                if window.start_from and window.start_from.is_set():
+                    window_start = window.start_from.value.get(partition_id, begin_offset)
+                    begin_offset = max(window_start, begin_offset)
+                if window.stop_at and window.stop_at.is_set():
+                    window_stop = window.stop_at.value.get(partition_id, end_offset)
+                    end_offset = min(window_stop, end_offset)
+
+                min_offsets[partition_id] = begin_offset
+                max_offsets[partition_id] = end_offset
+
+        log.info("|%s| Received min and max offset values for each partition.", self.__class__.__name__)
+        for partition_id in sorted(min_offsets.keys()):
+            log.debug(
+                "|%s| Partition %d: Min Offset = %d, Max Offset = %d",
+                self.__class__.__name__,
+                partition_id,
+                min_offsets[partition_id],
+                max_offsets[partition_id],
+            )
+
+        return min_offsets, max_offsets
+
     @property
     def instance_url(self):
         return "kafka://" + self.cluster
