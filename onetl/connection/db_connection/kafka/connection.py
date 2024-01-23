@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
@@ -276,7 +277,21 @@ class Kafka(DBConnection):
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
+
+        if window and window.expression == "offset":
+            starting_offsets = window.start_from.value if window.start_from.value else "earliest"
+            ending_offsets = window.stop_at.value if window.stop_at.value else "latest"
+
+            if starting_offsets != "earliest":
+                result_options["startingOffsets"] = json.dumps({source: dict(starting_offsets)})
+            if ending_offsets != "latest":
+                result_options["endingOffsets"] = json.dumps({source: dict(ending_offsets)})
+
         df = self.spark.read.format("kafka").options(**result_options).load()
+
+        if limit is not None:
+            df = df.limit(limit)
+
         log.info("|%s| Dataframe is successfully created.", self.__class__.__name__)
         return df
 
@@ -471,6 +486,9 @@ class Kafka(DBConnection):
         self,
         source: str,
         window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
+        options: KafkaReadOptions | dict | None = None,
     ) -> tuple[dict[int, int], dict[int, int]]:
         log.info("|%s| Getting min and max offset values for topic %r ...", self.__class__.__name__, source)
 

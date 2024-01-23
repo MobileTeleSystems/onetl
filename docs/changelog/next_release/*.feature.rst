@@ -1,0 +1,12 @@
+Add support of  ``Incremental Strategies`` for ``Kafka`` connection. This lets you resume reading data from a Kafka topic starting at the last committed offset from your previous run.
+
+.. code-block:: python
+
+    reader = DBReader(
+        connection=Kafka(...),
+        source="topic_name",
+        hwm=AutoDetectHWM(name="some_hwm_name", expression="offset"),
+    )
+
+    with IncrementalStrategy():
+        df = reader.run()

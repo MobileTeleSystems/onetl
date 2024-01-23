@@ -1,3 +1,4 @@
+import re
 import secrets
 
 import pytest
@@ -21,7 +22,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
 
     processing = KafkaProcessing()
 
-    with strategy(step=10):
+    with strategy(step=10) as batches:
         reader = DBReader(
             connection=Kafka(
                 addresses=[f"{processing.host}:{processing.port}"],
@@ -31,5 +32,6 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             table="topic",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
-        with pytest.raises(RuntimeError):
-            reader.run()
+        with pytest.raises(TypeError, match=re.escape("unsupported operand type(s) for +: 'frozendict' and 'int'")):
+            for _ in batches:
+                reader.run()
