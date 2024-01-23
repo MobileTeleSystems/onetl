@@ -259,7 +259,7 @@ class Kafka(DBConnection):
         return self
 
     @slot
-    def read_source_as_df(  # noqa:  WPS231
+    def read_source_as_df(
         self,
         source: str,
         columns: list[str] | None = None,
@@ -279,22 +279,13 @@ class Kafka(DBConnection):
         result_options["subscribe"] = source
 
         if window and window.expression == "offset":
-            # the 'including' flag in window values are relevant for batch strategies which are not
-            # supported by Kafka, therefore we always get offsets including border values
-            starting_offsets = dict(window.start_from.value) if window.start_from.value else {}
-            ending_offsets = dict(window.stop_at.value) if window.stop_at.value else {}
+            starting_offsets = window.start_from.value if window.start_from.value else "earliest"
+            ending_offsets = window.stop_at.value if window.stop_at.value else "latest"
 
-            # when the Kafka topic's number of partitions has increased during incremental processing,
-            # new partitions, which are present in ending_offsets but not in
-            # starting_offsets, are assigned a default offset (0 in this case).
-            for partition in ending_offsets:
-                if partition not in starting_offsets:
-                    starting_offsets[partition] = 0
-
-            if starting_offsets:
-                result_options["startingOffsets"] = json.dumps({source: starting_offsets})
-            if ending_offsets:
-                result_options["endingOffsets"] = json.dumps({source: ending_offsets})
+            if starting_offsets != "earliest":
+                result_options["startingOffsets"] = json.dumps({source: dict(starting_offsets)})
+            if ending_offsets != "latest":
+                result_options["endingOffsets"] = json.dumps({source: dict(ending_offsets)})
 
         df = self.spark.read.format("kafka").options(**result_options).load()
 

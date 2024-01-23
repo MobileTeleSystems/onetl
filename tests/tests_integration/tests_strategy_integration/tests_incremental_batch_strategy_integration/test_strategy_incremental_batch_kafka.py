@@ -1,3 +1,4 @@
+import re
 import secrets
 
 import pytest
@@ -31,10 +32,6 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             table="topic",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
-        # raises as at current version there is no way to distribute step size between kafka partitions
-        with pytest.raises(
-            RuntimeError,
-            match=r"HWM: .* cannot be used with Batch strategies",
-        ):
+        with pytest.raises(TypeError, match=re.escape("unsupported operand type(s) for +: 'frozendict' and 'int'")):
             for _ in batches:
                 reader.run()

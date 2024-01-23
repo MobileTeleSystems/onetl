@@ -354,6 +354,40 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             df = downloader.run()
 
         # current run will download only files which were not downloaded in previous runs
+
+    Incremental run with :ref:`db-reader` and :ref:`kafka` connection
+    (by ``offset`` in topic - :etl-entities:`KeyValueHWM <hwm/key_value/index.html>`):
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
+        from onetl.hwm import AutoDetectHWM
+
+        from pyspark.sql import SparkSession
+
+        maven_packages = Kafka.get_packages()
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", ",".join(maven_packages))
+            .getOrCreate()
+        )
+
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster="my-cluster",
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=kafka,
+            source="topic_name",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="**offset**"),
+        )
+
+        with IncrementalStrategy():
+            df = reader.run()
     """
 
 

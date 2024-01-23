@@ -105,23 +105,31 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_expression):
 
 
 @pytest.mark.parametrize(
-    "topic, error_message",
+    "topic, should_raise, error_message",
     [
-        ("*", r"source/target=\* is not supported by Kafka. Provide a singular topic."),
-        ("topic1, topic2", "source/target=topic1, topic2 is not supported by Kafka. Provide a singular topic."),
+        ("valid_topic_name", False, None),  # valid case
+        ("*", True, r"source/target=\* is not supported by Kafka. Provide a singular topic."),
+        ("topic1, topic2", True, "source/target=topic1, topic2 is not supported by Kafka. Provide a singular topic."),
     ],
 )
-def test_kafka_reader_invalid_source(spark_mock, topic, error_message):
+def test_kafka_reader_valid_source(spark_mock, topic, should_raise, error_message):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
         spark=spark_mock,
     )
 
-    with pytest.raises(
-        ValueError,
-        match=error_message,
-    ):
+    if should_raise:
+        with pytest.raises(
+            ValueError,
+            match=error_message,
+        ):
+            DBReader(
+                connection=kafka,
+                table=topic,
+                hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
+            )
+    else:
         DBReader(
             connection=kafka,
             table=topic,
