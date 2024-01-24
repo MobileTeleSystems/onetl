@@ -42,7 +42,7 @@ jobs:
         sudo apt-get install --no-install-recommends libkrb5-dev
 
     - name: Cache pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-${{ hashFiles('requirements*.txt') }}
