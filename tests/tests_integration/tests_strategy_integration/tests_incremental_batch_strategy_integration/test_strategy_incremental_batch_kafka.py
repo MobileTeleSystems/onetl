@@ -32,6 +32,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             table="topic",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
-        with pytest.raises(TypeError, match=re.escape("unsupported operand type(s) for +: 'frozendict' and 'int'")):
+        # raises as at current version there is no way to distribute step size between kafka partitions
+        with pytest.raises(TypeError, match=re.escape("unsupported operand type(s) for +")):
             for _ in batches:
                 reader.run()

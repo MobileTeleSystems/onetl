@@ -1,4 +1,3 @@
-import json
 import secrets
 
 import pytest
@@ -93,9 +92,7 @@ def test_kafka_strategy_incremental(
     second_span_max = len(second_span) + first_span_max
 
     # insert first span
-    for _, row in first_span.iterrows():
-        message = json.dumps(row.to_dict())
-        processing.send_message(topic, message.encode("utf-8"))
+    processing.insert_pandas_df_into_topic(first_span, topic)
 
     # hwm is not in the store
     assert store.get_hwm(hwm_name) is None
@@ -114,9 +111,7 @@ def test_kafka_strategy_incremental(
     processing.assert_equal_df(df=deserialized_first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
-    for _, row in second_span.iterrows():
-        message = json.dumps(row.to_dict())
-        processing.send_message(topic, message.encode("utf-8"))
+    processing.insert_pandas_df_into_topic(second_span, topic)
 
     with IncrementalStrategy():
         second_df = reader.run()
@@ -184,9 +179,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     assert sum(value for value in hwm.value.values()) == 0
 
     # insert first span
-    for _, row in first_span.iterrows():
-        message = json.dumps(row.to_dict())
-        processing.send_message(topic, message.encode("utf-8"))
+    processing.insert_pandas_df_into_topic(first_span, topic)
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
@@ -212,9 +205,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     assert sum(value for value in hwm.value.values()) == first_span_max
 
     # insert second span
-    for _, row in second_span.iterrows():
-        message = json.dumps(row.to_dict())
-        processing.send_message(topic, message.encode("utf-8"))
+    processing.insert_pandas_df_into_topic(second_span, topic)
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
