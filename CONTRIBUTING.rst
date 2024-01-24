@@ -72,6 +72,9 @@ Create virtualenv and install dependencies:
         -r requirements/tests/oracle.txt \
         -r requirements/tests/spark-3.5.0.txt
 
+    # TODO: remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
+    pip install sphinx-plantuml --no-deps
+
 Enable pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~
 

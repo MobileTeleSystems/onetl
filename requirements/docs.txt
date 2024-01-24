@@ -7,7 +7,8 @@ sphinx
 sphinx-copybutton
 sphinx-design
 sphinx-favicon
-sphinx-plantuml
+# TODO: uncomment after https://github.com/zqmillet/sphinx-plantuml/pull/4
+# sphinx-plantuml
 sphinx-tabs
 sphinx-toolbox
 sphinx_substitution_extensions

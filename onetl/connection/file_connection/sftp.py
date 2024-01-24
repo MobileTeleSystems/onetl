@@ -143,7 +143,7 @@ class SFTP(FileConnection, RenameDirMixin):
         client.load_system_host_keys()
         if not self.host_key_check:
             # Default is RejectPolicy
-            client.set_missing_host_key_policy(WarningPolicy())
+            client.set_missing_host_key_policy(WarningPolicy())  # noqa: S507
 
         client.connect(
             hostname=self.host,
