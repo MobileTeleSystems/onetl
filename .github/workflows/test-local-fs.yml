@@ -40,7 +40,7 @@ jobs:
         python-version: ${{ inputs.python-version }}
 
     - name: Cache Ivy
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.with-cache
       with:
         path: ~/.ivy2
@@ -50,7 +50,7 @@ jobs:
           ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-local-fs-
 
     - name: Cache pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.with-cache
       with:
         path: ~/.cache/pip

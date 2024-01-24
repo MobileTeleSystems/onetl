@@ -49,7 +49,7 @@ jobs:
         sudo apt-get install --no-install-recommends libkrb5-dev gcc
 
     - name: Cache Ivy
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.with-cache
       with:
         path: ~/.ivy2
@@ -59,7 +59,7 @@ jobs:
           ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-hdfs-
 
     - name: Cache pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.with-cache
       with:
         path: ~/.cache/pip
