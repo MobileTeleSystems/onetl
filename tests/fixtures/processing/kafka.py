@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import TYPE_CHECKING
 
@@ -157,6 +158,11 @@ class KafkaProcessing(BaseProcessing):
         admin = self.get_admin_client()
         # https://github.com/confluentinc/confluent-kafka-python/issues/813
         admin.delete_topics(topics, request_timeout=timeout)
+
+    def insert_pandas_df_into_topic(self, df: pandas.DataFrame, topic: str):
+        for _, row in df.iterrows():
+            message = json.dumps(row.to_dict())
+            self.send_message(topic, message.encode("utf-8"))
 
     def topic_exists(self, topic: str, timeout: float = DEFAULT_TIMEOUT) -> bool:
         admin = self.get_admin_client()

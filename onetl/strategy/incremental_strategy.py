@@ -294,33 +294,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         FROM public.mydata
         WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
 
-    Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
-
-    .. code:: python
-
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.strategy import SnapshotStrategy
-        from etl_entities import FileListHWM
-
-        sftp = SFTP(
-            host="sftp.domain.com",
-            user="user",
-            password="*****",
-        )
-
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/remote",
-            local_path="/local",
-            hwm=FileListHWM(name="some_hwm_name"),
-        )
-
-        with IncrementalStrategy():
-            df = downloader.run()
-
-        # current run will download only files which were not downloaded in previous runs
-
     Incremental run with :ref:`db-reader` and :ref:`kafka` connection
     (by ``offset`` in topic - :etl-entities:`KeyValueHWM <hwm/key_value/index.html>`):
 
@@ -349,11 +322,38 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         reader = DBReader(
             connection=kafka,
             source="topic_name",
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="**offset**"),
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
         )
 
         with IncrementalStrategy():
             df = reader.run()
+
+    Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
+
+    .. code:: python
+
+        from onetl.connection import SFTP
+        from onetl.file import FileDownloader
+        from onetl.strategy import SnapshotStrategy
+        from etl_entities import FileListHWM
+
+        sftp = SFTP(
+            host="sftp.domain.com",
+            user="user",
+            password="*****",
+        )
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/remote",
+            local_path="/local",
+            hwm=FileListHWM(name="some_hwm_name"),
+        )
+
+        with IncrementalStrategy():
+            df = downloader.run()
+
+        # current run will download only files which were not downloaded in previous runs
     """
 
 
