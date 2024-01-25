@@ -20,6 +20,7 @@ from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
+from frozendict import frozendict
 from pydantic import root_validator, validator
 
 from onetl._internal import stringify
@@ -259,7 +260,7 @@ class Kafka(DBConnection):
         return self
 
     @slot
-    def read_source_as_df(
+    def read_source_as_df(  # noqa:  WPS231
         self,
         source: str,
         columns: list[str] | None = None,
@@ -279,8 +280,20 @@ class Kafka(DBConnection):
         result_options["subscribe"] = source
 
         if window and window.expression == "offset":
+            # the 'including' flag in window values are relevant for batch strategies which are not
+            # supported by Kafka, therefore we always get offsets including border values
             starting_offsets = window.start_from.value if window.start_from.value else "earliest"
             ending_offsets = window.stop_at.value if window.stop_at.value else "latest"
+
+            # when the Kafka topic's number of partitions has increased during incremental processing,
+            # new partitions, which are present in ending_offsets but not in
+            # starting_offsets, are assigned a default offset (0 in this case).
+            if starting_offsets != "earliest":
+                mutable_starting_offsets = dict(starting_offsets)
+                for partition in ending_offsets.keys():
+                    if partition not in mutable_starting_offsets:
+                        mutable_starting_offsets[partition] = 0  # noqa:  WPS220
+                starting_offsets = frozendict(mutable_starting_offsets)
 
             if starting_offsets != "earliest":
                 result_options["startingOffsets"] = json.dumps({source: dict(starting_offsets)})

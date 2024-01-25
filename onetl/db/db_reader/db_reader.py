@@ -660,7 +660,7 @@ class DBReader(FrozenModel):
         log.info("|%s| Got Spark field: %s", self.__class__.__name__, result)
         return result
 
-    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:
+    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:  # noqa: WPS231
         if not self.hwm:
             # SnapshotStrategy - always select all the data from source
             return None, None
@@ -722,6 +722,9 @@ class DBReader(FrozenModel):
             raise ValueError(error_message) from e
 
         if isinstance(strategy, BatchHWMStrategy):
+            if not hasattr(min_value, "__add__") and not hasattr(max_value, "__add__"):
+                raise RuntimeError(f"HWM expression {self.hwm.expression!r} value cannot be used for Batch stragies")
+
             if strategy.start is None:
                 strategy.start = min_value
 
