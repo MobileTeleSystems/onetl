@@ -33,6 +33,9 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
         # raises as at current version there is no way to distribute step size between kafka partitions
-        with pytest.raises(TypeError, match=re.escape("unsupported operand type(s) for +")):
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape("HWM expression 'offset' value cannot be used for Batch stragies"),
+        ):
             for _ in batches:
                 reader.run()

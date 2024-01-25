@@ -722,6 +722,9 @@ class DBReader(FrozenModel):
             raise ValueError(error_message) from e
 
         if isinstance(strategy, BatchHWMStrategy):
+            if not hasattr(min_value, "__add__") and not hasattr(max_value, "__add__"):
+                raise RuntimeError(f"HWM expression {self.hwm.expression!r} value cannot be used for Batch stragies")
+
             if strategy.start is None:
                 strategy.start = min_value
 
