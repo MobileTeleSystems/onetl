@@ -1,4 +1,3 @@
-import re
 import secrets
 
 import pytest
@@ -35,7 +34,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
         # raises as at current version there is no way to distribute step size between kafka partitions
         with pytest.raises(
             RuntimeError,
-            match=re.escape("HWM expression 'offset' value cannot be used for Batch stragies"),
+            match=r"HWM: .* cannot be used with Batch strategies",
         ):
             for _ in batches:
                 reader.run()
