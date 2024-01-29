@@ -27,7 +27,6 @@ from onetl.connection.db_connection.dialect_mixins import (
     NotSupportDFSchema,
     NotSupportHint,
     NotSupportWhere,
-    SupportNameAny,
 )
 
 if TYPE_CHECKING:
@@ -41,10 +40,17 @@ class KafkaDialect(  # noqa: WPS215
     NotSupportDFSchema,
     NotSupportHint,
     NotSupportWhere,
-    SupportNameAny,
     DBDialect,
 ):
     SUPPORTED_HWM_COLUMNS = {"offset"}
+
+    def validate_name(self, value: str) -> str:
+        if "*" in value or "," in value:
+            raise ValueError(
+                f"source/target={value} is not supported by {self.connection.__class__.__name__}. "
+                f"Provide a singular topic.",
+            )
+        return value
 
     def validate_hwm(
         self,

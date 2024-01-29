@@ -660,7 +660,7 @@ class DBReader(FrozenModel):
         log.info("|%s| Got Spark field: %s", self.__class__.__name__, result)
         return result
 
-    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:
+    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:  # noqa: WPS231
         if not self.hwm:
             # SnapshotStrategy - always select all the data from source
             return None, None

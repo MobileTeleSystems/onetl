@@ -5,10 +5,6 @@ Reading from Kafka
 
 For reading data from Kafka, use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` with specific options (see below).
 
-.. warning::
-
-    Currently, Kafka does not support :ref:`strategy`. You can only read the **whole** topic.
-
 .. note::
 
     Unlike other connection classes, Kafka always return dataframe with fixed schema

@@ -21,7 +21,7 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
 
     processing = KafkaProcessing()
 
-    with strategy(step=10):
+    with strategy(step=10) as batches:
         reader = DBReader(
             connection=Kafka(
                 addresses=[f"{processing.host}:{processing.port}"],
@@ -31,5 +31,10 @@ def test_strategy_kafka_with_batch_strategy_error(strategy, spark):
             table="topic",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )
-        with pytest.raises(RuntimeError):
-            reader.run()
+        # raises as at current version there is no way to distribute step size between kafka partitions
+        with pytest.raises(
+            RuntimeError,
+            match=r"HWM: .* cannot be used with Batch strategies",
+        ):
+            for _ in batches:
+                reader.run()

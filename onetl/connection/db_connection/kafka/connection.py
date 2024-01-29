@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
@@ -258,7 +259,7 @@ class Kafka(DBConnection):
         return self
 
     @slot
-    def read_source_as_df(
+    def read_source_as_df(  # noqa:  WPS231
         self,
         source: str,
         columns: list[str] | None = None,
@@ -276,7 +277,30 @@ class Kafka(DBConnection):
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
+
+        if window and window.expression == "offset":
+            # the 'including' flag in window values are relevant for batch strategies which are not
+            # supported by Kafka, therefore we always get offsets including border values
+            starting_offsets = dict(window.start_from.value) if window.start_from.value else {}
+            ending_offsets = dict(window.stop_at.value) if window.stop_at.value else {}
+
+            # when the Kafka topic's number of partitions has increased during incremental processing,
+            # new partitions, which are present in ending_offsets but not in
+            # starting_offsets, are assigned a default offset (0 in this case).
+            for partition in ending_offsets:
+                if partition not in starting_offsets:
+                    starting_offsets[partition] = 0
+
+            if starting_offsets:
+                result_options["startingOffsets"] = json.dumps({source: starting_offsets})
+            if ending_offsets:
+                result_options["endingOffsets"] = json.dumps({source: ending_offsets})
+
         df = self.spark.read.format("kafka").options(**result_options).load()
+
+        if limit is not None:
+            df = df.limit(limit)
+
         log.info("|%s| Dataframe is successfully created.", self.__class__.__name__)
         return df
 
@@ -471,6 +495,9 @@ class Kafka(DBConnection):
         self,
         source: str,
         window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
+        options: KafkaReadOptions | dict | None = None,
     ) -> tuple[dict[int, int], dict[int, int]]:
         log.info("|%s| Getting min and max offset values for topic %r ...", self.__class__.__name__, source)
 

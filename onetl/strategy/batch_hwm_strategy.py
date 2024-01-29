@@ -142,6 +142,9 @@ class BatchHWMStrategy(HWMStrategy):
     @property
     def next(self) -> Edge:
         if self.current.is_set():
+            if not hasattr(self.current.value, "__add__"):
+                raise RuntimeError(f"HWM: {self.hwm!r} cannot be used with Batch strategies")
+
             result = Edge(value=self.current.value + self.step)
         else:
             result = Edge(value=self.stop)
