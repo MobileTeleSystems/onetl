@@ -1,2 +1,4 @@
 **/*local_fs*
 **/*local-fs*
+**/*local_fs*/**
+**/*local-fs*/**

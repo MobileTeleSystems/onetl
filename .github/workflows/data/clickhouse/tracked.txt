@@ -1,1 +1,2 @@
-**/clickhouse*
+**/*clickhouse*
+**/*clickhouse*/**
