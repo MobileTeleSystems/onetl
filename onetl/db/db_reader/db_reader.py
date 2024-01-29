@@ -501,6 +501,37 @@ class DBReader(FrozenModel):
 
         return None
 
+    def has_data(self) -> bool:
+        """Returns ``True`` if there is some data in the source, ``False`` otherwise."""
+        self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+
+        window, limit = self._calculate_window_and_limit()
+        if limit == 0:
+            return False
+
+        df = self.connection.read_source_as_df(
+            source=str(self.source),
+            columns=self.columns,
+            hint=self.hint,
+            where=self.where,
+            df_schema=self.df_schema,
+            window=window,
+            limit=1,
+            **self._get_read_kwargs(),
+        )
+
+        return bool(df.take(1))
+
+    def raise_error_if_no_data(self) -> None:
+        """Raises exception if source does not contain any data."""
+
+        if not self.has_data():
+            raise Exception(f"No data in the source: {self.source}")  # noqa: WPS454
+
     @slot
     def run(self) -> DataFrame:
         """
@@ -541,6 +572,12 @@ class DBReader(FrozenModel):
             self._connection_checked = True
 
         window, limit = self._calculate_window_and_limit()
+
+        # update the HWM with the stop value
+        if self.hwm and window:
+            strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
+            strategy.update_hwm(window.stop_at.value)
+
         df = self.connection.read_source_as_df(
             source=str(self.source),
             columns=self.columns,
@@ -673,7 +710,6 @@ class DBReader(FrozenModel):
         if start_value is not None and stop_value is not None:
             # we already have start and stop values, nothing to do
             window = Window(self.hwm.expression, start_from=strategy.current, stop_at=strategy.next)
-            strategy.update_hwm(window.stop_at.value)
             return window, None
 
         if not isinstance(self.connection, ContainsGetMinMaxValues):
@@ -737,7 +773,6 @@ class DBReader(FrozenModel):
                 stop_at=Edge(value=max_value),
             )
 
-        strategy.update_hwm(window.stop_at.value)
         return window, None
 
     def _log_parameters(self) -> None:

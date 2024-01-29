@@ -280,6 +280,11 @@ def test_greenplum_reader_snapshot_nothing_to_read(spark, processing, prepare_sc
     first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
+    with pytest.raises(Exception, match="No data in the source:"):
+        reader.raise_error_if_no_data()
+
+    assert not reader.has_data()
+
     # no data yet, nothing to read
     df = reader.run()
     assert not df.count()
@@ -296,6 +301,9 @@ def test_greenplum_reader_snapshot_nothing_to_read(spark, processing, prepare_sc
 
     # read data explicitly
     df = reader.run()
+
+    # check that read df has data
+    assert reader.has_data()
     processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")
 
     # insert second span

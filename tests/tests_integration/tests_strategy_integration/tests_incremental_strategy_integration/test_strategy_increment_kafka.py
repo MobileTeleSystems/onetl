@@ -121,6 +121,8 @@ def test_kafka_strategy_incremental(
     deserialized_second_df = processing.json_deserialize(second_df, df_schema=schema)
     processing.assert_equal_df(df=deserialized_second_df, other_frame=second_span, order_by="id_int")
 
+    processing.delete_topic([topic])
+
 
 @pytest.mark.parametrize(
     "num_partitions",
@@ -224,6 +226,8 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     deserialized_df = processing.json_deserialize(df, df_schema=schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=second_span, order_by="id_int")
 
+    processing.delete_topic([topic])
+
 
 @pytest.mark.parametrize(
     "initial_partitions, additional_partitions",
@@ -299,3 +303,5 @@ def test_kafka_strategy_incremental_with_new_partition(
     partition_counts_combined = combined_df.groupBy("partition").agg(spark_count("*").alias("count"))
     partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
     assert hwm.value == partition_count_dict_combined
+
+    processing.delete_topic([topic])

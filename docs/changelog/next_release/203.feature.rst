@@ -1,0 +1,1 @@
+Add ``has_data``, ``raise_error_if_no_data`` methods to ``DBReader`` class.

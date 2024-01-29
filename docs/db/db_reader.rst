@@ -11,4 +11,4 @@ DB Reader
     DBReader.run
 
 .. autoclass:: DBReader
-    :members: run
+    :members: run, has_data, raise_error_if_no_data
