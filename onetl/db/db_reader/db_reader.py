@@ -618,7 +618,7 @@ class DBReader(FrozenModel):
             strategy.fetch_hwm()
             return
 
-        if not isinstance(strategy.hwm, ColumnHWM) or strategy.hwm.name != hwm.name:
+        if not isinstance(strategy.hwm, (ColumnHWM, KeyValueHWM)) or strategy.hwm.name != hwm.name:
             # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
             # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
             error_message = textwrap.dedent(
