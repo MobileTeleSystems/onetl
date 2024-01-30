@@ -601,7 +601,7 @@ class JDBCMixin(FrozenModel):
 
         result_set = jdbc_statement.getResultSet()
 
-        if not result_set:
+        if not result_set or result_set.isClosed():
             return None
 
         result_metadata = result_set.getMetaData()
