@@ -41,12 +41,11 @@ class MSSQLDialect(JDBCDialect):
             columns=columns,
             where=where,
             hint=hint,
-            limit=None,  # don't pass limit to parent query as MSSQL dialect is different
+            limit=0 if limit == 0 else None,
             compact=compact,
         )
-
         # MSSQL-specific handling for the LIMIT clause using TOP
-        if limit is not None:
+        if limit is not None and limit > 0:
             query = query.replace("SELECT", f"SELECT TOP {limit}", 1)
 
         return query

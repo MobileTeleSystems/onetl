@@ -156,8 +156,12 @@ def test_kafka_strategy_incremental_nothing_to_read(
     hwm = store.get_hwm(name=hwm_name)
     assert all(value == 0 for value in hwm.value.values())
 
+    assert not reader.has_data()
+
     # insert first span
     processing.insert_pandas_df_into_topic(first_span, kafka_topic)
+
+    assert reader.has_data()
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()

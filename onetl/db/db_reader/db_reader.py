@@ -502,6 +502,7 @@ class DBReader(FrozenModel):
 
         return None
 
+    @slot
     def has_data(self) -> bool:
         """Returns ``True`` if there is some data in the source, ``False`` otherwise."""
         self._check_strategy()
@@ -527,6 +528,7 @@ class DBReader(FrozenModel):
 
         return bool(df.take(1))
 
+    @slot
     def raise_error_if_no_data(self) -> None:
         """Raises exception ``NoDataError`` if source does not contain any data."""
 

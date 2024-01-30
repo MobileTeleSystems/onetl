@@ -258,12 +258,16 @@ def test_postgres_strategy_incremental_nothing_to_read(spark, processing, prepar
     hwm = store.get_hwm(name=hwm_name)
     assert hwm.value is None
 
+    assert not reader.has_data()
+
     # insert first span
     processing.insert_data(
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         values=first_span,
     )
+
+    assert reader.has_data()
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
