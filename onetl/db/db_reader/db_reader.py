@@ -17,6 +17,7 @@ from onetl.base import (
     ContainsGetDFSchemaMethod,
     ContainsGetMinMaxValues,
 )
+from onetl.exception import NoDataError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import AutoDetectHWM, Edge, Window
 from onetl.impl import FrozenModel, GenericOptions
@@ -527,10 +528,10 @@ class DBReader(FrozenModel):
         return bool(df.take(1))
 
     def raise_error_if_no_data(self) -> None:
-        """Raises exception if source does not contain any data."""
+        """Raises exception ``NoDataError`` if source does not contain any data."""
 
         if not self.has_data():
-            raise Exception(f"No data in the source: {self.source}")  # noqa: WPS454
+            raise NoDataError(f"No data in the source: {self.source}")
 
     @slot
     def run(self) -> DataFrame:
