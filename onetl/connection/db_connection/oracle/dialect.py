@@ -33,14 +33,20 @@ class OracleDialect(JDBCDialect):
         new_columns = columns or ["*"]
         if len(new_columns) > 1:
             new_columns = [table + ".*" if column.strip() == "*" else column for column in new_columns]
-        return super().get_sql_query(
+        base_query = super().get_sql_query(
             table=table,
             columns=new_columns,
             where=where,
             hint=hint,
-            limit=limit,
+            limit=None,  # don't pass limit to parent query as Oracle dialect is different
             compact=compact,
         )
+
+        # Oracle-specific handling for the LIMIT clause using ROWNUM
+        if limit is not None:
+            return f"SELECT * FROM ({base_query}) WHERE ROWNUM <= {limit}"
+
+        return base_query
 
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
         return f"ora_hash({partition_column}, {num_partitions})"

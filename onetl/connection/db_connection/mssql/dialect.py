@@ -27,6 +27,30 @@ class MSSQLDialect(JDBCDialect):
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         return f"{partition_column} % {num_partitions}"
 
+    def get_sql_query(
+        self,
+        table: str,
+        columns: list[str] | None = None,
+        where: str | list[str] | None = None,
+        hint: str | None = None,
+        limit: int | None = None,
+        compact: bool = False,
+    ) -> str:
+        query = super().get_sql_query(
+            table=table,
+            columns=columns,
+            where=where,
+            hint=hint,
+            limit=None,  # don't pass limit to parent query as MSSQL dialect is different
+            compact=compact,
+        )
+
+        # MSSQL-specific handling for the LIMIT clause using TOP
+        if limit is not None:
+            query = query.replace("SELECT", f"SELECT TOP {limit}", 1)
+
+        return query
+
     def _serialize_datetime(self, value: datetime) -> str:
         result = value.isoformat()
         return f"CAST('{result}' AS datetime2)"
