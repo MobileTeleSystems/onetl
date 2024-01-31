@@ -506,6 +506,10 @@ class DBReader(FrozenModel):
     def has_data(self) -> bool:
         """Returns ``True`` if there is some data in the source, ``False`` otherwise. |support_hooks|
 
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
+
         .. warning::
 
                If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
@@ -556,6 +560,10 @@ class DBReader(FrozenModel):
     @slot
     def raise_if_no_data(self) -> None:
         """Raises exception ``NoDataError`` if source does not contain any data. |support_hooks|
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
 
         .. warning::
 
