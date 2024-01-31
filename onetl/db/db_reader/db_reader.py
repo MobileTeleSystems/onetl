@@ -507,7 +507,28 @@ class DBReader(FrozenModel):
         """Returns ``True`` if there is some data in the source, ``False`` otherwise.
 
         .. warning::
+
                If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        Raises
+        ------
+        RuntimeError
+
+            Current strategy is not compatible with HWM parameter.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            reader = DBReader(...)
+
+            # handle situation when there is no data in the source
+            if reader.has_data():
+                df = reader.run()
+            else:
+                # implement your handling logic here
+                ...
         """
         self._check_strategy()
 
@@ -537,7 +558,29 @@ class DBReader(FrozenModel):
         """Raises exception ``NoDataError`` if source does not contain any data.
 
         .. warning::
+
             If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        Raises
+        ------
+         RuntimeError
+
+            Current strategy is not compatible with HWM parameter.
+
+        :obj:`onetl.exception.NoDataError`
+
+            There is no data in source.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            reader = DBReader(...)
+
+            # before creating read SparkDF, ensure that there is some data in the source
+            reader.raise_if_no_data()
+            df = reader.run()
         """
 
         if not self.has_data():
@@ -552,6 +595,10 @@ class DBReader(FrozenModel):
 
             This method can return different results depending on :ref:`strategy`
 
+        .. warning::
+
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
         Returns
         -------
         df : pyspark.sql.dataframe.DataFrame
@@ -562,9 +609,6 @@ class DBReader(FrozenModel):
             Keep in mind that with differences in the timezone settings of the source and Spark,
             there may be discrepancies in the datetime on the source and in the Spark dataframe.
             It depends on the ``spark.sql.session.timeZone`` option set when creating the Spark session.
-
-        .. warning::
-            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         Examples
         --------

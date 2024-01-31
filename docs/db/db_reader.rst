@@ -9,6 +9,8 @@ DB Reader
 
     DBReader
     DBReader.run
+    DBReader.has_data
+    DBReader.raise_if_no_data
 
 .. autoclass:: DBReader
     :members: run, has_data, raise_if_no_data
