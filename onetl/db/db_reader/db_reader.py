@@ -563,6 +563,9 @@ class DBReader(FrozenModel):
             there may be discrepancies in the datetime on the source and in the Spark dataframe.
             It depends on the ``spark.sql.session.timeZone`` option set when creating the Spark session.
 
+        .. warning::
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
         Examples
         --------
 
