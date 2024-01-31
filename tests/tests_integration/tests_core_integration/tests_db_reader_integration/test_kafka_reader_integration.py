@@ -233,11 +233,11 @@ def test_kafka_reader_snapshot_nothing_to_read(spark, processing, kafka_datafram
     deserialized_df = processing.json_deserialize(df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=first_span, order_by="id_int")
 
-    # read data explicitly
-    df = reader.run()
-
     # check that read df has data
     assert reader.has_data()
+
+    # read data explicitly
+    df = reader.run()
 
     deserialized_df = processing.json_deserialize(df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=first_span, order_by="id_int")

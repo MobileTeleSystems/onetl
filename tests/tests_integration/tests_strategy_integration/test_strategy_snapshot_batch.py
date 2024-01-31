@@ -716,7 +716,7 @@ def test_postgres_has_data_outside_snapshot_batch_strategy(spark, processing, pr
     with pytest.raises(
         RuntimeError,
         match=re.escape(
-            "DBReader.has_data() cannot be used outside of strategy context. Check documentation DBReader.has_data().",
+            "Check documentation DBReader.has_data(): ",
         ),
     ):
         reader.has_data()

@@ -50,7 +50,8 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 
 
         @default_hwm_store_class
-        class MyClass(BaseHWMStore): ...
+        class MyClass(BaseHWMStore):
+            ...
 
 
         HWMStoreClassRegistry.get() == MyClass  # default

@@ -179,11 +179,12 @@ def test_mongodb_reader_snapshot_nothing_to_read(spark, processing, prepare_sche
     # .run() is not called, but dataframes are lazy, so it now contains all data from the source
     processing.assert_equal_df(df=df, other_frame=first_span, order_by="_id")
 
+    # check that read df has data
+    assert reader.has_data()
+
     # read data explicitly
     df = reader.run()
 
-    # check that read df has data
-    assert reader.has_data()
     processing.assert_equal_df(df=df, other_frame=first_span, order_by="_id")
 
     # insert second span
