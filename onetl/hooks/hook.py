@@ -62,8 +62,7 @@ class Hook(Generic[T]):  # noqa: WPS338
         from onetl.hooks.hook import Hook, HookPriority
 
 
-        def some_func(*args, **kwargs):
-            ...
+        def some_func(*args, **kwargs): ...
 
 
         hook = Hook(callback=some_func, enabled=True, priority=HookPriority.FIRST)
@@ -209,8 +208,7 @@ class Hook(Generic[T]):  # noqa: WPS338
             from onetl.hooks.hook import Hook, HookPriority
 
 
-            def some_func(*args, **kwargs):
-                ...
+            def some_func(*args, **kwargs): ...
 
 
             hook = Hook(callback=some_func)
