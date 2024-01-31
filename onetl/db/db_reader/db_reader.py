@@ -578,9 +578,8 @@ class DBReader(FrozenModel):
 
             reader = DBReader(...)
 
-            # before creating read SparkDF, ensure that there is some data in the source
+            # ensure that there is some data in the source before reading it using Spark
             reader.raise_if_no_data()
-            df = reader.run()
         """
 
         if not self.has_data():
