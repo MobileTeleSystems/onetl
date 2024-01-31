@@ -696,3 +696,27 @@ def test_postgres_strategy_snapshot_batch_nothing_to_read(spark, processing, pre
 
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
     processing.assert_equal_df(df=df, other_frame=total_span, order_by="id_int")
+
+
+def test_postgres_has_data_outside_snapshot_batch_strategy(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), expression="text_string"),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "DBReader.has_data() cannot be used outside of strategy context. Check documentation DBReader.has_data().",
+        ),
+    ):
+        reader.has_data()

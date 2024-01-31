@@ -271,13 +271,17 @@ def test_db_dialect_get_sql_query_compact_true(spark_mock):
         (0, None, "SELECT\n       *\nFROM\n       default.test\nWHERE\n       1=0"),
         (5, None, "SELECT\n       *\nFROM\n       default.test\nWHERE\n       ROWNUM <= 5"),
         (None, "column1 = 'value'", "SELECT\n       *\nFROM\n       default.test\nWHERE\n       column1 = 'value'"),
+        (0, "column1 = 'value'", "SELECT\n       *\nFROM\n       default.test\nWHERE\n       1=0"),
+        (
+            5,
+            "column1 = 'value'",
+            "SELECT\n       *\nFROM\n       default.test\nWHERE\n       (column1 = 'value')\n  AND\n       (ROWNUM <= 5)",
+        ),
     ],
 )
 def test_oracle_dialect_get_sql_query_limit_where(spark_mock, limit, where, expected_query):
     conn = Oracle(host="some_host", user="user", sid="XE", password="passwd", spark=spark_mock)
-
     result = conn.dialect.get_sql_query(table="default.test", limit=limit, where=where)
-
     assert result.strip() == expected_query.strip()
 
 
@@ -288,11 +292,11 @@ def test_oracle_dialect_get_sql_query_limit_where(spark_mock, limit, where, expe
         (0, None, "SELECT\n       *\nFROM\n       default.test\nWHERE\n       1 = 0"),
         (5, None, "SELECT TOP 5\n       *\nFROM\n       default.test"),
         (None, "column1 = 'value'", "SELECT\n       *\nFROM\n       default.test\nWHERE\n       column1 = 'value'"),
+        (0, "column1 = 'value'", "SELECT\n       *\nFROM\n       default.test\nWHERE\n       1 = 0"),
+        (5, "column1 = 'value'", "SELECT TOP 5\n       *\nFROM\n       default.test\nWHERE\n       column1 = 'value'"),
     ],
 )
 def test_mssql_dialect_get_sql_query_limit_where(spark_mock, limit, where, expected_query):
     conn = MSSQL(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
-
     result = conn.dialect.get_sql_query(table="default.test", limit=limit, where=where)
-
     assert result.strip() == expected_query.strip()

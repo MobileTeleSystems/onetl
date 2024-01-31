@@ -150,8 +150,8 @@ def test_mysql_strategy_incremental_nothing_to_read(spark, processing, prepare_s
 
     # no data yet, nothing to read
     with IncrementalStrategy():
-        df = reader.run()
         assert not reader.has_data()
+        df = reader.run()
 
     assert not df.count()
     hwm = store.get_hwm(name=hwm_name)

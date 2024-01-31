@@ -504,8 +504,12 @@ class DBReader(FrozenModel):
 
     @slot
     def has_data(self) -> bool:
-        """Returns ``True`` if there is some data in the source, ``False`` otherwise."""
-        self._check_strategy()
+        """Returns ``True`` if there is some data in the source, ``False`` otherwise.
+
+        .. warning::
+            This method should be used within the context of :ref:`strategy` if you use :etl-entities:`hwm <hwm/index.html>`. It may not work as expected when used outside of a strategy context. This does not apply to :ref:`snapshot-strategy`, where the method functions normally.
+        """
+        self._check_strategy(from_has_data=True)
 
         if not self._connection_checked:
             self._log_parameters()
@@ -529,8 +533,12 @@ class DBReader(FrozenModel):
         return bool(df.take(1))
 
     @slot
-    def raise_error_if_no_data(self) -> None:
-        """Raises exception ``NoDataError`` if source does not contain any data."""
+    def raise_if_no_data(self) -> None:
+        """Raises exception ``NoDataError`` if source does not contain any data.
+
+        .. warning::
+            This method should be used within the context of :ref:`strategy` if you use :etl-entities:`hwm <hwm/index.html>`. It may not work as expected when used outside of a strategy context. This does not apply to :ref:`snapshot-strategy`, where the method functions normally.
+        """
 
         if not self.has_data():
             raise NoDataError(f"No data in the source: {self.source}")
@@ -595,13 +603,17 @@ class DBReader(FrozenModel):
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df
 
-    def _check_strategy(self):
+    def _check_strategy(self, from_has_data=False):
         strategy = StrategyManager.get_current()
         class_name = type(self).__name__
         strategy_name = type(strategy).__name__
 
         if self.hwm:
             if not isinstance(strategy, HWMStrategy):
+                if from_has_data:
+                    raise RuntimeError(
+                        f"{class_name}.has_data() cannot be used outside of strategy context. Check documentation DBReader.has_data().",
+                    )
                 raise RuntimeError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
             self._prepare_hwm(strategy, self.hwm)
 

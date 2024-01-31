@@ -161,7 +161,7 @@ def test_mongodb_reader_snapshot_nothing_to_read(spark, processing, prepare_sche
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     with pytest.raises(Exception, match="No data in the source:"):
-        reader.raise_error_if_no_data()
+        reader.raise_if_no_data()
 
     assert not reader.has_data()
 
