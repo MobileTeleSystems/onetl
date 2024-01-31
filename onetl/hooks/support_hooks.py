@@ -111,13 +111,11 @@ def suspend_hooks(cls: type) -> None:
         @support_hooks
         class MyClass:
             @slot
-            def my_method(self, arg):
-                ...
+            def my_method(self, arg): ...
 
 
         @MyClass.my_method.hook
-        def callback(self, arg):
-            ...
+        def callback(self, arg): ...
 
 
         obj = MyClass()
@@ -146,13 +144,11 @@ def resume_hooks(cls: type) -> None:
         @support_hooks
         class MyClass:
             @slot
-            def my_method(self, arg):
-                ...
+            def my_method(self, arg): ...
 
 
         @MyClass.my_method.hook
-        def callback(self, arg):
-            ...
+        def callback(self, arg): ...
 
 
         obj = MyClass()
@@ -190,13 +186,11 @@ def support_hooks(cls: Klass) -> Klass:
         @support_hooks
         class MyClass:
             @slot
-            def my_method(self, arg):
-                ...
+            def my_method(self, arg): ...
 
 
         @MyClass.my_method.hook
-        def callback(self, arg):
-            ...
+        def callback(self, arg): ...
 
 
         MyClass().my_method()  # will execute callback function
