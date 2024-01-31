@@ -137,12 +137,11 @@ def test_hive_strategy_incremental_nothing_to_read(spark, processing, prepare_sc
     # no data yet, nothing to read
     with IncrementalStrategy():
         df = reader.run()
+        assert not reader.has_data()
 
     assert not df.count()
     hwm = store.get_hwm(name=hwm_name)
     assert hwm.value is None
-
-    assert not reader.has_data()
 
     # insert first span
     processing.insert_data(
@@ -151,8 +150,6 @@ def test_hive_strategy_incremental_nothing_to_read(spark, processing, prepare_sc
         values=first_span,
     )
 
-    assert reader.has_data()
-
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
     hwm = store.get_hwm(name=hwm_name)
@@ -160,6 +157,7 @@ def test_hive_strategy_incremental_nothing_to_read(spark, processing, prepare_sc
 
     # set hwm value to 50
     with IncrementalStrategy():
+        assert reader.has_data()
         df = reader.run()
 
     processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")

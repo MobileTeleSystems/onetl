@@ -636,16 +636,12 @@ def test_postgres_strategy_snapshot_batch_nothing_to_read(spark, processing, pre
     assert counter == 1
     assert not df.count()
 
-    assert not reader.has_data()
-
     # insert first span
     processing.insert_data(
         schema=prepare_schema_table.schema,
         table=prepare_schema_table.table,
         values=first_span,
     )
-
-    assert reader.has_data()
 
     # .run() is not called - dataframe still empty (unlike SnapshotStrategy)
     assert not df.count()
