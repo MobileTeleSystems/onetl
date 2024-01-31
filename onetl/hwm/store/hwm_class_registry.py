@@ -77,8 +77,7 @@ def register_spark_type_to_hwm_type_mapping(*type_names: str):
 
 
         @register_spark_type_to_hwm_type_mapping("somename", "anothername")
-        class MyHWM(HWM):
-            ...
+        class MyHWM(HWM): ...
 
 
         assert SparkTypeToHWM.get("somename") == MyClass
