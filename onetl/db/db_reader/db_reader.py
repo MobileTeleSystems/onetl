@@ -504,7 +504,7 @@ class DBReader(FrozenModel):
 
     @slot
     def has_data(self) -> bool:
-        """Returns ``True`` if there is some data in the source, ``False`` otherwise.
+        """Returns ``True`` if there is some data in the source, ``False`` otherwise. |support_hooks|
 
         .. warning::
 
@@ -555,7 +555,7 @@ class DBReader(FrozenModel):
 
     @slot
     def raise_if_no_data(self) -> None:
-        """Raises exception ``NoDataError`` if source does not contain any data.
+        """Raises exception ``NoDataError`` if source does not contain any data. |support_hooks|
 
         .. warning::
 
