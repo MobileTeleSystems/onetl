@@ -37,63 +37,63 @@ jobs:
           ACCEPT_EULA: Y
           SA_PASSWORD: 2astazeY
         ports:
-        - 1433:1433
+          - 1433:1433
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Java ${{ inputs.java-version }}
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: ${{ inputs.java-version }}
+      - name: Set up Java ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ inputs.python-version }}
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
 
-    - name: Cache Ivy
-      uses: actions/cache@v4
-      if: inputs.with-cache
-      with:
-        path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-        restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-
+      - name: Cache Ivy
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+          restore-keys: |
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-mssql-
 
-    - name: Cache pip
-      uses: actions/cache@v4
-      if: inputs.with-cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/mssql.txt', 'requirements/tests/spark-*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/mssql.txt', 'requirements/tests/spark-*.txt') }}
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/mssql.txt', 'requirements/tests/spark-*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/mssql.txt', 'requirements/tests/spark-*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-mssql-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/mssql.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+      - name: Install dependencies
+        run: |
+          pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/mssql.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
-    - name: Wait for MSSQL to be ready
-      run: |
-        ./docker/wait-for-it.sh -h localhost -p 1433 -t 60
+      - name: Wait for MSSQL to be ready
+        run: |
+          ./docker/wait-for-it.sh -h localhost -p 1433 -t 60
 
-    - name: Run tests
-      run: |
-        mkdir reports/ || echo "Directory exists"
-        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-        source ./env
-        ./pytest_runner.sh -m mssql
+      - name: Run tests
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+          source ./env
+          ./pytest_runner.sh -m mssql
 
-    - name: Upload coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: mssql-${{ inputs.mssql-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
-        path: reports/*
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: mssql-${{ inputs.mssql-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: reports/*

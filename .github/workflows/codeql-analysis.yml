@@ -3,10 +3,10 @@ name: Code analysis
 on:
   push:
     branches:
-    - develop
+      - develop
   pull_request:
     branches-ignore:
-    - master
+      - master
   workflow_dispatch:
 
 concurrency:
@@ -28,55 +28,55 @@ jobs:
       security-events: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
 
-    - name: Install Kerberos headers
-      run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends libkrb5-dev
+      - name: Install Kerberos headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends libkrb5-dev
 
-    - name: Cache pip
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-${{ hashFiles('requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-${{ hashFiles('requirements*.txt') }}
-          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-
-          ${{ runner.os }}-python
-          ${{ runner.os }}-
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-${{ hashFiles('requirements*.txt') }}
+            ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-codeql-
+            ${{ runner.os }}-python
+            ${{ runner.os }}-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I \
-          -r requirements/core.txt \
-          -r requirements/dev.txt \
-          -r requirements/ftp.txt \
-          -r requirements/hdfs.txt \
-          -r requirements/kerberos.txt \
-          -r requirements/s3.txt \
-          -r requirements/sftp.txt \
-          -r requirements/spark.txt \
-          -r requirements/webdav.txt
+      - name: Install dependencies
+        run: |
+          pip install -I \
+            -r requirements/core.txt \
+            -r requirements/dev.txt \
+            -r requirements/ftp.txt \
+            -r requirements/hdfs.txt \
+            -r requirements/kerberos.txt \
+            -r requirements/s3.txt \
+            -r requirements/sftp.txt \
+            -r requirements/spark.txt \
+            -r requirements/webdav.txt
 
-        # Set the `CODEQL-PYTHON` environment variable to the Python executable
-        # that includes the dependencies
-        echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
+          # Set the `CODEQL-PYTHON` environment variable to the Python executable
+          # that includes the dependencies
+          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
 
-    - name: Run flake8
-      run: python3 -m flake8 --config setup.cfg .
+      - name: Run flake8
+        run: python3 -m flake8 --config setup.cfg .
 
-    - name: Run mypy
-      run: python3 -m mypy --config-file setup.cfg onetl
+      - name: Run mypy
+        run: python3 -m mypy --config-file setup.cfg onetl
 
   codeql:
     name: CodeQL
@@ -87,21 +87,21 @@ jobs:
       security-events: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
 
     # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: python
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: /language:python
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:python

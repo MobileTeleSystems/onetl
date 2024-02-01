@@ -25,54 +25,54 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ inputs.python-version }}
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
 
-    - name: Set up Java ${{ inputs.java-version }}
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: ${{ inputs.java-version }}
+      - name: Set up Java ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
 
-    - name: Cache Ivy
-      uses: actions/cache@v4
-      if: inputs.with-cache
-      with:
-        path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-        restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-
+      - name: Cache Ivy
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+          restore-keys: |
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-clickhouse-
 
-    - name: Cache pip
-      uses: actions/cache@v4
-      if: inputs.with-cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
-          ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-tests-core-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+      - name: Install dependencies
+        run: |
+          pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
-    - name: Run tests
-      run: |
-        ./run_tests.sh -m 'not connection'
-        ./run_tests.sh onetl/_util
+      - name: Run tests
+        run: |
+          ./run_tests.sh -m 'not connection'
+          ./run_tests.sh onetl/_util
 
-    - name: Upload coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: core-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
-        path: reports/*
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: reports/*

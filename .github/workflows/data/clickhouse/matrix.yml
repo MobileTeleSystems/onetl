@@ -18,21 +18,21 @@ latest: &latest
 
 matrix:
   small:
-  - clickhouse-image: clickhouse/clickhouse-server
-    clickhouse-version: 23.6.1-alpine
-    <<: *max
+    - clickhouse-image: clickhouse/clickhouse-server
+      clickhouse-version: 23.6.1-alpine
+      <<: *max
   full:
   # the lowest supported Clickhouse version by JDBC driver
-  - clickhouse-image: yandex/clickhouse-server
-    clickhouse-version: '20.7'
-    <<: *min
-  - clickhouse-image: clickhouse/clickhouse-server
-    clickhouse-version: 23.6.1-alpine
-    <<: *max
+    - clickhouse-image: yandex/clickhouse-server
+      clickhouse-version: '20.7'
+      <<: *min
+    - clickhouse-image: clickhouse/clickhouse-server
+      clickhouse-version: 23.6.1-alpine
+      <<: *max
   nightly:
-  - clickhouse-image: yandex/clickhouse-server
-    clickhouse-version: '20.7'
-    <<: *min
-  - clickhouse-image: clickhouse/clickhouse-server
-    clickhouse-version: latest-alpine
-    <<: *latest
+    - clickhouse-image: yandex/clickhouse-server
+      clickhouse-version: '20.7'
+      <<: *min
+    - clickhouse-image: clickhouse/clickhouse-server
+      clickhouse-version: latest-alpine
+      <<: *latest

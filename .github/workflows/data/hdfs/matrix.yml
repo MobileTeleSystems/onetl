@@ -21,10 +21,10 @@ latest: &latest
 
 matrix:
   small:
-  - *max
+    - *max
   full:
-  - *min
-  - *max
+    - *min
+    - *max
   nightly:
-  - *min
-  - *latest
+    - *min
+    - *latest

@@ -18,16 +18,16 @@ latest: &latest
 
 matrix:
   small:
-  - postgres-version: 15.2-alpine
-    <<: *max
+    - postgres-version: 15.2-alpine
+      <<: *max
   full:
   # Min supported version by JDBC driver is 8.4, but it is too ancient to be used by anyone in real life
-  - postgres-version: 9.4.26-alpine
-    <<: *min
-  - postgres-version: 15.2-alpine
-    <<: *max
+    - postgres-version: 9.4.26-alpine
+      <<: *min
+    - postgres-version: 15.2-alpine
+      <<: *max
   nightly:
-  - postgres-version: 9.4.26-alpine
-    <<: *min
-  - postgres-version: alpine
-    <<: *latest
+    - postgres-version: 9.4.26-alpine
+      <<: *min
+    - postgres-version: alpine
+      <<: *latest

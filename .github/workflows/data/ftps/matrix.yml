@@ -9,11 +9,11 @@ max: &max
 matrix:
   small:
   # chonjay21/ftps image has only latest tag
-  - ftps-version: latest
-    <<: *max
+    - ftps-version: latest
+      <<: *max
   full: &full
-  - ftps-version: latest
-    <<: *min
-  - ftps-version: latest
-    <<: *max
+    - ftps-version: latest
+      <<: *min
+    - ftps-version: latest
+      <<: *max
   nightly: *full

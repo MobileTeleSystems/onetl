@@ -12,10 +12,10 @@ services:
         SPARK_VERSION: 3.5.0
     env_file: .env.docker
     volumes:
-    - ./:/app/
+      - ./:/app/
     networks:
-    - onetl
-    - default
+      - onetl
+      - default
     ulimits:
       # https://stackoverflow.com/a/56895801
       nofile:
@@ -28,27 +28,27 @@ services:
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 5433:5432
+      - 5433:5432
     networks:
-    - onetl
+      - onetl
 
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}
     restart: unless-stopped
     ports:
-    - 8123:8123
-    - 9001:9000
+      - 8123:8123
+      - 9001:9000
     networks:
-    - onetl
+      - onetl
 
   zookeeper:
     image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
     ports:
-    - 2181:2181
+      - 2181:2181
     networks:
-    - onetl
+      - onetl
     environment:
-    - ALLOW_ANONYMOUS_LOGIN=yes
+      - ALLOW_ANONYMOUS_LOGIN=yes
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 2181 || exit"]
       interval: 10s
@@ -59,11 +59,11 @@ services:
     image: ${KAFKA_IMAGE:-bitnami/kafka:latest}
     restart: unless-stopped
     ports:
-    - 9093:9093
-    - 9095:9095
+      - 9093:9093
+      - 9095:9095
     env_file: .env.dependencies
     networks:
-    - onetl
+      - onetl
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -77,37 +77,37 @@ services:
     image: ${MONGODB_IMAGE:-mongo:latest}
     restart: unless-stopped
     ports:
-    - 27017:27017
+      - 27017:27017
     env_file: .env.dependencies
     networks:
-    - onetl
+      - onetl
 
   mssql:
     image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 1433:1433
+      - 1433:1433
     networks:
-    - onetl
+      - onetl
 
   mysql:
     image: ${MYSQL_IMAGE:-mysql:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 3306:3306
+      - 3306:3306
     networks:
-    - onetl
+      - onetl
 
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:15.2-alpine}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 5432:5432
+      - 5432:5432
     networks:
-    - onetl
+      - onetl
 
   hdfs:
     image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
@@ -115,22 +115,22 @@ services:
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 9820:9820  # HDFS IPC
-    - 9870:9870  # WebHDFS
-    - 9864:9864  # Datanode UI
+      - 9820:9820 # HDFS IPC
+      - 9870:9870 # WebHDFS
+      - 9864:9864 # Datanode UI
     volumes:
-    - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
+      - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
     networks:
-    - onetl
+      - onetl
 
   oracle:
     image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.3-slim-faststart}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 1522:1521
+      - 1522:1521
     networks:
-    - onetl
+      - onetl
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 10s
@@ -142,75 +142,75 @@ services:
     restart: unless-stopped
     env_file: .env.dependencies
     environment:
-    - USE_SSL=false
-    - PASSV_MIN_PORT=30000
-    - PASSV_MAX_PORT=30010
+      - USE_SSL=false
+      - PASSV_MIN_PORT=30000
+      - PASSV_MAX_PORT=30010
     ports:
-    - 2121:21
-    - 30000-30010:30000-30010
+      - 2121:21
+      - 30000-30010:30000-30010
     volumes:
-    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
+      - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
-    - onetl
+      - onetl
 
   ftps:
     image: ${FTPS_IMAGE:-chonjay21/ftps:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     environment:
-    - USE_SSL=true
-    - PASSV_MIN_PORT=30020
-    - PASSV_MAX_PORT=30030
+      - USE_SSL=true
+      - PASSV_MIN_PORT=30020
+      - PASSV_MAX_PORT=30030
     ports:
-    - 2122:21
-    - 30020-30030:30020-30030
+      - 2122:21
+      - 30020-30030:30020-30030
     volumes:
-    - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
+      - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
-    - onetl
+      - onetl
 
   samba:
     image: elswork/samba
     restart: unless-stopped
     ports:
-    - "139:139"
-    - "445:445"
+      - "139:139"
+      - "445:445"
     volumes:
-    - ./docker/samba/custom_entrypoint.sh:/custom_entrypoint.sh
+      - ./docker/samba/custom_entrypoint.sh:/custom_entrypoint.sh
     entrypoint: ["/custom_entrypoint.sh"]
     networks:
-    - onetl
+      - onetl
 
   s3:
     image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 9010:9000
-    - 9011:9001
+      - 9010:9000
+      - 9011:9001
     networks:
-    - onetl
+      - onetl
 
   sftp:
     image: ${SFTP_IMAGE:-linuxserver/openssh-server}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 2222:2222
+      - 2222:2222
     networks:
-    - onetl
+      - onetl
 
   webdav:
     image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
-    - 8000:80
+      - 8000:80
     volumes:
     # Remove after https://github.com/chonjay21/docker-webdav/pull/3
-    - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
+      - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
-    - onetl
+      - onetl
 
 networks:
   onetl:

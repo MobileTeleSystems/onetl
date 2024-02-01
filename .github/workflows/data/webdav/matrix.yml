@@ -9,11 +9,11 @@ max: &max
 matrix:
   small:
   # chonjay21/webdav image has only latest tag
-  - webdav-version: latest
-    <<: *max
+    - webdav-version: latest
+      <<: *max
   full: &full
-  - webdav-version: latest
-    <<: *min
-  - webdav-version: latest
-    <<: *max
+    - webdav-version: latest
+      <<: *min
+    - webdav-version: latest
+      <<: *max
   nightly: *full

@@ -10,10 +10,10 @@ jobs:
     if: github.event.pull_request.user.login == 'pre-commit-ci[bot]' || github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
-    - uses: alexwilson/enable-github-automerge-action@1.0.0
-      with:
-        github-token: ${{ secrets.AUTOMERGE_TOKEN }}
-        merge-method: REBASE
+      - uses: alexwilson/enable-github-automerge-action@1.0.0
+        with:
+          github-token: ${{ secrets.AUTOMERGE_TOKEN }}
+          merge-method: REBASE
 
   autoapprove:
     name: Automatically approve pull request
@@ -22,6 +22,6 @@ jobs:
     if: github.event.pull_request.user.login == 'pre-commit-ci[bot]' || github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
-    - uses: hmarr/auto-approve-action@v3
-      with:
-        github-token: ${{ secrets.AUTOMERGE_TOKEN }}
+      - uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.AUTOMERGE_TOKEN }}
