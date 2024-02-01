@@ -465,8 +465,7 @@ def is_slot(method: Callable) -> bool:
 class Slot(Protocol):
     """Protocol which is implemented by a method after applying :obj:`~slot` decorator."""
 
-    def __call__(self, *args, **kwargs):
-        ...
+    def __call__(self, *args, **kwargs): ...
 
     @property
     def __hooks__(self) -> HookCollection:
@@ -611,8 +610,7 @@ class Slot(Protocol):
         """
 
     @wraps(bind_hook)
-    def bind(self):
-        ...
+    def bind(self): ...
 
 
 def slot(method: Method) -> Method:

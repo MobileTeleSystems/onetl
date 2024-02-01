@@ -229,8 +229,7 @@ class CanProcessResult(Protocol):
     allowing it to process result of original method call and modify/replace it with something else.
     """
 
-    def process_result(self, result: T) -> T:
-        ...
+    def process_result(self, result: T) -> T: ...
 
 
 class ContextDecorator:

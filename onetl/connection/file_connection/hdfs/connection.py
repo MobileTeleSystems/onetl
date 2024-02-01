@@ -541,7 +541,7 @@ class HDFS(FileConnection, RenameDirMixin):
             st_mtime=entry_stat["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
             st_uid=entry_stat["owner"],
             st_gid=entry_stat["group"],
-            st_mode=int(entry_stat["permission"], 8) | stat.S_IFDIR
-            if entry_stat["type"] == "DIRECTORY"
-            else stat.S_IFREG,
+            st_mode=(
+                int(entry_stat["permission"], 8) | stat.S_IFDIR if entry_stat["type"] == "DIRECTORY" else stat.S_IFREG
+            ),
         )
