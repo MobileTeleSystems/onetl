@@ -337,6 +337,9 @@ Read data from MSSQL, transform & write to Hive.
         options=MSSQL.ReadOptions(fetchsize=10000),
     )
 
+    # checks that there is data in the table, otherwise raises exception
+    reader.raise_if_no_data()
+
     # Read data to DataFrame
     df = reader.run()
     df.printSchema()

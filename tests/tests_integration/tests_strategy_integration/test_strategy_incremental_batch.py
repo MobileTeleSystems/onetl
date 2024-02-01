@@ -944,3 +944,27 @@ def test_postgres_strategy_incremental_batch_nothing_to_read(spark, processing, 
     processing.assert_equal_df(df=df, other_frame=second_span, order_by="id_int")
     hwm = store.get_hwm(name=hwm_name)
     assert hwm.value == second_span_max
+
+
+def test_postgres_has_data_outside_incremental_strategy(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=prepare_schema_table.full_name,
+        hwm=ColumnIntHWM(name=secrets.token_hex(5), expression="text_string"),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "Check documentation DBReader.has_data(): ",
+        ),
+    ):
+        reader.has_data()

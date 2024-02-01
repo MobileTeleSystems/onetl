@@ -11,26 +11,6 @@ from onetl.strategy import IncrementalStrategy
 pytestmark = pytest.mark.kafka
 
 
-@pytest.fixture(name="schema")
-def dataframe_schema():
-    from pyspark.sql.types import (
-        FloatType,
-        LongType,
-        StringType,
-        StructField,
-        StructType,
-    )
-
-    return StructType(
-        [
-            StructField("id_int", LongType(), nullable=True),
-            StructField("text_string", StringType(), nullable=True),
-            StructField("hwm_int", LongType(), nullable=True),
-            StructField("float_value", FloatType(), nullable=True),
-        ],
-    )
-
-
 @pytest.mark.parametrize(
     "num_partitions",
     [
@@ -42,13 +22,13 @@ def dataframe_schema():
 def test_kafka_strategy_incremental(
     spark,
     processing,
-    schema,
+    kafka_dataframe_schema,
+    kafka_topic,
     num_partitions,
 ):
     from pyspark.sql.functions import count as spark_count
 
     hwm_type = KeyValueIntHWM
-    topic = secrets.token_hex(6)
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
 
@@ -60,11 +40,11 @@ def test_kafka_strategy_incremental(
 
     # change the number of partitions for the Kafka topic to test work for different partitioning cases
     if num_partitions is not None:
-        processing.change_topic_partitions(topic, num_partitions)
+        processing.change_topic_partitions(kafka_topic, num_partitions)
 
     reader = DBReader(
         connection=kafka,
-        source=topic,
+        source=kafka_topic,
         hwm=DBReader.AutoDetectHWM(name=hwm_name, expression="offset"),
     )
 
@@ -82,7 +62,7 @@ def test_kafka_strategy_incremental(
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
     # insert first span
-    processing.insert_pandas_df_into_topic(first_span, topic)
+    processing.insert_pandas_df_into_topic(first_span, kafka_topic)
 
     # hwm is not in the store
     assert store.get_hwm(hwm_name) is None
@@ -101,11 +81,11 @@ def test_kafka_strategy_incremental(
     assert hwm.value == partition_count_dict_first_df
 
     # all the data has been read
-    deserialized_first_df = processing.json_deserialize(first_df, df_schema=schema)
+    deserialized_first_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_first_df, other_frame=first_span, order_by="id_int")
 
     # insert second span
-    processing.insert_pandas_df_into_topic(second_span, topic)
+    processing.insert_pandas_df_into_topic(second_span, kafka_topic)
 
     with IncrementalStrategy():
         second_df = reader.run()
@@ -118,7 +98,7 @@ def test_kafka_strategy_incremental(
     partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
     assert hwm.value == partition_count_dict_combined
 
-    deserialized_second_df = processing.json_deserialize(second_df, df_schema=schema)
+    deserialized_second_df = processing.json_deserialize(second_df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_second_df, other_frame=second_span, order_by="id_int")
 
 
@@ -130,10 +110,15 @@ def test_kafka_strategy_incremental(
         10,
     ],
 )
-def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, num_partitions):
+def test_kafka_strategy_incremental_nothing_to_read(
+    spark,
+    processing,
+    kafka_dataframe_schema,
+    num_partitions,
+    kafka_topic,
+):
     from pyspark.sql.functions import count as spark_count
 
-    topic = secrets.token_hex(6)
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
 
@@ -145,11 +130,11 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
 
     # change the number of partitions for the Kafka topic to test work for different partitioning cases
     if num_partitions is not None:
-        processing.change_topic_partitions(topic, num_partitions)
+        processing.change_topic_partitions(kafka_topic, num_partitions)
 
     reader = DBReader(
         connection=kafka,
-        source=topic,
+        source=kafka_topic,
         hwm=DBReader.AutoDetectHWM(name=hwm_name, expression="offset"),
     )
 
@@ -165,6 +150,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
 
     # no data yet, nothing to read
     with IncrementalStrategy():
+        assert not reader.has_data()
         df = reader.run()
 
     assert not df.count()
@@ -172,7 +158,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     assert all(value == 0 for value in hwm.value.values())
 
     # insert first span
-    processing.insert_pandas_df_into_topic(first_span, topic)
+    processing.insert_pandas_df_into_topic(first_span, kafka_topic)
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
@@ -181,6 +167,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
 
     # set hwm value to 50
     with IncrementalStrategy():
+        assert reader.has_data()
         first_df = reader.run()
 
     hwm = store.get_hwm(name=hwm_name)
@@ -189,7 +176,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     partition_count_dict_first_df = {row["partition"]: row["count"] for row in partition_counts.collect()}
     assert hwm.value == partition_count_dict_first_df
 
-    deserialized_df = processing.json_deserialize(first_df, df_schema=schema)
+    deserialized_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=first_span, order_by="id_int")
 
     # no new data yet, nothing to read
@@ -202,7 +189,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     assert hwm.value == partition_count_dict_first_df
 
     # insert second span
-    processing.insert_pandas_df_into_topic(second_span, topic)
+    processing.insert_pandas_df_into_topic(second_span, kafka_topic)
 
     # .run() is not called - dataframe still empty - HWM not updated
     assert not df.count()
@@ -221,7 +208,7 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
     partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
     assert hwm.value == partition_count_dict_combined
 
-    deserialized_df = processing.json_deserialize(df, df_schema=schema)
+    deserialized_df = processing.json_deserialize(df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=second_span, order_by="id_int")
 
 
@@ -235,13 +222,12 @@ def test_kafka_strategy_incremental_nothing_to_read(spark, processing, schema, n
 def test_kafka_strategy_incremental_with_new_partition(
     spark,
     processing,
-    schema,
     initial_partitions,
     additional_partitions,
+    kafka_topic,
 ):
     from pyspark.sql.functions import count as spark_count
 
-    topic = secrets.token_hex(6)
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
 
@@ -253,12 +239,12 @@ def test_kafka_strategy_incremental_with_new_partition(
 
     reader = DBReader(
         connection=kafka,
-        source=topic,
+        source=kafka_topic,
         hwm=DBReader.AutoDetectHWM(name=hwm_name, expression="offset"),
     )
 
     # Initial setup with `initial_partitions` partitions
-    processing.change_topic_partitions(topic, initial_partitions)
+    processing.change_topic_partitions(kafka_topic, initial_partitions)
 
     # 0..50
     first_span_begin = 0
@@ -271,7 +257,7 @@ def test_kafka_strategy_incremental_with_new_partition(
     first_span = processing.create_pandas_df(min_id=first_span_begin, max_id=first_span_end)
     second_span = processing.create_pandas_df(min_id=second_span_begin, max_id=second_span_end)
 
-    processing.insert_pandas_df_into_topic(first_span, topic)
+    processing.insert_pandas_df_into_topic(first_span, kafka_topic)
     with IncrementalStrategy():
         first_df = reader.run()
 
@@ -284,8 +270,8 @@ def test_kafka_strategy_incremental_with_new_partition(
     hwm = store.get_hwm(name=hwm_name)
     first_run_hwm_keys_num = len(hwm.value.keys())
 
-    processing.change_topic_partitions(topic, initial_partitions + additional_partitions)
-    processing.insert_pandas_df_into_topic(second_span, topic)
+    processing.change_topic_partitions(kafka_topic, initial_partitions + additional_partitions)
+    processing.insert_pandas_df_into_topic(second_span, kafka_topic)
 
     with IncrementalStrategy():
         second_df = reader.run()

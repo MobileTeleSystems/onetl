@@ -33,12 +33,24 @@ class OracleDialect(JDBCDialect):
         new_columns = columns or ["*"]
         if len(new_columns) > 1:
             new_columns = [table + ".*" if column.strip() == "*" else column for column in new_columns]
+
+        where = where or []
+        if isinstance(where, str):
+            where = [where]
+
+        if limit is not None:
+            if limit == 0:
+                where = ["1=0"]
+            else:
+                # Oracle does not support LIMIT
+                where.append(f"ROWNUM <= {limit}")
+
         return super().get_sql_query(
             table=table,
             columns=new_columns,
             where=where,
             hint=hint,
-            limit=limit,
+            limit=None,
             compact=compact,
         )
 
