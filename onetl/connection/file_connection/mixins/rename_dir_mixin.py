@@ -91,5 +91,4 @@ class RenameDirMixin(BaseFileConnection):
         return self.resolve_dir(target_dir)
 
     @abstractmethod
-    def _rename_dir(self, source: RemotePath, target: RemotePath) -> None:
-        ...
+    def _rename_dir(self, source: RemotePath, target: RemotePath) -> None: ...
