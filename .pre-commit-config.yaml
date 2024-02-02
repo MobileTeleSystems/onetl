@@ -44,7 +44,7 @@ repos:
         files: ^(tests/resources/file_df_connection/generate_files\.py)$
       - id: insert-license
         files: .*\.py$
-        exclude: ^(setup\.py|docs/.*\.py|tests/.*\.py)$
+        exclude: ^(setup\.py|conftest\.py|docs/.*\.py|tests/.*\.py)$
         args:
           - --license-filepath
           - .spdx-license-header.txt
