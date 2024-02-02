@@ -148,8 +148,8 @@ class MongoDB(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        scala_version: str | None = None,
-        spark_version: str | None = None,
+        scala_version: str | Version | None = None,
+        spark_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|

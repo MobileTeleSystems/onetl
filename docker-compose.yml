@@ -24,7 +24,7 @@ services:
     # no dependencies from other containers to allow running limited set of tests instead of all
 
   greenplum:
-    image: ${GREENPLUM_IMAGE:-datagrip/greenplum:6.8}
+    image: ${GREENPLUM_IMAGE:-andruche/greenplum:7.0.0}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

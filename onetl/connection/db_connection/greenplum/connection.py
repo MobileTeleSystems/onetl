@@ -63,8 +63,8 @@ class GreenplumExtra(GenericOptions):
 class Greenplum(JDBCMixin, DBConnection):
     """Greenplum connection. |support_hooks|
 
-    Based on package ``io.pivotal:greenplum-spark:2.1.4``
-    (`Pivotal connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1341690/file_groups/14993>`_).
+    Based on package ``io.pivotal:greenplum-spark:2.3.0``
+    (`VMware Greenplum connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1457167/file_groups/18338>`_).
 
     .. warning::
 
@@ -99,7 +99,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
         Supported options are:
             * All `Postgres JDBC driver properties <https://github.com/pgjdbc/pgjdbc#connection-properties>`_
-            * Properties from `Greenplum connector for Spark documentation <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-options.html>`_ page, but only starting with ``server.`` or ``pool.``
+            * Properties from `Greenplum connector for Spark documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html>`_ page, but only starting with ``server.`` or ``pool.``
 
     Examples
     --------
@@ -159,15 +159,17 @@ class Greenplum(JDBCMixin, DBConnection):
     @classmethod
     def get_packages(
         cls,
-        scala_version: str | None = None,
-        spark_version: str | None = None,
+        *,
+        scala_version: str | Version | None = None,
+        spark_version: str | Version | None = None,
+        package_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
 
         .. warning::
 
-            You should pass at least one parameter.
+            You should pass either ``scala_version`` or ``spark_version``.
 
         Parameters
         ----------
@@ -180,6 +182,9 @@ class Greenplum(JDBCMixin, DBConnection):
             Spark version in format ``major.minor``.
 
             Used only if ``scala_version=None``.
+
+        package_version : str, optional, default ``2.3.0``
+            Package version in format ``major.minor.patch``
 
         Examples
         --------
@@ -194,6 +199,11 @@ class Greenplum(JDBCMixin, DBConnection):
         """
 
         # Connector version is fixed, so we can perform checks for Scala/Spark version
+        if package_version:
+            package_ver = Version.parse(package_version)
+        else:
+            package_ver = Version(2, 3, 0)
+
         if scala_version:
             scala_ver = Version.parse(scala_version)
         elif spark_version:
@@ -207,28 +217,28 @@ class Greenplum(JDBCMixin, DBConnection):
         if scala_ver.digits(2) < (2, 11) or scala_ver.digits(2) > (2, 12):
             raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver}")
 
-        return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:2.1.4"]
+        return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:{package_ver.digits(3)}"]
 
     @classproperty
     def package_spark_2_3(cls) -> str:
         """Get package name to be downloaded by Spark 2.3."""
         msg = "`Greenplum.package_2_3` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.3')` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "io.pivotal:greenplum-spark_2.11:2.1.4"
+        return "io.pivotal:greenplum-spark_2.11:2.3.0"
 
     @classproperty
     def package_spark_2_4(cls) -> str:
         """Get package name to be downloaded by Spark 2.4."""
         msg = "`Greenplum.package_2_4` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.4')` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "io.pivotal:greenplum-spark_2.11:2.1.4"
+        return "io.pivotal:greenplum-spark_2.11:2.3.0"
 
     @classproperty
     def package_spark_3_2(cls) -> str:
         """Get package name to be downloaded by Spark 3.2."""
         msg = "`Greenplum.package_3_2` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='3.2')` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "io.pivotal:greenplum-spark_2.12:2.1.4"
+        return "io.pivotal:greenplum-spark_2.12:2.3.0"
 
     @property
     def instance_url(self) -> str:
