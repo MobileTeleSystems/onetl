@@ -29,8 +29,27 @@ repos:
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.4
     hooks:
+      - id: forbid-tabs
       - id: remove-tabs
-        exclude: ^docs/(make.bat|Makefile)
+        args: [--whitespaces-count, '2']
+      - id: chmod
+        args: ['644']
+        exclude_types: [shell]
+        exclude: ^(tests/resources/file_df_connection/generate_files\.py)$
+      - id: chmod
+        args: ['755']
+        types: [shell]
+      - id: chmod
+        args: ['755']
+        files: ^(tests/resources/file_df_connection/generate_files\.py)$
+      - id: insert-license
+        files: .*\.py$
+        exclude: ^(setup\.py|docs/.*\.py|tests/.*\.py)$
+        args:
+          - --license-filepath
+          - .spdx-license-header.txt
+          - --use-current-year
+          - --no-extra-eol
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
@@ -129,3 +148,4 @@ ci:
     - mypy # checked with Github Actions
     - towncrier # checked with Github Actions
     - docker-compose-check # cannot run on pre-commit.ci
+    - chmod # failing in pre-commit.ci

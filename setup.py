@@ -53,7 +53,7 @@ setup(
     description="One ETL tool to rule them all",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    license="Apache License 2.0",
+    license="Apache-2.0",
     license_files=("LICENSE.txt",),
     url="https://github.com/MobileTeleSystems/onetl",
     classifiers=[

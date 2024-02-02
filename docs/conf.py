@@ -25,7 +25,7 @@ sys.path.insert(0, os.fspath(PROJECT_ROOT_DIR))
 # -- Project information -----------------------------------------------------
 
 project = "onETL"
-copyright = "2023, DataOps.ETL"
+copyright = "2021-2024 MTS (Mobile Telesystems)"
 author = "DataOps.ETL"
 
 # The version info for the project you're documenting, acts as replacement for
