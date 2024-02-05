@@ -138,9 +138,9 @@ class XML(ReadWriteFileFormat):
     @classmethod
     def get_packages(  # noqa: WPS231
         cls,
-        spark_version: str,
-        scala_version: str | None = None,
-        package_version: str | None = None,
+        spark_version: str | Version,
+        scala_version: str | Version | None = None,
+        package_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -155,7 +155,7 @@ class XML(ReadWriteFileFormat):
 
             If ``None``, ``spark_version`` is used to determine Scala version.
 
-        version: str, optional
+        package_version : str, optional
             Package version in format ``major.minor.patch``. Default is ``0.17.0``.
 
             See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
@@ -193,7 +193,7 @@ class XML(ReadWriteFileFormat):
                 raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version.parse("0.17.0")
+            version = Version(0, 17, 0)
 
         spark_ver = Version.parse(spark_version)
         scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)

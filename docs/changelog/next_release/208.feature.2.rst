@@ -1,0 +1,1 @@
+``Greenplum.get_packages()`` method now accepts optional arg ``package_version`` which allows to override version of Greenplum connector package.

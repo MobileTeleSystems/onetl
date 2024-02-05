@@ -93,7 +93,7 @@ Recommendations
 Mapping of Spark types to Greenplum types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.1/greenplum-connector-spark/reference-datatype_mapping.html#spark-to-greenplum>`_
+See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html#spark-to-greenplum>`_
 for more details.
 onETL does not perform any additional casting of types while writing data.
 

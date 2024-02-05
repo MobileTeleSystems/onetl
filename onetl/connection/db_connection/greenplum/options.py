@@ -18,6 +18,10 @@ GENERIC_PROHIBITED_OPTIONS = frozenset(
     ),
 )
 
+READ_WRITE_OPTIONS = frozenset(
+    ("gpdb.guc.*",),
+)
+
 WRITE_OPTIONS = frozenset(
     (
         "mode",
@@ -32,6 +36,7 @@ READ_OPTIONS = frozenset(
         "partitions",
         "numPartitions",
         "partitionColumn",
+        "gpdb.matchDistributionPolicy",
     ),
 )
 
@@ -58,12 +63,12 @@ class GreenplumTableExistBehavior(str, Enum):
 
 
 class GreenplumReadOptions(JDBCOptions):
-    """Pivotal's Greenplum Spark connector reading options.
+    """VMware's Greenplum Spark connector reading options.
 
     .. note ::
 
         You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-read_from_gpdb.html>`_,
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html>`_,
         even if it is not mentioned in this documentation.
 
         The set of supported options depends on connector version. See link above.
@@ -87,7 +92,7 @@ class GreenplumReadOptions(JDBCOptions):
     """
 
     class Config:
-        known_options = READ_OPTIONS
+        known_options = READ_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
 
     partition_column: Optional[str] = Field(alias="partitionColumn")
@@ -191,12 +196,12 @@ class GreenplumReadOptions(JDBCOptions):
 
 
 class GreenplumWriteOptions(JDBCOptions):
-    """Pivotal's Greenplum Spark connector writing options.
+    """VMware's Greenplum Spark connector writing options.
 
     .. note ::
 
         You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Tanzu-Greenplum-Connector-for-Apache-Spark/2.1/tanzu-greenplum-connector-spark/GUID-write_to_gpdb.html>`_,
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html>`_,
         even if it is not mentioned in this documentation.
 
         The set of supported options depends on connector version. See link above.
@@ -221,7 +226,7 @@ class GreenplumWriteOptions(JDBCOptions):
     """
 
     class Config:
-        known_options = WRITE_OPTIONS
+        known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
 
     if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")

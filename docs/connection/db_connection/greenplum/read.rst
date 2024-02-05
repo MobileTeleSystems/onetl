@@ -97,7 +97,7 @@ Reading from views
 This connector is **NOT** designed to read data from views.
 
 You can technically read data from a view which has
-`gp_segment_id <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.1/greenplum-connector-spark/troubleshooting.html#reading-from-a-view>`_ column.
+`gp_segment_id <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view>`_ column.
 But this is **not** recommended because each Spark executor will run the same query, which may lead to running duplicated calculations
 and sending data between segments only to skip most of the result and select only small part.
 
@@ -139,7 +139,7 @@ to write data to staging table without generating useless WAL logs.
 Mapping of Greenplum types to Spark types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.1/greenplum-connector-spark/reference-datatype_mapping.html#greenplum-to-spark>`_
+See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html#greenplum-to-spark>`_
 for more details.
 onETL does not perform any additional casting of types while reading data.
 

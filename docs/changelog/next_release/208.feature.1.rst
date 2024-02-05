@@ -1,0 +1,6 @@
+Updare VMware Greenplum connector from ``2.1.4`` to ``2.3.0``. This implies:
+    * Greenplum 7.x support
+    * `Kubernetes support <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/configure.html#k8scfg>`_
+    * New read option `gpdb.matchDistributionPolicy <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#distpolmotion>`_
+      which allows to match each Spark executor with specific Greenplum segment, avoiding redundant data transfer between Greenplum segments
+    * Allows overriding `Greenplum optimizer parameters <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#greenplum-gucs>`_ in read/write operations

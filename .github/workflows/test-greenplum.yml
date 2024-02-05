@@ -34,7 +34,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     services:
       greenplum:
-        image: datagrip/greenplum:${{ inputs.greenplum-version }}
+        image: andruche/greenplum:${{ inputs.greenplum-version }}
         env:
           TZ: UTC
         ports:

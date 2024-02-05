@@ -170,7 +170,7 @@ class MSSQL(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        java_version: str = "8",
+        java_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -191,6 +191,9 @@ class MSSQL(JDBCConnection):
             MSSQL.get_packages(java_version="8")
 
         """
+        if java_version is None:
+            java_version = "8"
+
         java_ver = Version.parse(java_version)
         if java_ver.major < 8:
             raise ValueError(f"Java version must be at least 8, got {java_ver}")
