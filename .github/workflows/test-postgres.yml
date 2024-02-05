@@ -35,63 +35,63 @@ jobs:
           POSTGRES_DB: onetl
           POSTGRES_PASSWORD: ohtae0luxeshi1uraeluMoh9IShah7ai
         ports:
-        - 5432:5432
+          - 5432:5432
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Java ${{ inputs.java-version }}
-      uses: actions/setup-java@v3
-      with:
-        distribution: temurin
-        java-version: ${{ inputs.java-version }}
+      - name: Set up Java ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ inputs.python-version }}
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
 
-    - name: Cache Ivy
-      uses: actions/cache@v3
-      if: inputs.with-cache
-      with:
-        path: ~/.ivy2
-        key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-        restore-keys: |
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-          ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-
+      - name: Cache Ivy
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+          restore-keys: |
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-tests-postgres-
 
-    - name: Cache pip
-      uses: actions/cache@v3
-      if: inputs.with-cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt') }}
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-postgres-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
+      - name: Install dependencies
+        run: |
+          pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt
 
-    - name: Wait for Postgres to be ready
-      run: |
-        ./docker/wait-for-it.sh -h localhost -p 5432 -t 60
+      - name: Wait for Postgres to be ready
+        run: |
+          ./docker/wait-for-it.sh -h localhost -p 5432 -t 60
 
-    - name: Run tests
-      run: |
-        mkdir reports/ || echo "Directory exists"
-        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-        source ./env
-        ./pytest_runner.sh -m postgres
+      - name: Run tests
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+          source ./env
+          ./pytest_runner.sh -m postgres
 
-    - name: Upload coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: postgres-${{ inputs.postgres-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
-        path: reports/*
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-${{ inputs.postgres-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: reports/*

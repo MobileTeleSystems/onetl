@@ -5,6 +5,17 @@ from pathlib import Path
 
 import pytest
 
+try:
+    from pyspark.sql.types import (
+        BinaryType,
+        LongType,
+        StructField,
+        StructType,
+        TimestampType,
+    )
+except ImportError:
+    pytest.skip("Missing pyspark", allow_module_level=True)
+
 from onetl.connection import Kafka
 from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.options import KafkaTopicExistBehaviorKafka
@@ -883,3 +894,46 @@ def test_kafka_ssl_protocol_with_basic_auth(spark_mock):
             "ssl.truststore.certificates": "<trusted-certificates>",
             "security.protocol": "SASL_SSL",
         }
+
+
+@pytest.mark.parametrize(
+    "columns,expected_schema",
+    [
+        (
+            ["key", "value", "offset"],
+            StructType(
+                [
+                    StructField("key", BinaryType(), nullable=True),
+                    StructField("value", BinaryType(), nullable=False),
+                    StructField("offset", LongType(), nullable=True),
+                ],
+            ),
+        ),
+        (
+            ["key", "timestamp"],
+            StructType(
+                [
+                    StructField("key", BinaryType(), nullable=True),
+                    StructField("timestamp", TimestampType(), nullable=True),
+                ],
+            ),
+        ),
+        (
+            ["value"],
+            StructType(
+                [
+                    StructField("value", BinaryType(), nullable=False),
+                ],
+            ),
+        ),
+    ],
+)
+def test_get_df_schema(spark_mock, columns, expected_schema):
+    kafka = Kafka(
+        addresses=["localhost:9092"],
+        cluster="my_cluster",
+        spark=spark_mock,
+    )
+
+    df_schema = kafka.get_df_schema(source="test_topic", columns=columns)
+    assert df_schema == expected_schema

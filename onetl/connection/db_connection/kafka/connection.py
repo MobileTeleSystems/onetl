@@ -1,19 +1,8 @@
-#  Copyright 2023 MTS (Mobile Telesystems)
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
@@ -258,7 +247,7 @@ class Kafka(DBConnection):
         return self
 
     @slot
-    def read_source_as_df(
+    def read_source_as_df(  # noqa:  WPS231
         self,
         source: str,
         columns: list[str] | None = None,
@@ -276,7 +265,30 @@ class Kafka(DBConnection):
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         result_options.update(options.dict(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
+
+        if window and window.expression == "offset":
+            # the 'including' flag in window values are relevant for batch strategies which are not
+            # supported by Kafka, therefore we always get offsets including border values
+            starting_offsets = dict(window.start_from.value) if window.start_from.value else {}
+            ending_offsets = dict(window.stop_at.value) if window.stop_at.value else {}
+
+            # when the Kafka topic's number of partitions has increased during incremental processing,
+            # new partitions, which are present in ending_offsets but not in
+            # starting_offsets, are assigned a default offset (0 in this case).
+            for partition in ending_offsets:
+                if partition not in starting_offsets:
+                    starting_offsets[partition] = 0
+
+            if starting_offsets:
+                result_options["startingOffsets"] = json.dumps({source: starting_offsets})
+            if ending_offsets:
+                result_options["endingOffsets"] = json.dumps({source: ending_offsets})
+
         df = self.spark.read.format("kafka").options(**result_options).load()
+
+        if limit is not None:
+            df = df.limit(limit)
+
         log.info("|%s| Dataframe is successfully created.", self.__class__.__name__)
         return df
 
@@ -346,38 +358,38 @@ class Kafka(DBConnection):
             TimestampType,
         )
 
-        schema = StructType(
-            [
-                StructField("key", BinaryType(), nullable=True),
-                StructField("value", BinaryType(), nullable=False),
-                StructField("topic", StringType(), nullable=True),
-                StructField("partition", IntegerType(), nullable=True),
-                StructField("offset", LongType(), nullable=True),
-                StructField("timestamp", TimestampType(), nullable=True),
-                StructField("timestampType", IntegerType(), nullable=True),
-                StructField(
-                    "headers",
-                    ArrayType(
-                        StructType(
-                            [
-                                StructField("key", StringType(), nullable=True),
-                                StructField("value", BinaryType(), nullable=True),
-                            ],
-                        ),
+        all_fields = [
+            StructField("key", BinaryType(), nullable=True),
+            StructField("value", BinaryType(), nullable=False),
+            StructField("topic", StringType(), nullable=True),
+            StructField("partition", IntegerType(), nullable=True),
+            StructField("offset", LongType(), nullable=True),
+            StructField("timestamp", TimestampType(), nullable=True),
+            StructField("timestampType", IntegerType(), nullable=True),
+            StructField(
+                "headers",
+                ArrayType(
+                    StructType(
+                        [
+                            StructField("key", StringType(), nullable=True),
+                            StructField("value", BinaryType(), nullable=True),
+                        ],
                     ),
-                    nullable=True,
                 ),
-            ],
-        )
+                nullable=True,
+            ),
+        ]
 
-        return schema  # noqa:  WPS331
+        filtered_fields = [field for field in all_fields if columns is None or field.name in columns]
+
+        return StructType(filtered_fields)
 
     @slot
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
-        scala_version: str | None = None,
+        spark_version: str | Version,
+        scala_version: str | Version | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -465,6 +477,63 @@ class Kafka(DBConnection):
     # Do not all __del__ with calling .close(), like other connections,
     # because this can influence dataframes created by this connection.
     # For example, .close() deletes local keytab copy.
+
+    @slot
+    def get_min_max_values(
+        self,
+        source: str,
+        window: Window,
+        hint: Any | None = None,
+        where: Any | None = None,
+        options: KafkaReadOptions | dict | None = None,
+    ) -> tuple[dict[int, int], dict[int, int]]:
+        log.info("|%s| Getting min and max offset values for topic %r ...", self.__class__.__name__, source)
+
+        consumer = self._get_java_consumer()
+        with closing(consumer):
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#partitionsFor-java.lang.String-
+            partition_infos = consumer.partitionsFor(source)
+
+            jvm = self.spark._jvm
+            topic_partitions = [
+                jvm.org.apache.kafka.common.TopicPartition(source, p.partition())  # type: ignore[union-attr]
+                for p in partition_infos
+            ]
+
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#beginningOffsets-java.util.Collection-
+            beginning_offsets = consumer.beginningOffsets(topic_partitions)
+
+            # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#endOffsets-java.util.Collection-
+            end_offsets = consumer.endOffsets(topic_partitions)
+
+            min_offsets = {}
+            max_offsets = {}
+            for tp in topic_partitions:
+                partition_id = tp.partition()
+                begin_offset = beginning_offsets[tp]
+                end_offset = end_offsets[tp]
+
+                if window.start_from and window.start_from.is_set():
+                    window_start = window.start_from.value.get(partition_id, begin_offset)
+                    begin_offset = max(window_start, begin_offset)
+                if window.stop_at and window.stop_at.is_set():
+                    window_stop = window.stop_at.value.get(partition_id, end_offset)
+                    end_offset = min(window_stop, end_offset)
+
+                min_offsets[partition_id] = begin_offset
+                max_offsets[partition_id] = end_offset
+
+        log.info("|%s| Received min and max offset values for each partition.", self.__class__.__name__)
+        for partition_id in sorted(min_offsets.keys()):
+            log.debug(
+                "|%s| Partition %d: Min Offset = %d, Max Offset = %d",
+                self.__class__.__name__,
+                partition_id,
+                min_offsets[partition_id],
+                max_offsets[partition_id],
+            )
+
+        return min_offsets, max_offsets
 
     @property
     def instance_url(self):

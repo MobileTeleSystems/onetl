@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import logging
@@ -62,8 +64,7 @@ class Hook(Generic[T]):  # noqa: WPS338
         from onetl.hooks.hook import Hook, HookPriority
 
 
-        def some_func(*args, **kwargs):
-            ...
+        def some_func(*args, **kwargs): ...
 
 
         hook = Hook(callback=some_func, enabled=True, priority=HookPriority.FIRST)
@@ -209,8 +210,7 @@ class Hook(Generic[T]):  # noqa: WPS338
             from onetl.hooks.hook import Hook, HookPriority
 
 
-            def some_func(*args, **kwargs):
-                ...
+            def some_func(*args, **kwargs): ...
 
 
             hook = Hook(callback=some_func)
@@ -231,8 +231,7 @@ class CanProcessResult(Protocol):
     allowing it to process result of original method call and modify/replace it with something else.
     """
 
-    def process_result(self, result: T) -> T:
-        ...
+    def process_result(self, result: T) -> T: ...
 
 
 class ContextDecorator:

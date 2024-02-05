@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, unlabeled, reopened]
     branches-ignore:
-    - master
+      - master
 
 env:
   DEFAULT_PYTHON: '3.12'
@@ -19,44 +19,44 @@ jobs:
     timeout-minutes: 10
     if: "!contains(github.event.pull_request.labels.*.name, 'ci:skip-changelog') && github.event.pull_request.user.login != 'pre-commit-ci[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'"
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-      id: python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
 
-    - name: Cache pip
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
-          ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-${{ hashFiles('requirements/core.txt', 'requirements/docs.txt') }}
+            ${{ runner.os }}-python-${{ env.DEFAULT_PYTHON }}-changelog-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I  -r requirements/core.txt -r requirements/docs.txt
+      - name: Install dependencies
+        run: |
+          pip install -I  -r requirements/core.txt -r requirements/docs.txt
 
-    - name: Check changelog entry exists
-      run: |
-        if [ ! -s docs/changelog/next_release/${{ github.event.pull_request.number }}.*.rst ]; then
-            echo "Please add corresponding file 'docs/changelog/next_release/<issue number>.<change type>.rst' with changes description"
-            exit 1
-        fi
+      - name: Check changelog entry exists
+        run: |
+          if [ ! -s docs/changelog/next_release/${{ github.event.pull_request.number }}.*.rst ]; then
+              echo "Please add corresponding file 'docs/changelog/next_release/<issue number>.<change type>.rst' with changes description"
+              exit 1
+          fi
 
-    - name: Validate changelog
-      run: |
-        # Fetch the pull request' base branch so towncrier will be able to
-        # compare the current branch with the base branch.
-        git fetch --no-tags origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-        towncrier check --compare-with origin/${{ github.base_ref }}
-        towncrier --draft
+      - name: Validate changelog
+        run: |
+          # Fetch the pull request' base branch so towncrier will be able to
+          # compare the current branch with the base branch.
+          git fetch --no-tags origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          towncrier check --compare-with origin/${{ github.base_ref }}
+          towncrier --draft

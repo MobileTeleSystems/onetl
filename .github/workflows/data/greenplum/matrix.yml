@@ -14,11 +14,11 @@ max: &max
 
 matrix:
   small:
-  - greenplum-version: 6.8
-    <<: *max
+    - greenplum-version: 7.0.0
+      <<: *max
   full: &full
-  - greenplum-version: 6.1
-    <<: *min
-  - greenplum-version: 6.8
-    <<: *max
+    - greenplum-version: 6.25.3
+      <<: *min
+    - greenplum-version: 7.0.0
+      <<: *max
   nightly: *full

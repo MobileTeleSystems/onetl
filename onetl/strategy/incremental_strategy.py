@@ -1,17 +1,5 @@
-#  Copyright 2023 MTS (Mobile Telesystems)
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -293,6 +281,40 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         SELECT business_dt, data
         FROM public.mydata
         WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
+
+    Incremental run with :ref:`db-reader` and :ref:`kafka` connection
+    (by ``offset`` in topic - :etl-entities:`KeyValueHWM <hwm/key_value/index.html>`):
+
+    .. code:: python
+
+        from onetl.connection import Kafka
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
+        from onetl.hwm import AutoDetectHWM
+
+        from pyspark.sql import SparkSession
+
+        maven_packages = Kafka.get_packages()
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", ",".join(maven_packages))
+            .getOrCreate()
+        )
+
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster="my-cluster",
+            spark=spark,
+        )
+
+        reader = DBReader(
+            connection=kafka,
+            source="topic_name",
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
+        )
+
+        with IncrementalStrategy():
+            df = reader.run()
 
     Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
 

@@ -35,8 +35,7 @@ class BaseProcessing(ABC):
     def create_schema(
         self,
         schema: str,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def create_table_ddl(
         self,
@@ -53,8 +52,7 @@ class BaseProcessing(ABC):
         table: str,
         fields: dict[str, str],
         schema: str,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def drop_database_ddl(
         self,
@@ -66,8 +64,7 @@ class BaseProcessing(ABC):
     def drop_database(
         self,
         schema: str,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def drop_table_ddl(
         self,
@@ -81,8 +78,7 @@ class BaseProcessing(ABC):
         self,
         table: str,
         schema: str,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     def insert_data(
@@ -90,8 +86,7 @@ class BaseProcessing(ABC):
         schema: str,
         table: str,
         values: list,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def get_expected_dataframe_ddl(
         self,
@@ -112,8 +107,7 @@ class BaseProcessing(ABC):
         schema: str,
         table: str,
         order_by: str | None = None,
-    ) -> pandas.DataFrame:
-        ...
+    ) -> pandas.DataFrame: ...
 
     def get_column_type(self, name: str) -> str:
         return self._column_types_and_names_matching[name]

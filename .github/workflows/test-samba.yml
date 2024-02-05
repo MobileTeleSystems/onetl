@@ -22,60 +22,60 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ inputs.python-version }}
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
 
-    - name: Cache pip
-      uses: actions/cache@v3
-      if: inputs.with-cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
-          ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: inputs.with-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip setuptools wheel
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip setuptools wheel
 
-    - name: Install dependencies
-      run: |
-        pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt
+      - name: Install dependencies
+        run: |
+          pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt
 
     # Replace with Github Actions' because of custom parameter for samba container start
-    - name: Start Samba
-      run: |
-        docker compose down -v --remove-orphans
-        docker compose up -d samba
-      env:
-        SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
-        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
+      - name: Start Samba
+        run: |
+          docker compose down -v --remove-orphans
+          docker compose up -d samba
+        env:
+          SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
+          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
-    - name: Wait for Samba to be ready
-      run: |
-        ./docker/wait-for-it.sh -h localhost -p 445 -t 60
+      - name: Wait for Samba to be ready
+        run: |
+          ./docker/wait-for-it.sh -h localhost -p 445 -t 60
 
-    - name: Run tests
-      run: |
-        mkdir reports/ || echo "Directory exists"
-        sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-        source ./env
-        ./pytest_runner.sh -m samba
+      - name: Run tests
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
+          source ./env
+          ./pytest_runner.sh -m samba
 
-    - name: Shutdown Samba
-      if: always()
-      run: |
-        docker compose down -v --remove-orphans
-      env:
-        COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
+      - name: Shutdown Samba
+        if: always()
+        run: |
+          docker compose down -v --remove-orphans
+        env:
+          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
-    - name: Upload coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: samba-${{ inputs.server-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
-        path: reports/*
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: samba-${{ inputs.server-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: reports/*

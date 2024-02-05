@@ -1,1 +1,2 @@
-**/greenplum*
+**/*greenplum*
+**/*greenplum*/**

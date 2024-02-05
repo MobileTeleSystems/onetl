@@ -2,7 +2,7 @@ name: Nightly tests
 on:
   schedule:
     # Run every week
-  - cron: 30 12 * * WED
+    - cron: 30 12 * * WED
   workflow_dispatch:
 
 concurrency:
@@ -338,28 +338,28 @@ jobs:
     name: Tests done
     runs-on: ubuntu-latest
     needs:
-    - tests-core
-    - tests-clickhouse
-    - tests-hive
-    - tests-kafka
-    - tests-local-fs
-    - tests-mongodb
-    - tests-mssql
-    - tests-mysql
-    - tests-oracle
-    - tests-postgres
-    - tests-teradata
-    - tests-ftp
-    - tests-ftps
-    - tests-hdfs
-    - tests-s3
-    - tests-sftp
-    - tests-samba
-    - tests-webdav
+      - tests-core
+      - tests-clickhouse
+      - tests-hive
+      - tests-kafka
+      - tests-local-fs
+      - tests-mongodb
+      - tests-mssql
+      - tests-mysql
+      - tests-oracle
+      - tests-postgres
+      - tests-teradata
+      - tests-ftp
+      - tests-ftps
+      - tests-hdfs
+      - tests-s3
+      - tests-sftp
+      - tests-samba
+      - tests-webdav
 
     steps:
 
     # Do not send coverage report. Nightly tests are used only to find bugs with new versions of DB and filesystems.
 
-    - name: All done
-      run: echo 1
+      - name: All done
+        run: echo 1

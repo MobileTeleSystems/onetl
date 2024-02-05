@@ -8,11 +8,11 @@ max: &max
 
 matrix:
   small:
-  - server-version: latest
-    <<: *max
+    - server-version: latest
+      <<: *max
   full: &full
-  - server-version: latest
-    <<: *min
-  - server-version: latest
-    <<: *max
+    - server-version: latest
+      <<: *min
+    - server-version: latest
+      <<: *max
   nightly: *full

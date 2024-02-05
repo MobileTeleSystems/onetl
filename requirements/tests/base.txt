@@ -1,6 +1,6 @@
 coverage
 omegaconf
-pytest
+pytest<8
 pytest-lazy-fixture
 pytest-mock
 pytest-rerunfailures

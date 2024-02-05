@@ -18,17 +18,17 @@ latest: &latest
 
 matrix:
   small:
-  - mysql-version: 8.0.33
-    <<: *max
+    - mysql-version: 8.0.33
+      <<: *max
   full:
   # Min supported version by JDBC driver is 5.7
-  - mysql-version: 5.7.42
-    <<: *min
+    - mysql-version: 5.7.42
+      <<: *min
   # Max supported version by JDBC driver is 8.0
-  - mysql-version: 8.0.33
-    <<: *max
+    - mysql-version: 8.0.33
+      <<: *max
   nightly:
-  - mysql-version: 5.7.42
-    <<: *min
-  - mysql-version: latest
-    <<: *latest
+    - mysql-version: 5.7.42
+      <<: *min
+    - mysql-version: latest
+      <<: *latest

@@ -18,16 +18,16 @@ latest: &latest
 
 matrix:
   small:
-  - mssql-version: v2017.CU24.0
-    <<: *max
+    - mssql-version: v2017.CU24.0
+      <<: *max
   full:
-  - mssql-version: v2017.CU24.0
-    <<: *min
+    - mssql-version: v2017.CU24.0
+      <<: *min
   # v2019.CU4.0 is not very stable
-  - mssql-version: v2017.CU24.0
-    <<: *max
+    - mssql-version: v2017.CU24.0
+      <<: *max
   nightly:
-  - mssql-version: v2017.CU24.0
-    <<: *min
-  - mssql-version: v2017.CU24.0
-    <<: *latest
+    - mssql-version: v2017.CU24.0
+      <<: *min
+    - mssql-version: v2017.CU24.0
+      <<: *latest

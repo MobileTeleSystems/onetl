@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,17 @@ DEFAULT_TIMEOUT = 10.0
 
 class KafkaProcessing(BaseProcessing):
     column_names: list[str] = ["id_int", "text_string", "hwm_int", "float_value"]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        return False
+
+    @property
+    def schema(self) -> str:
+        # Kafka does not support schemas
+        return ""
 
     def get_consumer(self):
         from confluent_kafka import Consumer
@@ -111,10 +123,46 @@ class KafkaProcessing(BaseProcessing):
     def insert_data(self, schema: str, table: str, values: list) -> None:
         pass
 
+    def change_topic_partitions(self, topic: str, num_partitions: int, timeout: float = DEFAULT_TIMEOUT):
+        from confluent_kafka.admin import NewPartitions
+
+        admin_client = self.get_admin_client()
+
+        if not self.topic_exists(topic):
+            self.create_topic(topic, num_partitions)
+        else:
+            new_partitions = [NewPartitions(topic, num_partitions)]
+            # change the number of partitions
+            fs = admin_client.create_partitions(new_partitions, request_timeout=timeout)
+
+            for topic, f in fs.items():
+                try:
+                    f.result()
+                except Exception as e:
+                    raise Exception(f"Failed to update number of partitions for topic '{topic}': {e}")  # noqa:  WPS454
+
+    def create_topic(self, topic: str, num_partitions: int, timeout: float = DEFAULT_TIMEOUT):
+        from confluent_kafka.admin import KafkaException, NewTopic
+
+        admin_client = self.get_admin_client()
+        topic_config = NewTopic(topic, num_partitions=num_partitions, replication_factor=1)
+        fs = admin_client.create_topics([topic_config], request_timeout=timeout)
+
+        for topic, f in fs.items():
+            try:
+                f.result()
+            except Exception as e:
+                raise KafkaException(f"Error creating topic '{topic}': {e}")
+
     def delete_topic(self, topics: list[str], timeout: float = DEFAULT_TIMEOUT):
         admin = self.get_admin_client()
         # https://github.com/confluentinc/confluent-kafka-python/issues/813
         admin.delete_topics(topics, request_timeout=timeout)
+
+    def insert_pandas_df_into_topic(self, df: pandas.DataFrame, topic: str):
+        for _, row in df.iterrows():
+            message = json.dumps(row.to_dict())
+            self.send_message(topic, message.encode("utf-8"))
 
     def topic_exists(self, topic: str, timeout: float = DEFAULT_TIMEOUT) -> bool:
         admin = self.get_admin_client()

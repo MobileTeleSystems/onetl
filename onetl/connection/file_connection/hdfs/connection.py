@@ -1,17 +1,5 @@
-#  Copyright 2023 MTS (Mobile Telesystems)
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import os
@@ -541,7 +529,7 @@ class HDFS(FileConnection, RenameDirMixin):
             st_mtime=entry_stat["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
             st_uid=entry_stat["owner"],
             st_gid=entry_stat["group"],
-            st_mode=int(entry_stat["permission"], 8) | stat.S_IFDIR
-            if entry_stat["type"] == "DIRECTORY"
-            else stat.S_IFREG,
+            st_mode=(
+                int(entry_stat["permission"], 8) | stat.S_IFDIR if entry_stat["type"] == "DIRECTORY" else stat.S_IFREG
+            ),
         )

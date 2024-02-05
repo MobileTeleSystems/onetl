@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import textwrap
@@ -6,7 +8,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import frozendict
-from etl_entities.hwm import HWM, ColumnHWM
+from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
 from pydantic import Field, PrivateAttr, root_validator, validator
@@ -17,6 +19,7 @@ from onetl.base import (
     ContainsGetDFSchemaMethod,
     ContainsGetMinMaxValues,
 )
+from onetl.exception import NoDataError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import AutoDetectHWM, Edge, Window
 from onetl.impl import FrozenModel, GenericOptions
@@ -123,7 +126,7 @@ class DBReader(FrozenModel):
             Some sources does not support data filtering.
 
     hwm : type[HWM] | None, default: ``None``
-        HWM class to be used as :etl-entities:`HWM <hwm/column/index.html>` value.
+        HWM class to be used as :etl-entities:`HWM <hwm/index.html>` value.
 
         .. code:: python
 
@@ -362,8 +365,6 @@ class DBReader(FrozenModel):
             df = reader.run()
     """
 
-    AutoDetectHWM = AutoDetectHWM
-
     connection: BaseDBConnection
     source: str = Field(alias="table")
     columns: Optional[List[str]] = Field(default=None, min_items=1)
@@ -372,8 +373,10 @@ class DBReader(FrozenModel):
     df_schema: Optional[StructType] = None
     hwm_column: Optional[Union[str, tuple]] = None
     hwm_expression: Optional[str] = None
-    hwm: Optional[ColumnHWM] = None
+    hwm: Optional[Union[AutoDetectHWM, ColumnHWM, KeyValueHWM]] = None
     options: Optional[GenericOptions] = None
+
+    AutoDetectHWM = AutoDetectHWM
 
     _connection_checked: bool = PrivateAttr(default=False)
 
@@ -414,7 +417,7 @@ class DBReader(FrozenModel):
         source: str = values["source"]
         hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
         hwm_expression: str | None = values.get("hwm_expression")
-        hwm: ColumnHWM | None = values.get("hwm")
+        hwm: HWM | None = values.get("hwm")
 
         if hwm_column is not None:
             if hwm:
@@ -502,6 +505,97 @@ class DBReader(FrozenModel):
         return None
 
     @slot
+    def has_data(self) -> bool:
+        """Returns ``True`` if there is some data in the source, ``False`` otherwise. |support_hooks|
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
+
+        .. warning::
+
+               If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        Raises
+        ------
+        RuntimeError
+
+            Current strategy is not compatible with HWM parameter.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            reader = DBReader(...)
+
+            # handle situation when there is no data in the source
+            if reader.has_data():
+                df = reader.run()
+            else:
+                # implement your handling logic here
+                ...
+        """
+        self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+
+        window, limit = self._calculate_window_and_limit()
+        if limit == 0:
+            return False
+
+        df = self.connection.read_source_as_df(
+            source=str(self.source),
+            columns=self.columns,
+            hint=self.hint,
+            where=self.where,
+            df_schema=self.df_schema,
+            window=window,
+            limit=1,
+            **self._get_read_kwargs(),
+        )
+
+        return bool(df.take(1))
+
+    @slot
+    def raise_if_no_data(self) -> None:
+        """Raises exception ``NoDataError`` if source does not contain any data. |support_hooks|
+
+        .. note::
+
+            This method can return different results depending on :ref:`strategy`
+
+        .. warning::
+
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        Raises
+        ------
+         RuntimeError
+
+            Current strategy is not compatible with HWM parameter.
+
+        :obj:`onetl.exception.NoDataError`
+
+            There is no data in source.
+
+        Examples
+        --------
+
+        .. code:: python
+
+            reader = DBReader(...)
+
+            # ensure that there is some data in the source before reading it using Spark
+            reader.raise_if_no_data()
+        """
+
+        if not self.has_data():
+            raise NoDataError(f"No data in the source: {self.source}")
+
+    @slot
     def run(self) -> DataFrame:
         """
         Reads data from source table and saves as Spark dataframe. |support_hooks|
@@ -509,6 +603,10 @@ class DBReader(FrozenModel):
         .. note::
 
             This method can return different results depending on :ref:`strategy`
+
+        .. warning::
+
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         Returns
         -------
@@ -541,6 +639,12 @@ class DBReader(FrozenModel):
             self._connection_checked = True
 
         window, limit = self._calculate_window_and_limit()
+
+        # update the HWM with the stop value
+        if self.hwm and window:
+            strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
+            strategy.update_hwm(window.stop_at.value)
+
         df = self.connection.read_source_as_df(
             source=str(self.source),
             columns=self.columns,
@@ -562,7 +666,9 @@ class DBReader(FrozenModel):
 
         if self.hwm:
             if not isinstance(strategy, HWMStrategy):
-                raise RuntimeError(f"{class_name}(hwm=...) cannot be used with {strategy_name}")
+                raise RuntimeError(
+                    f"{class_name}(hwm=...) cannot be used with {strategy_name}. Check documentation DBReader.has_data(): https://onetl.readthedocs.io/en/stable/db/db_reader.html#onetl.db.db_reader.db_reader.DBReader.has_data.",
+                )
             self._prepare_hwm(strategy, self.hwm)
 
         elif isinstance(strategy, HWMStrategy):
@@ -578,7 +684,7 @@ class DBReader(FrozenModel):
             strategy.fetch_hwm()
             return
 
-        if not isinstance(strategy.hwm, ColumnHWM) or strategy.hwm.name != hwm.name:
+        if not isinstance(strategy.hwm, (ColumnHWM, KeyValueHWM)) or strategy.hwm.name != hwm.name:
             # exception raised when inside one strategy >1 processes on the same table but with different hwm columns
             # are executed, example: test_postgres_strategy_incremental_hwm_set_twice
             error_message = textwrap.dedent(
@@ -660,7 +766,7 @@ class DBReader(FrozenModel):
         log.info("|%s| Got Spark field: %s", self.__class__.__name__, result)
         return result
 
-    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:
+    def _calculate_window_and_limit(self) -> tuple[Window | None, int | None]:  # noqa: WPS231
         if not self.hwm:
             # SnapshotStrategy - always select all the data from source
             return None, None
@@ -673,7 +779,6 @@ class DBReader(FrozenModel):
         if start_value is not None and stop_value is not None:
             # we already have start and stop values, nothing to do
             window = Window(self.hwm.expression, start_from=strategy.current, stop_at=strategy.next)
-            strategy.update_hwm(window.stop_at.value)
             return window, None
 
         if not isinstance(self.connection, ContainsGetMinMaxValues):
@@ -737,7 +842,6 @@ class DBReader(FrozenModel):
                 stop_at=Edge(value=max_value),
             )
 
-        strategy.update_hwm(window.stop_at.value)
         return window, None
 
     def _log_parameters(self) -> None:

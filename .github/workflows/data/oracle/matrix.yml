@@ -18,29 +18,29 @@ latest: &latest
 
 matrix:
   small:
-  - oracle-image: gvenzl/oracle-free
-    oracle-version: 23.3-slim-faststart
-    db-name: FREEPDB1
-    <<: *max
+    - oracle-image: gvenzl/oracle-free
+      oracle-version: 23.3-slim-faststart
+      db-name: FREEPDB1
+      <<: *max
   full:
-  - oracle-image: gvenzl/oracle-xe
-    oracle-version: 11.2.0.2-slim-faststart
-    db-name: XE
-    <<: *min
-  - oracle-image: gvenzl/oracle-xe
-    oracle-version: 21.3.0-slim-faststart
-    db-name: XEPDB1
-    <<: *max
-  - oracle-image: gvenzl/oracle-free
-    oracle-version: 23.3-slim-faststart
-    db-name: FREEPDB1
-    <<: *max
+    - oracle-image: gvenzl/oracle-xe
+      oracle-version: 11.2.0.2-slim-faststart
+      db-name: XE
+      <<: *min
+    - oracle-image: gvenzl/oracle-xe
+      oracle-version: 21.3.0-slim-faststart
+      db-name: XEPDB1
+      <<: *max
+    - oracle-image: gvenzl/oracle-free
+      oracle-version: 23.3-slim-faststart
+      db-name: FREEPDB1
+      <<: *max
   nightly:
-  - oracle-image: gvenzl/oracle-xe
-    oracle-version: 11.2.0.2-slim-faststart
-    db-name: XE
-    <<: *min
-  - oracle-image: gvenzl/oracle-free
-    oracle-version: slim-faststart
-    db-name: FREEPDB1
-    <<: *latest
+    - oracle-image: gvenzl/oracle-xe
+      oracle-version: 11.2.0.2-slim-faststart
+      db-name: XE
+      <<: *min
+    - oracle-image: gvenzl/oracle-free
+      oracle-version: slim-faststart
+      db-name: FREEPDB1
+      <<: *latest

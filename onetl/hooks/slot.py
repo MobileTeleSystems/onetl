@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import inspect
@@ -139,8 +141,7 @@ def _prepare_hook_args(
         @support_hooks
         class MyClass:
             @slot
-            def method(self, some, named="abc"):
-                ...
+            def method(self, some, named="abc"): ...
 
     then hook should have a compatible signature, like these ones:
 
@@ -148,22 +149,19 @@ def _prepare_hook_args(
 
         @MyClass.method.bind
         @hook
-        def callback(self, some, named):
-            ...
+        def callback(self, some, named): ...
 
     .. code:: python
 
         @MyClass.method.bind
         @hook
-        def callback(self, some, **kwargs):
-            ...
+        def callback(self, some, **kwargs): ...
 
     .. code:: python
 
         @MyClass.method.bind
         @hook
-        def callback(my_class_instance, *args, **kwargs):
-            ...
+        def callback(my_class_instance, *args, **kwargs): ...
 
     .. note::
 
@@ -469,8 +467,7 @@ def is_slot(method: Callable) -> bool:
 class Slot(Protocol):
     """Protocol which is implemented by a method after applying :obj:`~slot` decorator."""
 
-    def __call__(self, *args, **kwargs):
-        ...
+    def __call__(self, *args, **kwargs): ...
 
     @property
     def __hooks__(self) -> HookCollection:
@@ -561,14 +558,12 @@ class Slot(Protocol):
             @support_hooks
             class MyClass:
                 @slot
-                def my_method(self, arg):
-                    ...
+                def my_method(self, arg): ...
 
 
             @MyClass.my_method.bind
             @hook
-            def callback1(self, arg):
-                ...
+            def callback1(self, arg): ...
 
 
             obj = MyClass()
@@ -598,14 +593,12 @@ class Slot(Protocol):
             @support_hooks
             class MyClass:
                 @slot
-                def my_method(self, arg):
-                    ...
+                def my_method(self, arg): ...
 
 
             @MyClass.my_method.bind
             @hook
-            def callback1(self, arg):
-                ...
+            def callback1(self, arg): ...
 
 
             obj = MyClass()
@@ -619,8 +612,7 @@ class Slot(Protocol):
         """
 
     @wraps(bind_hook)
-    def bind(self):
-        ...
+    def bind(self): ...
 
 
 def slot(method: Method) -> Method:
@@ -656,36 +648,30 @@ def slot(method: Method) -> Method:
         @support_hooks
         class MyClass:
             @slot
-            def my_method(self, arg):
-                ...
+            def my_method(self, arg): ...
 
             @slot  # decorator should be on top of all other decorators
             @classmethod
-            def class_method(cls):
-                ...
+            def class_method(cls): ...
 
             @slot  # decorator should be on top of all other decorators
             @staticmethod
-            def static_method(arg):
-                ...
+            def static_method(arg): ...
 
 
         @MyClass.my_method.bind
         @hook
-        def callback1(self, arg):
-            ...
+        def callback1(self, arg): ...
 
 
         @MyClass.class_method.bind
         @hook
-        def callback2(cls):
-            ...
+        def callback2(cls): ...
 
 
         @MyClass.static_method.bind
         @hook
-        def callback3(arg):
-            ...
+        def callback3(arg): ...
 
 
         obj = MyClass()

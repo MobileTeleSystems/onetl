@@ -82,29 +82,11 @@ def test_kafka_reader_hwm_offset_is_valid(spark_mock):
     )
 
 
-def test_kafka_reader_hwm_timestamp_depends_on_spark_version(spark_mock, mocker):
-    kafka = Kafka(
-        addresses=["localhost:9092"],
-        cluster="my_cluster",
-        spark=spark_mock,
-    )
-    mocker.patch.object(spark_mock, "version", new="3.2.0")
-    DBReader(
-        connection=kafka,
-        table="table",
-        hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="timestamp"),
-    )
-
-    mocker.patch.object(spark_mock, "version", new="2.4.0")
-    with pytest.raises(ValueError, match="Spark version must be 3.x"):
-        DBReader(
-            connection=kafka,
-            table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="timestamp"),
-        )
-
-
-def test_kafka_reader_invalid_hwm_column(spark_mock):
+@pytest.mark.parametrize(
+    "hwm_expression",
+    ["unknown", "timestamp"],
+)
+def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_expression):
     kafka = Kafka(
         addresses=["localhost:9092"],
         cluster="my_cluster",
@@ -113,10 +95,35 @@ def test_kafka_reader_invalid_hwm_column(spark_mock):
 
     with pytest.raises(
         ValueError,
-        match="hwm.expression='unknown' is not supported by Kafka",
+        match=f"hwm.expression='{hwm_expression}' is not supported by Kafka",
     ):
         DBReader(
             connection=kafka,
             table="table",
-            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="unknown"),
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expression),
+        )
+
+
+@pytest.mark.parametrize(
+    "topic, error_message",
+    [
+        ("*", r"source/target=\* is not supported by Kafka. Provide a singular topic."),
+        ("topic1, topic2", "source/target=topic1, topic2 is not supported by Kafka. Provide a singular topic."),
+    ],
+)
+def test_kafka_reader_invalid_source(spark_mock, topic, error_message):
+    kafka = Kafka(
+        addresses=["localhost:9092"],
+        cluster="my_cluster",
+        spark=spark_mock,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=error_message,
+    ):
+        DBReader(
+            connection=kafka,
+            table=topic,
+            hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )

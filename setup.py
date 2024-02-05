@@ -53,7 +53,7 @@ setup(
     description="One ETL tool to rule them all",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    license="Apache License 2.0",
+    license="Apache-2.0",
     license_files=("LICENSE.txt",),
     url="https://github.com/MobileTeleSystems/onetl",
     classifiers=[
@@ -85,6 +85,7 @@ setup(
     },
     keywords=["Spark", "ETL", "JDBC", "HWM"],
     packages=find_packages(exclude=["docs", "docs.*", "tests", "tests.*"]),
+    entry_points={"tricoder_package_spy.register": ["onetl=onetl"]},
     python_requires=">=3.7",
     install_requires=requirements_core,
     extras_require={

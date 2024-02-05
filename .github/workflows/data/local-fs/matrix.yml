@@ -30,14 +30,14 @@ latest: &latest
 
 matrix:
   small:
-  - <<: *max
+    - <<: *max
   full:
-  - <<: *min
-  - <<: *min_avro
-  - <<: *min_excel
-  - <<: *max
+    - <<: *min
+    - <<: *min_avro
+    - <<: *min_excel
+    - <<: *max
   nightly:
-  - <<: *min
-  - <<: *min_avro
-  - <<: *min_excel
-  - <<: *latest
+    - <<: *min
+    - <<: *min_avro
+    - <<: *min_excel
+    - <<: *latest

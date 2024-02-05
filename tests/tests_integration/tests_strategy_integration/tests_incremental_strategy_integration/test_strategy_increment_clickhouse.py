@@ -145,6 +145,7 @@ def test_clickhouse_strategy_incremental_nothing_to_read(spark, processing, prep
 
     # no data yet, nothing to read
     with IncrementalStrategy():
+        assert not reader.has_data()
         df = reader.run()
 
     assert not df.count()
@@ -165,6 +166,7 @@ def test_clickhouse_strategy_incremental_nothing_to_read(spark, processing, prep
 
     # set hwm value to 50
     with IncrementalStrategy():
+        assert reader.has_data()
         df = reader.run()
 
     processing.assert_equal_df(df=df, other_frame=first_span, order_by="id_int")

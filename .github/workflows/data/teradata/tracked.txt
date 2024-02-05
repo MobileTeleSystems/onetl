@@ -1,1 +1,2 @@
-**/teradata*
+**/*teradata*
+**/*teradata*/**

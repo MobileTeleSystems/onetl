@@ -1,30 +1,16 @@
-#  Copyright 2023 MTS (Mobile Telesystems)
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
+# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import logging
 import warnings
-from typing import Any, ClassVar, Optional
+from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
 from onetl.hooks import slot, support_hooks
-from onetl.hwm import Window
 from onetl.impl import GenericOptions
 
 # do not import PySpark here, as we allow user to use `Clickhouse.get_packages()` for creating Spark session
@@ -110,8 +96,6 @@ class Clickhouse(JDBCConnection):
         from onetl.connection import Clickhouse
         from pyspark.sql import SparkSession
 
-        extra = {"continueBatchOnError": "false"}
-
         # Create Spark session with Clickhouse driver loaded
         maven_packages = Clickhouse.get_packages()
         spark = (
@@ -125,7 +109,7 @@ class Clickhouse(JDBCConnection):
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra=extra,
+            extra={"continueBatchOnError": "false"},
             spark=spark,
         )
 
@@ -174,27 +158,6 @@ class Clickhouse(JDBCConnection):
             return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
 
         return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
-
-    @slot
-    def get_min_max_values(
-        self,
-        source: str,
-        window: Window,
-        hint: Any | None = None,
-        where: Any | None = None,
-        options: JDBCReadOptions | None = None,
-    ) -> tuple[Any, Any]:
-        min_value, max_value = super().get_min_max_values(
-            source=source,
-            window=window,
-            hint=hint,
-            where=where,
-            options=options,
-        )
-        # Clickhouse for some reason return min/max=0 if there are no rows
-        if min_value == max_value == 0:
-            return None, None
-        return min_value, max_value
 
     @staticmethod
     def _build_statement(

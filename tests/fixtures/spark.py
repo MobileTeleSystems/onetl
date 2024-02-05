@@ -72,7 +72,7 @@ def maven_packages():
         packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
 
         # There is no XML files support for Spark less than 3
-        packages.extend(XML.get_packages(pyspark_version))
+        packages.extend(XML.get_packages(spark_version=pyspark_version))
 
         # There is no MongoDB connector for Spark less than 3.2
         packages.extend(MongoDB.get_packages(spark_version=pyspark_version))

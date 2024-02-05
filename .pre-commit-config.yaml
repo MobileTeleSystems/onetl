@@ -1,113 +1,151 @@
+default_language_version:
+  python: python3.11
+
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
-  hooks:
-  - id: check-ast
-  - id: check-case-conflict
-  - id: check-docstring-first
-  - id: check-executables-have-shebangs
-  - id: check-merge-conflict
-  - id: check-toml
-  - id: check-vcs-permalinks
-  - id: check-yaml
-    args: [--unsafe]
-  - id: requirements-txt-fixer
-    files: ^(requirements/.*\.txt)$
-  - id: end-of-file-fixer
-    exclude: ^(.*/VERSION|tests/resources/.*/.*)$
-  - id: fix-byte-order-marker
-  - id: fix-encoding-pragma
-    args: [--remove]
-  - id: name-tests-test
-    files: ^tests/(tests_integration|tests_unit)/.*\.py$
-    args: [--django]
-  - id: trailing-whitespace
-- repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.5.4
-  hooks:
-  - id: remove-tabs
-    exclude: ^docs/(make.bat|Makefile)
-- repo: https://github.com/codespell-project/codespell
-  rev: v2.2.6
-  hooks:
-  - id: codespell
-    args: [-w]
-- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.11.0
-  hooks:
-  - id: pretty-format-yaml
-    args: [--autofix, --indent, '2', --preserve-quotes]
-- repo: https://github.com/lovesegfault/beautysh
-  rev: v6.2.1
-  hooks:
-  - id: beautysh
-- repo: https://github.com/IamTheFij/docker-pre-commit
-  rev: v3.0.1
-  hooks:
-  - id: docker-compose-check
-- repo: https://github.com/pycqa/isort
-  rev: 5.13.0
-  hooks:
-  - id: isort
-- repo: https://github.com/pre-commit/pygrep-hooks
-  rev: v1.10.0
-  hooks:
-  - id: python-no-log-warn
-  - id: python-no-eval
-  - id: rst-backticks
-  - id: rst-directive-colons
-  - id: rst-inline-touching-normal
-  - id: text-unicode-replacement-char
-- repo: https://github.com/asottile/pyupgrade
-  rev: v3.15.0
-  hooks:
-  - id: pyupgrade
-    args: [--py37-plus, --keep-runtime-typing]
-- repo: https://github.com/psf/black
-  rev: 23.11.0
-  hooks:
-  - id: black
-    language_version: python3
-- repo: https://github.com/asottile/blacken-docs
-  rev: 1.16.0
-  hooks:
-  - id: blacken-docs
-- repo: meta
-  hooks:
-  - id: check-hooks-apply
-  - id: check-useless-excludes
-- repo: https://github.com/PyCQA/autoflake
-  rev: v2.2.1
-  hooks:
-  - id: autoflake
-    args:
-    - --in-place
-    - --config=setup.cfg
-- repo: local
-  hooks:
-  - id: flake8
-    name: flake8
-    entry: python3 -m flake8
-    language: system
-    types: [python]
-    files: ^(onetl|tests)/.*$
-    pass_filenames: true
-  - id: mypy
-    name: mypy
-    entry: python3 -m mypy --config-file setup.cfg onetl
-    language: system
-    types: [python]
-    pass_filenames: false
-  - id: towncrier
-    name: towncrier
-    entry: towncrier build --draft
-    language: system
-    types: [rst]
-    pass_filenames: false
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-yaml
+        args: [--unsafe]
+      - id: requirements-txt-fixer
+        files: ^(requirements/.*\.txt)$
+      - id: end-of-file-fixer
+        exclude: ^(.*/VERSION|tests/resources/.*/.*)$
+      - id: fix-byte-order-marker
+      - id: fix-encoding-pragma
+        args: [--remove]
+      - id: name-tests-test
+        files: ^tests/(tests_integration|tests_unit)/.*\.py$
+        args: [--django]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.4
+    hooks:
+      - id: forbid-tabs
+      - id: remove-tabs
+        args: [--whitespaces-count, '2']
+      - id: chmod
+        args: ['644']
+        exclude_types: [shell]
+        exclude: ^(tests/resources/file_df_connection/generate_files\.py)$
+      - id: chmod
+        args: ['755']
+        types: [shell]
+      - id: chmod
+        args: ['755']
+        files: ^(tests/resources/file_df_connection/generate_files\.py)$
+      - id: insert-license
+        files: .*\.py$
+        exclude: ^(setup\.py|conftest\.py|docs/.*\.py|tests/.*\.py)$
+        args:
+          - --license-filepath
+          - .spdx-license-header.txt
+          - --use-current-year
+          - --no-extra-eol
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        args: [-w]
+
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.12.0
+    hooks:
+      - id: pretty-format-yaml
+        args: [--autofix, --indent, '2', --preserve-quotes, --offset, '2']
+
+  - repo: https://github.com/lovesegfault/beautysh
+    rev: v6.2.1
+    hooks:
+      - id: beautysh
+
+  - repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v3.0.1
+    hooks:
+      - id: docker-compose-check
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-no-log-warn
+      - id: python-no-eval
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        args: [--py37-plus, --keep-runtime-typing]
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/asottile/blacken-docs
+    rev: 1.16.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies:
+          - black==24.1.1
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
+        args:
+          - --in-place
+          - --config=setup.cfg
+
+  - repo: local
+    hooks:
+      - id: flake8
+        name: flake8
+        entry: python3 -m flake8
+        language: system
+        types: [python]
+        files: ^(onetl|tests)/.*$
+        pass_filenames: true
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy --config-file setup.cfg onetl
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: towncrier
+        name: towncrier
+        entry: towncrier build --draft
+        language: system
+        types: [rst]
+        pass_filenames: false
 
 ci:
   skip:
-  - flake8  # checked with Github Actions
-  - mypy  # checked with Github Actions
-  - towncrier  # checked with Github Actions
-  - docker-compose-check  # cannot run on pre-commit.ci
+    - flake8 # checked with Github Actions
+    - mypy # checked with Github Actions
+    - towncrier # checked with Github Actions
+    - docker-compose-check # cannot run on pre-commit.ci
+    - chmod # failing in pre-commit.ci

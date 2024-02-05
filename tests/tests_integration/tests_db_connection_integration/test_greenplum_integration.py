@@ -246,6 +246,7 @@ def test_greenplum_connection_dml(request, spark, processing, load_table_data, s
     assert not greenplum.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
 
+@pytest.mark.xfail(reason="Greenplum prior to 7.x does not support procedures")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_greenplum_connection_execute_procedure(
     request,
@@ -267,7 +268,50 @@ def test_greenplum_connection_execute_procedure(
     table = load_table_data.full_name
     proc = f"{load_table_data.table}_proc"
 
-    # Greenplum does not support procedures
+    assert not greenplum.execute(
+        f"""
+        CREATE PROCEDURE {proc} ()
+        LANGUAGE SQL
+        AS $$
+            SELECT COUNT(*) FROM {table};
+        $${suffix}
+    """,
+    )
+
+    def proc_finalizer():
+        greenplum.execute(f"DROP PROCEDURE {proc}")
+
+    request.addfinalizer(proc_finalizer)
+
+    assert not greenplum.execute(f"CALL {proc}(){suffix}")
+
+    # wrong syntax
+    with pytest.raises(Exception):
+        greenplum.execute(f"CALL {proc}{suffix}")
+
+    # EXECUTE is supported only for prepared statements
+    with pytest.raises(Exception):
+        greenplum.execute(f"EXECUTE {proc}{suffix}")
+
+    with pytest.raises(Exception):
+        greenplum.execute(f"EXECUTE {proc}(){suffix}")
+
+    # syntax proposed by https://docs.oracle.com/javase/8/docs/api/java/sql/CallableStatement.html
+    # supported only for functions
+    with pytest.raises(Exception):
+        greenplum.execute(f"{{call {proc}}}")
+
+    with pytest.raises(Exception):
+        greenplum.execute(f"{{call {proc}()}}")
+
+    # not supported by greenplum
+    with pytest.raises(Exception):
+        greenplum.execute(f"{{?= call {proc}}}")
+
+    with pytest.raises(Exception):
+        greenplum.execute(f"{{?= call {proc}()}}")
+
+    # already exists
     with pytest.raises(Exception):
         greenplum.execute(
             f"""
@@ -278,6 +322,235 @@ def test_greenplum_connection_execute_procedure(
             $${suffix}
         """,
         )
+
+    # recreate
+    assert not greenplum.execute(
+        f"""
+        CREATE OR REPLACE PROCEDURE {proc} ()
+        LANGUAGE SQL
+        AS $$
+            SELECT COUNT(*) FROM {table};
+        $${suffix}
+    """,
+    )
+
+    with pytest.raises(Exception):
+        greenplum.execute("CALL MissingProcedure")
+
+    with pytest.raises(Exception):
+        greenplum.execute("CALL MissingProcedure()")
+
+    with pytest.raises(Exception):
+        greenplum.execute("DROP PROCEDURE MissingProcedure")
+
+    # missing semicolon in body
+    with pytest.raises(Exception):
+        greenplum.execute(
+            f"""
+            CREATE PROCEDURE {proc} ()
+            LANGUAGE SQL
+            AS $$
+                SELECT COUNT(*) FROM {table}
+            $$
+        """,
+        )
+
+
+@pytest.mark.xfail(reason="Greenplum prior to 7.x does not support procedures")
+@pytest.mark.parametrize("suffix", ["", ";"])
+def test_greenplum_connection_execute_procedure_arguments(
+    request,
+    spark,
+    processing,
+    load_table_data,
+    suffix,
+):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+
+    table = load_table_data.full_name
+    proc = f"{load_table_data.table}_proc"
+
+    assert not greenplum.execute(
+        f"""
+        CREATE PROCEDURE {proc} (idd int)
+        LANGUAGE SQL
+        AS $$
+            SELECT COUNT(*) FROM {table}
+            WHERE id_int = idd;
+        $${suffix}
+    """,
+    )
+
+    def proc_finalizer():
+        greenplum.execute(f"DROP PROCEDURE {proc}")
+
+    request.addfinalizer(proc_finalizer)
+
+    assert not greenplum.execute(f"CALL {proc}(10){suffix}")
+
+    # not enough options
+    with pytest.raises(Exception):
+        greenplum.execute(f"CALL {proc}{suffix}")
+
+    with pytest.raises(Exception):
+        greenplum.execute(f"CALL {proc}(){suffix}")
+
+    # too many options
+    with pytest.raises(Exception):
+        greenplum.execute(f"CALL {proc}(10, 1){suffix}")
+
+
+@pytest.mark.xfail(reason="Greenplum prior to 7.x does not support procedures")
+@pytest.mark.parametrize("suffix", ["", ";"])
+def test_greenplum_connection_execute_procedure_inout(
+    request,
+    spark,
+    processing,
+    load_table_data,
+    suffix,
+):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+
+    table = load_table_data.full_name
+    proc = f"{load_table_data.table}_proc_inout"
+
+    table_df = processing.get_expected_dataframe(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        order_by="id_int",
+    )
+
+    assert not greenplum.execute(
+        f"""
+        CREATE PROCEDURE {proc} (IN idd int, INOUT result int)
+        LANGUAGE PLPGSQL
+        AS $$
+            BEGIN
+                SELECT COUNT(*) INTO result FROM {table}
+                WHERE id_int < idd;
+            END
+        $${suffix}
+    """,
+    )
+
+    def proc_finalizer():
+        greenplum.execute(f"DROP PROCEDURE {proc}{suffix}")
+
+    request.addfinalizer(proc_finalizer)
+
+    df = greenplum.execute(f"CALL {proc}(10, 1){suffix}")
+    matching_df = table_df[table_df.id_int < 10]
+    result_df = pandas.DataFrame([[len(matching_df)]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
+
+    # option 1 value is missing
+    # greenplum does not support OUT arguments
+    with pytest.raises(Exception):
+        greenplum.execute(f"CALL {proc}(10, ?){suffix}")
+
+
+@pytest.mark.xfail(reason="Greenplum prior to 7.x does not support procedures")
+@pytest.mark.parametrize("suffix", ["", ";"])
+def test_greenplum_connection_execute_procedure_ddl(
+    request,
+    spark,
+    processing,
+    get_schema_table,
+    suffix,
+):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+
+    table = get_schema_table.full_name
+    proc = f"{table}_ddl"
+
+    assert not greenplum.execute(
+        f"""
+        CREATE PROCEDURE {proc} ()
+        LANGUAGE SQL
+        AS $$
+            CREATE TABLE {table} (iid INT, text VARCHAR(400));
+        $${suffix}
+    """,
+    )
+
+    def proc_finalizer():
+        greenplum.execute(f"DROP PROCEDURE {proc}")
+
+    request.addfinalizer(proc_finalizer)
+
+    assert not greenplum.execute(f"CALL {proc}()")
+    assert not greenplum.execute(f"DROP TABLE {table}")
+
+
+@pytest.mark.xfail(reason="Greenplum prior to 7.x does not support procedures")
+@pytest.mark.parametrize("suffix", ["", ";"])
+def test_greenplum_connection_execute_procedure_dml(
+    request,
+    spark,
+    processing,
+    get_schema_table,
+    suffix,
+):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra=processing.extra,
+    )
+
+    table = get_schema_table.full_name
+    proc = f"{table}_dml"
+
+    assert not greenplum.execute(f"CREATE TABLE {table} (iid INT, text VARCHAR(400)){suffix}")
+
+    def table_finalizer():
+        greenplum.execute(f"DROP TABLE {table}")
+
+    request.addfinalizer(table_finalizer)
+
+    assert not greenplum.execute(
+        f"""
+        CREATE PROCEDURE {proc} (idd int, text VARCHAR)
+        LANGUAGE SQL
+        AS $$
+            INSERT INTO {table} VALUES(idd, text);
+        $${suffix}
+    """,
+    )
+
+    def proc_finalizer():
+        greenplum.execute(f"DROP PROCEDURE {proc}")
+
+    request.addfinalizer(proc_finalizer)
+
+    assert not greenplum.execute(f"CALL {proc}(1, 'abc')")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
