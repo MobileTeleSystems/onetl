@@ -31,29 +31,9 @@ class Clickhouse(JDBCConnection):
     Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
-    .. dropdown:: Version compatibility
-
-        * Clickhouse server versions: 20.7 or higher
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://clickhouse.com/docs/en/integrations/java#jdbc-driver>`_.
-
     .. warning::
 
-        To use Clickhouse connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`clickhouse-prerequisites`
 
     Parameters
     ----------
@@ -82,9 +62,11 @@ class Clickhouse(JDBCConnection):
 
         For example: ``{"continueBatchOnError": "false"}``.
 
-        See `Clickhouse JDBC driver properties documentation
-        <https://github.com/ClickHouse/clickhouse-jdbc/tree/master/clickhouse-jdbc#configuration>`_
-        for more details
+        See:
+            * `Clickhouse JDBC driver properties documentation <https://clickhouse.com/docs/en/integrations/java#configuration>`_
+            * `Clickhouse core settings documentation <https://clickhouse.com/docs/en/operations/settings/settings>`_
+            * `Clickhouse query complexity documentation <https://clickhouse.com/docs/en/operations/settings/query-complexity>`_
+            * `Clickhouse query level settings <https://clickhouse.com/docs/en/operations/settings/query-level>`_
 
     Examples
     --------

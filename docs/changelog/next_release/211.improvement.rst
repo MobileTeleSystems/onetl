@@ -1,0 +1,3 @@
+Improve Clickhouse documentation:
+  * Add "Types" section describing mapping between Clickhouse and Spark types
+  * Add "Prerequisites" section describing different aspects of connecting to Clickhouse
