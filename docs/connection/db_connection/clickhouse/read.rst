@@ -1,18 +1,74 @@
 .. _clickhouse-read:
 
-Reading from Clickhouse
-=======================
+Reading from Clickhouse using ``DBReader``
+==========================================
 
-There are 2 ways of distributed data reading from Clickhouse:
+.. warning::
 
-* Using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` with different :ref:`strategy`
-* Using :obj:`Clickhouse.sql <onetl.connection.db_connection.clickhouse.connection.Clickhouse.sql>`
+    Please take into account :ref:`clickhouse-types`
 
-Both methods accept :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`
+:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
+but does not support custom queries, like JOINs.
 
-.. currentmodule:: onetl.connection.db_connection.clickhouse.connection
+Supported DBReader features
+---------------------------
 
-.. automethod:: Clickhouse.sql
+* ✅︎ ``columns``
+* ✅︎ ``where``
+* ✅︎ ``hwm``, supported strategies:
+* * ✅︎ :ref:`snapshot-strategy`
+* * ✅︎ :ref:`incremental-strategy`
+* * ✅︎ :ref:`snapshot-batch-strategy`
+* * ✅︎ :ref:`incremental-batch-strategy`
+* ❌ ``hint`` (is not supported by Clickhouse)
+* ❌ ``df_schema``
+* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+
+Examples
+--------
+
+Snapshot strategy:
+
+.. code-block:: python
+
+    from onetl.connection import Clickhouse
+    from onetl.db import DBReader
+
+    clickhouse = Clickhouse(...)
+
+    reader = DBReader(
+        connection=clickhouse,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
+        where="key = 'something'",
+        options=Clickhouse.ReadOptions(partition_column="id", num_partitions=10),
+    )
+    df = reader.run()
+
+Incremental strategy:
+
+.. code-block:: python
+
+    from onetl.connection import Clickhouse
+    from onetl.db import DBReader
+    from onetl.strategy import IncrementalStrategy
+
+    clickhouse = Clickhouse(...)
+
+    reader = DBReader(
+        connection=clickhouse,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
+        where="key = 'something'",
+        hwm=DBReader.AutoDetectHWM(name="clickhouse_hwm", expression="updated_dt"),
+        options=Clickhouse.ReadOptions(partition_column="id", num_partitions=10),
+    )
+
+    with IncrementalStrategy():
+        df = reader.run()
+
+References
+----------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
 

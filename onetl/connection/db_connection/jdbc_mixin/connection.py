@@ -92,7 +92,7 @@ class JDBCMixin(FrozenModel):
 
         .. code:: python
 
-            df = connection.fetch("SELECT * FROM mytable")
+            df = connection.fetch("SELECT * FROM mytable LIMIT 10")
             assert df.count()
             connection.close()
 
@@ -207,15 +207,7 @@ class JDBCMixin(FrozenModel):
 
         .. code:: python
 
-            df = connection.fetch("SELECT * FROM mytable")
-            assert df.count()
-
-        Read data from a table with options:
-
-        .. code:: python
-
-            # reads data from table in batches, 10000 rows per batch
-            df = connection.fetch("SELECT * FROM mytable", {"fetchsize": 10000})
+            df = connection.fetch("SELECT * FROM mytable LIMIT 10")
             assert df.count()
         """
 
