@@ -507,7 +507,8 @@ class Hive(DBConnection):
         # So we should sort columns according their order in the existing table
         # instead of using order from the dataframe
         columns = self._sort_df_columns_like_table(table, df.columns)
-        writer = df.select(*columns).write
+        if columns != df.columns:
+            df = df.select(*columns)
 
         # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
         # so using a workaround with patching Spark config and then setting up the previous value
@@ -515,7 +516,7 @@ class Hive(DBConnection):
             overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
 
             log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
-            writer.insertInto(table, overwrite=overwrite)
+            df.write.insertInto(table, overwrite=overwrite)
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
