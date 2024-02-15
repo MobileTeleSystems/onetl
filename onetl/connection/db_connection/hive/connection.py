@@ -497,7 +497,8 @@ class Hive(DBConnection):
         unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
         if unsupported_options:
             log.warning(
-                "|%s| Options %r are not supported while inserting into existing table, ignoring",
+                "|%s| User-specified options %r are ignored while inserting into existing table. "
+                "Using only table parameters from Hive metastore",
                 self.__class__.__name__,
                 unsupported_options,
             )
