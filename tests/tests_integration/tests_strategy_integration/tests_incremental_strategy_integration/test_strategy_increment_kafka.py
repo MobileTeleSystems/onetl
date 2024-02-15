@@ -101,8 +101,7 @@ def test_kafka_strategy_incremental(
 
     # HWM contains mapping `partition: max offset + 1`
     hwm = store.get_hwm(hwm_name)
-    partition_offsets_new = dict.fromkeys(range(num_partitions or 1), 0)
-    partition_offsets_new.update(partition_offsets_initial)
+    partition_offsets_new = partition_offsets_initial.copy()
     partition_offsets_new.update(
         {
             row["partition"]: row["offset"] + 1
@@ -222,8 +221,7 @@ def test_kafka_strategy_incremental_nothing_to_read(
 
     # HWM contains mapping `partition: max offset + 1`
     hwm = store.get_hwm(name=hwm_name)
-    partition_offsets_new = dict.fromkeys(range(num_partitions or 1), 0)
-    partition_offsets_new.update(partition_offsets_initial)
+    partition_offsets_new = partition_offsets_initial.copy()
     partition_offsets_new.update(
         {
             row["partition"]: row["offset"] + 1
