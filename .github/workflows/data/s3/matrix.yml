@@ -10,14 +10,16 @@ min: &min
 max: &max
   minio-version: 2023.7.18
   spark-version: 3.5.0
-  python-version: '3.12'
+  # TODO: replace with 3.12 after release of https://github.com/python/typing_extensions/pull/324
+  python-version: '3.12.1'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
   minio-version: latest
   spark-version: latest
-  python-version: '3.12'
+  # TODO: replace with 3.12 after release of https://github.com/python/typing_extensions/pull/324
+  python-version: '3.12.1'
   java-version: 20
   os: ubuntu-latest
 

@@ -3,7 +3,8 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  python-version: '3.12'
+  # TODO: replace with 3.12 after release of https://github.com/python/typing_extensions/pull/324
+  python-version: '3.12.1'
   os: ubuntu-latest
 
 matrix:
