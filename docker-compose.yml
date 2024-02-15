@@ -90,6 +90,7 @@ services:
       - 1433:1433
     networks:
       - onetl
+    platform: linux/amd64
 
   mysql:
     image: ${MYSQL_IMAGE:-mysql:latest}
@@ -99,6 +100,7 @@ services:
       - 3306:3306
     networks:
       - onetl
+    platform: linux/amd64
 
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:15.2-alpine}
@@ -136,6 +138,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    platform: linux/amd64
 
   ftp:
     image: ${FTP_IMAGE:-chonjay21/ftps:latest}
