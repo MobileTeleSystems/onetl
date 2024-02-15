@@ -60,9 +60,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx_favicon",
 ]
-numpydoc_show_class_members = True
-autosummary_generate_overwrite = False
-autosummary_generate = False
+numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_config_member = False
