@@ -64,7 +64,7 @@ class Greenplum(JDBCMixin, DBConnection):
     """Greenplum connection. |support_hooks|
 
     Based on package ``io.pivotal:greenplum-spark:2.3.0``
-    (`VMware Greenplum connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1457167/file_groups/18338>`_).
+    (`VMware Greenplum connector for Spark <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1462218/file_groups/18524>`_).
 
     .. warning::
 
