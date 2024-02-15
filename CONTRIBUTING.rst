@@ -343,38 +343,83 @@ Release Process
 
 Before making a release from the ``develop`` branch, follow these steps:
 
+0. Checkout to ``develop`` branch and update it to the actual state
+
+.. code:: bash
+
+    git checkout develop
+    git pull -p
+
 1. Backup ``NEXT_RELEASE.rst``
 
 .. code:: bash
 
-    cp docs/changelog/NEXT_RELEASE.rst docs/changelog/temp_NEXT_RELEASE.rst
+    cp "docs/changelog/NEXT_RELEASE.rst" "docs/changelog/temp_NEXT_RELEASE.rst"
 
 2. Build the Release notes with Towncrier
 
 .. code:: bash
 
-    export VERSION=$(cat onetl/VERSION)
-    towncrier build  --version=${VERSION}
+    VERSION=$(cat onetl/VERSION)
+    towncrier build "--version=${VERSION}" --yes
 
-3. Update Changelog
+3. Change file with changelog to release version number
 
 .. code:: bash
 
-    mv docs/changelog/NEXT_RELEASE.rst docs/changelog/${VERSION}.rst
+    mv docs/changelog/NEXT_RELEASE.rst "docs/changelog/${VERSION}.rst"
 
-4. Edit the ``${VERSION}.rst`` file
-Remove content above the version number heading in the ``${VERSION}.rst`` file.
+4. Remove content above the version number heading in the ``${VERSION}.rst`` file
+
+.. code:: bash
+
+    sed "0,/^.*towncrier release notes start/d" -i "docs/changelog/${VERSION}.rst"
 
 5. Update Changelog Index
 
 .. code:: bash
 
-    awk -v version=${VERSION} '/NEXT_RELEASE/{print;print "    " version;next}1' docs/changelog/index.rst > temp && mv temp docs/changelog/index.rst
+    sed -E "s/DRAFT/DRAFT\n    ${VERSION}/" -i "docs/changelog/index.rst"
 
-6. Reset ``NEXT_RELEASE.rst`` file
+6. Restore ``NEXT_RELEASE.rst`` file from backup
 
 .. code:: bash
 
-    mv docs/changelog/temp_NEXT_RELEASE.rst docs/changelog/NEXT_RELEASE.rst
+    mv "docs/changelog/temp_NEXT_RELEASE.rst" "docs/changelog/NEXT_RELEASE.rst"
 
-7. Update the patch version in the ``VERSION`` file of ``develop`` branch **after release**.
+7. Commit and push changes to ``develop`` branch
+
+.. code:: bash
+
+    git add .
+    git commit -m "Prepare for release ${VERSION}"
+    git push
+
+8. Merge ``develop`` branch to ``master``, **WITHOUT** squashing
+
+.. code:: bash
+
+    git checkout master
+    git pull
+    git merge develop
+    git push
+
+9. Add git tag to the latest commit in ``master`` branch
+
+.. code:: bash
+
+    git tag "$VERSION"
+    git push origin "$VERSION"
+
+10. Update version in ``develop`` branch **after release**:
+
+.. code:: bash
+
+    git checkout develop
+
+    NEXT_VERSION=$(echo "$VERSION" | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+    echo "$NEXT_VERSION" > onetl/VERSION
+
+    git add .
+    git commit -m "Bump version"
+    git push
