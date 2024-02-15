@@ -130,9 +130,7 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            from onetl.hwm import AutoDetectHWM
-
-            hwm = AutoDetectHWM(
+            hwm = DBReader.AutoDetectHWM(
                 name="some_unique_hwm_name",
                 expression="hwm_column",
             )
@@ -143,9 +141,7 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            from onetl.hwm import AutoDetectHWM
-
-            hwm = AutoDetectHWM(
+            hwm = DBReader.AutoDetectHWM(
                 name="some_unique_hwm_name",
                 expression="cast(hwm_column_orig as date)",
             )
@@ -332,7 +328,6 @@ class DBReader(FrozenModel):
         from onetl.db import DBReader
         from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
-        from onetl.hwm import AutoDetectHWM
         from pyspark.sql import SparkSession
 
         maven_packages = Postgres.get_packages()

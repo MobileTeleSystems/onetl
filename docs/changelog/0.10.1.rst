@@ -11,7 +11,7 @@ Features
       reader = DBReader(
           connection=Kafka(...),
           source="topic_name",
-          hwm=AutoDetectHWM(name="some_hwm_name", expression="offset"),
+          hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
       )
 
       with IncrementalStrategy():

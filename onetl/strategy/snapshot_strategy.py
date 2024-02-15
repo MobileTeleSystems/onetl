@@ -55,7 +55,6 @@ class SnapshotStrategy(BaseStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import SnapshotStrategy
-        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -227,7 +226,6 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
         from onetl.strategy import SnapshotBatchStrategy
-        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
