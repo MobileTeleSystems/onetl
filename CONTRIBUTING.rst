@@ -373,13 +373,13 @@ Before making a release from the ``develop`` branch, follow these steps:
 
 .. code:: bash
 
-    sed "0,/^.*towncrier release notes start/d" -i "docs/changelog/${VERSION}.rst"
+    awk '!/^.*towncrier release notes start/' "docs/changelog/${VERSION}.rst" > temp && mv temp "docs/changelog/${VERSION}.rst"
 
 5. Update Changelog Index
 
 .. code:: bash
 
-    sed -E "s/DRAFT/DRAFT\n    ${VERSION}/" -i "docs/changelog/index.rst"
+    awk -v version=${VERSION} '/DRAFT/{print;print "    " version;next}1' docs/changelog/index.rst > temp && mv temp docs/changelog/index.rst
 
 6. Restore ``NEXT_RELEASE.rst`` file from backup
 
