@@ -5,7 +5,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
     labels:
       - type:ci
     # https://til.simonwillison.net/github/dependabot-python-setup
