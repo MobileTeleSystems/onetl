@@ -10,7 +10,7 @@ jobs:
     if: github.event.pull_request.user.login == 'pre-commit-ci[bot]' || github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
-      - uses: alexwilson/enable-github-automerge-action@1.0.0
+      - uses: alexwilson/enable-github-automerge-action@2.0.0
         with:
           github-token: ${{ secrets.AUTOMERGE_TOKEN }}
           merge-method: REBASE
