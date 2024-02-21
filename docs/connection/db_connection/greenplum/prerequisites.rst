@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * Greenplum server versions: 5.x, 6.x, 7.x
-* Spark versions: 2.3.x - 3.2.x (Spark 3.3+ is not supported yet)
-* Java versions: 8 - 11
+* Spark versions: 2.3.x - 3.5.x
+* Java versions: 8 - 20
 
 See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/release_notes.html>`_.
 

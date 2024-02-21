@@ -25,31 +25,14 @@ def test_greenplum_get_packages_no_input():
         Greenplum.get_packages()
 
 
-@pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.2",
-        "3.3",
-        "3.4",
-        "3.5",
-    ],
-)
-def test_greenplum_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version must be 2.3.x - 3.2.x, got {spark_version}"):
-        Greenplum.get_packages(spark_version=spark_version)
+def test_greenplum_get_packages_spark_version_not_supported():
+    with pytest.raises(ValueError, match="Spark version must be at least 2.3, got 2.2"):
+        Greenplum.get_packages(spark_version="2.2")
 
 
-@pytest.mark.parametrize(
-    "scala_version",
-    [
-        "2.10",
-        "2.13",
-        "3.0",
-    ],
-)
-def test_greenplum_get_packages_scala_version_not_supported(scala_version):
-    with pytest.raises(ValueError, match=f"Scala version must be 2.11 - 2.12, got {scala_version}"):
-        Greenplum.get_packages(scala_version=scala_version)
+def test_greenplum_get_packages_scala_version_not_supported():
+    with pytest.raises(ValueError, match="Scala version must be at least 2.11, got 2.10"):
+        Greenplum.get_packages(scala_version="2.10")
 
 
 @pytest.mark.parametrize(
