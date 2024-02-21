@@ -3,6 +3,8 @@
 Writing to Clickhouse using ``DBWriter``
 ========================================
 
+For writing data to Clickhouse, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+
 .. warning::
 
     Please take into account :ref:`clickhouse-types`
@@ -14,8 +16,6 @@ Writing to Clickhouse using ``DBWriter``
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-
-For writing data to Clickhouse, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
 
 Examples
 --------
@@ -33,7 +33,8 @@ Examples
         connection=clickhouse,
         target="schema.table",
         options=Clickhouse.WriteOptions(
-            if_exists="replace_entire_table",
+            if_exists="append",
+            # ENGINE is required by Clickhouse
             createTableOptions="ENGINE = MergeTree() ORDER BY id",
         ),
     )
