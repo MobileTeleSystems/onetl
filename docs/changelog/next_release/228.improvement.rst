@@ -1,0 +1,3 @@
+Improve Greenplum documentation:
+  * Add "Types" section describing mapping between Greenplum and Spark types
+  * Add more examples of reading and writing data from Greenplum

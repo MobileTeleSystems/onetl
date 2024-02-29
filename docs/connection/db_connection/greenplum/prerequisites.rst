@@ -24,7 +24,7 @@ Downloading VMware package
 --------------------------
 
 To use Greenplum connector you should download connector ``.jar`` file from
-`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1457167/file_groups/18338>`_
+`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1462218/file_groups/18524>`_
 and then pass it to Spark session.
 
 .. warning::
@@ -197,7 +197,7 @@ used for creating a connection:
 
 .. tabs::
 
-    .. code-tab:: sql Read + write
+    .. code-tab:: sql Read + Write
 
         -- get access to get tables metadata & cluster information
         GRANT SELECT ON information_schema.tables TO username;
