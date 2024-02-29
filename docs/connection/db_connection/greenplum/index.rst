@@ -17,3 +17,9 @@ Greenplum
     read
     write
     execute
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Troubleshooting
+
+    types

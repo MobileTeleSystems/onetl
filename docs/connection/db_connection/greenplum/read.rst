@@ -1,15 +1,109 @@
 .. _greenplum-read:
 
-Reading from Greenplum
-=======================
+Reading from Greenplum using ``DBReader``
+==========================================
 
-For reading data from Greenplum, use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` with options below.
+.. warning::
+
+    Please take into account :ref:`greenplum-types`.
+
+Data can be read from Greenplum to Spark using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
+It also supports :ref:`strategy` for incremental data reading.
 
 .. note::
 
     Unlike JDBC connectors, *Greenplum connector for Spark* does not support
-    executing **custom** SQL queries using ``.sql`` method. Connector can be used to only read some table data
-    (with filters, if needed) using DBReader.
+    executing **custom** SQL queries using ``.sql`` method. Connector can be used to only read data from a table or view.
+
+Supported DBReader features
+---------------------------
+
+* ✅︎ ``columns`` (see note below)
+* ✅︎ ``where`` (see note below)
+* ✅︎ ``hwm`` (see note below), supported strategies:
+* * ✅︎ :ref:`snapshot-strategy`
+* * ✅︎ :ref:`incremental-strategy`
+* * ✅︎ :ref:`snapshot-batch-strategy`
+* * ✅︎ :ref:`incremental-batch-strategy`
+* ❌ ``hint`` (is not supported by Greenplum)
+* ❌ ``df_schema``
+* ✅︎ ``options`` (see :obj:`GreenplumReadOptions <onetl.connection.db_connection.greenplum.options.GreenplumReadOptions>`)
+
+.. warning::
+
+    In case of Greenplum connector, ``DBReader`` does not generate raw ``SELECT`` query. Instead it relies on Spark SQL syntax
+    which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.
+
+    So ``columns``, ``where`` and ``hwm.expression`` should be specified in Spark SQL syntax, not Greenplum SQL.
+
+    This is OK:
+
+    .. code-block:: python
+
+        DBReader(
+            columns=[
+                "some_column",
+                # this cast is executed on Spark side
+                "CAST(another_column AS STRING)",
+            ],
+            # this predicate is parsed by Spark, and can be pushed down to Greenplum
+            where="some_column LIKE 'val1%'",
+        )
+
+    This is will fail:
+
+    .. code-block:: python
+
+        DBReader(
+            columns=[
+                "some_column",
+                # Spark does not have `text` type
+                "CAST(another_column AS text)",
+            ],
+            # Spark does not support ~ syntax for regexp matching
+            where="some_column ~ 'val1.*'",
+        )
+
+Examples
+--------
+
+Snapshot strategy:
+
+.. code-block:: python
+
+    from onetl.connection import Greenplum
+    from onetl.db import DBReader
+
+    greenplum = Greenplum(...)
+
+    reader = DBReader(
+        connection=greenplum,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
+        where="key = 'something'",
+    )
+    df = reader.run()
+
+Incremental strategy:
+
+.. code-block:: python
+
+    from onetl.connection import Greenplum
+    from onetl.db import DBReader
+    from onetl.strategy import IncrementalStrategy
+
+    greenplum = Greenplum(...)
+
+    reader = DBReader(
+        connection=greenplum,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
+        where="key = 'something'",
+        hwm=DBReader.AutoDetectHWM(name="greenplum_hwm", expression="updated_dt"),
+    )
+
+    with IncrementalStrategy():
+        df = reader.run()
 
 Interaction schema
 ------------------
@@ -91,60 +185,176 @@ High-level schema is described in :ref:`greenplum-prerequisites`. You can find d
 Recommendations
 ---------------
 
-Reading from views
-~~~~~~~~~~~~~~~~~~
+``DBReader`` in case of Greenplum connector requires view or table to have some column which is used by Spark
+for parallel reads.
 
-This connector is **NOT** designed to read data from views.
+Choosing proper column allows each Spark executor to read only part of data stored in the specified segment,
+avoiding moving large amounts of data between segments, which improves reading performance.
 
-You can technically read data from a view which has
-`gp_segment_id <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view>`_ column.
-But this is **not** recommended because each Spark executor will run the same query, which may lead to running duplicated calculations
-and sending data between segments only to skip most of the result and select only small part.
+Parallel read using ``gp_segment_id``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Prefer following option:
-    * Create staging table to store result data, using :obj:`Greenplum.execute <onetl.connection.db_connection.greenplum.connection.Greenplum.execute>`
-    * Use the same ``.execute`` method run a query ``INSERT INTO staging_table AS SELECT FROM some_view``. This will be done on Greenplum segments side, query will be run only once.
-    * Read data from staging table to Spark executor using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
-    * Drop staging table using ``.execute`` method.
+By default, ``DBReader`` will use `gp_segment_id <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view>`_
+column for parallel data reading. Each DataFrame partition will contain data of a specific Greenplum segment.
 
-Using ``JOIN`` on Greenplum side
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This allows each Spark executor read only data from specific Greenplum segment, avoiding moving large amounts of data between segments.
 
-If you need to get data of joining 2 tables in Greenplum, you should:
-    * Create staging table to store result data, using ``Greenplum.execute``
-    * Use the same ``Greenplum.execute`` run a query ``INSERT INTO staging_table AS SELECT FROM table1 JOIN table2``. This will be done on Greenplum segments side, in a distributed way.
-    * Read data from staging table to Spark executor using ``DBReader``.
-    * Drop staging table using ``Greenplum.execute``.
+If view is used, it is recommended to include ``gp_segment_id`` column to this view:
+
+.. dropdown:: Reading from view with gp_segment_id column
+
+    .. code-block:: python
+
+        from onetl.connection import Greenplum
+        from onetl.db import DBReader
+
+        greenplum = Greenplum(...)
+
+        greenplum.execute(
+            """
+            CREATE VIEW schema.view_with_gp_segment_id AS
+            SELECT
+                id,
+                some_column,
+                another_column,
+                gp_segment_id  -- IMPORTANT
+            FROM schema.some_table
+            """,
+        )
+
+        reader = DBReader(
+            connection=greenplum,
+            source="schema.view_with_gp_segment_id",
+        )
+        df = reader.run()
+
+Parallel read using custom ``partition_column``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes table or view is lack of ``gp_segment_id`` column, but there is some column
+with value range correlated with Greenplum segment distribution.
+
+In this case, custom column can be used instead:
+
+.. dropdown:: Reading from view with custom partition_column
+
+    .. code-block:: python
+
+        from onetl.connection import Greenplum
+        from onetl.db import DBReader
+
+        greenplum = Greenplum(...)
+
+        greenplum.execute(
+            """
+            CREATE VIEW schema.view_with_partition_column AS
+            SELECT
+                id,
+                some_column,
+                part_column  -- correlated to greenplum segment ID
+            FROM schema.some_table
+            """,
+        )
+
+        reader = DBReader(
+            connection=greenplum,
+            source="schema.view_with_partition_column",
+            options=Greenplum.Options(
+                # parallelize data using specified column
+                partition_column="part_column",
+                # create 10 Spark tasks, each will read only part of table data
+                num_partitions=10,
+            ),
+        )
+        df = reader.run()
+
+Reading ``DISTRIBUTED REPLICATED`` tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Replicated tables do not have ``gp_segment_id`` column at all, so you need to set ``partition_column`` to some column name
+of type integer/bigint/smallint.
+
+Parallel ``JOIN`` execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case of using views which require some data motion between Greenplum segments, like ``JOIN`` queries, another approach should be used.
+
+Each Spark executor N will run the same query, so each of N query will start its own JOIN process, leading to really heavy load on Greenplum segments.
+**This should be avoided**.
+
+Instead is recommended to run ``JOIN`` query on Greenplum side, save the result to an intermediate table,
+and then read this table using ``DBReader``:
+
+.. dropdown:: Reading from view using intermediate table
+
+    .. code-block:: python
+
+        from onetl.connection import Greenplum
+        from onetl.db import DBReader
+
+        greenplum = Greenplum(...)
+
+        greenplum.execute(
+            """
+            CREATE UNLOGGED TABLE schema.intermediate_table AS
+            SELECT
+                id,
+                tbl1.col1,
+                tbl1.data,
+                tbl2.another_data
+            FROM
+                schema.table1 as tbl1
+            JOIN
+                schema.table2 as tbl2
+            ON
+                tbl1.col1 = tbl2.col2
+            WHERE ...
+            """,
+        )
+
+        reader = DBReader(
+            connection=greenplum,
+            source="schema.intermediate_table",
+        )
+        df = reader.run()
+
+        # write dataframe somethere
+
+        greenplum.execute(
+            """
+            DROP TABLE schema.intermediate_table
+            """,
+        )
 
 .. warning::
 
-    Do **NOT** try to read data from ``table1`` and ``table2`` using ``DBReader``, and then join the resulting dataframes!
+    **NEVER** do that:
 
-    This will lead to sending all the data from both tables to Spark executor memory, and then ``JOIN``
-    will be performed on Spark side, not Greenplum. This is **very** inefficient.
+    .. code-block:: python
 
-Using ``TEMPORARY`` tables
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+        df1 = DBReader(connection=greenplum, table="public.table1", ...).run()
+        df2 = DBReader(connection=greenplum, table="public.table2", ...).run()
 
-Someone could think that writing data from ``VIEW`` or result of ``JOIN`` to ``TEMPORARY`` table,
-and then passing it to DBReader, is an efficient way to read data from Greenplum, because temp tables are not generating WAL files,
+        joined_df = df1.join(df2, on="col")
+
+    This will lead to sending all the data from both ``table1`` and ``table2`` to Spark executor memory, and then ``JOIN``
+    will be performed on Spark side, not inside Greenplum. This is **VERY** inefficient.
+
+``TEMPORARY`` tables notice
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Someone could think that writing data from view or result of ``JOIN`` to ``TEMPORARY`` table,
+and then passing it to ``DBReader``, is an efficient way to read data from Greenplum. This is because temp tables are not generating WAL files,
 and are automatically deleted after finishing the transaction.
 
-That's will **not** work. Each Spark executor establishes its own connection to Greenplum,
-and thus reads its own temporary table, which does not contain any data.
+That will **NOT** work. Each Spark executor establishes its own connection to Greenplum.
+And each connection starts its own transaction which means that every executor will read empty temporary table.
 
 You should use `UNLOGGED <https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html>`_ tables
-to write data to staging table without generating useless WAL logs.
+to write data to intermediate table without generating WAL logs.
 
-Mapping of Greenplum types to Spark types
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html#greenplum-to-spark>`_
-for more details.
-onETL does not perform any additional casting of types while reading data.
-
-Options
--------
+Read options
+------------
 
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 

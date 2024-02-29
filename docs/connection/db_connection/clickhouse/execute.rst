@@ -62,6 +62,7 @@ This method supports **any** query syntax supported by Clickhouse, like:
 * ``CREATE TABLE ...``
 * ``ALTER ...``
 * ``INSERT INTO ... AS SELECT ...``
+* etc
 
 It does not support multiple queries in the same operation, like ``SET ...; CREATE TABLE ...;``.
 
@@ -88,7 +89,6 @@ Examples
             """,
             options=Clickhouse.JDBCOptions(query_timeout=10),
         )
-
 
 References
 ----------
