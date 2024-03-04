@@ -98,7 +98,7 @@ class Greenplum(JDBCMixin, DBConnection):
         For example: ``{"tcpKeepAlive": "true", "server.port": "50000-65535"}``
 
         Supported options are:
-            * All `Postgres JDBC driver properties <https://github.com/pgjdbc/pgjdbc#connection-properties>`_
+            * All `Postgres JDBC driver properties <https://jdbc.postgresql.org/documentation/use/>`_
             * Properties from `Greenplum connector for Spark documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html>`_ page, but only starting with ``server.`` or ``pool.``
 
     Examples

@@ -67,8 +67,8 @@ Incremental strategy:
     with IncrementalStrategy():
         df = reader.run()
 
-References
-----------
+Read options
+------------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
 
