@@ -228,7 +228,7 @@ def test_jdbc_read_options_to_jdbc(spark_mock):
             "CamelCaseOption": "left unchanged",
         },
         "upperBound": "1000",
-        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc",
+        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc&stringtype=unspecified",
     }
 
 
@@ -257,7 +257,7 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
             "camelCaseOption": "left unchanged",
             "CamelCaseOption": "left unchanged",
         },
-        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc",
+        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc&stringtype=unspecified",
     }
 
 

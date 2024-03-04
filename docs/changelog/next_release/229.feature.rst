@@ -1,0 +1,4 @@
+Update default ``Postgres(extra={...})`` to include ``{"stringtype": "unspecified"}`` option.
+This allows to write text data to non-text column (or vice versa), relying to Postgres cast capabilities.
+
+For example, now it is possible to read column of type ``money`` as Spark's ``StringType()``, and write it back to the same column, without using intermediate columns or tables.

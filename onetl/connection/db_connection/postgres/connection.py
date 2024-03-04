@@ -16,6 +16,9 @@ from onetl.impl import GenericOptions
 
 
 class PostgresExtra(GenericOptions):
+    # allows automatic conversion from text to target column type during write
+    stringtype: str = "unspecified"
+
     class Config:
         extra = "allow"
 
@@ -27,29 +30,9 @@ class Postgres(JDBCConnection):
     Based on Maven package ``org.postgresql:postgresql:42.6.0``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
-    .. dropdown:: Version compatibility
-
-        * PostgreSQL server versions: 8.2 or higher
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://jdbc.postgresql.org/download/>`_.
-
     .. warning::
 
-        To use Postgres connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`postgres-prerequisites`
 
     Parameters
     ----------
@@ -78,7 +61,7 @@ class Postgres(JDBCConnection):
 
         For example: ``{"ssl": "false"}``
 
-        See `Postgres JDBC driver properties documentation <https://github.com/pgjdbc/pgjdbc#connection-properties>`_
+        See `Postgres JDBC driver properties documentation <https://jdbc.postgresql.org/documentation/use/>`_
         for more details
 
     Examples
