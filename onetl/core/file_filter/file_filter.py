@@ -10,11 +10,13 @@ import warnings
 from typing import List, Optional, Union
 
 from pydantic import Field, root_validator, validator
+from typing_extensions import deprecated
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath
 
 
+@deprecated("Deprecated in 0.8.0 and will be removed in 1.0.0. Use Glob, Regexp or ExcludeDir instead", category=None)
 class FileFilter(BaseFileFilter, FrozenModel):
     r"""Filter files or directories by their path.
 
