@@ -55,7 +55,7 @@ def test_postgres(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&stringtype=unspecified"
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -71,7 +71,7 @@ def test_postgres_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&stringtype=unspecified"
 
 
 def test_postgres_without_database_error(spark_mock):
@@ -89,7 +89,10 @@ def test_postgres_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&autosave=always&ssl=true"
+    assert (
+        conn.jdbc_url
+        == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&autosave=always&ssl=true&stringtype=unspecified"
+    )
 
 
 def test_postgres_without_mandatory_args(spark_mock):
