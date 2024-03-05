@@ -6,8 +6,8 @@ import warnings
 from enum import Enum
 from typing import List, Optional, Tuple, Union
 
-from deprecated import deprecated
 from pydantic import Field, root_validator, validator
+from typing_extensions import deprecated
 
 from onetl.impl import GenericOptions
 
@@ -339,9 +339,7 @@ class HiveWriteOptions(GenericOptions):
 
 
 @deprecated(
-    version="0.5.0",
-    reason="Please use 'WriteOptions' class instead. Will be removed in v1.0.0",
-    action="always",
+    "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'WriteOptions' instead",
     category=UserWarning,
 )
 class HiveLegacyOptions(HiveWriteOptions):

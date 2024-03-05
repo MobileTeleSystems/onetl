@@ -6,8 +6,8 @@ import warnings
 from enum import Enum
 from typing import Optional
 
-from deprecated import deprecated
 from pydantic import Field, PositiveInt, root_validator
+from typing_extensions import deprecated
 
 from onetl._internal import to_camel
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
@@ -512,9 +512,7 @@ class JDBCWriteOptions(JDBCOptions):
 
 
 @deprecated(
-    version="0.5.0",
-    reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-    action="always",
+    "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'ReadOptions' or 'WriteOptions' instead",
     category=UserWarning,
 )
 class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):
