@@ -5,8 +5,12 @@ from __future__ import annotations
 import textwrap
 import warnings
 
-from pydantic import validator
 from typing_extensions import deprecated
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel

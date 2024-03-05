@@ -10,7 +10,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from etl_entities.instance import Cluster, Host
-from pydantic import Field, PrivateAttr, validator
+
+try:
+    from pydantic.v1 import Field, PrivateAttr, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (

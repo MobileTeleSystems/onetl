@@ -6,7 +6,11 @@ import warnings
 from enum import Enum
 from typing import List, Optional, Tuple, Union
 
-from pydantic import Field, root_validator, validator
+try:
+    from pydantic.v1 import Field, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import deprecated
 
 from onetl.impl import GenericOptions

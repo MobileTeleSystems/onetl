@@ -5,6 +5,9 @@ on:
       ftp-version:
         required: true
         type: string
+      pydantic-version:
+        required: true
+        type: string
       python-version:
         required: true
         type: string
@@ -18,7 +21,7 @@ on:
 
 jobs:
   test-ftp:
-    name: Run FTP tests (server=${{ inputs.ftp-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run FTP tests (server=${{ inputs.ftp-version }}, pydantic=${{ inputs.pydantic-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -35,17 +38,17 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-ftp-${{ hashFiles('requirements/core.txt', 'requirements/ftp.txt', 'requirements/tests/base.txt') }}
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-ftp-${{ hashFiles('requirements/core.txt', 'requirements/ftp.txt', 'requirements/tests/base.txt') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-ftp-${{ hashFiles('requirements/core.txt', 'requirements/ftp.txt', 'requirements/tests/base.txt') }}
-            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-ftp-
+            ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-ftp-${{ hashFiles('requirements/core.txt', 'requirements/ftp.txt', 'requirements/tests/base.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-ftp-
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Install dependencies
         run: |
-          pip install -I -r requirements/core.txt -r requirements/ftp.txt -r requirements/tests/base.txt
+          pip install -I -r requirements/core.txt -r requirements/ftp.txt -r requirements/tests/base.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
     # Replace with Github Actions' services after https://github.com/chonjay21/docker-ftp/pull/3
     # Cannot use services because we need to mount config file from the repo, but services start before checkout.

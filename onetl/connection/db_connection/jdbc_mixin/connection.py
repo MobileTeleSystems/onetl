@@ -9,7 +9,10 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
 
-from pydantic import Field, PrivateAttr, SecretStr, validator
+try:
+    from pydantic.v1 import Field, PrivateAttr, SecretStr, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import clear_statement, stringify
 from onetl._util.java import get_java_gateway, try_import_java_class

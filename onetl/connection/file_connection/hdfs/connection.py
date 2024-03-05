@@ -9,7 +9,11 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from etl_entities.instance import Cluster, Host
-from pydantic import Field, FilePath, SecretStr, root_validator, validator
+
+try:
+    from pydantic.v1 import Field, FilePath, SecretStr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, FilePath, SecretStr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection

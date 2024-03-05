@@ -3,6 +3,7 @@ min: &min
   minio-version: 2021.3.17
   # Minimal Spark version with Hadoop 3.x support
   spark-version: 3.2.4
+  pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
@@ -10,6 +11,7 @@ min: &min
 max: &max
   minio-version: 2023.7.18
   spark-version: 3.5.0
+  pydantic-version: 2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
@@ -17,6 +19,7 @@ max: &max
 latest: &latest
   minio-version: latest
   spark-version: latest
+  pydantic-version: latest
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest

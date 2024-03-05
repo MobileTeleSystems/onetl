@@ -11,8 +11,12 @@ from pathlib import Path
 from typing import Optional, Union
 
 from etl_entities.instance import Host
-from pydantic import SecretStr, validator
 from typing_extensions import Literal
+
+try:
+    from pydantic.v1 import SecretStr, validator
+except (ImportError, AttributeError):
+    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.hooks import slot, support_hooks

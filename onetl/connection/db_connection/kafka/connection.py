@@ -8,7 +8,11 @@ from contextlib import closing
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from etl_entities.instance import Cluster
-from pydantic import root_validator, validator
+
+try:
+    from pydantic.v1 import root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import stringify
 from onetl._util.java import try_import_java_class

@@ -7,7 +7,10 @@ import os
 import shutil
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, PrivateAttr, root_validator, validator
+try:
+    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import stringify
 from onetl._util.file import get_file_hash, is_file_readable

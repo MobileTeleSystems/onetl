@@ -21,7 +21,7 @@ jobs:
     uses: ./.github/workflows/get-matrix.yml
 
   tests-core:
-    name: Run core tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run core tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -31,12 +31,13 @@ jobs:
     uses: ./.github/workflows/test-core.yml
     with:
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-clickhouse:
-    name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Clickhouse tests (server=${{ matrix.clickhouse-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -48,12 +49,13 @@ jobs:
       clickhouse-image: ${{ matrix.clickhouse-image }}
       clickhouse-version: ${{ matrix.clickhouse-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-greenplum:
-    name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Greenplum tests (server=${{ matrix.greenplum-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -64,6 +66,7 @@ jobs:
     with:
       greenplum-version: ${{ matrix.greenplum-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -72,7 +75,7 @@ jobs:
       GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 
   tests-hive:
-    name: Run Hive tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Hive tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -82,12 +85,13 @@ jobs:
     uses: ./.github/workflows/test-hive.yml
     with:
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-kafka:
-    name: Run Kafka tests (server=${{ matrix.kafka-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Kafka tests (server=${{ matrix.kafka-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -98,12 +102,13 @@ jobs:
     with:
       kafka-version: ${{ matrix.kafka-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-local-fs:
-    name: Run LocalFS tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run LocalFS tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -113,12 +118,13 @@ jobs:
     uses: ./.github/workflows/test-local-fs.yml
     with:
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-mongodb:
-    name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run MongoDB tests (server=${{ matrix.mongodb-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -129,12 +135,13 @@ jobs:
     with:
       mongodb-version: ${{ matrix.mongodb-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-mssql:
-    name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run MSSQL tests (server=${{ matrix.mssql-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -145,12 +152,13 @@ jobs:
     with:
       mssql-version: ${{ matrix.mssql-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-mysql:
-    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run MySQL tests (server=${{ matrix.mysql-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -161,12 +169,13 @@ jobs:
     with:
       mysql-version: ${{ matrix.mysql-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-oracle:
-    name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Oracle tests (server=${{ matrix.oracle-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -179,12 +188,13 @@ jobs:
       oracle-version: ${{ matrix.oracle-version }}
       db-name: ${{ matrix.db-name }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-postgres:
-    name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Postgres tests (server=${{ matrix.postgres-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -195,12 +205,13 @@ jobs:
     with:
       postgres-version: ${{ matrix.postgres-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-teradata:
-    name: Run Teradata tests (spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Teradata tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -210,12 +221,13 @@ jobs:
     uses: ./.github/workflows/test-teradata.yml
     with:
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-ftp:
-    name: Run FTP tests (server=${{ matrix.ftp-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run FTP tests (server=${{ matrix.ftp-version }}, pydantic=${{ matrix.pydantic-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -225,11 +237,12 @@ jobs:
     uses: ./.github/workflows/test-ftp.yml
     with:
       ftp-version: ${{ matrix.ftp-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-ftps:
-    name: Run FTPS tests (server=${{ matrix.ftps-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run FTPS tests (server=${{ matrix.ftps-version }}, pydantic=${{ matrix.pydantic-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -239,11 +252,12 @@ jobs:
     uses: ./.github/workflows/test-ftps.yml
     with:
       ftps-version: ${{ matrix.ftps-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-hdfs:
-    name: Run HDFS tests (server=${{ matrix.hadoop-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run HDFS tests (server=${{ matrix.hadoop-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -254,12 +268,13 @@ jobs:
     with:
       hadoop-version: ${{ matrix.hadoop-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-s3:
-    name: Run S3 tests (server=${{ matrix.minio-version }}, spark=${{ matrix.spark-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run S3 tests (server=${{ matrix.minio-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -270,12 +285,13 @@ jobs:
     with:
       minio-version: ${{ matrix.minio-version }}
       spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-sftp:
-    name: Run SFTP tests (server=${{ matrix.openssh-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run SFTP tests (server=${{ matrix.openssh-version }}, pydantic=${{ matrix.pydantic-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -285,11 +301,12 @@ jobs:
     uses: ./.github/workflows/test-sftp.yml
     with:
       openssh-version: ${{ matrix.openssh-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
   tests-samba:
-    name: Run Samba tests (server=${{ matrix.server-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run Samba tests (server=${{ matrix.server-version }}, pydantic=${{ matrix.pydantic-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -299,12 +316,13 @@ jobs:
     uses: ./.github/workflows/test-samba.yml
     with:
       server-version: ${{ matrix.server-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
 
   tests-webdav:
-    name: Run WebDAV tests (server=${{ matrix.webdav-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    name: Run WebDAV tests (server=${{ matrix.webdav-version }}, pydantic=${{ matrix.pydantic-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
@@ -314,6 +332,7 @@ jobs:
     uses: ./.github/workflows/test-webdav.yml
     with:
       webdav-version: ${{ matrix.webdav-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 

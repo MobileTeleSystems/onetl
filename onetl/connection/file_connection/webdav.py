@@ -12,7 +12,12 @@ from ssl import SSLContext
 from typing import Optional, Union
 
 from etl_entities.instance import Host
-from pydantic import DirectoryPath, FilePath, SecretStr, root_validator
+
+try:
+    from pydantic.v1 import DirectoryPath, FilePath, SecretStr, root_validator
+except (ImportError, AttributeError):
+    from pydantic import DirectoryPath, FilePath, SecretStr, root_validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection

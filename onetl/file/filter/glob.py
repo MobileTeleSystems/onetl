@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import glob
 
-from pydantic import validator
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel

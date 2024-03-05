@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, validator
+try:
+    from pydantic.v1 import Field, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import get_pyspark_version
 from onetl.base import FileDFReadOptions

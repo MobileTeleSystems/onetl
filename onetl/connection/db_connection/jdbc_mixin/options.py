@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except (ImportError, AttributeError):
+    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 

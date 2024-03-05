@@ -14,7 +14,11 @@ from etl_entities.hwm_store import (
     register_hwm_store_class,
 )
 from platformdirs import user_data_dir
-from pydantic import validator
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, LocalPath
