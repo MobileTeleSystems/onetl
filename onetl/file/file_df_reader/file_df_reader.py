@@ -7,7 +7,11 @@ import os
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from ordered_set import OrderedSet
-from pydantic import PrivateAttr, validator
+
+try:
+    from pydantic.v1 import PrivateAttr, validator
+except (ImportError, AttributeError):
+    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol

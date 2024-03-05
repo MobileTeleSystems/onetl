@@ -7,7 +7,11 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable
 
 from etl_entities.instance import Cluster
-from pydantic import validator
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import clear_statement
 from onetl._util.spark import inject_spark_param

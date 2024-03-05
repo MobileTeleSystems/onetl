@@ -1,6 +1,7 @@
 min: &min
   # kafka_version: 0.10.2-1-r3
   kafka-version: 3.5.1
+  pydantic-version: 1
   spark-version: 2.4.8
   python-version: '3.7'
   java-version: 8
@@ -8,6 +9,7 @@ min: &min
 
 max: &max
   kafka-version: 3.5.1
+  pydantic-version: 2
   spark-version: 3.5.0
   python-version: '3.12'
   java-version: 20
@@ -15,6 +17,7 @@ max: &max
 
 latest: &latest
   kafka-version: latest
+  pydantic-version: latest
   spark-version: latest
   python-version: '3.12'
   java-version: 20

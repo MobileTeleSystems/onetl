@@ -6,7 +6,10 @@ import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Dict, Optional
 
-from pydantic import Field, validator
+try:
+    from pydantic.v1 import Field, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version

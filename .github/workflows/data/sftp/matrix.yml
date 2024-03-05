@@ -1,8 +1,15 @@
 min: &min
+  pydantic-version: 1
   python-version: '3.7'
   os: ubuntu-latest
 
 max: &max
+  pydantic-version: 2
+  python-version: '3.12'
+  os: ubuntu-latest
+
+latest: &latest
+  pydantic-version: latest
   python-version: '3.12'
   os: ubuntu-latest
 
@@ -20,4 +27,4 @@ matrix:
     - openssh-version: 8.1_p1-r0-ls5
       <<: *min
     - openssh-version: latest
-      <<: *max
+      <<: *latest

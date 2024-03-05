@@ -3,4 +3,5 @@
 .github/workflows/data/base/**
 requirements/core.txt
 requirements/tests/base.txt
+requirements/tests/pydantic-*.txt
 .env.local

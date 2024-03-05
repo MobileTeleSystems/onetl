@@ -9,7 +9,11 @@ from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from ordered_set import OrderedSet
-from pydantic import Field, PrivateAttr, validator
+
+try:
+    from pydantic.v1 import Field, PrivateAttr, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol, PathWithStatsProtocol

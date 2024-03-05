@@ -29,7 +29,12 @@ except (ImportError, NameError) as e:
     ) from e
 
 from etl_entities.instance import Host
-from pydantic import SecretStr, root_validator
+
+try:
+    from pydantic.v1 import SecretStr, root_validator
+except (ImportError, AttributeError):
+    from pydantic import SecretStr, root_validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection

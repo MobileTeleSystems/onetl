@@ -11,7 +11,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from etl_entities.process import ProcessStackManager
-from pydantic import SecretStr
+
+try:
+    from pydantic.v1 import SecretStr
+except (ImportError, AttributeError):
+    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
 
 if TYPE_CHECKING:
     from pathlib import PurePath

@@ -12,7 +12,10 @@ from decimal import Decimal
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except (ImportError, AttributeError):
+    from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty

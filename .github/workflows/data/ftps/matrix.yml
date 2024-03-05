@@ -1,8 +1,15 @@
 min: &min
+  pydantic-version: 1
   python-version: '3.7'
   os: ubuntu-latest
 
 max: &max
+  pydantic-version: 2
+  python-version: '3.12'
+  os: ubuntu-latest
+
+latest: &latest
+  pydantic-version: latest
   python-version: '3.12'
   os: ubuntu-latest
 
@@ -11,9 +18,13 @@ matrix:
   # chonjay21/ftps image has only latest tag
     - ftps-version: latest
       <<: *max
-  full: &full
+  full:
     - ftps-version: latest
       <<: *min
     - ftps-version: latest
       <<: *max
-  nightly: *full
+  nightly:
+    - ftps-version: latest
+      <<: *min
+    - ftps-version: latest
+      <<: *latest

@@ -5,6 +5,9 @@ on:
       server-version:
         required: true
         type: string
+      pydantic-version:
+        required: true
+        type: string
       python-version:
         required: true
         type: string
@@ -18,7 +21,7 @@ on:
 
 jobs:
   test-samba:
-    name: Run Samba tests (server=${{ inputs.server-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run Samba tests (server=${{ inputs.server-version }}, pydantic=${{ inputs.pydantic-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -35,17 +38,17 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
-            ${{ runner.os }}-python-${{ inputs.python-version }}-tests-samba-
+            ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-samba-${{ hashFiles('requirements/core.txt', 'requirements/samba.txt', 'requirements/tests/base.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-pydantic-${{ inputs.pydantic-version }}-tests-samba-
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Install dependencies
         run: |
-          pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt
+          pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
     # Replace with Github Actions' because of custom parameter for samba container start
       - name: Start Samba

@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 from etl_entities.hwm import HWM
-from pydantic import root_validator
+
+try:
+    from pydantic.v1 import root_validator
+except (ImportError, AttributeError):
+    from pydantic import root_validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import Literal
 
 

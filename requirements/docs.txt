@@ -1,4 +1,4 @@
-autodoc-pydantic<2.0.0
+autodoc-pydantic<2
 furo
 importlib-resources<6
 numpydoc

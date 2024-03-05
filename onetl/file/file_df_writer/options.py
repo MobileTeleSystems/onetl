@@ -7,7 +7,10 @@ from contextlib import contextmanager, nullcontext
 from enum import Enum
 from typing import TYPE_CHECKING, ContextManager, Iterable, List, Optional, Union
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import inject_spark_param
 from onetl.base import FileDFWriteOptions

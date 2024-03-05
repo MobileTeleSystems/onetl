@@ -9,8 +9,12 @@ import textwrap
 import warnings
 from typing import List, Optional, Union
 
-from pydantic import Field, root_validator, validator
 from typing_extensions import deprecated
+
+try:
+    from pydantic.v1 import Field, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath

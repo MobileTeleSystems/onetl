@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 

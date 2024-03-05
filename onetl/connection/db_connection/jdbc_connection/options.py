@@ -6,7 +6,11 @@ import warnings
 from enum import Enum
 from typing import Optional
 
-from pydantic import Field, PositiveInt, root_validator
+try:
+    from pydantic.v1 import Field, PositiveInt, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PositiveInt, root_validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import deprecated
 
 from onetl._internal import to_camel

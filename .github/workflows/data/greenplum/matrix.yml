@@ -1,6 +1,7 @@
 min: &min
   # Spark 2.3.0 does not support passing ivysettings.xml
   spark-version: 2.3.1
+  pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
@@ -8,6 +9,15 @@ min: &min
 max: &max
   # Greenplum connector does not support Spark 3.3+
   spark-version: 3.2.4
+  pydantic-version: 2
+  python-version: '3.10'
+  java-version: 11
+  os: ubuntu-latest
+
+latest: &latest
+  # Greenplum connector does not support Spark 3.3+
+  spark-version: 3.2.4
+  pydantic-version: latest
   python-version: '3.10'
   java-version: 11
   os: ubuntu-latest
@@ -16,9 +26,13 @@ matrix:
   small:
     - greenplum-version: 7.0.0
       <<: *max
-  full: &full
+  full:
     - greenplum-version: 6.25.3
       <<: *min
     - greenplum-version: 7.0.0
       <<: *max
-  nightly: *full
+  nightly:
+    - greenplum-version: 6.25.3
+      <<: *min
+    - greenplum-version: 7.0.0
+      <<: *latest

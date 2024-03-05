@@ -9,7 +9,11 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from etl_entities.instance import Host
-from pydantic import validator
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class

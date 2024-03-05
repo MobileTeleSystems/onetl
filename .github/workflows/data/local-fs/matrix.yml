@@ -1,29 +1,34 @@
 min: &min
   spark-version: 2.3.1
+  pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
 
 min_avro: &min_avro
   spark-version: 2.4.8
+  pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
 
 min_excel: &min_excel
   spark-version: 3.2.4
+  pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
 
 max: &max
   spark-version: 3.5.0
+  pydantic-version: 2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
   spark-version: latest
+  pydantic-version: latest
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest

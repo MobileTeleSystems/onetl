@@ -11,7 +11,11 @@ import frozendict
 from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
-from pydantic import Field, PrivateAttr, root_validator, validator
+
+try:
+    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
