@@ -22,15 +22,19 @@ Writing to some existing Clickhuse table
 
 This is how Clickhouse connector performs this:
 
-* Get names of columns in DataFrame.
+* Get names of columns in DataFrame. [1]_
 * Perform ``SELECT column1, colum2, ... FROM table LIMIT 0`` query
 * For each column in query result get column name and Clickhouse type.
-* **Find corresponding** ``Clickhouse type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [1]_
+* **Find corresponding** ``Clickhouse type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
 * Find corresponding ``Spark type`` -> ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Clickhousetype (write)`` match ``Clickhouse type (read)``, no additional casts will be performed, DataFrame column will be written to Clickhouse as is.
 * If ``Clickhousetype (write)`` does not match ``Clickhouse type (read)``, DataFrame column will be casted to target column type **on Clickhouse side**. For example, you can write column with text data to ``Int32`` column, if column contains valid integer values within supported value range and precision.
 
 .. [1]
+    This allows to write data to tables with ``DEFAULT`` columns - if DataFrame has no such column,
+    it will be populated by Clickhouse.
+
+.. [2]
 
     Yes, this is weird.
 
@@ -127,7 +131,7 @@ Numeric types
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Decimal(P=0..38, S=0..38)``  | ``DecimalType(P=0..38, S=0..38)`` | ``Decimal(P=0..38, S=0..38)`` | ``Decimal(P=0..38, S=0..38)`` |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Decimal(P=39..76, S=0..76)`` | unsupported [2]_                  |                               |                               |
+| ``Decimal(P=39..76, S=0..76)`` | unsupported [3]_                  |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Decimal32(P=0..9)``          | ``DecimalType(P=9, S=0..9)``      | ``Decimal(P=9, S=0..9)``      | ``Decimal(P=9, S=0..9)``      |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
@@ -135,7 +139,7 @@ Numeric types
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Decimal128(S=0..38)``        | ``DecimalType(P=38, S=0..38)``    | ``Decimal(P=38, S=0..38)``    | ``Decimal(P=38, S=0..38)``    |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Decimal256(S=0..76)``        | unsupported [2]_                  |                               |                               |
+| ``Decimal256(S=0..76)``        | unsupported [3]_                  |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Float32``                    | ``DoubleType()``                  | ``Float64``                   | ``Float64``                   |
 +--------------------------------+                                   |                               |                               |
@@ -153,7 +157,7 @@ Numeric types
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Int128``                     | ``DecimalType(20,0)``             | ``Decimal(20,0)``             | ``Decimal(20,0)``             |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Int256``                     | unsupported [2]_                  |                               |                               |
+| ``Int256``                     | unsupported [3]_                  |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``-``                          | ``ByteType()``                    | ``Int8``                      | ``Int8``                      |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
@@ -169,10 +173,10 @@ Numeric types
 +--------------------------------+                                   |                               |                               |
 | ``UInt128``                    |                                   |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``UInt256``                    | unsupported [2]_                  |                               |                               |
+| ``UInt256``                    | unsupported [3]_                  |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 
-.. [2]
+.. [3]
 
     Clickhouse support numeric types up to 256 bit - ``Int256``, ``UInt256``, ``Decimal256(S)``, ``Decimal(P=39..76, S=0..76)``.
 
@@ -194,13 +198,13 @@ Note: ``DateTime(P, TZ)`` has the same precision as ``DateTime(P)``.
 | ``DateTime32``, seconds           | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 | ``DateTime64(3)``, milliseconds   | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
-|                                   |                                      |                                  | **precision loss** [4]_       |
+|                                   |                                      |                                  | **precision loss** [5]_       |
 |                                   |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 | ``DateTime64(6)``, microseconds   | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
-+-----------------------------------+--------------------------------------+----------------------------------+ **cannot be inserted** [5]_   |
++-----------------------------------+--------------------------------------+----------------------------------+ **cannot be inserted** [6]_   |
 | ``DateTime64(7..9)``, nanoseconds | ``TimestampType()``, microseconds,   | ``DateTime64(6)``, microseconds, |                               |
-|                                   | **precision loss** [3]_              | **precision loss** [3]_          |                               |
+|                                   | **precision loss** [4]_              | **precision loss** [4]_          |                               |
 |                                   |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+                               |
 | ``-``                             | ``TimestampNTZType()``, microseconds | ``DateTime64(6)``                |                               |
@@ -228,16 +232,16 @@ Note: ``DateTime(P, TZ)`` has the same precision as ``DateTime(P)``.
 | ``IntervalYear``                  |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 
-.. [3]
+.. [4]
     Clickhouse support datetime up to nanoseconds precision (``23:59:59.999999999``),
     but Spark ``TimestampType()`` supports datetime up to microseconds precision (``23:59:59.999999``).
     Nanoseconds will be lost during read or write operations.
 
-.. [4]
+.. [5]
     Generic JDBC dialect generates DDL with Clickhouse type ``TIMESTAMP`` which is alias for ``DateTime32`` with precision up to seconds (``23:59:59``).
     Inserting data with milliseconds precision (``23:59:59.999``) will lead to throwing away milliseconds (``23:59:59``).
 
-.. [5]
+.. [6]
     Clickhouse will raise an exception that data in format ``2001-01-01 23:59:59.999999`` has data ``.999999`` which does not match format ``YYYY-MM-DD hh:mm:ss``.
     So you can create Clickhouse table with Spark, but cannot write data to column of this type.
 
@@ -358,17 +362,16 @@ Then you can parse this column on Clickhouse side:
 
     SELECT id, JSONExtract(json_column, 'Array(String)') FROM target_tbl
 
-You can also use `MATERIALIZED <https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized>`_
-and `ALIAS <https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias>`_ columns
+You can also use `ALIAS <https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias>`_ columns
 to avoid writing such expression in every ``SELECT`` clause all the time.
 
 Downsides:
 
 * Using ``SELECT JSONExtract(...)`` or ``ALIAS`` column can be expensive, because value is calculated on every row access. This can be especially harmful if such column is used in ``WHERE`` clause.
-* Using ``MATERIALIZED`` column allows to perform such expensive calculation just once, but this requires up to 2x storage, because Clickhouse stores both raw and parsed column.
-* Both ``ALIAS`` and ``MATERIALIZED`` columns are not included in ``SELECT *`` clause, they should be added explicitly: ``SELECT *, calculated_column FROM table``.
+* Both ``ALIAS`` columns are not included in ``SELECT *`` clause, they should be added explicitly: ``SELECT *, calculated_column FROM table``.
 
 .. warning::
 
+    `MATERIALIZED <https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized>`_  and
     `EPHEMERAL <https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral>`_ columns are not supported by Spark
     because they cannot be selected to determine target column type.
