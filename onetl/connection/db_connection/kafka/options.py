@@ -71,8 +71,7 @@ class KafkaReadOptions(GenericOptions):
             * ``subscribe``
             * ``subscribePattern``
 
-        are populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
-        by the user to avoid issues.
+        are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
     Examples
     --------
@@ -117,8 +116,7 @@ class KafkaWriteOptions(GenericOptions):
             * ``kafka.*``
             * ``topic``
 
-        are populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
-        by the user to avoid issues.
+        are populated from connection attributes, and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
 
     Examples
     --------

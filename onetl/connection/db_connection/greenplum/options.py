@@ -76,7 +76,7 @@ class GreenplumReadOptions(JDBCOptions):
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-        etc are populated from connection attributes, and cannot be set in ``ReadOptions`` class
+        etc are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
     Examples
     --------
@@ -208,8 +208,8 @@ class GreenplumWriteOptions(JDBCOptions):
 
     .. warning::
 
-        Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-        etc are populated from connection attributes, and cannot be set in ``WriteOptions`` class
+        Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``, etc
+        are populated from connection attributes, and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
 
     Examples
     --------
