@@ -23,8 +23,8 @@ Writing to some existing Clickhuse table
 This is how Clickhouse connector performs this:
 
 * Get names of columns in DataFrame. [1]_
-* Perform ``SELECT column1, colum2, ... FROM table LIMIT 0`` query
-* For each column in query result get column name and Clickhouse type.
+* Perform ``SELECT * FROM table LIMIT 0`` query.
+* Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
 * **Find corresponding** ``Clickhouse type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
 * Find corresponding ``Spark type`` -> ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Clickhousetype (write)`` match ``Clickhouse type (read)``, no additional casts will be performed, DataFrame column will be written to Clickhouse as is.
@@ -61,40 +61,44 @@ This may lead to incidental precision loss, or sometimes data cannot be written 
 
 So instead of relying on Spark to create tables:
 
-.. code:: python
+.. dropdown:: See example
 
-    writer = DBWriter(
-        connection=clickhouse,
-        table="default.target_tbl",
-        options=Clickhouse.WriteOptions(
-            if_exists="append",
-            # ENGINE is required by Clickhouse
-            createTableOptions="ENGINE = MergeTree() ORDER BY id",
-        ),
-    )
-    writer.run(df)
+    .. code:: python
+
+        writer = DBWriter(
+            connection=clickhouse,
+            table="default.target_tbl",
+            options=Clickhouse.WriteOptions(
+                if_exists="append",
+                # ENGINE is required by Clickhouse
+                createTableOptions="ENGINE = MergeTree() ORDER BY id",
+            ),
+        )
+        writer.run(df)
 
 Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
-.. code:: python
+.. dropdown:: See example
 
-    clickhouse.execute(
-        """
-        CREATE TABLE default.target_tbl AS (
-            id UInt8,
-            value DateTime64(6) -- specific type and precision
+    .. code:: python
+
+        clickhouse.execute(
+            """
+            CREATE TABLE default.target_tbl AS (
+                id UInt8,
+                value DateTime64(6) -- specific type and precision
+            )
+            ENGINE = MergeTree()
+            ORDER BY id
+            """,
         )
-        ENGINE = MergeTree()
-        ORDER BY id
-        """,
-    )
 
-    writer = DBWriter(
-        connection=clickhouse,
-        table="default.target_tbl",
-        options=Clickhouse.WriteOptions(if_exists="append"),
-    )
-    writer.run(df)
+        writer = DBWriter(
+            connection=clickhouse,
+            table="default.target_tbl",
+            options=Clickhouse.WriteOptions(if_exists="append"),
+        )
+        writer.run(df)
 
 References
 ~~~~~~~~~~
