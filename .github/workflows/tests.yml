@@ -397,8 +397,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./reports/coverage.xml
           fail_ci_if_error: true
-        # TODO: remove after fixing https://github.com/codecov/codecov-cli/issues/367
-          plugin: 'gcov'
+          plugin: 'noop'
 
       - name: All done
         run: echo 1
