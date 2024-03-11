@@ -1,7 +1,7 @@
 .. _postgres-write:
 
 Writing to Postgres using ``DBWriter``
-========================================
+======================================
 
 For writing data to Postgres, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
 

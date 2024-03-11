@@ -46,7 +46,7 @@ used for creating a connection:
 
     .. code-tab:: sql Read + Write
 
-        -- allow external tables in the same schema as target table
+        -- allow creating tables in the target schema
         GRANT CREATE TABLE ON myschema.* TO username;
 
         -- allow read & write access to specific table
@@ -56,14 +56,5 @@ used for creating a connection:
 
         -- allow read access to specific table
         GRANT SELECT ON myschema.mytable TO username;
-
-    .. code-tab:: sql Write only
-
-        -- allow external tables in the same schema as target table
-        GRANT CREATE TABLE ON myschema.* TO username;
-
-        -- allow read access to specific table (to get column types)
-        -- allow write access to specific table
-        GRANT SELECT, INSERT ON myschema.mytable TO username;
 
 More details can be found in `official documentation <https://clickhouse.com/docs/en/sql-reference/statements/grant>`_.

@@ -23,11 +23,11 @@ Syntax support
 
 This method supports **any** query syntax supported by Clickhouse, like:
 
-* ``SELECT ... FROM ...``
-* ``WITH alias AS (...) SELECT ...``
-* ``SHOW ...``
-
-It does not support multiple queries in the same operation, like ``SET ...; SELECT ...;``.
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` - call function
+* ✅︎ ``SHOW ...``
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^
@@ -59,12 +59,12 @@ Syntax support
 
 This method supports **any** query syntax supported by Clickhouse, like:
 
-* ``CREATE TABLE ...``
-* ``ALTER ...``
-* ``INSERT INTO ... AS SELECT ...``
-* etc
-
-It does not support multiple queries in the same operation, like ``SET ...; CREATE TABLE ...;``.
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
+* ✅︎ ``ALTER ...``
+* ✅︎ ``INSERT INTO ... AS SELECT ...``
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ other statements not mentioned here
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^

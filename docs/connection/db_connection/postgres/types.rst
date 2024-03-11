@@ -9,7 +9,7 @@ Type detection & casting
 Spark's DataFrames always have a ``schema`` which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.
 
 Reading from Postgres
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 This is how Postgres connector performs this:
 
@@ -20,8 +20,8 @@ This is how Postgres connector performs this:
 .. [1]
     All Postgres types that doesn't have corresponding Java type are converted to ``String``.
 
-Writing to some existing Clickhuse table
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Writing to some existing Postgres table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is how Postgres connector performs this:
 
@@ -319,17 +319,18 @@ Geo types
 +----------------------+-----------------------+-----------------------+-------------------------+
 
 Explicit type cast
--------------------
+------------------
 
 ``DBReader``
-~~~~~~~~~~~
+~~~~~~~~~~~~
 
 It is possible to explicitly cast column of unsupported type using ``DBReader(columns=...)`` syntax.
 
 For example, you can use ``CAST(column AS text)`` to convert data to string representation on Postgres side, and so it will be read as Spark's ``StringType()``.
 
-It is also possible to use ``to_json`` Postgres function for convert column of any type to string representation,
-and then parse this column on Spark side using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+It is also possible to use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function
+to convert column of any type to string representation, and then parse this column on Spark side using
+`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
 
 .. code-block:: python
 
@@ -348,7 +349,7 @@ and then parse this column on Spark side using `from_json <https://spark.apache.
             "supported_column",
             "CAST(unsupported_column AS text) unsupported_column_str",
             # or
-            "to_json(unsupported_column) unsupported_column_json",
+            "to_json(unsupported_column) array_column_json",
         ],
     )
     df = reader.run()
@@ -363,7 +364,7 @@ and then parse this column on Spark side using `from_json <https://spark.apache.
         # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
         # or explicit json parsing
-        from_json(df.unsupported_column_json, schema).alias("parsed_json"),
+        from_json(df.array_column_json, schema).alias("array_column"),
     )
 
 ``DBWriter``
@@ -390,7 +391,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
         CREATE TABLE schema.target_table (
             id int,
             supported_column timestamp,
-            unsupported_column_json jsonb -- any column type, actually
+            array_column_json jsonb -- any column type, actually
         )
         """,
     )
@@ -398,7 +399,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.unsupported_column).alias("unsupported_column_json"),
+        to_json(df.unsupported_column).alias("array_column_json"),
     )
 
     writer = DBWriter(
@@ -414,8 +415,7 @@ Then you can parse this column on Postgres side (for example, by creating a view
     SELECT
         id,
         supported_column,
-        -- access some nested field
-        unsupported_column_json->'field'
+        array_column_json->'0' AS array_item_0
     FROM
         schema.target_table
 

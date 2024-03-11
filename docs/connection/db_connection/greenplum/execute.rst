@@ -28,12 +28,10 @@ Syntax support
 
 This method supports **any** query syntax supported by Greenplum, like:
 
-* ``SELECT ... FROM ...``
-* ``WITH alias AS (...) SELECT ...``
-
-Queries like ``SHOW ...`` are not supported.
-
-It does not support multiple queries in the same operation, like ``SET ...; SELECT ...;``.
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^
@@ -65,15 +63,14 @@ Syntax support
 
 This method supports **any** query syntax supported by Greenplum, like:
 
-* ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
-* ``ALTER ...``
-* ``INSERT INTO ... AS SELECT ...``
-* ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
-* ``CALL procedure(arg1, arg2) ...``
-* ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
-* etc
-
-It does not support multiple queries in the same operation, like ``SET ...; CREATE TABLE ...;``.
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
+* ✅︎ ``ALTER ...``
+* ✅︎ ``INSERT INTO ... AS SELECT ...``
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``CALL procedure(arg1, arg2) ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
+* ✅︎ other statements not mentioned here
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^

@@ -1,7 +1,7 @@
 .. _postgres-execute:
 
 Executing statements in Postgres
-==================================
+================================
 
 How to
 ------
@@ -9,7 +9,7 @@ How to
 There are 2 ways to execute some statement in Postgres
 
 Use :obj:`Postgres.fetch <onetl.connection.db_connection.postgres.connection.Postgres.fetch>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
 Postgres config, or reading data from some reference table.
@@ -23,12 +23,9 @@ Syntax support
 
 This method supports **any** query syntax supported by Postgres, like:
 
-* ``SELECT ... FROM ...``
-* ``WITH alias AS (...) SELECT ...``
-
-Queries like ``SHOW ...`` are not supported.
-
-It does not support multiple queries in the same operation, like ``SET ...; SELECT ...;``.
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``\
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^
@@ -60,15 +57,14 @@ Syntax support
 
 This method supports **any** query syntax supported by Postgres, like:
 
-* ``CREATE TABLE ...``, ``CREATE VIEW ...``
-* ``ALTER ...``
-* ``INSERT INTO ... AS SELECT ...``
-* ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
-* ``CALL procedure(arg1, arg2) ...``
-* ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
-* etc
-
-It does not support multiple queries in the same operation, like ``SET ...; CREATE TABLE ...;``.
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
+* ✅︎ ``ALTER ...``
+* ✅︎ ``INSERT INTO ... AS SELECT ...``
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``CALL procedure(arg1, arg2) ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
+* ✅︎ other statements not mentioned here
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 ^^^^^^^^
@@ -84,7 +80,7 @@ Examples
         postgres.execute(
             """
             CREATE TABLE schema.table AS (
-                id biging ALWAYS GENERATED AS IDENTITY,
+                id bigint GENERATED ALWAYS AS IDENTITY,
                 key text,
                 value real
             )

@@ -17,8 +17,8 @@ This is how Clickhouse connector performs this:
 * Find corresponding ``Clickhouse type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
-Writing to some existing Clickhuse table
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Writing to some existing Clickhouse table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is how Clickhouse connector performs this:
 
@@ -112,6 +112,8 @@ Here you can find source code with type conversions:
 
 Supported types
 ---------------
+
+See `official documentation <https://clickhouse.com/docs/en/sql-reference/data-types>`_
 
 Generic types
 ~~~~~~~~~~~~~
@@ -243,7 +245,7 @@ Note: ``DateTime(P, TZ)`` has the same precision as ``DateTime(P)``.
 
 .. [5]
     Generic JDBC dialect generates DDL with Clickhouse type ``TIMESTAMP`` which is alias for ``DateTime32`` with precision up to seconds (``23:59:59``).
-    Inserting data with milliseconds precision (``23:59:59.999``) will lead to throwing away milliseconds (``23:59:59``).
+    Inserting data with milliseconds precision (``23:59:59.999``) will lead to **throwing away milliseconds**.
 
 .. [6]
     Clickhouse will raise an exception that data in format ``2001-01-01 23:59:59.999999`` has data ``.999999`` which does not match format ``YYYY-MM-DD hh:mm:ss``.
@@ -304,8 +306,11 @@ This dialect does not have type conversion between some types, like Clickhouse `
 
 The is a way to avoid this - just cast everything to ``String``.
 
-Read unsupported column type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Explicit type cast
+------------------
+
+``DBReader``
+~~~~~~~~~~~~
 
 Use ``CAST`` or ``toJSONString`` to get column data as string in JSON format,
 and then cast string column in resulting dataframe to proper type using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
@@ -332,8 +337,8 @@ and then cast string column in resulting dataframe to proper type using `from_js
         from_json(df.array_column, column_type).alias("array_column"),
     )
 
-Write unsupported column type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``DBWriter``
+~~~~~~~~~~~~
 
 Convert dataframe column to JSON using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_,
 and write it as ``String`` column in Clickhouse:
@@ -342,7 +347,7 @@ and write it as ``String`` column in Clickhouse:
 
     clickhouse.execute(
         """
-        CREATE TABLE target_tbl AS (
+        CREATE TABLE default.target_tbl AS (
             id Int32,
             array_column_json String,
         )
@@ -360,7 +365,7 @@ and write it as ``String`` column in Clickhouse:
 
     writer.run(df)
 
-Then you can parse this column on Clickhouse side:
+Then you can parse this column on Clickhouse side - for example, by creating a view:
 
 .. code:: sql
 
