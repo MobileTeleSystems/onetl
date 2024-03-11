@@ -1,13 +1,13 @@
-.. _postgres-sql:
+.. _oracle-sql:
 
-Reading from Postgres using ``Postgres.sql``
-============================================
+Reading from Oracle using ``Oracle.sql``
+========================================
 
 .. warning::
 
-    Please take into account :ref:`postgres-types`
+    Please take into account :ref:`oracle-types`
 
-:obj:`Postgres.sql <onetl.connection.db_connection.postgres.connection.Postgres.sql>` allows passing custom SQL query,
+:obj:`Oracle.sql <onetl.connection.db_connection.oracle.connection.Oracle.sql>` allows passing custom SQL query,
 but does not support incremental strategies.
 
 Method also accepts :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`.
@@ -29,27 +29,27 @@ Examples
 
 .. code-block:: python
 
-    from onetl.connection import Postgres
+    from onetl.connection import Oracle
 
-    postgres = Postgres(...)
-    df = postgres.sql(
+    oracle = Oracle(...)
+    df = oracle.sql(
         """
         SELECT
             id,
             key,
-            CAST(value AS text) value,
+            CAST(value AS VARCHAR2(4000)) value,
             updated_at
         FROM
             some.mytable
         WHERE
             key = 'something'
         """,
-        options=Postgres.ReadOptions(partition_column="id", num_partitions=10),
+        options=Oracle.ReadOptions(partition_column="id", num_partitions=10),
     )
 
 References
 ----------
 
-.. currentmodule:: onetl.connection.db_connection.postgres.connection
+.. currentmodule:: onetl.connection.db_connection.oracle.connection
 
-.. automethod:: Postgres.sql
+.. automethod:: Oracle.sql

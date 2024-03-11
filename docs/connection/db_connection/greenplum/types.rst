@@ -23,7 +23,7 @@ This is how Greenplum connector performs this:
     Yes, **all columns of a table**, not just selected ones.
     This means that if source table **contains** columns with unsupported type, the entire table cannot be read.
 
-Writing to some existing Clickhuse table
+Writing to some existing Greenplum table
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is how Greenplum connector performs this:
@@ -33,7 +33,7 @@ This is how Greenplum connector performs this:
 * For each column in query result get column name and Greenplum type.
 * Match table columns with DataFrame columns (by name, case insensitive).
   If some column is present only in target table, but not in DataFrame (like ``DEFAULT`` or ``SERIAL`` column), and vice versa, raise an exception.
-  See `Write unsupported column type`_.
+  See `Explicit type cast`_.
 * Find corresponding ``Spark type`` -> ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Greenplumtype (write)`` match ``Greenplum type (read)``, no additional casts will be performed, DataFrame column will be written to Greenplum as is.
 * If ``Greenplumtype (write)`` does not match ``Greenplum type (read)``, DataFrame column will be casted to target column type **on Greenplum side**. For example, you can write column with text data to ``json`` column which Greenplum connector currently does not support.
@@ -272,8 +272,11 @@ Columns of these types cannot be read/written by Spark:
 
 The is a way to avoid this - just cast unsupported types to ``text``. But the way this can be done is not a straightforward.
 
-Read unsupported column type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Explicit type cast
+------------------
+
+``DBReader``
+~~~~~~~~~~~~
 
 Unfortunately, it is not possible to cast unsupported column to some supported type on ``DBReader`` side:
 
@@ -334,8 +337,8 @@ You can then parse this column on Spark side using `from_json <https://spark.apa
         from_json(df.array_column_as_json, schema).alias("array_column"),
     )
 
-Write unsupported column type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``DBWriter``
+~~~~~~~~~~~~
 
 It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Greenplum table.
 

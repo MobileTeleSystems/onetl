@@ -1,0 +1,5 @@
+Improve Oracle documentation:
+  * Add "Types" section describing mapping between Oracle and Spark types
+  * Add "Prerequisites" section describing different aspects of connecting to Oracle
+  * Separate documentation of ``DBReader`` and ``Oracle.sql``
+  * Add examples for ``Oracle.fetch`` and ``Oracle.execute``

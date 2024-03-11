@@ -23,12 +23,6 @@ See :ref:`install-spark` installation instruction for more details.
 Connecting to Postgres
 -----------------------
 
-Connection port
-~~~~~~~~~~~~~~~
-
-Connection is usuallu performed to port 5432. Port may differ for different Postgres instances.
-Please ask your Postgres administrator to provide required information.
-
 Allowing connection to Postgres instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -37,8 +31,16 @@ e.g. by updating ``pg_hba.conf`` file.
 
 See `official documentation <https://www.postgresql.org/docs/current/auth-pg-hba-conf.html>`_.
 
-Postgres cluster interaction
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Connection port
+~~~~~~~~~~~~~~~
+
+Connection is usually performed to port 5432. Port may differ for different Postgres instances.
+Please ask your Postgres administrator to provide required information.
+
+Connection host
+~~~~~~~~~~~~~~~
+
+It is possible to connect to Postgres by using either DNS name of host or it's IP address.
 
 If you're using Postgres cluster, it is currently possible to connect only to **one specific node**.
 Connecting to multiple nodes to perform load balancing, as well as automatic failover to new master/replica are not supported.
@@ -57,7 +59,10 @@ used for creating a connection:
         GRANT USAGE, CREATE ON SCHEMA myschema TO username;
 
         -- allow read & write access to specific table
-        GRANT SELECT, INSERT, TRUNCATE ON myschema.mytable TO username;
+        GRANT SELECT, INSERT ON myschema.mytable TO username;
+
+        -- only if if_exists="replace_entire_table" is used:
+        GRANT TRUNCATE ON myschema.mytable TO username;
 
     .. code-tab:: sql Read only
 
