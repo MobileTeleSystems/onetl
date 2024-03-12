@@ -29,29 +29,9 @@ class MySQL(JDBCConnection):
     Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
-    .. dropdown:: Version compatibility
-
-        * MySQL server versions: 5.7, 8.0
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html>`_.
-
     .. warning::
 
-        To use MySQL connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`mysql-prerequisites`
 
     Parameters
     ----------
@@ -78,7 +58,7 @@ class MySQL(JDBCConnection):
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"useSSL": "false"}``
+        For example: ``{"useSSL": "false", "allowPublicKeyRetrieval": "true"}``
 
         See `MySQL JDBC driver properties documentation
         <https://dev.mysql.com/doc/connector-j/en/connector-j-reference-configuration-properties.html>`_
@@ -107,7 +87,7 @@ class MySQL(JDBCConnection):
             host="database.host.or.ip",
             user="user",
             password="*****",
-            extra={"useSSL": "false"},
+            extra={"useSSL": "false", "allowPublicKeyRetrieval": "true"},
             spark=spark,
         )
 

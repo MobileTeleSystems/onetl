@@ -1,0 +1,5 @@
+Improve MySQL documentation:
+  * Add "Types" section describing mapping between MySQL and Spark types
+  * Add "Prerequisites" section describing different aspects of connecting to MySQL
+  * Separate documentation of ``DBReader`` and ``MySQL.sql``
+  * Add examples for ``MySQL.fetch`` and ``MySQL.execute``
