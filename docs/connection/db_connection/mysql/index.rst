@@ -7,6 +7,7 @@ MySQL
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
 
 .. toctree::
@@ -14,5 +15,12 @@ MySQL
     :caption: Operations
 
     read
+    sql
     write
     execute
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Troubleshooting
+
+    types

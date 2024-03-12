@@ -1,18 +1,76 @@
 .. _mysql-read:
 
-Reading from MySQL
-==================
+Reading from MySQL using ``DBReader``
+=====================================
 
-There are 2 ways of distributed data reading from MySQL:
+.. warning::
 
-* Using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` with different :ref:`strategy`
-* Using :obj:`MySQL.sql <onetl.connection.db_connection.mysql.connection.MySQL.sql>`
+    Please take into account :ref:`mysql-types`
 
-Both methods accept :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`
+:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
+but does not support custom queries, like JOINs.
 
-.. currentmodule:: onetl.connection.db_connection.mysql.connection
+Supported DBReader features
+---------------------------
 
-.. automethod:: MySQL.sql
+* ✅︎ ``columns``
+* ✅︎ ``where``
+* ✅︎ ``hwm``, supported strategies:
+* * ✅︎ :ref:`snapshot-strategy`
+* * ✅︎ :ref:`incremental-strategy`
+* * ✅︎ :ref:`snapshot-batch-strategy`
+* * ✅︎ :ref:`incremental-batch-strategy`
+* ✅︎ ``hint`` (see `official documentation <https://dev.mysql.com/doc/refman/en/optimizer-hints.html>`_)
+* ❌ ``df_schema``
+* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+
+Examples
+--------
+
+Snapshot strategy:
+
+.. code-block:: python
+
+    from onetl.connection import MySQL
+    from onetl.db import DBReader
+
+    mysql = MySQL(...)
+
+    reader = DBReader(
+        connection=mysql,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+        where="key = 'something'",
+        hint="SKIP_SCAN(schema.table key_index)",
+        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
+    )
+    df = reader.run()
+
+Incremental strategy:
+
+.. code-block:: python
+
+    from onetl.connection import MySQL
+    from onetl.db import DBReader
+    from onetl.strategy import IncrementalStrategy
+
+    mysql = MySQL(...)
+
+    reader = DBReader(
+        connection=mysql,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+        where="key = 'something'",
+        hint="SKIP_SCAN(schema.table key_index)",
+        hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
+        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
+    )
+
+    with IncrementalStrategy():
+        df = reader.run()
+
+Read options
+------------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
 
