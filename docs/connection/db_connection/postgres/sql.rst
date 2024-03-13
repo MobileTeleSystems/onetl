@@ -17,12 +17,9 @@ Syntax support
 
 Only queries with the following syntax are supported:
 
-* ``SELECT ...``
-* ``WITH alias AS (...) SELECT ...``
-
-Queries like ``SHOW ...`` are not supported.
-
-This method also does not support multiple queries in the same operation, like ``SET ...; SELECT ...;``.
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 --------

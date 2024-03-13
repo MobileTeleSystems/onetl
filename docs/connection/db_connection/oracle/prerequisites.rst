@@ -88,13 +88,13 @@ used for creating a connection:
         -- as Oracle does not support specifying exact schema name
         GRANT CREATE ANY TABLE TO username;
 
+        -- allow read & write access to specific table
+        GRANT SELECT, INSERT ON someschema.mytable TO username;
+
         -- only if if_exists="replace_entire_table" is used:
         -- allow dropping/truncating tables in any schema,
         -- as Oracle does not support specifying exact schema name
         GRANT DROP ANY TABLE TO username;
-
-        -- allow read & write access to specific table
-        GRANT SELECT, INSERT ON someschema.mytable TO username;
 
     .. code-tab:: sql Read only
 

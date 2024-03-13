@@ -1,13 +1,13 @@
-.. _oracle-sql:
+.. _mssql-sql:
 
-Reading from Oracle using ``Oracle.sql``
+Reading from MSSQL using ``MSSQL.sql``
 ========================================
 
 .. warning::
 
-    Please take into account :ref:`oracle-types`
+    Please take into account :ref:`mssql-types`
 
-:obj:`Oracle.sql <onetl.connection.db_connection.oracle.connection.Oracle.sql>` allows passing custom SQL query,
+:obj:`MSSQL.sql <onetl.connection.db_connection.mssql.connection.MSSQL.sql>` allows passing custom SQL query,
 but does not support incremental strategies.
 
 Method also accepts :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`.
@@ -18,8 +18,7 @@ Syntax support
 Only queries with the following syntax are supported:
 
 * ✅︎ ``SELECT ... FROM ...``
-* ✅︎ ``WITH alias AS (...) SELECT ...``
-* ❌ ``SHOW ...``
+* ❌ ``WITH alias AS (...) SELECT ...``
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
@@ -27,27 +26,27 @@ Examples
 
 .. code-block:: python
 
-    from onetl.connection import Oracle
+    from onetl.connection import MSSQL
 
-    oracle = Oracle(...)
-    df = oracle.sql(
+    mssql = MSSQL(...)
+    df = mssql.sql(
         """
         SELECT
             id,
             key,
-            CAST(value AS VARCHAR2(4000)) value,
+            CAST(value AS text) value,
             updated_at
         FROM
             some.mytable
         WHERE
             key = 'something'
         """,
-        options=Oracle.ReadOptions(partition_column="id", num_partitions=10),
+        options=MSSQL.ReadOptions(partition_column="id", num_partitions=10),
     )
 
 References
 ----------
 
-.. currentmodule:: onetl.connection.db_connection.oracle.connection
+.. currentmodule:: onetl.connection.db_connection.mssql.connection
 
-.. automethod:: Oracle.sql
+.. automethod:: MSSQL.sql

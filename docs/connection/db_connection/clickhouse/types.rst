@@ -55,7 +55,7 @@ But Spark does not have specific dialect for Clickhouse, so Generic JDBC dialect
 Generic dialect is using SQL ANSI type names while creating tables in target database, not database-specific types.
 
 If some cases this may lead to using wrong column type. For example, Spark creates column of type ``TIMESTAMP``
-which corresponds to Clickhouse's type ``DateTime32`` (precision up to seconds)
+which corresponds to Clickhouse type ``DateTime32`` (precision up to seconds)
 instead of more precise ``DateTime64`` (precision up to nanoseconds).
 This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.
 
@@ -192,7 +192,10 @@ Numeric types
 Temporal types
 ~~~~~~~~~~~~~~
 
-Note: ``DateTime(P, TZ)`` has the same precision as ``DateTime(P)``.
+Notes:
+    * Datetime with timezone has the same precision as without timezone
+    * ``DateTime`` is alias for ``DateTime32``
+    * ``TIMESTAMP`` is alias for ``DateTime32``, but ``TIMESTAMP(N)`` is alias for ``DateTime64(N)``
 
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 | Clickhouse type (read)            | Spark type                           | Clickhousetype (write)           | Clickhouse type (create)      |
@@ -238,6 +241,31 @@ Note: ``DateTime(P, TZ)`` has the same precision as ``DateTime(P)``.
 | ``IntervalYear``                  |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 
+.. warning::
+
+    Note that types in Clickhouse and Spark have different value ranges:
+
+    +------------------------+-----------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
+    | Clickhouse type        | Min value                         | Max value                         | Spark type          | Min value                      | Max value                      |
+    +========================+===================================+===================================+=====================+================================+================================+
+    | ``Date``               | ``1970-01-01``                    | ``2149-06-06``                    | ``DateType()``      | ``0001-01-01``                 | ``9999-12-31``                 |
+    +------------------------+-----------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
+    | ``DateTime32``         | ``1970-01-01 00:00:00``           | ``2106-02-07 06:28:15``           | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
+    +------------------------+-----------------------------------+-----------------------------------+                     |                                |                                |
+    | ``DateTime64(P=0..8)`` | ``1900-01-01 00:00:00.00000000``  | ``2299-12-31 23:59:59.99999999``  |                     |                                |                                |
+    +------------------------+-----------------------------------+-----------------------------------+                     |                                |                                |
+    | ``DateTime64(P=9)``    | ``1900-01-01 00:00:00.000000000`` | ``2262-04-11 23:47:16.999999999`` |                     |                                |                                |
+    +------------------------+-----------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
+
+    So not all of values in Spark DataFrame can be written to Clickhouse.
+
+    References:
+        * `Clickhouse Date documentation <https://clickhouse.com/docs/en/sql-reference/data-types/date>`_
+        * `Clickhouse Datetime32 documentation <https://clickhouse.com/docs/en/sql-reference/data-types/datetime>`_
+        * `Clickhouse Datetime64 documentation <https://clickhouse.com/docs/en/sql-reference/data-types/datetime64>`_
+        * `Spark DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
+        * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
+
 .. [4]
     Clickhouse support datetime up to nanoseconds precision (``23:59:59.999999999``),
     but Spark ``TimestampType()`` supports datetime up to microseconds precision (``23:59:59.999999``).
@@ -257,17 +285,17 @@ String types
 +--------------------------------------+------------------+------------------------+--------------------------+
 | Clickhouse type (read)               | Spark type       | Clickhousetype (write) | Clickhouse type (create) |
 +======================================+==================+========================+==========================+
-| ``IPv4``                             | ``StringType()`` | ``String``             | ``String``               |
+| ``FixedString(N)``                   | ``StringType()`` | ``String``             | ``String``               |
 +--------------------------------------+                  |                        |                          |
-| ``IPv6``                             |                  |                        |                          |
+| ``String``                           |                  |                        |                          |
 +--------------------------------------+                  |                        |                          |
 | ``Enum8``                            |                  |                        |                          |
 +--------------------------------------+                  |                        |                          |
 | ``Enum16``                           |                  |                        |                          |
 +--------------------------------------+                  |                        |                          |
-| ``FixedString(N)``                   |                  |                        |                          |
+| ``IPv4``                             |                  |                        |                          |
 +--------------------------------------+                  |                        |                          |
-| ``String``                           |                  |                        |                          |
+| ``IPv6``                             |                  |                        |                          |
 +--------------------------------------+------------------+                        |                          |
 | ``-``                                | ``BinaryType()`` |                        |                          |
 +--------------------------------------+------------------+------------------------+--------------------------+
@@ -352,7 +380,7 @@ and write it as ``String`` column in Clickhouse:
             array_column_json String,
         )
         ENGINE = MergeTree()
-        ORDER BY time
+        ORDER BY id
         """,
     )
 
@@ -369,18 +397,34 @@ Then you can parse this column on Clickhouse side - for example, by creating a v
 
 .. code:: sql
 
-    SELECT id, JSONExtract(json_column, 'Array(String)') FROM target_tbl
+    SELECT
+        id,
+        JSONExtract(json_column, 'Array(String)') AS array_column
+    FROM target_tbl
 
-You can also use `ALIAS <https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias>`_ columns
-to avoid writing such expression in every ``SELECT`` clause all the time.
+You can also use `ALIAS <https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias>`_
+or `MATERIALIZED <https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized>`_ columns
+to avoid writing such expression in every ``SELECT`` clause all the time:
+
+.. code-block:: sql
+
+    CREATE TABLE default.target_tbl AS (
+        id Int32,
+        array_column_json String,
+        -- computed column
+        array_column Array(String) ALIAS JSONExtract(json_column, 'Array(String)')
+        -- or materialized column
+        -- array_column Array(String) MATERIALIZED JSONExtract(json_column, 'Array(String)')
+    )
+    ENGINE = MergeTree()
+    ORDER BY id
 
 Downsides:
 
 * Using ``SELECT JSONExtract(...)`` or ``ALIAS`` column can be expensive, because value is calculated on every row access. This can be especially harmful if such column is used in ``WHERE`` clause.
-* Both ``ALIAS`` columns are not included in ``SELECT *`` clause, they should be added explicitly: ``SELECT *, calculated_column FROM table``.
+* ``ALIAS`` and ``MATERIALIZED`` columns are not included in ``SELECT *`` clause, they should be added explicitly: ``SELECT *, calculated_column FROM table``.
 
 .. warning::
 
-    `MATERIALIZED <https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized>`_  and
     `EPHEMERAL <https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral>`_ columns are not supported by Spark
     because they cannot be selected to determine target column type.
