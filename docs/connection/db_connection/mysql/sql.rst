@@ -1,13 +1,13 @@
-.. _clickhouse-sql:
+.. _mysql-sql:
 
-Reading from Clickhouse using ``Clickhouse.sql``
-================================================
+Reading from MySQL using ``MySQL.sql``
+======================================
 
 .. warning::
 
-    Please take into account :ref:`clickhouse-types`
+    Please take into account :ref:`mysql-types`
 
-:obj:`Clickhouse.sql <onetl.connection.db_connection.clickhouse.connection.Clickhouse.sql>` allows passing custom SQL query,
+:obj:`MySQL.sql <onetl.connection.db_connection.mysql.connection.MySQL.sql>` allows passing custom SQL query,
 but does not support incremental strategies.
 
 Method also accepts :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`.
@@ -17,22 +17,20 @@ Syntax support
 
 Only queries with the following syntax are supported:
 
-* ``SELECT ...``
-* ``WITH alias AS (...) SELECT ...``
-
-Queries like ``SHOW ...`` are not supported.
-
-This method also does not support multiple queries in the same operation, like ``SET ...; SELECT ...;``.
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
+* ❌ ``SHOW ...``
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
 --------
 
 .. code-block:: python
 
-    from onetl.connection import Clickhouse
+    from onetl.connection import MySQL
 
-    clickhouse = Clickhouse(...)
-    df = clickhouse.sql(
+    mysql = MySQL(...)
+    df = mysql.sql(
         """
         SELECT
             id,
@@ -44,12 +42,12 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Clickhouse.ReadOptions(partition_column="id", num_partitions=10),
+        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
     )
 
 References
 ----------
 
-.. currentmodule:: onetl.connection.db_connection.clickhouse.connection
+.. currentmodule:: onetl.connection.db_connection.mysql.connection
 
-.. automethod:: Clickhouse.sql
+.. automethod:: MySQL.sql

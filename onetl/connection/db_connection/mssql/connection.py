@@ -29,30 +29,9 @@ class MSSQL(JDBCConnection):
     (`official MSSQL JDBC driver
     <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
-    .. dropdown:: Version compatibility
-
-        * SQL Server versions: 2014 - 2022
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
-        and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.
-
     .. warning::
 
-        To use MSSQL connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`mssql-prerequisites`
 
     Parameters
     ----------

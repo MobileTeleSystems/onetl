@@ -47,7 +47,7 @@ used for creating a connection:
 
     .. code-tab:: sql Read + Write
 
-        -- allow external tables in the same schema as target table
+        -- allow creating tables in the target schema
         GRANT CREATE ON myschema.* TO username@'192.168.1.%';
 
         -- allow read & write access to specific table

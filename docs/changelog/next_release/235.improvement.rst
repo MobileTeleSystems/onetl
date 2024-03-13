@@ -1,0 +1,5 @@
+Improve MSSQL documentation:
+  * Add "Types" section describing mapping between MSSQL and Spark types
+  * Add "Prerequisites" section describing different aspects of connecting to MSSQL
+  * Separate documentation of ``DBReader`` and ``MSSQL.sql``
+  * Add examples for ``MSSQL.fetch`` and ``MSSQL.execute``

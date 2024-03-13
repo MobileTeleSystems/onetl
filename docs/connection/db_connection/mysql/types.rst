@@ -47,7 +47,7 @@ This is how MySQL connector performs this:
 * Write DataFrame to created table as is.
 
 But some cases this may lead to using wrong column type. For example, Spark creates column of type ``timestamp``
-which corresponds to MySQL's type ``timestamp(0)`` (precision up to seconds)
+which corresponds to MySQL type ``timestamp(0)`` (precision up to seconds)
 instead of more precise ``timestamp(6)`` (precision up to nanoseconds).
 This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.
 
@@ -152,61 +152,57 @@ Temporal types
 +-----------------------------------+                                      |                                   |                               |
 | ``date``                          |                                      |                                   |                               |
 +-----------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``datetime``, seconds             | ``TimestampType()``, microseconds    | ``timestamp(N=6)``, microseconds  | ``timestamp(N=0)``, seconds   |
+| ``datetime``, seconds             | ``TimestampType()``, microseconds    | ``timestamp(6)``, microseconds    | ``timestamp(0)``, seconds     |
 +-----------------------------------+                                      |                                   |                               |
 | ``timestamp``, seconds            |                                      |                                   |                               |
 +-----------------------------------+                                      |                                   |                               |
-| ``datetime(N=0)``, seconds        |                                      |                                   |                               |
+| ``datetime(0)``, seconds          |                                      |                                   |                               |
 +-----------------------------------+                                      |                                   |                               |
-| ``timestamp(N=0)``, seconds       |                                      |                                   |                               |
+| ``timestamp(0)``, seconds         |                                      |                                   |                               |
 +-----------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``datetime(N=3)``, milliseconds   | ``TimestampType()``, microseconds    | ``timestamp(N=6)``, microseconds  | ``timestamp(N=0)``, seconds,  |
+| ``datetime(3)``, milliseconds     | ``TimestampType()``, microseconds    | ``timestamp(6)``, microseconds    | ``timestamp(0)``, seconds,    |
 +-----------------------------------+                                      |                                   | **precision loss** [4]_,      |
-| ``timestamp(N=6)``, milliseconds  |                                      |                                   |                               |
+| ``timestamp(3)``, milliseconds    |                                      |                                   |                               |
 +-----------------------------------+                                      |                                   |                               |
-| ``datetime(N=6)``, microseconds   |                                      |                                   |                               |
+| ``datetime(6)``, microseconds     |                                      |                                   |                               |
 +-----------------------------------+                                      |                                   |                               |
-| ``timestamp(N=6)``, microseconds  |                                      |                                   |                               |
+| ``timestamp(6)``, microseconds    |                                      |                                   |                               |
 +-----------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``time``, seconds                 | ``TimestampType()``, microseconds,   | ``timestamp(N=6)``, microseconds  | ``timestamp(N=0)``, seconds   |
+| ``time``, seconds                 | ``TimestampType()``, microseconds,   | ``timestamp(6)``, microseconds    | ``timestamp(0)``, seconds     |
 +-----------------------------------+ with time format quirks [5]_         |                                   |                               |
-| ``time(N=0)``, seconds            |                                      |                                   |                               |
+| ``time(0)``, seconds              |                                      |                                   |                               |
 +-----------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``time(N=3)``, milliseconds       | ``TimestampType()``, microseconds    | ``timestamp(N=6)``, microseconds  | ``timestamp(N=0)``, seconds,  |
+| ``time(3)``, milliseconds         | ``TimestampType()``, microseconds    | ``timestamp(6)``, microseconds    | ``timestamp(0)``, seconds,    |
 +-----------------------------------+ with time format quirks [5]_         |                                   | **precision loss** [4]_,      |
-| ``time(N=6)``, microseconds       |                                      |                                   |                               |
+| ``time(6)``, microseconds         |                                      |                                   |                               |
 +-----------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
 
 .. warning::
 
     Note that types in MySQL and Spark have different value ranges:
 
-    +-----------------------------+-------------------------+-------------------------+
-    | Type                        | Min value               | Max value               |
-    +=============================+=========================+=========================+
-    | MySQL's ``year``            | ``1901``                | ``2155``                |
-    +-----------------------------+-------------------------+-------------------------+
-    | MySQL's ``date``            | ``1000-01-01``          | ``9999-12-31``          |
-    +-----------------------------+-------------------------+-------------------------+
-    | Spark's ``DateType()``      | ``0001-01-01``          | ``9999-12-31``          |
-    +-----------------------------+-------------------------+-------------------------+
-    | MySQL's ``datetime``        | ``1000-01-01 00:00:00`` | ``9999-12-31 23:59:59`` |
-    +-----------------------------+-------------------------+-------------------------+
-    | MySQL's ``timestamp``       | ``1970-01-01 00:00:01`` | ``9999-12-31 23:59:59`` |
-    +-----------------------------+-------------------------+-------------------------+
-    | MySQL's ``time``            | ``-838:59:59``          | ``838:59:59``           |
-    +-----------------------------+-------------------------+-------------------------+
-    | Spark's ``TimestampType()`` | ``0001-01-01 00:00:00`` | ``9999-12-31 23:59:59`` |
-    +-----------------------------+-------------------------+-------------------------+
+    +---------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
+    | MySQL type    | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
+    +===============+================================+================================+=====================+================================+================================+
+    | ``year``      | ``1901``                       | ``2155``                       | ``DateType()``      | ``0001-01-01``                 | ``9999-12-31``                 |
+    +---------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``date``      | ``1000-01-01``                 | ``9999-12-31``                 |                     |                                |                                |
+    +---------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
+    | ``datetime``  | ``1000-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.499999`` | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
+    +---------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``timestamp`` | ``1970-01-01 00:00:01.000000`` | ``9999-12-31 23:59:59.499999`` |                     |                                |                                |
+    +---------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``time``      | ``-838:59:59.000000``          | ``838:59:59.000000``           |                     |                                |                                |
+    +---------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
 
     So Spark can read all the values from MySQL, but not all of values in Spark DataFrame can be written to MySQL.
 
-    See:
-        * `MySQL's year documentation <https://dev.mysql.com/doc/refman/en/year.html>`_
-        * `MySQL's date, datetime & timestamp documentation <https://dev.mysql.com/doc/refman/en/datetime.html>`_
-        * `MySQL's time documentation <https://dev.mysql.com/doc/refman/en/time.html>`_
-        * `Spark's DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
-        * `Spark's TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
+    References:
+        * `MySQL year documentation <https://dev.mysql.com/doc/refman/en/year.html>`_
+        * `MySQL date, datetime & timestamp documentation <https://dev.mysql.com/doc/refman/en/datetime.html>`_
+        * `MySQL time documentation <https://dev.mysql.com/doc/refman/en/time.html>`_
+        * `Spark DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
+        * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
 
 .. [4]
     MySQL dialect generates DDL with MySQL type ``timestamp`` which is alias for ``timestamp(0)`` with precision up to seconds (``23:59:59``).
@@ -244,44 +240,44 @@ String types
 Binary types
 ~~~~~~~~~~~~
 
-+---------------------------+------------------+--------------------+---------------------+
-| MySQL type (read)         | Spark type       | MySQL type (write) | MySQL type (create) |
-+===========================+==================+====================+=====================+
-| ``binary``                | ``BinaryType()`` | ``blob``           | ``blob``            |
-+---------------------------+                  |                    |                     |
-| ``binary(N)``             |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``varbinary(N)``          |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``mediumblob``            |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``blob``                  |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``longblob``              |                  |                    |                     |
-+---------------------------+------------------+--------------------+---------------------+
++-------------------+------------------+--------------------+---------------------+
+| MySQL type (read) | Spark type       | MySQL type (write) | MySQL type (create) |
++===================+==================+====================+=====================+
+| ``binary``        | ``BinaryType()`` | ``blob``           | ``blob``            |
++-------------------+                  |                    |                     |
+| ``binary(N)``     |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``varbinary(N)``  |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``mediumblob``    |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``blob``          |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``longblob``      |                  |                    |                     |
++-------------------+------------------+--------------------+---------------------+
 
 Geometry types
 ~~~~~~~~~~~~~~
 
-+---------------------------+------------------+--------------------+---------------------+
-| MySQL type (read)         | Spark type       | MySQL type (write) | MySQL type (create) |
-+===========================+==================+====================+=====================+
-| ``point``                 | ``BinaryType()`` | ``blob``           | ``blob``            |
-+---------------------------+                  |                    |                     |
-| ``linestring``            |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``polygon``               |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``geometry``              |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``multipoint``            |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``multilinestring``       |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``multipolygon``          |                  |                    |                     |
-+---------------------------+                  |                    |                     |
-| ``geometrycollection``    |                  |                    |                     |
-+---------------------------+------------------+--------------------+---------------------+
++------------------------+------------------+--------------------+---------------------+
+| MySQL type (read)      | Spark type       | MySQL type (write) | MySQL type (create) |
++========================+==================+====================+=====================+
+| ``point``              | ``BinaryType()`` | ``blob``           | ``blob``            |
++------------------------+                  |                    |                     |
+| ``linestring``         |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``polygon``            |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``geometry``           |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``multipoint``         |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``multilinestring``    |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``multipolygon``       |                  |                    |                     |
++------------------------+                  |                    |                     |
+| ``geometrycollection`` |                  |                    |                     |
++------------------------+------------------+--------------------+---------------------+
 
 Explicit type cast
 ------------------
@@ -311,7 +307,7 @@ to convert column of any type to string representation, and then parse this colu
         columns=[
             "id",
             "supported_column",
-            "CAST(unsupported_column AS TEXT) unsupported_column_str",
+            "CAST(unsupported_column AS text) unsupported_column_str",
             # or
             "JSON_OBJECT('key', value_column) json_column",
         ],
@@ -362,7 +358,10 @@ Then you can parse this column on MySQL side - for example, by creating a view:
 
 .. code:: sql
 
-    SELECT id, json_column->"$[0]" AS array_item FROM target_tbl
+    SELECT
+        id,
+        array_column_json->"$[0]" AS array_item
+    FROM target_tbl
 
 Or by using `GENERATED column <https://dev.mysql.com/doc/refman/en/create-table-generated-columns.html>`_:
 
@@ -372,7 +371,10 @@ Or by using `GENERATED column <https://dev.mysql.com/doc/refman/en/create-table-
         id bigint,
         supported_column timestamp,
         array_column_json json, -- any string type, actually
+        -- virtual column
         array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) VIRTUAL
+        -- or stired column
+        -- array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) STORED
     )
 
 ``VIRTUAL`` column value is calculated on every table read.

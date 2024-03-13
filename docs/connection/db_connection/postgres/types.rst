@@ -38,8 +38,7 @@ This is how Postgres connector performs this:
     it will be populated by Postgres.
 
 .. [3]
-    This is true only if conversion of ``T_df -> T_tbl`` target or source types is ``text`` or ``StringType()``. So it is possible to
-    insert data back to column with original type, if data format is matching the column type.
+    This is true only if either DataFrame column is a ``StringType()``, or target column is ``text`` type.
 
     But other types cannot be silently converted, like ``bytea -> bit(N)``. This requires explicit casting, see `Manual conversion to string`_.
 
@@ -201,6 +200,27 @@ Temporal types
 +------------------------------------+                              |                       |                         |
 | ``tstzrange``                      |                              |                       |                         |
 +------------------------------------+------------------------------+-----------------------+-------------------------+
+
+.. warning::
+
+    Note that types in Postgres and Spark have different value ranges:
+
+    +---------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
+    | Postgres type | Min value                       | Max value                        | Spark type          | Min value                      | Max value                      |
+    +===============+=================================+==================================+=====================+================================+================================+
+    | ``date``      | ``-4713-01-01``                 | ``5874897-01-01``                | ``DateType()``      | ``0001-01-01``                 | ``9999-12-31``                 |
+    +---------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
+    | ``timestamp`` | ``-4713-01-01 00:00:00.000000`` | ``294276-12-31 23:59:59.999999`` | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
+    +---------------+---------------------------------+----------------------------------+                     |                                |                                |
+    | ``time``      | ``00:00:00.000000``             | ``24:00:00.000000``              |                     |                                |                                |
+    +---------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
+
+    So not all of values can be read from Postgres to Spark.
+
+    References:
+        * `Postgres date/time types documentation <https://www.postgresql.org/docs/current/datatype-datetime.html>`_
+        * `Spark DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
+        * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
 
 .. [6]
 

@@ -17,8 +17,8 @@ Syntax support
 
 Only queries with the following syntax are supported:
 
-* ``SELECT ...``
-* ``WITH alias AS (...) SELECT ...``
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
 
 Queries like ``SHOW ...`` are not supported.
 
