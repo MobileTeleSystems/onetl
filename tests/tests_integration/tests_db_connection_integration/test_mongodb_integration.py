@@ -48,10 +48,9 @@ def test_mongodb_connection_check_fail(processing, spark):
         mongo.check()
 
 
-def test_mongodb_connection_read_pipeline_match(
+def test_mongodb_connection_read_pipeline(
     spark,
     prepare_schema_table,
-    load_table_data,
     processing,
 ):
     mongo = MongoDB(
@@ -61,6 +60,46 @@ def test_mongodb_connection_read_pipeline_match(
         password=processing.password,
         database=processing.database,
         spark=spark,
+    )
+
+    write_df = processing.create_pandas_df()
+
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=write_df,
+    )
+
+    df = mongo.pipeline(
+        collection=prepare_schema_table.table,
+    )
+
+    processing.assert_equal_df(
+        df=df,
+        other_frame=write_df,
+    )
+
+
+def test_mongodb_connection_read_pipeline_match(
+    spark,
+    prepare_schema_table,
+    processing,
+):
+    mongo = MongoDB(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    write_df = processing.create_pandas_df()
+
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=write_df,
     )
 
     df = mongo.pipeline(
@@ -68,18 +107,15 @@ def test_mongodb_connection_read_pipeline_match(
         pipeline={"$match": {"_id": {"$eq": 1}}},
     )
 
-    assert df
-    assert df.count() == 1
-
-    collected = df.collect()
-
-    assert collected[0][0] == 1  # _id
+    processing.assert_equal_df(
+        df=df,
+        other_frame=write_df[write_df._id == 1],
+    )
 
 
 def test_mongodb_connection_read_pipeline_match_with_df_schema(
     spark,
     prepare_schema_table,
-    load_table_data,
     processing,
 ):
     mongo = MongoDB(
@@ -89,6 +125,14 @@ def test_mongodb_connection_read_pipeline_match_with_df_schema(
         password=processing.password,
         database=processing.database,
         spark=spark,
+    )
+
+    write_df = processing.create_pandas_df()
+
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=write_df,
     )
 
     df = mongo.pipeline(
@@ -97,15 +141,13 @@ def test_mongodb_connection_read_pipeline_match_with_df_schema(
         df_schema=prepare_schema_table.schema,
     )
 
-    assert df
-    assert df.count() == 1
-
-    collected = df.collect()
-
-    assert collected[0]["_id"] == 1
+    processing.assert_equal_df(
+        df=df,
+        other_frame=write_df[write_df._id == 1],
+    )
 
 
-def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, load_table_data, processing):
+def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, processing):
     mongo = MongoDB(
         host=processing.host,
         port=processing.port,
@@ -113,6 +155,14 @@ def test_mongodb_connection_read_pipeline_group(spark, prepare_schema_table, loa
         password=processing.password,
         database=processing.database,
         spark=spark,
+    )
+
+    write_df = processing.create_pandas_df(min_id=1, max_id=100)
+
+    processing.insert_data(
+        schema=prepare_schema_table.schema,
+        table=prepare_schema_table.table,
+        values=write_df,
     )
 
     df = mongo.pipeline(
