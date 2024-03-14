@@ -7,6 +7,7 @@ MongoDB
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
 
 .. toctree::
@@ -14,4 +15,11 @@ MongoDB
     :caption: Operations
 
     read
+    pipeline
     write
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Troubleshooting
+
+    types

@@ -50,33 +50,12 @@ class MongoDBExtra(GenericOptions):
 class MongoDB(DBConnection):
     """MongoDB connection. |support_hooks|
 
-    Based on package ``org.mongodb.spark:mongo-spark-connector``
-    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
-
-    .. dropdown:: Version compatibility
-
-        * MongoDB server versions: 4.0 or higher
-        * Spark versions: 3.2.x - 3.4.x
-        * Scala versions: 2.12 - 2.13
-        * Java versions: 8 - 20
-
-        See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
+    Based on package ``org.mongodb.spark:mongo-spark-connector:10.1.1``
+    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/v10.1/>`_)
 
     .. warning::
 
-        To use MongoDB connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.4.2  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`mongodb-prerequisites`
 
     Parameters
     ----------
@@ -118,7 +97,7 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MongoDB connector loaded
-        maven_packages = MongoDB.get_packages(spark_version="3.2")
+        maven_packages = MongoDB.get_packages(spark_version="3.4")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -132,7 +111,7 @@ class MongoDB(DBConnection):
             password="*****",
             database="target_database",
             spark=spark,
-        )
+        ).check()
     """
 
     database: str
@@ -181,8 +160,8 @@ class MongoDB(DBConnection):
 
             from onetl.connection import MongoDB
 
-            MongoDB.get_packages(scala_version="2.11")
-            MongoDB.get_packages(spark_version="3.2")
+            MongoDB.get_packages(scala_version="2.12")
+            MongoDB.get_packages(spark_version="3.4")
 
         """
 
@@ -249,7 +228,7 @@ class MongoDB(DBConnection):
 
         .. code:: js
 
-            db.collection.aggregate([{"$match": ...}, {"$group": ...}])
+            db.collection_name.aggregate([{"$match": ...}, {"$group": ...}])
 
         but pipeline is executed on Spark executors, in a distributed way.
 
@@ -285,13 +264,13 @@ class MongoDB(DBConnection):
         Examples
         --------
 
-        Get document with a specific ``_id``:
+        Get document with a specific ``field`` value:
 
         .. code:: python
 
             df = connection.pipeline(
                 collection="collection_name",
-                pipeline={"$match": {"_id": {"$eq": 1}}},
+                pipeline={"$match": {"field": {"$eq": 1}}},
             )
 
         Calculate aggregation and get result:
@@ -324,7 +303,7 @@ class MongoDB(DBConnection):
 
             df_schema = StructType(
                 [
-                    StructField("_id", IntegerType()),
+                    StructField("_id", StringType()),
                     StructField("some_string", StringType()),
                     StructField("some_int", IntegerType()),
                     StructField("some_datetime", TimestampType()),
@@ -344,8 +323,8 @@ class MongoDB(DBConnection):
 
             df = connection.pipeline(
                 collection="collection_name",
-                pipeline={"$match": {"_id": {"$eq": 1}}},
-                options=MongoDB.PipelineOptions(hint={"_id": 1}),
+                pipeline={"$match": {"field": {"$eq": 1}}},
+                options=MongoDB.PipelineOptions(hint={"field": 1}),
             )
 
         """
