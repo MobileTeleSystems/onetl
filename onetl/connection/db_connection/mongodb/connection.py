@@ -237,7 +237,7 @@ class MongoDB(DBConnection):
     def pipeline(
         self,
         collection: str,
-        pipeline: dict | list[dict],
+        pipeline: dict | list[dict] | None = None,
         df_schema: StructType | None = None,
         options: MongoDBPipelineOptions | dict | None = None,
     ):
@@ -258,28 +258,20 @@ class MongoDB(DBConnection):
             This method does not support :ref:`strategy`,
             use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
 
-        .. note::
-
-            Statement is executed in read-write connection,
-            so if you're calling some stored functions, you can make changes
-            to the data source.
-
-            Unfortunately, Spark does no provide any option to change this behavior.
-
         Parameters
         ----------
 
         collection : str
             Collection name.
 
-        pipeline : dict | list[dict]
+        pipeline : dict | list[dict], optional
             Pipeline containing a database query.
             See `Aggregation pipeline syntax <https://www.mongodb.com/docs/manual/core/aggregation-pipeline/>`_.
 
-        df_schema : StructType, default: ``None``
+        df_schema : StructType, optional
             Schema describing the resulting DataFrame.
 
-        options : PipelineOptions | dict, default:  ``None``
+        options : PipelineOptions | dict, optional
             Additional pipeline options, see :obj:`~PipelineOptions`.
 
         Examples
@@ -352,7 +344,9 @@ class MongoDB(DBConnection):
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        pipeline = self.dialect.prepare_pipeline(pipeline)
+        if pipeline:
+            pipeline = self.dialect.prepare_pipeline(pipeline)
+
         log_with_indent(log, "collection = %r", collection)
         log_json(log, pipeline, name="pipeline")
 
@@ -363,7 +357,8 @@ class MongoDB(DBConnection):
         log_options(log, read_options)
 
         read_options["collection"] = collection
-        read_options["aggregation.pipeline"] = json.dumps(pipeline)
+        if pipeline:
+            read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
