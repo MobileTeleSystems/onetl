@@ -1,0 +1,4 @@
+Improve MongoDB documentation:
+  * Add "Types" section describing mapping between MongoDB and Spark types
+  * Add "Prerequisites" section describing different aspects of connecting to MongoDB
+  * Separate documentation of ``DBReader`` and ``MongoDB.pipeline``

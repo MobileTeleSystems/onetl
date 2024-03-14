@@ -117,7 +117,7 @@ class MongoDBPipelineOptions(GenericOptions):
     .. code:: python
 
         MongoDB.PipelineOptions(
-            hint="{'_id': 1}",
+            hint={"some_field": 1},
         )
     """
 
