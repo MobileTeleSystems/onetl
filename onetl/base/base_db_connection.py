@@ -35,7 +35,7 @@ class BaseDBDialect(ABC):
         """
 
     @abstractmethod
-    def validate_columns(self, columns: list[str] | None) -> list[str] | None:
+    def validate_columns(self, columns: str | list[str] | None) -> list[str] | None:
         """Check if ``columns`` value is valid.
 
         Raises

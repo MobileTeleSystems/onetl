@@ -58,7 +58,6 @@ def test_reader_hive_with_read_options(spark_mock):
         (),
         {},
         set(),
-        "any,string",
     ],
 )
 def test_reader_invalid_columns(spark_mock, columns):
@@ -73,6 +72,7 @@ def test_reader_invalid_columns(spark_mock, columns):
 @pytest.mark.parametrize(
     "columns, real_columns",
     [
+        (None, ["*"]),
         (["*"], ["*"]),
         (["abc", "cde"], ["abc", "cde"]),
         (["*", "abc"], ["*", "abc"]),
@@ -84,6 +84,35 @@ def test_reader_valid_columns(spark_mock, columns, real_columns):
         table="schema.table",
         columns=columns,
     )
+
+    assert reader.columns == real_columns
+
+
+@pytest.mark.parametrize(
+    "column, real_columns, msg",
+    [
+        (
+            "*",
+            ["*"],
+            "Passing DBReader(columns='*') is deprecated since v0.10.0 and will be removed in v1.0.0. "
+            "Use DBReader(columns=['*'] instead",
+        ),
+        (
+            "some, column",
+            ["some, column"],
+            "Passing DBReader(columns='some, column') is deprecated since v0.10.0 and will be removed in v1.0.0. "
+            "Use DBReader(columns=['some, column'] instead",
+        ),
+    ],
+    ids=["*", "some, column"],
+)
+def test_reader_legacy_columns(spark_mock, column, real_columns, msg):
+    with pytest.warns(UserWarning, match=re.escape(msg)):
+        reader = DBReader(
+            connection=Hive(cluster="rnd-dwh", spark=spark_mock),
+            table="schema.table",
+            columns=column,
+        )
 
     assert reader.columns == real_columns
 
