@@ -107,6 +107,11 @@ class DBReader(FrozenModel):
             It is recommended to pass column names explicitly to avoid selecting too many columns,
             and to avoid adding unexpected columns to dataframe if source DDL is changed.
 
+        .. deprecated:: 0.10.0
+
+            Syntax ``DBReader(columns="col1, col2")`` (string instead of list) is not supported,
+            and will be removed in v1.0.0
+
     where : Any, default: ``None``
         Custom ``where`` for SQL query or MongoDB pipeline.
 
@@ -384,8 +389,8 @@ class DBReader(FrozenModel):
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(source)
 
-    @validator("columns", always=True)  # noqa: WPS231
-    def validate_columns(cls, value: list[str] | None, values: dict) -> list[str] | None:
+    @validator("columns", always=True, pre=True)
+    def validate_columns(cls, value: str | list[str] | None, values: dict) -> list[str] | None:
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_columns(value)
 
