@@ -123,11 +123,11 @@ class JDBCReadOptions(JDBCOptions):
     .. code:: python
 
         options = JDBC.ReadOptions(
-            partitionColumn="reg_id",
-            numPartitions=10,
-            lowerBound=0,
-            upperBound=1000,
-            someNewOption="value",
+            partition_column="reg_id",
+            num_partitions=10,
+            lower_bound=0,
+            upper_bound=1000,
+            customOption="value",
         )
     """
 
@@ -390,7 +390,7 @@ class JDBCWriteOptions(JDBCOptions):
 
     .. code:: python
 
-        options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, someNewOption="value")
+        options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, customOption="value")
     """
 
     class Config:

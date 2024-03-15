@@ -32,29 +32,9 @@ class Teradata(JDBCConnection):
     Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
 
-    .. dropdown:: Version compatibility
-
-        * Teradata server versions: 16.10 - 20.0
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html>`_.
-
     .. warning::
 
-        To use Teradata connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`teradata-prerequisites`
 
     Parameters
     ----------
@@ -92,10 +72,10 @@ class Teradata(JDBCConnection):
             By default, these options are added to extra:
 
                 * ``CHARSET = "UTF8"``
-                * ``COLUMN_NAME = "ON"``
-                * ``FLATTEN = "ON"``
+                * ``COLUMN_NAME = "ON"`` - allow reading column title from a table
+                * ``FLATTEN = "ON"`` - improves error messages
                 * ``MAYBENULL = "ON"``
-                * ``STRICT_NAMES = "OFF"``
+                * ``STRICT_NAMES = "OFF"`` - ignore Spark options passed to JDBC URL
 
             It is possible to override default values, for example set ``extra={"FLATTEN": "OFF"}``
 

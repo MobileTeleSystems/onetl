@@ -11,7 +11,7 @@ For writing data to Postgres, use :obj:`DBWriter <onetl.db.db_writer.db_writer.D
 
 .. warning::
 
-    It is always recommended to create table explicitly using :obj:`Postgres.execute <onetl.connection.db_connection.postgres.connection.Postgres.execute>`
+    It is always recommended to create table explicitly using :ref:`Postgres.execute <postgres-execute>`
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
@@ -37,9 +37,8 @@ Examples
 
     writer.run(df)
 
-
-Write options
--------------
+Options
+-------
 
 Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
 

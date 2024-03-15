@@ -3,12 +3,12 @@
 Reading from Greenplum using ``DBReader``
 ==========================================
 
+Data can be read from Greenplum to Spark using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
+It also supports :ref:`strategy` for incremental data reading.
+
 .. warning::
 
     Please take into account :ref:`greenplum-types`.
-
-Data can be read from Greenplum to Spark using :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
-It also supports :ref:`strategy` for incremental data reading.
 
 .. note::
 
@@ -185,14 +185,29 @@ High-level schema is described in :ref:`greenplum-prerequisites`. You can find d
 Recommendations
 ---------------
 
-``DBReader`` in case of Greenplum connector requires view or table to have some column which is used by Spark
+Select only required columns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of passing ``"*"`` in ``DBReader(columns=[...])`` prefer passing exact column names. This reduces the amount of data passed from Greenplum to Spark.
+
+Pay attention to ``where`` value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``DBReader(where="column = 'value'")`` clause.
+This both reduces the amount of data send from Greenplum to Spark, and may also improve performance of the query.
+Especially if there are indexes or partitions for columns used in ``where`` clause.
+
+Read data in parallel
+~~~~~~~~~~~~~~~~~~~~~
+
+``DBReader`` in case of Greenplum connector requires view or table to have a column which is used by Spark
 for parallel reads.
 
 Choosing proper column allows each Spark executor to read only part of data stored in the specified segment,
 avoiding moving large amounts of data between segments, which improves reading performance.
 
-Parallel read using ``gp_segment_id``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using ``gp_segment_id``
+^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, ``DBReader`` will use `gp_segment_id <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view>`_
 column for parallel data reading. Each DataFrame partition will contain data of a specific Greenplum segment.
@@ -228,8 +243,8 @@ If view is used, it is recommended to include ``gp_segment_id`` column to this v
         )
         df = reader.run()
 
-Parallel read using custom ``partition_column``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using custom ``partition_column``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes table or view is lack of ``gp_segment_id`` column, but there is some column
 with value range correlated with Greenplum segment distribution.
@@ -353,8 +368,8 @@ And each connection starts its own transaction which means that every executor w
 You should use `UNLOGGED <https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html>`_ tables
 to write data to intermediate table without generating WAL logs.
 
-Read options
-------------
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 

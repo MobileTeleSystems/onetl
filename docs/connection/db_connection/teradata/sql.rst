@@ -1,13 +1,9 @@
-.. _clickhouse-sql:
+.. _teradata-sql:
 
-Reading from Clickhouse using ``Clickhouse.sql``
-================================================
+Reading from Teradata using ``Teradata.sql``
+============================================
 
-``Clickhouse.sql`` allows passing custom SQL query, but does not support incremental strategies.
-
-.. warning::
-
-    Please take into account :ref:`clickhouse-types`
+``Teradata.sql`` allows passing custom SQL query, but does not support incremental strategies.
 
 .. warning::
 
@@ -21,6 +17,7 @@ Only queries with the following syntax are supported:
 
 * ✅︎ ``SELECT ... FROM ...``
 * ✅︎ ``WITH alias AS (...) SELECT ...``
+* ❌ ``SHOW ...``
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
 Examples
@@ -28,26 +25,27 @@ Examples
 
 .. code-block:: python
 
-    from onetl.connection import Clickhouse
+    from onetl.connection import Teradata
 
-    clickhouse = Clickhouse(...)
-    df = clickhouse.sql(
+    teradata = Teradata(...)
+    df = teradata.sql(
         """
         SELECT
             id,
             key,
-            CAST(value AS String) value,
-            updated_at
+            CAST(value AS VARCHAR) AS value,
+            updated_at,
+            HASHAMP(HASHBUCKET(HASHROW(id))) MOD 10 AS part_column
         FROM
-            some.mytable
+            database.mytable
         WHERE
             key = 'something'
         """,
-        options=Clickhouse.ReadOptions(
-            partition_column="id",
+        options=Teradata.ReadOptions(
+            partition_column="part_column",
             num_partitions=10,
             lower_bound=0,
-            upper_bound=1000,
+            upper_bound=9,
         ),
     )
 
@@ -58,11 +56,11 @@ Select only required columns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Instead of passing ``SELECT * FROM ...`` prefer passing exact column names ``SELECT col1, col2, ...``.
-This reduces the amount of data passed from Clickhouse to Spark.
+This reduces the amount of data passed from Teradata to Spark.
 
 Pay attention to ``where`` value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``WHERE column = 'value'`` clause.
-This both reduces the amount of data send from Clickhouse to Spark, and may also improve performance of the query.
+This both reduces the amount of data send from Teradata to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in ``where`` clause.

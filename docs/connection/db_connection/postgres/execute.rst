@@ -3,20 +3,30 @@
 Executing statements in Postgres
 ================================
 
+.. warning::
+
+    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+
+    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <postgres-read>` or :ref:`Postgres.sql <postgres-sql>` instead.
+
 How to
 ------
 
 There are 2 ways to execute some statement in Postgres
 
-Use :obj:`Postgres.fetch <onetl.connection.db_connection.postgres.connection.Postgres.fetch>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``Postgres.fetch``
+~~~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
-Postgres config, or reading data from some reference table.
+Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`Postgres.close <onetl.connection.db_connection.postgres.connection.Postgres.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
+
+.. warning::
+
+    Please take into account :ref:`postgres-types`.
 
 Syntax support
 ^^^^^^^^^^^^^^
@@ -43,23 +53,23 @@ Examples
     postgres.close()
     value = df.collect()[0][0]  # get value from first row and first column
 
-Use :obj:`Postgres.execute <onetl.connection.db_connection.postgres.connection.Postgres.execute>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``Postgres.execute``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`Postgres.close <onetl.connection.db_connection.postgres.connection.Postgres.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
 Syntax support
 ^^^^^^^^^^^^^^
 
 This method supports **any** query syntax supported by Postgres, like:
 
-* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, ``DROP TABLE ...``, and so on
 * ✅︎ ``ALTER ...``
-* ✅︎ ``INSERT INTO ... AS SELECT ...``
+* ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...``
 * ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
@@ -76,6 +86,7 @@ Examples
     postgres = Postgres(...)
 
     with postgres:
+        # automatically close connection after exiting this context manager
         postgres.execute("DROP TABLE schema.table")
         postgres.execute(
             """
@@ -88,15 +99,8 @@ Examples
             options=Postgres.JDBCOptions(query_timeout=10),
         )
 
-
-References
-----------
-
-.. currentmodule:: onetl.connection.db_connection.postgres.connection
-
-.. automethod:: Postgres.fetch
-.. automethod:: Postgres.execute
-.. automethod:: Postgres.close
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 

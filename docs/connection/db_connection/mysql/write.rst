@@ -11,7 +11,7 @@ For writing data to MySQL, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWr
 
 .. warning::
 
-    It is always recommended to create table explicitly using :obj:`MySQL.execute <onetl.connection.db_connection.mysql.connection.MySQL.execute>`
+    It is always recommended to create table explicitly using :ref:`MySQL.execute <mysql-execute>`
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
@@ -41,9 +41,8 @@ Examples
 
     writer.run(df)
 
-
-Write options
--------------
+Options
+-------
 
 Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
 

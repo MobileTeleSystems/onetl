@@ -3,12 +3,12 @@
 Reading from MongoDB using ``DBReader``
 =======================================
 
+:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
+but does not support custom pipelines, e.g. aggregation.
+
 .. warning::
 
     Please take into account :ref:`mongodb-types`
-
-:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
-but does not support custom pipelines, e.g. aggregation.
 
 Supported DBReader features
 ---------------------------
@@ -119,6 +119,16 @@ Incremental strategy:
 
     with IncrementalStrategy():
         df = reader.run()
+
+Recommendations
+---------------
+
+Pay attention to ``where`` value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``DBReader(where={"column": {"$eq": "value"}})`` clause.
+This both reduces the amount of data send from MongoDB to Spark, and may also improve performance of the query.
+Especially if there are indexes for columns used in ``where`` clause.
 
 Read options
 ------------

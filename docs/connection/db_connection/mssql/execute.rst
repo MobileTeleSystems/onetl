@@ -3,20 +3,30 @@
 Executing statements in MSSQL
 =============================
 
+.. warning::
+
+    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+
+    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <mssql-read>` or :ref:`MSSQL.sql <mssql-sql>` instead.
+
 How to
 ------
 
 There are 2 ways to execute some statement in MSSQL
 
-Use :obj:`MSSQL.fetch <onetl.connection.db_connection.mssql.connection.MSSQL.fetch>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``MSSQL.fetch``
+~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
-MSSQL config, or reading data from some reference table.
+MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`MSSQL.close <onetl.connection.db_connection.mssql.connection.MSSQL.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
+
+.. warning::
+
+    Please take into account :ref:`mssql-types`.
 
 Syntax support
 ^^^^^^^^^^^^^^
@@ -44,14 +54,14 @@ Examples
     mssql.close()
     value = df.collect()[0][0]  # get value from first row and first column
 
-Use :obj:`MSSQL.execute <onetl.connection.db_connection.mssql.connection.MSSQL.execute>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``MSSQL.execute``
+~~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`MSSQL.close <onetl.connection.db_connection.mssql.connection.MSSQL.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
 Syntax support
 ^^^^^^^^^^^^^^
@@ -77,6 +87,7 @@ Examples
     mssql = MSSQL(...)
 
     with mssql:
+        # automatically close connection after exiting this context manager
         mssql.execute("DROP TABLE schema.table")
         mssql.execute(
             """
@@ -89,15 +100,8 @@ Examples
             options=MSSQL.JDBCOptions(query_timeout=10),
         )
 
-
-References
-----------
-
-.. currentmodule:: onetl.connection.db_connection.mssql.connection
-
-.. automethod:: MSSQL.fetch
-.. automethod:: MSSQL.execute
-.. automethod:: MSSQL.close
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 

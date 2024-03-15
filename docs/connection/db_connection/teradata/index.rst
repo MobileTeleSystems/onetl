@@ -7,6 +7,7 @@ Teradata
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
 
 .. toctree::
@@ -14,5 +15,6 @@ Teradata
     :caption: Operations
 
     read
+    sql
     write
     execute

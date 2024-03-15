@@ -3,14 +3,16 @@
 Reading from MySQL using ``MySQL.sql``
 ======================================
 
+``MySQL.sql`` allows passing custom SQL query, but does not support incremental strategies.
+
 .. warning::
 
     Please take into account :ref:`mysql-types`
 
-:obj:`MySQL.sql <onetl.connection.db_connection.mysql.connection.MySQL.sql>` allows passing custom SQL query,
-but does not support incremental strategies.
+.. warning::
 
-Method also accepts :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`.
+    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
+    they can change data in your database.
 
 Syntax support
 --------------
@@ -42,12 +44,26 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
+        options=MySQL.ReadOptions(
+            partition_column="id",
+            num_partitions=10,
+            lower_bound=0,
+            upper_bound=1000,
+        ),
     )
 
-References
-----------
+Recommendations
+---------------
 
-.. currentmodule:: onetl.connection.db_connection.mysql.connection
+Select only required columns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automethod:: MySQL.sql
+Instead of passing ``SELECT * FROM ...`` prefer passing exact column names ``SELECT col1, col2, ...``.
+This reduces the amount of data passed from MySQL to Spark.
+
+Pay attention to ``where`` value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``WHERE column = 'value'`` clause.
+This both reduces the amount of data send from MySQL to Spark, and may also improve performance of the query.
+Especially if there are indexes or partitions for columns used in ``where`` clause.
