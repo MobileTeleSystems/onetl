@@ -68,61 +68,21 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         Same as ``spark.read.jdbc(query)``.
 
-        .. note::
-
-            This method does not support :ref:`strategy`,
-            use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
-
-        .. note::
-
-            Statement is executed in read-write connection,
-            so if you're calling some functions/procedures with DDL/DML statements inside,
-            they can change data in your database.
-
-            Unfortunately, Spark does no provide any option to change this behavior.
-
         Parameters
         ----------
         query : str
 
             SQL query to be executed.
 
-            Only ``SELECT ... FROM ...`` form is supported.
-
-            Some databases also supports ``WITH ... AS (...) SELECT ... FROM ...`` form.
-
-            Queries like ``SHOW ...`` are not supported.
-
-            .. warning::
-
-                The exact syntax **depends on RDBMS** is being used.
-
         options : dict, :obj:`~ReadOptions`, default: ``None``
 
-            Spark options to be used while fetching data, like ``fetchsize`` or ``partitionColumn``
+            Spark options to be used while fetching data.
 
         Returns
         -------
         df : pyspark.sql.dataframe.DataFrame
 
             Spark dataframe
-
-        Examples
-        --------
-
-        Read data from a table:
-
-        .. code:: python
-
-            df = connection.sql("SELECT * FROM mytable")
-
-        Read data from a table with options:
-
-        .. code:: python
-
-            # reads data from table in batches, 10000 rows per batch
-            df = connection.sql("SELECT * FROM mytable", {"fetchsize": 10000})
-            assert df.count()
 
         """
 

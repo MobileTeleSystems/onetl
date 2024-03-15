@@ -398,7 +398,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./reports/coverage.xml
           fail_ci_if_error: true
-          plugin: 'noop'
+          plugin: noop
 
       - name: All done
         run: echo 1

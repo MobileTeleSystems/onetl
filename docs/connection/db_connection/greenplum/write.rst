@@ -12,7 +12,7 @@ with :obj:`GreenplumWriteOptions <onetl.connection.db_connection.greenplum.optio
 
 .. warning::
 
-    It is always recommended to create table explicitly using :obj:`Greenplum.execute <onetl.connection.db_connection.greenplum.connection.Greenplum.execute>`
+    It is always recommended to create table explicitly using :ref:`Greenplum.execute <greenplum-execute>`
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different types than it is expected.
@@ -123,8 +123,8 @@ High-level schema is described in :ref:`greenplum-prerequisites`. You can find d
                 deactivate "Spark driver"
         @enduml
 
-Write options
--------------
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 

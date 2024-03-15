@@ -82,8 +82,8 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partitionBy="reg_id",
-            someNewOption="value",
+            partition_by="reg_id",
+            customOption="value",
         )
     """
 

@@ -1,22 +1,32 @@
 .. _oracle-execute:
 
 Executing statements in Oracle
-==================================
+==============================
+
+.. warning::
+
+    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+
+    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <oracle-read>` or :ref:`Oracle.sql <oracle-sql>` instead.
 
 How to
 ------
 
 There are 2 ways to execute some statement in Oracle
 
-Use :obj:`Oracle.fetch <onetl.connection.db_connection.oracle.connection.Oracle.fetch>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``Oracle.fetch``
+~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
-Oracle config, or reading data from some reference table.
+Oracle config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`Oracle.close <onetl.connection.db_connection.oracle.connection.Oracle.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
+
+.. warning::
+
+    Please take into account :ref:`oracle-types`.
 
 Syntax support
 ^^^^^^^^^^^^^^
@@ -45,14 +55,14 @@ Examples
     oracle.close()
     value = df.collect()[0][0]  # get value from first row and first column
 
-Use :obj:`Oracle.execute <onetl.connection.db_connection.oracle.connection.Oracle.execute>`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use ``Oracle.execute``
+~~~~~~~~~~~~~~~~~~~~~~
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
 Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
 
-Connection opened using this method should be then closed with :obj:`Oracle.close <onetl.connection.db_connection.oracle.connection.Oracle.close>`.
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
 Syntax support
 ^^^^^^^^^^^^^^
@@ -61,7 +71,7 @@ This method supports **any** query syntax supported by Oracle, like:
 
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``
 * ✅︎ ``ALTER ...``
-* ✅︎ ``INSERT INTO ... AS SELECT ...``
+* ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
 * ✅︎ ``DECLARE ... BEGIN ... END`` - execute PL/SQL statement
@@ -78,6 +88,7 @@ Examples
     oracle = Oracle(...)
 
     with oracle:
+        # automatically close connection after exiting this context manager
         oracle.execute("DROP TABLE schema.table")
         oracle.execute(
             """
@@ -90,15 +101,8 @@ Examples
             options=Oracle.JDBCOptions(query_timeout=10),
         )
 
-
-References
-----------
-
-.. currentmodule:: onetl.connection.db_connection.oracle.connection
-
-.. automethod:: Oracle.fetch
-.. automethod:: Oracle.execute
-.. automethod:: Oracle.close
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 

@@ -11,7 +11,7 @@ For writing data to Oracle, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBW
 
 .. warning::
 
-    It is always recommended to create table explicitly using :obj:`Oracle.execute <onetl.connection.db_connection.oracle.connection.Oracle.execute>`
+    It is always recommended to create table explicitly using :ref:`Oracle.execute <oracle-execute>`
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
@@ -37,9 +37,8 @@ Examples
 
     writer.run(df)
 
-
-Write options
--------------
+Options
+-------
 
 Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
 

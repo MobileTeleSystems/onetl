@@ -147,22 +147,7 @@ class JDBCMixin(FrozenModel):
         """
         **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. |support_hooks|
 
-        Works almost the same like :obj:`~sql`, but calls JDBC driver directly.
-
-        .. warning::
-
-            This function should **NOT** be used to return dataframe with large number of rows/columns,
-            like ``SELECT * FROM table`` (without any filtering).
-
-            Use it **ONLY** to execute queries with **one or just a few returning rows/columns**,
-            like ``SELECT COUNT(*) FROM table`` or ``SELECT * FROM table WHERE id = ...``.
-
-            This is because all the data is fetched through master host, not in a distributed way
-            (even on clustered instances).
-            Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
-
-            Use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` for reading
-            data from table via Spark executors, or for handling different :ref:`strategy`.
+        Works almost the same like :obj:`~sql`, but Spark executor is not used.
 
         .. note::
 
@@ -179,16 +164,6 @@ class JDBCMixin(FrozenModel):
 
             SQL query to be executed.
 
-            Can be in any form of SELECT supported by RDBMS, like:
-
-            * ``SELECT ... FROM ...``
-            * ``WITH ... AS (...) SELECT ... FROM ...``
-            * *Some* RDBMS instances also support ``SHOW ...`` queries, like ``SHOW TABLES``
-
-            .. warning::
-
-                The exact syntax **depends on a RDBMS** is being used.
-
         options : dict, :obj:`~JDBCOptions`, default: ``None``
 
             Options to be passed directly to JDBC driver, like ``fetchsize`` or ``queryTimeout``
@@ -202,16 +177,6 @@ class JDBCMixin(FrozenModel):
         df : pyspark.sql.dataframe.DataFrame
 
             Spark dataframe
-
-        Examples
-        --------
-
-        Read data from a table:
-
-        .. code:: python
-
-            df = connection.fetch("SELECT * FROM mytable LIMIT 10")
-            assert df.count()
         """
 
         query = clear_statement(query)
@@ -237,24 +202,8 @@ class JDBCMixin(FrozenModel):
         """
         **Immediately** execute DDL, DML or procedure/function **on Spark driver**. |support_hooks|
 
-        Returns DataFrame only if input is DML statement with ``RETURNING ...`` clause, or a procedure/function call.
-        In other cases returns ``None``.
-
         There is no method like this in :obj:`pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
-
-        .. warning::
-
-            Use this method **ONLY** to execute queries which return **small number of rows/column,
-            or return nothing**.
-
-            This is because all the data is fetched through master host, not in a distributed way
-            (even on clustered instances).
-            Also the resulting dataframe is stored directly in driver's memory, which is usually quite limited.
-
-            Please **DO NOT** use this method to execute queries
-            like ``INSERT INTO ... VALUES(a, lot, of, values)``,
-            use :obj:`onetl.db.db_writer.db_writer.DBWriter` instead
 
         .. note::
 
@@ -265,33 +214,7 @@ class JDBCMixin(FrozenModel):
         ----------
         statement : str
 
-            Statement to be executed, like:
-
-            DML statements:
-
-            * ``INSERT INTO target_table SELECT * FROM source_table``
-            * ``UPDATE mytable SET value = 1 WHERE id BETWEEN 100 AND 999``
-            * ``DELETE FROM mytable WHERE id BETWEEN 100 AND 999``
-            * ``TRUNCATE TABLE mytable``
-
-            DDL statements:
-
-            * ``CREATE TABLE mytable (...)``
-            * ``ALTER SCHEMA myschema ...``
-            * ``DROP PROCEDURE myprocedure``
-
-            Call statements:
-
-            * ``BEGIN ... END``
-            * ``EXEC myprocedure``
-            * ``EXECUTE myprocedure(arg1)``
-            * ``CALL myfunction(arg1, arg2)``
-            * ``{call myprocedure(arg1, ?)}`` (``?`` is output parameter)
-            * ``{?= call myfunction(arg1, arg2)}``
-
-            .. warning::
-
-                The exact syntax **depends on a RDBMS** is being used.
+            Statement to be executed.
 
         options : dict, :obj:`~JDBCOptions`, default: ``None``
 
@@ -305,27 +228,10 @@ class JDBCMixin(FrozenModel):
         -------
         df : pyspark.sql.dataframe.DataFrame, optional
 
-            Spark dataframe
+            Spark DataFrame.
 
-        Examples
-        --------
-
-        Create table:
-
-        .. code:: python
-
-            assert connection.execute("CREATE TABLE target_table(id NUMBER, data VARCHAR)") is None
-
-        Insert data to one table from another, with a specific transaction isolation level,
-        and return DataFrame with new rows:
-
-        .. code:: python
-
-            df = connection.execute(
-                "INSERT INTO target_table SELECT * FROM source_table RETURNING id, data",
-                {"isolationLevel": "READ_COMMITTED"},
-            )
-            assert df.count()
+            DataFrame is returned only if input is DML statement with ``RETURNING ...`` clause,
+            or a procedure/function call. In other cases returns ``None``.
         """
 
         statement = clear_statement(statement)

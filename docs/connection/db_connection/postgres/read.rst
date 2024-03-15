@@ -3,12 +3,12 @@
 Reading from Postgres using ``DBReader``
 ========================================
 
+:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
+but does not support custom queries, like ``JOIN``.
+
 .. warning::
 
     Please take into account :ref:`postgres-types`
-
-:obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports :ref:`strategy` for incremental data reading,
-but does not support custom queries, like JOINs.
 
 Supported DBReader features
 ---------------------------
@@ -67,8 +67,23 @@ Incremental strategy:
     with IncrementalStrategy():
         df = reader.run()
 
-Read options
-------------
+Recommendations
+---------------
+
+Select only required columns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of passing ``"*"`` in ``DBReader(columns=[...])`` prefer passing exact column names. This reduces the amount of data passed from Postgres to Spark.
+
+Pay attention to ``where`` value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``DBReader(where="column = 'value'")`` clause.
+This both reduces the amount of data send from Postgres to Spark, and may also improve performance of the query.
+Especially if there are indexes or partitions for columns used in ``where`` clause.
+
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
 
