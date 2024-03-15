@@ -5,6 +5,9 @@ on:
       greenplum-version:
         required: true
         type: string
+      package-version:
+        required: true
+        type: string
       spark-version:
         required: true
         type: string
@@ -107,6 +110,7 @@ jobs:
           mkdir reports/ || echo "Directory exists"
           sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
           source ./env
+          export ONETL_GP_PACKAGE_VERSION=${{ inputs.package-version }}
           ./pytest_runner.sh -m greenplum
         env:
           ONETL_DB_WITH_GREENPLUM: 'true'

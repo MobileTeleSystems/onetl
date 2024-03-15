@@ -59,7 +59,12 @@ def maven_packages():
     with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
     if with_greenplum:
         # Greenplum connector jar is not publicly available,
-        packages.extend(Greenplum.get_packages(spark_version=pyspark_version))
+        packages.extend(
+            Greenplum.get_packages(
+                spark_version=pyspark_version,
+                package_version=os.getenv("ONETL_GP_PACKAGE_VERSION") or None,
+            ),
+        )
 
     if pyspark_version >= (2, 4):
         # There is no Avro package for Spark 2.3
