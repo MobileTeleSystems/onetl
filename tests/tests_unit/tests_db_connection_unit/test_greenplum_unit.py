@@ -15,9 +15,9 @@ def test_greenplum_driver():
 def test_greenplum_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Greenplum.get_packages(spark_version=")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.3.0"
-        assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.3.0"
-        assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.3.0"
+        assert Greenplum.package_spark_2_3 == "io.pivotal:greenplum-spark_2.11:2.2.0"
+        assert Greenplum.package_spark_2_4 == "io.pivotal:greenplum-spark_2.11:2.2.0"
+        assert Greenplum.package_spark_3_2 == "io.pivotal:greenplum-spark_2.12:2.2.0"
 
 
 def test_greenplum_get_packages_no_input():
@@ -56,15 +56,15 @@ def test_greenplum_get_packages_scala_version_not_supported(scala_version):
     "spark_version, scala_version, package",
     [
         # use Scala version directly
-        (None, "2.11", "io.pivotal:greenplum-spark_2.11:2.3.0"),
-        (None, "2.12", "io.pivotal:greenplum-spark_2.12:2.3.0"),
+        (None, "2.11", "io.pivotal:greenplum-spark_2.11:2.2.0"),
+        (None, "2.12", "io.pivotal:greenplum-spark_2.12:2.2.0"),
         # Detect Scala version by Spark version
-        ("2.3", None, "io.pivotal:greenplum-spark_2.11:2.3.0"),
-        ("2.4", None, "io.pivotal:greenplum-spark_2.11:2.3.0"),
-        ("3.2", None, "io.pivotal:greenplum-spark_2.12:2.3.0"),
+        ("2.3", None, "io.pivotal:greenplum-spark_2.11:2.2.0"),
+        ("2.4", None, "io.pivotal:greenplum-spark_2.11:2.2.0"),
+        ("3.2", None, "io.pivotal:greenplum-spark_2.12:2.2.0"),
         # Override Scala version detected automatically
-        ("2.3", "2.11", "io.pivotal:greenplum-spark_2.11:2.3.0"),
-        ("2.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.3.0"),
+        ("2.3", "2.11", "io.pivotal:greenplum-spark_2.11:2.2.0"),
+        ("2.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.2.0"),
     ],
 )
 def test_greenplum_get_packages(spark_version, scala_version, package):
@@ -74,7 +74,7 @@ def test_greenplum_get_packages(spark_version, scala_version, package):
 @pytest.mark.parametrize(
     "package_version, scala_version, package",
     [
-        (None, "2.12", "io.pivotal:greenplum-spark_2.12:2.3.0"),
+        (None, "2.12", "io.pivotal:greenplum-spark_2.12:2.2.0"),
         ("2.3.0", "2.12", "io.pivotal:greenplum-spark_2.12:2.3.0"),
         ("2.1.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.1.4"),
     ],

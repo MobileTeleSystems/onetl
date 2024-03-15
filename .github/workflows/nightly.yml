@@ -67,6 +67,7 @@ jobs:
     with:
       greenplum-version: ${{ matrix.greenplum-version }}
       spark-version: ${{ matrix.spark-version }}
+      package-version: ${{ matrix.package-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}

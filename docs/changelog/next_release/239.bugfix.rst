@@ -1,0 +1,8 @@
+Downgrade Greenplum package version from 2.3.0 to 2.2.0. This is because version 2.3.0 introduced issues with writing data to Greenplum 6.x.
+Connector can open transaction with ``SELECT * FROM table LIMIT 0`` query, but does not close it, which leads to deadlocks.
+
+For using this connector with Greenplum 7.x, please pass package version explicitly:
+
+.. code-block:: python
+
+    maven_packages = Greenplum.get_packages(package_version="2.3.0", ...)

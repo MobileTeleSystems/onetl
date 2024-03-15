@@ -6,11 +6,11 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Greenplum server versions: 5.x, 6.x, 7.x
+* Greenplum server versions: 5.x, 6.x, 7.x (requires ``Greenplum.get_packages(package_version="2.3.0")`` or higher)
 * Spark versions: 2.3.x - 3.2.x (Spark 3.3+ is not supported yet)
 * Java versions: 8 - 11
 
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/release_notes.html>`_.
+See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.2/greenplum-connector-spark/release_notes.html>`_.
 
 Installing PySpark
 ------------------
@@ -24,12 +24,18 @@ Downloading VMware package
 --------------------------
 
 To use Greenplum connector you should download connector ``.jar`` file from
-`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1462218/file_groups/18524>`_
+`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1413479/file_groups/16966>`_
 and then pass it to Spark session.
 
 .. warning::
 
     Please pay attention to :ref:`Spark & Scala version compatibility <spark-compatibility-matrix>`.
+
+.. warning::
+
+    There are issues with using package of version 2.3.0/2.3.1 with Greenplum 6.x - connector can
+    open transaction with ``SELECT * FROM table LIMIT 0`` query, but does not close it, which leads to deadlocks
+    during write.
 
 There are several ways to do that. See :ref:`java-packages` for details.
 
