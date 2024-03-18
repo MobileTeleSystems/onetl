@@ -86,7 +86,7 @@ jobs:
 
       - name: Check if base files are changed
         id: changed-base
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/base/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/base/ignored.txt
@@ -97,7 +97,7 @@ jobs:
 
       - name: Check if db-related files are changed
         id: changed-db
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/db/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/db/ignored.txt
@@ -108,7 +108,7 @@ jobs:
 
       - name: Check if file-related files are changed
         id: changed-file
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/file/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/file/ignored.txt
@@ -119,7 +119,7 @@ jobs:
 
       - name: Check if file-df-related files are changed
         id: changed-file-df
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/file-df/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/file-df/ignored.txt
@@ -130,7 +130,7 @@ jobs:
 
       - name: Check if core files are changed
         id: changed-core
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/core/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/core/ignored.txt
@@ -160,7 +160,7 @@ jobs:
 
       - name: Check if Clickhouse files are changed
         id: changed-clickhouse
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/clickhouse/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/clickhouse/ignored.txt
@@ -190,7 +190,7 @@ jobs:
 
       - name: Check if Greenplum files are changed
         id: changed-greenplum
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/greenplum/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/greenplum/ignored.txt
@@ -220,7 +220,7 @@ jobs:
 
       - name: Check if Hive files are changed
         id: changed-hive
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/hive/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/hive/ignored.txt
@@ -250,7 +250,7 @@ jobs:
 
       - name: Check if Kafka files are changed
         id: changed-kafka
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/kafka/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/kafka/ignored.txt
@@ -280,7 +280,7 @@ jobs:
 
       - name: Check if LocalFS files are changed
         id: changed-local-fs
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/local-fs/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/local-fs/ignored.txt
@@ -310,7 +310,7 @@ jobs:
 
       - name: Check if MongoDB files are changed
         id: changed-mongodb
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/mongodb/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/mongodb/ignored.txt
@@ -340,7 +340,7 @@ jobs:
 
       - name: Check if MSSQL files are changed
         id: changed-mssql
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/mssql/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/mssql/ignored.txt
@@ -370,7 +370,7 @@ jobs:
 
       - name: Check if MySQL files are changed
         id: changed-mysql
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/mysql/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/mysql/ignored.txt
@@ -400,7 +400,7 @@ jobs:
 
       - name: Check if Oracle files are changed
         id: changed-oracle
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/oracle/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/oracle/ignored.txt
@@ -430,7 +430,7 @@ jobs:
 
       - name: Check if Postgres files are changed
         id: changed-postgres
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/postgres/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/postgres/ignored.txt
@@ -460,7 +460,7 @@ jobs:
 
       - name: Check if Teradata files are changed
         id: changed-teradata
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/teradata/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/teradata/ignored.txt
@@ -490,7 +490,7 @@ jobs:
 
       - name: Check if FTP files are changed
         id: changed-ftp
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/ftp/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/ftp/ignored.txt
@@ -520,7 +520,7 @@ jobs:
 
       - name: Check if FTPS files are changed
         id: changed-ftps
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/ftps/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/ftps/ignored.txt
@@ -550,7 +550,7 @@ jobs:
 
       - name: Check if HDFS files are changed
         id: changed-hdfs
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/hdfs/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/hdfs/ignored.txt
@@ -580,7 +580,7 @@ jobs:
 
       - name: Check if S3 files are changed
         id: changed-s3
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/s3/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/s3/ignored.txt
@@ -610,7 +610,7 @@ jobs:
 
       - name: Check if SFTP files are changed
         id: changed-sftp
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/sftp/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/sftp/ignored.txt
@@ -640,7 +640,7 @@ jobs:
 
       - name: Check if Samba files are changed
         id: changed-samba
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/samba/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/samba/ignored.txt
@@ -670,7 +670,7 @@ jobs:
 
       - name: Check if WebDAV files are changed
         id: changed-webdav
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v43
         with:
           files_from_source_file: .github/workflows/data/webdav/tracked.txt
           files_ignore_from_source_file: .github/workflows/data/webdav/ignored.txt
