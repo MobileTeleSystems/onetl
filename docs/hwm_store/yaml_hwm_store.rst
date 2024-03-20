@@ -1,7 +1,7 @@
 .. _yaml-hwm-store:
 
-YAML HWM Store
-=================================================================
+YAMLHWMStore
+============
 
 .. currentmodule:: onetl.hwm.store.yaml_hwm_store
 
