@@ -3,7 +3,7 @@
 HWM
 ===
 
-Since ``onetl>=0.10.0`` version, the ``HWMStore`` and ``HWM`` classes have been moved to a separate library :etl-entities:`etl-entities <>`.
+Since onETL v0.10.0, the ``HWMStore`` and ``HWM`` classes have been moved to a separate library :etl-entities:`etl-entities <>`.
 
 The only class was left intact is :ref:`yaml-hwm-store`, **which is default** in onETL.
 
