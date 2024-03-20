@@ -84,7 +84,6 @@ rst_prolog = f"""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-html_extra_path = ["robots.txt"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -108,6 +107,7 @@ html_theme_options = {}
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_extra_path = ["robots.txt"]
 html_logo = "./_static/logo.svg"
 favicons = [
     {"rel": "icon", "href": "icon.svg", "type": "image/svg+xml"},
