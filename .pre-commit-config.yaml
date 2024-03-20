@@ -107,6 +107,16 @@ repos:
         additional_dependencies:
           - black==24.3.0
 
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        args:
+          - --aggregate=file
+          - -iii
+          - -ll
+        require_serial: true
+
   - repo: meta
     hooks:
       - id: check-hooks-apply

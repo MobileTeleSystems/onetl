@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import ftplib  # noqa: S402
+import ftplib  # noqa: S402  # nosec
 import os
 import textwrap
 from logging import getLogger

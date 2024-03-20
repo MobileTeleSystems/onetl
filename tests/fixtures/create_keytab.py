@@ -14,4 +14,4 @@ def create_keytab(tmp_path_factory):
 
 @pytest.fixture
 def keytab_md5():
-    return hashlib.md5(b"content").hexdigest()  # noqa: S324
+    return hashlib.md5(b"content").hexdigest()  # noqa: S324  # nosec
