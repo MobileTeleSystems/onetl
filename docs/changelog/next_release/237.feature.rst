@@ -1,1 +1,0 @@
-Allow calling ``MongoDB.pipeline(...)`` with passing just collection name, without explicit aggregation pipeline.

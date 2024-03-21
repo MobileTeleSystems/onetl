@@ -1,5 +1,0 @@
-Improve Postgres documentation:
-  * Add "Types" section describing mapping between Postgres and Spark types
-  * Add "Prerequisites" section describing different aspects of connecting to Postgres
-  * Separate documentation of ``DBReader`` and ``Postgres.sql``
-  * Add examples for ``Postgres.fetch`` and ``Postgres.execute``

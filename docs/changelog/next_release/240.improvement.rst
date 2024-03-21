@@ -1,4 +1,0 @@
-Improve Teradata documentation:
-  * Add "Prerequisites" section describing different aspects of connecting to Teradata
-  * Separate documentation of ``DBReader`` and ``Teradata.sql``
-  * Add examples for ``Teradata.fetch`` and ``Teradata.execute``

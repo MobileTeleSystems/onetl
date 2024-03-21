@@ -1,2 +1,0 @@
-Return back handling of ``DBReader(columns="string")``. This was a valid syntax up to v0.10 release, but it was removed because
-most of users neved used it. It looks that we were wrong, returning this behavior back, but with deprecation warning.

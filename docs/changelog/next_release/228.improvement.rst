@@ -1,5 +1,0 @@
-Improve Greenplum documentation:
-  * Add "Types" section describing mapping between Greenplum and Spark types
-  * Add more examples of reading and writing data from Greenplum
-  * Add examples for ``Greenplum.fetch`` and ``Greenplum.execute``
-  * Add notes about issues with IP resolution and building ``gpfdist`` URL

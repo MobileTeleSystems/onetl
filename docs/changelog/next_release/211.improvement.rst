@@ -1,5 +1,0 @@
-Improve Clickhouse documentation:
-  * Add "Types" section describing mapping between Clickhouse and Spark types
-  * Add "Prerequisites" section describing different aspects of connecting to Clickhouse
-  * Separate documentation of ``DBReader`` and ``Clickhouse.sql``
-  * Add examples for ``Clickhouse.fetch`` and ``Clickhouse.execute``
