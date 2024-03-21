@@ -16,7 +16,11 @@ from etl_entities.instance import AbsolutePath
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 from etl_entities.source import RemoteFolder
 from ordered_set import OrderedSet
-from pydantic import Field, PrivateAttr, root_validator, validator
+
+try:
+    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import generate_temp_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit

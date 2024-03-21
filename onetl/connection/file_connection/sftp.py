@@ -10,7 +10,11 @@ from stat import S_ISDIR, S_ISREG
 from typing import Optional
 
 from etl_entities.instance import Host
-from pydantic import FilePath, SecretStr
+
+try:
+    from pydantic.v1 import FilePath, SecretStr
+except (ImportError, AttributeError):
+    from pydantic import FilePath, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin

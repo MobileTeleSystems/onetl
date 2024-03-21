@@ -196,7 +196,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import Postgres
         from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
-        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -290,7 +289,6 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import Kafka
         from onetl.db import DBReader
         from onetl.strategy import IncrementalStrategy
-        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 
@@ -323,7 +321,7 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
-        from etl_entities import FileListHWM
+        from etl_entities.hwm import FileListHWM
 
         sftp = SFTP(
             host="sftp.domain.com",
@@ -495,7 +493,6 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         from onetl.connection import Postgres, Hive
         from onetl.db import DBReader
         from onetl.strategy import IncrementalBatchStrategy
-        from onetl.hwm import AutoDetectHWM
 
         from pyspark.sql import SparkSession
 

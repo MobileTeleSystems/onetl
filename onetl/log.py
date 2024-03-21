@@ -11,8 +11,8 @@ from enum import Enum
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Collection, Iterable
 
-from deprecated import deprecated
 from etl_entities.hwm import HWM
+from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -33,9 +33,7 @@ logging.addLevelName(NOTICE, "NOTICE")
 
 
 @deprecated(
-    version="0.5.0",
-    reason="Will be removed in 1.0.0, use 'setup_logging' instead",
-    action="always",
+    "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'setup_logging' instead",
     category=UserWarning,
 )
 def setup_notebook_logging(level: int | str = logging.INFO) -> None:

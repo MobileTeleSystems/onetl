@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pydantic import PrivateAttr, validator
+try:
+    from pydantic.v1 import PrivateAttr, validator
+except (ImportError, AttributeError):
+    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
 from onetl.file.file_df_writer.options import FileDFWriterOptions

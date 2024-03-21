@@ -2,14 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import ftplib  # noqa: S402
+import ftplib  # noqa: S402  # nosec
 import os
 import textwrap
 from logging import getLogger
 from typing import Optional
 
 from etl_entities.instance import Host
-from pydantic import SecretStr
+
+try:
+    from pydantic.v1 import SecretStr
+except (ImportError, AttributeError):
+    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection

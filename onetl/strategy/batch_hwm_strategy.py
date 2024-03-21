@@ -6,7 +6,10 @@ import logging
 from textwrap import dedent
 from typing import Any, ClassVar
 
-from pydantic import validator
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.hwm import Edge
 from onetl.strategy.hwm_strategy import HWMStrategy

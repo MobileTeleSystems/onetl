@@ -6,11 +6,11 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Greenplum server versions: 5.x, 6.x, 7.x
+* Greenplum server versions: 5.x, 6.x, 7.x (requires ``Greenplum.get_packages(package_version="2.3.0")`` or higher)
 * Spark versions: 2.3.x - 3.2.x (Spark 3.3+ is not supported yet)
 * Java versions: 8 - 11
 
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/release_notes.html>`_.
+See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.2/greenplum-connector-spark/release_notes.html>`_.
 
 Installing PySpark
 ------------------
@@ -24,12 +24,18 @@ Downloading VMware package
 --------------------------
 
 To use Greenplum connector you should download connector ``.jar`` file from
-`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1457167/file_groups/18338>`_
+`VMware website <https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1413479/file_groups/16966>`_
 and then pass it to Spark session.
 
 .. warning::
 
     Please pay attention to :ref:`Spark & Scala version compatibility <spark-compatibility-matrix>`.
+
+.. warning::
+
+    There are issues with using package of version 2.3.0/2.3.1 with Greenplum 6.x - connector can
+    open transaction with ``SELECT * FROM table LIMIT 0`` query, but does not close it, which leads to deadlocks
+    during write.
 
 There are several ways to do that. See :ref:`java-packages` for details.
 
@@ -53,8 +59,8 @@ Greenplum master only receives commands to start reading/writing process, and ma
 
 More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/overview.html>`_.
 
-Number of parallel connections
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set number of connections
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
 
@@ -83,32 +89,32 @@ Number of connections can be limited by 2 ways:
 
     .. code-tab:: py Spark with master=local
 
-        (
+        spark = (
             SparkSession.builder
-            # Spark will start EXACTLY 10 executors with 1 core each, so max number of parallel jobs is 10
-            .config("spark.master", "local[10]")
+            # Spark will start EXACTLY 5 executors with 1 core each, so max number of parallel jobs is 10
+            .config("spark.master", "local[5]")
             .config("spark.executor.cores", 1)
-        )
+        ).getOrCreate()
 
     .. code-tab:: py Spark with master=yarn or master=k8s, dynamic allocation
 
-        (
+        spark = (
             SparkSession.builder
             .config("spark.master", "yarn")
             # Spark will start MAX 10 executors with 1 core each (dynamically), so max number of parallel jobs is 10
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
-        )
+        ).getOrCreate()
 
     .. code-tab:: py Spark with master=yarn or master=k8s, static allocation
 
-        (
+        spark = (
             SparkSession.builder
             .config("spark.master", "yarn")
             # Spark will start EXACTLY 10 executors with 1 core each, so max number of parallel jobs is 10
             .config("spark.executor.instances", 10)
             .config("spark.executor.cores", 1)
-        )
+        ).getOrCreate()
 
 * By limiting connection pool size user by Spark (**only** for Spark with ``master=local``):
 
@@ -140,8 +146,8 @@ e.g. by updating ``pg_hba.conf`` file.
 
 More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/admin_guide-client_auth.html#limiting-concurrent-connections#allowing-connections-to-greenplum-database-0>`_.
 
-Network ports
-~~~~~~~~~~~~~
+Set connection port
+~~~~~~~~~~~~~~~~~~~
 
 Spark with ``master=k8s``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -159,7 +165,7 @@ To read data from Greenplum using Spark, following ports should be opened in fir
 
   .. code:: python
 
-        Greenplum(host="master.host", port=5432, ...)
+    greenplum = Greenplum(host="master.host", port=5432, ...)
 
 * Greenplum segments -> some port range (e.g. ``41000-42000``) **listened by Spark executors**.
 
@@ -167,12 +173,12 @@ To read data from Greenplum using Spark, following ports should be opened in fir
 
   .. code:: python
 
-        Greenplum(
-            ...,
-            extra={
-                "server.port": "41000-42000",
-            },
-        )
+    greenplum = Greenplum(
+        ...,
+        extra={
+            "server.port": "41000-42000",
+        },
+    )
 
   Number of ports in this range is ``number of parallel running Spark sessions`` * ``number of parallel connections per session``.
 
@@ -189,15 +195,147 @@ More details can be found in official documentation:
     * `format of server.port value <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.port>`_
     * `port troubleshooting <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#port-errors>`_
 
-Required grants
-~~~~~~~~~~~~~~~
+Set connection host
+~~~~~~~~~~~~~~~~~~~
+
+Spark with ``master=k8s``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Please follow `the official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/configure.html#k8scfg>`_
+
+Spark with ``master=local``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, Greenplum connector tries to resolve IP of current host, and then pass it as ``gpfdist`` URL to Greenplum segment.
+This may fail in some cases.
+
+For example, IP can be resolved using ``/etc/hosts`` content like this:
+
+.. code:: text
+
+    127.0.0.1 localhost real-host-name
+
+.. code:: bash
+
+    $ hostname -f
+    localhost
+
+    $ hostname -i
+    127.0.0.1
+
+Reading/writing data to Greenplum will fail with following exception:
+
+.. code-block:: text
+
+    org.postgresql.util.PSQLException: ERROR: connection with gpfdist failed for
+    "gpfdist://127.0.0.1:49152/local-1709739764667/exec/driver",
+    effective url: "http://127.0.0.1:49152/local-1709739764667/exec/driver":
+    error code = 111 (Connection refused);  (seg3 slice1 12.34.56.78:10003 pid=123456)
+
+There are 2 ways to fix that:
+
+* Explicitly pass your host IP address to connector, like this
+
+  .. code-block:: python
+
+      import os
+
+      # pass here real host IP (accessible from GP segments)
+      os.environ["HOST_IP"] = "192.168.1.1"
+
+      greenplum = Greenplum(
+          ...,
+          extra={
+              # connector will read IP from this environment variable
+              "server.hostEnv": "env.HOST_IP",
+          },
+          spark=spark,
+      )
+
+  More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.hostenv>`_.
+
+* Update ``/etc/hosts`` file to include real host IP:
+
+  .. code:: text
+
+      127.0.0.1 localhost
+      # this IP should be accessible from GP segments
+      192.168.1.1 driver-host-name
+
+  So Greenplum connector will properly resolve host IP.
+
+Spark with ``master=yarn``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The same issue with resolving IP address can occur on Hadoop cluster node, but it's tricky to fix, because each node has a different IP.
+
+There are 3 ways to fix that:
+
+* Pass node hostname to ``gpfdist`` URL. So IP will be resolved on segment side:
+
+  .. code-block:: python
+
+      greenplum = Greenplum(
+          ...,
+          extra={
+              "server.useHostname": "true",
+          },
+      )
+
+  But this may fail if Hadoop cluster node hostname cannot be resolved from Greenplum segment side.
+
+  More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.usehostname>`_.
+
+* Set specific network interface to get IP address from:
+
+  .. code-block:: python
+
+     greenplum = Greenplum(
+         ...,
+         extra={
+             "server.nic": "eth0",
+         },
+     )
+
+  You can get list of network interfaces using this command.
+
+  .. note::
+
+    This command should be executed on Hadoop cluster node, **not** Spark driver host!
+
+  .. code-block:: bash
+
+    $ ip address
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+        inet 127.0.0.1/8 scope host lo
+        valid_lft forever preferred_lft forever
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+        inet 192.168.1.1/24 brd 192.168.1.255 scope global dynamic noprefixroute eth0
+        valid_lft 83457sec preferred_lft 83457sec
+
+  Note that in this case **each** Hadoop cluster node node should have network interface with name ``eth0``.
+
+  More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.nic>`_.
+
+* Update ``/etc/hosts`` on each Hadoop cluster node to include real node IP:
+
+  .. code:: text
+
+      127.0.0.1 localhost
+      # this IP should be accessible from GP segments
+      192.168.1.1 cluster-node-name
+
+  So Greenplum connector will properly resolve node IP.
+
+Set required grants
+~~~~~~~~~~~~~~~~~~~
 
 Ask your Greenplum cluster administrator to set following grants for a user,
 used for creating a connection:
 
 .. tabs::
 
-    .. code-tab:: sql Read + write
+    .. code-tab:: sql Read + Write
 
         -- get access to get tables metadata & cluster information
         GRANT SELECT ON information_schema.tables TO username;
@@ -242,29 +380,5 @@ used for creating a connection:
 
         -- allow read access to specific table
         GRANT SELECT ON schema_to_read.table_to_read TO username;
-
-    .. code-tab:: sql Write only
-
-        -- get access to get tables metadata & cluster information
-        GRANT SELECT ON information_schema.tables TO username;
-        GRANT SELECT ON pg_attribute TO username;
-        GRANT SELECT ON pg_class TO username;
-        GRANT SELECT ON pg_namespace TO username;
-        GRANT SELECT ON pg_settings TO username;
-        GRANT SELECT ON pg_stats TO username;
-        GRANT SELECT ON gp_distributed_xacts TO username;
-        GRANT SELECT ON gp_segment_configuration TO username;
-        -- Greenplum 5.x only
-        GRANT SELECT ON gp_distribution_policy TO username;
-
-        -- allow creating external tables in the same schema as target table
-        GRANT USAGE ON SCHEMA schema_to_write TO username;
-        GRANT CREATE ON SCHEMA schema_to_write TO username;
-        -- yes, ``readable``, because data is read from Spark executor to Greenplum.
-        ALTER USER username CREATEEXTTABLE(type = 'readable', protocol = 'gpfdist');
-
-        -- allow read access to specific table (to get column types)
-        -- allow write access to specific table
-        GRANT SELECT, INSERT ON schema_to_write.table_to_write TO username;
 
 More details can be found in `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/install_cfg.html#role-privileges>`_.

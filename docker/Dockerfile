@@ -68,7 +68,8 @@ RUN pip install \
     -r /app/requirements/tests/mysql.txt \
     -r /app/requirements/tests/oracle.txt \
     -r /app/requirements/tests/postgres.txt \
-    -r /app/requirements/tests/kafka.txt
+    -r /app/requirements/tests/kafka.txt \
+    -r /app/requirements/tests/pydantic-${PYDANTIC_VERSION}.txt
 
 FROM base AS full
 

@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any
 from urllib import parse as parser
 
 from etl_entities.instance import Host
-from pydantic import SecretStr, validator
+
+try:
+    from pydantic.v1 import SecretStr, validator
+except (ImportError, AttributeError):
+    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -46,33 +50,12 @@ class MongoDBExtra(GenericOptions):
 class MongoDB(DBConnection):
     """MongoDB connection. |support_hooks|
 
-    Based on package ``org.mongodb.spark:mongo-spark-connector``
-    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
-
-    .. dropdown:: Version compatibility
-
-        * MongoDB server versions: 4.0 or higher
-        * Spark versions: 3.2.x - 3.4.x
-        * Scala versions: 2.12 - 2.13
-        * Java versions: 8 - 20
-
-        See `official documentation <https://www.mongodb.com/docs/spark-connector/current/>`_.
+    Based on package ``org.mongodb.spark:mongo-spark-connector:10.1.1``
+    (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/v10.1/>`_)
 
     .. warning::
 
-        To use MongoDB connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.4.2  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`mongodb-prerequisites`
 
     Parameters
     ----------
@@ -114,7 +97,7 @@ class MongoDB(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with MongoDB connector loaded
-        maven_packages = MongoDB.get_packages(spark_version="3.2")
+        maven_packages = MongoDB.get_packages(spark_version="3.4")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -128,7 +111,7 @@ class MongoDB(DBConnection):
             password="*****",
             database="target_database",
             spark=spark,
-        )
+        ).check()
     """
 
     database: str
@@ -177,8 +160,8 @@ class MongoDB(DBConnection):
 
             from onetl.connection import MongoDB
 
-            MongoDB.get_packages(scala_version="2.11")
-            MongoDB.get_packages(spark_version="3.2")
+            MongoDB.get_packages(scala_version="2.12")
+            MongoDB.get_packages(spark_version="3.4")
 
         """
 
@@ -233,7 +216,7 @@ class MongoDB(DBConnection):
     def pipeline(
         self,
         collection: str,
-        pipeline: dict | list[dict],
+        pipeline: dict | list[dict] | None = None,
         df_schema: StructType | None = None,
         options: MongoDBPipelineOptions | dict | None = None,
     ):
@@ -245,7 +228,7 @@ class MongoDB(DBConnection):
 
         .. code:: js
 
-            db.collection.aggregate([{"$match": ...}, {"$group": ...}])
+            db.collection_name.aggregate([{"$match": ...}, {"$group": ...}])
 
         but pipeline is executed on Spark executors, in a distributed way.
 
@@ -254,40 +237,32 @@ class MongoDB(DBConnection):
             This method does not support :ref:`strategy`,
             use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
 
-        .. note::
-
-            Statement is executed in read-write connection,
-            so if you're calling some stored functions, you can make changes
-            to the data source.
-
-            Unfortunately, Spark does no provide any option to change this behavior.
-
         Parameters
         ----------
 
         collection : str
             Collection name.
 
-        pipeline : dict | list[dict]
+        pipeline : dict | list[dict], optional
             Pipeline containing a database query.
             See `Aggregation pipeline syntax <https://www.mongodb.com/docs/manual/core/aggregation-pipeline/>`_.
 
-        df_schema : StructType, default: ``None``
+        df_schema : StructType, optional
             Schema describing the resulting DataFrame.
 
-        options : PipelineOptions | dict, default:  ``None``
+        options : PipelineOptions | dict, optional
             Additional pipeline options, see :obj:`~PipelineOptions`.
 
         Examples
         --------
 
-        Get document with a specific ``_id``:
+        Get document with a specific ``field`` value:
 
         .. code:: python
 
             df = connection.pipeline(
                 collection="collection_name",
-                pipeline={"$match": {"_id": {"$eq": 1}}},
+                pipeline={"$match": {"field": {"$eq": 1}}},
             )
 
         Calculate aggregation and get result:
@@ -320,7 +295,7 @@ class MongoDB(DBConnection):
 
             df_schema = StructType(
                 [
-                    StructField("_id", IntegerType()),
+                    StructField("_id", StringType()),
                     StructField("some_string", StringType()),
                     StructField("some_int", IntegerType()),
                     StructField("some_datetime", TimestampType()),
@@ -340,15 +315,17 @@ class MongoDB(DBConnection):
 
             df = connection.pipeline(
                 collection="collection_name",
-                pipeline={"$match": {"_id": {"$eq": 1}}},
-                options=MongoDB.PipelineOptions(hint={"_id": 1}),
+                pipeline={"$match": {"field": {"$eq": 1}}},
+                options=MongoDB.PipelineOptions(hint={"field": 1}),
             )
 
         """
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
         read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
-        pipeline = self.dialect.prepare_pipeline(pipeline)
+        if pipeline:
+            pipeline = self.dialect.prepare_pipeline(pipeline)
+
         log_with_indent(log, "collection = %r", collection)
         log_json(log, pipeline, name="pipeline")
 
@@ -359,7 +336,8 @@ class MongoDB(DBConnection):
         log_options(log, read_options)
 
         read_options["collection"] = collection
-        read_options["aggregation.pipeline"] = json.dumps(pipeline)
+        if pipeline:
+            read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 

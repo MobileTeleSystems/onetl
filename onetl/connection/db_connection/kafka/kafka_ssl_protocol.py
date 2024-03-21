@@ -5,7 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, SecretStr, validator
+try:
+    from pydantic.v1 import Field, SecretStr, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import stringify
 from onetl._util.file import is_file_readable

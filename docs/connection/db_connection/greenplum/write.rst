@@ -1,10 +1,46 @@
 .. _greenplum-write:
 
-Writing to Greenplum
-=====================
+Writing to Greenplum using ``DBWriter``
+========================================
 
-For writing data to Greenplum, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>` with options below.
+For writing data to Greenplum, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`
+with :obj:`GreenplumWriteOptions <onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions>`.
 
+.. warning::
+
+    Please take into account :ref:`greenplum-types`.
+
+.. warning::
+
+    It is always recommended to create table explicitly using :ref:`Greenplum.execute <greenplum-execute>`
+    instead of relying on Spark's table DDL generation.
+
+    This is because Spark's DDL generator can create columns with different types than it is expected.
+
+Examples
+--------
+
+.. code-block:: python
+
+    from onetl.connection import Greenplum
+    from onetl.db import DBWriter
+
+    greenplum = Greenplum(...)
+
+    df = ...  # data is here
+
+    writer = DBWriter(
+        connection=greenplum,
+        target="schema.table",
+        options=Greenplum.WriteOptions(
+            if_exists="append",
+            # by default distribution is random
+            distributedBy="id",
+            # partitionBy is not supported
+        ),
+    )
+
+    writer.run(df)
 
 Interaction schema
 ------------------
@@ -86,16 +122,6 @@ High-level schema is described in :ref:`greenplum-prerequisites`. You can find d
                 deactivate "Greenplum master"
                 deactivate "Spark driver"
         @enduml
-
-Recommendations
----------------
-
-Mapping of Spark types to Greenplum types
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html#spark-to-greenplum>`_
-for more details.
-onETL does not perform any additional casting of types while writing data.
 
 Options
 -------

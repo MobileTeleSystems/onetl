@@ -6,8 +6,12 @@ import warnings
 from enum import Enum
 from typing import List, Optional, Tuple, Union
 
-from deprecated import deprecated
-from pydantic import Field, root_validator, validator
+try:
+    from pydantic.v1 import Field, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
+
+from typing_extensions import deprecated
 
 from onetl.impl import GenericOptions
 
@@ -78,8 +82,8 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partitionBy="reg_id",
-            someNewOption="value",
+            partition_by="reg_id",
+            customOption="value",
         )
     """
 
@@ -206,7 +210,7 @@ class HiveWriteOptions(GenericOptions):
 
     .. warning::
 
-        Used **only** while **creating new table**, or in case of ``if_exists=recreate_entire_table``
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
 
     partition_by: Optional[Union[List[str], str]] = Field(default=None, alias="partitionBy")
@@ -233,7 +237,7 @@ class HiveWriteOptions(GenericOptions):
 
     .. warning::
 
-        Used **only** while **creating new table**, or in case of ``if_exists=recreate_entire_table``
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
 
     bucket_by: Optional[Tuple[int, Union[List[str], str]]] = Field(default=None, alias="bucketBy")  # noqa: WPS234
@@ -258,14 +262,14 @@ class HiveWriteOptions(GenericOptions):
 
         It is recommended to use this option **ONLY** if you have a large table
         (hundreds of Gb or more), which is used mostly for JOINs with other tables,
-        and you're inserting data using ``if_exists=overwrite_partitions`` or ``if_exists=recreate_entire_table``.
+        and you're inserting data using ``if_exists=overwrite_partitions`` or ``if_exists=replace_entire_table``.
 
         Otherwise Spark will create a lot of small files
         (one file for each bucket and each executor), drastically **decreasing** HDFS performance.
 
     .. warning::
 
-        Used **only** while **creating new table**, or in case of ``if_exists=recreate_entire_table``
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
 
     sort_by: Optional[Union[List[str], str]] = Field(default=None, alias="sortBy")
@@ -283,7 +287,7 @@ class HiveWriteOptions(GenericOptions):
 
     .. warning::
 
-        Used **only** while **creating new table**, or in case of ``if_exists=recreate_entire_table``
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
 
     compression: Optional[str] = None
@@ -294,7 +298,7 @@ class HiveWriteOptions(GenericOptions):
 
     .. warning::
 
-        Used **only** while **creating new table**, or in case of ``if_exists=recreate_entire_table``
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
 
     @validator("sort_by")
@@ -339,9 +343,7 @@ class HiveWriteOptions(GenericOptions):
 
 
 @deprecated(
-    version="0.5.0",
-    reason="Please use 'WriteOptions' class instead. Will be removed in v1.0.0",
-    action="always",
+    "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'WriteOptions' instead",
     category=UserWarning,
 )
 class HiveLegacyOptions(HiveWriteOptions):

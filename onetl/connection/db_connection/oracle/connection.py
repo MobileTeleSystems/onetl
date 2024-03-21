@@ -12,7 +12,10 @@ from decimal import Decimal
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except (ImportError, AttributeError):
+    from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
@@ -70,29 +73,9 @@ class Oracle(JDBCConnection):
     Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
-    .. dropdown:: Version compatibility
-
-        * Oracle Server versions: 23, 21, 19, 18, 12.2 and probably 11.2 (tested, but that's not official).
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
-        See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
-
     .. warning::
 
-        To use Oracle connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`oracle-prerequisites`
 
     Parameters
     ----------
@@ -113,16 +96,16 @@ class Oracle(JDBCConnection):
 
         .. warning ::
 
-            Be careful, to correct work you must provide ``sid`` or ``service_name``
+            You should provide either ``sid`` or ``service_name``, not both of them
 
     service_name : str, default: ``None``
         Specifies one or more names by which clients can connect to the instance.
 
-        For example: ``MYDATA``.
+        For example: ``PDB1``.
 
         .. warning ::
 
-            Be careful, for correct work you must provide ``sid`` or ``service_name``
+            You should provide either ``sid`` or ``service_name``, not both of them
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session.
@@ -130,23 +113,21 @@ class Oracle(JDBCConnection):
     extra : dict, default: ``None``
         Specifies one or more extra parameters by which clients can connect to the instance.
 
-        For example: ``{"defaultBatchValue": 100}``
+        For example: ``{"remarksReporting": "false"}``
 
-        See `Oracle JDBC driver properties documentation
-        <https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html>`_
-        for more details
+        See official documentation:
+            * `Connection parameters <https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html>`_
+            * `Connection properties <https://docs.oracle.com/cd/A97335_02/apps.102/a83724/basic1.htm#1024018>`_
 
     Examples
     --------
 
-    Oracle connection initialization
+    Connect to Oracle using ``sid``:
 
     .. code:: python
 
         from onetl.connection import Oracle
         from pyspark.sql import SparkSession
-
-        extra = {"defaultBatchValue": 100}
 
         # Create Spark session with Oracle driver loaded
         maven_packages = Oracle.get_packages()
@@ -162,7 +143,22 @@ class Oracle(JDBCConnection):
             user="user",
             password="*****",
             sid="XE",
-            extra=extra,
+            extra={"remarksReporting": "false"},
+            spark=spark,
+        )
+
+    Using ``service_name``:
+
+    .. code:: python
+
+        ...
+
+        oracle = Oracle(
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            service_name="PDB1",
+            extra={"remarksReporting": "false"},
             spark=spark,
         )
 

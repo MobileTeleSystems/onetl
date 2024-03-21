@@ -129,7 +129,7 @@ def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
     ],
 )
 def test_jdbc_old_options_allowed_but_deprecated(arg, value):
-    warning_msg = "Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0"
+    warning_msg = "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'ReadOptions' or 'WriteOptions' instead"
     with pytest.warns(UserWarning, match=warning_msg):
         options = Postgres.Options.parse({arg: value})
 
@@ -228,7 +228,7 @@ def test_jdbc_read_options_to_jdbc(spark_mock):
             "CamelCaseOption": "left unchanged",
         },
         "upperBound": "1000",
-        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc",
+        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc&stringtype=unspecified",
     }
 
 
@@ -257,7 +257,7 @@ def test_jdbc_write_options_to_jdbc(spark_mock):
             "camelCaseOption": "left unchanged",
             "CamelCaseOption": "left unchanged",
         },
-        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc",
+        "url": "jdbc:postgresql://local:5432/default?ApplicationName=abc&stringtype=unspecified",
     }
 
 

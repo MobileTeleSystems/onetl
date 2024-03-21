@@ -5,12 +5,18 @@ from __future__ import annotations
 import textwrap
 import warnings
 
-from pydantic import validator
+from typing_extensions import deprecated
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
 
 
+@deprecated("Deprecated in 0.8.0 and will be removed in 1.0.0. Use MaxFilesCount instead", category=None)
 class FileLimit(BaseFileLimit, FrozenModel):
     """Limits the number of downloaded files.
 

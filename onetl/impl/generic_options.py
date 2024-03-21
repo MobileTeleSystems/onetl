@@ -7,7 +7,10 @@ import re
 from fnmatch import fnmatch
 from typing import Iterable, TypeVar
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except (ImportError, AttributeError):
+    from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
 from onetl.impl.frozen_model import FrozenModel
 

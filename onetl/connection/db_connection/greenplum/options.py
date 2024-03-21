@@ -6,7 +6,10 @@ import warnings
 from enum import Enum
 from typing import Optional
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
 from onetl.connection.db_connection.jdbc_mixin import JDBCOptions
 
@@ -76,7 +79,7 @@ class GreenplumReadOptions(JDBCOptions):
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-        etc are populated from connection attributes, and cannot be set in ``ReadOptions`` class
+        etc are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
     Examples
     --------
@@ -208,8 +211,8 @@ class GreenplumWriteOptions(JDBCOptions):
 
     .. warning::
 
-        Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
-        etc are populated from connection attributes, and cannot be set in ``WriteOptions`` class
+        Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``, etc
+        are populated from connection attributes, and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
 
     Examples
     --------

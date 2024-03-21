@@ -3,7 +3,7 @@
     :caption: Changelog
 
     DRAFT
-    NEXT_RELEASE
+    0.10.2
     0.10.1
     0.10.0
     0.9.5

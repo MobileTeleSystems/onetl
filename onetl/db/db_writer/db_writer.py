@@ -5,7 +5,10 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, PrivateAttr, validator
+try:
+    from pydantic.v1 import Field, PrivateAttr, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseDBConnection
 from onetl.hooks import slot, support_hooks

@@ -8,7 +8,12 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from etl_entities.instance import Host
-from pydantic import SecretStr, root_validator, validator
+
+try:
+    from pydantic.v1 import SecretStr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import SecretStr, root_validator, validator  # type: ignore[no-redef, assignment]
+
 from typing_extensions import Literal
 
 from onetl._internal import stringify

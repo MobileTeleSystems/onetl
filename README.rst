@@ -4,7 +4,7 @@ onETL
 =====
 
 |Repo Status| |PyPI| |PyPI License| |PyPI Python Version|
-|Documentation| |Build Status| |Coverage|
+|Documentation| |Build Status| |Coverage| |pre-commit.ci|
 
 .. |Repo Status| image:: https://www.repostatus.org/badges/latest/active.svg
     :target: https://github.com/MobileTeleSystems/onetl
@@ -20,6 +20,8 @@ onETL
     :target: https://github.com/MobileTeleSystems/onetl/actions
 .. |Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
     :target: https://codecov.io/gh/MobileTeleSystems/onetl
+.. |pre-commit.ci| image:: https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg
+    :target: https://results.pre-commit.ci/latest/github/MobileTeleSystems/onetl/develop
 
 |Logo|
 

@@ -3,6 +3,105 @@
 Executing statements in Greenplum
 ==================================
 
+.. warning::
+
+    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+
+    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <greenplum-read>` instead.
+
+How to
+------
+
+There are 2 ways to execute some statement in Greenplum
+
+Use ``Greenplum.fetch``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
+Greenplum config, or reading data from some reference table. Method returns Spark DataFrame.
+
+Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
+
+.. warning::
+
+    ``Greenplum.fetch`` is implemented using Postgres JDBC connection,
+    so types are handled a bit differently than in ``DBReader``. See :ref:`postgres-types`.
+
+Syntax support
+^^^^^^^^^^^^^^
+
+This method supports **any** query syntax supported by Greenplum, like:
+
+* ✅︎ ``SELECT ... FROM ...``
+* ✅︎ ``WITH alias AS (...) SELECT ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
+
+Examples
+^^^^^^^^
+
+.. code-block:: python
+
+    from onetl.connection import Greenplum
+
+    greenplum = Greenplum(...)
+
+    df = greenplum.fetch(
+        "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+        options=Greenplum.JDBCOptions(query_timeout=10),
+    )
+    greenplum.close()
+    value = df.collect()[0][0]  # get value from first row and first column
+
+Use ``Greenplum.execute``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+
+Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+
+Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
+
+Syntax support
+^^^^^^^^^^^^^^
+
+This method supports **any** query syntax supported by Greenplum, like:
+
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, ``DROP TABLE ...``, and so on
+* ✅︎ ``ALTER ...``
+* ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``CALL procedure(arg1, arg2) ...``
+* ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
+* ✅︎ other statements not mentioned here
+* ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
+
+Examples
+^^^^^^^^
+
+.. code-block:: python
+
+    from onetl.connection import Greenplum
+
+    greenplum = Greenplum(...)
+
+    with greenplum:
+        # automatically close connection after exiting this context manager
+        greenplum.execute("DROP TABLE schema.table")
+        greenplum.execute(
+            """
+            CREATE TABLE schema.table AS (
+                id int,
+                key text,
+                value real
+            )
+            DISTRIBUTED BY id
+            """,
+            options=Greenplum.JDBCOptions(query_timeout=10),
+        )
+
 Interaction schema
 ------------------
 
@@ -43,12 +142,6 @@ The only port used while interacting with Greenplum in this case is ``5432`` (Gr
 
 Options
 -------
-
-.. currentmodule:: onetl.connection.db_connection.greenplum.connection
-
-.. automethod:: Greenplum.fetch
-.. automethod:: Greenplum.execute
-.. automethod:: Greenplum.close
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 

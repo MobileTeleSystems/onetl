@@ -1,10 +1,15 @@
 # SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
 # SPDX-License-Identifier: Apache-2.0
+# isort: skip_file
+
 from __future__ import annotations
 
 from typing import ClassVar
 
-from pydantic import BaseModel as PydanticBaseModel
+try:
+    from pydantic.v1 import BaseModel as PydanticBaseModel
+except (ImportError, AttributeError):
+    from pydantic import BaseModel as PydanticBaseModel  # type: ignore[no-redef, assignment]
 
 
 class BaseModel(PydanticBaseModel):

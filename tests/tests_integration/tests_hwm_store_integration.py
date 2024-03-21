@@ -11,7 +11,7 @@ from onetl.strategy import IncrementalStrategy
 
 hwm_store = [
     MemoryHWMStore(),
-    YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306 NOSONAR
+    YAMLHWMStore(path=tempfile.mktemp("hwmstore")),  # noqa: S306  # nosec
 ]
 
 

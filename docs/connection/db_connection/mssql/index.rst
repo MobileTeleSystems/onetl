@@ -1,12 +1,13 @@
 .. _mssql:
 
 MSSQL
-=====
+======
 
 .. toctree::
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
 
 .. toctree::
@@ -14,5 +15,12 @@ MSSQL
     :caption: Operations
 
     read
+    sql
     write
     execute
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Troubleshooting
+
+    types

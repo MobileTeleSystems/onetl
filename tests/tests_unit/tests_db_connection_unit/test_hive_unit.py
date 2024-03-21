@@ -103,7 +103,7 @@ def test_hive_known_get_current(request, spark_mock):
 
 
 def test_hive_old_options_deprecated():
-    warning_msg = "Please use 'WriteOptions' class instead. Will be removed in v1.0.0"
+    warning_msg = "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'WriteOptions' instead"
     with pytest.warns(UserWarning, match=warning_msg):
         options = Hive.Options(some="value")
 

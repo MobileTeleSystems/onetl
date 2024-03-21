@@ -1,0 +1,41 @@
+0.10.2 (2024-03-21)
+===================
+
+Features
+--------
+
+- Add support of Pydantic v2. (:github:pull:`230`)
+
+
+Improvements
+------------
+
+- Improve database connections documentation:
+    * Add "Types" section describing mapping between Clickhouse and Spark types
+    * Add "Prerequisites" section describing different aspects of connecting to Clickhouse
+    * Separate documentation of ``DBReader`` and ``.sql()`` / ``.pipeline(...)``
+    * Add examples for ``.fetch()`` and ``.execute()`` (:github:pull:`211`, :github:pull:`228`, :github:pull:`229`, :github:pull:`233`, :github:pull:`234`, :github:pull:`235`, :github:pull:`236`, :github:pull:`240`)
+- Add notes to Greenplum documentation about issues with IP resolution and building ``gpfdist`` URL (:github:pull:`228`)
+- Allow calling ``MongoDB.pipeline(...)`` with passing just collection name, without explicit aggregation pipeline. (:github:pull:`237`)
+- Update default ``Postgres(extra={...})`` to include ``{"stringtype": "unspecified"}`` option.
+  This allows to write text data to non-text column (or vice versa), relying to Postgres cast capabilities.
+
+  For example, now it is possible to read column of type ``money`` as Spark's ``StringType()``, and write it back to the same column,
+  without using intermediate columns or tables. (:github:pull:`229`)
+
+
+Bug Fixes
+---------
+
+- Return back handling of ``DBReader(columns="string")``. This was a valid syntax up to v0.10 release, but it was removed because
+  most of users neved used it. It looks that we were wrong, returning this behavior back, but with deprecation warning. (:github:pull:`238`)
+- Downgrade Greenplum package version from ``2.3.0`` to ``2.2.0``. (:github:pull:`239`)
+
+  This is because version 2.3.0 introduced issues with writing data to Greenplum 6.x.
+  Connector can open transaction with ``SELECT * FROM table LIMIT 0`` query, but does not close it, which leads to deadlocks.
+
+  For using this connector with Greenplum 7.x, please pass package version explicitly:
+
+  .. code-block:: python
+
+      maven_packages = Greenplum.get_packages(package_version="2.3.0", ...)

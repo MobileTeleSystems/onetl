@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 
@@ -71,8 +74,7 @@ class KafkaReadOptions(GenericOptions):
             * ``subscribe``
             * ``subscribePattern``
 
-        are populated from connection attributes, and cannot be set in ``KafkaReadOptions`` class and be overridden
-        by the user to avoid issues.
+        are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
     Examples
     --------
@@ -117,8 +119,7 @@ class KafkaWriteOptions(GenericOptions):
             * ``kafka.*``
             * ``topic``
 
-        are populated from connection attributes, and cannot be set in ``KafkaWriteOptions`` class and be overridden
-        by the user to avoid issues.
+        are populated from connection attributes, and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
 
     Examples
     --------

@@ -6,7 +6,11 @@ import os
 from typing import Iterable
 
 from humanize import naturalsize
-from pydantic import Field, validator
+
+try:
+    from pydantic.v1 import Field, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PurePathProtocol
 from onetl.exception import (

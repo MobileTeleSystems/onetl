@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
 # SPDX-License-Identifier: Apache-2.0
-import ftplib  # NOQA: S402
+import ftplib  # noqa: S402  # nosec
 import textwrap
 
 from ftputil import FTPHost
@@ -31,7 +31,7 @@ class TLSfix(ftplib.FTP_TLS):  # noqa: N801
     """
 
     def ntransfercmd(self, cmd, rest=None):
-        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)  # noqa: S321
+        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)  # noqa: S321  # nosec
         if self._prot_p:
             conn = self.context.wrap_socket(
                 conn,

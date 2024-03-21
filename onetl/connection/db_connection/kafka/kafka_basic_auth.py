@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import Field, SecretStr
+try:
+    from pydantic.v1 import Field, SecretStr
+except (ImportError, AttributeError):
+    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions

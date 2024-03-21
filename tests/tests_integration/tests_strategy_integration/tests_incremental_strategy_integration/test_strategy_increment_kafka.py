@@ -26,7 +26,7 @@ def test_kafka_strategy_incremental(
     kafka_topic,
     num_partitions,
 ):
-    from pyspark.sql.functions import count as spark_count
+    from pyspark.sql.functions import max as spark_max
 
     hwm_type = KeyValueIntHWM
     hwm_name = secrets.token_hex(5)
@@ -71,18 +71,23 @@ def test_kafka_strategy_incremental(
     with IncrementalStrategy():
         first_df = reader.run()
 
+    # all the data has been read
+    deserialized_first_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
+    processing.assert_equal_df(df=deserialized_first_df, other_frame=first_span, order_by="id_int")
+
     hwm = store.get_hwm(hwm_name)
     assert hwm is not None
     assert isinstance(hwm, hwm_type)
 
-    # check that HWM distribution of messages in partitions matches the distribution in sparkDF
-    partition_counts = first_df.groupBy("partition").agg(spark_count("*").alias("count"))
-    partition_count_dict_first_df = {row["partition"]: row["count"] for row in partition_counts.collect()}
-    assert hwm.value == partition_count_dict_first_df
-
-    # all the data has been read
-    deserialized_first_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
-    processing.assert_equal_df(df=deserialized_first_df, other_frame=first_span, order_by="id_int")
+    # HWM contains mapping `partition: max offset + 1`
+    partition_offsets_initial = dict.fromkeys(range(num_partitions or 1), 0)
+    partition_offsets_initial.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in first_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+    assert hwm.value == partition_offsets_initial
 
     # insert second span
     processing.insert_pandas_df_into_topic(second_span, kafka_topic)
@@ -90,16 +95,20 @@ def test_kafka_strategy_incremental(
     with IncrementalStrategy():
         second_df = reader.run()
 
-    hwm = store.get_hwm(hwm_name)
-
-    # check that HWM distribution of messages in partitions matches the distribution in sparkDF
-    combined_df = first_df.union(second_df)
-    partition_counts_combined = combined_df.groupBy("partition").agg(spark_count("*").alias("count"))
-    partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
-    assert hwm.value == partition_count_dict_combined
-
+    # only new data has been read
     deserialized_second_df = processing.json_deserialize(second_df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_second_df, other_frame=second_span, order_by="id_int")
+
+    # HWM contains mapping `partition: max offset + 1`
+    hwm = store.get_hwm(hwm_name)
+    partition_offsets_new = partition_offsets_initial.copy()
+    partition_offsets_new.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in second_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+    assert hwm.value == partition_offsets_new
 
 
 @pytest.mark.parametrize(
@@ -117,7 +126,7 @@ def test_kafka_strategy_incremental_nothing_to_read(
     num_partitions,
     kafka_topic,
 ):
-    from pyspark.sql.functions import count as spark_count
+    from pyspark.sql.functions import max as spark_max
 
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
@@ -170,14 +179,19 @@ def test_kafka_strategy_incremental_nothing_to_read(
         assert reader.has_data()
         first_df = reader.run()
 
-    hwm = store.get_hwm(name=hwm_name)
-    # check that HWM distribution of messages in partitions matches the distribution in sparkDF
-    partition_counts = first_df.groupBy("partition").agg(spark_count("*").alias("count"))
-    partition_count_dict_first_df = {row["partition"]: row["count"] for row in partition_counts.collect()}
-    assert hwm.value == partition_count_dict_first_df
-
     deserialized_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
     processing.assert_equal_df(df=deserialized_df, other_frame=first_span, order_by="id_int")
+
+    # HWM contains mapping `partition: max offset + 1`
+    hwm = store.get_hwm(name=hwm_name)
+    partition_offsets_initial = dict.fromkeys(range(num_partitions or 1), 0)
+    partition_offsets_initial.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in first_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+    assert hwm.value == partition_offsets_initial
 
     # no new data yet, nothing to read
     with IncrementalStrategy():
@@ -186,7 +200,7 @@ def test_kafka_strategy_incremental_nothing_to_read(
     assert not df.count()
     # HWM value is unchanged
     hwm = store.get_hwm(name=hwm_name)
-    assert hwm.value == partition_count_dict_first_df
+    assert hwm.value == partition_offsets_initial
 
     # insert second span
     processing.insert_pandas_df_into_topic(second_span, kafka_topic)
@@ -195,38 +209,44 @@ def test_kafka_strategy_incremental_nothing_to_read(
     assert not df.count()
     # HWM value is unchanged
     hwm = store.get_hwm(name=hwm_name)
-    assert hwm.value == partition_count_dict_first_df
+    assert hwm.value == partition_offsets_initial
 
     # read data
     with IncrementalStrategy():
-        df = reader.run()
+        second_df = reader.run()
 
+    # only new data has been read
+    deserialized_second_df = processing.json_deserialize(second_df, df_schema=kafka_dataframe_schema)
+    processing.assert_equal_df(df=deserialized_second_df, other_frame=second_span, order_by="id_int")
+
+    # HWM contains mapping `partition: max offset + 1`
     hwm = store.get_hwm(name=hwm_name)
-    # check that HWM distribution of messages in partitions matches the distribution in sparkDF
-    combined_df = df.union(first_df)
-    partition_counts_combined = combined_df.groupBy("partition").agg(spark_count("*").alias("count"))
-    partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
-    assert hwm.value == partition_count_dict_combined
-
-    deserialized_df = processing.json_deserialize(df, df_schema=kafka_dataframe_schema)
-    processing.assert_equal_df(df=deserialized_df, other_frame=second_span, order_by="id_int")
+    partition_offsets_new = partition_offsets_initial.copy()
+    partition_offsets_new.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in second_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+    assert hwm.value == partition_offsets_new
 
 
 @pytest.mark.parametrize(
-    "initial_partitions, additional_partitions",
+    "initial_partitions, new_partitions",
     [
-        (3, 2),  # starting with 3 partitions, adding 2 more
-        (5, 1),  # starting with 5 partitions, adding 1 more
+        (3, 5),
+        (5, 6),
     ],
 )
 def test_kafka_strategy_incremental_with_new_partition(
     spark,
     processing,
     initial_partitions,
-    additional_partitions,
+    new_partitions,
     kafka_topic,
+    kafka_dataframe_schema,
 ):
-    from pyspark.sql.functions import count as spark_count
+    from pyspark.sql.functions import max as spark_max
 
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
@@ -267,21 +287,38 @@ def test_kafka_strategy_incremental_with_new_partition(
     # Specified: Set(topic1, topic2) Assigned: Set(topic1, topic2, additional_topic3, additional_topic4)
     first_df.cache()
 
-    hwm = store.get_hwm(name=hwm_name)
-    first_run_hwm_keys_num = len(hwm.value.keys())
+    # all the data has been read
+    deserialized_df = processing.json_deserialize(first_df, df_schema=kafka_dataframe_schema)
+    processing.assert_equal_df(df=deserialized_df, other_frame=first_span, order_by="id_int")
 
-    processing.change_topic_partitions(kafka_topic, initial_partitions + additional_partitions)
+    # HWM contains mapping `partition: max offset + 1`
+    hwm = store.get_hwm(name=hwm_name)
+    partition_offsets_initial = dict.fromkeys(range(initial_partitions), 0)
+    partition_offsets_initial.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in first_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+
+    processing.change_topic_partitions(kafka_topic, new_partitions)
     processing.insert_pandas_df_into_topic(second_span, kafka_topic)
 
     with IncrementalStrategy():
         second_df = reader.run()
 
-    hwm = store.get_hwm(name=hwm_name)
-    second_run_hwm_keys_num = len(hwm.value)
-    assert first_run_hwm_keys_num + additional_partitions == second_run_hwm_keys_num
+    # only new data has been read
+    deserialized_second_df = processing.json_deserialize(second_df, df_schema=kafka_dataframe_schema)
+    processing.assert_equal_df(df=deserialized_second_df, other_frame=second_span, order_by="id_int")
 
-    # check that HWM distribution of messages in partitions matches the distribution in sparkDF
-    combined_df = second_df.union(first_df)
-    partition_counts_combined = combined_df.groupBy("partition").agg(spark_count("*").alias("count"))
-    partition_count_dict_combined = {row["partition"]: row["count"] for row in partition_counts_combined.collect()}
-    assert hwm.value == partition_count_dict_combined
+    # HWM contains mapping `partition: max offset + 1`
+    hwm = store.get_hwm(name=hwm_name)
+    partition_offsets_new = dict.fromkeys(range(new_partitions), 0)
+    partition_offsets_new.update(partition_offsets_initial)
+    partition_offsets_new.update(
+        {
+            row["partition"]: row["offset"] + 1
+            for row in second_df.groupBy("partition").agg(spark_max("offset").alias("offset")).collect()
+        },
+    )
+    assert hwm.value == partition_offsets_new

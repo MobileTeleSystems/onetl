@@ -1,0 +1,153 @@
+# config for https://github.com/marketplace/actions/github-labeler
+
+  - name: attention:help wanted
+    description: Extra attention is needed
+    color: bfdadc
+    from_name: help wanted
+
+  - name: attention:invalid
+    description: This doesn't seem right
+    color: ea2357
+    from_name: invalid
+
+  - name: ci:skip-changelog
+    description: Add this label to skip changelog file check
+    color: 04990f
+
+  - name: component:connection
+    description: Connection-related
+    color: 75aeb3
+
+  - name: component:db
+    description: DB-related
+    color: 5319e7
+
+  - name: component:file
+    description: DB-related
+    color: 75f526
+
+  - name: component:hooks
+    description: Hooks-related
+    color: 006b75
+
+  - name: component:hwm
+    description: HWM-related
+    color: 670f54
+
+  - name: component:plugins
+    description: Plugins-related
+    color: 77ba7b
+
+  - name: component:spark
+    description: Spark-related
+    color: e09183
+
+  - name: db:clickhouse
+    description: Clickhouse-related
+    color: 1d76db
+
+  - name: db:greenplum
+    description: Greenplum-related
+    color: c2e0c6
+
+  - name: db:hive
+    description: Hive-related
+    color: ef2895
+
+  - name: db:kafka
+    description: Kafka-related
+    color: f00a38
+
+  - name: db:mongodb
+    description: MongoDB-related
+    color: 1587c4
+
+  - name: db:mssql
+    description: MSSQL-related
+    color: ad368a
+
+  - name: db:mysql
+    description: MySQL-related
+    color: '473255'
+
+  - name: db:oracle
+    description: Oracle-related
+    color: '646821'
+
+  - name: db:postgres
+    description: Postgres-related
+    color: 1077a6
+
+  - name: db:teradata
+    description: Teradata-related
+    color: 04115d
+
+  - name: file:ftp
+    description: FTP-related
+    color: e41c74
+
+  - name: file:ftps
+    description: FTPS-related
+    color: 07c469
+
+  - name: file:hdfs
+    description: HDFS-related
+    color: 0295d0
+
+  - name: file:s3
+    description: S3-related
+    color: b0e8f9
+
+  - name: file:sftp
+    description: SFTP-related
+    color: 3e9d6d
+
+  - name: file:webdav
+    description: WebDAV-related
+    color: 6d1c10
+
+  - name: kind:bug
+    description: Something isn't working
+    color: d73a4a
+    from_name: bug
+
+  - name: kind:feature
+    description: New feature or request
+    color: 389a3f
+
+  - name: kind:improvement
+    description: Improvement of some existing feature
+    color: 1a92c2
+    from_name: enhancement
+
+  - name: kind:question
+    description: Further information is requested
+    color: 0e857c
+    from_name: question
+
+  - name: resolution:duplicate
+    description: This issue or pull request already exists
+    color: cfd3d7
+    from_name: duplicate
+
+  - name: resolution:wontfix
+    description: This will not be worked on
+    color: ec103b
+    from_name: wontfix
+
+  - name: type:ci
+    description: CI-related changes
+    color: cdb0bd
+
+  - name: type:dependency
+    description: Dependency-related changes
+    color: 214efe
+
+  - name: type:documentation
+    description: Improvements or additions to documentation
+    color: 6b9f54
+    from_name: documentation
+
+  - name: type:tests
+    description: Tests-related changes
+    color: 5cca5b

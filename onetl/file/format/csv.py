@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except (ImportError, AttributeError):
+    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks

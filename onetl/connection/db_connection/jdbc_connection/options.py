@@ -6,8 +6,12 @@ import warnings
 from enum import Enum
 from typing import Optional
 
-from deprecated import deprecated
-from pydantic import Field, PositiveInt, root_validator
+try:
+    from pydantic.v1 import Field, PositiveInt, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PositiveInt, root_validator  # type: ignore[no-redef, assignment]
+
+from typing_extensions import deprecated
 
 from onetl._internal import to_camel
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
@@ -119,11 +123,11 @@ class JDBCReadOptions(JDBCOptions):
     .. code:: python
 
         options = JDBC.ReadOptions(
-            partitionColumn="reg_id",
-            numPartitions=10,
-            lowerBound=0,
-            upperBound=1000,
-            someNewOption="value",
+            partition_column="reg_id",
+            num_partitions=10,
+            lower_bound=0,
+            upper_bound=1000,
+            customOption="value",
         )
     """
 
@@ -386,7 +390,7 @@ class JDBCWriteOptions(JDBCOptions):
 
     .. code:: python
 
-        options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, someNewOption="value")
+        options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, customOption="value")
     """
 
     class Config:
@@ -512,9 +516,7 @@ class JDBCWriteOptions(JDBCOptions):
 
 
 @deprecated(
-    version="0.5.0",
-    reason="Please use 'ReadOptions' or 'WriteOptions' class instead. Will be removed in v1.0.0",
-    action="always",
+    "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'ReadOptions' or 'WriteOptions' instead",
     category=UserWarning,
 )
 class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):

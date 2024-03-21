@@ -7,7 +7,11 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable
 
 from etl_entities.instance import Cluster
-from pydantic import validator
+
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._internal import clear_statement
 from onetl._util.spark import inject_spark_param
@@ -497,7 +501,8 @@ class Hive(DBConnection):
         unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
         if unsupported_options:
             log.warning(
-                "|%s| Options %r are not supported while inserting into existing table, ignoring",
+                "|%s| User-specified options %r are ignored while inserting into existing table. "
+                "Using only table parameters from Hive metastore",
                 self.__class__.__name__,
                 unsupported_options,
             )
@@ -506,7 +511,8 @@ class Hive(DBConnection):
         # So we should sort columns according their order in the existing table
         # instead of using order from the dataframe
         columns = self._sort_df_columns_like_table(table, df.columns)
-        writer = df.select(*columns).write
+        if columns != df.columns:
+            df = df.select(*columns)
 
         # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
         # so using a workaround with patching Spark config and then setting up the previous value
@@ -514,7 +520,7 @@ class Hive(DBConnection):
             overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
 
             log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
-            writer.insertInto(table, overwrite=overwrite)
+            df.write.insertInto(table, overwrite=overwrite)
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 

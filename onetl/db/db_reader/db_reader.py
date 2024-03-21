@@ -11,7 +11,11 @@ import frozendict
 from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from etl_entities.old_hwm import IntHWM as OldColumnHWM
 from etl_entities.source import Column, Table
-from pydantic import Field, PrivateAttr, root_validator, validator
+
+try:
+    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+except (ImportError, AttributeError):
+    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import (
@@ -103,6 +107,11 @@ class DBReader(FrozenModel):
             It is recommended to pass column names explicitly to avoid selecting too many columns,
             and to avoid adding unexpected columns to dataframe if source DDL is changed.
 
+        .. deprecated:: 0.10.0
+
+            Syntax ``DBReader(columns="col1, col2")`` (string instead of list) is not supported,
+            and will be removed in v1.0.0
+
     where : Any, default: ``None``
         Custom ``where`` for SQL query or MongoDB pipeline.
 
@@ -130,9 +139,7 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            from onetl.hwm import AutoDetectHWM
-
-            hwm = AutoDetectHWM(
+            hwm = DBReader.AutoDetectHWM(
                 name="some_unique_hwm_name",
                 expression="hwm_column",
             )
@@ -143,9 +150,7 @@ class DBReader(FrozenModel):
 
         .. code:: python
 
-            from onetl.hwm import AutoDetectHWM
-
-            hwm = AutoDetectHWM(
+            hwm = DBReader.AutoDetectHWM(
                 name="some_unique_hwm_name",
                 expression="cast(hwm_column_orig as date)",
             )
@@ -332,7 +337,6 @@ class DBReader(FrozenModel):
         from onetl.db import DBReader
         from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
-        from onetl.hwm import AutoDetectHWM
         from pyspark.sql import SparkSession
 
         maven_packages = Postgres.get_packages()
@@ -385,8 +389,8 @@ class DBReader(FrozenModel):
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(source)
 
-    @validator("columns", always=True)  # noqa: WPS231
-    def validate_columns(cls, value: list[str] | None, values: dict) -> list[str] | None:
+    @validator("columns", always=True, pre=True)
+    def validate_columns(cls, value: str | list[str] | None, values: dict) -> list[str] | None:
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_columns(value)
 

@@ -6,7 +6,10 @@ import os
 import socket
 from pathlib import Path
 
-from pydantic import validator
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (

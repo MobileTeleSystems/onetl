@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except (ImportError, AttributeError):
+    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl.file.file_result import FileResult, FileSet
 from onetl.impl import FailedLocalFile, LocalPath, RemoteFile

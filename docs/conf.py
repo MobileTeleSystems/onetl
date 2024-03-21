@@ -60,7 +60,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx_favicon",
 ]
-numpydoc_show_class_members = True
+numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_config_member = False
@@ -107,6 +107,7 @@ html_theme_options = {}
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_extra_path = ["robots.txt"]
 html_logo = "./_static/logo.svg"
 favicons = [
     {"rel": "icon", "href": "icon.svg", "type": "image/svg+xml"},

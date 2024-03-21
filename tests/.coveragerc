@@ -20,3 +20,4 @@ exclude_lines =
     spark = SparkSession._instantiatedSession
     if log.isEnabledFor(logging.DEBUG):
     if sys.version_info
+    except .*ImportError

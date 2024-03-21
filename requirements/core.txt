@@ -1,5 +1,4 @@
-deprecated
-etl-entities>=2.2,<2.3
+etl-entities>=2.2,<2.4
 evacuator>=1.0,<1.1
 frozendict
 humanize
@@ -9,8 +8,8 @@ ordered-set
 platformdirs
 # https://github.com/pydantic/pydantic/issues/4092
 # https://github.com/pydantic/pydantic/issues/4498
-pydantic>=1.9.2,!=1.10.2,<2
+pydantic>=1.9.2,!=1.10.2,<3
 pyyaml
 # https://github.com/python/typing_extensions/pull/188
-typing_extensions>=4.0.0,!=4.6.1; python_version == "3.7"
-typing_extensions>=4.0.0; python_version > "3.7"
+typing_extensions>=4.5.0,!=4.6.1; python_version == "3.7"
+typing_extensions>=4.5.0; python_version > "3.7"

@@ -289,7 +289,10 @@ def test_hive_writer_insert_into_with_options(spark, processing, get_schema_tabl
         options=options,
     )
 
-    error_msg = f"|Hive| Options {option_kv} are not supported while inserting into existing table, ignoring"
+    error_msg = (
+        f"|Hive| User-specified options {option_kv} are ignored while inserting into existing table. "
+        "Using only table parameters from Hive metastore"
+    )
     with caplog.at_level(logging.WARNING):
         # write to table with new options
         writer2.run(df2)

@@ -5,7 +5,10 @@ from __future__ import annotations
 import warnings
 from enum import Enum
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except (ImportError, AttributeError):
+    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 
@@ -96,7 +99,7 @@ class MongoDBPipelineOptions(GenericOptions):
     .. note ::
 
         You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
         even if it is not mentioned in this documentation.
 
         The set of supported options depends on connector version. See link above.
@@ -104,7 +107,7 @@ class MongoDBPipelineOptions(GenericOptions):
     .. warning::
 
         Options ``uri``, ``database``, ``collection``, ``pipeline`` are populated from connection attributes,
-        and cannot be set in ``PipelineOptions`` class.
+        and cannot be overridden by the user in ``PipelineOptions`` to avoid issues.
 
     Examples
     --------
@@ -114,7 +117,7 @@ class MongoDBPipelineOptions(GenericOptions):
     .. code:: python
 
         MongoDB.PipelineOptions(
-            hint="{'_id': 1}",
+            hint={"some_field": 1},
         )
     """
 
@@ -130,7 +133,7 @@ class MongoDBReadOptions(GenericOptions):
     .. note ::
 
         You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/read>`_,
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
         even if it is not mentioned in this documentation.
 
         The set of supported options depends on connector version. See link above.
@@ -138,7 +141,7 @@ class MongoDBReadOptions(GenericOptions):
     .. warning::
 
         Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
-        attributes, and cannot be set in ``ReadOptions`` class.
+        attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
     Examples
     --------
@@ -164,7 +167,7 @@ class MongoDBWriteOptions(GenericOptions):
     .. note ::
 
         You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/configuration/write/>`_,
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-write-config/>`_,
         even if it is not mentioned in this documentation.
 
         The set of supported options depends on connector version. See link above.
@@ -172,7 +175,7 @@ class MongoDBWriteOptions(GenericOptions):
     .. warning::
 
         Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
-        and cannot be set in ``WriteOptions`` class.
+        and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
 
     Examples
     --------

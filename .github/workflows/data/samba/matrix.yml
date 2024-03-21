@@ -1,8 +1,15 @@
 min: &min
+  pydantic-version: 1
   python-version: '3.7'
   os: ubuntu-latest
 
 max: &max
+  pydantic-version: 2
+  python-version: '3.12'
+  os: ubuntu-latest
+
+latest: &latest
+  pydantic-version: latest
   python-version: '3.12'
   os: ubuntu-latest
 
@@ -10,9 +17,13 @@ matrix:
   small:
     - server-version: latest
       <<: *max
-  full: &full
+  full:
     - server-version: latest
       <<: *min
     - server-version: latest
       <<: *max
-  nightly: *full
+  nightly:
+    - server-version: latest
+      <<: *min
+    - server-version: latest
+      <<: *latest
