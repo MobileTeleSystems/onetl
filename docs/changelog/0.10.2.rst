@@ -5,11 +5,6 @@ Features
 --------
 
 - Add support of Pydantic v2. (:github:pull:`230`)
-- Update default ``Postgres(extra={...})`` to include ``{"stringtype": "unspecified"}`` option.
-  This allows to write text data to non-text column (or vice versa), relying to Postgres cast capabilities.
-
-  For example, now it is possible to read column of type ``money`` as Spark's ``StringType()``, and write it back to the same column,
-  without using intermediate columns or tables. (:github:pull:`229`)
 
 
 Improvements
@@ -22,6 +17,11 @@ Improvements
     * Add examples for ``.fetch()`` and ``.execute()`` (:github:pull:`211`, :github:pull:`228`, :github:pull:`229`, :github:pull:`233`, :github:pull:`234`, :github:pull:`235`, :github:pull:`236`, :github:pull:`240`)
 - Add notes to Greenplum documentation about issues with IP resolution and building ``gpfdist`` URL (:github:pull:`228`)
 - Allow calling ``MongoDB.pipeline(...)`` with passing just collection name, without explicit aggregation pipeline. (:github:pull:`237`)
+- Update default ``Postgres(extra={...})`` to include ``{"stringtype": "unspecified"}`` option.
+  This allows to write text data to non-text column (or vice versa), relying to Postgres cast capabilities.
+
+  For example, now it is possible to read column of type ``money`` as Spark's ``StringType()``, and write it back to the same column,
+  without using intermediate columns or tables. (:github:pull:`229`)
 
 
 Bug Fixes
