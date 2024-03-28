@@ -53,6 +53,7 @@ Non-goals
 
 Requirements
 ------------
+
 * **Python 3.7 - 3.12**
 * PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
