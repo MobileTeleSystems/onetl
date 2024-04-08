@@ -260,12 +260,12 @@ class SparkS3(SparkFileDFConnection):
 
         """
 
-        spark_ver = Version.parse(spark_version)
+        spark_ver = Version(spark_version)
         if spark_ver.major < 3:
             # https://issues.apache.org/jira/browse/SPARK-23977
             raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
 
-        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
 

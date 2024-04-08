@@ -30,7 +30,7 @@ def test_excel_reader_with_infer_schema(
 ):
     """Reading CSV files with inferSchema=True working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
-    if spark_version < (3, 2):
+    if spark_version < "3.2":
         pytest.skip("Excel files are supported on Spark 3.2+ only")
 
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
@@ -79,7 +79,7 @@ def test_excel_reader_with_options(
 ):
     """Reading Excel files working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
-    if spark_version < (3, 2):
+    if spark_version < "3.2":
         pytest.skip("Excel files are supported on Spark 3.2+ only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
@@ -115,7 +115,7 @@ def test_excel_writer(
 ):
     """Written files can be read by Spark"""
     spark_version = get_spark_version(spark)
-    if spark_version < (3, 2):
+    if spark_version < "3.2":
         pytest.skip("Excel files are supported on Spark 3.2+ only")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path

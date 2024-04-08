@@ -167,16 +167,16 @@ class MongoDB(DBConnection):
 
         # Connector version is fixed, so we can perform checks for Scala/Spark version
         if scala_version:
-            scala_ver = Version.parse(scala_version)
+            scala_ver = Version(scala_version)
         elif spark_version:
-            spark_ver = Version.parse(spark_version)
+            spark_ver = Version(spark_version)
             if spark_ver.major < 3:
                 raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
+        if scala_ver.digits(2) < "2.12" or scala_ver.digits(2) > "2.13":
             raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
         # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector

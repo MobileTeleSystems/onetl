@@ -167,25 +167,25 @@ class Excel(ReadWriteFileFormat):
         """
 
         if package_version:
-            version = Version.parse(package_version)
-            if version < (0, 15):
+            version = Version(package_version)
+            if version < "0.15":
                 # format="com.crealytics.spark.excel" does not support reading folder with files
                 # format="excel" was added only in 0.14, but Maven package for 0.14 has different naming convention than recent versions.
                 # So using 0.15 as the lowest supported version.
                 raise ValueError(f"Package version should be at least 0.15, got {package_version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version(0, 20, 3)
+            version = Version("0.20.3")
 
-        spark_ver = Version.parse(spark_version)
-        if spark_ver < (3, 2):
+        spark_ver = Version(spark_version)
+        if spark_ver < "3.2":
             # Actually, Spark 2.4 is supported, but packages are built only for Scala 2.12
             # when default pyspark==2.4.1 is built with Scala 2.11.
             # See https://github.com/crealytics/spark-excel/issues/426
             raise ValueError(f"Spark version should be at least 3.2, got {spark_version}")
 
-        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver.digits(2) < (2, 12):
+        scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        if scala_ver.digits(2) < "2.12":
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver}")
 
         return [f"com.crealytics:spark-excel_{scala_ver.digits(2)}:{spark_ver.digits(3)}_{version.digits(3)}"]

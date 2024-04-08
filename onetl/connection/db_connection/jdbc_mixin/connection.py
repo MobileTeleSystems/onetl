@@ -521,7 +521,7 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if get_spark_version(self.spark) >= (3, 4):
+        if get_spark_version(self.spark) >= "3.4":
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:

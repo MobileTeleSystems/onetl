@@ -54,7 +54,7 @@ def test_avro_reader(
 ):
     """Reading Avro files working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
-    if spark_version < (2, 4):
+    if spark_version < "2.4":
         pytest.skip("Avro files are supported on Spark 3.2+ only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
@@ -91,7 +91,7 @@ def test_avro_writer(
 ):
     """Written files can be read by Spark"""
     spark_version = get_spark_version(spark)
-    if spark_version < (2, 4):
+    if spark_version < "2.4":
         pytest.skip("Avro files are supported on Spark 3.2+ only")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
