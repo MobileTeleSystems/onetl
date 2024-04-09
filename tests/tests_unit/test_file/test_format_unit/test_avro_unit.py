@@ -2,6 +2,7 @@ import logging
 
 import pytest
 
+from onetl._util.version import Version
 from onetl.file.format import Avro
 
 
@@ -14,7 +15,7 @@ from onetl.file.format import Avro
 )
 def test_avro_get_packages_spark_version_not_supported(spark_version):
     with pytest.raises(ValueError, match=f"Spark version should be at least 2.4, got {spark_version}"):
-        Avro.get_packages(spark_version=spark_version)
+        Avro.get_packages(spark_version=Version(spark_version))
 
 
 def test_avro_get_packages_scala_version_not_supported():

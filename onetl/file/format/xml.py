@@ -202,10 +202,10 @@ class XML(ReadWriteFileFormat):
         scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
 
         # Ensure compatibility with Spark and Scala versions
-        if spark_ver < "3.0":
+        if spark_ver < Version("3.0"):
             raise ValueError(f"Spark version must be 3.x, got {spark_ver}")
 
-        if scala_ver < "2.12" or scala_ver > "2.13":
+        if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
             raise ValueError(f"Scala version must be 2.12 or 2.13, got {scala_ver}")
 
         return [f"com.databricks:spark-xml_{scala_ver.digits(2)}:{version.digits(3)}"]

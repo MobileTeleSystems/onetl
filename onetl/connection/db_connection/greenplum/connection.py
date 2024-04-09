@@ -212,13 +212,13 @@ class Greenplum(JDBCMixin, DBConnection):
             scala_ver = Version(scala_version)
         elif spark_version:
             spark_ver = Version(spark_version)
-            if spark_ver.digits(2) > "3.2" or spark_ver.digits(2) < "2.3":
+            if spark_ver.digits(2) > Version("3.2") or spark_ver.digits(2) < Version("2.3"):
                 raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < "2.11" or scala_ver.digits(2) > "2.12":
+        if scala_ver.digits(2) < Version("2.11") or scala_ver.digits(2) > Version("2.12"):
             raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver}")
 
         return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:{package_ver.digits(3)}"]

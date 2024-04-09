@@ -176,7 +176,7 @@ class MongoDB(DBConnection):
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < "2.12" or scala_ver.digits(2) > "2.13":
+        if scala_ver.digits(2) < Version("2.12") or scala_ver.digits(2) > Version("2.13"):
             raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
         # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector

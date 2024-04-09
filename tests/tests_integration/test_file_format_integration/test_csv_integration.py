@@ -7,6 +7,7 @@ Do not test all the possible options and combinations, we are not testing Spark 
 import pytest
 
 from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import CSV
 
@@ -46,7 +47,7 @@ def test_csv_reader_with_infer_schema(
     if spark_version.major < 3:
         # Spark 2 infers "date_value" as timestamp instead of date
         expected_df = df.withColumn("date_value", col("date_value").cast("timestamp"))
-    elif spark_version < "3.3":
+    elif spark_version < Version(3.3):
         # Spark 3.2 cannot infer "date_value", and return it as string
         expected_df = df.withColumn("date_value", col("date_value").cast("string"))
 

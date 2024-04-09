@@ -178,14 +178,14 @@ class Excel(ReadWriteFileFormat):
             version = Version("0.20.3")
 
         spark_ver = Version(spark_version)
-        if spark_ver < "3.2":
+        if spark_ver < Version("3.2"):
             # Actually, Spark 2.4 is supported, but packages are built only for Scala 2.12
             # when default pyspark==2.4.1 is built with Scala 2.11.
             # See https://github.com/crealytics/spark-excel/issues/426
             raise ValueError(f"Spark version should be at least 3.2, got {spark_version}")
 
         scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver.digits(2) < "2.12":
+        if scala_ver.digits(2) < Version("2.12"):
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver}")
 
         return [f"com.crealytics:spark-excel_{scala_ver.digits(2)}:{spark_ver.digits(3)}_{version.digits(3)}"]

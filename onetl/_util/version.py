@@ -14,7 +14,11 @@ class Version:
     """
 
     def __init__(self, version):
-        if isinstance(version, Version):
+        if version is None:
+            self._raw_str = ""
+            self._raw_parts = []
+            self._numeric_parts = []
+        elif isinstance(version, Version):
             self._raw_str = version._raw_str
             self._raw_parts = version._raw_parts.copy()
             self._numeric_parts = version._numeric_parts.copy()
@@ -23,9 +27,8 @@ class Version:
             self._raw_parts = re.split("[.-]", version)
             self._numeric_parts = []
 
-            # Process parts to keep leading zeros in minor or patch levels (like '00' in '12.23.00.34')
+            # process parts to keep leading zeros in minor or patch levels (like '00' in '12.23.00.34')
             for part in self._raw_parts:
-                # Extract digits, default to '0' if no digits found
                 clean_part = "".join(filter(str.isdigit, part)) or "0"
                 self._numeric_parts.append(int(clean_part))
 
@@ -55,32 +58,16 @@ class Version:
         return ".".join(self._raw_parts)
 
     def __eq__(self, other):
-        if isinstance(other, str):
-            other = Version(other)
-        if isinstance(other, Version):
-            return self._numeric_parts == other._numeric_parts
-        return NotImplemented
+        return self._numeric_parts == other._numeric_parts
 
     def __lt__(self, other):
-        if isinstance(other, str):
-            other = Version(other)
-        if isinstance(other, Version):
-            return self._numeric_parts < other._numeric_parts
-        return NotImplemented
+        return self._numeric_parts < other._numeric_parts
 
     def __gt__(self, other):
-        if isinstance(other, str):
-            other = Version(other)
-        if isinstance(other, Version):
-            return self._numeric_parts > other._numeric_parts
-        return NotImplemented
+        return self._numeric_parts > other._numeric_parts
 
     def __ge__(self, other):
-        if isinstance(other, str):
-            other = Version(other)
-        if isinstance(other, Version):
-            return self._numeric_parts >= other._numeric_parts
-        return NotImplemented
+        return self._numeric_parts >= other._numeric_parts
 
     def digits(self, num_parts: int) -> Version:
         """Returns a version object truncated to the first version components."""

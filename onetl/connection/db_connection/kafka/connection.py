@@ -425,7 +425,7 @@ class Kafka(DBConnection):
 
         # Connector version is same as Spark, do not perform any additional checks
         spark_ver = Version(spark_version)
-        if spark_ver < "2.4":
+        if spark_version < Version("2.4"):
             # Kafka connector for Spark 2.3 is build with Kafka client 0.10.0.1 which does not support
             # passing `sasl.jaas.config` option. It is supported only in 0.10.2.0,
             # see https://issues.apache.org/jira/browse/KAFKA-4259
@@ -592,7 +592,7 @@ class Kafka(DBConnection):
     @validator("spark")
     def _check_spark_version(cls, spark):
         spark_version = get_spark_version(spark)
-        if spark_version < "2.4":
+        if spark_version < Version("2.4"):
             raise ValueError(f"Spark version must be at least 2.4, got {spark_version}")
 
         return spark
