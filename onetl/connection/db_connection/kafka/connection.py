@@ -432,11 +432,7 @@ class Kafka(DBConnection):
             # Old client requires generating JAAS file and placing it to filesystem, which is not secure.
             raise ValueError(f"Spark version must be at least 2.4, got {spark_ver}")
 
-        scala_ver = (
-            Version(scala_version).min_digits(2)
-            if scala_version
-            else get_default_scala_version(spark_ver)
-        )
+        scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver}:{spark_ver}",
         ]
