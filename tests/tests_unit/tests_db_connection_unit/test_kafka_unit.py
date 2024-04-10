@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from onetl._util.version import Version
-
 try:
     from pyspark.sql.types import (
         BinaryType,
@@ -47,7 +45,7 @@ def create_temp_file(tmp_path_factory):
     ],
 )
 def test_kafka_get_packages(spark_version, scala_version, package):
-    assert Kafka.get_packages(spark_version=Version(spark_version), scala_version=Version(scala_version)) == [package]
+    assert Kafka.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
 
 
 @pytest.mark.parametrize(
@@ -59,7 +57,7 @@ def test_kafka_get_packages(spark_version, scala_version, package):
 )
 def test_kafka_get_packages_error(spark_version):
     with pytest.raises(ValueError, match=f"Spark version must be at least 2.4, got {spark_version}"):
-        Kafka.get_packages(spark_version=Version(spark_version))
+        Kafka.get_packages(spark_version=spark_version)
 
 
 def test_kafka_too_old_spark_error(spark_mock, mocker):

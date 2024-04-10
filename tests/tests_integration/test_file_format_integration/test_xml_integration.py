@@ -7,6 +7,7 @@ Do not test all the possible options and combinations, we are not testing Spark 
 import pytest
 
 from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import XML
 
@@ -43,7 +44,7 @@ def test_xml_reader(
 ):
     """Reading XML files working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
-    if spark_version < "3.0":
+    if spark_version < Version("3.0"):
         pytest.skip("XML files are supported on Spark 3.x only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
@@ -70,7 +71,7 @@ def test_xml_reader_with_infer_schema(
 ):
     """Reading XML files with inferSchema=True working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
-    if spark_version < "3.0":
+    if spark_version < Version("3.0"):
         pytest.skip("XML files are supported on Spark 3.x only")
 
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
@@ -108,7 +109,7 @@ def test_xml_writer(
 ):
     """Written files can be read by Spark"""
     spark_version = get_spark_version(spark)
-    if spark_version < "3.0":
+    if spark_version < Version("3.0"):
         pytest.skip("XML files are supported on Spark 3.x only")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
@@ -150,7 +151,7 @@ def test_xml_reader_with_attributes(
 ):
     """Reading XML files with attributes works as expected"""
     spark_version = get_spark_version(spark)
-    if spark_version < "3.0":
+    if spark_version < Version("3.0"):
         pytest.skip("XML files are supported on Spark 3.x only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files

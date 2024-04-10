@@ -2,7 +2,6 @@ import logging
 
 import pytest
 
-from onetl._util.version import Version
 from onetl.file.format import Excel
 
 
@@ -16,7 +15,7 @@ from onetl.file.format import Excel
 )
 def test_excel_get_packages_spark_version_not_supported(spark_version):
     with pytest.raises(ValueError, match=f"Spark version should be at least 3.2, got {spark_version}"):
-        Excel.get_packages(spark_version=Version(spark_version))
+        Excel.get_packages(spark_version=spark_version)
 
 
 def test_excel_get_packages_scala_version_not_supported():

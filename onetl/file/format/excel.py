@@ -168,7 +168,7 @@ class Excel(ReadWriteFileFormat):
 
         if package_version:
             version = Version(package_version)
-            if version < "0.15":
+            if version < Version("0.15"):
                 # format="com.crealytics.spark.excel" does not support reading folder with files
                 # format="excel" was added only in 0.14, but Maven package for 0.14 has different naming convention than recent versions.
                 # So using 0.15 as the lowest supported version.

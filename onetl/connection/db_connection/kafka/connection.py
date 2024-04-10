@@ -425,7 +425,7 @@ class Kafka(DBConnection):
 
         # Connector version is same as Spark, do not perform any additional checks
         spark_ver = Version(spark_version)
-        if spark_version < Version("2.4"):
+        if spark_ver < Version("2.4"):
             # Kafka connector for Spark 2.3 is build with Kafka client 0.10.0.1 which does not support
             # passing `sasl.jaas.config` option. It is supported only in 0.10.2.0,
             # see https://issues.apache.org/jira/browse/KAFKA-4259

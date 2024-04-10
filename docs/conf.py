@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from packaging import version as Version
+from packaging.version import Version
 
 PROJECT_ROOT_DIR = Path(__file__).parent.parent.resolve()
 

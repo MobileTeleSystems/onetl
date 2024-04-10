@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from onetl._util.version import Version
 from onetl.connection import SparkS3
 
 pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connection]
@@ -29,7 +28,7 @@ def test_spark_s3_get_packages(spark_version, scala_version, package):
 )
 def test_spark_s3_get_packages_spark_2_error(spark_version):
     with pytest.raises(ValueError, match=f"Spark version must be at least 3.x, got {spark_version}"):
-        SparkS3.get_packages(spark_version=Version(spark_version))
+        SparkS3.get_packages(spark_version=spark_version)
 
 
 @pytest.mark.parametrize("hadoop_version", ["2.7.3", "2.8.0", "2.10.1"])

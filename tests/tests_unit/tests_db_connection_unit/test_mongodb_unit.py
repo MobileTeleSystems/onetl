@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pytest
 
-from onetl._util.version import Version
 from onetl.connection import MongoDB
 from onetl.connection.db_connection.mongodb import MongoDBCollectionExistBehavior
 
@@ -33,7 +32,7 @@ def test_mongodb_get_packages_no_input():
 )
 def test_mongodb_get_packages_spark_version_not_supported(spark_version):
     with pytest.raises(ValueError, match=f"Spark version must be at least 3.0, got {spark_version}"):
-        MongoDB.get_packages(spark_version=Version(spark_version))
+        MongoDB.get_packages(spark_version=spark_version)
 
 
 @pytest.mark.parametrize(
