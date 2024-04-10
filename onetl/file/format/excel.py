@@ -185,7 +185,7 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(f"Spark version should be at least 3.2, got {spark_version}")
 
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver.min_digits(2) < Version("2.12"):
+        if scala_ver < Version("2.12"):
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver.format('{0}.{1}')}")
 
         return [
