@@ -434,7 +434,7 @@ class Kafka(DBConnection):
 
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
-            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver}:{spark_ver}",
+            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
         ]
 
     def __enter__(self):

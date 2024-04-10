@@ -265,13 +265,9 @@ class SparkS3(SparkFileDFConnection):
             # https://issues.apache.org/jira/browse/SPARK-23977
             raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
 
-        scala_ver = (
-            Version(scala_version).min_digits(2)
-            if scala_version
-            else get_default_scala_version(spark_ver).min_digits(2)
-        )
+        scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
-        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver}:{spark_ver}"]
+        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:

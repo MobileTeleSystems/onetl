@@ -172,15 +172,15 @@ class MongoDB(DBConnection):
             spark_ver = Version(spark_version)
             if spark_ver.major < 3:
                 raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
-            scala_ver = get_default_scala_version(spark_ver).min_digits(2)
+            scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
-            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
+            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver.format('{0}.{1}')}")
 
         # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector
-        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.1.1"]
+        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:10.1.1"]
 
     @classproperty
     def package_spark_3_2(cls) -> str:
