@@ -214,7 +214,7 @@ class Greenplum(JDBCMixin, DBConnection):
             spark_ver = Version(spark_version).min_digits(2)
             if spark_ver > Version("3.2") or spark_ver < Version("2.3"):
                 raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
-            scala_ver = get_default_scala_version(spark_ver)
+            scala_ver = get_default_scala_version(spark_ver).min_digits(2)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
@@ -387,7 +387,7 @@ class Greenplum(JDBCMixin, DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).min_digits(2)
+            spark_version = get_spark_version(spark).format("{major}.{minor}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

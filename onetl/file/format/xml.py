@@ -191,15 +191,19 @@ class XML(ReadWriteFileFormat):
         """
 
         if package_version:
-            version = Version(package_version)
+            version = Version(package_version).min_digits(3)
             if version < Version("0.14"):
                 raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version("0.17.0")
+            version = Version("0.17.0").min_digits(3)
 
         spark_ver = Version(spark_version)
-        scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        scala_ver = (
+            Version(scala_version).min_digits(2)
+            if scala_version
+            else get_default_scala_version(spark_ver).min_digits(2)
+        )
 
         # Ensure compatibility with Spark and Scala versions
         if spark_ver < Version("3.0"):
@@ -208,7 +212,7 @@ class XML(ReadWriteFileFormat):
         if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
             raise ValueError(f"Scala version must be 2.12 or 2.13, got {scala_ver}")
 
-        return [f"com.databricks:spark-xml_{scala_ver.min_digits(2)}:{version.min_digits(3)}"]
+        return [f"com.databricks:spark-xml_{scala_ver}:{version}"]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:

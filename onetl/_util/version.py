@@ -30,7 +30,7 @@ class Version:
             self._raw_str: str = version._raw_str
             self._raw_parts: list[str] = version._raw_parts.copy()
             self._numeric_parts: list[int] = version._numeric_parts.copy()
-        elif isinstance(version, str):
+        else:
             self._raw_str = version
             self._raw_parts = re.split("[.-]", version)
             self._numeric_parts = [int(part) for part in self._raw_parts if part.isdigit()]
@@ -58,8 +58,8 @@ class Version:
 
         >>> Version("5.6.7").minor
         6
-        >>> Version("5").minor  # None
-
+        >>> Version("5").minor
+        0
         """
         return self._numeric_parts[1] if len(self._numeric_parts) > 1 else 0
 
@@ -73,6 +73,8 @@ class Version:
 
         >>> Version("5.6.7").patch
         7
+        >>> Version("5.6").patch
+        0
         """
         return self._numeric_parts[2] if len(self._numeric_parts) > 2 else 0
 
@@ -192,6 +194,8 @@ class Version:
         --------
         >>> Version("5.6.7").min_digits(3)
         Version('5.6.7')
+        >>> Version("5.6.7").min_digits(2)
+        Version('5.6')
         >>> Version("5.6").min_digits(3)
         Traceback (most recent call last):
             ...
@@ -199,7 +203,9 @@ class Version:
         """
         if len(self._numeric_parts) < num_parts:
             raise ValueError(f"Version '{self}' does not have enough numeric components for requested format.")
-        return self
+        truncated_parts = self._numeric_parts[:num_parts]
+        truncated_str = ".".join(str(part) for part in truncated_parts)
+        return Version(truncated_str)
 
     def format(self, format_string: str) -> str:
         """
@@ -215,13 +221,12 @@ class Version:
         >>> v.format("{0}.{1}.{2} - Complete Version")
         '5.6.7 - Complete Version'
         >>> v = Version("12.3.4-patch5")
-        >>> v.format("{major}.{minor}.{patch} - {raw}")
-        '12.3.4 - 12.3.4-patch5'
+        >>> v.format("{major}.{minor}.{patch}")
+        '12.3.4'
         """
         return format_string.format(
             *self._numeric_parts,
             major=self.major,
             minor=self.minor,
             patch=self.patch,
-            raw=self._raw_str,
         )
