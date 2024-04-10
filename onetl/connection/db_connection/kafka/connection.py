@@ -434,7 +434,7 @@ class Kafka(DBConnection):
 
         scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
         return [
-            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
+            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.min_digits(2)}:{spark_ver.min_digits(3)}",
         ]
 
     def __enter__(self):
@@ -604,7 +604,7 @@ class Kafka(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).min_digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

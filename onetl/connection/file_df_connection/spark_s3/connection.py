@@ -267,7 +267,7 @@ class SparkS3(SparkFileDFConnection):
 
         scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
-        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
+        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.min_digits(2)}:{spark_ver.min_digits(3)}"]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
@@ -365,7 +365,7 @@ class SparkS3(SparkFileDFConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(3)
+            spark_version = get_spark_version(spark).min_digits(3)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

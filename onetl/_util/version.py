@@ -25,20 +25,15 @@ class Version:
 
     """
 
-    def __init__(self, version):
+    def __init__(self, version: Version | str):
         if isinstance(version, Version):
-            self._raw_str = version._raw_str
-            self._raw_parts = version._raw_parts.copy()
-            self._numeric_parts = version._numeric_parts.copy()
+            self._raw_str: str = version._raw_str
+            self._raw_parts: list[str] = version._raw_parts.copy()
+            self._numeric_parts: list[int] = version._numeric_parts.copy()
         elif isinstance(version, str):
             self._raw_str = version
             self._raw_parts = re.split("[.-]", version)
-            self._numeric_parts = []
-
-            # process parts to keep leading zeros in minor or patch levels (like '00' in '12.23.00.34')
-            for part in self._raw_parts:
-                clean_part = "".join(filter(str.isdigit, part)) or "0"
-                self._numeric_parts.append(int(clean_part))
+            self._numeric_parts = [int(part) for part in self._raw_parts if part.isdigit()]
 
     @property
     def major(self) -> int:
@@ -51,7 +46,7 @@ class Version:
         >>> Version("5.6.7").major
         5
         """
-        return self._numeric_parts[0] if self._numeric_parts else None
+        return self._numeric_parts[0] if self._numeric_parts else 0
 
     @property
     def minor(self) -> int:
@@ -63,8 +58,10 @@ class Version:
 
         >>> Version("5.6.7").minor
         6
+        >>> Version("5").minor  # None
+
         """
-        return self._numeric_parts[1] if len(self._numeric_parts) > 1 else None
+        return self._numeric_parts[1] if len(self._numeric_parts) > 1 else 0
 
     @property
     def patch(self) -> int:
@@ -77,13 +74,38 @@ class Version:
         >>> Version("5.6.7").patch
         7
         """
-        return self._numeric_parts[2] if len(self._numeric_parts) > 2 else None
+        return self._numeric_parts[2] if len(self._numeric_parts) > 2 else 0
 
     @property
     def raw_parts(self) -> list[str]:
+        """
+        Returns the parts of the version string as a list of substrings split by '.' or '-'.
+
+        Examples
+        --------
+        >>> Version("1.2.3-alpha").raw_parts
+        ['1', '2', '3', 'alpha']
+
+        """
         return self._raw_parts
 
     def __getitem__(self, item):
+        """
+        Allows direct access to the numeric parts of the version by index.
+
+        Examples
+        --------
+        >>> Version("1.2.3")[0]
+        1
+        >>> Version("1.2.3")[1]
+        2
+        >>> Version("1.2.3")[2]
+        3
+        >>> Version("1.2.3-alpha")[3]
+        Traceback (most recent call last):
+            ...
+        IndexError: list index out of range
+        """
         return self._numeric_parts[item]
 
     def __len__(self):
@@ -113,8 +135,14 @@ class Version:
         Examples
         --------
 
-        >>> str(Version("5.6.7-patch4"))
-        '5.6.7-patch4'
+        >>> str(Version("5.6.7"))
+        '5.6.7'
+        >>> str(Version("5.6"))
+        '5.6'
+        >>> str(Version("5.6.7.8"))
+        '5.6.7.8'
+        >>> str(Version("5.6.7-patch8"))
+        '5.6.7-patch8'
 
         """
         return self._raw_str
@@ -151,9 +179,9 @@ class Version:
             return NotImplemented
         return self._numeric_parts < other._numeric_parts
 
-    def digits(self, num_parts: int) -> Version:
+    def min_digits(self, num_parts: int) -> Version:
         """
-        Return a version object truncated to the first 'num_parts' components.
+        Ensure the version has at least a specified number of numeric components.
 
         Raises
         ------
@@ -162,15 +190,38 @@ class Version:
 
         Examples
         --------
-
-        >>> Version("5.6.7.8").digits(3)
+        >>> Version("5.6.7").min_digits(3)
         Version('5.6.7')
-        >>> Version("5.6").digits(3)
+        >>> Version("5.6").min_digits(3)
         Traceback (most recent call last):
             ...
-        ValueError: Version '5.6' does not have enough components for requested format.
+        ValueError: Version '5.6' does not have enough numeric components for requested format.
         """
         if len(self._numeric_parts) < num_parts:
-            raise ValueError(f"Version '{self}' does not have enough components for requested format.")
-        truncated_version_str = ".".join(map(str, self._numeric_parts[:num_parts]))
-        return Version(truncated_version_str)
+            raise ValueError(f"Version '{self}' does not have enough numeric components for requested format.")
+        return self
+
+    def format(self, format_string: str) -> str:
+        """
+        Format the version using a custom format string.
+
+        Examples
+        --------
+        >>> v = Version("5.6.7")
+        >>> v.format("{major}.{minor}.{patch}")
+        '5.6.7'
+        >>> v.format("{0}.{1}.{2}")
+        '5.6.7'
+        >>> v.format("{0}.{1}.{2} - Complete Version")
+        '5.6.7 - Complete Version'
+        >>> v = Version("12.3.4-patch5")
+        >>> v.format("{major}.{minor}.{patch} - {raw}")
+        '12.3.4 - 12.3.4-patch5'
+        """
+        return format_string.format(
+            *self._numeric_parts,
+            major=self.major,
+            minor=self.minor,
+            patch=self.patch,
+            raw=self._raw_str,
+        )

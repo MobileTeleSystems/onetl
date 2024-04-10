@@ -209,19 +209,19 @@ class Greenplum(JDBCMixin, DBConnection):
             package_ver = Version("2.2.0")
 
         if scala_version:
-            scala_ver = Version(scala_version)
+            scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
-            spark_ver = Version(spark_version)
-            if spark_ver.digits(2) > Version("3.2") or spark_ver.digits(2) < Version("2.3"):
+            spark_ver = Version(spark_version).min_digits(2)
+            if spark_ver > Version("3.2") or spark_ver < Version("2.3"):
                 raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < Version("2.11") or scala_ver.digits(2) > Version("2.12"):
+        if scala_ver < Version("2.11") or scala_ver > Version("2.12"):
             raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver}")
 
-        return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:{package_ver.digits(3)}"]
+        return [f"io.pivotal:greenplum-spark_{scala_ver.format('{0}.{1}')}:{package_ver}"]
 
     @classproperty
     def package_spark_2_3(cls) -> str:
@@ -387,7 +387,7 @@ class Greenplum(JDBCMixin, DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).min_digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

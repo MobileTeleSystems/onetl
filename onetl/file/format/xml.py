@@ -208,7 +208,7 @@ class XML(ReadWriteFileFormat):
         if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
             raise ValueError(f"Scala version must be 2.12 or 2.13, got {scala_ver}")
 
-        return [f"com.databricks:spark-xml_{scala_ver.digits(2)}:{version.digits(3)}"]
+        return [f"com.databricks:spark-xml_{scala_ver.min_digits(2)}:{version.min_digits(3)}"]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:

@@ -185,10 +185,12 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(f"Spark version should be at least 3.2, got {spark_version}")
 
         scala_ver = Version(scala_version) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver.digits(2) < Version("2.12"):
+        if scala_ver.min_digits(2) < Version("2.12"):
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver}")
 
-        return [f"com.crealytics:spark-excel_{scala_ver.digits(2)}:{spark_ver.digits(3)}_{version.digits(3)}"]
+        return [
+            f"com.crealytics:spark-excel_{scala_ver.min_digits(2)}:{spark_ver.min_digits(3)}_{version.min_digits(3)}",
+        ]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:

@@ -176,11 +176,11 @@ class MongoDB(DBConnection):
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < Version("2.12") or scala_ver.digits(2) > Version("2.13"):
+        if scala_ver.min_digits(2) < Version("2.12") or scala_ver.min_digits(2) > Version("2.13"):
             raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
 
         # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector
-        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
+        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.min_digits(2)}:10.1.1"]
 
     @classproperty
     def package_spark_3_2(cls) -> str:
@@ -512,7 +512,7 @@ class MongoDB(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).min_digits(2)
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
