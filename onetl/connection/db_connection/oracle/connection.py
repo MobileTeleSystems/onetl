@@ -207,8 +207,8 @@ class Oracle(JDBCConnection):
         if java_ver.major < 8:
             raise ValueError(f"Java version must be at least 8, got {java_ver}")
 
-        jre_ver = "8" if java_ver.major < 11 else "11"
-        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]
+        jre_ver = Version("8") if java_ver.major < 11 else Version("11")
+        return [f'com.oracle.database.jdbc:ojdbc{jre_ver.format("{0}")}:23.2.0.0']
 
     @classproperty
     def package(cls) -> str:
