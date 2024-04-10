@@ -435,7 +435,7 @@ class Kafka(DBConnection):
         scala_ver = (
             Version(scala_version).min_digits(2)
             if scala_version
-            else get_default_scala_version(spark_ver).min_digits(2)
+            else get_default_scala_version(spark_ver)
         )
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver}:{spark_ver}",
