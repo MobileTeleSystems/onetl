@@ -189,7 +189,7 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver.format('{0}.{1}')}")
 
         return [
-            f"com.crealytics:spark-excel_{scala_ver.format('{0}.{1}')}:{spark_ver}_{version}",
+            f"com.crealytics:spark-excel_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}_{version}",
         ]
 
     @slot
