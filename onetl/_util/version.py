@@ -165,7 +165,7 @@ class Version:
             return NotImplemented
         return self._numeric_parts == other._numeric_parts
 
-    def __lt__(self, other):
+    def __lt__(self, other: Version):
         """
         Compare two versions using less than.
 

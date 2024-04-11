@@ -61,6 +61,8 @@ def test_mongodb_get_packages_scala_version_not_supported(scala_version):
         # Override Scala version detected automatically
         ("3.2", "2.12", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
         ("3.4", "2.13", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+        # Scala version contain three digits when only two needed
+        ("3.2.4", "2.12.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
     ],
 )
 def test_mongodb_get_packages(spark_version, scala_version, package):
