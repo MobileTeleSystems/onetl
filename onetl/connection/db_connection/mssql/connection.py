@@ -177,8 +177,8 @@ class MSSQL(JDBCConnection):
         if java_ver.major < 8:
             raise ValueError(f"Java version must be at least 8, got {java_ver}")
 
-        jre_ver = Version("8") if java_ver.major < 11 else Version("11")
-        return [f'com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre{jre_ver.format("{0}")}']
+        jre_ver = "8" if java_ver.major < 11 else "11"
+        return [f"com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre{jre_ver}"]
 
     @classproperty
     def package(cls) -> str:
