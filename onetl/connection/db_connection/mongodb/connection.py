@@ -167,20 +167,20 @@ class MongoDB(DBConnection):
 
         # Connector version is fixed, so we can perform checks for Scala/Spark version
         if scala_version:
-            scala_ver = Version.parse(scala_version)
+            scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
-            spark_ver = Version.parse(spark_version)
+            spark_ver = Version(spark_version)
             if spark_ver.major < 3:
                 raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < (2, 12) or scala_ver.digits(2) > (2, 13):
-            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver}")
+        if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
+            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver.format('{0}.{1}')}")
 
         # https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector
-        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.digits(2)}:10.1.1"]
+        return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:10.1.1"]
 
     @classproperty
     def package_spark_3_2(cls) -> str:
@@ -512,7 +512,7 @@ class MongoDB(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).format("{major}.{minor}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

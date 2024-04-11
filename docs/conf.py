@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from packaging import version as Version
+from packaging.version import Version
 
 PROJECT_ROOT_DIR = Path(__file__).parent.parent.resolve()
 
@@ -34,7 +34,7 @@ author = "DataOps.ETL"
 #
 # The short X.Y version.
 
-ver = Version.parse(subprocess.check_output("python ../setup.py --version", shell=True, text=True).strip())
+ver = Version(subprocess.check_output("python ../setup.py --version", shell=True, text=True).strip())
 version = ver.base_version
 # The full version, including alpha/beta/rc tags.
 release = ver.public

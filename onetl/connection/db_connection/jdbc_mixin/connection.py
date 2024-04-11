@@ -17,6 +17,7 @@ except (ImportError, AttributeError):
 from onetl._internal import clear_statement, stringify
 from onetl._util.java import get_java_gateway, try_import_java_class
 from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCOptions as JDBCMixinOptions,
 )
@@ -521,7 +522,7 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if get_spark_version(self.spark) >= (3, 4):
+        if get_spark_version(self.spark) >= Version("3.4"):
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:

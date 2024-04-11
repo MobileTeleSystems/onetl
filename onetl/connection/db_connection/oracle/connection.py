@@ -203,7 +203,7 @@ class Oracle(JDBCConnection):
         if java_version is None:
             java_version = "8"
 
-        java_ver = Version.parse(java_version)
+        java_ver = Version(java_version)
         if java_ver.major < 8:
             raise ValueError(f"Java version must be at least 8, got {java_ver}")
 

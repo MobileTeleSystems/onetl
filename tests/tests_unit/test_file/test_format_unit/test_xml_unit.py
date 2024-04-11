@@ -20,6 +20,7 @@ from onetl.file.format import XML
         ("3.4.1", "2.13", "0.18.0", ["com.databricks:spark-xml_2.13:0.18.0"]),
         ("3.3.0", None, "0.16.0", ["com.databricks:spark-xml_2.12:0.16.0"]),
         ("3.3.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.17.0"]),
+        ("3.2.4", "2.12.1", "0.15.0", ["com.databricks:spark-xml_2.12:0.15.0"]),
     ],
 )
 def test_xml_get_packages(spark_version, scala_version, package_version, expected_packages):

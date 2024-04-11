@@ -2,60 +2,113 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import re
 from functools import total_ordering
-from string import ascii_lowercase
-from typing import Iterator, NamedTuple, Sequence
 
 
 @total_ordering
-class Version(NamedTuple):
+class Version:
     """
     Version representation.
 
     Examples
     --------
 
-    >>> Version(5, 6, 7)
-    Version(major=5, minor=6, patch=7)
-    >>> Version(5, 6)
-    Version(major=5, minor=6, patch=None)
-    >>> Version(5)
-    Version(major=5, minor=None, patch=None)
+    >>> Version("12.3.1")
+    Version('12.3.1')
+    >>> Version("12.3")
+    Version('12.3')
+    >>> Version("12.3.4.5")
+    Version('12.3.4.5')
+    >>> Version("12.3.4-patch5")
+    Version('12.3.4-patch5')
 
     """
 
-    major: int
-    minor: int | None = None
-    patch: int | None = None
+    def __init__(self, version: Version | str):
+        if isinstance(version, Version):
+            self._raw_str: str = version._raw_str
+            self._raw_parts: list[str] = version._raw_parts.copy()
+            self._numeric_parts: list[int] = version._numeric_parts.copy()
+        else:
+            self._raw_str = version
+            self._raw_parts = re.split("[.-]", version)
+            self._numeric_parts = [int(part) for part in self._raw_parts if part.isdigit()]
 
-    def __iter__(self) -> Iterator[int]:
+    @property
+    def major(self) -> int:
         """
-        Iterate over version components which are not ``None``.
+        Return the major version component.
 
         Examples
         --------
 
-        >>> for part in Version(5, 6, 7):
-        ...     print(part)
+        >>> Version("5.6.7").major
         5
+        """
+        return self._numeric_parts[0] if self._numeric_parts else 0
+
+    @property
+    def minor(self) -> int:
+        """
+        Return the minor version component.
+
+        Examples
+        --------
+
+        >>> Version("5.6.7").minor
         6
+        >>> Version("5").minor
+        0
+        """
+        return self._numeric_parts[1] if len(self._numeric_parts) > 1 else 0
+
+    @property
+    def patch(self) -> int:
+        """
+        Return the patch version component.
+
+        Examples
+        --------
+
+        >>> Version("5.6.7").patch
         7
+        >>> Version("5.6").patch
+        0
+        """
+        return self._numeric_parts[2] if len(self._numeric_parts) > 2 else 0
 
-        >>> for part in Version(5, 6):
-        ...     print(part)
-        5
-        6
+    @property
+    def raw_parts(self) -> list[str]:
+        """
+        Returns the parts of the version string as a list of substrings split by '.' or '-'.
 
-        >>> for part in Version(5):
-        ...     print(part)
-        5
+        Examples
+        --------
+        >>> Version("1.2.3-alpha").raw_parts
+        ['1', '2', '3', 'alpha']
 
         """
-        yield self.major
-        if self.minor is not None:
-            yield self.minor
-        if self.patch is not None:
-            yield self.patch
+        return self._raw_parts
+
+    def __getitem__(self, item):
+        """
+        Allows direct access to the numeric parts of the version by index.
+
+        Examples
+        --------
+        >>> Version("1.2.3")[0]
+        1
+        >>> Version("1.2.3")[1]
+        2
+        >>> Version("1.2.3")[2]
+        3
+        >>> Version("1.2.3-alpha")[3]
+        Traceback (most recent call last):
+            ...
+        IndexError: list index out of range
+        """
+        return self._numeric_parts[item]
 
     def __len__(self):
         """
@@ -64,131 +117,116 @@ class Version(NamedTuple):
         Examples
         --------
 
-        >>> assert len(Version(5, 6, 7)) == 3
-        >>> assert len(Version(5, 6)) == 2
-        >>> assert len(Version(5)) == 1
+        >>> len(Version("5.6.7"))
+        3
+        >>> len(Version("5.6"))
+        2
+        >>> len(Version("5"))
+        1
 
         """
-        if self.patch is not None:
-            return 3
-        if self.minor is not None:
-            return 2
-        return 1
+        return len(self._numeric_parts)
+
+    def __repr__(self):
+        return f"Version('{self._raw_str}')"
 
     def __str__(self):
         """
-        Get version as string.
+        Return a string representation of the version.
 
         Examples
         --------
 
-        >>> assert str(Version(5, 6, 7)) == "5.6.7"
-        >>> assert str(Version(5, 6)) == "5.6"
-        >>> assert str(Version(5)) == "5"
+        >>> str(Version("5.6.7"))
+        '5.6.7'
+        >>> str(Version("5.6"))
+        '5.6'
+        >>> str(Version("5.6.7.8"))
+        '5.6.7.8'
+        >>> str(Version("5.6.7-patch8"))
+        '5.6.7-patch8'
 
         """
-        return ".".join(map(str, self))
+        return self._raw_str
 
     def __eq__(self, other):
         """
-        Compare versions.
+        Compare two versions for equality.
 
         Examples
         --------
 
-        >>> assert Version(5, 6, 7) == Version(5, 6, 7)
-
-        >>> # Version could be replaced with tuple[int, ...]
-        >>> assert Version(5, 6, 7) == (5, 6, 7)
-        >>> assert Version(5, 6) == (5, 6)
-        >>> assert Version(5) == (5,)
-
+        >>> Version("5.6.7") == Version("5.6.7")
+        True
+        >>> Version("5.6.7") == Version("5.6.8")
+        False
         """
-        if not isinstance(other, tuple):
+        if not isinstance(other, Version):
             return NotImplemented
+        return self._numeric_parts == other._numeric_parts
 
-        return tuple(self) == other
-
-    def __gt__(self, other):
+    def __lt__(self, other: Version):
         """
-        Compare versions.
+        Compare two versions using less than.
 
         Examples
         --------
 
-        >>> assert Version(5, 6, 7) > Version(5, 6, 6)
-        >>> assert not Version(5, 6, 7) > Version(5, 6, 7)
-
-        >>> # Version could be replaced with tuple[int, ...]
-        >>> assert Version(5, 6, 7) > (5, 6)
-        >>> assert not Version(5, 6, 7) > (5, 7)
-
-        >>> assert Version(5, 6) > (5, 5)
-        >>> assert not Version(5, 6) > (5, 6)
-        >>> assert not Version(5, 6) > (5, 7)
-
-        >>> assert Version(5, 6) > (5,)
-        >>> assert not Version(5, 6) > (6,)
-
-        >>> assert Version(5) > (4,)
-        >>> assert not Version(5) > (5,)
-        >>> assert not Version(5) > (6,)
-
+        >>> Version("5.6.7") < Version("5.6.8")
+        True
+        >>> Version("5.6.9") < Version("5.6.8")
+        False
         """
-        if not isinstance(other, tuple):
+        if not isinstance(other, Version):
             return NotImplemented
+        return self._numeric_parts < other._numeric_parts
 
-        return tuple(self) > other
-
-    @classmethod
-    def parse(cls, version: int | float | str | Sequence) -> Version:
+    def min_digits(self, num_parts: int) -> Version:
         """
-        Parse input as version object.
-
-        Examples
-        --------
-
-        >>> assert Version.parse("5.6.7") == Version(5, 6, 7)
-        >>> assert Version.parse("5.6") == Version(5, 6)
-        >>> assert Version.parse("5") == Version(5)
-
-        >>> assert Version.parse([5, 6, 7]) == Version(5, 6, 7)
-        >>> assert Version.parse([5, 6]) == Version(5, 6)
-        >>> assert Version.parse([5]) == Version(5)
-
-        >>> assert Version.parse(5) == Version(5)
-        >>> assert Version.parse(5.0) == Version(5, 0)
-
-        """
-        if isinstance(version, (int, float)):
-            version = str(version)
-        if isinstance(version, str):
-            version = version.split(".")
-        return cls(*map(int, version[:3]))
-
-    def digits(self, items: int) -> Version:
-        """
-        Return version with exactly N components.
+        Ensure the version has at least a specified number of numeric components.
 
         Raises
         ------
-        AssertionError
+        ValueError
             There is not enough components
 
         Examples
         --------
-
-        >>> assert Version(5, 6, 7).digits(3) == Version(5, 6, 7)
-        >>> assert Version(5, 6, 7).digits(2) == Version(5, 6)
-        >>> assert Version(5, 6, 7).digits(1) == Version(5)
-        >>> Version(5, 6).digits(3)
+        >>> Version("5.6.7").min_digits(3)
+        Version('5.6.7')
+        >>> Version("5.6.7").min_digits(2)
+        Version('5.6')
+        >>> Version("5.6").min_digits(3)
         Traceback (most recent call last):
-        AssertionError: Version '5.6' does not match format 'a.b.c'
-        >>> Version(5).digits(2)
-        Traceback (most recent call last):
-        AssertionError: Version '5' does not match format 'a.b'
+            ...
+        ValueError: Version '5.6' does not have enough numeric components for requested format.
         """
-        if len(self) < items:
-            expected = ".".join(ascii_lowercase[:items])
-            raise AssertionError(f"Version '{self}' does not match format '{expected}'")
-        return self.parse(tuple(self)[:items])
+        if len(self._numeric_parts) < num_parts:
+            raise ValueError(f"Version '{self}' does not have enough numeric components for requested format.")
+        truncated_parts = self._numeric_parts[:num_parts]
+        truncated_str = ".".join(str(part) for part in truncated_parts)
+        return Version(truncated_str)
+
+    def format(self, format_string: str) -> str:
+        """
+        Format the version using a custom format string.
+
+        Examples
+        --------
+        >>> v = Version("5.6.7")
+        >>> v.format("{major}.{minor}.{patch}")
+        '5.6.7'
+        >>> v.format("{0}.{1}.{2}")
+        '5.6.7'
+        >>> v.format("{0}.{1}.{2} - Complete Version")
+        '5.6.7 - Complete Version'
+        >>> v = Version("12.3.4-patch5")
+        >>> v.format("{major}.{minor}.{patch}")
+        '12.3.4'
+        """
+        return format_string.format(
+            *self._numeric_parts,
+            major=self.major,
+            minor=self.minor,
+            patch=self.patch,
+        )

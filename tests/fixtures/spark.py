@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from onetl._util.spark import get_pyspark_version
+from onetl._util.version import Version
 
 
 @pytest.fixture(scope="session")
@@ -66,13 +67,13 @@ def maven_packages():
             ),
         )
 
-    if pyspark_version >= (2, 4):
+    if pyspark_version >= Version("2.4"):
         # There is no Avro package for Spark 2.3
         packages.extend(Avro.get_packages(spark_version=pyspark_version))
         # Kafka connector for Spark 2.3 is too old and not supported
         packages.extend(Kafka.get_packages(spark_version=pyspark_version))
 
-    if pyspark_version >= (3, 2):
+    if pyspark_version >= Version("3.2"):
         # There is no SparkS3 connector for Spark less than 3
         packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
 

@@ -65,6 +65,8 @@ def test_greenplum_get_packages_scala_version_not_supported(scala_version):
         # Override Scala version detected automatically
         ("2.3", "2.11", "io.pivotal:greenplum-spark_2.11:2.2.0"),
         ("2.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.2.0"),
+        # Scala version contain three digits when only two needed
+        ("3.2.4", "2.12.1", "io.pivotal:greenplum-spark_2.12:2.2.0"),
     ],
 )
 def test_greenplum_get_packages(spark_version, scala_version, package):
