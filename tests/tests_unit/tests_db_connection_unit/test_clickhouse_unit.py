@@ -27,21 +27,35 @@ def test_clickhouse_package():
             ],
         ),
         (
-            "0.7.1",
-            "0.6.0",
-            [
-                "com.clickhouse:clickhouse-jdbc:0.7.1",
-                "com.clickhouse:clickhouse-http-client:0.7.1",
-                "org.apache.httpcomponents.client5:httpclient5:0.6.0",
-            ],
-        ),
-        (
             "0.6.0-patch3",
             "5.3.1",
             [
                 "com.clickhouse:clickhouse-jdbc:0.6.0-patch3",
                 "com.clickhouse:clickhouse-http-client:0.6.0-patch3",
                 "org.apache.httpcomponents.client5:httpclient5:5.3.1",
+            ],
+        ),
+        (
+            "0.4.0",
+            "4.5.14",
+            ["com.clickhouse:clickhouse-jdbc:0.4.0", "com.clickhouse:clickhouse-http-client:0.4.0"],
+        ),  # No HTTP client should be included
+        (
+            "0.5.0",
+            "4.5.14",
+            [
+                "com.clickhouse:clickhouse-jdbc:0.5.0",
+                "com.clickhouse:clickhouse-http-client:0.5.0",
+                "org.apache.httpcomponents.client5:httpclient5:4.5.14",
+            ],
+        ),
+        (
+            "0.6.0",
+            "4.5.14",
+            [
+                "com.clickhouse:clickhouse-jdbc:0.6.0",
+                "com.clickhouse:clickhouse-http-client:0.6.0",
+                "org.apache.httpcomponents.client5:httpclient5:4.5.14",
             ],
         ),
     ],
