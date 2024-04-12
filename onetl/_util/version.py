@@ -195,17 +195,17 @@ class Version:
         >>> Version("5.6.7").min_digits(3)
         Version('5.6.7')
         >>> Version("5.6.7").min_digits(2)
-        Version('5.6')
+        Version('5.6.7')
         >>> Version("5.6").min_digits(3)
         Traceback (most recent call last):
             ...
-        ValueError: Version '5.6' does not have enough numeric components for requested format.
+        ValueError: Version '5.6' does not have enough numeric components for requested format (expected at least 3).
         """
         if len(self._numeric_parts) < num_parts:
-            raise ValueError(f"Version '{self}' does not have enough numeric components for requested format.")
-        truncated_parts = self._numeric_parts[:num_parts]
-        truncated_str = ".".join(str(part) for part in truncated_parts)
-        return Version(truncated_str)
+            raise ValueError(
+                f"Version '{self}' does not have enough numeric components for requested format (expected at least {num_parts}).",
+            )
+        return self
 
     def format(self, format_string: str) -> str:
         """

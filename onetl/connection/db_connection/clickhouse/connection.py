@@ -139,12 +139,10 @@ class Clickhouse(JDBCConnection):
              ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
-        package_version_obj = Version(package_version) if package_version else Version("0.6.0")
+        package_version_obj = Version(package_version).min_digits(3) if package_version else Version("0.6.0")
         apache_http_client_version_obj = (
-            Version(apache_http_client_version) if apache_http_client_version else Version("5.3.1")
+            Version(apache_http_client_version).min_digits(3) if apache_http_client_version else Version("5.3.1")
         )
-        if len(package_version_obj) != 3 or len(apache_http_client_version_obj) != 3:
-            raise ValueError("Version should consist of exactly three numeric_parts (major.minor.patch)")
 
         result = [
             f"com.clickhouse:clickhouse-jdbc:{package_version_obj}",
