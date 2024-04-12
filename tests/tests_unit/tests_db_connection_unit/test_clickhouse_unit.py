@@ -1,5 +1,3 @@
-import re
-
 import pytest
 
 from onetl.connection import Clickhouse
@@ -8,21 +6,34 @@ pytestmark = [pytest.mark.clickhouse, pytest.mark.db_connection, pytest.mark.con
 
 
 def test_clickhouse_driver():
-    assert Clickhouse.DRIVER == "ru.yandex.clickhouse.ClickHouseDriver"
+    assert Clickhouse.DRIVER == "com.clickhouse.jdbc.ClickHouseDriver"
 
 
 def test_clickhouse_package():
-    warning_msg = re.escape("will be removed in 1.0.0, use `Clickhouse.get_packages()` instead")
-    with pytest.warns(UserWarning, match=warning_msg):
-        assert Clickhouse.package == "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+    expected_packages = "com.clickhouse:clickhouse-jdbc:0.6.0,com.clickhouse:clickhouse-http-client:0.6.0,org.apache.httpcomponents.client5:httpclient5:5.3.1"
+    assert Clickhouse.package == expected_packages
 
 
 def test_clickhouse_get_packages():
-    assert Clickhouse.get_packages() == ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
+    expected_packages = [
+        "com.clickhouse:clickhouse-jdbc:0.6.0",
+        "com.clickhouse:clickhouse-http-client:0.6.0",
+        "org.apache.httpcomponents.client5:httpclient5:5.3.1",
+    ]
+    assert Clickhouse.get_packages() == expected_packages
+
+
+def test_clickhouse_get_packages_custom():
+    expected_packages = [
+        "com.clickhouse:clickhouse-jdbc:0.7.1",
+        "com.clickhouse:clickhouse-http-client:0.7.1",
+        "org.apache.httpcomponents.client5:httpclient5:5.4",
+    ]
+    assert Clickhouse.get_packages("0.7.1", "5.4") == expected_packages
 
 
 def test_clickhouse_missing_package(spark_no_packages):
-    msg = "Cannot import Java class 'ru.yandex.clickhouse.ClickHouseDriver'"
+    msg = "Cannot import Java class 'com.clickhouse.jdbc.ClickHouseDriver'"
     with pytest.raises(ValueError, match=msg):
         Clickhouse(
             host="some_host",
