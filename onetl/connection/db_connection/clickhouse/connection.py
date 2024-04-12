@@ -28,8 +28,8 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0>`_  and additional dependencies
-    for `Apache HTTP client <https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5/5.3.1>`_ when necessary (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0>`_
+    (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. warning::
 
@@ -131,7 +131,7 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
-            Clickhouse.get_packages(package_version="0.7.1", apache_http_client_version="5.4")
+            Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
 
         .. note::
 
