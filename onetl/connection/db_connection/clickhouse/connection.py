@@ -6,6 +6,7 @@ import logging
 from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
@@ -130,26 +131,29 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
-            Clickhouse.get_packages("0.7.1", "5.4")
+            Clickhouse.get_packages(package_version="0.7.1", apache_http_client_version="5.4")
 
         .. note::
 
-            Spark does not support ``.jar`` classifiers, so it is not possible to pass
-            ``com.clickhouse:clickhouse-jdbc:0.6.0-all`` to install all required packages.
-            Dependencies are listed manually.
+             Spark does not support ``.jar`` classifiers, so it is not possible to pass
+             ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
-        package_version = package_version or "0.6.0"
-        apache_http_client_version = apache_http_client_version or "5.3.1"
+        package_version_obj = Version(package_version) if package_version else Version("0.6.0")
+        apache_http_client_version_obj = (
+            Version(apache_http_client_version) if apache_http_client_version else Version("5.3.1")
+        )
+        if len(package_version_obj) != 3 or len(apache_http_client_version_obj) != 3:
+            raise ValueError("Version should consist of exactly three numeric_parts (major.minor.patch)")
 
         result = [
-            f"com.clickhouse:clickhouse-jdbc:{package_version}",
-            f"com.clickhouse:clickhouse-http-client:{package_version}",
+            f"com.clickhouse:clickhouse-jdbc:{package_version_obj}",
+            f"com.clickhouse:clickhouse-http-client:{package_version_obj}",
         ]
 
-        if package_version >= "0.5.0":
+        if package_version_obj >= Version("0.5.0"):
             #  before 0.5.0 builtin Java HTTP Client was used
-            result.append(f"org.apache.httpcomponents.client5:httpclient5:{apache_http_client_version}")
+            result.append(f"org.apache.httpcomponents.client5:httpclient5:{apache_http_client_version_obj}")
 
         return result
 

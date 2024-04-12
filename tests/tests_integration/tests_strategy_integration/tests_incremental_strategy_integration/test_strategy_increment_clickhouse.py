@@ -304,7 +304,7 @@ def test_clickhouse_strategy_incremental_explicit_hwm_type(
         ),
         (
             "hwm_datetime",
-            "CAST(text_string AS DateTime64(6))",
+            "CAST(text_string AS DateTime)",
             ColumnDateTimeHWM,
             lambda x: x.isoformat(),
         ),

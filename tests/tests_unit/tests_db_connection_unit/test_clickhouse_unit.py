@@ -14,22 +14,59 @@ def test_clickhouse_package():
     assert Clickhouse.package == expected_packages
 
 
-def test_clickhouse_get_packages():
-    expected_packages = [
-        "com.clickhouse:clickhouse-jdbc:0.6.0",
-        "com.clickhouse:clickhouse-http-client:0.6.0",
-        "org.apache.httpcomponents.client5:httpclient5:5.3.1",
-    ]
-    assert Clickhouse.get_packages() == expected_packages
+@pytest.mark.parametrize(
+    "package_version, apache_http_client_version, expected_packages",
+    [
+        (
+            None,
+            None,
+            [
+                "com.clickhouse:clickhouse-jdbc:0.6.0",
+                "com.clickhouse:clickhouse-http-client:0.6.0",
+                "org.apache.httpcomponents.client5:httpclient5:5.3.1",
+            ],
+        ),
+        (
+            "0.7.1",
+            "0.6.0",
+            [
+                "com.clickhouse:clickhouse-jdbc:0.7.1",
+                "com.clickhouse:clickhouse-http-client:0.7.1",
+                "org.apache.httpcomponents.client5:httpclient5:0.6.0",
+            ],
+        ),
+        (
+            "0.6.0-patch3",
+            "5.3.1",
+            [
+                "com.clickhouse:clickhouse-jdbc:0.6.0-patch3",
+                "com.clickhouse:clickhouse-http-client:0.6.0-patch3",
+                "org.apache.httpcomponents.client5:httpclient5:5.3.1",
+            ],
+        ),
+    ],
+)
+def test_clickhouse_get_packages(package_version, apache_http_client_version, expected_packages):
+    assert (
+        Clickhouse.get_packages(package_version=package_version, apache_http_client_version=apache_http_client_version)
+        == expected_packages
+    )
 
 
-def test_clickhouse_get_packages_custom():
-    expected_packages = [
-        "com.clickhouse:clickhouse-jdbc:0.7.1",
-        "com.clickhouse:clickhouse-http-client:0.7.1",
-        "org.apache.httpcomponents.client5:httpclient5:5.4",
-    ]
-    assert Clickhouse.get_packages("0.7.1", "5.4") == expected_packages
+@pytest.mark.parametrize(
+    "package_version, apache_http_client_version",
+    [
+        ("0.7", "5.3.1"),
+        ("1", "5.4.0"),
+        ("a.b.c", "5.3.1"),
+    ],
+)
+def test_invalid_versions_raise_error(package_version, apache_http_client_version):
+    with pytest.raises(
+        ValueError,
+        match=r"Version should consist of exactly three numeric_parts \(major\.minor\.patch\)",
+    ):
+        Clickhouse.get_packages(package_version=package_version, apache_http_client_version=apache_http_client_version)
 
 
 def test_clickhouse_missing_package(spark_no_packages):
