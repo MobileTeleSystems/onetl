@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
-import warnings
 from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
@@ -28,7 +28,7 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. warning::
@@ -104,13 +104,25 @@ class Clickhouse(JDBCConnection):
     Extra = ClickhouseExtra
     Dialect = ClickhouseDialect
 
-    DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
+    DRIVER: ClassVar[str] = "com.clickhouse.jdbc.ClickHouseDriver"
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(
+        cls,
+        package_version: str | None = None,
+        apache_http_client_version: str | None = None,
+    ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
+
+        Parameters
+        ----------
+        package_version : str , optional
+             ClickHouse JDBC version client packages. Defaults to ``0.6.0``.
+
+        apache_http_client_version : str, optional
+             Apache HTTP Client version package. Defaults to ``5.3.1``.
 
         Examples
         --------
@@ -119,17 +131,34 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
-            Clickhouse.get_packages()
+            Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
+
+        .. note::
+
+             Spark does not support ``.jar`` classifiers, so it is not possible to pass
+             ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
-        return ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
+        package_version_obj = Version(package_version).min_digits(3) if package_version else Version("0.6.0")
+        apache_http_client_version_obj = (
+            Version(apache_http_client_version).min_digits(3) if apache_http_client_version else Version("5.3.1")
+        )
+
+        result = [
+            f"com.clickhouse:clickhouse-jdbc:{package_version_obj}",
+            f"com.clickhouse:clickhouse-http-client:{package_version_obj}",
+        ]
+
+        if package_version_obj >= Version("0.5.0"):
+            #  before 0.5.0 builtin Java HTTP Client was used
+            result.append(f"org.apache.httpcomponents.client5:httpclient5:{apache_http_client_version_obj}")
+
+        return result
 
     @classproperty
-    def package(cls) -> str:
-        """Get package name to be downloaded by Spark."""
-        msg = "`Clickhouse.package` will be removed in 1.0.0, use `Clickhouse.get_packages()` instead"
-        warnings.warn(msg, UserWarning, stacklevel=3)
-        return "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+    def package(self) -> str:
+        """Get a single string of package names to be downloaded by Spark for establishing a Clickhouse connection."""
+        return "com.clickhouse:clickhouse-jdbc:0.6.0,com.clickhouse:clickhouse-http-client:0.6.0,org.apache.httpcomponents.client5:httpclient5:5.3.1"
 
     @property
     def jdbc_url(self) -> str:

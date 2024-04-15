@@ -227,9 +227,7 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     updated_df = pandas.concat([updated_rows, unchanged_rows])
     processing.assert_equal_df(df=df, other_frame=updated_df, order_by="id_int")
 
-    # not supported by Clickhouse
-    with pytest.raises(Exception):
-        clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
+    clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
 
     clickhouse.execute(f"ALTER TABLE {temp_table} DELETE WHERE id_int < 70{suffix}")
     df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")

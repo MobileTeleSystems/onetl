@@ -152,3 +152,19 @@ class ClickhouseProcessing(BaseProcessing):
         order_by: str | None = None,
     ) -> pandas.DataFrame:
         return self.connection.query_dataframe(self.get_expected_dataframe_ddl(schema, table, order_by))
+
+    def fix_pandas_df(
+        self,
+        df: pandas.DataFrame,
+    ) -> pandas.DataFrame:
+        df = super().fix_pandas_df(df)
+
+        for column in df.columns:
+            column_name = column.lower()
+
+            if "float" in column_name:
+                # somethere in chain Clickhouse -> Spark -> Pandas Float32 column is being converted to Float64,
+                # causing tests to fail. Convert it back to original type
+                df[column] = df[column].astype("float32")
+
+        return df
