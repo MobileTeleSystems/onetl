@@ -110,18 +110,18 @@ class Clickhouse(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        package_version: str | None = None,
-        apache_http_client_version: str | None = None,
+        package_version: str | Version | None = None,
+        apache_http_client_version: str | Version | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC and Apache HTTP Client versions. |support_hooks|
 
         Parameters
         ----------
-        package_version : str , optional
+        package_version : str | Version, optional
              ClickHouse JDBC version client packages. Defaults to ``0.6.0``.
 
-        apache_http_client_version : str, optional
+        apache_http_client_version : str | Version, optional
              Apache HTTP Client version package. Defaults to ``5.3.1``.
 
         Examples
@@ -139,19 +139,23 @@ class Clickhouse(JDBCConnection):
              ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
-        package_version_obj = Version(package_version).min_digits(3) if package_version else Version("0.6.0")
-        apache_http_client_version_obj = (
-            Version(apache_http_client_version).min_digits(3) if apache_http_client_version else Version("5.3.1")
+        default_jdbc_version = "0.6.0"
+        default_http_version = "5.3.1"
+
+        jdbc_version = default_jdbc_version if package_version is None else str(Version(package_version).min_digits(3))
+        http_version = (
+            default_http_version
+            if apache_http_client_version is None
+            else str(Version(apache_http_client_version).min_digits(3))
         )
 
         result = [
-            f"com.clickhouse:clickhouse-jdbc:{package_version_obj}",
-            f"com.clickhouse:clickhouse-http-client:{package_version_obj}",
+            f"com.clickhouse:clickhouse-jdbc:{jdbc_version}",
+            f"com.clickhouse:clickhouse-http-client:{jdbc_version}",
         ]
 
-        if package_version_obj >= Version("0.5.0"):
-            #  before 0.5.0 builtin Java HTTP Client was used
-            result.append(f"org.apache.httpcomponents.client5:httpclient5:{apache_http_client_version_obj}")
+        if Version(jdbc_version) >= Version("0.5.0"):
+            result.append(f"org.apache.httpcomponents.client5:httpclient5:{http_version}")
 
         return result
 
