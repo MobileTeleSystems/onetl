@@ -2,7 +2,6 @@ import re
 
 import pytest
 
-from onetl._util.version import Version
 from onetl.connection import Postgres
 
 pytestmark = [pytest.mark.postgres, pytest.mark.db_connection, pytest.mark.connection]
@@ -25,7 +24,6 @@ def test_postgres_package():
         ("42.7.3", ["org.postgresql:postgresql:42.7.3"]),
         ("42.7.3-patch", ["org.postgresql:postgresql:42.7.3-patch"]),
         ("42.6.0", ["org.postgresql:postgresql:42.6.0"]),
-        (Version("42.5.1"), ["org.postgresql:postgresql:42.5.1"]),
     ],
 )
 def test_postgres_get_packages(package_version, expected_packages):
@@ -39,7 +37,7 @@ def test_postgres_get_packages(package_version, expected_packages):
         "abc",
     ],
 )
-def test_postgres_invalid_version(package_version):
+def test_postgres_get_packages_invalid_version(package_version):
     with pytest.raises(
         ValueError,
         match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",

@@ -106,13 +106,13 @@ class Postgres(JDBCConnection):
 
     @slot
     @classmethod
-    def get_packages(cls, package_version: str | Version | None = None) -> list[str]:
+    def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
         Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. |support_hooks|
 
         Parameters
         ----------
-        package_version : str | Version, optional
+        package_version : str, optional
             Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.3``.
 
         Examples
@@ -128,9 +128,8 @@ class Postgres(JDBCConnection):
             Postgres.get_packages(package_version="42.6.0")
 
         """
-
         default_version = "42.7.3"
-        version = default_version if package_version is None else str(Version(package_version).min_digits(3))
+        version = Version(package_version or default_version).min_digits(3)
 
         return [f"org.postgresql:postgresql:{version}"]
 

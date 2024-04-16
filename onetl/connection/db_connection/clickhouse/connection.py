@@ -110,18 +110,18 @@ class Clickhouse(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        package_version: str | Version | None = None,
-        apache_http_client_version: str | Version | None = None,
+        package_version: str | None = None,
+        apache_http_client_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. Allows specifying custom JDBC and Apache HTTP Client versions. |support_hooks|
 
         Parameters
         ----------
-        package_version : str | Version, optional
+        package_version : str, optional
              ClickHouse JDBC version client packages. Defaults to ``0.6.0``.
 
-        apache_http_client_version : str | Version, optional
+        apache_http_client_version : str, optional
              Apache HTTP Client version package. Defaults to ``5.3.1``.
 
         Examples
@@ -142,19 +142,15 @@ class Clickhouse(JDBCConnection):
         default_jdbc_version = "0.6.0"
         default_http_version = "5.3.1"
 
-        jdbc_version = default_jdbc_version if package_version is None else str(Version(package_version).min_digits(3))
-        http_version = (
-            default_http_version
-            if apache_http_client_version is None
-            else str(Version(apache_http_client_version).min_digits(3))
-        )
+        jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
+        http_version = Version(apache_http_client_version or default_http_version).min_digits(3)
 
         result = [
             f"com.clickhouse:clickhouse-jdbc:{jdbc_version}",
             f"com.clickhouse:clickhouse-http-client:{jdbc_version}",
         ]
 
-        if Version(jdbc_version) >= Version("0.5.0"):
+        if jdbc_version >= Version("0.5.0"):
             result.append(f"org.apache.httpcomponents.client5:httpclient5:{http_version}")
 
         return result
