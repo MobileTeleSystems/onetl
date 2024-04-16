@@ -6,6 +6,7 @@ import warnings
 from typing import ClassVar
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
 from onetl.connection.db_connection.postgres.dialect import PostgresDialect
@@ -27,7 +28,7 @@ class PostgresExtra(GenericOptions):
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. |support_hooks|
 
-    Based on Maven package ``org.postgresql:postgresql:42.6.0``
+    Based on Maven package ``org.postgresql:postgresql:42.7.3``
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
     .. warning::
@@ -105,9 +106,14 @@ class Postgres(JDBCConnection):
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. |support_hooks|
+
+        Parameters
+        ----------
+        package_version : str, optional
+            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.3``.
 
         Examples
         --------
@@ -118,15 +124,21 @@ class Postgres(JDBCConnection):
 
             Postgres.get_packages()
 
+            # custom package version
+            Postgres.get_packages(package_version="42.6.0")
+
         """
-        return ["org.postgresql:postgresql:42.6.0"]
+        default_version = "42.7.3"
+        version = Version(package_version or default_version).min_digits(3)
+
+        return [f"org.postgresql:postgresql:{version}"]
 
     @classproperty
     def package(cls) -> str:
         """Get package name to be downloaded by Spark."""
         msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.postgresql:postgresql:42.6.0"
+        return "org.postgresql:postgresql:42.7.3"
 
     @property
     def jdbc_url(self) -> str:

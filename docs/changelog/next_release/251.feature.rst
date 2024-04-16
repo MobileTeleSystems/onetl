@@ -1,0 +1,1 @@
+:class:`Postgres` connection now uses PostgreSQL JDBC driver ``42.7.3``, upgraded from ``42.6.0``, and supports passing custom versions: ``Postgres.get_packages(package_version=...)``.

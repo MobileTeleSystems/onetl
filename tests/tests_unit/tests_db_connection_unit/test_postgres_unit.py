@@ -14,14 +14,38 @@ def test_postgres_class_attributes():
 def test_postgres_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Postgres.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Postgres.package == "org.postgresql:postgresql:42.6.0"
+        assert Postgres.package == "org.postgresql:postgresql:42.7.3"
 
 
-def test_postgres_get_packages():
-    assert Postgres.get_packages() == ["org.postgresql:postgresql:42.6.0"]
+@pytest.mark.parametrize(
+    "package_version, expected_packages",
+    [
+        (None, ["org.postgresql:postgresql:42.7.3"]),
+        ("42.7.3", ["org.postgresql:postgresql:42.7.3"]),
+        ("42.7.3-patch", ["org.postgresql:postgresql:42.7.3-patch"]),
+        ("42.6.0", ["org.postgresql:postgresql:42.6.0"]),
+    ],
+)
+def test_postgres_get_packages(package_version, expected_packages):
+    assert Postgres.get_packages(package_version=package_version) == expected_packages
 
 
-def test_oracle_missing_package(spark_no_packages):
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "42.2",
+        "abc",
+    ],
+)
+def test_postgres_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",
+    ):
+        Postgres.get_packages(package_version=package_version)
+
+
+def test_postgres_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'org.postgresql.Driver'"
     with pytest.raises(ValueError, match=msg):
         Postgres(

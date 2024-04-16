@@ -75,7 +75,7 @@ def test_clickhouse_get_packages(package_version, apache_http_client_version, ex
         ("a.b.c", "5.3.1"),
     ],
 )
-def test_invalid_versions_raise_error(package_version, apache_http_client_version):
+def test_clickhouse_get_packages_invalid_version(package_version, apache_http_client_version):
     with pytest.raises(
         ValueError,
         match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",

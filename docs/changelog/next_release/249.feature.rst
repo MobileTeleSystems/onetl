@@ -1,1 +1,1 @@
-Allow passing custom JDBC driver version to ``Clickhouse.get_packages(package_version=...)``.
+:class:`Clickhouse` connection supports passing custom versions: ``Clickhouse.get_packages(package_version=...)``.
