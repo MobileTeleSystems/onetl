@@ -6,6 +6,7 @@ import warnings
 from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.mysql.dialect import MySQLDialect
 from onetl.hooks import slot, support_hooks
@@ -104,28 +105,37 @@ class MySQL(JDBCConnection):
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying a custom JDBC driver version for MySQL. |support_hooks|
+
+        Parameters
+        ----------
+        package_version : str, optional
+            Specifies the version of the MySQL JDBC driver to use. Defaults to ``8.3.0``.
 
         Examples
         --------
-
         .. code:: python
 
             from onetl.connection import MySQL
 
             MySQL.get_packages()
 
+            # specify a custom package version
+            MySQL.get_packages(package_version="8.2.0")
         """
-        return ["com.mysql:mysql-connector-j:8.0.33"]
+        default_version = "8.3.0"
+        version = Version(package_version or default_version).min_digits(3)
+
+        return [f"com.mysql:mysql-connector-j:{version}"]
 
     @classproperty
     def package(cls) -> str:
         """Get package name to be downloaded by Spark."""
         msg = "`MySQL.package` will be removed in 1.0.0, use `MySQL.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.mysql:mysql-connector-j:8.0.33"
+        return "com.mysql:mysql-connector-j:8.3.0"
 
     @property
     def jdbc_url(self):

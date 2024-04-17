@@ -14,11 +14,35 @@ def test_mysql_class_attributes():
 def test_mysql_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MySQL.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MySQL.package == "com.mysql:mysql-connector-j:8.0.33"
+        assert MySQL.package == "com.mysql:mysql-connector-j:8.3.0"
 
 
-def test_mysql_get_packages():
-    assert MySQL.get_packages() == ["com.mysql:mysql-connector-j:8.0.33"]
+@pytest.mark.parametrize(
+    "package_version, expected_packages",
+    [
+        (None, ["com.mysql:mysql-connector-j:8.3.0"]),
+        ("8.3.0", ["com.mysql:mysql-connector-j:8.3.0"]),
+        ("8.1.0", ["com.mysql:mysql-connector-j:8.1.0"]),
+        ("8.0.33", ["com.mysql:mysql-connector-j:8.0.33"]),
+    ],
+)
+def test_mysql_get_packages(package_version, expected_packages):
+    assert MySQL.get_packages(package_version=package_version) == expected_packages
+
+
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "8.3",
+        "abc",
+    ],
+)
+def test_mysql_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",
+    ):
+        MySQL.get_packages(package_version=package_version)
 
 
 def test_mysql_missing_package(spark_no_packages):
