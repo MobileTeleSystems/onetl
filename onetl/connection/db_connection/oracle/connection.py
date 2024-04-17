@@ -179,15 +179,18 @@ class Oracle(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        java_version: str | Version | None = None,
+        java_version: str | None = None,
+        package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for Oracle. |support_hooks|
 
         Parameters
         ----------
-        java_version : str, default ``8``
-            Java major version.
+        java_version : str, optional
+            Java major version, defaults to "8". Must be "8" or "11".
+        package_version : str, optional
+            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.3.0.0.23.09".
 
         Examples
         --------
@@ -197,25 +200,29 @@ class Oracle(JDBCConnection):
             from onetl.connection import Oracle
 
             Oracle.get_packages()
-            Oracle.get_packages(java_version="8")
 
+            # specify Java and package versions
+            Oracle.get_packages(java_version="8", package_version="23.2.0.0")
         """
-        if java_version is None:
-            java_version = "8"
 
-        java_ver = Version(java_version)
+        default_java_version = "8"
+        default_package_version = "23.3.0.23.09"
+
+        java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java version must be at least 8, got {java_ver}")
+            raise ValueError(f"Java version must be at least 8, got {java_ver.major}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
-        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]
+        jdbc_version = Version(package_version or default_package_version).min_digits(4)
+
+        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:{jdbc_version}"]
 
     @classproperty
     def package(cls) -> str:
         """Get package name to be downloaded by Spark."""
         msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
+        return "com.oracle.database.jdbc:ojdbc8:23.3.0.23.09"
 
     @property
     def jdbc_url(self) -> str:
