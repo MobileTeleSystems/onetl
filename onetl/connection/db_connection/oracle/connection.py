@@ -206,14 +206,14 @@ class Oracle(JDBCConnection):
         """
 
         default_java_version = "8"
-        default_package_version = "23.3.0.0.23.09"
+        default_package_version = "23.3.0.23.09"
 
         java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
             raise ValueError(f"Java version must be at least 8, got {java_ver.major}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
-        jdbc_version = Version(package_version or default_package_version)
+        jdbc_version = Version(package_version or default_package_version).min_digits(4)
 
         return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:{jdbc_version}"]
 
@@ -222,7 +222,7 @@ class Oracle(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.oracle.database.jdbc:ojdbc8:23.3.0.0.23.09"
+        return "com.oracle.database.jdbc:ojdbc8:23.3.0.23.09"
 
     @property
     def jdbc_url(self) -> str:
