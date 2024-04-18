@@ -70,15 +70,15 @@ Database
 +==============+=========================================================================================================================+
 | Clickhouse   | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
-| MSSQL        |                                                                                                                         |
+| MSSQL        | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
-| MySQL        |                                                                                                                         |
+| MySQL        | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Postgres     |                                                                                                                         |
+| Postgres     | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Oracle       |                                                                                                                         |
+| Oracle       | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Teradata     |                                                                                                                         |
+| Teradata     | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
 | Hive         | Apache Spark `Hive integration <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_               |
 +--------------+-------------------------------------------------------------------------------------------------------------------------+
@@ -102,7 +102,7 @@ File
 +--------------+--------------------------------------------------------------------+
 | FTP          | `FTPUtil library <https://pypi.org/project/ftputil/>`_             |
 +--------------+--------------------------------------------------------------------+
-| FTPS         |                                                                    |
+| FTPS         | `FTPUtil library <https://pypi.org/project/ftputil/>`_             |
 +--------------+--------------------------------------------------------------------+
 | WebDAV       | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_ |
 +--------------+--------------------------------------------------------------------+
@@ -117,7 +117,7 @@ Files as DataFrame
 +==============+===============================================================================================================+
 | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_ |
 +--------------+---------------------------------------------------------------------------------------------------------------+
-| SparkHDFS    |                                                                                                               |
+| SparkHDFS    | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_ |
 +--------------+---------------------------------------------------------------------------------------------------------------+
 | SparkS3      | `Hadoop AWS <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_ library        |
 +--------------+---------------------------------------------------------------------------------------------------------------+
