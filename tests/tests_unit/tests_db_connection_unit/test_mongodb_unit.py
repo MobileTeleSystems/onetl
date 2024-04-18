@@ -12,9 +12,9 @@ pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connec
 def test_mongodb_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MongoDB.get_packages(spark_version=")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
-        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"
+        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"
+        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"
+        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"
 
 
 def test_mongodb_get_packages_no_input():
@@ -38,35 +38,51 @@ def test_mongodb_get_packages_spark_version_not_supported(spark_version):
 @pytest.mark.parametrize(
     "scala_version",
     [
+        "2.9.2",
         "2.11",
-        "2.14",
-        "3.0",
     ],
 )
 def test_mongodb_get_packages_scala_version_not_supported(scala_version):
-    with pytest.raises(ValueError, match=f"Scala version must be 2.12 - 2.13, got {scala_version}"):
+    with pytest.raises(ValueError, match=f"Scala version must be at least 2.12, got {scala_version}"):
         MongoDB.get_packages(scala_version=scala_version)
 
 
 @pytest.mark.parametrize(
-    "spark_version, scala_version, package",
+    "spark_version, scala_version, package_version, package",
     [
-        # use Scala version directly
-        (None, "2.12", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        (None, "2.13", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
-        # Detect Scala version by Spark version
-        ("3.2", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        ("3.3", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        ("3.4", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        # Override Scala version detected automatically
-        ("3.2", "2.12", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        ("3.4", "2.13", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
-        # Scala version contain three digits when only two needed
-        ("3.2.4", "2.12.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        (None, "2.12", "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"),
+        (None, "2.13", "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.13:10.2.2"),
+        ("3.2", None, "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"),
+        ("3.3", None, "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"),
+        ("3.4", None, "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"),
+        ("3.2", "2.12", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        ("3.4", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+        ("3.2", "2.12", "10.2.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.1"),
+        ("3.2", "2.12", "10.2.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.0"),
+        ("3.2.4", "2.12.1", "10.2.2", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.2"),
     ],
 )
-def test_mongodb_get_packages(spark_version, scala_version, package):
-    assert MongoDB.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+def test_mongodb_get_packages(spark_version, scala_version, package_version, package):
+    assert MongoDB.get_packages(
+        spark_version=spark_version,
+        scala_version=scala_version,
+        package_version=package_version,
+    ) == [package]
+
+
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "10",
+        "abc",
+    ],
+)
+def test_mongodb_get_packages_invalid_package_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 2\).",
+    ):
+        MongoDB.get_packages(scala_version="2.12", package_version=package_version)
 
 
 def test_mongodb_missing_package(spark_no_packages):
