@@ -14,31 +14,48 @@ def test_mssql_class_attributes():
 def test_mssql_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MSSQL.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"
+        assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"
 
 
-def test_mssql_get_packages_no_input():
-    assert MSSQL.get_packages() == ["com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"]
+@pytest.mark.parametrize(
+    "java_version, package_version, expected_packages",
+    [
+        (None, None, ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"]),
+        ("8", None, ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"]),
+        ("9", None, ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"]),
+        ("11", None, ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11"]),
+        ("20", None, ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11"]),
+        ("8", "12.6.1.jre8", ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"]),
+        ("11", "12.6.1.jre11", ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11"]),
+        ("11", "12.7.0.jre11-preview", ["com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre11-preview"]),
+        ("8", "12.7.0.jre8-preview", ["com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview"]),
+        ("8", "12.6.1", ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"]),
+        ("11", "12.6.1", ["com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11"]),
+    ],
+)
+def test_mssql_get_packages(java_version, package_version, expected_packages):
+    assert MSSQL.get_packages(java_version=java_version, package_version=package_version) == expected_packages
+
+
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "12.7",
+        "abc",
+    ],
+)
+def test_mssql_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",
+    ):
+        MSSQL.get_packages(package_version=package_version)
 
 
 @pytest.mark.parametrize("java_version", ["7", "6"])
 def test_mssql_get_packages_java_version_not_supported(java_version):
     with pytest.raises(ValueError, match=f"Java version must be at least 8, got {java_version}"):
         MSSQL.get_packages(java_version=java_version)
-
-
-@pytest.mark.parametrize(
-    "java_version, package",
-    [
-        ("8", "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"),
-        ("9", "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8"),
-        ("11", "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11"),
-        ("17", "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11"),
-        ("20", "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11"),
-    ],
-)
-def test_mssql_get_packages(java_version, package):
-    assert MSSQL.get_packages(java_version=java_version) == [package]
 
 
 def test_mssql_missing_package(spark_no_packages):
