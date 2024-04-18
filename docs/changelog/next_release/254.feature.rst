@@ -1,1 +1,1 @@
-:class:`MSSQL` connection now uses Microsoft SQL Server JDBC driver ``12.7.0``, upgraded from ``12.2.0``, and supports passing custom versions: ``MSSQL.get_packages(java_version=..., package_version=...)``.
+:class:`MSSQL` connection now uses Microsoft SQL Server JDBC driver ``12.6.1``, upgraded from ``12.2.0``, and supports passing custom versions: ``MSSQL.get_packages(java_version=..., package_version=...)``.

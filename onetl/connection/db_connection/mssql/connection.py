@@ -160,7 +160,7 @@ class MSSQL(JDBCConnection):
         java_version : str, optional
             Java major version, defaults to ``8``. Must be ``8`` or ``11``.
         package_version : str, optional
-            Specifies the version of the MSSQL JDBC driver to use. Defaults to ``12.7.0``.
+            Specifies the version of the MSSQL JDBC driver to use. Defaults to ``12.6.1.``.
 
         Examples
         --------
@@ -174,7 +174,7 @@ class MSSQL(JDBCConnection):
             MSSQL.get_packages(java_version="8", package_version="12.6.1.jre11")
         """
         default_java_version = "8"
-        default_package_version = "12.7.0"
+        default_package_version = "12.6.1"
 
         java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
@@ -196,7 +196,7 @@ class MSSQL(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`MSSQL.package` will be removed in 1.0.0, use `MSSQL.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8"
+        return "com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8"
 
     @property
     def jdbc_url(self) -> str:
