@@ -133,7 +133,7 @@ class MongoDB(DBConnection):
         cls,
         scala_version: str | None = None,
         spark_version: str | None = None,
-        connector_version: str | None = None,
+        package_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. Allows specifying custom MongoDB Spark connector versions. |support_hooks|
@@ -148,7 +148,7 @@ class MongoDB(DBConnection):
         spark_version : str, optional
             Spark version in format ``major.minor``. Used only if ``scala_version=None``.
 
-        connector_version : str, optional
+        package_version : str, optional
             Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.2.2``.
 
         Examples
@@ -160,10 +160,10 @@ class MongoDB(DBConnection):
             MongoDB.get_packages(scala_version="2.12")
 
             # specify custom connector version
-            MongoDB.get_packages(scala_version="2.12", connector_version="10.2.2")
+            MongoDB.get_packages(scala_version="2.12", package_version="10.2.2")
         """
 
-        default_connector_version = "10.2.2"
+        default_package_version = "10.2.2"
 
         if scala_version:
             scala_ver = Version(scala_version).min_digits(2)
@@ -175,10 +175,10 @@ class MongoDB(DBConnection):
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        connector_ver = Version(connector_version or default_connector_version).min_digits(2)
+        connector_ver = Version(package_version or default_package_version).min_digits(2)
 
-        if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
-            raise ValueError(f"Scala version must be 2.12 - 2.13, got {scala_ver.format('{0}.{1}')}")
+        if scala_ver < Version("2.12"):
+            raise ValueError(f"Scala version must be at least 2.12, got {scala_ver}")
 
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:{connector_ver}"]
 
