@@ -6,6 +6,7 @@ import warnings
 from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.teradata.dialect import TeradataDialect
 from onetl.hooks import slot
@@ -124,21 +125,33 @@ class Teradata(JDBCConnection):
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(
+        cls,
+        package_version: str | None = None,
+    ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for Teradata. |support_hooks|
+
+        Parameters
+        ----------
+        package_version : str, optional
+            Specifies the version of the Teradata JDBC driver to use. Defaults to ``17.20.00.15``.
 
         Examples
         --------
-
         .. code:: python
 
             from onetl.connection import Teradata
 
             Teradata.get_packages()
 
+            # specify custom driver version
+            Teradata.get_packages(package_version="20.00.00.18")
         """
-        return ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+        default_package_version = "17.20.00.15"
+        version = Version(package_version or default_package_version).min_digits(4)
+
+        return [f"com.teradata.jdbc:terajdbc:{version}"]
 
     @classproperty
     def package(cls) -> str:

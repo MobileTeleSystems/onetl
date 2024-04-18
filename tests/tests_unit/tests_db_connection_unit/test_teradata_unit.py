@@ -17,8 +17,31 @@ def test_teradata_package():
         assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
 
 
-def test_teradata_get_packages():
-    assert Teradata.get_packages() == ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+@pytest.mark.parametrize(
+    "package_version, expected_package",
+    [
+        (None, ["com.teradata.jdbc:terajdbc:17.20.00.15"]),
+        ("17.20.00.15", ["com.teradata.jdbc:terajdbc:17.20.00.15"]),
+        ("16.20.00.13", ["com.teradata.jdbc:terajdbc:16.20.00.13"]),
+    ],
+)
+def test_teradata_get_packages_valid_versions(package_version, expected_package):
+    assert Teradata.get_packages(package_version=package_version) == expected_package
+
+
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "20.00.13",
+        "abc",
+    ],
+)
+def test_teradata_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 4\).",
+    ):
+        Teradata.get_packages(package_version=package_version)
 
 
 def test_teradata_missing_package(spark_no_packages):
