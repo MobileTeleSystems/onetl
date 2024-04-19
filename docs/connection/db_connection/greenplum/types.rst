@@ -301,35 +301,29 @@ Explicit type cast
 ``DBReader``
 ~~~~~~~~~~~~
 
-Unfortunately, it is not possible to cast unsupported column to some supported type on ``DBReader`` side:
+Direct casting of Greenplum types is not supported by DBReader due to the connector’s implementation specifics.
 
 .. code-block:: python
 
-    DBReader(
+    reader = DBReader(
         connection=greenplum,
         # will fail
-        columns=["CAST(column AS text)"],
+        columns=["CAST(unsupported_column AS text)"],
     )
 
-This is related to Greenplum connector implementation. Instead of passing this ``CAST`` expression to ``SELECT`` query
-as is, it performs type cast on Spark side, so this syntax is not supported.
+But there is a workaround - create a view with casting unsupported column to text (or any other supported type).
+For example, you can use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function to convert column of any type to string representation and then parse this column on Spark side using :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
-But there is a workaround - create a view with casting unsupported column to ``text`` (or any other supported type).
+.. code-block:: python
 
-For example, you can use ``to_json`` Postgres function for convert column of any type to string representation.
-You can then parse this column on Spark side using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
-
-.. code:: python
-
-    from pyspark.sql.functions import from_json
     from pyspark.sql.types import ArrayType, IntegerType
 
     from onetl.connection import Greenplum
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     greenplum = Greenplum(...)
 
-    # create view with proper type cast
     greenplum.execute(
         """
         CREATE VIEW schema.view_with_json_column AS
@@ -350,29 +344,26 @@ You can then parse this column on Spark side using `from_json <https://spark.apa
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = ArrayType(IntegerType())
+    # Define the schema for the JSON data
+    json_scheme = ArrayType(IntegerType())
 
-    # cast column content to proper Spark type
     df = df.select(
         df.id,
         df.supported_column,
-        from_json(df.array_column_as_json, schema).alias("array_column"),
+        JSON().parse_column(df.array_column_as_json, json_scheme).alias("array_column"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Greenplum table.
+To write data to a ``text`` or ``json`` column in a Greenplum table, use :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
-For example, you can convert data using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+.. code-block:: python
 
-.. code:: python
-
-    from pyspark.sql.functions import to_json
 
     from onetl.connection import Greenplum
-    from onetl.db import DBReader
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
 
     greenplum = Greenplum(...)
 
@@ -390,7 +381,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.array_column).alias("array_column_json"),
+        JSON().serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer = DBWriter(

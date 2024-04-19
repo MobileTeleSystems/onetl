@@ -301,12 +301,12 @@ For example, you can use ``CAST(column AS CLOB)`` to convert data to string repr
 
 It is also possible to use `JSON_ARRAY <https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/JSON_ARRAY.html>`_
 or `JSON_OBJECT <https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/JSON_OBJECT.html>`_ Oracle functions
-to convert column of any type to string representation, and then parse this column on Spark side using
-`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+to convert column of any type to string representation. Then this JSON string can then be effectively parsed using the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
 .. code-block:: python
 
-    from pyspark.sql.types import IntegerType
+    from onetl.file.format import JSON
+    from pyspark.sql.types import IntegerType, StructType, StructField
 
     from onetl.connection import Oracle
     from onetl.db import DBReader
@@ -325,32 +325,27 @@ to convert column of any type to string representation, and then parse this colu
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = IntegerType()
+    json_scheme = StructType([StructField("key", IntegerType())])
 
-    # cast column content to proper Spark type
     df = df.select(
         df.id,
         df.supported_column,
-        # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-        # or explicit json parsing
-        from_json(df.array_column_json, schema).alias("array_column"),
+        JSON().parse_column("array_column_json", json_scheme).alias("array_column"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Oracle table.
+It is always possible to convert data on Spark side to string, and then write it to text column in Oracle table.
 
-For example, you can convert data using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+To serialize and write JSON data to a ``text`` or ``json`` column in an Oracle table use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
-.. code:: python
-
-    from pyspark.sql.functions import to_json
+.. code-block:: python
 
     from onetl.connection import Oracle
-    from onetl.db import DBReader
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
 
     oracle = Oracle(...)
 
@@ -367,7 +362,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.unsupported_column).alias("array_column_json"),
+        JSON().serialize_column(df.unsupported_column).alias("array_column_json"),
     )
 
     writer = DBWriter(

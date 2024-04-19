@@ -5,19 +5,23 @@ Do not test all the possible options and combinations, we are not testing Spark 
 """
 
 import pytest
-from pyspark.sql import Row
-from pyspark.sql.functions import col, struct
-from pyspark.sql.types import (
-    ArrayType,
-    IntegerType,
-    MapType,
-    StringType,
-    StructField,
-    StructType,
-)
 
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSON
+
+try:
+    from pyspark.sql import Row
+    from pyspark.sql.functions import col
+    from pyspark.sql.types import (
+        ArrayType,
+        IntegerType,
+        MapType,
+        StringType,
+        StructField,
+        StructType,
+    )
+except ImportError:
+    pytest.skip("Missing pyspark", allow_module_level=True)
 
 try:
     from tests.util.assert_df import assert_equal_df
@@ -75,7 +79,7 @@ def test_json_writer_is_not_supported(
 
 
 @pytest.mark.parametrize(
-    "json_string,schema,expected",
+    "json_string, schema, expected",
     [
         (
             '{"id": 1, "name": "Alice"}',
@@ -94,15 +98,17 @@ def test_json_writer_is_not_supported(
         ),
     ],
 )
-def test_json_parse_column(spark, json_string, schema, expected):
-    json_class = JSON()
-    df = spark.createDataFrame([(json_string,)], ["json_string"])
-    parsed_df = df.withColumn("parsed", json_class.parse_column(col("json_string"), schema))
-    assert parsed_df.select("parsed").first()["parsed"] == expected
+@pytest.mark.parametrize("column_type", [str, col])
+def test_json_parse_column(spark, json_string, schema, expected, column_type):
+    json = JSON()
+    df = spark.createDataFrame([(json_string,)], ["json_column"])
+    parsed_df = df.select(json.parse_column(column_type("json_column"), schema))
+    assert parsed_df.columns == ["json_column"]
+    assert parsed_df.select("json_column").first()["json_column"] == expected
 
 
 @pytest.mark.parametrize(
-    "data,schema,expected_json",
+    "data, schema, expected_json",
     [
         (
             {"id": 1, "name": "Alice"},
@@ -121,18 +127,12 @@ def test_json_parse_column(spark, json_string, schema, expected):
         ),
     ],
 )
-def test_json_serialize_column(spark, data, schema, expected_json):
-    json_class = JSON()
-
-    if isinstance(schema, StructType):
-        df = spark.createDataFrame([data], schema=schema)
-        serialized_df = df.withColumn("json_string", json_class.serialize_column(struct(*df.columns)))
-    elif isinstance(schema, ArrayType):
-        df = spark.createDataFrame([data], schema)
-        serialized_df = df.withColumn("json_string", json_class.serialize_column(col("value")))
-    elif isinstance(schema, MapType):
-        df = spark.createDataFrame([data], schema)
-        serialized_df = df.withColumn("json_string", json_class.serialize_column(col("value")))
-
+@pytest.mark.parametrize("column_type", [str, col])
+def test_json_serialize_column(spark, data, schema, expected_json, column_type):
+    json = JSON()
+    df_schema = StructType([StructField("json_string", schema)])
+    df = spark.createDataFrame([(data,)], df_schema)
+    serialized_df = df.select(json.serialize_column(column_type("json_string")))
     actual_json = serialized_df.select("json_string").first()["json_string"]
     assert actual_json == expected_json
+    assert serialized_df.columns == ["json_string"]
