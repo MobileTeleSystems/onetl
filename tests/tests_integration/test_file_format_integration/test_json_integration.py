@@ -5,6 +5,16 @@ Do not test all the possible options and combinations, we are not testing Spark 
 """
 
 import pytest
+from pyspark.sql import Row
+from pyspark.sql.functions import col, struct
+from pyspark.sql.types import (
+    ArrayType,
+    IntegerType,
+    MapType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSON
@@ -62,3 +72,67 @@ def test_json_writer_is_not_supported(
             format=JSON(),
             target_path=json_root,
         )
+
+
+@pytest.mark.parametrize(
+    "json_string,schema,expected",
+    [
+        (
+            '{"id": 1, "name": "Alice"}',
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            Row(id=1, name="Alice"),
+        ),
+        (
+            '[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]',
+            ArrayType(StructType([StructField("id", IntegerType()), StructField("name", StringType())])),
+            [Row(id=1, name="Alice"), Row(id=2, name="Bob")],
+        ),
+        (
+            '{"key1": "value1", "key2": "value2"}',
+            MapType(StringType(), StringType()),
+            {"key1": "value1", "key2": "value2"},
+        ),
+    ],
+)
+def test_json_parse_column(spark, json_string, schema, expected):
+    json_class = JSON()
+    df = spark.createDataFrame([(json_string,)], ["json_string"])
+    parsed_df = df.withColumn("parsed", json_class.parse_column(col("json_string"), schema))
+    assert parsed_df.select("parsed").first()["parsed"] == expected
+
+
+@pytest.mark.parametrize(
+    "data,schema,expected_json",
+    [
+        (
+            {"id": 1, "name": "Alice"},
+            StructType([StructField("id", IntegerType(), True), StructField("name", StringType(), True)]),
+            '{"id":1,"name":"Alice"}',
+        ),
+        (
+            [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}],
+            ArrayType(StructType([StructField("id", IntegerType(), True), StructField("name", StringType(), True)])),
+            '[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]',
+        ),
+        (
+            {"key1": "value1", "key2": "value2"},
+            MapType(StringType(), StringType()),
+            '{"key1":"value1","key2":"value2"}',
+        ),
+    ],
+)
+def test_json_serialize_column(spark, data, schema, expected_json):
+    json_class = JSON()
+
+    if isinstance(schema, StructType):
+        df = spark.createDataFrame([data], schema=schema)
+        serialized_df = df.withColumn("json_string", json_class.serialize_column(struct(*df.columns)))
+    elif isinstance(schema, ArrayType):
+        df = spark.createDataFrame([data], schema)
+        serialized_df = df.withColumn("json_string", json_class.serialize_column(col("value")))
+    elif isinstance(schema, MapType):
+        df = spark.createDataFrame([data], schema)
+        serialized_df = df.withColumn("json_string", json_class.serialize_column(col("value")))
+
+    actual_json = serialized_df.select("json_string").first()["json_string"]
+    assert actual_json == expected_json
