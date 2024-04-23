@@ -348,17 +348,15 @@ It is possible to explicitly cast column of unsupported type using ``DBReader(co
 
 For example, you can use ``CAST(column AS text)`` to convert data to string representation on Postgres side, and so it will be read as Spark's ``StringType()``.
 
-It is also possible to use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function
-to convert column of any type to string representation, and then parse this column on Spark side using
-`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+It is also possible to use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function to convert column of any type to string representation, and then parse this column on Spark side you can use the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method:
 
 .. code-block:: python
 
-    from pyspark.sql.functions import from_json
     from pyspark.sql.types import IntegerType
 
     from onetl.connection import Postgres
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     postgres = Postgres(...)
 
@@ -374,35 +372,37 @@ to convert column of any type to string representation, and then parse this colu
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = IntegerType()
-
-    # cast column content to proper Spark type
+    json_schema = StructType(
+        [
+            StructField("id", IntegerType(), nullable=True),
+            StructField("name", StringType(), nullable=True),
+            ...,
+        ]
+    )
     df = df.select(
         df.id,
         df.supported_column,
         # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-        # or explicit json parsing
-        from_json(df.array_column_json, schema).alias("array_column"),
+        JSON().parse_column("array_column_json", json_schema).alias("json_string"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Postgres table.
+It is always possible to convert data on the Spark side to a string, and then write it to a text column in a Postgres table.
 
-Using ``to_json``
-^^^^^^^^^^^^^^^^^
+Using JSON.serialize_column
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+You can use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method for data serialization:
 
-For example, you can convert data using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+.. code-block:: python
 
-.. code:: python
-
-    from pyspark.sql.functions import to_json
+    from onetl.file.format import JSON
+    from pyspark.sql.functions import col
 
     from onetl.connection import Postgres
-    from onetl.db import DBReader
+    from onetl.db import DBWriter
 
     postgres = Postgres(...)
 
@@ -419,7 +419,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.unsupported_column).alias("array_column_json"),
+        JSON().serialize_column(df.unsupported_column).alias("array_column_json"),
     )
 
     writer = DBWriter(
@@ -428,7 +428,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     )
     writer.run(write_df)
 
-Then you can parse this column on Postgres side (for example, by creating a view):
+Then you can parse this column on the Postgres side (for example, by creating a view):
 
 .. code-block:: sql
 

@@ -289,16 +289,15 @@ It is possible to explicitly cast column type using ``DBReader(columns=...)`` sy
 
 For example, you can use ``CAST(column AS text)`` to convert data to string representation on MySQL side, and so it will be read as Spark's ``StringType()``.
 
-It is also possible to use `JSON_OBJECT <https://dev.mysql.com/doc/refman/en/json.html>`_ MySQL function
-to convert column of any type to string representation, and then parse this column on Spark side using
-`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+It is also possible to use `JSON_OBJECT <https://dev.mysql.com/doc/refman/en/json.html>`_ MySQL function and parse JSON columns in MySQL with the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
 .. code-block:: python
 
-    from pyspark.sql.types import IntegerType, StructField, StructType
+    from pyspark.sql.types import IntegerType, StructType, StructField
 
     from onetl.connection import MySQL
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     mysql = MySQL(...)
 
@@ -314,30 +313,30 @@ to convert column of any type to string representation, and then parse this colu
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = StructType([StructField("key", IntegerType())])
+    json_scheme = StructType([StructField("key", IntegerType())])
 
-    # cast column content to proper Spark type
     df = df.select(
         df.id,
         df.supported_column,
         # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-        # or explicit json parsing
-        from_json(df.json_column, schema).alias("struct_column"),
+        JSON().parse_column("json_column", json_scheme).alias("struct_column"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-Convert dataframe column to JSON using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_,
-and write it as ``text`` column in MySQL:
+To write JSON data to a ``json`` or ``text`` column in a MySQL table, use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
-.. code:: python
+.. code-block:: python
+
+    from onetl.connection import MySQL
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
 
     mysql.execute(
         """
-        CREATE TABLE schema.target_tbl AS (
+        CREATE TABLE schema.target_tbl (
             id bigint,
             array_column_json json -- any string type, actually
         )
@@ -345,11 +344,9 @@ and write it as ``text`` column in MySQL:
         """,
     )
 
-    from pyspark.sql.functions import to_json
-
     df = df.select(
         df.id,
-        to_json(df.array_column).alias("array_column_json"),
+        JSON().serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer.run(df)

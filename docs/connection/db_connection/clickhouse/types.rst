@@ -336,12 +336,16 @@ Explicit type cast
 ~~~~~~~~~~~~
 
 Use ``CAST`` or ``toJSONString`` to get column data as string in JSON format,
-and then cast string column in resulting dataframe to proper type using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
 
-.. code:: python
+For parsing JSON columns in ClickHouse, :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
-    from pyspark.sql.functions import from_json
+.. code-block:: python
+
     from pyspark.sql.types import ArrayType, IntegerType
+
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBReader
 
     reader = DBReader(
         connection=clickhouse,
@@ -357,16 +361,22 @@ and then cast string column in resulting dataframe to proper type using `from_js
 
     df = df.select(
         df.id,
-        from_json(df.array_column, column_type).alias("array_column"),
+        JSON().parse_column("array_column", column_type),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-Convert dataframe column to JSON using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_,
-and write it as ``String`` column in Clickhouse:
+For writing JSON data to ClickHouse, use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method to convert a DataFrame column to JSON format efficiently and write it as a ``String`` column in Clickhouse.
 
-.. code:: python
+
+.. code-block:: python
+
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBWriter
+
+    clickhouse = ClickHouse(...)
 
     clickhouse.execute(
         """
@@ -379,11 +389,9 @@ and write it as ``String`` column in Clickhouse:
         """,
     )
 
-    from pyspark.sql.functions import to_json
-
     df = df.select(
         df.id,
-        to_json(df.array_column).alias("array_column_json"),
+        JSON().serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer.run(df)
