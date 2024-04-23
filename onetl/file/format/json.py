@@ -136,7 +136,7 @@ class JSON(ReadOnlyFileFormat):
                 [StructField("id", IntegerType()), StructField("name", StringType())]
             )
 
-            parsed_df = df.withColumn("parsed_json", json.parse_column("json_string", schema))
+            parsed_df = df.select(json.parse_column("json_string", schema))
             parsed_df.show()
         """
         from pyspark.sql import Column, SparkSession  # noqa:  WPS442
@@ -177,7 +177,7 @@ class JSON(ReadOnlyFileFormat):
             df = spark.createDataFrame([(123, "John")], ["id", "name"])
             df = df.withColumn("combined", struct("id", "name"))
 
-            serialized_df = df.withColumn("json_string", json.serialize_column("combined"))
+            serialized_df = df.select(json.serialize_column("combined"))
             serialized_df.show()
         """
         from pyspark.sql import Column, SparkSession  # noqa:  WPS442
