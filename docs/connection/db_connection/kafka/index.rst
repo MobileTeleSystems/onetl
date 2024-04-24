@@ -35,7 +35,7 @@ Kafka
     :maxdepth: 1
     :caption: Troubleshooting
 
-    types
+    format_handling
 
 .. toctree::
     :maxdepth: 1

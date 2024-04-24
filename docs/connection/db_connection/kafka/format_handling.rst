@@ -1,8 +1,12 @@
-.. _kafka-types:
+.. _kafka-data-format-handling:
 
+Data Format Handling
+--------------------
 
-Type cast
----------
+Kafka topics can store data in various formats including ``JSON``, ``CSV``, ``Avro``, etc. Below are examples of how to handle data formats using custom methods for parsing and serialization integrated with Spark's DataFrame operations.
+
+CSV Format Handling
+-------------------
 
 ``DBReader``
 ~~~~~~~~~~~~
@@ -33,8 +37,8 @@ To handle CSV formatted data stored in Kafka topics, use the :obj:`CSV.parse_col
     # +----+--------+--------+---------+------+-----------------------+-------------+
     # |key |value   |topic   |partition|offset|timestamp              |timestampType|
     # +----+--------+--------+---------+------+-----------------------+-------------+
-    # |[31]|Alice,20|topic_n1|0        |0     |2024-04-24 13:02:25.911|0            |
-    # |[32]|Bob,25  |topic_n1|0        |1     |2024-04-24 13:02:25.922|0            |
+    # |[31]|Alice,20|topicCSV|0        |0     |2024-04-24 13:02:25.911|0            |
+    # |[32]|Bob,25  |topicCSV|0        |1     |2024-04-24 13:02:25.922|0            |
     # +----+--------+--------+---------+------+-----------------------+-------------+
 
     # schema for parsing CSV data from Kafka
@@ -86,3 +90,65 @@ To serialize structured data into CSV format and write it back to a Kafka topic,
     # |  1|"Alice,20" |
     # |  2|"Bob,25"   |
     # +---+-----------+
+
+JSON Format Handling
+--------------------
+
+``DBReader``
+~~~~~~~~~~~~
+
+To process JSON formatted data from Kafka, use the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
+
+.. code-block:: python
+
+    from onetl.file.format import JSON
+
+    df.show()
+    # +----+-------------------------+----------+---------+------+-----------------------+-------------+
+    # |key |value                    |topic     |partition|offset|timestamp              |timestampType|
+    # +----+-------------------------+----------+---------+------+-----------------------+-------------+
+    # |[31]|{"name":"Alice","age":20}|topicKafka|0        |0     |2024-04-24 16:51:11.739|0            |
+    # |[32]|{"name":"Bob","age":25}  |topicKafka|0        |1     |2024-04-24 16:51:11.749|0            |
+    # +----+-------------------------+----------+---------+------+-----------------------+-------------+
+
+    json = JSON()
+
+    json_schema = StructType(
+        [
+            StructField("name", StringType(), nullable=True),
+            StructField("age", IntegerType(), nullable=True),
+        ]
+    )
+
+    parsed_json_df = df.select(json.parse_column("value", json_schema))
+
+    parsed_json_df.first()
+    # Row(value=Row(name='Alice', age=20))
+
+``DBWriter``
+~~~~~~~~~~~~
+
+For serializing data into JSON format and sending it back to Kafka, use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>`.
+
+.. code-block:: python
+
+    from onetl.file.format import JSON
+
+    df.show()
+    # +-----------+
+    # |value      |
+    # +-----------+
+    # |{Alice, 20}|
+    # |{Bob, 25}  |
+    # +-----------+
+
+    json = JSON()
+
+    serialized_json_df = df.select(json.serialize_column("data_column"))
+    serialized_json_df.show()
+    # +-------------------------+
+    # |value                    |
+    # +-------------------------+
+    # |{"name":"Alice","age":20}|
+    # |{"name":"Bob","age":25}  |
+    # +-------------------------+
