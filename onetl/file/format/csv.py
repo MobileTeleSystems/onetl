@@ -142,9 +142,7 @@ class CSV(ReadWriteFileFormat):
                 [StructField("id", IntegerType()), StructField("text", StringType())]
             )
 
-            parsed_df = df.select(
-                csv_handler.parse_column("csv_string", schema).alias("parsed_csv")
-            )
+            parsed_df = df.select(csv_handler.parse_column("csv_string", schema))
             parsed_df.show()
         """
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
