@@ -115,6 +115,9 @@ class CSV(ReadWriteFileFormat):
         """
         Parses a CSV string column to a structured Spark SQL column using Spark's `from_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_csv.html>`_ function, based on the provided schema.
 
+        .. note::
+            The ``from_csv`` function is available from Apache Spark ``3.0.0`` onwards.
+
         Parameters
         ----------
         column : str | Column
@@ -136,13 +139,13 @@ class CSV(ReadWriteFileFormat):
             from pyspark.sql.types import StructType, StructField, IntegerType, StringType
 
             spark = SparkSession.builder.appName("CSVParsingExample").getOrCreate()
-            csv_handler = CSV()
+            csv = CSV()
             df = spark.createDataFrame([("1,some",), ("2,another",)], ["csv_string"])
             schema = StructType(
                 [StructField("id", IntegerType()), StructField("text", StringType())]
             )
 
-            parsed_df = df.select(csv_handler.parse_column("csv_string", schema))
+            parsed_df = df.select(csv.parse_column("csv_string", schema))
             parsed_df.show()
         """
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
@@ -161,6 +164,9 @@ class CSV(ReadWriteFileFormat):
     def serialize_column(self, column: str | Column) -> Column:
         """
         Serializes a structured Spark SQL column into a CSV string column using Spark's `to_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_csv.html>`_ function.
+
+        .. note::
+            The ``to_csv`` function is available from Apache Spark ``3.0.0`` onwards.
 
         Parameters
         ----------

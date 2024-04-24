@@ -33,6 +33,12 @@ Kafka
 
 .. toctree::
     :maxdepth: 1
+    :caption: Troubleshooting
+
+    types
+
+.. toctree::
+    :maxdepth: 1
     :caption: For developers
 
     auth

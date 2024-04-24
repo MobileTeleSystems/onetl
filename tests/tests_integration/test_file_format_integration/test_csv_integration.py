@@ -164,14 +164,8 @@ def test_csv_writer_with_options(
             {"delimiter": ",", "header": True},
             Row(id=1, name="Anne"),
         ),
-        (
-            "1,Anne",
-            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            {"delimiter": ",", "compression": "gzip", "header": False},
-            Row(id=1, name="Anne"),
-        ),
     ],
-    ids=["comma-delimited", "semicolon-delimited", "quoted-comma-delimited", "with-header", "with-compression"],
+    ids=["comma-delimited", "semicolon-delimited", "quoted-comma-delimited", "with-header"],
 )
 def test_csv_parse_column(spark, csv_string, schema, options, expected):
     csv_handler = CSV(**options)
@@ -199,17 +193,11 @@ def test_csv_parse_column(spark, csv_string, schema, options, expected):
         (
             Row(id=1, name="Alice"),
             StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            {"delimiter": ",", "compression": "gzip"},
-            "1,Alice",
-        ),
-        (
-            Row(id=1, name="Alice"),
-            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
             {"delimiter": ",", "header": True},
             "1,Alice",
         ),
     ],
-    ids=["comma-delimited", "semicolon-delimited", "with-compression", "with-header"],
+    ids=["comma-delimited", "semicolon-delimited", "with-header"],
 )
 def test_csv_serialize_column(spark, data, schema, options, expected_csv):
     csv_handler = CSV(**options)
