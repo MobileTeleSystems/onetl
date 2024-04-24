@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, ClassVar
 
 try:
@@ -152,6 +153,7 @@ class CSV(ReadWriteFileFormat):
         from pyspark.sql.functions import col, from_csv
 
         self.check_if_supported(SparkSession._instantiatedSession)  # noqa: WPS437
+        self._check_unsupported_serialization_options()
 
         if isinstance(column, Column):
             column_name = column._jc.toString()  # noqa: WPS437
@@ -197,6 +199,7 @@ class CSV(ReadWriteFileFormat):
         from pyspark.sql.functions import col, to_csv
 
         self.check_if_supported(SparkSession._instantiatedSession)  # noqa: WPS437
+        self._check_unsupported_serialization_options()
 
         if isinstance(column, Column):
             column_name = column._jc.toString()  # noqa: WPS437
@@ -204,3 +207,14 @@ class CSV(ReadWriteFileFormat):
             column_name, column = column, col(column)
 
         return to_csv(column, self.dict()).alias(column_name)
+
+    def _check_unsupported_serialization_options(self):
+        unsupported_options = ["header", "compression", "inferSchema"]
+        for option in unsupported_options:
+            if self.dict().get(option):
+                warnings.warn(
+                    f"Option `{option}` is set but not supported in `CSV.parse_column` or `CSV.serialize_column`. "
+                    "This may lead to unexpected behavior.",
+                    UserWarning,
+                    stacklevel=2,
+                )

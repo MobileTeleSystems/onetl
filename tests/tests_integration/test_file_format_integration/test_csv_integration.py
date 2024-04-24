@@ -161,10 +161,11 @@ def test_csv_writer_with_options(
     ],
     ids=["comma-delimited", "semicolon-delimited", "quoted-comma-delimited"],
 )
-def test_csv_parse_column(spark, csv_string, schema, options, expected):
+@pytest.mark.parametrize("column_type", [str, col])
+def test_csv_parse_column(spark, csv_string, schema, options, expected, column_type):
     csv_handler = CSV(**options)
     df = spark.createDataFrame([(csv_string,)], ["csv_string"])
-    parsed_df = df.select(csv_handler.parse_column("csv_string", schema))
+    parsed_df = df.select(csv_handler.parse_column(column_type("csv_string"), schema))
     assert parsed_df.columns == ["csv_string"]
     assert parsed_df.first()["csv_string"] == expected
 
@@ -187,10 +188,36 @@ def test_csv_parse_column(spark, csv_string, schema, options, expected):
     ],
     ids=["comma-delimited", "semicolon-delimited"],
 )
-def test_csv_serialize_column(spark, data, schema, options, expected_csv):
+@pytest.mark.parametrize("column_type", [str, col])
+def test_csv_serialize_column(spark, data, schema, options, expected_csv, column_type):
     csv_handler = CSV(**options)
     df = spark.createDataFrame([data], schema)
     df = df.withColumn("csv_column", struct("id", "name"))
-    serialized_df = df.select(csv_handler.serialize_column("csv_column"))
+    serialized_df = df.select(csv_handler.serialize_column(column_type("csv_column")))
     assert serialized_df.columns == ["csv_column"]
     assert serialized_df.first()["csv_column"] == expected_csv
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ({"header": True}),
+        ({"compression": "gzip"}),
+        ({"inferSchema": True}),
+    ],
+    ids=["with-header", "with-compression", "with-inferSchema"],
+)
+def test_csv_unsupported_options_warning(spark, options):
+    schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
+    df = spark.createDataFrame([Row(id=1, name="Alice")], schema)
+    df = df.withColumn("csv_column", struct("id", "name"))
+
+    csv_handler = CSV(**options)
+    msg = (
+        f"Option `{list(options.keys())[0]}` is set but not supported in `CSV.parse_column` or `CSV.serialize_column`."
+    )
+
+    with pytest.warns(UserWarning) as record:
+        df.select(csv_handler.serialize_column("csv_column")).collect()
+        assert record
+        assert msg in str(record[0].message)
