@@ -163,7 +163,7 @@ def test_kafka_reader_topic_does_not_exist(spark, processing):
 @pytest.mark.parametrize("group_id_option", ["group.id", "groupIdPrefix"])
 def test_kafka_reader_with_group_id(group_id_option, spark, processing, kafka_dataframe_schema, kafka_topic):
     if get_spark_version(spark).major < 3:
-        pytest.skip("Spark 3.x or later is required to pas group.id")
+        pytest.skip("Spark 3.x or later is required to pass group.id")
 
     first_span = processing.create_pandas_df(min_id=0, max_id=100)
     processing.insert_pandas_df_into_topic(first_span, kafka_topic)

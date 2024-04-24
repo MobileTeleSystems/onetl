@@ -10,6 +10,8 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field  # type: ignore[no-redef, assignment]
 
+from onetl._internal import stringify
+from onetl._util.spark import get_spark_version
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
@@ -114,10 +116,12 @@ class CSV(ReadWriteFileFormat):
 
     def parse_column(self, column: str | Column, schema: StructType) -> Column:
         """
-        Parses a CSV string column to a structured Spark SQL column using Spark's `from_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_csv.html>`_ function, based on the provided schema.
+        Parses a CSV string column to a structured Spark SQL column using Spark's
+        `from_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_csv.html>`_ function, based on the provided schema.
 
         .. note::
-            The ``from_csv`` function is available from Apache Spark ``3.0.0`` onwards.
+
+            Can be used only with Spark 3.x+
 
         Parameters
         ----------
@@ -149,11 +153,15 @@ class CSV(ReadWriteFileFormat):
             parsed_df = df.select(csv.parse_column("csv_string", schema))
             parsed_df.show()
         """
-        from pyspark.sql import Column, SparkSession  # noqa: WPS442
-        from pyspark.sql.functions import col, from_csv
 
-        self.check_if_supported(SparkSession._instantiatedSession)  # noqa: WPS437
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+
+        spark = SparkSession._instantiatedSession  # noqa: WPS437
+        self.check_if_supported(spark)
+        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_serialization_options()
+
+        from pyspark.sql.functions import col, from_csv
 
         if isinstance(column, Column):
             column_name = column._jc.toString()  # noqa: WPS437
@@ -161,14 +169,17 @@ class CSV(ReadWriteFileFormat):
             column_name, column = column, col(column).cast("string")
 
         schema_string = schema.simpleString()
-        return from_csv(column, schema_string, self.dict()).alias(column_name)
+        options = stringify(self.dict(by_alias=True))
+        return from_csv(column, schema_string, options).alias(column_name)
 
     def serialize_column(self, column: str | Column) -> Column:
         """
-        Serializes a structured Spark SQL column into a CSV string column using Spark's `to_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_csv.html>`_ function.
+        Serializes a structured Spark SQL column into a CSV string column using Spark's
+        `to_csv <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_csv.html>`_ function.
 
         .. note::
-            The ``to_csv`` function is available from Apache Spark ``3.0.0`` onwards.
+
+            Can be used only with Spark 3.x+
 
         Parameters
         ----------
@@ -195,23 +206,39 @@ class CSV(ReadWriteFileFormat):
             serialized_df = df.select(csv.serialize_column("combined"))
             serialized_df.show()
         """
-        from pyspark.sql import Column, SparkSession  # noqa: WPS442
-        from pyspark.sql.functions import col, to_csv
 
-        self.check_if_supported(SparkSession._instantiatedSession)  # noqa: WPS437
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+
+        spark = SparkSession._instantiatedSession  # noqa: WPS437
+        self.check_if_supported(spark)
+        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_serialization_options()
+
+        from pyspark.sql.functions import col, to_csv
 
         if isinstance(column, Column):
             column_name = column._jc.toString()  # noqa: WPS437
         else:
             column_name, column = column, col(column)
 
-        return to_csv(column, self.dict()).alias(column_name)
+        options = stringify(self.dict(by_alias=True))
+        return to_csv(column, options).alias(column_name)
+
+    def _check_spark_version_for_serialization(self, spark: SparkSession):
+        spark_version = get_spark_version(spark)
+        if spark_version.major < 3:
+            class_name = self.__class__.__name__
+            error_msg = (
+                f"`{class_name}.parse_column` or `{class_name}.serialize_column` are available "
+                f"only since Spark 3.x, but got {spark_version}"
+            )
+            raise ValueError(error_msg)
 
     def _check_unsupported_serialization_options(self):
         unsupported_options = ["header", "compression", "inferSchema"]
+        current_options = self.dict()
         for option in unsupported_options:
-            if self.dict().get(option):
+            if current_options.get(option):
                 warnings.warn(
                     f"Option `{option}` is set but not supported in `CSV.parse_column` or `CSV.serialize_column`. "
                     "This may lead to unexpected behavior.",

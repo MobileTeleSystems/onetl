@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import Literal
 
+from onetl._internal import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 
@@ -149,7 +150,8 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
-        return from_json(column, schema, self.dict()).alias(column_name)
+        options = stringify(self.dict(by_alias=True))
+        return from_json(column, schema, options).alias(column_name)
 
     def serialize_column(self, column: str | Column) -> Column:
         """
@@ -190,4 +192,5 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column)
 
-        return to_json(column, self.dict()).alias(column_name)
+        options = stringify(self.dict(by_alias=True))
+        return to_json(column, options).alias(column_name)

@@ -4,6 +4,9 @@ Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
+import contextlib
+import re
+
 import pytest
 
 from onetl._util.spark import get_spark_version
@@ -163,11 +166,23 @@ def test_csv_writer_with_options(
 )
 @pytest.mark.parametrize("column_type", [str, col])
 def test_csv_parse_column(spark, csv_string, schema, options, expected, column_type):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        msg = (
+            f"`CSV.parse_column` or `CSV.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=re.escape(msg))
+    else:
+        context_manager = contextlib.nullcontext()
+
     csv_handler = CSV(**options)
     df = spark.createDataFrame([(csv_string,)], ["csv_string"])
-    parsed_df = df.select(csv_handler.parse_column(column_type("csv_string"), schema))
-    assert parsed_df.columns == ["csv_string"]
-    assert parsed_df.first()["csv_string"] == expected
+
+    with context_manager:
+        parsed_df = df.select(csv_handler.parse_column(column_type("csv_string"), schema))
+        assert parsed_df.columns == ["csv_string"]
+        assert parsed_df.first()["csv_string"] == expected
 
 
 @pytest.mark.parametrize(
@@ -190,12 +205,24 @@ def test_csv_parse_column(spark, csv_string, schema, options, expected, column_t
 )
 @pytest.mark.parametrize("column_type", [str, col])
 def test_csv_serialize_column(spark, data, schema, options, expected_csv, column_type):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        msg = (
+            f"`CSV.parse_column` or `CSV.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=re.escape(msg))
+    else:
+        context_manager = contextlib.nullcontext()
+
     csv_handler = CSV(**options)
     df = spark.createDataFrame([data], schema)
     df = df.withColumn("csv_column", struct("id", "name"))
-    serialized_df = df.select(csv_handler.serialize_column(column_type("csv_column")))
-    assert serialized_df.columns == ["csv_column"]
-    assert serialized_df.first()["csv_column"] == expected_csv
+
+    with context_manager:
+        serialized_df = df.select(csv_handler.serialize_column(column_type("csv_column")))
+        assert serialized_df.columns == ["csv_column"]
+        assert serialized_df.first()["csv_column"] == expected_csv
 
 
 @pytest.mark.parametrize(
@@ -207,7 +234,11 @@ def test_csv_serialize_column(spark, data, schema, options, expected_csv, column
     ],
     ids=["with-header", "with-compression", "with-inferSchema"],
 )
-def test_csv_unsupported_options_warning(spark, options):
+def test_csv_serialize_column_unsupported_options_warning(spark, options):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("CSV.serialize_column in supported on Spark 3.x only")
+
     schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
     df = spark.createDataFrame([Row(id=1, name="Alice")], schema)
     df = df.withColumn("csv_column", struct("id", "name"))

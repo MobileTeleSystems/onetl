@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import ORC
 
+pytestmark = [pytest.mark.orc]
+
 
 @pytest.mark.parametrize(
     "known_option",

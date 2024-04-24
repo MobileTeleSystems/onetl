@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import Excel
 
+pytestmark = [pytest.mark.excel]
+
 
 @pytest.mark.parametrize(
     "spark_version",
