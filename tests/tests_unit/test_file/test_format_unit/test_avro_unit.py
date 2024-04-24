@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import Avro
 
+pytestmark = [pytest.mark.avro]
+
 
 @pytest.mark.parametrize(
     "spark_version",

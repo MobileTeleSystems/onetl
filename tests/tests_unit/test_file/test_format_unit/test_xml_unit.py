@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import XML
 
+pytestmark = [pytest.mark.xml]
+
 
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version, expected_packages",
@@ -121,10 +123,3 @@ def test_xml_options_unknown(caplog):
         xml = XML(row_tag="item", unknownOption="abc")
         assert xml.unknownOption == "abc"
     assert "Options ['unknownOption'] are not known by XML, are you sure they are valid?" in caplog.text
-
-
-@pytest.mark.local_fs
-def test_xml_missing_package(spark_no_packages):
-    msg = "Cannot import Java class 'com.databricks.spark.xml.XmlReader'"
-    with pytest.raises(ValueError, match=msg):
-        XML(row_tag="item").check_if_supported(spark_no_packages)

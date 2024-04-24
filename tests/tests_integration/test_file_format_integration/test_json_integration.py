@@ -6,6 +6,8 @@ Do not test all the possible options and combinations, we are not testing Spark 
 
 import pytest
 
+from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSON
 
@@ -97,9 +99,14 @@ def test_json_writer_is_not_supported(
             {"key1": "value1", "key2": "value2"},
         ),
     ],
+    ids=["struct", "map", "array"],
 )
 @pytest.mark.parametrize("column_type", [str, col])
 def test_json_parse_column(spark, json_string, schema, expected, column_type):
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4") and isinstance(schema, MapType):
+        pytest.skip("JSON.parse_column accepts MapType only in Spark 2.4+")
+
     json = JSON()
     df = spark.createDataFrame([(json_string,)], ["json_column"])
     parsed_df = df.select(json.parse_column(column_type("json_column"), schema))
@@ -126,6 +133,7 @@ def test_json_parse_column(spark, json_string, schema, expected, column_type):
             '{"key1":"value1","key2":"value2"}',
         ),
     ],
+    ids=["struct", "array", "map"],
 )
 @pytest.mark.parametrize("column_type", [str, col])
 def test_json_serialize_column(spark, data, schema, expected_json, column_type):

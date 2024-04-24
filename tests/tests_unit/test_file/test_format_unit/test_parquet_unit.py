@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import Parquet
 
+pytestmark = [pytest.mark.parquet]
+
 
 @pytest.mark.parametrize(
     "known_option",
