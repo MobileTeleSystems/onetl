@@ -159,7 +159,7 @@ class XML(ReadWriteFileFormat):
             If ``None``, ``spark_version`` is used to determine Scala version.
 
         package_version : str, optional
-            Package version in format ``major.minor.patch``. Default is ``0.17.0``.
+            Package version in format ``major.minor.patch``. Default is ``0.18.0``.
 
             See `Maven index <https://mvnrepository.com/artifact/com.databricks/spark-xml>`_
             for list of available versions.
@@ -185,7 +185,7 @@ class XML(ReadWriteFileFormat):
             XML.get_packages(
                 spark_version="3.5.0",
                 scala_version="2.12",
-                package_version="0.17.0",
+                package_version="0.18.0",
             )
 
         """
@@ -196,7 +196,7 @@ class XML(ReadWriteFileFormat):
                 raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version("0.17.0").min_digits(3)
+            version = Version("0.18.0").min_digits(3)
 
         spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
@@ -205,8 +205,8 @@ class XML(ReadWriteFileFormat):
         if spark_ver < Version("3.0"):
             raise ValueError(f"Spark version must be 3.x, got {spark_ver}")
 
-        if scala_ver < Version("2.12") or scala_ver > Version("2.13"):
-            raise ValueError(f"Scala version must be 2.12 or 2.13, got {scala_ver.format('{0}.{1}')}")
+        if scala_ver < Version("2.12"):
+            raise ValueError(f"Scala version must be at least 2.12, got {scala_ver.format('{0}.{1}')}")
 
         return [f"com.databricks:spark-xml_{scala_ver.format('{0}.{1}')}:{version}"]
 
