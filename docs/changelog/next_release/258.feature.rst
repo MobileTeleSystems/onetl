@@ -1,0 +1,1 @@
+Add ``CSV.parse_column`` and ``CSV.serialize_column`` methods to facilitate direct parsing of CSV strings into Spark DataFrame CSV columns and serialization of structured DataFrame CSV columns back into CSV strings.

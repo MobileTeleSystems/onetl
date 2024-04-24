@@ -12,7 +12,9 @@ from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import CSV
 
 try:
-    from pyspark.sql.functions import col
+    from pyspark.sql import Row
+    from pyspark.sql.functions import col, struct
+    from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
     from tests.util.assert_df import assert_equal_df
     from tests.util.spark_df import reset_column_names
@@ -133,3 +135,89 @@ def test_csv_writer_with_options(
     assert read_df.count()
     assert read_df.schema == df.schema
     assert_equal_df(read_df, df, order_by="id")
+
+
+@pytest.mark.parametrize(
+    "csv_string, schema, options, expected",
+    [
+        (
+            "1,Anne",
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            {"delimiter": ",", "header": False},
+            Row(id=1, name="Anne"),
+        ),
+        (
+            "1;Anne",
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            {"delimiter": ";", "header": False},
+            Row(id=1, name="Anne"),
+        ),
+        (
+            '"1","Anne"',
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            {"delimiter": ",", "quote": '"', "header": False},
+            Row(id=1, name="Anne"),
+        ),
+    ],
+    ids=["comma-delimited", "semicolon-delimited", "quoted-comma-delimited"],
+)
+@pytest.mark.parametrize("column_type", [str, col])
+def test_csv_parse_column(spark, csv_string, schema, options, expected, column_type):
+    csv_handler = CSV(**options)
+    df = spark.createDataFrame([(csv_string,)], ["csv_string"])
+    parsed_df = df.select(csv_handler.parse_column(column_type("csv_string"), schema))
+    assert parsed_df.columns == ["csv_string"]
+    assert parsed_df.first()["csv_string"] == expected
+
+
+@pytest.mark.parametrize(
+    "data, schema, options, expected_csv",
+    [
+        (
+            Row(id=1, name="Alice"),
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            {"delimiter": ","},
+            "1,Alice",
+        ),
+        (
+            Row(id=1, name="Alice"),
+            StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
+            {"delimiter": ";"},
+            "1;Alice",
+        ),
+    ],
+    ids=["comma-delimited", "semicolon-delimited"],
+)
+@pytest.mark.parametrize("column_type", [str, col])
+def test_csv_serialize_column(spark, data, schema, options, expected_csv, column_type):
+    csv_handler = CSV(**options)
+    df = spark.createDataFrame([data], schema)
+    df = df.withColumn("csv_column", struct("id", "name"))
+    serialized_df = df.select(csv_handler.serialize_column(column_type("csv_column")))
+    assert serialized_df.columns == ["csv_column"]
+    assert serialized_df.first()["csv_column"] == expected_csv
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ({"header": True}),
+        ({"compression": "gzip"}),
+        ({"inferSchema": True}),
+    ],
+    ids=["with-header", "with-compression", "with-inferSchema"],
+)
+def test_csv_unsupported_options_warning(spark, options):
+    schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
+    df = spark.createDataFrame([Row(id=1, name="Alice")], schema)
+    df = df.withColumn("csv_column", struct("id", "name"))
+
+    csv_handler = CSV(**options)
+    msg = (
+        f"Option `{list(options.keys())[0]}` is set but not supported in `CSV.parse_column` or `CSV.serialize_column`."
+    )
+
+    with pytest.warns(UserWarning) as record:
+        df.select(csv_handler.serialize_column("csv_column")).collect()
+        assert record
+        assert msg in str(record[0].message)
