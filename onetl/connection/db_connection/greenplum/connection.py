@@ -164,9 +164,9 @@ class Greenplum(JDBCMixin, DBConnection):
     def get_packages(
         cls,
         *,
-        scala_version: str | Version | None = None,
-        spark_version: str | Version | None = None,
-        package_version: str | Version | None = None,
+        scala_version: str | None = None,
+        spark_version: str | None = None,
+        package_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
