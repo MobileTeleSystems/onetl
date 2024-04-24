@@ -70,6 +70,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
             ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-
+          # add krb5 to cache, but not in feature/bugfix branches
+          save-always: ${{ github.ref_name == 'develop' }}
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip setuptools wheel
