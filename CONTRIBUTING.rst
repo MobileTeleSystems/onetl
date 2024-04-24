@@ -176,7 +176,6 @@ Without docker-compose
 
     * Download `VMware Greenplum connector for Spark <https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html>`_
     * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
-    * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
 
 Start all containers with dependencies:
 

@@ -16,7 +16,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
-pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
+pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.avro]
 
 
 @pytest.fixture()

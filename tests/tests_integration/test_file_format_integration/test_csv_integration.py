@@ -21,7 +21,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
-pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection]
+pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.csv]
 
 
 def test_csv_reader_with_infer_schema(

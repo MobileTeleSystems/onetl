@@ -25,15 +25,10 @@ class Version:
 
     """
 
-    def __init__(self, version: Version | str):
-        if isinstance(version, Version):
-            self._raw_str: str = version._raw_str
-            self._raw_parts: list[str] = version._raw_parts.copy()
-            self._numeric_parts: list[int] = version._numeric_parts.copy()
-        else:
-            self._raw_str = version
-            self._raw_parts = re.split("[.-]", version)
-            self._numeric_parts = [int(part) for part in self._raw_parts if part.isdigit()]
+    def __init__(self, version: str):
+        self._raw_str = version
+        self._raw_parts = re.split("[.-]", version)
+        self._numeric_parts = [int(part) for part in self._raw_parts if part.isdigit()]
 
     @property
     def major(self) -> int:

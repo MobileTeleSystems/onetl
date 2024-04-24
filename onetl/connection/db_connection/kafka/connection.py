@@ -392,8 +392,8 @@ class Kafka(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str | Version,
-        scala_version: str | Version | None = None,
+        spark_version: str,
+        scala_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
