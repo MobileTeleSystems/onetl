@@ -3,7 +3,8 @@ furo
 importlib-resources<6
 numpydoc
 pygments-csv-lexer
-sphinx
+# TODO: remove version limit after https://github.com/pradyunsg/furo/pull/783
+sphinx<7.3
 sphinx-copybutton
 sphinx-design
 sphinx-favicon
