@@ -6,6 +6,8 @@ import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Dict, Optional
 
+import requests
+
 try:
     from pydantic.v1 import Field, validator
 except (ImportError, AttributeError):
@@ -20,7 +22,8 @@ from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrameReader, DataFrameWriter, SparkSession
+    from pyspark.sql import Column, DataFrameReader, DataFrameWriter, SparkSession
+
 
 PROHIBITED_OPTIONS = frozenset(
     (
@@ -188,6 +191,127 @@ class Avro(ReadWriteFileFormat):
         if self.schema_dict:
             options["avroSchema"] = json.dumps(self.schema_dict)
         return writer.format(self.name).options(**options)
+
+    def parse_column(self, column: str | Column) -> Column:
+        """
+        Parses an Avro binary column into a structured Spark SQL column using Spark's
+        `from_avro <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.from_avro.html>`_ function, based on the schema provided within the class.
+
+        .. note::
+
+            Can be used only with Spark 3.x+
+
+        Parameters
+        ----------
+        column : str | Column
+            The name of the column or the Column object containing Avro binary data to parse.
+
+        Returns
+        -------
+        Column
+            A new Column object with data parsed from Avro binary to the specified structured format.
+
+        Examples
+        --------
+        .. code:: python
+
+            from pyspark.sql import SparkSession
+            from onetl.file.format import Avro
+
+            spark = SparkSession.builder.appName("AvroParsingExample").getOrCreate()
+            schema_dict = {
+                "type": "record",
+                "name": "Person",
+                "fields": [{"name": "name", "type": "string"}],
+            }
+            avro = Avro(schema_dict=schema_dict)
+            df = spark.createDataFrame([("bytes_data_here",)], ["avro_data"])
+
+            parsed_df = df.select(avro.parse_column("avro_data"))
+            parsed_df.show()
+
+        """
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+        from pyspark.sql.avro.functions import from_avro
+        from pyspark.sql.functions import col
+
+        self.check_if_supported(SparkSession.getActiveSession())
+
+        if isinstance(column, Column):
+            column_name = column._jc.toString()  # noqa: WPS437
+        else:
+            column_name, column = column, col(column).cast("binary")
+
+        if self.schema_dict:
+            schema_json = json.dumps(self.schema_dict)
+        elif self.schema_url:
+            response = requests.get(self.schema_url)  # noqa: S113
+            schema_json = response.text
+        else:
+            raise ValueError("No schema defined in Avro class instance.")
+
+        return from_avro(column, schema_json).alias(column_name)
+
+    def serialize_column(self, column: str | Column) -> Column:
+        """
+        Serializes a structured Spark SQL column into an Avro binary column using Spark's
+        `to_avro <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.to_avro.html#pyspark.sql.avro.functions.to_avro>`_ function.
+
+        .. note::
+
+            Can be used only with Spark 3.x+
+
+        Parameters
+        ----------
+        column : str | Column
+            The name of the column or the Column object containing the data to serialize to Avro format.
+
+        Returns
+        -------
+        Column
+            A new Column object with data serialized from Spark SQL structures to Avro binary.
+
+        Examples
+        --------
+        .. code:: python
+
+            from pyspark.sql import SparkSession
+            from pyspark.sql.functions import col
+            from onetl.file.format import Avro
+
+            spark = SparkSession.builder.appName("AvroSerializationExample").getOrCreate()
+            schema_dict = {
+                "type": "record",
+                "name": "Person",
+                "fields": [{"name": "id", "type": "long"}, {"name": "name", "type": "string"}],
+            }
+
+            avro = Avro(schema_dict=schema_dict)
+            df = spark.createDataFrame([(1, "John Doe"), (2, "Jane Doe")], ["id", "name"])
+
+            serialized_df = df.select(avro.serialize_column("name"))
+            serialized_df.show()
+
+        """
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+        from pyspark.sql.avro.functions import to_avro
+        from pyspark.sql.functions import col
+
+        self.check_if_supported(SparkSession._instantiatedSession)  # noqa:  WPS437
+
+        if isinstance(column, Column):
+            column_name = column._jc.toString()  # noqa:  WPS437
+        else:
+            column_name, column = column, col(column)
+
+        if self.schema_dict:
+            schema = json.dumps(self.schema_dict)
+        elif self.self.schema_url:
+            schema = requests.get(self.self.schema_url)  # noqa: S113
+        else:
+            schema = ""
+
+        return to_avro(column, schema).alias(column_name)
 
     @validator("schema_dict", pre=True)
     def _parse_schema_from_json(cls, value):

@@ -6,4 +6,4 @@ Avro
 .. currentmodule:: onetl.file.format.avro
 
 .. autoclass:: Avro
-    :members: get_packages
+    :members: get_packages, parse_column, serialize_column
