@@ -83,11 +83,14 @@ services:
       - onetl
 
   mssql:
-    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
+    image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
       - 1433:1433
+    volumes:
+      - ./docker/mssql/:/usr/config/
+    entrypoint: ["/usr/config/entrypoint.sh"]
     networks:
       - onetl
     platform: linux/amd64
