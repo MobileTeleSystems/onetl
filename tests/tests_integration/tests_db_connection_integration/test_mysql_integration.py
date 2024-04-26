@@ -46,6 +46,21 @@ def test_mysql_connection_check_fail(spark):
         mysql.check()
 
 
+def test_mysql_connection_check_extra_is_handled_by_driver(spark, processing):
+    mysql = MySQL(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={"tcpKeepAlive": "wrong_type"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        mysql.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_mysql_connection_sql(spark, processing, load_table_data, suffix):
     mysql = MySQL(

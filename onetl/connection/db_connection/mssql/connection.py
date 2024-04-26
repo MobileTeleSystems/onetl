@@ -200,11 +200,14 @@ class MSSQL(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        prop = self.extra.dict(by_alias=True)
-        prop["databaseName"] = self.database
-        parameters = ";".join(f"{k}={v}" for k, v in sorted(prop.items()))
+        return f"jdbc:sqlserver://{self.host}:{self.port}"
 
-        return f"jdbc:sqlserver://{self.host}:{self.port};{parameters}"
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        result["databaseName"] = self.database
+        return result
 
     @property
     def instance_url(self) -> str:

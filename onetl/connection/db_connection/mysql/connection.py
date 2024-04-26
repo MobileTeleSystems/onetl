@@ -138,11 +138,14 @@ class MySQL(JDBCConnection):
         return "com.mysql:mysql-connector-j:8.3.0"
 
     @property
-    def jdbc_url(self):
-        prop = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(prop.items()))
-
+    def jdbc_url(self) -> str:
         if self.database:
-            return f"jdbc:mysql://{self.host}:{self.port}/{self.database}?{parameters}"
+            return f"jdbc:mysql://{self.host}:{self.port}/{self.database}"
 
-        return f"jdbc:mysql://{self.host}:{self.port}?{parameters}"
+        return f"jdbc:mysql://{self.host}:{self.port}"
+
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        return result

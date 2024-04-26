@@ -103,6 +103,12 @@ def test_oracle(spark_mock):
     assert conn.sid == "sid"
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:1521:sid",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -119,12 +125,24 @@ def test_oracle_with_port(spark_mock):
     assert conn.sid == "sid"
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:5000:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:5000:sid",
+    }
 
 
 def test_oracle_uri_with_service_name(spark_mock):
     conn = Oracle(host="some_host", user="user", password="passwd", service_name="service", spark=spark_mock)
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@//some_host:1521/service"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@//some_host:1521/service",
+    }
 
 
 def test_oracle_without_sid_and_service_name(spark_mock):
@@ -167,7 +185,15 @@ def test_oracle_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid?connectTimeout=10&tcpKeepAlive=false"
+    assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:1521:sid",
+        "tcpKeepAlive": "false",
+        "connectTimeout": "10",
+    }
 
 
 def test_oracle_without_mandatory_args(spark_mock):

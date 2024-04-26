@@ -162,13 +162,16 @@ class Clickhouse(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        extra = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
         if self.database:
-            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
+            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}"
 
-        return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
+        return f"jdbc:clickhouse://{self.host}:{self.port}"
+
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        return result
 
     @staticmethod
     def _build_statement(

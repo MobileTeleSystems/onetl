@@ -31,6 +31,8 @@ services:
       - 5433:5432
     networks:
       - onetl
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
 
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}

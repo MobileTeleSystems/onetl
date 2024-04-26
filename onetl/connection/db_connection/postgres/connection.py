@@ -20,6 +20,10 @@ class PostgresExtra(GenericOptions):
     # allows automatic conversion from text to target column type during write
     stringtype: str = "unspecified"
 
+    # avoid closing connections from server side
+    # while connector is moving data to executors before insert
+    tcpKeepAlive: str = "true"  # noqa: N815
+
     class Config:
         extra = "allow"
 
@@ -142,11 +146,14 @@ class Postgres(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        extra = self.extra.dict(by_alias=True)
-        extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
+    @property
+    def jdbc_params(self) -> dict[str, str]:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        return result
 
     @property
     def instance_url(self) -> str:

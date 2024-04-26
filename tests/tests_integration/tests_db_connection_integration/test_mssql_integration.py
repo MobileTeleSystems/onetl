@@ -55,6 +55,21 @@ def test_mssql_connection_check_fail(spark):
         mssql.check()
 
 
+def test_mssql_connection_check_extra_is_handled_by_driver(spark, processing):
+    mssql = MSSQL(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={"trustServerCertificate": "false"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        mssql.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_mssql_connection_sql(spark, processing, load_table_data, suffix):
     mssql = MSSQL(

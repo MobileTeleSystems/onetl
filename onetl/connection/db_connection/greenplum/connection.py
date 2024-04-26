@@ -250,15 +250,20 @@ class Greenplum(JDBCMixin, DBConnection):
 
     @property
     def jdbc_url(self) -> str:
-        extra = {
-            key: value
-            for key, value in self.extra.dict(by_alias=True).items()
-            if not (key.startswith("server.") or key.startswith("pool."))
-        }
-        extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(
+            {
+                key: value
+                for key, value in self.extra.dict(by_alias=True).items()
+                if not (key.startswith("server.") or key.startswith("pool."))
+            },
+        )
+        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        return result
 
     @slot
     def read_source_as_df(

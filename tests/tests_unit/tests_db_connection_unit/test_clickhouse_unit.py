@@ -121,6 +121,12 @@ def test_clickhouse(spark_mock):
     assert conn.database == "database"
 
     assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.clickhouse.jdbc.ClickHouseDriver",
+        "url": "jdbc:clickhouse://some_host:8123/database",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -144,6 +150,12 @@ def test_clickhouse_with_port(spark_mock):
     assert conn.database == "database"
 
     assert conn.jdbc_url == "jdbc:clickhouse://some_host:5000/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.clickhouse.jdbc.ClickHouseDriver",
+        "url": "jdbc:clickhouse://some_host:5000/database",
+    }
 
 
 def test_clickhouse_without_database(spark_mock):
@@ -157,6 +169,12 @@ def test_clickhouse_without_database(spark_mock):
     assert not conn.database
 
     assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.clickhouse.jdbc.ClickHouseDriver",
+        "url": "jdbc:clickhouse://some_host:8123",
+    }
 
 
 def test_clickhouse_with_extra(spark_mock):
@@ -165,11 +183,18 @@ def test_clickhouse_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"socket_timeout": "120000", "query": "SELECT%201%3B"},
+        extra={"socket_timeout": 120000, "custom_http_params": "key1=value1,key2=value2"},
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == "jdbc:clickhouse://some_host:8123/database?query=SELECT%201%3B&socket_timeout=120000"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.clickhouse.jdbc.ClickHouseDriver",
+        "url": "jdbc:clickhouse://some_host:8123/database",
+        "socket_timeout": 120000,
+        "custom_http_params": "key1=value1,key2=value2",
+    }
 
 
 def test_clickhouse_without_mandatory_args(spark_mock):
