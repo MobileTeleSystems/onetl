@@ -28,7 +28,7 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0>`_
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0-patch4 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch4>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. warning::
@@ -119,7 +119,7 @@ class Clickhouse(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-             ClickHouse JDBC version client packages. Defaults to ``0.6.0``.
+             ClickHouse JDBC version client packages. Defaults to ``0.6.0-patch4``.
 
         apache_http_client_version : str, optional
              Apache HTTP Client version package. Defaults to ``5.3.1``.
@@ -139,7 +139,7 @@ class Clickhouse(JDBCConnection):
              ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
-        default_jdbc_version = "0.6.0"
+        default_jdbc_version = "0.6.0-patch4"
         default_http_version = "5.3.1"
 
         jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
@@ -158,7 +158,7 @@ class Clickhouse(JDBCConnection):
     @classproperty
     def package(self) -> str:
         """Get a single string of package names to be downloaded by Spark for establishing a Clickhouse connection."""
-        return "com.clickhouse:clickhouse-jdbc:0.6.0,com.clickhouse:clickhouse-http-client:0.6.0,org.apache.httpcomponents.client5:httpclient5:5.3.1"
+        return "com.clickhouse:clickhouse-jdbc:0.6.0-patch4,com.clickhouse:clickhouse-http-client:0.6.0-patch4,org.apache.httpcomponents.client5:httpclient5:5.3.1"
 
     @property
     def jdbc_url(self) -> str:

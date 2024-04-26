@@ -48,13 +48,13 @@ def maven_packages(request):
     from onetl.file.format import XML, Avro, Excel
 
     pyspark_version = get_pyspark_version()
-    packages: list[str] = []
 
     # get markers from all downstream tests
     markers = set()
     for func in request.session.items:
         markers.update(marker.name for marker in func.iter_markers())
 
+    packages: list[str] = []
     if "clickhouse" in markers:
         packages.extend(Clickhouse.get_packages())
 
