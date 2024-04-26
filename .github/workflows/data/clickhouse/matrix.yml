@@ -25,16 +25,16 @@ matrix:
       clickhouse-version: 23.6.1-alpine
       <<: *max
   full:
-  # the lowest supported Clickhouse version by JDBC driver
+    # Clickhouse version with proper DateTime > DateTime64 comparison
     - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '20.7'
+      clickhouse-version: '21.1'
       <<: *min
     - clickhouse-image: clickhouse/clickhouse-server
       clickhouse-version: 23.6.1-alpine
       <<: *max
   nightly:
     - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '20.7'
+      clickhouse-version: '21.1'
       <<: *min
     - clickhouse-image: clickhouse/clickhouse-server
       clickhouse-version: latest-alpine

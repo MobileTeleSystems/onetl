@@ -20,7 +20,7 @@ class ClickhouseProcessing(BaseProcessing):
         "text_string": "String",
         "hwm_int": "Int32",
         "hwm_date": "Date",
-        "hwm_datetime": "DateTime",
+        "hwm_datetime": "DateTime64(6)",
         "float_value": "Float32",
     }
 

@@ -26,9 +26,11 @@ class ClickhouseDialect(JDBCDialect):
         return f"minOrNull({result})"
 
     def _serialize_datetime(self, value: datetime) -> str:
-        result = value.strftime("%Y-%m-%d %H:%M:%S")
-        return f"CAST('{result}' AS DateTime)"
+        # this requires at least Clickhouse 21.1, see:
+        # https://github.com/ClickHouse/ClickHouse/issues/16655
+        result = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return f"toDateTime64('{result}', 6)"
 
     def _serialize_date(self, value: date) -> str:
         result = value.strftime("%Y-%m-%d")
-        return f"CAST('{result}' AS Date)"
+        return f"toDate('{result}')"
