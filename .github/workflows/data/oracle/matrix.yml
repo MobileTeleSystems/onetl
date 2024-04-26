@@ -6,7 +6,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.0
+  spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
@@ -30,10 +30,6 @@ matrix:
       oracle-version: 11.2.0.2-slim-faststart
       db-name: XE
       <<: *min
-    - oracle-image: gvenzl/oracle-xe
-      oracle-version: 21.3.0-slim-faststart
-      db-name: XEPDB1
-      <<: *max
     - oracle-image: gvenzl/oracle-free
       oracle-version: 23.3-slim-faststart
       db-name: FREEPDB1

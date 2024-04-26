@@ -82,10 +82,6 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-      - name: Wait for Postgres to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 5432 -t 60
-
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"

@@ -98,10 +98,6 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/oracle.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-      - name: Wait for Oracle to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 1522 -t 60
-
       - name: Run tests
         run: |
           export ONETL_ORA_CLIENT_PATH=./oracle/instantclient_21_10

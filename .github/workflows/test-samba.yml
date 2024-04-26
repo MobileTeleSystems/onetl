@@ -57,11 +57,6 @@ jobs:
           docker compose up -d samba
         env:
           SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
-
-      - name: Wait for Samba to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 445 -t 60
 
       - name: Run tests
         run: |
@@ -74,8 +69,6 @@ jobs:
         if: always()
         run: |
           docker compose down -v --remove-orphans
-        env:
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-samba${{ inputs.server-version }}
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

@@ -50,20 +50,15 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/ftp.txt -r requirements/tests/base.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-    # Replace with Github Actions' services after https://github.com/chonjay21/docker-ftp/pull/3
-    # Cannot use services because we need to mount config file from the repo, but services start before checkout.
-    # See https://github.com/orgs/community/discussions/25792
+      # Replace with Github Actions' services after https://github.com/chonjay21/docker-ftp/pull/3
+      # Cannot use services because we need to mount config file from the repo, but services start before checkout.
+      # See https://github.com/orgs/community/discussions/25792
       - name: Start FTP
         run: |
           docker compose down -v --remove-orphans
-          docker compose up -d ftp
+          docker compose up -d ftp --wait --wait --wait-timeout 200
         env:
           FTP_IMAGE: chonjay21/ftps:${{ inputs.ftp-version }}
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-ftp${{ inputs.ftp-version }}
-
-      - name: Wait for FTP to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 2121 -t 60
 
       - name: Run tests
         run: |
@@ -76,8 +71,6 @@ jobs:
         if: always()
         run: |
           docker compose down -v --remove-orphans
-        env:
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-ftp${{ inputs.ftp-version }}
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

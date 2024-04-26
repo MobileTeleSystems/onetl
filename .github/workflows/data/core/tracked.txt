@@ -2,5 +2,7 @@ onetl/hooks/**
 onetl/plugins/**
 onetl/impl/**
 onetl/hwm/**
+onetl/_util/**
 onetl/_internal.py
 onetl/log.py
+.github/workflows/data/core/**

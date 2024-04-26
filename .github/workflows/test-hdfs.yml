@@ -70,8 +70,8 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/kerberos.txt -r requirements/hdfs.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-    # Cannot use services because we need to mount config file from the repo, but services start before checkout.
-    # See https://github.com/orgs/community/discussions/25792
+      # Cannot use services because we need to mount config file from the repo, but services start before checkout.
+      # See https://github.com/orgs/community/discussions/25792
       - name: Start HDFS
         run: |
           docker compose down -v --remove-orphans
@@ -81,11 +81,6 @@ jobs:
           wait $wait_pid
         env:
           HDFS_IMAGE: mtsrus/hadoop:${{ inputs.hadoop-version }}
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-hadoop${{ inputs.hadoop-version }}
-
-      - name: Wait for HDFS to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 9870 -t 60
 
       - name: Run tests
         run: |
@@ -99,8 +94,6 @@ jobs:
         if: always()
         run: |
           docker compose down -v --remove-orphans
-        env:
-          COMPOSE_PROJECT_NAME: ${{ github.run_id }}-hadoop${{ inputs.hadoop-version }}
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

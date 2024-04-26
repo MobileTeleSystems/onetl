@@ -155,6 +155,7 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
     assert count_df.collect()[0][0] == table_df.count()
 
 
+@pytest.mark.xfail(reason="Clickhouse <24 deduplicated column names, but 24+ does not")
 def test_clickhouse_reader_snapshot_with_columns_duplicated(spark, processing, prepare_schema_table):
     clickhouse = Clickhouse(
         host=processing.host,
@@ -180,9 +181,9 @@ def test_clickhouse_reader_snapshot_with_columns_duplicated(spark, processing, p
         ],
     )
 
-    # Clickhouse can detect that column is already a part of * and does not produce duplicates
-    df2 = reader2.run()
-    assert df1.columns == df2.columns
+    with pytest.raises(Exception, match="The column `id_int` already exists"):
+        df2 = reader2.run()
+        assert df1.columns == df2.columns
 
 
 def test_clickhouse_reader_snapshot_with_columns_mixed_naming(spark, processing, get_schema_table):
