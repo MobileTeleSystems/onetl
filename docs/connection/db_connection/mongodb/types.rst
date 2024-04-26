@@ -73,8 +73,8 @@ References
 
 Here you can find source code with type conversions:
 
-* `MongoDB -> Spark <https://github.com/mongodb/mongo-spark/blob/r10.1.1/src/main/java/com/mongodb/spark/sql/connector/schema/InferSchema.java#L121-L170>`_
-* `Spark -> MongoDB <https://github.com/mongodb/mongo-spark/blob/r10.1.1/src/main/java/com/mongodb/spark/sql/connector/schema/RowToBsonDocumentConverter.java#L117-L200>`_
+* `MongoDB -> Spark <https://github.com/mongodb/mongo-spark/blob/r10.2.3/src/main/java/com/mongodb/spark/sql/connector/schema/InferSchema.java#L130-L176>`_
+* `Spark -> MongoDB <https://github.com/mongodb/mongo-spark/blob/r10.2.3/src/main/java/com/mongodb/spark/sql/connector/schema/RowToBsonDocumentConverter.java#L156-L252>`_
 
 Supported types
 ---------------
