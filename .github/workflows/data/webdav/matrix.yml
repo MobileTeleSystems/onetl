@@ -15,7 +15,7 @@ latest: &latest
 
 matrix:
   small:
-  # chonjay21/webdav image has only latest tag
+    # chonjay21/webdav image has only latest tag
     - webdav-version: latest
       <<: *max
   full:

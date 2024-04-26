@@ -7,7 +7,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.4.2
+  spark-version: 3.4.3
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
@@ -22,12 +22,12 @@ latest: &latest
 
 matrix:
   small:
-    - mongodb-version: 6.0.7
+    - mongodb-version: 7.0.8
       <<: *max
   full:
     - mongodb-version: 4.0.0
       <<: *min
-    - mongodb-version: 6.0.7
+    - mongodb-version: 7.0.8
       <<: *max
   nightly:
     - mongodb-version: 4.0.0

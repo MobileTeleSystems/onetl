@@ -28,14 +28,14 @@ matrix:
       package-version: 2.3.1
       <<: *max
   full:
-    - greenplum-version: 6.25.3
+    - greenplum-version: 6.23.1
       package-version: 2.2.0
       <<: *min
     - greenplum-version: 7.0.0
       package-version: 2.3.1
       <<: *max
   nightly:
-    - greenplum-version: 6.25.3
+    - greenplum-version: 6.23.1
       package-version: 2.2.0
       <<: *min
     - greenplum-version: 7.0.0

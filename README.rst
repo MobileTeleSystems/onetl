@@ -187,17 +187,17 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | Spark                                                        | Python      | Java        | Scala |
 +==============================================================+=============+=============+=======+
-| `2.3.x <https://spark.apache.org/docs/2.3.0/#downloading>`_  | 3.7 only    | 8 only      | 2.11  |
+| `2.3.x <https://spark.apache.org/docs/2.3.1/#downloading>`_  | 3.7 only    | 8 only      | 2.11  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `2.4.x <https://spark.apache.org/docs/2.4.8/#downloading>`_  | 3.7 only    | 8 only      | 2.11  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.2.x <https://spark.apache.org/docs/3.2.4/#downloading>`_  | 3.7 - 3.10  | 8u201 - 11  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.3.x <https://spark.apache.org/docs/3.3.3/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
+| `3.3.x <https://spark.apache.org/docs/3.3.4/#downloading>`_  | 3.7 - 3.10  | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.1/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.3/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.0/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.1/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
@@ -212,7 +212,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.5.0  # install a specific PySpark version
+    pip install onetl pyspark==3.5.1  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise connection object cannot be created.**
@@ -553,7 +553,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(spark_version="3.5.0") + Postgres.get_packages()
+    maven_packages = SparkS3.get_packages(spark_version="3.5.1") + Postgres.get_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))

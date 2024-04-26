@@ -250,7 +250,7 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     assert not clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
 
-@pytest.mark.xfail(reason="Clickhouse 20.7 doesn't support functions")
+@pytest.mark.xfail(reason="CREATE FUNCTION is not supported in Clickhouse < 21.20")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_execute_function(
     request,

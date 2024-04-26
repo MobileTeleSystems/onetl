@@ -15,7 +15,7 @@ latest: &latest
 
 matrix:
   small:
-  # chonjay21/ftps image has only latest tag
+    # chonjay21/ftps image has only latest tag
     - ftp-version: latest
       <<: *max
   full:

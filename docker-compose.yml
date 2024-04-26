@@ -9,7 +9,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.5.0
+        SPARK_VERSION: 3.5.1
     env_file: .env.docker
     volumes:
       - ./:/app/
@@ -173,7 +173,7 @@ services:
       - onetl
 
   samba:
-    image: elswork/samba
+    image: ${SAMBA_IMAGE:-elswork/samba}
     restart: unless-stopped
     ports:
       - "139:139"

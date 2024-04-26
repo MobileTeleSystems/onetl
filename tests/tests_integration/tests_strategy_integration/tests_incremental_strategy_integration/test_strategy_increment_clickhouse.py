@@ -212,7 +212,7 @@ def test_clickhouse_strategy_incremental_nothing_to_read(spark, processing, prep
     [
         ("float_value", ValueError, "Expression 'float_value' returned values"),
         ("text_string", RuntimeError, "Cannot detect HWM type for"),
-        ("unknown_column", Exception, "Missing columns"),
+        ("unknown_column", Exception, "(Missing columns|Unknown expression).*"),
     ],
 )
 def test_clickhouse_strategy_incremental_wrong_hwm(
