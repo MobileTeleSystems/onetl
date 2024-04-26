@@ -12,9 +12,11 @@ from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import Avro
 
 try:
+    from pyspark.sql.functions import col
+
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.avro]
 
@@ -30,8 +32,11 @@ def avro_schema():
             {"name": "id", "type": ["null", "int"]},
             {"name": "str_value", "type": ["null", "string"]},
             {"name": "int_value", "type": ["null", "int"]},
-            {"name": "date_value", "type": ["null", "int"]},
-            {"name": "datetime_value", "type": ["null", "long"]},
+            {"name": "date_value", "type": ["null", {"type": "int", "logicalType": "date"}]},
+            {
+                "name": "datetime_value",
+                "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+            },
             {"name": "float_value", "type": ["null", "double"]},
         ],
     }
@@ -117,3 +122,41 @@ def test_avro_writer(
     assert read_df.count()
     assert read_df.schema == df.schema
     assert_equal_df(read_df, df, order_by="id")
+
+
+@pytest.mark.parametrize(
+    "path, options",
+    [
+        ("without_compression", {}),
+        ("with_compression", {"compression": "snappy"}),
+    ],
+    ids=["without_compression", "with_compression"],
+)
+@pytest.mark.parametrize("column_type", [str, col])
+def test_avro_serialize_and_parse_column(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    path,
+    avro_schema,
+    options,
+    column_type,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro from_avro, to_avro are supported on Spark 3.x+ only")
+
+    df = file_df_dataframe
+    avro = Avro(schema_dict=avro_schema, **options)
+
+    combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
+    serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+
+    assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+
+    parsed_df = serialized_df.select(avro.parse_column(column_type("combined")))
+
+    assert combined_df.select(column_type("combined")).collect() == parsed_df.collect()

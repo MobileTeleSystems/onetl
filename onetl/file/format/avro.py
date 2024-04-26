@@ -216,6 +216,7 @@ class Avro(ReadWriteFileFormat):
         .. code:: python
 
             from pyspark.sql import SparkSession
+
             from onetl.file.format import Avro
 
             spark = SparkSession.builder.appName("AvroParsingExample").getOrCreate()
@@ -276,7 +277,7 @@ class Avro(ReadWriteFileFormat):
         .. code:: python
 
             from pyspark.sql import SparkSession
-            from pyspark.sql.functions import col
+
             from onetl.file.format import Avro
 
             spark = SparkSession.builder.appName("AvroSerializationExample").getOrCreate()
