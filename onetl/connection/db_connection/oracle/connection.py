@@ -226,13 +226,16 @@ class Oracle(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        extra = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
         if self.sid:
-            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}?{parameters}".rstrip("?")
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
 
-        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}?{parameters}".rstrip("?")
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
+
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        return result
 
     @property
     def instance_url(self) -> str:

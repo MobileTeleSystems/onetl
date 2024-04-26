@@ -55,6 +55,22 @@ def test_oracle_connection_check_fail(spark):
         oracle.check()
 
 
+def test_oracle_connection_check_extra_is_handled_by_driver(spark, processing):
+    oracle = Oracle(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        spark=spark,
+        sid=processing.sid,
+        service_name=processing.service_name,
+        extra={"defaultRowPrefetch": "wrong_type"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        oracle.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
     oracle = Oracle(

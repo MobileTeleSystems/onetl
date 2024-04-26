@@ -76,6 +76,16 @@ class JDBCMixin(FrozenModel):
     def jdbc_url(self) -> str:
         """JDBC Connection URL"""
 
+    @property
+    def jdbc_params(self) -> dict:
+        """JDBC Connection params"""
+        return {
+            "user": self.user,
+            "password": self.password.get_secret_value() if self.password is not None else "",
+            "driver": self.DRIVER,
+            "url": self.jdbc_url,
+        }
+
     @slot
     def close(self):
         """
@@ -312,20 +322,12 @@ class JDBCMixin(FrozenModel):
         self,
         options: JDBCMixinOptions,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, str]:
         """
         Fills up human-readable Options class to a format required by Spark internal methods
         """
-
-        result = options.copy(
-            update={
-                "user": self.user,
-                "password": self.password.get_secret_value() if self.password is not None else "",
-                "driver": self.DRIVER,
-                "url": self.jdbc_url,
-            },
-        ).dict(by_alias=True, **kwargs)
-
+        result = self.jdbc_params
+        result.update(options.dict(by_alias=True, **kwargs))
         return stringify(result)
 
     def _options_to_connection_properties(self, options: JDBCMixinOptions):
@@ -339,8 +341,7 @@ class JDBCMixin(FrozenModel):
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/DataFrameReader.scala#L248-L255
         """
 
-        jdbc_properties = self._get_jdbc_properties(options, exclude_unset=True)
-
+        jdbc_properties = self._get_jdbc_properties(options, exclude_none=True)
         jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_options = jdbc_utils_package.JDBCOptions(
             self.jdbc_url,

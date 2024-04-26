@@ -48,6 +48,21 @@ def test_greenplum_connection_check_fail(spark):
         greenplum.check()
 
 
+def test_greenplum_connection_check_extra_is_handled_by_driver(spark, processing):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={**processing.extra, "connectTimeout": "wrong_type"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        greenplum.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
     greenplum = Greenplum(

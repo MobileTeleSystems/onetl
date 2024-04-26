@@ -165,7 +165,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         options: JDBCWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        jdbc_params = self.options_to_jdbc_params(write_options)
+        jdbc_properties = self._get_jdbc_properties(write_options, exclude={"if_exists"}, exclude_none=True)
 
         mode = (
             "overwrite"
@@ -173,7 +173,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             else write_options.if_exists.value
         )
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        df.write.jdbc(table=target, mode=mode, **jdbc_params)
+        df.write.format("jdbc").mode(mode).options(dbtable=target, **jdbc_properties).save()
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
     @slot
@@ -195,38 +195,6 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
-
-    def options_to_jdbc_params(
-        self,
-        options: JDBCReadOptions | JDBCWriteOptions,
-    ) -> dict:
-        # Have to replace the <partitionColumn> parameter with <column>
-        # since the method takes the named <column> parameter
-        # link to source below
-        # https://github.com/apache/spark/blob/2ef8ced27a6b0170a691722a855d3886e079f037/python/pyspark/sql/readwriter.py#L465
-
-        partition_column = getattr(options, "partition_column", None)
-        if partition_column:
-            options = options.copy(
-                update={"column": partition_column},
-                exclude={"partition_column"},
-            )
-
-        result = self._get_jdbc_properties(
-            options,
-            include=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
-            exclude={"if_exists"},
-            exclude_none=True,
-        )
-
-        result["properties"] = self._get_jdbc_properties(
-            options,
-            exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS | {"if_exists"},
-            exclude_none=True,
-        )
-
-        result["properties"].pop("partitioningMode", None)
-        return result
 
     @slot
     def get_min_max_values(
@@ -275,8 +243,8 @@ class JDBCConnection(JDBCMixin, DBConnection):
         query: str,
         options: JDBCReadOptions,
     ) -> DataFrame:
-        jdbc_params = self.options_to_jdbc_params(options)
-        return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
+        jdbc_properties = self._get_jdbc_properties(options, exclude={"partitioning_mode"}, exclude_none=True)
+        return self.spark.read.format("jdbc").options(dbtable=f"({query}) T", **jdbc_properties).load()
 
     def _exclude_partition_options(
         self,

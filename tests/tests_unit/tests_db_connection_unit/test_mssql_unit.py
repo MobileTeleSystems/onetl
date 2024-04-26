@@ -92,7 +92,14 @@ def test_mssql(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433;databaseName=database"
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "url": "jdbc:sqlserver://some_host:1433",
+        "databaseName": "database",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -108,7 +115,14 @@ def test_mssql_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:sqlserver://some_host:5000;databaseName=database"
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host:5000"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "url": "jdbc:sqlserver://some_host:5000",
+        "databaseName": "database",
+    }
 
 
 def test_mssql_without_database_error(spark_mock):
@@ -118,7 +132,6 @@ def test_mssql_without_database_error(spark_mock):
             user="user",
             password="passwd",
             spark=spark_mock,
-            extra={"trustServerCertificate": "true"},
         )
 
 
@@ -132,10 +145,16 @@ def test_mssql_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert (
-        conn.jdbc_url
-        == "jdbc:sqlserver://some_host:1433;characterEncoding=UTF-8;databaseName=database;trustServerCertificate=true"
-    )
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "url": "jdbc:sqlserver://some_host:1433",
+        "databaseName": "database",
+        "characterEncoding": "UTF-8",
+        "trustServerCertificate": "true",
+    }
 
 
 def test_mssql_with_extra_prohibited(spark_mock):

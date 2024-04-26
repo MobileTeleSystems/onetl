@@ -5,6 +5,7 @@ from __future__ import annotations
 import warnings
 from typing import ClassVar, Optional
 
+from onetl._internal import stringify
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -162,12 +163,22 @@ class Teradata(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        prop = self.extra.dict(by_alias=True)
+        # Teradata JDBC driver documentation specifically mentions that params from
+        # java.sql.DriverManager.getConnection(url, params) are used to only retrieve 'user' and 'password' values.
+        # Other params should be passed via url
+        properties = self.extra.dict(by_alias=True)
 
         if self.database:
-            prop["DATABASE"] = self.database
+            properties["DATABASE"] = self.database
 
-        prop["DBS_PORT"] = self.port
+        properties["DBS_PORT"] = self.port
 
-        conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
-        return f"jdbc:teradata://{self.host}/{conn}"
+        connection_params = []
+        for key, value in sorted(properties.items()):
+            string_value = stringify(value)
+            if "," in string_value:
+                connection_params.append(f"{key}='{string_value}'")
+            else:
+                connection_params.append(f"{key}={string_value}")
+
+        return f"jdbc:teradata://{self.host}/{','.join(connection_params)}"

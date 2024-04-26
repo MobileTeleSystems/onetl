@@ -119,7 +119,15 @@ def test_greenplum(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -135,7 +143,15 @@ def test_greenplum_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5000/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+    }
 
 
 def test_greenplum_without_database_error(spark_mock):
@@ -161,9 +177,16 @@ def test_greenplum_with_extra(spark_mock):
 
     # `server.*` and `pool.*` options are ignored while generating jdbc_url
     # they are used only in `read_source_as_df` and `write_df_to_target`
-    assert conn.jdbc_url == (
-        "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&tcpKeepAlive=false"
-    )
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "ApplicationName": "override",
+        "tcpKeepAlive": "false",
+        "autosave": "always",
+    }
 
 
 def test_greenplum_without_mandatory_args(spark_mock):

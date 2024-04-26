@@ -79,7 +79,15 @@ def test_mysql(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database?characterEncoding=UTF-8&useUnicode=yes"
+    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:3306/database",
+        "characterEncoding": "UTF-8",
+        "useUnicode": "yes",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -95,7 +103,15 @@ def test_mysql_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:mysql://some_host:5000/database?characterEncoding=UTF-8&useUnicode=yes"
+    assert conn.jdbc_url == "jdbc:mysql://some_host:5000/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:5000/database",
+        "characterEncoding": "UTF-8",
+        "useUnicode": "yes",
+    }
 
 
 def test_mysql_without_database(spark_mock):
@@ -108,7 +124,15 @@ def test_mysql_without_database(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert not conn.database
 
-    assert conn.jdbc_url == "jdbc:mysql://some_host:3306?characterEncoding=UTF-8&useUnicode=yes"
+    assert conn.jdbc_url == "jdbc:mysql://some_host:3306"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:3306",
+        "characterEncoding": "UTF-8",
+        "useUnicode": "yes",
+    }
 
 
 def test_mysql_with_extra(spark_mock):
@@ -121,10 +145,17 @@ def test_mysql_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == (
-        "jdbc:mysql://some_host:3306/database?allowMultiQueries=true&characterEncoding=UTF-8&"
-        "requireSSL=true&useUnicode=yes"
-    )
+    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:3306/database",
+        "characterEncoding": "UTF-8",
+        "useUnicode": "yes",
+        "allowMultiQueries": "true",
+        "requireSSL": "true",
+    }
 
     conn = MySQL(
         host="some_host",
@@ -135,7 +166,15 @@ def test_mysql_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == ("jdbc:mysql://some_host:3306/database?characterEncoding=CP-1251&useUnicode=no")
+    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:3306/database",
+        "characterEncoding": "CP-1251",
+        "useUnicode": "no",
+    }
 
 
 def test_mysql_without_mandatory_args(spark_mock):
