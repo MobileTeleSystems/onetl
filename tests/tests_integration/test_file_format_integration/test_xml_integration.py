@@ -166,3 +166,30 @@ def test_xml_reader_with_attributes(
     assert read_df.count()
     assert read_df.schema == expected_xml_attributes_df.schema
     assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")
+
+
+def test_xml_parse_column(
+    spark,
+    local_fs_file_df_connection_with_path_and_files,
+    expected_xml_attributes_df,
+    file_df_dataframe,
+    file_df_schema,
+):
+    from onetl.file.format import XML
+
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("XML files are supported on Spark 3.x only")
+
+    file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
+    xml_file_path = source_path / "xml" / "without_compression" / "file.xml"
+
+    with open(xml_file_path) as file:
+        xml_data = file.read()
+
+    df = spark.createDataFrame([(xml_data,)], ["xml_string"])
+    df.show(truncate=False)
+    xml = XML.parse({"rowTag": "item", "rootTag": "root"})
+    parsed_df = df.select(xml.parse_column("xml_string", schema=file_df_schema))
+
+    parsed_df.show(truncate=False)

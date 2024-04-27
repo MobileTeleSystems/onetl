@@ -20,6 +20,7 @@ from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
     from pyspark.sql import Column, SparkSession
+    from pyspark.sql.types import StructType
 
 
 PROHIBITED_OPTIONS = frozenset(
@@ -227,7 +228,7 @@ class XML(ReadWriteFileFormat):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
-    def parse_column(self, column: str | Column) -> Column:
+    def parse_column(self, column: str | Column, schema: StructType) -> Column:
         """
         Parses an XML string column into a structured Spark SQL column using the ``from_xml`` function
         provided by the `Databricks Spark XML library <https://github.com/databricks/spark-xml#pyspark-notes>`_
@@ -265,7 +266,7 @@ class XML(ReadWriteFileFormat):
                     StructField("price", IntegerType(), nullable=True),
                 ]
             )
-            xml_processor = XML(row_tag="book", schema=schema)
+            xml_processor = XML(row_tag="book")
 
             data = [
                 (
@@ -274,10 +275,12 @@ class XML(ReadWriteFileFormat):
             ]
             df = spark.createDataFrame(data, ["xml_string"])
 
-            parsed_df = df.select(xml_processor.parse_column("xml_string"))
+            parsed_df = df.select(xml_processor.parse_column("xml_string", schema=schema))
             parsed_df.show()
 
         """
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+
         spark = SparkSession._instantiatedSession  # noqa: WPS437
         self.check_if_supported(spark)
 
@@ -290,9 +293,10 @@ class XML(ReadWriteFileFormat):
             column_name, column = column, col(column).cast("string")
 
         java_column = _to_java_column(column)
-        java_schema = spark._jsparkSession.parseDataType(self.schema.json())  # noqa: WPS437
+        java_schema = spark._jsparkSession.parseDataType(schema.json())  # noqa: WPS437
+        filtered_options = {k: v for k, v in self.dict().items() if k in self.Config.known_options}
         scala_options = spark._jvm.org.apache.spark.api.python.PythonUtils.toScalaMap(  # noqa: WPS219, WPS437
-            self.dict(),
+            filtered_options,
         )
         jc = spark._jvm.com.databricks.spark.xml.functions.from_xml(  # noqa: WPS219, WPS437
             java_column,
