@@ -192,11 +192,11 @@ def test_avro_serialize_and_parse_no_schema(
         serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
         assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
 
-    with pytest.raises(
-        ValueError,
-        match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
-    ):
-        serialized_df.select(avro.parse_column(column_type("combined")))
+        with pytest.raises(
+            ValueError,
+            match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
+        ):
+            serialized_df.select(avro.parse_column(column_type("combined")))
 
 
 @pytest.mark.parametrize("column_type", [str, col])
