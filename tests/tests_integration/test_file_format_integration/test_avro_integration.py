@@ -4,7 +4,10 @@ Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
+import contextlib
+
 import pytest
+import responses
 
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
@@ -12,9 +15,11 @@ from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import Avro
 
 try:
+    from pyspark.sql.functions import col
+
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.avro]
 
@@ -30,8 +35,11 @@ def avro_schema():
             {"name": "id", "type": ["null", "int"]},
             {"name": "str_value", "type": ["null", "string"]},
             {"name": "int_value", "type": ["null", "int"]},
-            {"name": "date_value", "type": ["null", "int"]},
-            {"name": "datetime_value", "type": ["null", "long"]},
+            {"name": "date_value", "type": ["null", {"type": "int", "logicalType": "date"}]},
+            {
+                "name": "datetime_value",
+                "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+            },
             {"name": "float_value", "type": ["null", "double"]},
         ],
     }
@@ -56,7 +64,7 @@ def test_avro_reader(
     """Reading Avro files working as expected on any Spark, Python and Java versions"""
     spark_version = get_spark_version(spark)
     if spark_version < Version("2.4"):
-        pytest.skip("Avro files are supported on Spark 3.2+ only")
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
 
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
@@ -93,7 +101,7 @@ def test_avro_writer(
     """Written files can be read by Spark"""
     spark_version = get_spark_version(spark)
     if spark_version < Version("2.4"):
-        pytest.skip("Avro files are supported on Spark 3.2+ only")
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
 
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe
@@ -117,3 +125,116 @@ def test_avro_writer(
     assert read_df.count()
     assert read_df.schema == df.schema
     assert_equal_df(read_df, df, order_by="id")
+
+
+@pytest.mark.parametrize("column_type", [str, col])
+def test_avro_serialize_and_parse_column(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    avro_schema,
+    column_type,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
+
+    if spark_version.major < 3:
+        msg = (
+            f"`Avro.parse_column` or `Avro.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=msg)
+    else:
+        context_manager = contextlib.nullcontext()
+    df = file_df_dataframe
+    avro = Avro(schema_dict=avro_schema)
+
+    combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
+
+    with context_manager:
+        serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+        assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+        parsed_df = serialized_df.select(avro.parse_column(column_type("combined")))
+        assert combined_df.select("combined").collect() == parsed_df.collect()
+
+
+@pytest.mark.parametrize("column_type", [str, col])
+def test_avro_serialize_and_parse_no_schema(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    column_type,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
+
+    if spark_version.major < 3:
+        msg = (
+            f"`Avro.parse_column` or `Avro.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=msg)
+    else:
+        context_manager = contextlib.nullcontext()
+
+    df = file_df_dataframe
+    avro = Avro()
+
+    with context_manager:
+        combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
+        serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+        assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+
+        with pytest.raises(
+            ValueError,
+            match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
+        ):
+            serialized_df.select(avro.parse_column(column_type("combined")))
+
+
+@pytest.mark.parametrize("column_type", [str, col])
+@responses.activate
+def test_avro_serialize_and_parse_with_schema_url(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    column_type,
+    avro_schema,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
+
+    if spark_version.major < 3:
+        msg = (
+            f"`Avro.parse_column` or `Avro.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=msg)
+    else:
+        context_manager = contextlib.nullcontext()
+
+    # mocking the request to return a JSON schema
+    schema_url = "http://example.com/avro_schema"
+    responses.add(responses.GET, schema_url, json=avro_schema, status=200)
+
+    df = file_df_dataframe
+    avro = Avro(schema_url=schema_url)
+
+    combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
+    with context_manager:
+        serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+        assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+        parsed_df = serialized_df.select(avro.parse_column(column_type("combined")))
+        assert combined_df.select("combined").collect() == parsed_df.collect()

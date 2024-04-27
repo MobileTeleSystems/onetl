@@ -152,3 +152,93 @@ For serializing data into JSON format and sending it back to Kafka, use the :obj
     # |{"name":"Alice","age":20}|
     # |{"name":"Bob","age":25}  |
     # +-------------------------+
+
+Avro Format Handling
+--------------------
+
+``DBReader``
+~~~~~~~~~~~~
+
+To process Avro formatted data from Kafka, use the :obj:`Avro.parse_column <onetl.file.format.avro.Avro.parse_column>` method. This method allows you to convert a column containing Avro binary data directly into a structured Spark DataFrame using a predefined schema.
+
+.. code-block:: python
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+
+    from onetl.db import DBReader
+    from onetl.file.format import Avro
+    from onetl.connection import Kafka
+
+    spark = SparkSession.builder.appName("KafkaAvroExample").getOrCreate()
+
+    kafka = Kafka(...)
+    avro = Avro(
+        schema_dict={
+            "type": "record",
+            "name": "Person",
+            "fields": [{"name": "name", "type": "string"}, {"name": "age", "type": "int"}],
+        }
+    )
+
+    reader = DBReader(
+        connection=kafka,
+        topic="topic_name",
+    )
+    df = reader.run()
+
+    df.show()
+    # +----+------------------------------------+----------+---------+------+-----------------------+-------------+
+    # |key |value                               |topic     |partition|offset|timestamp              |timestampType|
+    # +----+------------------------------------+----------+---------+------+-----------------------+-------------+
+    # |[31]|[02 02 02 08 76 6... (binary data)] |topicAvro |0        |0     |2024-04-24 13:02:25.911|0            |
+    # |[32]|[02 04 02 08 76 6... (binary data)] |topicAvro |0        |1     |2024-04-24 13:02:25.922|0            |
+    # +----+------------------------------------+----------+---------+------+-----------------------+-------------+
+
+    parsed_df = df.select(avro.parse_column("value"))
+    parsed_df.show()
+    # +-----+----+
+    # | name| age|
+    # +-----+----+
+    # |Alice|  20|
+    # |  Bob|  25|
+    # +-----+----+
+
+``DBWriter``
+~~~~~~~~~~~~
+
+To serialize structured data into Avro format and write it back to a Kafka topic, use the :obj:`Avro.serialize_column <onetl.file.format.avro.Avro.serialize_column>` method.
+
+.. code-block:: python
+
+    from onetl.db import DBWriter
+    from onetl.file.format import Avro
+    from onetl.connection import Kafka
+
+    kafka = Kafka(...)
+    avro = Avro(
+        schema_dict={
+            "type": "record",
+            "name": "Person",
+            "fields": [{"name": "name", "type": "string"}, {"name": "age", "type": "int"}],
+        }
+    )
+
+    df.select("value").show()
+    # +-----------+
+    # |value      |
+    # +-----------+
+    # |{Alice, 20}|
+    # |{Bob, 25}  |
+    # +-----------+
+
+    # serializing data into Avro format
+    serialized_df = df.select(avro.serialize_column("value"))
+
+    serialized_df.show()
+    # +---+------------------------------------+
+    # |key|value                               |
+    # +---+------------------------------------+
+    # |  1|[02 02 02 08 76 6... (binary data)] |
+    # |  2|[02 04 02 08 76 6... (binary data)] |
+    # +---+------------------------------------+

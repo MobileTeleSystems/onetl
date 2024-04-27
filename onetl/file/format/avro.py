@@ -20,7 +20,8 @@ from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrameReader, DataFrameWriter, SparkSession
+    from pyspark.sql import Column, DataFrameReader, DataFrameWriter, SparkSession
+
 
 PROHIBITED_OPTIONS = frozenset(
     (
@@ -189,8 +190,184 @@ class Avro(ReadWriteFileFormat):
             options["avroSchema"] = json.dumps(self.schema_dict)
         return writer.format(self.name).options(**options)
 
+    def parse_column(self, column: str | Column) -> Column:
+        """
+        Parses an Avro binary column into a structured Spark SQL column using Spark's
+        `from_avro <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.from_avro.html>`_ function, based on the schema provided within the class.
+
+        .. note::
+
+            Can be used only with Spark 3.x+
+
+        .. warning::
+
+            If ``schema_url`` is provided, ``requests`` library is used to fetch the schema from the URL. It should be installed manually, like this:
+
+            .. code:: bash
+
+                pip install requests
+
+        Parameters
+        ----------
+        column : str | Column
+            The name of the column or the Column object containing Avro binary data to parse.
+
+        Returns
+        -------
+        Column
+            A new Column object with data parsed from Avro binary to the specified structured format.
+
+        Raises
+        ------
+        ValueError
+            If the Spark version is less than 3.x or if neither schema_dict nor schema_url is defined.
+        ImportError
+            If ``schema_url`` is used and the ``requests`` library is not installed.
+
+
+        Examples
+        --------
+        .. code:: python
+
+            from pyspark.sql import SparkSession
+
+            from onetl.file.format import Avro
+
+            spark = SparkSession.builder.appName("AvroParsingExample").getOrCreate()
+            schema_dict = {
+                "type": "record",
+                "name": "Person",
+                "fields": [{"name": "name", "type": "string"}],
+            }
+            avro = Avro(schema_dict=schema_dict)
+            df = spark.createDataFrame([("bytes_data_here",)], ["avro_data"])
+
+            parsed_df = df.select(avro.parse_column("avro_data"))
+            parsed_df.show()
+
+        """
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+        from pyspark.sql.functions import col
+
+        spark = SparkSession._instantiatedSession  # noqa: WPS437
+        self.check_if_supported(spark)
+        self._check_spark_version_for_serialization(spark)
+
+        from pyspark.sql.avro.functions import from_avro
+
+        if isinstance(column, Column):
+            column_name = column._jc.toString()  # noqa: WPS437
+        else:
+            column_name, column = column, col(column).cast("binary")
+
+        schema = self._get_schema_json()
+        if not schema:
+            raise ValueError("Avro.parse_column can be used only with defined `schema_dict` or `schema_url`")
+
+        return from_avro(column, schema).alias(column_name)
+
+    def serialize_column(self, column: str | Column) -> Column:
+        """
+        Serializes a structured Spark SQL column into an Avro binary column using Spark's
+        `to_avro <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.to_avro.html#pyspark.sql.avro.functions.to_avro>`_ function.
+
+        .. note::
+
+            Can be used only with Spark 3.x+
+
+        .. warning::
+
+            If ``schema_url`` is provided, ``requests`` library is used to fetch the schema from the URL. It should be installed manually, like this:
+
+            .. code:: bash
+
+                pip install requests
+
+        Parameters
+        ----------
+        column : str | Column
+            The name of the column or the Column object containing the data to serialize to Avro format.
+
+        Returns
+        -------
+        Column
+            A new Column object with data serialized from Spark SQL structures to Avro binary.
+
+        Raises
+        ------
+        ValueError
+            If the Spark version is less than 3.x.
+        ImportError
+            If ``schema_url`` is used and the ``requests`` library is not installed.
+
+        Examples
+        --------
+        .. code:: python
+
+            from pyspark.sql import SparkSession
+
+            from onetl.file.format import Avro
+
+            spark = SparkSession.builder.appName("AvroSerializationExample").getOrCreate()
+            schema_dict = {
+                "type": "record",
+                "name": "Person",
+                "fields": [{"name": "id", "type": "long"}, {"name": "name", "type": "string"}],
+            }
+
+            avro = Avro(schema_dict=schema_dict)
+            df = spark.createDataFrame([(1, "John Doe"), (2, "Jane Doe")], ["id", "name"])
+
+            serialized_df = df.select(avro.serialize_column("name"))
+            serialized_df.show()
+
+        """
+        from pyspark.sql import Column, SparkSession  # noqa: WPS442
+        from pyspark.sql.functions import col
+
+        spark = SparkSession._instantiatedSession  # noqa: WPS437
+        self.check_if_supported(spark)
+        self._check_spark_version_for_serialization(spark)
+
+        from pyspark.sql.avro.functions import to_avro
+
+        if isinstance(column, Column):
+            column_name = column._jc.toString()  # noqa:  WPS437
+        else:
+            column_name, column = column, col(column)
+
+        schema = self._get_schema_json()
+        return to_avro(column, schema).alias(column_name)
+
     @validator("schema_dict", pre=True)
     def _parse_schema_from_json(cls, value):
         if isinstance(value, (str, bytes)):
             return json.loads(value)
         return value
+
+    def _check_spark_version_for_serialization(self, spark: SparkSession):
+        spark_version = get_spark_version(spark)
+        if spark_version.major < 3:
+            class_name = self.__class__.__name__
+            error_msg = (
+                f"`{class_name}.parse_column` or `{class_name}.serialize_column` are available "
+                f"only since Spark 3.x, but got {spark_version}."
+            )
+            raise ValueError(error_msg)
+
+    def _get_schema_json(self) -> str:
+        if self.schema_dict:
+            return json.dumps(self.schema_dict)
+        elif self.schema_url:
+            try:
+                import requests
+
+                response = requests.get(self.schema_url)  # noqa: S113
+                return response.text
+            except ImportError as e:
+                raise ImportError(
+                    "The 'requests' library is required to use 'schema_url' but is not installed. "
+                    "Install it with 'pip install requests' or avoid using 'schema_url'.",
+                ) from e
+        else:
+            return ""
