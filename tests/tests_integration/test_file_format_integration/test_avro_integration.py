@@ -7,6 +7,7 @@ Do not test all the possible options and combinations, we are not testing Spark 
 import contextlib
 
 import pytest
+import responses
 
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
@@ -154,6 +155,84 @@ def test_avro_serialize_and_parse_column(
 
     combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
 
+    with context_manager:
+        serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+        assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+        parsed_df = serialized_df.select(avro.parse_column(column_type("combined")))
+        assert combined_df.select("combined").collect() == parsed_df.collect()
+
+
+@pytest.mark.parametrize("column_type", [str, col])
+def test_avro_serialize_and_parse_no_schema(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    column_type,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
+
+    if spark_version.major < 3:
+        msg = (
+            f"`Avro.parse_column` or `Avro.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=msg)
+    else:
+        context_manager = contextlib.nullcontext()
+
+    df = file_df_dataframe
+    avro = Avro()
+
+    with context_manager:
+        combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
+        serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
+        assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
+
+        with pytest.raises(
+            ValueError,
+            match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
+        ):
+            serialized_df.select(avro.parse_column(column_type("combined")))
+
+
+@pytest.mark.parametrize("column_type", [str, col])
+@responses.activate
+def test_avro_serialize_and_parse_with_schema_url(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+    column_type,
+    avro_schema,
+):
+    from pyspark.sql.functions import struct
+    from pyspark.sql.types import BinaryType
+
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        pytest.skip("Avro files are supported on Spark 2.4+ only")
+
+    if spark_version.major < 3:
+        msg = (
+            f"`Avro.parse_column` or `Avro.serialize_column` are available "
+            f"only since Spark 3.x, but got {spark_version}"
+        )
+        context_manager = pytest.raises(ValueError, match=msg)
+    else:
+        context_manager = contextlib.nullcontext()
+
+    # mocking the request to return a JSON schema
+    schema_url = "http://example.com/avro_schema"
+    responses.add(responses.GET, schema_url, json=avro_schema, status=200)
+
+    df = file_df_dataframe
+    avro = Avro(schema_url=schema_url)
+
+    combined_df = df.withColumn("combined", struct([col(c) for c in df.columns]))
     with context_manager:
         serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
         assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
