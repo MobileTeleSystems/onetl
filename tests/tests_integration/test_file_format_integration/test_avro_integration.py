@@ -130,7 +130,6 @@ def test_avro_writer(
 @pytest.mark.parametrize("column_type", [str, col])
 def test_avro_serialize_and_parse_column(
     spark,
-    local_fs_file_df_connection_with_path,
     file_df_dataframe,
     avro_schema,
     column_type,
@@ -150,6 +149,7 @@ def test_avro_serialize_and_parse_column(
         context_manager = pytest.raises(ValueError, match=msg)
     else:
         context_manager = contextlib.nullcontext()
+
     df = file_df_dataframe
     avro = Avro(schema_dict=avro_schema)
 
@@ -165,7 +165,6 @@ def test_avro_serialize_and_parse_column(
 @pytest.mark.parametrize("column_type", [str, col])
 def test_avro_serialize_and_parse_no_schema(
     spark,
-    local_fs_file_df_connection_with_path,
     file_df_dataframe,
     column_type,
 ):
@@ -193,18 +192,17 @@ def test_avro_serialize_and_parse_no_schema(
         serialized_df = combined_df.select(avro.serialize_column(column_type("combined")))
         assert isinstance(serialized_df.schema["combined"].dataType, BinaryType)
 
-        with pytest.raises(
-            ValueError,
-            match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
-        ):
-            serialized_df.select(avro.parse_column(column_type("combined")))
+    with pytest.raises(
+        ValueError,
+        match="Avro.parse_column can be used only with defined `schema_dict` or `schema_url`",
+    ):
+        serialized_df.select(avro.parse_column(column_type("combined")))
 
 
 @pytest.mark.parametrize("column_type", [str, col])
 @responses.activate
 def test_avro_serialize_and_parse_with_schema_url(
     spark,
-    local_fs_file_df_connection_with_path,
     file_df_dataframe,
     column_type,
     avro_schema,
