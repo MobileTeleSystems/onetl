@@ -19,7 +19,7 @@ from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
-    from pyspark.sql import SparkSession
+    from pyspark.sql import Column, SparkSession
 
 
 PROHIBITED_OPTIONS = frozenset(
@@ -226,3 +226,77 @@ class XML(ReadWriteFileFormat):
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
+
+    def parse_column(self, column: str | Column) -> Column:
+        """
+        Parses an XML string column into a structured Spark SQL column using the ``from_xml`` function
+        provided by the `Databricks Spark XML library <https://github.com/databricks/spark-xml#pyspark-notes>`_
+        based on the provided schema.
+
+        .. note::
+
+            This method assumes that the ``spark-xml`` package is installed and properly configured within your Spark environment.
+
+        Parameters
+        ----------
+        column : str | Column
+            The name of the column or the Column object containing XML strings to parse.
+
+        Returns
+        -------
+        Column
+            A new Column object with data parsed from XML string to the specified structured format.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from pyspark.sql import SparkSession
+            from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+            from onetl.file.format import XML
+
+            spark = SparkSession.builder.appName("XMLParsingExample").getOrCreate()
+            schema = StructType(
+                [
+                    StructField("author", StringType(), nullable=True),
+                    StructField("title", StringType(), nullable=True),
+                    StructField("genre", StringType(), nullable=True),
+                    StructField("price", IntegerType(), nullable=True),
+                ]
+            )
+            xml_processor = XML(row_tag="book", schema=schema)
+
+            data = [
+                (
+                    "<book><author>Austen, Jane</author><title>Pride and Prejudice</title><genre>romance</genre><price>19</price></book>",
+                )
+            ]
+            df = spark.createDataFrame(data, ["xml_string"])
+
+            parsed_df = df.select(xml_processor.parse_column("xml_string"))
+            parsed_df.show()
+
+        """
+        spark = SparkSession._instantiatedSession  # noqa: WPS437
+        self.check_if_supported(spark)
+
+        from pyspark.sql.column import _to_java_column  # noqa: WPS450
+        from pyspark.sql.functions import col
+
+        if isinstance(column, Column):
+            column_name, column = column._jc.toString(), column.cast("string")  # noqa: WPS437
+        else:
+            column_name, column = column, col(column).cast("string")
+
+        java_column = _to_java_column(column)
+        java_schema = spark._jsparkSession.parseDataType(self.schema.json())  # noqa: WPS437
+        scala_options = spark._jvm.org.apache.spark.api.python.PythonUtils.toScalaMap(  # noqa: WPS219, WPS437
+            self.dict(),
+        )
+        jc = spark._jvm.com.databricks.spark.xml.functions.from_xml(  # noqa: WPS219, WPS437
+            java_column,
+            java_schema,
+            scala_options,
+        )
+        return Column(jc).alias(column_name)
