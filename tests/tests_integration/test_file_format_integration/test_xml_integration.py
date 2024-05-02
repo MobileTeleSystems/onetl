@@ -11,9 +11,11 @@ from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import XML
 
 try:
-    from tests.util.assert_df import assert_equal_df
+    from pyspark.sql.functions import col
+
+    from tests.util.assert_df import assert_equal_df, assert_subset_df
 except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.xml]
 
@@ -168,13 +170,17 @@ def test_xml_reader_with_attributes(
     assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")
 
 
+@pytest.mark.parametrize("column_type", [str, col])
 def test_xml_parse_column(
     spark,
     local_fs_file_df_connection_with_path_and_files,
     expected_xml_attributes_df,
     file_df_dataframe,
     file_df_schema,
+    column_type,
 ):
+    from pyspark.sql.functions import expr
+
     from onetl.file.format import XML
 
     spark_version = get_spark_version(spark)
@@ -188,8 +194,25 @@ def test_xml_parse_column(
         xml_data = file.read()
 
     df = spark.createDataFrame([(xml_data,)], ["xml_string"])
-    df.show(truncate=False)
-    xml = XML.parse({"rowTag": "item", "rootTag": "root"})
-    parsed_df = df.select(xml.parse_column("xml_string", schema=file_df_schema))
+    # remove the <root> tag from the XML string
+    df = df.withColumn("xml_string", expr("regexp_replace(xml_string, '^<root>|</root>$', '')"))
 
-    parsed_df.show(truncate=False)
+    xml = XML(row_tag="item")
+    parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
+    transformed_df = parsed_df.select(
+        "xml_string.id",
+        "xml_string.str_value",
+        "xml_string.int_value",
+        "xml_string.date_value",
+        "xml_string.datetime_value",
+        "xml_string.float_value",
+    )
+    expected_df_selected = expected_xml_attributes_df.select(
+        "id",
+        "str_value",
+        "int_value",
+        "date_value",
+        "datetime_value",
+        "float_value",
+    )
+    assert_subset_df(transformed_df, expected_df_selected)

@@ -238,6 +238,24 @@ class XML(ReadWriteFileFormat):
 
             This method assumes that the ``spark-xml`` package is installed and properly configured within your Spark environment.
 
+        .. note::
+
+            This method does not support XML strings with a root tag that is not specified as the ``rowTag``. If your XML data includes a root tag that encapsulates multiple row tags, ensure to preprocess the XML string to remove or ignore the root tag before parsing.
+
+            .. code-block:: xml
+
+                <books>
+                    <book><title>Book One</title><author>Author A</author></book>
+                    <book><title>Book Two</title><author>Author B</author></book>
+                </books>
+
+                # before applying method xml field should be processed into:
+
+                <book><title>Book One</title><author>Author A</author></book>
+                <book><title>Book Two</title><author>Author B</author></book>
+
+
+
         Parameters
         ----------
         column : str | Column
@@ -294,9 +312,8 @@ class XML(ReadWriteFileFormat):
 
         java_column = _to_java_column(column)
         java_schema = spark._jsparkSession.parseDataType(schema.json())  # noqa: WPS437
-        filtered_options = {k: v for k, v in self.dict().items() if k in self.Config.known_options}
         scala_options = spark._jvm.org.apache.spark.api.python.PythonUtils.toScalaMap(  # noqa: WPS219, WPS437
-            filtered_options,
+            self.dict(),
         )
         jc = spark._jvm.com.databricks.spark.xml.functions.from_xml(  # noqa: WPS219, WPS437
             java_column,
