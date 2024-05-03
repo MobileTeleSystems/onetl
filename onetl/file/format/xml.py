@@ -240,7 +240,7 @@ class XML(ReadWriteFileFormat):
 
         .. note::
 
-            This method parses each XML string in the DataFrame individually; therefore, each string must contain exactly one occurrence of the ``rowTag`` without any surrounding root tags. If your XML data includes a root tag that encapsulates the row tags, you must preprocess the XML to remove or ignore this root tag before parsing.
+            This method parses each DataFrame row individually; therefore for specific column each row must contain exactly one occurrence of the ``rowTag`` without any surrounding root tags. If your XML data includes a root tag that encapsulates the row tags, you must preprocess the XML to remove or ignore this root tag before parsing.
 
             .. code-block:: xml
 
