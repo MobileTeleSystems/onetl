@@ -236,11 +236,11 @@ class XML(ReadWriteFileFormat):
 
         .. note::
 
-            This method assumes that the ``spark-xml`` package is installed and properly configured within your Spark environment.
+            This method assumes that the ``spark-xml`` package is installed: :obj:`XML.get_packages <onetl.file.format.xml.XML.get_packages>`.
 
         .. note::
 
-            This method does not support XML strings with a root tag that is not specified as the ``rowTag``. If your XML data includes a root tag that encapsulates multiple row tags, ensure to preprocess the XML string to remove or ignore the root tag before parsing.
+            This method parses each XML string in the DataFrame individually; therefore, each string must contain exactly one occurrence of the ``rowTag`` without any surrounding root tags. If your XML data includes a root tag that encapsulates the row tags, you must preprocess the XML to remove or ignore this root tag before parsing.
 
             .. code-block:: xml
 

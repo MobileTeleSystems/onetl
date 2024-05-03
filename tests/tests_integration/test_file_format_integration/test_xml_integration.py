@@ -13,7 +13,7 @@ from onetl.file.format import XML
 try:
     from pyspark.sql.functions import col
 
-    from tests.util.assert_df import assert_equal_df, assert_subset_df
+    from tests.util.assert_df import assert_equal_df
 except ImportError:
     pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
@@ -179,7 +179,7 @@ def test_xml_parse_column(
     file_df_schema,
     column_type,
 ):
-    from pyspark.sql.functions import expr
+    from pyspark.sql.types import StringType
 
     from onetl.file.format import XML
 
@@ -187,15 +187,24 @@ def test_xml_parse_column(
     if spark_version.major < 3:
         pytest.skip("XML files are supported on Spark 3.x only")
 
-    file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
-    xml_file_path = source_path / "xml" / "without_compression" / "file.xml"
+    def to_xml(row):
+        # convert datetime to UTC
+        import pytz
 
-    with open(xml_file_path) as file:
-        xml_data = file.read()
+        utc_datetime = row.datetime_value.astimezone(pytz.utc)
+        utc_datetime_str = utc_datetime.isoformat()
 
-    df = spark.createDataFrame([(xml_data,)], ["xml_string"])
-    # remove the <root> tag from the XML string
-    df = df.withColumn("xml_string", expr("regexp_replace(xml_string, '^<root>|</root>$', '')"))
+        return f"""<item>
+        <id>{row.id}</id>
+        <str_value>{row.str_value}</str_value>
+        <int_value>{row.int_value}</int_value>
+        <date_value>{row.date_value}</date_value>
+        <datetime_value>{utc_datetime_str}</datetime_value>
+        <float_value>{row.float_value}</float_value>
+        </item>"""
+
+    xml_rdd = spark.sparkContext.parallelize(expected_xml_attributes_df.rdd.map(to_xml).collect())
+    df = spark.createDataFrame(xml_rdd, StringType()).toDF("xml_string")
 
     xml = XML(row_tag="item")
     parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
@@ -215,4 +224,4 @@ def test_xml_parse_column(
         "datetime_value",
         "float_value",
     )
-    assert_subset_df(transformed_df, expected_df_selected)
+    assert_equal_df(transformed_df, expected_df_selected)
