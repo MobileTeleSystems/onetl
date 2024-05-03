@@ -240,7 +240,7 @@ class XML(ReadWriteFileFormat):
 
         .. note::
 
-            This method parses each DataFrame row individually; therefore for specific column each row must contain exactly one occurrence of the ``rowTag`` without any surrounding root tags. If your XML data includes a root tag that encapsulates the row tags, you must preprocess the XML to remove or ignore this root tag before parsing.
+            This method parses each DataFrame row individually. Therefore, for a specific column, each row must contain exactly one occurrence of the ``rowTag`` specified. If your XML data includes a root tag that encapsulates multiple row tags, you can adjust the schema to use an ``ArrayType`` to keep all child elements under the single root.
 
             .. code-block:: xml
 
@@ -249,12 +249,28 @@ class XML(ReadWriteFileFormat):
                     <book><title>Book Two</title><author>Author B</author></book>
                 </books>
 
-                # before applying method xml field should be processed into:
+            And the corresponding schema in Spark using an ``ArrayType``:
 
-                <book><title>Book One</title><author>Author A</author></book>
-                <book><title>Book Two</title><author>Author B</author></book>
+            .. code-block:: python
 
+                from pyspark.sql.types import StructType, StructField, ArrayType, StringType
 
+                schema = StructType(
+                    [
+                        StructField(
+                            "book",
+                            ArrayType(
+                                StructType(
+                                    [
+                                        StructField("title", StringType(), True),
+                                        StructField("author", StringType(), True),
+                                    ]
+                                )
+                            ),
+                            True,
+                        )
+                    ]
+                )
 
         Parameters
         ----------
