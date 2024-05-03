@@ -203,6 +203,10 @@ def test_xml_reader_with_attributes(
 def test_xml_parse_column(spark, xml_input: str, expected_row: Row, column_type, file_df_schema):
     from onetl.file.format import XML
 
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("XML files are supported on Spark 3.x only")
+
     xml = XML(row_tag="item")
     df = spark.createDataFrame([(xml_input,)], ["xml_string"])
     parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
