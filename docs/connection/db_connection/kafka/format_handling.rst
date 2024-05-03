@@ -242,3 +242,56 @@ To serialize structured data into Avro format and write it back to a Kafka topic
     # |  1|[02 02 02 08 76 6... (binary data)] |
     # |  2|[02 04 02 08 76 6... (binary data)] |
     # +---+------------------------------------+
+
+XML Format Handling
+-------------------
+
+Handling XML data in Kafka involves parsing string representations of XML into structured Spark DataFrame format.
+
+``DBReader``
+~~~~~~~~~~~~
+
+To process XML formatted data from Kafka, use the :obj:`XML.parse_column <onetl.file.format.xml.XML.parse_column>` method. This method allows you to convert a column containing XML strings directly into a structured Spark DataFrame using a specified schema.
+
+.. code-block:: python
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+    from onetl.db import DBReader
+    from onetl.file.format import XML
+    from onetl.connection import Kafka
+
+    spark = SparkSession.builder.appName("KafkaXMLExample").getOrCreate()
+
+    kafka = Kafka(...)
+    xml = XML(row_tag="person")
+
+    reader = DBReader(
+        connection=kafka,
+        topic="topic_name",
+    )
+    df = reader.run()
+
+    df.show()
+    # +----+--------------------------------------------------------------------------------------------+----------+---------+------+-----------------------+-------------+
+    # |key |value                                                                                       |topic     |partition|offset|timestamp              |timestampType|
+    # +----+--------------------------------------------------------------------------------------------+----------+---------+------+-----------------------+-------------+
+    # |[31]|"<person><name>Alice</name><age>20</age></person>"                                          |topicXML  |0        |0     |2024-04-24 13:02:25.911|0            |
+    # |[32]|"<person><name>Bob</name><age>25</age></person>"                                            |topicXML  |0        |1     |2024-04-24 13:02:25.922|0            |
+    # +----+--------------------------------------------------------------------------------------------+----------+---------+------+-----------------------+-------------+
+
+    xml_schema = StructType(
+        [
+            StructField("name", StringType(), nullable=True),
+            StructField("age", IntegerType(), nullable=True),
+        ]
+    )
+    parsed_xml_df = df.select(xml.parse_column("value", xml_schema))
+    parsed_xml_df.show()
+    # +-----------+
+    # |value      |
+    # +-----------+
+    # |{Alice, 20}|
+    # |{Bob, 25}  |
+    # +-----------+

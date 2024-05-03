@@ -4,6 +4,8 @@ Test only that options are passed to Spark in both FileDFReader & FileDFWriter.
 Do not test all the possible options and combinations, we are not testing Spark here.
 """
 
+import datetime
+
 import pytest
 
 from onetl._util.spark import get_spark_version
@@ -11,9 +13,12 @@ from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import XML
 
 try:
+    from pyspark.sql import Row
+    from pyspark.sql.functions import col
+
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.xml]
 
@@ -166,3 +171,45 @@ def test_xml_reader_with_attributes(
     assert read_df.count()
     assert read_df.schema == expected_xml_attributes_df.schema
     assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")
+
+
+@pytest.mark.parametrize(
+    "xml_input, expected_row",
+    [
+        (
+            """<item>
+                    <id>1</id>
+                    <str_value>Alice</str_value>
+                    <int_value>123</int_value>
+                    <date_value>2021-01-01</date_value>
+                    <datetime_value>2021-01-01T07:01:01Z</datetime_value>
+                    <float_value>1.23</float_value>
+                </item>""",
+            Row(
+                xml_string=Row(
+                    id=1,
+                    str_value="Alice",
+                    int_value=123,
+                    date_value=datetime.date(2021, 1, 1),
+                    datetime_value=datetime.datetime(2021, 1, 1, 7, 1, 1),
+                    float_value=1.23,
+                ),
+            ),
+        ),
+    ],
+    ids=["basic-case"],
+)
+@pytest.mark.parametrize("column_type", [str, col])
+def test_xml_parse_column(spark, xml_input: str, expected_row: Row, column_type, file_df_schema):
+    from onetl.file.format import XML
+
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("XML files are supported on Spark 3.x only")
+
+    xml = XML(row_tag="item")
+    df = spark.createDataFrame([(xml_input,)], ["xml_string"])
+    parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
+    result_row = parsed_df.first()
+
+    assert result_row == expected_row
