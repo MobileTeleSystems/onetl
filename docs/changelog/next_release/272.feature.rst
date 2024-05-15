@@ -1,0 +1,20 @@
+``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` is now required for ``.sql`` method calls
+
+.. code-block:: python
+
+    from onetl.connection import Postgres
+
+    postgres = Postgres(...)
+    df = postgres.sql(
+        """
+        SELECT id, key, CAST(value AS text) value, updated_at
+        FROM some.mytable
+        WHERE key = 'something'
+        """,
+        options=Postgres.SQLOptions(
+            partition_column="id",
+            num_partitions=10,
+            lower_bound=0,
+            upper_bound=1000,
+        ),
+    )

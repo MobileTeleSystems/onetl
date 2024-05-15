@@ -44,7 +44,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Oracle.ReadOptions(
+        options=Oracle.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,

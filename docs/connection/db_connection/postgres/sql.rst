@@ -43,7 +43,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Postgres.ReadOptions(
+        options=Postgres.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,

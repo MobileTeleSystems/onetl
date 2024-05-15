@@ -515,6 +515,42 @@ class JDBCWriteOptions(JDBCOptions):
         return values
 
 
+class JDBCSQLOptions(JDBCOptions):
+    """Options specifically for SQL queries
+
+    These options allow you to specify configurations for executing SQL queries
+    without relying on Spark's partitioning mechanisms.
+
+    .. note::
+
+        You can pass any JDBC configuration
+        `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
+        tailored to optimize SQL query execution. Option names should be in ``camelCase``!
+
+    """
+
+    lower_bound: Optional[int] = None
+    upper_bound: Optional[int] = None
+    num_partitions: Optional[int] = None
+    partition_column: Optional[str] = None
+
+    class Config:
+        known_options = READ_OPTIONS - {"partitioning_mode"}
+        prohibited_options = JDBCOptions.Config.prohibited_options | {"partitioning_mode"}
+        alias_generator = to_camel
+
+    @root_validator(pre=True)
+    def _check_partition_fields(cls, values):
+        num_partitions = values.get("num_partitions")
+        lower_bound = values.get("lower_bound")
+        upper_bound = values.get("upper_bound")
+
+        if num_partitions is not None and num_partitions > 1:
+            if lower_bound is None or upper_bound is None:
+                raise ValueError("lower_bound and upper_bound must be set if num_partitions > 1")
+        return values
+
+
 @deprecated(
     "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'ReadOptions' or 'WriteOptions' instead",
     category=UserWarning,

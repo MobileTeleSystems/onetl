@@ -41,7 +41,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Teradata.ReadOptions(
+        options=Teradata.SQLOptions(
             partition_column="part_column",
             num_partitions=10,
             lower_bound=0,

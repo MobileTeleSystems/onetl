@@ -43,7 +43,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Clickhouse.ReadOptions(
+        options=Clickhouse.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,

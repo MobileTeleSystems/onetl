@@ -261,3 +261,21 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
 def test_jdbc_write_options_mode_wrong(options):
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
         Postgres.WriteOptions(**options)
+
+
+@pytest.mark.parametrize(
+    "options, expected_message",
+    [
+        ({"num_partitions": 2}, "lower_bound and upper_bound must be set if num_partitions > 1"),
+        ({"num_partitions": 2, "lower_bound": 0}, "lower_bound and upper_bound must be set if num_partitions > 1"),
+        ({"num_partitions": 2, "upper_bound": 10}, "lower_bound and upper_bound must be set if num_partitions > 1"),
+    ],
+)
+def test_jdbc_sql_options_partition_bounds(options, expected_message):
+    with pytest.raises(ValueError, match=expected_message):
+        Postgres.SQLOptions(**options)
+
+
+def test_jdbc_sql_options_partitioning_mode_prohibited():
+    with pytest.raises(ValueError, match=r"Options \['partitioning_mode'\] are not allowed"):
+        Postgres.SQLOptions(partitioning_mode="range")
