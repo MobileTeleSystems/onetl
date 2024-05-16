@@ -1,0 +1,47 @@
+``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` are recommended for the ``.sql`` method in JDBC connections.
+``SQLOptions`` do not support ``partitioning_mode`` and require explicit definition of ``lower_bound`` and ``upper_bound`` when ``num_partitions`` is greater than 1.
+``ReadOptions`` allow the inclusion of ``partitioning_mode`` and automatically handle ``lower_bound`` and ``upper_bound`` based on the data distribution
+
+
+Before:
+
+.. code-block:: python
+
+    from onetl.connection import Postgres
+
+    postgres = Postgres(...)
+    df = postgres.sql(
+        """
+        SELECT *
+        FROM some.mytable
+        WHERE key = 'something'
+        """,
+        options=Postgres.ReadOptions(
+            partitioning_mode="range",
+            partition_column="id",
+            num_partitions=10,
+        ),
+    )
+
+After:
+
+.. code-block:: python
+
+    from onetl.connection import Postgres
+
+    postgres = Postgres(...)
+    df = postgres.sql(
+        """
+        SELECT *
+        FROM some.mytable
+        WHERE key = 'something'
+        """,
+        options=Postgres.SQLOptions(
+            # partitioning_mode is not supported!
+            partition_column="id",
+            num_partitions=10,
+            # this should be set explicitly!
+            lower_bound=0,
+            upper_bound=1000,
+        ),
+    )

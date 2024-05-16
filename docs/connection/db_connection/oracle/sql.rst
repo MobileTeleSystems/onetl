@@ -44,7 +44,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Oracle.ReadOptions(
+        options=Oracle.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,
@@ -67,3 +67,10 @@ Pay attention to ``where`` value
 Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``WHERE column = 'value'`` clause.
 This both reduces the amount of data send from Oracle to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in ``where`` clause.
+
+Options
+-------
+
+.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+
+.. autopydantic_model:: JDBCSQLOptions

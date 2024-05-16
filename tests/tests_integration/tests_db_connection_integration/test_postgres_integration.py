@@ -961,3 +961,47 @@ def test_postgres_connection_execute_function_dml(
     df = postgres.sql(f"SELECT {func}(2, 'cde') AS result")
     result_df = pandas.DataFrame([[2]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
+
+
+@pytest.mark.parametrize(
+    "options_class, options_kwargs, expected_warning",
+    [
+        (Postgres.ReadOptions, {"fetchsize": 5000, "sessionInitStatement": "SET timezone TO 'UTC'"}, UserWarning),
+        (Postgres.SQLOptions, {"fetchsize": 5000, "sessionInitStatement": "SET timezone TO 'UTC'"}, None),
+    ],
+)
+def test_postgres_connection_sql_options(
+    options_class,
+    options_kwargs,
+    expected_warning,
+    spark,
+    processing,
+    load_table_data,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    table = load_table_data.full_name
+    options = options_class(**options_kwargs)
+
+    if expected_warning:
+        with pytest.warns(
+            expected_warning,
+            match="Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead.",
+        ):
+            df = postgres.sql(f"SELECT * FROM {table}", options=options)
+    else:
+        df = postgres.sql(f"SELECT * FROM {table}", options=options)
+
+    table_df = processing.get_expected_dataframe(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        order_by="id_int",
+    )
+
+    processing.assert_equal_df(df=df, other_frame=table_df)
