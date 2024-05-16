@@ -279,3 +279,9 @@ def test_jdbc_sql_options_partition_bounds(options, expected_message):
 def test_jdbc_sql_options_partitioning_mode_prohibited():
     with pytest.raises(ValueError, match=r"Options \['partitioning_mode'\] are not allowed"):
         Postgres.SQLOptions(partitioning_mode="range")
+
+
+def test_jdbc_sql_options_default():
+    options = Postgres.SQLOptions()
+    assert options.fetchsize == 100_000
+    assert options.query_timeout is None

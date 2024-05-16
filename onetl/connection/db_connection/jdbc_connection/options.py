@@ -562,10 +562,10 @@ class JDBCSQLOptions(JDBCOptions):
     """Number of jobs created by Spark to read the table content in parallel."""  # noqa: WPS322
 
     lower_bound: Optional[int] = None
-    """Defines the starting boundary for partitioning the query's data."""  # noqa: WPS322
+    """Defines the starting boundary for partitioning the query's data. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
 
     upper_bound: Optional[int] = None
-    """Sets the ending boundary for data partitioning."""  # noqa: WPS322
+    """Sets the ending boundary for data partitioning. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
 
     session_init_statement: Optional[str] = None
     '''After each database session is opened to the remote DB and before starting to read data,
