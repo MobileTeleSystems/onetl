@@ -121,5 +121,3 @@ Options
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
-
-.. autoclass:: JDBCSQLOptions

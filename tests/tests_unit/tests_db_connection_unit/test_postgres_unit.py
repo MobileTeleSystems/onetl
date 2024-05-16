@@ -182,3 +182,26 @@ def test_postgres_without_mandatory_args(spark_mock):
             password="passwd",
             spark=spark_mock,
         )
+
+
+def test_postgres_sql_method_with_partitioning_mode_in_readoptions(spark_mock):
+    read_options = Postgres.ReadOptions(
+        partitioning_mode="range",
+        num_partitions=10,
+        lower_bound=0,
+        upper_bound=100,
+        partition_column="id",
+    )
+    postgres = Postgres(
+        host="some_host",
+        user="user",
+        database="database",
+        password="passwd",
+        spark=spark_mock,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"Options \['partitioning_mode'\] are not allowed to use in a JDBCSQLOptions \(type=value_error\)",
+    ):
+        postgres.sql("SELECT * FROM table", options=read_options)

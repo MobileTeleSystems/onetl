@@ -64,7 +64,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
     def sql(
         self,
         query: str,
-        options: JDBCReadOptions | JDBCSQLOptions | dict | None = None,
+        options: JDBCSQLOptions | dict | None = None,
     ) -> DataFrame:
         """
         **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. |support_hooks|
@@ -92,7 +92,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         if isinstance(options, JDBCReadOptions):
             msg = "Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead."
             warnings.warn(msg, UserWarning, stacklevel=3)
-            options = self.SQLOptions.parse_obj(options.dict(exclude={"partitioning_mode"}, exclude_none=True))
+            options = self.SQLOptions.parse_obj(options.dict(exclude_none=True))
 
         query = clear_statement(query)
 

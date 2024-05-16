@@ -1,4 +1,4 @@
-``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` is now required for ``.sql`` method calls
+``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` are recommended for the ``.sql`` method in JDBC connections to provide control over SQL execution parameters, ``ReadOptions`` are designed for data reading with automated partitioning in ``DBReader.options``.
 
 .. code-block:: python
 
