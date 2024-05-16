@@ -8,7 +8,11 @@ from typing import ClassVar
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+    JDBCOptions,
+)
 from onetl.connection.db_connection.postgres.dialect import PostgresDialect
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
@@ -159,7 +163,10 @@ class Postgres(JDBCConnection):
     def instance_url(self) -> str:
         return f"{super().instance_url}/{self.database}"
 
-    def _options_to_connection_properties(self, options: JDBCOptions):  # noqa: WPS437
+    def _options_to_connection_properties(
+        self,
+        options: JDBCOptions | JDBCFetchOptions | JDBCExecuteOptions,
+    ):  # noqa: WPS437
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

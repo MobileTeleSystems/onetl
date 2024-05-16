@@ -54,7 +54,6 @@ extensions = [
     "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
     "sphinxcontrib.plantuml",
     "sphinx.ext.extlinks",

@@ -91,7 +91,7 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
-    df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.JDBCOptions(fetchsize=2))
+    df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -122,7 +122,7 @@ def test_postgres_connection_ddl(spark, processing, get_schema_table, suffix):
     table_name, schema, table = get_schema_table
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
 
-    assert not postgres.execute(f"SET search_path TO {schema}, public{suffix}", Postgres.JDBCOptions(queryTimeout=1))
+    assert not postgres.execute(f"SET search_path TO {schema}, public{suffix}", Postgres.ExecuteOptions(queryTimeout=1))
 
     assert not postgres.execute(processing.create_schema_ddl(schema) + suffix)
     assert not postgres.execute(processing.create_table_ddl(table, fields, schema) + suffix)
@@ -1005,3 +1005,33 @@ def test_postgres_connection_sql_options(
     )
 
     processing.assert_equal_df(df=df, other_frame=table_df)
+
+
+def test_postgres_fetch_with_legacy_jdbc_options(spark, processing):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    options = Postgres.JDBCOptions(fetchsize=10)
+
+    df = postgres.fetch("SELECT CURRENT_TIMESTAMP;", options=options)
+    assert df is not None
+
+
+def test_postgres_execute_with_legacy_jdbc_options(spark, processing):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    options = Postgres.JDBCOptions(query_timeout=30)
+    postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)

@@ -44,7 +44,8 @@ def test_jdbc_options_default():
         ("properties", {"abc": "cde"}),
     ],
 )
-def test_jdbc_read_write_options_populated_by_connection_class(arg, value):
+@pytest.mark.parametrize("options_class", [Postgres.FetchOptions, Postgres.ExecuteOptions])
+def test_jdbc_read_write_options_populated_by_connection_class(arg, value, options_class):
     error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Postgres.ReadOptions.parse({arg: value})
@@ -53,8 +54,8 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value):
     with pytest.raises(ValueError, match=error_msg):
         Postgres.WriteOptions.parse({arg: value})
 
-    # JDBCOptions does not have such restriction
-    options = Postgres.JDBCOptions.parse({arg: value})
+    # FetchOptions & ExecuteOptions does not have such restriction
+    options = options_class.parse({arg: value})
     assert options.dict()[arg] == value
 
 
@@ -285,3 +286,10 @@ def test_jdbc_sql_options_default():
     options = Postgres.SQLOptions()
     assert options.fetchsize == 100_000
     assert options.query_timeout is None
+
+
+def test_jdbc_deprecated_jdbcoptions():
+    deprecated_warning = "Deprecated in 0.11.0 and will be removed in 1.0.0. Use FetchOptions or ExecuteOptions instead"
+
+    with pytest.warns(DeprecationWarning, match=deprecated_warning):
+        Postgres.JDBCOptions(fetchsize=10, query_timeout=30)

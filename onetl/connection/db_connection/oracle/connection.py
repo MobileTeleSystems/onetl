@@ -22,7 +22,10 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCOptions,
+)
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
@@ -272,14 +275,14 @@ class Oracle(JDBCConnection):
     def execute(
         self,
         statement: str,
-        options: JDBCOptions | dict | None = None,  # noqa: WPS437
+        options: JDBCOptions | JDBCExecuteOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
-        call_options = self.JDBCOptions.parse(options)
+        call_options = self.ExecuteOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
         self._handle_compile_errors(statement.strip(), call_options)
 
@@ -336,7 +339,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: JDBCOptions,
+        options: JDBCOptions | JDBCExecuteOptions,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -406,7 +409,7 @@ class Oracle(JDBCConnection):
     def _handle_compile_errors(
         self,
         statement: str,
-        options: JDBCOptions,
+        options: JDBCExecuteOptions,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.
