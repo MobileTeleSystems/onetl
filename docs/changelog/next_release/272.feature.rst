@@ -1,4 +1,6 @@
-``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` are recommended for the ``.sql`` method in JDBC connections to provide control over SQL execution parameters, ``ReadOptions`` are designed for data reading with automated partitioning in ``DBReader.options``.
+``ReadOptions`` and ``SQLOptions`` have been separated for JDBC connections. ``SQLOptions`` are recommended for the ``.sql`` method in JDBC connections.
+``SQLOptions`` do not support ``partitioning_mode`` and require explicit definition of ``lower_bound`` and ``upper_bound`` when ``num_partitions`` is greater than 1.
+``ReadOptions`` allow the inclusion of ``partitioning_mode`` and automatically handle ``lower_bound`` and ``upper_bound`` based on the data distribution
 
 .. code-block:: python
 

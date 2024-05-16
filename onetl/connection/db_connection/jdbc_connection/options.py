@@ -529,10 +529,77 @@ class JDBCSQLOptions(JDBCOptions):
 
     """
 
-    lower_bound: Optional[int] = None
-    upper_bound: Optional[int] = None
-    num_partitions: Optional[int] = None
     partition_column: Optional[str] = None
+    """Column used to partition data across multiple executors for parallel query processing.
+
+    .. warning::
+        It is highly recommended to use primary key, or at least a column with an index
+        to avoid performance issues.
+
+    Example of using partition_column for range-based partitioning:
+
+    .. code-block:: sql
+
+        -- If partition_column is 'id', with num_partitions=4, lower_bound=1, and upper_bound=100:
+        -- Executor 1 processes IDs from 1 to 25
+        SELECT ... FROM table WHERE id >= 1 AND id < 26
+        -- Executor 2 processes IDs from 26 to 50
+        SELECT ... FROM table WHERE id >= 26 AND id < 51
+        -- Executor 3 processes IDs from 51 to 75
+        SELECT ... FROM table WHERE id >= 51 AND id < 76
+        -- Executor 4 processes IDs from 76 to 100
+        SELECT ... FROM table WHERE id >= 76 AND id <= 100
+
+
+        -- General case for Executor N
+        SELECT ... FROM table
+        WHERE partition_column >= (lower_bound + (N-1) * stride)
+          AND partition_column <= upper_bound
+        -- Where ``stride`` is calculated as ``(upper_bound - lower_bound) / num_partitions``.
+    """
+
+    num_partitions: Optional[int] = None
+    """Number of jobs created by Spark to read the table content in parallel."""  # noqa: WPS322
+
+    lower_bound: Optional[int] = None
+    """Defines the starting boundary for partitioning the query's data."""  # noqa: WPS322
+
+    upper_bound: Optional[int] = None
+    """Sets the ending boundary for data partitioning."""  # noqa: WPS322
+
+    session_init_statement: Optional[str] = None
+    '''After each database session is opened to the remote DB and before starting to read data,
+    this option executes a custom SQL statement (or a PL/SQL block).
+
+    Use this to implement session initialization code.
+
+    Example:
+
+    .. code:: python
+
+        sessionInitStatement = """
+            BEGIN
+                execute immediate
+                'alter session set "_serial_direct_read"=true';
+            END;
+        """
+    '''
+
+    fetchsize: int = 100_000
+    """Fetch N rows from an opened cursor per one read round.
+
+    Tuning this option can influence performance of reading.
+
+    .. warning::
+
+        Default value is different from Spark.
+
+        Spark uses driver's own value, and it may be different in different drivers,
+        and even versions of the same driver. For example, Oracle has
+        default ``fetchsize=10``, which is absolutely not usable.
+
+        Thus we've overridden default value with ``100_000``, which should increase reading performance.
+    """
 
     class Config:
         known_options = READ_OPTIONS - {"partitioning_mode"}
