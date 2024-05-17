@@ -25,34 +25,33 @@ class UploadResult(FileResult):
     Examples
     --------
 
-    Upload files
-
-    .. code:: python
-
-        from onetl.impl import LocalPath, RemoteFile, FailedLocalFile
-        from onetl.file import FileUploader, UploadResult
-
-        uploader = FileUploader(target_path="/remote", ...)
-
-        uploaded_files = uploader.run(
-            [
-                "/local/file1",
-                "/local/file2",
-                "/failed/file",
-                "/existing/file",
-                "/missing/file",
-            ]
-        )
-
-        assert uploaded_files == UploadResult(
-            successful={
-                RemoteFile("/remote/file1"),
-                RemoteFile("/remote/file2"),
-            },
-            failed={FailedLocalFile("/failed/file")},
-            skipped={LocalPath("/existing/file")},
-            missing={LocalPath("/missing/file")},
-        )
+    >>> from onetl.file import FileUploader
+    >>> uploader = FileUploader(target_path="/remote", ...)
+    >>> upload_result = uploader.run(
+    ...     [
+    ...         "/local/file1",
+    ...         "/local/file2",
+    ...         "/failed/file",
+    ...         "/existing/file",
+    ...         "/missing/file",
+    ...     ]
+    ... )
+    >>> upload_result
+    UploadResult(
+        successful=FileSet([
+            RemoteFile("/remote/file1"),
+            RemoteFile("/remote/file2"),
+        ]),
+        failed=FileSet([
+            FailedLocalFile("/failed/file")
+        ]),
+        skipped=FileSet([
+            LocalPath("/existing/file")
+        ]),
+        missing=FileSet([
+            LocalPath("/missing/file")
+        ]),
+    )
     """
 
     successful: FileSet[RemoteFile] = Field(default_factory=FileSet)

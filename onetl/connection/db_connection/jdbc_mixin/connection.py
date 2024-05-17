@@ -107,7 +107,6 @@ class JDBCMixin(FrozenModel):
         .. code:: python
 
             df = connection.fetch("SELECT * FROM mytable LIMIT 10")
-            assert df.count()
             connection.close()
 
             # or

@@ -75,21 +75,26 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             .. code:: python
 
-                assert download_result == DownloadResult(
-                    successful=[
-                        "/path/my/file1",
-                        "/path/my/file2",
-                    ]
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file1"),
+                        LocalFile("/downloaded/file2"),
+                    },
                 )
 
             Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
-                [
-                    "/path/my/file1",
-                    "/path/my/file2",
-                ]
+                FileListHWM(
+                    ...,
+                    entity="/path",
+                    value=[
+                        "/path/my/file1",
+                        "/path/my/file2",
+                    ],
+                )
 
             Next incremental run will download only new files from the source:
 
@@ -104,22 +109,26 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             .. code:: python
 
                 # only files which are not in FileListHWM
-
-                assert download_result == DownloadResult(
-                    successful=[
-                        "/path/my/file3",
-                    ]
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file3"),
+                    },
                 )
 
             New files will be added to the ``FileListHWM`` and saved to :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
-                [
-                    "/path/my/file1",
-                    "/path/my/file2",
-                    "/path/my/file3",
-                ]
+                FileListHWM(
+                    ...,
+                    entity="/path",
+                    value=[
+                        "/path/my/file1",
+                        "/path/my/file2",
+                        "/path/my/file3",
+                    ],
+                )
 
         .. warning::
 

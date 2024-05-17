@@ -213,7 +213,7 @@ def test_postgres_connection_dml(request, spark, processing, load_table_data, su
         SELECT * FROM {table_name}
         WHERE id_int >= 50
         RETURNING id_int{suffix}
-    """,
+        """,
     )
 
     df = postgres.fetch(f"SELECT * FROM {temp_table}{suffix}")
@@ -302,7 +302,7 @@ def test_postgres_connection_execute_procedure(
         AS $$
             SELECT COUNT(*) FROM {table};
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -358,7 +358,7 @@ def test_postgres_connection_execute_procedure(
         AS $$
             SELECT COUNT(*) FROM {table};
         $${suffix}
-    """,
+        """,
     )
 
     with pytest.raises(Exception):
@@ -412,7 +412,7 @@ def test_postgres_connection_execute_procedure_arguments(
             SELECT COUNT(*) FROM {table}
             WHERE id_int = idd;
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -471,7 +471,7 @@ def test_postgres_connection_execute_procedure_inout(
                 WHERE id_int < idd;
             END
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -518,7 +518,7 @@ def test_postgres_connection_execute_procedure_ddl(
         AS $$
             CREATE TABLE {table} (iid INT, text VARCHAR(400));
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -565,7 +565,7 @@ def test_postgres_connection_execute_procedure_dml(
         AS $$
             INSERT INTO {table} VALUES(idd, text);
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -605,7 +605,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -667,7 +667,7 @@ def test_postgres_connection_execute_function(
                     RETURN 100;
                 END
             $$ LANGUAGE PLPGSQL{suffix}
-        """,
+            """,
         )
 
     # replace
@@ -681,7 +681,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     # missing
@@ -706,7 +706,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100
             END
             $$ LANGUAGE PLPGSQL{suffix}
-        """,
+            """,
         )
 
 
@@ -746,7 +746,7 @@ def test_postgres_connection_execute_function_arguments(
                 RETURN i*100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -825,7 +825,7 @@ def test_postgres_connection_execute_function_table(
             FROM {table}
             WHERE id_int < i;
         $$ LANGUAGE SQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -873,7 +873,7 @@ def test_postgres_connection_execute_function_ddl(
             RETURN 1;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -941,7 +941,7 @@ def test_postgres_connection_execute_function_dml(
             RETURN idd;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():

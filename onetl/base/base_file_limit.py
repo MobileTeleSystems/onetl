@@ -33,12 +33,11 @@ class BaseFileLimit(ABC):
         Examples
         --------
 
-        .. code:: python
-
-            assert limit.is_reached
-
-            new_limit = limit.reset()
-            assert not new_limit.is_reached
+        >>> limit.is_reached
+        True
+        >>> new_limit = limit.reset()
+        >>> new_limit.is_reached
+        False
         """
 
     @abstractmethod
@@ -58,21 +57,18 @@ class BaseFileLimit(ABC):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-
-            assert not limit.stops_at(LocalPath("/path/to/file.csv"))
-            # do this multiple times
-            ...
-
-            # stopped on some input
-            assert limit.stops_at(LocalPath("/path/to/another.csv"))
-
-            # at this point, .stops_at() and .is_reached will always return True,
-            # even on inputs that returned False before.
-            # it will be in the same state until .reset() is called
-            assert limit.stops_at(LocalPath("/path/to/file.csv"))
+        >>> from onetl.impl import LocalPath
+        >>> # limit is not reached yet
+        >>> limit.stops_at(LocalPath("/path/to/file.csv"))
+        False
+        >>> # after limit is reached
+        >>> limit.stops_at(LocalPath("/path/to/another.csv"))
+        True
+        >>> # at this point, .stops_at() and .is_reached will always return True,
+        >>> # even on inputs that returned False before.
+        >>> # it will be in the same state until .reset() is called
+        >>> limit.stops_at(LocalPath("/path/to/file.csv"))
+        True
         """
 
     @property
@@ -88,15 +84,16 @@ class BaseFileLimit(ABC):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-
-            assert not limit.is_reached
-
-            assert not limit.stops_at(LocalPath("/path/to/file.csv"))
-            assert not limit.is_reached
-
-            assert limit.stops_at(LocalPath("/path/to/file.csv"))
-            assert limit.is_reached
+        >>> from onetl.impl import LocalPath
+        >>> limit.is_reached
+        False
+        >>> limit.stops_at(LocalPath("/path/to/file.csv"))
+        False
+        >>> limit.is_reached
+        False
+        >>> # after limit is reached
+        >>> limit.stops_at(LocalPath("/path/to/file.csv"))
+        True
+        >>> limit.is_reached
+        True
         """

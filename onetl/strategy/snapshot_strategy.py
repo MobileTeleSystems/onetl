@@ -38,11 +38,12 @@ class SnapshotStrategy(BaseStrategy):
 
         .. code:: python
 
-            assert download_result == DownloadResult(
-                successful=[
-                    "/path/my/file1",
-                    "/path/my/file2",
-                ]
+            DownloadResult(
+                ...,
+                successful={
+                    LocalFile("/downloaded/file1"),
+                    LocalFile("/downloaded/file2"),
+                },
             )
 
     Examples

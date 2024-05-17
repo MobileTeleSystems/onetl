@@ -249,7 +249,7 @@ class FileDownloader(FrozenModel):
 
         Returns
         -------
-        downloaded_files : :obj:`DownloadResult <onetl.file.file_downloader.download_result.DownloadResult>`
+        :obj:`DownloadResult <onetl.file.file_downloader.download_result.DownloadResult>`
 
             Download result object
 
@@ -266,76 +266,76 @@ class FileDownloader(FrozenModel):
         Examples
         --------
 
-        Download files from ``source_path`` to ``local_path``
+        Download files from ``source_path`` to ``local_path``:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onetl.file import FileDownloader
-
-            downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
-            downloaded_files = downloader.run()
-
-            assert downloaded_files.successful == {
+        >>> from onetl.file import FileDownloader
+        >>> downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
+        >>> download_result = downloader.run()
+        >>> download_result
+        DownloadResult(
+            successful=FileSet([
                 LocalPath("/local/file1.txt"),
                 LocalPath("/local/file2.txt"),
-                LocalPath("/local/nested/path/file3.txt"),  # directory structure is preserved
-            }
-            assert downloaded_files.failed == {FailedRemoteFile("/remote/failed.file")}
-            assert downloaded_files.skipped == {RemoteFile("/remote/already.exists")}
-            assert downloaded_files.missing == {RemotePath("/remote/missing.file")}
+                # directory structure is preserved
+                LocalPath("/local/nested/path/file3.txt"),
+            ]),
+            failed=FileSet([
+                FailedRemoteFile("/remote/failed.file"),
+            ]),
+            skipped=FileSet([
+                RemoteFile("/remote/already.exists"),
+            ]),
+            missing=FileSet([
+                RemotePath("/remote/missing.file"),
+            ]),
+        )
 
-        Download only certain files from ``source_path``
+        Download only certain files from ``source_path``:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onetl.file import FileDownloader
-
-            downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
-
-            # paths could be relative or absolute, but all should be in "/remote"
-            downloaded_files = downloader.run(
-                [
-                    "/remote/file1.txt",
-                    "/remote/nested/path/file3.txt",
-                    # excluding "/remote/file2.txt"
-                ]
-            )
-
-            assert downloaded_files.successful == {
+        >>> from onetl.file import FileDownloader
+        >>> downloader = FileDownloader(source_path="/remote", local_path="/local", ...)
+        >>> # paths could be relative or absolute, but all should be in "/remote"
+        >>> download_result = downloader.run(
+        ...     [
+        ...         "/remote/file1.txt",
+        ...         "/remote/nested/path/file3.txt",
+        ...         # excluding "/remote/file2.txt"
+        ...     ]
+        ... )
+        >>> download_result
+        DownloadResult(
+            successful=FileSet([
                 LocalPath("/local/file1.txt"),
-                LocalPath("/local/nested/path/file3.txt"),  # directory structure is preserved
-            }
-            assert not downloaded_files.failed
-            assert not downloaded_files.skipped
-            assert not downloaded_files.missing
+                # directory structure is preserved
+                LocalPath("/local/nested/path/file3.txt"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
 
-        Download certain files from any folder
+        Download certain files from any folder:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onetl.file import FileDownloader
-
-            downloader = FileDownloader(local_path="/local", ...)  # no source_path set
-
-            # only absolute paths
-            downloaded_files = downloader.run(
-                [
-                    "/remote/file1.txt",
-                    "/any/nested/path/file2.txt",
-                ]
-            )
-
-            assert downloaded_files.successful == {
+        >>> from onetl.file import FileDownloader
+        >>> downloader = FileDownloader(local_path="/local", ...)  # no source_path set
+        >>> # only absolute paths
+        >>> download_result = downloader.run(
+        ...     [
+        ...         "/remote/file1.txt",
+        ...         "/any/nested/path/file2.txt",
+        ...     ]
+        ... )
+        >>> download_result
+        DownloadResult(
+            successful=FileSet([
                 LocalPath("/local/file1.txt"),
-                LocalPath("/local/file2.txt"),
                 # directory structure is NOT preserved without source_path
-            }
-            assert not downloaded_files.failed
-            assert not downloaded_files.skipped
-            assert not downloaded_files.missing
+                LocalPath("/local/file2.txt"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
         """
 
         entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
@@ -417,22 +417,16 @@ class FileDownloader(FrozenModel):
         Examples
         --------
 
-        View files
+        View files:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onetl.file import FileDownloader
-
-            downloader = FileDownloader(source_path="/remote", ...)
-
-            view_files = downloader.view_files()
-
-            assert view_files == {
-                RemoteFile("/remote/file1.txt"),
-                RemoteFile("/remote/file3.txt"),
-                RemoteFile("/remote/nested/file3.txt"),
-            }
+        >>> from onetl.file import FileDownloader
+        >>> downloader = FileDownloader(source_path="/remote", ...)
+        >>> downloader.view_files()
+        FileSet([
+            RemoteFile("/remote/file1.txt"),
+            RemoteFile("/remote/file3.txt"),
+            RemoteFile("/remote/nested/file3.txt"),
+        ])
         """
 
         if not self.source_path:

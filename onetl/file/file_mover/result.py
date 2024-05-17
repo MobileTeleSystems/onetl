@@ -25,34 +25,33 @@ class MoveResult(FileResult):
     Examples
     --------
 
-    Move files
-
-    .. code:: python
-
-        from onetl.impl import RemotePath, RemoteFile, FailedLocalFile
-        from onetl.file import FileMover, MoveResult
-
-        mover = FileMover(local_path="/local", ...)
-
-        moved_files = mover.run(
-            [
-                "/source/file1",
-                "/source/file2",
-                "/failed/file",
-                "/existing/file",
-                "/missing/file",
-            ]
-        )
-
-        assert moved_files == MoveResult(
-            successful={
-                RemoteFile("/target/file1"),
-                RemoteFile("/target/file2"),
-            },
-            failed={FailedLocalFile("/failed/file")},
-            skipped={RemoteFile("/existing/file")},
-            missing={RemotePath("/missing/file")},
-        )
+    >>> from onetl.file import FileMover
+    >>> mover = FileMover(local_path="/local", ...)
+    >>> move_result = mover.run(
+    ...     [
+    ...         "/source/file1",
+    ...         "/source/file2",
+    ...         "/failed/file",
+    ...         "/existing/file",
+    ...         "/missing/file",
+    ...     ]
+    ... )
+    >>> move_result
+    MoveResult(
+        successful=FileSet([
+            RemoteFile("/target/file1"),
+            RemoteFile("/target/file2"),
+        ]),
+        failed=FileSet([
+            FailedLocalFile("/failed/file")
+        ]),
+        skipped=FileSet([
+            RemoteFile("/existing/file")
+        ]),
+        missing=FileSet([
+            RemotePath("/missing/file")
+        ]),
+    )
     """
 
     successful: FileSet[RemoteFile] = Field(default_factory=FileSet)

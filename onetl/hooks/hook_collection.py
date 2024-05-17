@@ -34,26 +34,25 @@ class HookCollection:
     @property
     def active(self):
         """
-        Return HookCollection but containing only hooks with enabled state.
+        Return new HookCollection but containing only hooks with ``enabled=True`` state.
 
         If called after :obj:`~stop` or inside :obj:`~skip`, empty collection will be returned.
 
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                    Hook(callback=func2, enabled=False),
-                ]
-            )
-
-            assert hooks.active == HookCollection([Hook(callback=func1)])
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1, enabled=True),
+        ...         Hook(callback=func2, enabled=False),
+        ...     ],
+        ... )
+        >>> len(hooks.active)
+        1
         """
 
         if self._enabled:
@@ -68,20 +67,19 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1),
-                    Hook(callback=func2),
-                ]
-            )
-
-            hooks.stop()
-            assert hooks.active == HookCollection()
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...         Hook(callback=func2),
+        ...     ],
+        ... )
+        >>> hooks.stop()
+        >>> hooks.active
+        HookCollection([])
         """
         self._enabled = False
 
@@ -97,26 +95,24 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1),
-                    Hook(callback=func2),
-                ]
-            )
-
-            hooks.resume()
-
-            assert hooks.active == HookCollection(
-                [
-                    Hook(callback=func1),
-                    Hook(callback=func2),
-                ]
-            )
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...         Hook(callback=func2),
+        ...     ],
+        ... )
+        >>> hooks.resume()
+        >>> hooks.active # doctest: +SKIP
+        HookCollection(
+            [
+                Hook(callback=func1),
+                Hook(callback=func2),
+            ]
+        )
         """
 
         self._enabled = True
@@ -135,25 +131,26 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1),
-                    Hook(callback=func2),
-                ]
-            )
-
-            # hooks state is same as created by constructor
-
-            with hooks.skip():
-                # all hooks are disabled here
-                ...
-
-            # hooks state is restored as it was before entering the context manager
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...         Hook(callback=func2),
+        ...     ],
+        ... )
+        >>> # hooks state is same as created by constructor
+        >>> len(hooks.active)
+        2
+        >>> with hooks.skip():
+        ...     # all hooks are disabled here
+        ...     print(len(hooks.active))
+        0
+        >>> # hooks state is restored as it was before entering the context manager
+        >>> len(hooks.active)
+        2
         """
 
         if not self._enabled:
@@ -171,26 +168,20 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...     ],
+        ... )
 
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                ]
-            )
-
-            new_hook = Hook(callback=func2, enabled=False)
-            hooks.add(new_hook)
-
-            assert hooks == HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                    Hook(callback=func2, enabled=False),
-                ]
-            )
+        >>> new_hook = Hook(callback=func2)
+        >>> hooks.add(new_hook)
+        >>> len(hooks.active)
+        2
         """
         self._hooks.append(item)
 
@@ -200,26 +191,20 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...     ],
+        ... )
 
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                ]
-            )
-
-            new_hooks = [Hook(callback=func2, enabled=False)]
-            hooks.extend(new_hook)
-
-            assert hooks == HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                    Hook(callback=func2, enabled=False),
-                ]
-            )
+        >>> new_hooks = [Hook(callback=func2)]
+        >>> hooks.extend(new_hooks)
+        >>> len(hooks.active)
+        2
         """
         self._hooks.extend(hooks)
 
@@ -229,20 +214,20 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                    Hook(callback=func2, enabled=True),
-                ]
-            )
-
-            for hook in hooks:
-                assert hook.enabled
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...    [
+        ...        Hook(callback=func1, enabled=True),
+        ...        Hook(callback=func2, enabled=False),
+        ...    ],
+        ... )
+        >>> for hook in hooks:
+        ...    print(hook.enabled)
+        True
+        False
         """
         return iter(self._hooks)
 
@@ -252,18 +237,20 @@ class HookCollection:
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook
-            from onetl.hooks.hook_collection import HookCollection
-
-            hooks = HookCollection(
-                [
-                    Hook(callback=func1, enabled=True),
-                    Hook(callback=func2, enabled=True),
-                ]
-            )
-
-            assert len(hooks) == 2
+        >>> from onetl.hooks.hook import Hook
+        >>> from onetl.hooks.hook_collection import HookCollection
+        >>> def func1(): ...
+        >>> def func2(): ...
+        >>> hooks = HookCollection(
+        ...     [
+        ...         Hook(callback=func1),
+        ...         Hook(callback=func2),
+        ...     ],
+        ... )
+        >>> len(hooks)
+        2
         """
         return len(self._hooks)
+
+    def __repr__(self):
+        return f"HookCollection({self._hooks})"

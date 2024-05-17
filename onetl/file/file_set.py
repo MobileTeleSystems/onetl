@@ -33,14 +33,11 @@ class FileSet(OrderedSet[T], Generic[T]):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_set import FileSet
-
-            file_set = FileSet({LocalPath("/some/file"), LocalPath("/some/another.file")})
-
-            assert path_set.total_size == 1_000_000  # in bytes
+        >>> from onetl.impl import LocalPath
+        >>> from onet.file.file_set import FileSet
+        >>> file_set = FileSet({LocalPath("/some/file"), LocalPath("/some/another.file")})
+        >>> path_set.total_size  # in bytes
+        1024
         """
 
         return sum(
@@ -60,14 +57,12 @@ class FileSet(OrderedSet[T], Generic[T]):
         Examples
         --------
 
-        .. code:: python
-
-            from onet.file.file_set import FileSet
-
-            file_set = FileSet()
-
-            file_set.raise_if_empty()
-            # will raise EmptyFilesError("There are no files in the set")
+        >>> from onet.file.file_set import FileSet
+        >>> file_set = FileSet()
+        >>> file_set.raise_if_empty()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.EmptyFilesError: There are no files in the set
         """
 
         if not self:
@@ -86,23 +81,19 @@ class FileSet(OrderedSet[T], Generic[T]):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_set import FileSet
-
-            file_set = FileSet(
-                LocalPath("/local/empty1.file"),
-                LocalPath("/local/empty2.file"),
-                LocalPath("/local/normal.file"),
-            )
-
-            file_set.raise_if_contains_zero_size()
-            # will raise ZeroFileSizeError('''
-            #    2 files out of 3 have zero size:
-            #        '/local/empty1.file'
-            #        '/local/empty2.file'
-            # ''')
+        >>> from onetl.impl import RemoteFile, LocalPath
+        >>> from onet.file.file_set import FileSet
+        >>> file_set = FileSet(
+        ...     LocalPath("/local/empty1.file"),
+        ...     LocalPath("/local/empty2.file"),
+        ...     LocalPath("/local/normal.file"),
+        ... )
+        >>> file_set.raise_if_contains_zero_size()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.ZeroFileSizeError: 2 files out of 3 have zero size:
+            '/local/empty1.file'
+            '/local/empty2.file'
         """
 
         lines = []
@@ -132,21 +123,19 @@ class FileSet(OrderedSet[T], Generic[T]):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_set import FileSet
-
-            path_set1 = FileSet(
-                [
-                    LocalPath("/local/file"),
-                    LocalPath("/local/another.file"),
-                ]
-            )
-
-            assert path_set1.summary == "2 files (30.7 kB)"
-
-            assert FileSet().summary == "No files"
+        >>> from onetl.impl import LocalPath
+        >>> from onet.file.file_set import FileSet
+        >>> path_set1 = FileSet(
+        ...     [
+        ...         LocalPath("/local/file"),
+        ...         LocalPath("/local/another.file"),
+        ...     ]
+        ... )
+        >>> print(path_set1.summary)
+        2 files (30.7 kB)
+        >>> path_set2 = FileSet()
+        >>> print(path_set2.summary)
+        No files
         """
 
         if not self:
@@ -156,35 +145,30 @@ class FileSet(OrderedSet[T], Generic[T]):
         return f"{file_number_str} (size='{naturalsize(self.total_size)}')"
 
     @property
-    def details(self) -> str:
-        '''
+    def details(self) -> str:  # noqa: WPS473
+        """
         Return detailed information about files in the set
 
         Examples
         --------
 
-        .. code:: python
+        >>> from onetl.impl import LocalPath
+        >>> from onet.file.file_set import FileSet
+        >>> path_set1 = FileSet(
+        ...     [
+        ...         LocalPath("/local/file"),
+        ...         LocalPath("/local/another.file"),
+        ...     ]
+        ... )
+        >>> print(path_set1.details)
+        2 files (30.7 kB):
+            '/local/file' (10.2 kB)
+            '/local/another.file' (20.5 kB)
 
-            from onetl.impl import LocalPath
-            from onet.file.file_set import FileSet
-
-            path_set1 = FileSet(
-                [
-                    LocalPath("/local/file"),
-                    LocalPath("/local/another.file"),
-                ]
-            )
-
-            details1 = """
-                2 files (30.7 kB):
-                    '/local/file' (10.2 kB)
-                    '/local/another.file' (20.5 kB)
-            """
-
-            assert path_set1.details == details1
-
-            assert FileSet().details == "No files"
-        '''
+        >>> path_set2 = FileSet()
+        >>> print(path_set2.details)
+        No files
+        """
 
         if not self:
             return self.summary
