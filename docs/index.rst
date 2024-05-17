@@ -17,6 +17,8 @@
     install/index
     quickstart
     concepts
+    logging
+    troubleshooting/index
 
 .. toctree::
     :maxdepth: 3
@@ -61,13 +63,6 @@
 
     hooks/index
     plugins
-
-.. toctree::
-    :maxdepth: 2
-    :caption: Misc
-    :hidden:
-
-    logging
 
 .. toctree::
     :maxdepth: 2

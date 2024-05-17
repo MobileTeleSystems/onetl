@@ -3,6 +3,10 @@
 Spark S3 Troubleshooting
 ========================
 
+.. note::
+
+    General guide: :ref:`troubleshooting`.
+
 More details:
 
 * `Hadoop AWS Troubleshooting Guide <https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/troubleshooting_s3a.html>`_
@@ -34,12 +38,7 @@ How to determine reason
 Make logging more verbose
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Change Spark session log level to ``DEBUG`` to print result of each attempt:
-
-.. code:: python
-
-    spark.sparkContext.setLogLevel("debug")
-
+Change Spark session log level to :ref:`DEBUG <spark-troubleshooting>` to print result of each attempt.
 Resulting logs will look like this
 
 .. dropdown:: See log
@@ -170,15 +169,6 @@ Resulting logs will look like this
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Unable to execute HTTP request: Unsupported or unrecognized SSL message Request will be retried.
         23/08/03 11:25:10 DEBUG request: Retrying Request: GET https://test-bucket.localhost:9000 / Parameters: ({"list-type":["2"],"delimiter":["/"],"max-keys":["2"],"prefix":["fake/"],"fetch-owner":["false"]}Headers: (amz-sdk-invocation-id: e6d62603-96e4-a80f-10a1-816e0822bc71, Content-Type: application/octet-stream, User-Agent: Hadoop 3.3.4, aws-sdk-java/1.12.262 Linux/6.4.7-1-MANJARO OpenJDK_64-Bit_Server_VM/25.292-b10 java/1.8.0_292 scala/2.12.17 vendor/AdoptOpenJDK cfg/retry-mode/legacy, )
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Retriable error detected, will retry in 49ms, attempt number: 0
-
-After getting all information you need, make logs less verbose:
-
-.. code:: python
-
-    spark.sparkContext.setLogLevel("info")
-
-    # or
-    spark.sparkContext.setLogLevel("warn")
 
 Change number of retries
 ^^^^^^^^^^^^^^^^^^^^^^^^
