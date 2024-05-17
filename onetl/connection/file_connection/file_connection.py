@@ -87,7 +87,6 @@ class FileConnection(BaseFileConnection, FrozenModel):
         .. code:: python
 
             content = connection.list_dir("/mydir")
-            assert content
             connection.close()
 
             # or
@@ -603,19 +602,19 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Get an entry name:
 
-        .. code:: python
-
-            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
-                assert entry == {
-                    "created": "2023-12-08T18:33:39Z",
-                    "owner": None,
-                    "size": "23",
-                    "modified": "2023-12-08 18:33:20",
-                    "isdir": False,
-                    "path": "/path/to/the/file.txt",
-                }
-
-                assert entry._extract_name_from_entry(entry) == "file.txt"
+        >>> for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+        ...     break
+        >>> entry
+        {
+            'created': '2023-12-08T18:33:39Z',
+            'owner': None,
+            'size': 23,
+            'modified': '2023-12-08 18:33:20',
+            'isdir': False,
+            'path': '/path/to/the/directory/file.txt',
+        }
+        >>> entry._extract_name_from_entry(entry)
+        'file.txt'
         """
 
     @abstractmethod
@@ -643,10 +642,19 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Show if the entry is a directory:
 
-        .. code:: python
-
-            for component in connection._scan_entries(path="/a/path/to/the/directory"):
-                assert connection._is_dir_entry(root="/a/path/to/the/directory", entry) == True
+        >>> for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+        ...     break
+        >>> entry
+        {
+            'created': '2023-12-08T18:33:39Z',
+            'owner': None,
+            'size': 0,
+            'modified': '2023-12-08 18:33:20',
+            'isdir': True,
+            'path': '/path/to/the/directory',
+        }
+        >>> connection._is_dir_entry(root="/a/path/to/the/directory", entry)
+        True
         """
 
     @abstractmethod
@@ -674,10 +682,19 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Show if the entry is a file:
 
-        .. code:: python
-
-            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
-                assert connection._is_file_entry(root="/a/path/to/the/directory", entry) == True
+        >>> for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+        ...     break
+        >>> entry
+        {
+            'created': '2023-12-08T18:33:39Z',
+            'owner': None,
+            'size': 23,
+            'modified': '2023-12-08 18:33:20',
+            'isdir': False,
+            'path': '/path/to/the/directory/file.txt',
+        }
+        >>> connection._is_file_entry(root="/a/path/to/the/directory", entry)
+        True
         """
 
     @abstractmethod
@@ -708,15 +725,25 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Get statistics object from the entry:
 
-        .. code:: python
-
-            for entry in connection._scan_entries(path="/a/path/to/the/directory"):
-                stat = connection._extract_stat_from_entry(root="/a/path/to/the/directory", entry)
-
-                assert stat == RemotePathStat(
-                    st_size=23, st_mtime=1670517693.0, st_mode=None, st_uid=None, st_gid=None
-                )
-
+        >>> for entry in connection._scan_entries(path="/a/path/to/the/directory"):
+        ...     break
+        >>> entry
+        {
+            'created': '2023-12-08T18:33:39Z',
+            'owner': None,
+            'size': 23,
+            'modified': '2023-12-08 18:33:20',
+            'isdir': False,
+            'path': '/path/to/the/directory/file.txt',
+        }
+        >>> connection._extract_stat_from_entry(root="/a/path/to/the/directory", entry)
+        RemotePathStat(
+            st_size=23,
+            st_mtime=1670517693.0,
+            st_mode=None,
+            st_uid=None,
+            st_gid=None,
+        )
         """
 
     def _log_parameters(self):

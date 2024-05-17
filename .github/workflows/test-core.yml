@@ -72,7 +72,7 @@ jobs:
       - name: Run tests
         run: |
           ./run_tests.sh -m 'not connection'
-          ./run_tests.sh onetl/_util
+          ./run_tests.sh onetl/_util onetl/_internal.py onetl/hooks onetl/file/filter onetl/file/limit onetl/hwm/store/hwm_class_registry.py
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

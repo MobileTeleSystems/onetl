@@ -52,11 +52,13 @@ class RenameDirMixin(BaseFileConnection):
         Examples
         --------
 
-        .. code:: python
-
-            new_file = connection.rename_dir("/path/to/dir1", "/path/to/dir2")
-            assert connection.path_exists("/path/to/dir1")
-            assert not connection.path_exists("/path/to/dir2")
+        >>> new_dir = connection.rename_dir("/path/to/dir1", "/path/to/dir2")
+        >>> os.fspath(new_dir)
+        '/path/to/dir2'
+        >>> connection.path_exists("/path/to/dir1")
+        False
+        >>> connection.path_exists("/path/to/dir2")
+        True
         """
 
         log.debug("|%s| Renaming directory '%s' to '%s'", self.__class__.__name__, source_dir_path, target_dir_path)

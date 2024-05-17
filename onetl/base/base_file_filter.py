@@ -25,11 +25,12 @@ class BaseFileFilter(ABC):
         Examples
         --------
 
-        .. code:: python
+        from onetl.impl import LocalPath
 
-            from onetl.impl import LocalPath
-
-            assert filter.match(LocalPath("/path/to/file.csv"))
-            assert not filter.match(LocalPath("/path/to/excluded.csv"))
-            assert filter.match(LocalPath("/path/to/file.csv"))
+        >>> filter.match(LocalPath("/path/to/file.csv"))
+        True
+        >>> filter.match(LocalPath("/path/to/excluded.csv"))
+        False
+        >>> filter.match(LocalPath("/path/to/file.csv"))
+        True
         """

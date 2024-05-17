@@ -10,8 +10,6 @@ import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from etl_entities.process import ProcessStackManager
-
 try:
     from pydantic.v1 import SecretStr
 except (ImportError, AttributeError):
@@ -33,19 +31,18 @@ def clear_statement(statement: str) -> str:
     Examples
     --------
 
-    .. code:: python
-
-        assert clear_statement("SELECT * FROM mytable") == "SELECT * FROM mytable"
-        assert clear_statement("SELECT * FROM mytable ; ") == "SELECT * FROM mytable"
-        assert (
-            clear_statement("CREATE TABLE mytable (id NUMBER)")
-            == "CREATE TABLE mytable (id NUMBER)"
-        )
-        assert clear_statement("BEGIN ... END") == "BEGIN ... END;"
+    >>> clear_statement("SELECT * FROM mytable")
+    'SELECT * FROM mytable'
+    >>> clear_statement("SELECT * FROM mytable ; ")
+    'SELECT * FROM mytable'
+    >>> clear_statement("CREATE TABLE mytable (id NUMBER)")
+    'CREATE TABLE mytable (id NUMBER)'
+    >>> clear_statement("BEGIN ... END")
+    'BEGIN ... END;'
     """
 
-    statement = statement.rstrip().lstrip("\n\r").rstrip(";")
-    if statement.lower().strip().endswith("end"):
+    statement = statement.rstrip().lstrip("\n\r").rstrip(";").rstrip()
+    if statement.lower().endswith("end"):
         statement += ";"
     return statement
 
@@ -57,11 +54,12 @@ def uniq_ignore_case(orig_list: list[str]) -> list[str]:
     Examples
     --------
 
-    .. code:: python
-
-        assert uniq_ignore_case(["a", "c"]) == ["a", "c"]
-        assert uniq_ignore_case(["A", "a", "c"]) == ["A", "c"]
-        assert uniq_ignore_case(["a", "A", "c"]) == ["a", "c"]
+    >>> uniq_ignore_case(["a", "c"])
+    ['a', 'c']
+    >>> uniq_ignore_case(["A", "a", "c"])
+    ['A', 'c']
+    >>> uniq_ignore_case(["a", "A", "c"])
+    ['a', 'c']
     """
 
     result: list[str] = []
@@ -90,14 +88,22 @@ def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
     Examples
     --------
 
-    >>> assert stringify(1) == "1"
-    >>> assert stringify(True) == "true"
-    >>> assert stringify(False) == "false"
-    >>> assert stringify(None) == "null"
-    >>> assert stringify("string") == "string"
-    >>> assert stringify("string", quote=True) == '"string"'
-    >>> assert stringify({"abc": 1}) == {"abc": "1"}
-    >>> assert stringify([1, True, False, None, "string"]) == ["1", "true", "false", "null", "string"]
+    >>> stringify(1)
+    '1'
+    >>> stringify(True)
+    'true'
+    >>> stringify(False)
+    'false'
+    >>> stringify(None)
+    'null'
+    >>> stringify("string")
+    'string'
+    >>> stringify("string", quote=True)
+    '"string"'
+    >>> stringify({"abc": 1})
+    {'abc': '1'}
+    >>> stringify([1, True, False, None, "string"])
+    ['1', 'true', 'false', 'null', 'string']
     """
 
     if isinstance(value, dict):
@@ -131,9 +137,8 @@ def to_camel(string: str) -> str:
     Examples
     --------
 
-    .. code:: python
-
-        assert to_camel("some_value") == "someValue"
+    >>> to_camel("some_value")
+    'someValue'
     """
 
     return "".join(word.capitalize() if index > 0 else word for index, word in enumerate(string.split("_")))
@@ -151,23 +156,16 @@ def generate_temp_path(root: PurePath) -> PurePath:
     Examples
     --------
 
-    View files
-
-    .. code:: python
-
-        from etl_entities.process import Process
-
-        from pathlib import Path
-
-        assert generate_temp_path(Path("/tmp")) == Path(
-            "/tmp/onetl/currenthost/myprocess/20230524122150",
-        )
-
-        with Process(dag="mydag", task="mytask"):
-            assert generate_temp_path(Path("/abc")) == Path(
-                "/abc/onetl/currenthost/mydag.mytask.myprocess/20230524122150",
-            )
+    >>> from etl_entities.process import Process
+    >>> from pathlib import Path
+    >>> generate_temp_path(Path("/tmp")) # doctest: +SKIP
+    Path("/tmp/onetl/currenthost/myprocess/20230524122150")
+    >>> with Process(dag="mydag", task="mytask"): # doctest: +SKIP
+    ...    generate_temp_path(Path("/abc"))
+    Path("/abc/onetl/currenthost/mydag.mytask.myprocess/20230524122150")
     """
+
+    from etl_entities.process import ProcessStackManager
 
     current_process = ProcessStackManager.get_current()
     current_dt = datetime.now().strftime(DATETIME_FORMAT)

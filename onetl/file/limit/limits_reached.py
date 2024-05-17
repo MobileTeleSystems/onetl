@@ -28,18 +28,17 @@ def limits_reached(limits: Iterable[BaseFileLimit]) -> bool:
     Examples
     --------
 
-    .. code:: python
-
-        from onetl.file.limit import MaxFilesCount, limits_reached, limits_stop_at
-        from onetl.impl import LocalPath
-
-        limits = [MaxFilesCount(2)]
-        assert not limits_reached(limits)
-
-        assert not limits_stop_at(LocalPath("/path/to/file.csv"), limits)
-        assert limits_stop_at(LocalPath("/path/to/file.csv"), limits)
-
-        assert limits_reached(limits)
+    >>> from onetl.file.limit import MaxFilesCount, limits_reached, limits_stop_at
+    >>> from onetl.impl import LocalPath
+    >>> limits = [MaxFilesCount(2)]
+    >>> limits_reached(limits)
+    False
+    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    False
+    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    True
+    >>> limits_reached(limits)
+    True
     """
     debug = log.isEnabledFor(logging.DEBUG)
 

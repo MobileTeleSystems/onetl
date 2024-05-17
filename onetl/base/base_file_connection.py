@@ -35,11 +35,12 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            assert connection.path_exists("/path/to/file.csv")
-            assert connection.path_exists("/path/to/dir")
-            assert not connection.path_exists("/path/to/missing")
+        >>> connection.path_exists("/path/to/file.csv")
+        True
+        >>> connection.path_exists("/path/to/dir")
+        True
+        >>> connection.path_exists("/path/to/missing")
+        False
         """
 
     @abstractmethod
@@ -64,10 +65,10 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            assert connection.is_file("/path/to/dir/file.csv")
-            assert not connection.is_file("/path/to/dir")
+        >>> connection.is_file("/path/to/dir/file.csv")
+        True
+        >>> connection.is_file("/path/to/dir")
+        False
         """
 
     @abstractmethod
@@ -92,10 +93,10 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            assert connection.is_dir("/path/to/dir")
-            assert not connection.is_dir("/path/to/dir/file.csv")
+        >>> connection.is_dir("/path/to/dir")
+        True
+        >>> connection.is_dir("/path/to/dir/file.csv")
+        False
         """
 
     @abstractmethod
@@ -119,11 +120,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            stat = connection.get_stat("/path/to/file.csv")
-            assert stat.st_size > 0
-            assert stat.st_uid == 12345  # owner id
+        >>> stat = connection.get_stat("/path/to/file.csv")
+        >>> stat.st_size  # in bytes
+        1024
+        >>> stat.st_uid  # owner id or name
+        12345
         """
 
     @abstractmethod
@@ -151,11 +152,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            dir_path = connection.resolve_dir("/path/to/dir")
-            assert os.fspath(dir_path) == "/path/to/dir"
-            assert dir_path.stat.st_uid == 12345  # owner id
+        >>> dir_path = connection.resolve_dir("/path/to/dir")
+        >>> os.fspath(dir_path)
+        '/path/to/dir'
+        >>> dir_path.stat.st_uid  # owner id
+        12345
         """
 
     @abstractmethod
@@ -183,11 +184,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            file_path = connection.resolve_file("/path/to/dir/file.csv")
-            assert os.fspath(file_path) == "/path/to/dir/file.csv"
-            assert file_path.stat.st_uid == 12345  # owner id
+        >>> file_path = connection.resolve_file("/path/to/dir/file.csv")
+        >>> os.fspath(file_path)
+        '/path/to/dir/file.csv'
+        >>> file_path.stat.st_uid  # owner id
+        12345
         """
 
     @abstractmethod
@@ -212,9 +213,9 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            dir_path = connection.create_dir("/path/to/dir")
+        >>> dir_path = connection.create_dir("/path/to/dir")
+        >>> os.fspath(dir_path)
+        '/path/to/dir'
         """
 
     @abstractmethod
@@ -245,12 +246,12 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            assert connection.remove_file("/path/to/file.csv")
-            assert not connection.path_exists("/path/to/dir/file.csv")
-
-            assert not connection.remove_file("/path/to/file.csv")  # already deleted
+        >>> connection.remove_file("/path/to/file.csv")
+        True
+        >>> connection.path_exists("/path/to/dir/file.csv")
+        False
+        >>> connection.remove_file("/path/to/file.csv")  # already deleted, no error
+        False
         """
 
     @abstractmethod
@@ -280,13 +281,14 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            assert connection.remove_dir("/path/to/dir")
-            assert not connection.path_exists("/path/to/dir/file.csv")
-            assert not connection.path_exists("/path/to/dir")
-
-            assert not connection.remove_dir("/path/to/dir")  # already deleted
+        >>> connection.remove_dir("/path/to/dir")
+        True
+        >>> connection.path_exists("/path/to/dir")
+        False
+        >>> connection.path_exists("/path/to/dir/file.csv")
+        False
+        >>> connection.remove_dir("/path/to/dir")  # already deleted, no error
+        False
         """
 
     @abstractmethod
@@ -332,11 +334,13 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            new_file = connection.rename_file("/path/to/file1.csv", "/path/to/file2.csv")
-            assert connection.path_exists("/path/to/file2.csv")
-            assert not connection.path_exists("/path/to/file1.csv")
+        >>> new_file = connection.rename_file("/path/to/file1.csv", "/path/to/file2.csv")
+        >>> os.fspath(new_file)
+        '/path/to/file2.csv'
+        >>> connection.path_exists("/path/to/file2.csv")
+        True
+        >>> connection.path_exists("/path/to/file1.csv")
+        False
         """
 
     @abstractmethod
@@ -376,11 +380,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            dir_content = connection.list_dir("/path/to/dir")
-            assert os.fspath(dir_content[0]) == "/path/to/dir/file.csv"
-            assert connection.path_exists("/path/to/dir/file.csv")
+        >>> dir_content = connection.list_dir("/path/to/dir")
+        >>> os.fspath(dir_content[0])
+        '/path/to/dir/file.csv'
+        >>> connection.path_exists("/path/to/dir/file.csv")
+        True
         """
 
     @abstractmethod
@@ -428,13 +432,16 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            for root, dirs, files in connection.walk("/path/to/dir"):
-                assert os.fspath(root) == "/path/to/dir"
-                assert dirs == []
-                assert os.fspath(files[0]) == "/path/to/dir/file.csv"
-                assert connection.path_exists("/path/to/dir/file.csv")
+        >>> for root, dirs, files in connection.walk("/path/to/dir"):
+        ...    break
+        >>> os.fspath(root)
+        '/path/to/dir'
+        >>> dirs
+        []
+        >>> os.fspath(files[0])
+        '/path/to/dir/file.csv'
+        >>> connection.path_exists("/path/to/dir/file.csv")
+        True
         """
 
     @abstractmethod
@@ -483,14 +490,18 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            local_file = connection.download_file(
-                remote_file_path="/path/to/source.csv", local_file_path="/path/to/target.csv"
-            )
-            assert local_file.exists()
-            assert os.fspath(local_file) == "/path/to/target.csv"
-            assert local_file.stat().st_size == connection.get_stat("/path/to/source.csv").st_size
+        >>> local_file = connection.download_file(
+        ...     remote_file_path="/path/to/source.csv",
+        ...     local_file_path="/path/to/target.csv",
+        ... )
+        >>> os.fspath(local_file)
+        '/path/to/target.csv'
+        >>> local_file.exists()
+        True
+        >>> local_file.stat().st_size  # in bytes
+        1024
+        >>> connection.get_stat("/path/to/source.csv").st_size  # same size
+        1024
         """
 
     @abstractmethod
@@ -539,14 +550,18 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            remote_file = connection.upload(
-                local_file_path="/path/to/source.csv",
-                remote_file_path="/path/to/target.csv",
-            )
-            assert connection.path_exists("/path/to/target.csv")
-            assert remote_file.stat().st_size == os.stat("/path/to/source.csv").st_size
+        >>> remote_file = connection.upload(
+        ...     local_file_path="/path/to/source.csv",
+        ...     remote_file_path="/path/to/target.csv",
+        ... )
+        >>> os.fspath(remote_file)
+        '/path/to/target.csv'
+        >>> connection.path_exists("/path/to/target.csv")
+        True
+        >>> remote_file.stat().st_size  # in bytes
+        1024
+        >>> os.stat("/path/to/source.csv").st_size  # same as source
+        1024
         """
 
     @abstractmethod
@@ -577,10 +592,8 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            content = connection.read_text("/path/to/dir/file.csv")
-            assert content == "some;header\n1;2"
+        >>> connection.read_text("/path/to/dir/file.csv")
+        'some;header\n1;2'
         """
 
     @abstractmethod
@@ -608,10 +621,8 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            content = connection.read_bytes("/path/to/dir/file.csv")
-            assert content == b"0xdeadbeef"
+        >>> connection.read_bytes("/path/to/dir/file.csv")
+        b'0xdeadbeef'
         """
 
     @abstractmethod
@@ -654,10 +665,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            file_path = connection.write_text("/path/to/dir/file.csv", "some;header\n1;2")
-            assert file_path.stat.st_size > 0
+        >>> file_path = connection.write_text("/path/to/dir/file.csv", "some;header\n1;2")
+        >>> os.fspath(file_path)
+        '/path/to/dir/file.csv'
+        >>> file_path.stat.st_size  # in bytes
+        1024
         """
 
     @abstractmethod
@@ -692,10 +704,11 @@ class BaseFileConnection(BaseConnection):
         Examples
         --------
 
-        .. code:: python
-
-            file_path = connection.write_bytes("/path/to/dir/file.csv", b"0xdeadbeef")
-            assert file_path.stat.st_size > 0
+        >>> file_path = connection.write_bytes("/path/to/dir/file.csv", b"0xdeadbeef")
+        >>> os.fspath(file_path)
+        '/path/to/dir/file.csv'
+        >>> file_path.stat.st_size  # in bytes
+        1024
         """
 
     @property

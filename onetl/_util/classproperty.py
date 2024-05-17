@@ -15,7 +15,8 @@ class classproperty(property):  # noqa: N801
     ...    def attribute(cls):
     ...        return 123
     >>> # no call
-    >>> assert My.attribute == 123
+    >>> My.attribute
+    123
     """
 
     def __init__(self, f):
