@@ -233,7 +233,8 @@ def test_greenplum_write_options_default():
     [
         (Greenplum.ReadOptions, "GreenplumReadOptions"),
         (Greenplum.WriteOptions, "GreenplumWriteOptions"),
-        (Greenplum.JDBCOptions, "JDBCOptions"),
+        (Greenplum.FetchOptions, "JDBCFetchOptions"),
+        (Greenplum.ExecuteOptions, "JDBCExecuteOptions"),
         (Greenplum.Extra, "GreenplumExtra"),
     ],
 )
@@ -243,7 +244,8 @@ def test_greenplum_jdbc_options_populated_by_connection_class(klass, name):
         klass(user="me", password="abc", driver="some.Class", url="jdbc:postgres://some/db")
 
 
-def test_greenplum_read_write_options_populated_by_connection_class():
+@pytest.mark.parametrize("options_class", [Greenplum.FetchOptions, Greenplum.ExecuteOptions])
+def test_greenplum_read_write_options_populated_by_connection_class(options_class):
     error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a GreenplumReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(dbschema="myschema", dbtable="mytable")
@@ -252,8 +254,8 @@ def test_greenplum_read_write_options_populated_by_connection_class():
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(dbschema="myschema", dbtable="mytable")
 
-    # JDBCOptions does not have such restriction
-    options = Greenplum.JDBCOptions(dbschema="myschema", dbtable="mytable")
+    # FetchOptions & ExecuteOptions does not have such restriction
+    options = options_class(dbschema="myschema", dbtable="mytable")
     assert options.dbschema == "myschema"
     assert options.dbtable == "mytable"
 

@@ -13,7 +13,8 @@ pytestmark = [pytest.mark.postgres]
     [
         Postgres.ReadOptions,
         Postgres.WriteOptions,
-        Postgres.JDBCOptions,
+        Postgres.FetchOptions,
+        Postgres.ExecuteOptions,
         Postgres.Options,
         Greenplum.ReadOptions,
         Greenplum.WriteOptions,
@@ -107,7 +108,8 @@ def test_db_options_parse_mismatch_connection_and_options_types(connection, opti
     [
         Postgres.ReadOptions,
         Postgres.WriteOptions,
-        Postgres.JDBCOptions,
+        Postgres.FetchOptions,
+        Postgres.ExecuteOptions,
         Greenplum.ReadOptions,
         Greenplum.WriteOptions,
         Hive.WriteOptions,

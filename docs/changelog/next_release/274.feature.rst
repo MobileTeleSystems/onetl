@@ -1,0 +1,37 @@
+Divide general ``JDBCOptions`` into ``FetchOptions`` for fetching data and ``ExecuteOptions`` for executing statements.
+
+Before:
+
+.. code-block:: python
+
+    from onetl.connection import Postgres
+
+    postgres = Postgres(...)
+    df = postgres.fetch(
+        "SELECT * FROM some.mytable WHERE key = 'something'",
+        options=Postgres.JDBCOptions(fetchsize=1000, query_timeout=30),
+    )
+
+    postgres.execute(
+        "UPDATE some.mytable SET value = 'new' WHERE key = 'something'",
+        options=Postgres.JDBCOptions(query_timeout=30),
+    )
+
+After:
+
+.. code-block:: python
+
+    from onetl.connection import Postgres
+
+    # Using FetchOptions for fetching data
+    postgres = Postgres(...)
+    df = postgres.fetch(
+        "SELECT * FROM some.mytable WHERE key = 'something'",
+        options=Postgres.FetchOptions(fetchsize=1000),
+    )
+
+    # Using ExecuteOptions for executing statements
+    postgres.execute(
+        "UPDATE some.mytable SET value = 'new' WHERE key = 'something'",
+        options=Postgres.ExecuteOptions(query_timeout=30),
+    )

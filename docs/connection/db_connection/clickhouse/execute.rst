@@ -17,10 +17,10 @@ There are 2 ways to execute some statement in Clickhouse
 Use ``Clickhouse.fetch``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
+Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 Clickhouse config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`FetchOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -50,7 +50,7 @@ Examples
 
     df = clickhouse.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Clickhouse.JDBCOptions(query_timeout=10),
+        options=Clickhouse.FetchOptions(query_timeout=10),
     )
     clickhouse.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -60,7 +60,7 @@ Use ``Clickhouse.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`ExecuteOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -98,7 +98,7 @@ Examples
             ENGINE = MergeTree()
             ORDER BY id
             """,
-            options=Clickhouse.JDBCOptions(query_timeout=10),
+            options=Clickhouse.ExecuteOptions(query_timeout=10),
         )
 
 Notes
@@ -113,7 +113,13 @@ Options
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 
-.. autopydantic_model:: JDBCOptions
+.. autopydantic_model:: JDBCFetchOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
+
+
+.. autopydantic_model:: JDBCExecuteOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

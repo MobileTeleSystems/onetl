@@ -31,7 +31,11 @@ from onetl.connection.db_connection.greenplum.options import (
     GreenplumWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+    JDBCOptions,
+)
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
@@ -420,7 +424,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCOptions):
+    def _options_to_connection_properties(self, options: JDBCOptions | JDBCExecuteOptions | JDBCFetchOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only
@@ -439,7 +443,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):")
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.JDBCOptions())
+        df = self._query_on_driver(query, self.FetchOptions())
         result = df.collect()
 
         log.debug(
@@ -460,7 +464,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):")
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.JDBCOptions())
+        df = self._query_on_driver(query, self.FetchOptions())
         result = df.collect()
 
         log.debug(

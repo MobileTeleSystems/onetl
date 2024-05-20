@@ -17,10 +17,10 @@ There are 2 ways to execute some statement in MySQL
 Use ``MySQL.fetch``
 ~~~~~~~~~~~~~~~~~~~
 
-Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
+Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 MySQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`FetchOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -50,7 +50,7 @@ Examples
 
     df = mysql.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=MySQL.JDBCOptions(query_timeout=10),
+        options=MySQL.FetchOptions(query_timeout=10),
     )
     mysql.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -60,7 +60,7 @@ Use ``MySQL.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`ExecuteOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -98,7 +98,7 @@ Examples
             )
             ENGINE = InnoDB
             """,
-            options=MySQL.JDBCOptions(query_timeout=10),
+            options=MySQL.ExecuteOptions(query_timeout=10),
         )
 
 Options
@@ -106,7 +106,13 @@ Options
 
 .. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
 
-.. autopydantic_model:: JDBCOptions
+.. autopydantic_model:: JDBCFetchOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
+
+
+.. autopydantic_model:: JDBCExecuteOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
