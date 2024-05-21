@@ -21,12 +21,20 @@ from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
-from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
+from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptionsType
 from onetl.connection.db_connection.jdbc_mixin.options import (
-    JDBCExecuteOptions,
+    JDBCExecuteOptionsType,
+    JDBCFetchOptionsType,
     JDBCOptions,
 )
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
+from onetl.connection.db_connection.oracle.options import (
+    OracleExecuteOptions,
+    OracleFetchOptions,
+    OracleReadOptions,
+    OracleSQLOptions,
+    OracleWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.impl import GenericOptions
@@ -172,6 +180,12 @@ class Oracle(JDBCConnection):
     service_name: Optional[str] = None
     extra: OracleExtra = OracleExtra()
 
+    ReadOptions = OracleReadOptions
+    WriteOptions = OracleWriteOptions
+    SQLOptions = OracleSQLOptions
+    FetchOptions = OracleFetchOptions
+    ExecuteOptions = OracleExecuteOptions
+
     Extra = OracleExtra
     Dialect = OracleDialect
 
@@ -254,7 +268,7 @@ class Oracle(JDBCConnection):
         window: Window,
         hint: Any | None = None,
         where: Any | None = None,
-        options: JDBCReadOptions | None = None,
+        options: JDBCReadOptionsType | None = None,
     ) -> tuple[Any, Any]:
         min_value, max_value = super().get_min_max_values(
             source=source,
@@ -275,7 +289,7 @@ class Oracle(JDBCConnection):
     def execute(
         self,
         statement: str,
-        options: JDBCOptions | JDBCExecuteOptions | dict | None = None,  # noqa: WPS437
+        options: JDBCOptions | JDBCExecuteOptionsType | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
         statement = clear_statement(statement)
 
@@ -339,7 +353,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: JDBCOptions | JDBCExecuteOptions,
+        options: JDBCExecuteOptionsType | JDBCFetchOptionsType,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -409,7 +423,7 @@ class Oracle(JDBCConnection):
     def _handle_compile_errors(
         self,
         statement: str,
-        options: JDBCExecuteOptions,
+        options: JDBCExecuteOptionsType,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.

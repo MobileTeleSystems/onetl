@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ✅︎ ``hint`` (see `official documentation <https://docs.oracle.com/cd/B10500_01/server.920/a96533/hintsref.htm>`_)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+* ✅︎ ``options`` (see :obj:`OracleReadOptions <onetl.connection.db_connection.oracle.options.OracleReadOptions>`)
 
 Examples
 --------
@@ -87,9 +87,8 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.oracle.options
 
-.. autopydantic_model:: JDBCReadOptions
+.. autopydantic_model:: OracleReadOptions
+    :inherited-members: JDBCReadOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false

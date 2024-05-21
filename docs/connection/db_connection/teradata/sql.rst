@@ -68,6 +68,10 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.teradata.options
 
-.. autopydantic_model:: JDBCSQLOptions
+.. autopydantic_model:: TeradataSQLOptions
+    :inherited-members: JDBCOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

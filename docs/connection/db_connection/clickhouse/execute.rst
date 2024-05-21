@@ -20,7 +20,7 @@ Use ``Clickhouse.fetch``
 Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 Clickhouse config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`FetchOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCFetchOptions>`.
+Method accepts :obj:`ClickhouseFetchOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -60,7 +60,7 @@ Use ``Clickhouse.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`ExecuteOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCExecuteOptions>`.
+Method accepts :obj:`ClickhouseExecuteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -111,15 +111,13 @@ So it should **NOT** be used to read large amounts of data. Use :ref:`DBReader <
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
+.. currentmodule:: onetl.connection.db_connection.clickhouse.options
 
-.. autopydantic_model:: JDBCFetchOptions
+.. autopydantic_model:: ClickhouseFetchOptions
+    :inherited-members: JDBCFetchOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
 
 
-.. autopydantic_model:: JDBCExecuteOptions
+.. autopydantic_model:: ClickhouseExecuteOptions
+    :inherited-members: JDBCExecuteOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false

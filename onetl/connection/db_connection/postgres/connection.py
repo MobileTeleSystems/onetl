@@ -9,11 +9,18 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import (
-    JDBCExecuteOptions,
-    JDBCFetchOptions,
+    JDBCExecuteOptionsType,
+    JDBCFetchOptionsType,
     JDBCOptions,
 )
 from onetl.connection.db_connection.postgres.dialect import PostgresDialect
+from onetl.connection.db_connection.postgres.options import (
+    PostgresExecuteOptions,
+    PostgresFetchOptions,
+    PostgresReadOptions,
+    PostgresSQLOptions,
+    PostgresWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -107,6 +114,12 @@ class Postgres(JDBCConnection):
     port: int = 5432
     extra: PostgresExtra = PostgresExtra()
 
+    ReadOptions = PostgresReadOptions
+    WriteOptions = PostgresWriteOptions
+    SQLOptions = PostgresSQLOptions
+    FetchOptions = PostgresFetchOptions
+    ExecuteOptions = PostgresExecuteOptions
+
     Extra = PostgresExtra
     Dialect = PostgresDialect
 
@@ -165,7 +178,7 @@ class Postgres(JDBCConnection):
 
     def _options_to_connection_properties(
         self,
-        options: JDBCOptions | JDBCFetchOptions | JDBCExecuteOptions,
+        options: JDBCOptions | JDBCFetchOptionsType | JDBCExecuteOptionsType,
     ):  # noqa: WPS437
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction

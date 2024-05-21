@@ -9,6 +9,13 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.mssql.dialect import MSSQLDialect
+from onetl.connection.db_connection.mssql.options import (
+    MSSQLExecuteOptions,
+    MSSQLFetchOptions,
+    MSSQLReadOptions,
+    MSSQLSQLOptions,
+    MSSQLWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -138,6 +145,12 @@ class MSSQL(JDBCConnection):
     database: str
     port: int = 1433
     extra: MSSQLExtra = MSSQLExtra()
+
+    ReadOptions = MSSQLReadOptions
+    WriteOptions = MSSQLWriteOptions
+    SQLOptions = MSSQLSQLOptions
+    FetchOptions = MSSQLFetchOptions
+    ExecuteOptions = MSSQLExecuteOptions
 
     Extra = MSSQLExtra
     Dialect = MSSQLDialect

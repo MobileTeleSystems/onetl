@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Clickhouse)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+* ✅︎ ``options`` (see :obj:`ClickhouseReadOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions>`)
 
 Examples
 --------
@@ -85,9 +85,8 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.clickhouse.options
 
-.. autopydantic_model:: JDBCReadOptions
+.. autopydantic_model:: ClickhouseReadOptions
+    :inherited-members: JDBCReadOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false

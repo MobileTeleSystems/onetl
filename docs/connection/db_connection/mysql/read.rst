@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ✅︎ ``hint`` (see `official documentation <https://dev.mysql.com/doc/refman/en/optimizer-hints.html>`_)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+* ✅︎ ``options`` (see :obj:`MySQLReadOptions <onetl.connection.db_connection.mysql.options.MySQLReadOptions>`)
 
 Examples
 --------
@@ -87,9 +87,8 @@ Especially if there are indexes for columns used in ``where`` clause.
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.mysql.options
 
-.. autopydantic_model:: JDBCReadOptions
+.. autopydantic_model:: MySQLReadOptions
+    :inherited-members: JDBCReadOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false

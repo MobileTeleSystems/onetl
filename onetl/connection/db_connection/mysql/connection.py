@@ -9,6 +9,13 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.mysql.dialect import MySQLDialect
+from onetl.connection.db_connection.mysql.options import (
+    MySQLExecuteOptions,
+    MySQLFetchOptions,
+    MySQLReadOptions,
+    MySQLSQLOptions,
+    MySQLWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl.generic_options import GenericOptions
 
@@ -97,6 +104,12 @@ class MySQL(JDBCConnection):
     port: int = 3306
     database: Optional[str] = None
     extra: MySQLExtra = MySQLExtra()
+
+    ReadOptions = MySQLReadOptions
+    WriteOptions = MySQLWriteOptions
+    SQLOptions = MySQLSQLOptions
+    FetchOptions = MySQLFetchOptions
+    ExecuteOptions = MySQLExecuteOptions
 
     Extra = MySQLExtra
     Dialect = MySQLDialect

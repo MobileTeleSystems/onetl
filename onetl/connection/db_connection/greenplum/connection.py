@@ -26,7 +26,10 @@ from onetl.connection.db_connection.greenplum.connection_limit import (
 )
 from onetl.connection.db_connection.greenplum.dialect import GreenplumDialect
 from onetl.connection.db_connection.greenplum.options import (
+    GreenplumExecuteOptions,
+    GreenplumFetchOptions,
     GreenplumReadOptions,
+    GreenplumSQLOptions,
     GreenplumTableExistBehavior,
     GreenplumWriteOptions,
 )
@@ -154,10 +157,14 @@ class Greenplum(JDBCMixin, DBConnection):
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
 
-    Extra = GreenplumExtra
-    Dialect = GreenplumDialect
     ReadOptions = GreenplumReadOptions
     WriteOptions = GreenplumWriteOptions
+    SQLOptions = GreenplumSQLOptions
+    FetchOptions = GreenplumFetchOptions
+    ExecuteOptions = GreenplumExecuteOptions
+
+    Extra = GreenplumExtra
+    Dialect = GreenplumDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31

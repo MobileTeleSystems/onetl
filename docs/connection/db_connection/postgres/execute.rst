@@ -20,7 +20,7 @@ Use ``Postgres.fetch``
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
 Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`FetchOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCFetchOptions>`.
+Method accepts :obj:`PostgresFetchOptions <onetl.connection.db_connection.postgres.options.PostgresFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -58,7 +58,7 @@ Use ``Postgres.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`ExecuteOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCExecuteOptions>`.
+Method accepts :obj:`PostgresExecuteOptions <onetl.connection.db_connection.postgres.options.PostgresExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -102,15 +102,13 @@ Examples
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
+.. currentmodule:: onetl.connection.db_connection.postgres.options
 
-.. autopydantic_model:: JDBCFetchOptions
+.. autopydantic_model:: PostgresFetchOptions
+    :inherited-members: JDBCFetchOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
 
 
-.. autopydantic_model:: JDBCExecuteOptions
+.. autopydantic_model:: PostgresExecuteOptions
+    :inherited-members: JDBCExecuteOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
