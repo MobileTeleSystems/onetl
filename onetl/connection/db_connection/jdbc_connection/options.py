@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import Optional
 
 try:
     from pydantic.v1 import Field, PositiveInt, root_validator
@@ -625,8 +625,3 @@ class JDBCSQLOptions(JDBCOptions):
 class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):
     class Config:
         prohibited_options = JDBCOptions.Config.prohibited_options
-
-
-JDBCReadOptionsType = TypeVar("JDBCReadOptionsType", bound=JDBCReadOptions)
-JDBCWriteOptionsType = TypeVar("JDBCWriteOptionsType", bound=JDBCWriteOptions)
-JDBCSQLOptionsType = TypeVar("JDBCSQLOptionsType", bound=JDBCSQLOptions)

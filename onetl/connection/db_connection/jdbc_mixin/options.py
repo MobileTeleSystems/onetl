@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from typing import Optional, TypeVar
+from typing import Optional
 
 from typing_extensions import deprecated
 
@@ -123,7 +123,3 @@ class JDBCExecuteOptions(GenericOptions):
         Default value depends on driver. For example, Oracle has
         default ``fetchsize=10``.
     """
-
-
-JDBCFetchOptionsType = TypeVar("JDBCFetchOptionsType", bound=JDBCFetchOptions)
-JDBCExecuteOptionsType = TypeVar("JDBCExecuteOptionsType", bound=JDBCExecuteOptions)
