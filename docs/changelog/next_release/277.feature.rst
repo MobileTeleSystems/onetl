@@ -1,1 +1,0 @@
-Add ``ReadOptions``, ``WriteOptions``, ``SQLOptions``, ``FetchOptions``, ``ExecuteOptions`` option classes for each JDBC connector.
