@@ -217,23 +217,7 @@ class HiveWriteOptions(GenericOptions):
     """
     List of columns should be used for data partitioning. ``None`` means partitioning is disabled.
 
-    Each partition is a folder which contains only files with the specific column value,
-    like ``myschema.db/mytable/col1=value1``, ``myschema.db/mytable/col1=value2``, and so on.
-
-    Multiple partitions columns means nested folder structure, like ``myschema.db/mytable/col1=val1/col2=val2``.
-
-    If ``WHERE`` clause in the query contains expression like ``partition = value``,
-    Spark will scan only files in a specific partition.
-
     Examples: ``reg_id`` or ``["reg_id", "business_dt"]``
-
-    .. note::
-
-        Values should be scalars (integers, strings),
-        and either static (``countryId``) or incrementing (dates, years), with low
-        number of distinct values.
-
-        Columns like ``userId`` or ``datetime``/``timestamp`` should **NOT** be used for partitioning.
 
     .. warning::
 
