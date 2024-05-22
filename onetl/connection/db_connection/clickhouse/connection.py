@@ -8,6 +8,13 @@ from typing import ClassVar, Optional
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
+from onetl.connection.db_connection.clickhouse.options import (
+    ClickhouseExecuteOptions,
+    ClickhouseFetchOptions,
+    ClickhouseReadOptions,
+    ClickhouseSQLOptions,
+    ClickhouseWriteOptions,
+)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
 from onetl.hooks import slot, support_hooks
@@ -103,6 +110,12 @@ class Clickhouse(JDBCConnection):
 
     Extra = ClickhouseExtra
     Dialect = ClickhouseDialect
+
+    ReadOptions = ClickhouseReadOptions
+    WriteOptions = ClickhouseWriteOptions
+    SQLOptions = ClickhouseSQLOptions
+    FetchOptions = ClickhouseFetchOptions
+    ExecuteOptions = ClickhouseExecuteOptions
 
     DRIVER: ClassVar[str] = "com.clickhouse.jdbc.ClickHouseDriver"
 

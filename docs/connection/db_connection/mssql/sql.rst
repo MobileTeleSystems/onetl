@@ -43,7 +43,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=MSSQL.QLOptions(
+        options=MSSQL.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,
@@ -70,6 +70,10 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.mssql.options
 
-.. autopydantic_model:: JDBCSQLOptions
+.. autopydantic_model:: MSSQLSQLOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

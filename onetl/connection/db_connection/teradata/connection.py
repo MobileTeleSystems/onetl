@@ -10,6 +10,13 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.teradata.dialect import TeradataDialect
+from onetl.connection.db_connection.teradata.options import (
+    TeradataExecuteOptions,
+    TeradataFetchOptions,
+    TeradataReadOptions,
+    TeradataSQLOptions,
+    TeradataWriteOptions,
+)
 from onetl.hooks import slot
 from onetl.impl import GenericOptions
 
@@ -117,6 +124,12 @@ class Teradata(JDBCConnection):
     port: int = 1025
     database: Optional[str] = None
     extra: TeradataExtra = TeradataExtra()
+
+    ReadOptions = TeradataReadOptions
+    WriteOptions = TeradataWriteOptions
+    SQLOptions = TeradataSQLOptions
+    FetchOptions = TeradataFetchOptions
+    ExecuteOptions = TeradataExecuteOptions
 
     Extra = TeradataExtra
     Dialect = TeradataDialect

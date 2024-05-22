@@ -23,7 +23,7 @@ Supported DBReader features
 * * Note that ``expression`` field of HWM can only be a field name, not a custom expression
 * ✅︎ ``hint`` (see `official documentation <https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/>`_)
 * ✅︎ ``df_schema`` (mandatory)
-* ✅︎ ``options`` (see :obj:`MongoDBReadOptions <onetl.connection.db_connection.mongodb.options.MongoDBReadOptions>`)
+* ✅︎ ``options`` (see :obj:`MongoDB.ReadOptions <onetl.connection.db_connection.mongodb.options.MongoDBReadOptions>`)
 
 Examples
 --------

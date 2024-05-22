@@ -11,7 +11,12 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl.connection.db_connection.jdbc_connection.options import JDBCSQLOptions
 from onetl.connection.db_connection.jdbc_mixin import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 
 # options from which are populated by Greenplum class methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(
@@ -311,3 +316,15 @@ class GreenplumWriteOptions(JDBCOptions):
                 stacklevel=3,
             )
         return values
+
+
+class GreenplumSQLOptions(JDBCSQLOptions):
+    pass
+
+
+class GreenplumFetchOptions(JDBCFetchOptions):
+    pass
+
+
+class GreenplumExecuteOptions(JDBCExecuteOptions):
+    pass

@@ -14,6 +14,13 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCOptions,
 )
 from onetl.connection.db_connection.postgres.dialect import PostgresDialect
+from onetl.connection.db_connection.postgres.options import (
+    PostgresExecuteOptions,
+    PostgresFetchOptions,
+    PostgresReadOptions,
+    PostgresSQLOptions,
+    PostgresWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
@@ -106,6 +113,12 @@ class Postgres(JDBCConnection):
     database: str
     port: int = 5432
     extra: PostgresExtra = PostgresExtra()
+
+    ReadOptions = PostgresReadOptions
+    WriteOptions = PostgresWriteOptions
+    SQLOptions = PostgresSQLOptions
+    FetchOptions = PostgresFetchOptions
+    ExecuteOptions = PostgresExecuteOptions
 
     Extra = PostgresExtra
     Dialect = PostgresDialect

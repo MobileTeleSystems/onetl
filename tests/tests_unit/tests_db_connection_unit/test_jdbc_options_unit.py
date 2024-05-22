@@ -3,7 +3,7 @@ import re
 import pytest
 
 from onetl._internal import to_camel
-from onetl.connection import Postgres
+from onetl.connection import MSSQL, Clickhouse, MySQL, Oracle, Postgres, Teradata
 from onetl.connection.db_connection.jdbc_connection import JDBCTableExistBehavior
 
 pytestmark = [pytest.mark.postgres]
@@ -44,21 +44,57 @@ def test_jdbc_options_default():
         ("properties", {"abc": "cde"}),
     ],
 )
-@pytest.mark.parametrize("options_class", [Postgres.FetchOptions, Postgres.ExecuteOptions])
-def test_jdbc_read_write_options_populated_by_connection_class(arg, value, options_class):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCReadOptions"
-    with pytest.raises(ValueError, match=error_msg):
-        Postgres.ReadOptions.parse({arg: value})
+@pytest.mark.parametrize(
+    "options_class, read_write_restriction",
+    [
+        (Postgres.FetchOptions, False),
+        (Postgres.ExecuteOptions, False),
+        (Postgres.ReadOptions, True),
+        (Postgres.WriteOptions, True),
+        (Clickhouse.FetchOptions, False),
+        (Clickhouse.ExecuteOptions, False),
+        (Clickhouse.ReadOptions, True),
+        (Clickhouse.WriteOptions, True),
+        (MSSQL.FetchOptions, False),
+        (MSSQL.ExecuteOptions, False),
+        (MSSQL.ReadOptions, True),
+        (MSSQL.WriteOptions, True),
+        (MySQL.FetchOptions, False),
+        (MySQL.ExecuteOptions, False),
+        (MySQL.ReadOptions, True),
+        (MySQL.WriteOptions, True),
+        (Teradata.FetchOptions, False),
+        (Teradata.ExecuteOptions, False),
+        (Teradata.ReadOptions, True),
+        (Teradata.WriteOptions, True),
+        (Oracle.FetchOptions, False),
+        (Oracle.ExecuteOptions, False),
+        (Oracle.ReadOptions, True),
+        (Oracle.WriteOptions, True),
+    ],
+)
+def test_jdbc_read_write_options_populated_by_connection_class(arg, value, options_class, read_write_restriction):
+    if read_write_restriction:
+        error_msg = rf"Options \['{arg}'\] are not allowed to use in a {options_class.__name__}"
+        with pytest.raises(ValueError, match=error_msg):
+            options_class.parse({arg: value})
+    else:
+        # FetchOptions & ExecuteOptions does not have such restriction
+        options = options_class.parse({arg: value})
+        assert options.dict()[arg] == value
 
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCWriteOptions"
-    with pytest.raises(ValueError, match=error_msg):
-        Postgres.WriteOptions.parse({arg: value})
 
-    # FetchOptions & ExecuteOptions does not have such restriction
-    options = options_class.parse({arg: value})
-    assert options.dict()[arg] == value
-
-
+@pytest.mark.parametrize(
+    "options_class, options_class_name",
+    [
+        (Postgres.ReadOptions, "PostgresReadOptions"),
+        (Clickhouse.ReadOptions, "ClickhouseReadOptions"),
+        (MSSQL.ReadOptions, "MSSQLReadOptions"),
+        (MySQL.ReadOptions, "MySQLReadOptions"),
+        (Teradata.ReadOptions, "TeradataReadOptions"),
+        (Oracle.ReadOptions, "OracleReadOptions"),
+    ],
+)
 @pytest.mark.parametrize(
     "arg, value",
     [
@@ -73,12 +109,23 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value, optio
         ("createTableColumnTypes", "a varchar"),
     ],
 )
-def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCReadOptions"
+def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value, options_class, options_class_name):
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a {options_class_name}"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.ReadOptions.parse({arg: value})
+        options_class.parse({arg: value})
 
 
+@pytest.mark.parametrize(
+    "options_class, options_class_name",
+    [
+        (Postgres.WriteOptions, "PostgresWriteOptions"),
+        (Clickhouse.WriteOptions, "ClickhouseWriteOptions"),
+        (MSSQL.WriteOptions, "MSSQLWriteOptions"),
+        (MySQL.WriteOptions, "MySQLWriteOptions"),
+        (Teradata.WriteOptions, "TeradataWriteOptions"),
+        (Oracle.WriteOptions, "OracleWriteOptions"),
+    ],
+)
 @pytest.mark.parametrize(
     "arg, value",
     [
@@ -101,10 +148,10 @@ def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value):
         ("predicates", "s"),
     ],
 )
-def test_jdbc_read_options_cannot_be_used_in_write_options(arg, value):
-    error_msg = rf"Options \['{arg}'\] are not allowed to use in a JDBCWriteOptions"
+def test_jdbc_read_options_cannot_be_used_in_write_options(options_class, options_class_name, arg, value):
+    error_msg = rf"Options \['{arg}'\] are not allowed to use in a {options_class_name}"
     with pytest.raises(ValueError, match=error_msg):
-        Postgres.WriteOptions.parse({arg: value})
+        options_class.parse({arg: value})
 
 
 @pytest.mark.parametrize(
@@ -137,12 +184,23 @@ def test_jdbc_old_options_allowed_but_deprecated(arg, value):
     assert options.dict(by_alias=True)[to_camel(arg)] == value
 
 
-def test_jdbc_read_options_partitioning_is_not_valid():
+@pytest.mark.parametrize(
+    "options_class",
+    [
+        Postgres.ReadOptions,
+        Clickhouse.ReadOptions,
+        MSSQL.ReadOptions,
+        MySQL.ReadOptions,
+        Teradata.ReadOptions,
+        Oracle.ReadOptions,
+    ],
+)
+def test_jdbc_read_options_partitioning_is_not_valid(options_class):
     with pytest.raises(ValueError):
-        Postgres.ReadOptions(numPartitions=200)
+        options_class(numPartitions=200)
 
     with pytest.raises(ValueError):
-        Postgres.ReadOptions(partitionColumn="test")
+        options_class(partitionColumn="test")
 
 
 def test_jdbc_read_options_case():
@@ -254,14 +312,19 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
 
 
 @pytest.mark.parametrize(
-    "options",
+    "options_class, options",
     [
-        {"mode": "wrong_mode"},
+        (Postgres.WriteOptions, {"mode": "wrong_mode"}),
+        (Clickhouse.WriteOptions, {"mode": "wrong_mode"}),
+        (MSSQL.WriteOptions, {"mode": "wrong_mode"}),
+        (MySQL.WriteOptions, {"mode": "wrong_mode"}),
+        (Teradata.WriteOptions, {"mode": "wrong_mode"}),
+        (Oracle.WriteOptions, {"mode": "wrong_mode"}),
     ],
 )
-def test_jdbc_write_options_mode_wrong(options):
+def test_jdbc_write_options_mode_wrong(options_class, options):
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        Postgres.WriteOptions(**options)
+        options_class(**options)
 
 
 @pytest.mark.parametrize(
@@ -277,13 +340,35 @@ def test_jdbc_sql_options_partition_bounds(options, expected_message):
         Postgres.SQLOptions(**options)
 
 
-def test_jdbc_sql_options_partitioning_mode_prohibited():
+@pytest.mark.parametrize(
+    "options_class",
+    [
+        Postgres.SQLOptions,
+        Clickhouse.SQLOptions,
+        MSSQL.SQLOptions,
+        MySQL.SQLOptions,
+        Teradata.SQLOptions,
+        Oracle.SQLOptions,
+    ],
+)
+def test_jdbc_sql_options_partitioning_mode_prohibited(options_class):
     with pytest.raises(ValueError, match=r"Options \['partitioning_mode'\] are not allowed"):
-        Postgres.SQLOptions(partitioning_mode="range")
+        options_class(partitioning_mode="range")
 
 
-def test_jdbc_sql_options_default():
-    options = Postgres.SQLOptions()
+@pytest.mark.parametrize(
+    "options_class",
+    [
+        Postgres.SQLOptions,
+        Clickhouse.SQLOptions,
+        MSSQL.SQLOptions,
+        MySQL.SQLOptions,
+        Teradata.SQLOptions,
+        Oracle.SQLOptions,
+    ],
+)
+def test_jdbc_sql_options_default(options_class):
+    options = options_class()
     assert options.fetchsize == 100_000
     assert options.query_timeout is None
 

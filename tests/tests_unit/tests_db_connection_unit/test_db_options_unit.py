@@ -3,7 +3,16 @@ import re
 
 import pytest
 
-from onetl.connection import Greenplum, Hive, Postgres
+from onetl.connection import (
+    MSSQL,
+    Clickhouse,
+    Greenplum,
+    Hive,
+    MySQL,
+    Oracle,
+    Postgres,
+    Teradata,
+)
 
 pytestmark = [pytest.mark.postgres]
 
@@ -18,6 +27,26 @@ pytestmark = [pytest.mark.postgres]
         Postgres.Options,
         Greenplum.ReadOptions,
         Greenplum.WriteOptions,
+        Clickhouse.ReadOptions,
+        Clickhouse.WriteOptions,
+        Clickhouse.FetchOptions,
+        Clickhouse.ExecuteOptions,
+        MSSQL.ReadOptions,
+        MSSQL.WriteOptions,
+        MSSQL.FetchOptions,
+        MSSQL.ExecuteOptions,
+        MySQL.ReadOptions,
+        MySQL.WriteOptions,
+        MySQL.FetchOptions,
+        MySQL.ExecuteOptions,
+        Teradata.ReadOptions,
+        Teradata.WriteOptions,
+        Teradata.FetchOptions,
+        Teradata.ExecuteOptions,
+        Oracle.ReadOptions,
+        Oracle.WriteOptions,
+        Oracle.FetchOptions,
+        Oracle.ExecuteOptions,
     ],
 )
 @pytest.mark.parametrize(
@@ -39,11 +68,21 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
     [
         (Hive.WriteOptions, "HiveWriteOptions", {"if_exists": "replace_overlapping_partitions"}),
         (Hive.Options, "HiveLegacyOptions", {"if_exists": "replace_overlapping_partitions"}),
-        (Postgres.ReadOptions, "JDBCReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
-        (Postgres.WriteOptions, "JDBCWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Postgres.ReadOptions, "PostgresReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Postgres.WriteOptions, "PostgresWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Postgres.Options, "JDBCLegacyOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Greenplum.ReadOptions, "GreenplumReadOptions", {"partitions": 10}),
         (Greenplum.WriteOptions, "GreenplumWriteOptions", {"if_exists": "replace_entire_table"}),
+        (Clickhouse.ReadOptions, "ClickhouseReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Clickhouse.WriteOptions, "ClickhouseWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (MSSQL.ReadOptions, "MSSQLReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (MSSQL.WriteOptions, "MSSQLWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (MySQL.ReadOptions, "MySQLReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (MySQL.WriteOptions, "MySQLWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Teradata.ReadOptions, "TeradataReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Teradata.WriteOptions, "TeradataWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Oracle.ReadOptions, "OracleReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Oracle.WriteOptions, "OracleWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
     ],
 )
 def test_db_options_warn_for_unknown(options_class, options_class_name, known_options, caplog):
@@ -65,18 +104,20 @@ def test_db_options_warn_for_unknown(options_class, options_class_name, known_op
 @pytest.mark.parametrize(
     "options_class,options",
     [
-        (
-            Postgres.ReadOptions,
-            Postgres.WriteOptions(),
-        ),
-        (
-            Postgres.WriteOptions,
-            Postgres.ReadOptions(),
-        ),
-    ],
-    ids=[
-        "Write options object passed to ReadOptions",
-        "Read options object passed to WriteOptions",
+        (Postgres.ReadOptions, Postgres.WriteOptions()),
+        (Postgres.WriteOptions, Postgres.ReadOptions()),
+        (Clickhouse.ReadOptions, Clickhouse.WriteOptions()),
+        (Clickhouse.WriteOptions, Clickhouse.ReadOptions()),
+        (MSSQL.ReadOptions, MSSQL.WriteOptions()),
+        (MSSQL.WriteOptions, MSSQL.ReadOptions()),
+        (MySQL.ReadOptions, MySQL.WriteOptions()),
+        (MySQL.WriteOptions, MySQL.ReadOptions()),
+        (Teradata.ReadOptions, Teradata.WriteOptions()),
+        (Teradata.WriteOptions, Teradata.ReadOptions()),
+        (Greenplum.ReadOptions, Greenplum.WriteOptions()),
+        (Greenplum.WriteOptions, Greenplum.ReadOptions()),
+        (Oracle.ReadOptions, Oracle.WriteOptions()),
+        (Oracle.WriteOptions, Oracle.ReadOptions()),
     ],
 )
 def test_db_options_parse_mismatch_class(options_class, options):
@@ -106,15 +147,36 @@ def test_db_options_parse_mismatch_connection_and_options_types(connection, opti
 @pytest.mark.parametrize(
     "options_class",
     [
+        # PostgreSQL options
         Postgres.ReadOptions,
         Postgres.WriteOptions,
         Postgres.FetchOptions,
         Postgres.ExecuteOptions,
+        Postgres.Options,
         Greenplum.ReadOptions,
         Greenplum.WriteOptions,
         Hive.WriteOptions,
-        Postgres.Options,
         Hive.Options,
+        Clickhouse.ReadOptions,
+        Clickhouse.WriteOptions,
+        Clickhouse.FetchOptions,
+        Clickhouse.ExecuteOptions,
+        MSSQL.ReadOptions,
+        MSSQL.WriteOptions,
+        MSSQL.FetchOptions,
+        MSSQL.ExecuteOptions,
+        MySQL.ReadOptions,
+        MySQL.WriteOptions,
+        MySQL.FetchOptions,
+        MySQL.ExecuteOptions,
+        Teradata.ReadOptions,
+        Teradata.WriteOptions,
+        Teradata.FetchOptions,
+        Teradata.ExecuteOptions,
+        Oracle.ReadOptions,
+        Oracle.WriteOptions,
+        Oracle.FetchOptions,
+        Oracle.ExecuteOptions,
     ],
 )
 @pytest.mark.parametrize(

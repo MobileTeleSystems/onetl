@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (MSSQL does support hints, but DBReader not, at least for now)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+* ✅︎ ``options`` (see :obj:`MSSQL.ReadOptions <onetl.connection.db_connection.mssql.options.MSSQLReadOptions>`)
 
 Examples
 --------
@@ -85,9 +85,10 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.mssql.options
 
-.. autopydantic_model:: JDBCReadOptions
+.. autopydantic_model:: MSSQLReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

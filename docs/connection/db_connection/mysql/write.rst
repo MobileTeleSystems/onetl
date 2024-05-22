@@ -44,11 +44,12 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
+Method above accepts  :obj:`MySQL.WriteOptions <onetl.connection.db_connection.mysql.options.MySQLWriteOptions>`
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.mysql.options
 
-.. autopydantic_model:: JDBCWriteOptions
+.. autopydantic_model:: MySQLWriteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
