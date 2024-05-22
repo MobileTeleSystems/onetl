@@ -18,7 +18,7 @@ Supported DBReader features
 * * ❌ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Kafka)
 * ❌ ``df_schema`` (see note below)
-* ✅︎ ``options`` (see :obj:`KafkaReadOptions <onetl.connection.db_connection.kafka.options.KafkaReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Kafka.ReadOptions <onetl.connection.db_connection.kafka.options.KafkaReadOptions>`)
 
 Dataframe schema
 ----------------

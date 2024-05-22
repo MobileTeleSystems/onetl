@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Clickhouse)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`ClickhouseReadOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Clickhouse.ReadOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions>`)
 
 Examples
 --------

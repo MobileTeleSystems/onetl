@@ -45,7 +45,7 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`ClickhouseWriteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions>`
+Method above accepts  :obj:`Clickhouse.WriteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.clickhouse.options
 

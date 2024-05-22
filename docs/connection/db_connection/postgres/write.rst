@@ -40,7 +40,7 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`PostgresWriteOptions <onetl.connection.db_connection.postgres.options.PostgresWriteOptions>`
+Method above accepts  :obj:`Postgres.WriteOptions <onetl.connection.db_connection.postgres.options.PostgresWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.postgres.options
 

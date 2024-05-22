@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Postgres)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`PostgresReadOptions <onetl.connection.db_connection.postgres.options.PostgresReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Postgres.ReadOptions <onetl.connection.db_connection.postgres.options.PostgresReadOptions>`)
 
 Examples
 --------

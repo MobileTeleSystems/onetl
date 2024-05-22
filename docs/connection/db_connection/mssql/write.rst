@@ -40,7 +40,7 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`MSSQLWriteOptions <onetl.connection.db_connection.mssql.options.MSSQLWriteOptions>`
+Method above accepts  :obj:`MSSQL.WriteOptions <onetl.connection.db_connection.mssql.options.MSSQLWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 

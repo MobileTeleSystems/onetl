@@ -44,7 +44,7 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`MySQLWriteOptions <onetl.connection.db_connection.mysql.options.MySQLWriteOptions>`
+Method above accepts  :obj:`MySQL.WriteOptions <onetl.connection.db_connection.mysql.options.MySQLWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.mysql.options
 

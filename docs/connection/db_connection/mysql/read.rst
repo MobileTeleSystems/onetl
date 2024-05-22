@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ✅︎ ``hint`` (see `official documentation <https://dev.mysql.com/doc/refman/en/optimizer-hints.html>`_)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`MySQLReadOptions <onetl.connection.db_connection.mysql.options.MySQLReadOptions>`)
+* ✅︎ ``options`` (see :obj:`MySQL.ReadOptions <onetl.connection.db_connection.mysql.options.MySQLReadOptions>`)
 
 Examples
 --------

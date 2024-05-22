@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (MSSQL does support hints, but DBReader not, at least for now)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`MSSQLReadOptions <onetl.connection.db_connection.mssql.options.MSSQLReadOptions>`)
+* ✅︎ ``options`` (see :obj:`MSSQL.ReadOptions <onetl.connection.db_connection.mssql.options.MSSQLReadOptions>`)
 
 Examples
 --------

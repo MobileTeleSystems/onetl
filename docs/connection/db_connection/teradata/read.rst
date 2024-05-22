@@ -18,7 +18,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Teradata)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`TeradataReadOptions <onetl.connection.db_connection.teradata.options.TeradataReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Teradata.ReadOptions <onetl.connection.db_connection.teradata.options.TeradataReadOptions>`)
 
 Examples
 --------

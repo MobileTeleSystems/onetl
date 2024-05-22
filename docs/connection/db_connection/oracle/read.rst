@@ -22,7 +22,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ✅︎ ``hint`` (see `official documentation <https://docs.oracle.com/cd/B10500_01/server.920/a96533/hintsref.htm>`_)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`OracleReadOptions <onetl.connection.db_connection.oracle.options.OracleReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Oracle.ReadOptions <onetl.connection.db_connection.oracle.options.OracleReadOptions>`)
 
 Examples
 --------

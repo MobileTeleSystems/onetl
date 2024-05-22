@@ -110,7 +110,7 @@ Choosing one of the modes can alter connector behavior. For example:
 Options
 -------
 
-Method above accepts  :obj:`TeradataWriteOptions <onetl.connection.db_connection.teradata.options.TeradataWriteOptions>`
+Method above accepts  :obj:`Teradata.WriteOptions <onetl.connection.db_connection.teradata.options.TeradataWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 

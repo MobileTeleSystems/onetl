@@ -35,7 +35,7 @@ Examples
 Write options
 -------------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions>`
+Method above accepts  :obj:`MongoDB.WriteOptions <onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions>`
 
 .. currentmodule:: onetl.connection.db_connection.mongodb.options
 

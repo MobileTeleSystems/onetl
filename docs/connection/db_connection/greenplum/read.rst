@@ -27,7 +27,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Greenplum)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`GreenplumReadOptions <onetl.connection.db_connection.greenplum.options.GreenplumReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Greenplum.ReadOptions <onetl.connection.db_connection.greenplum.options.GreenplumReadOptions>`)
 
 .. warning::
 
