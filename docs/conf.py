@@ -57,7 +57,6 @@ extensions = [
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
     "sphinxcontrib.plantuml",
     "sphinx.ext.extlinks",
-    "sphinxcontrib.autodoc_pydantic",
     "sphinx_favicon",
     "sphinxcontrib.autodoc_pydantic",
 ]
