@@ -240,7 +240,8 @@ class XML(ReadWriteFileFormat):
 
         .. note::
 
-            This method parses each DataFrame row individually. Therefore, for a specific column, each row must contain exactly one occurrence of the ``rowTag`` specified. If your XML data includes a root tag that encapsulates multiple row tags, you can adjust the schema to use an ``ArrayType`` to keep all child elements under the single root.
+            This method parses each DataFrame row individually. Therefore, for a specific column, each row must contain exactly one occurrence of the ``rowTag`` specified.
+            If your XML data includes a root tag that encapsulates multiple row tags, you can adjust the schema to use an ``ArrayType`` to keep all child elements under the single root.
 
             .. code-block:: xml
 
@@ -254,7 +255,11 @@ class XML(ReadWriteFileFormat):
             .. code-block:: python
 
                 from pyspark.sql.types import StructType, StructField, ArrayType, StringType
+                from onetl.file.format import XML
 
+                # each DataFrame row has exactly one <books> tag
+                xml = XML(rowTag="books")
+                # each <books> tag have multiple <book> tags, so using ArrayType for such field
                 schema = StructType(
                     [
                         StructField(
@@ -264,54 +269,63 @@ class XML(ReadWriteFileFormat):
                                     [
                                         StructField("title", StringType(), True),
                                         StructField("author", StringType(), True),
-                                    ]
-                                )
+                                    ],
+                                ),
                             ),
                             True,
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing XML strings to parse.
+            The name of the column or the column object containing XML strings/bytes to parse.
+
+        schema : StructType
+            The schema to apply when parsing the XML data. This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        Column
-            A new Column object with data parsed from XML string to the specified structured format.
+        Column with deserialized data, with the same structure as the provided schema. Column name is the same as input column.
 
         Examples
         --------
-        .. code-block:: python
 
-            from pyspark.sql import SparkSession
-            from pyspark.sql.types import StructType, StructField, StringType, IntegerType
-
-            from onetl.file.format import XML
-
-            spark = SparkSession.builder.appName("XMLParsingExample").getOrCreate()
-            schema = StructType(
-                [
-                    StructField("author", StringType(), nullable=True),
-                    StructField("title", StringType(), nullable=True),
-                    StructField("genre", StringType(), nullable=True),
-                    StructField("price", IntegerType(), nullable=True),
-                ]
-            )
-            xml_processor = XML(row_tag="book")
-
-            data = [
-                (
-                    "<book><author>Austen, Jane</author><title>Pride and Prejudice</title><genre>romance</genre><price>19</price></book>",
-                )
-            ]
-            df = spark.createDataFrame(data, ["xml_string"])
-
-            parsed_df = df.select(xml_processor.parse_column("xml_string", schema=schema))
-            parsed_df.show()
-
+        >>> from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+        >>> from onetl.file.format import XML
+        >>> df.show()
+        +--+------------------------------------------------+
+        |id|value                                           |
+        +--+------------------------------------------------+
+        |1 |<person><name>Alice</name><age>20</age></person>|
+        |2 |<person><name>Bob</name><age>25</age></person>  |
+        +--+------------------------------------------------+
+        >>> df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: string (nullable = true)
+        >>> xml = XML(rowTag="person")
+        >>> xml_schema = StructType(
+        ...     [
+        ...         StructField("name", StringType(), nullable=True),
+        ...         StructField("age", IntegerType(), nullable=True),
+        ...     ],
+        ... )
+        >>> parsed_df = df.select("key", xml.parse_column("value", xml_schema))
+        >>> parsed_df.show()
+        +--+-----------+
+        |id|value      |
+        +--+-----------+
+        |1 |{Alice, 20}|
+        |2 |  {Bob, 25}|
+        +--+-----------+
+        >>> parsed_df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
         """
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
 

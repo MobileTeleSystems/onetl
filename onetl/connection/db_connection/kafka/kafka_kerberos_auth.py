@@ -111,7 +111,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
                 # options without sasl.kerberos. prefix are passed to JAAS config
                 # names are in camel case!
                 "isInitiator": True,
-                # options with sasl.kerberos. prefix are passed to Kafka client config
+                # options with `sasl.kerberos.` prefix are passed to Kafka client config as-is
                 "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
             }
         )

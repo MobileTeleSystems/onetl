@@ -98,7 +98,10 @@ class Avro(ReadWriteFileFormat):
         schema = {
             "type": "record",
             "name": "Person",
-            "fields": [{"name": "name", "type": "string"}],
+            "fields": [
+                {"name": "name", "type": "string"},
+                {"name": "age", "type": "int"},
+            ],
         }
         avro = Avro(schema_dict=schema, compression="snappy")
 
@@ -210,12 +213,12 @@ class Avro(ReadWriteFileFormat):
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing Avro binary data to parse.
+            The name of the column or the column object containing Avro bytes to deserialize.
+            Schema should match the provided Avro schema.
 
         Returns
         -------
-        Column
-            A new Column object with data parsed from Avro binary to the specified structured format.
+        Column with deserialized data. Schema is matching the provided Avro schema. Column name is the same as input column.
 
         Raises
         ------
@@ -224,27 +227,51 @@ class Avro(ReadWriteFileFormat):
         ImportError
             If ``schema_url`` is used and the ``requests`` library is not installed.
 
-
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-
-            from onetl.file.format import Avro
-
-            spark = SparkSession.builder.appName("AvroParsingExample").getOrCreate()
-            schema_dict = {
-                "type": "record",
-                "name": "Person",
-                "fields": [{"name": "name", "type": "string"}],
-            }
-            avro = Avro(schema_dict=schema_dict)
-            df = spark.createDataFrame([("bytes_data_here",)], ["avro_data"])
-
-            parsed_df = df.select(avro.parse_column("avro_data"))
-            parsed_df.show()
-
+        >>> from pyspark.sql.functions import decode
+        >>> from onetl.file.format import Avro
+        >>> df.show()
+        +----+----------------------+----------+---------+------+-----------------------+-------------+
+        |key |value                 |topic     |partition|offset|timestamp              |timestampType|
+        +----+----------------------+----------+---------+------+-----------------------+-------------+
+        |[31]|[0A 41 6C 69 63 65 28]|topicAvro |0        |0     |2024-04-24 13:02:25.911|0            |
+        |[32]|[06 42 6F 62 32]      |topicAvro |0        |1     |2024-04-24 13:02:25.922|0            |
+        +----+----------------------+----------+---------+------+-----------------------+-------------+
+        >>> df.printSchema()
+        root
+        |-- key: binary (nullable = true)
+        |-- value: binary (nullable = true)
+        |-- topic: string (nullable = true)
+        |-- partition: integer (nullable = true)
+        |-- offset: integer (nullable = true)
+        |-- timestamp: timestamp (nullable = true)
+        |-- timestampType: integer (nullable = true)
+        >>> avro = Avro(
+        ...     schema_dict={
+        ...         "type": "record",
+        ...         "name": "Person",
+        ...         "fields": [
+        ...             {"name": "name", "type": "string"},
+        ...             {"name": "age", "type": "int"},
+        ...         ],
+        ...     }
+        ... )
+        >>> parsed_df = df.select(decode("key", "UTF-8").alias("key"), avro.parse_column("value"))
+        >>> parsed_df.show(truncate=False)
+        +---+-----------+
+        |key|value      |
+        +---+-----------+
+        |1  |{Alice, 20}|
+        |2  |{Bob, 25}  |
+        +---+-----------+
+        >>> parsed_df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
         """
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
         from pyspark.sql.functions import col
@@ -286,12 +313,11 @@ class Avro(ReadWriteFileFormat):
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing the data to serialize to Avro format.
+            The name of the column or the column object containing the data to serialize to Avro format.
 
         Returns
         -------
-        Column
-            A new Column object with data serialized from Spark SQL structures to Avro binary.
+        Column with binary Avro data. Column name is the same as input column.
 
         Raises
         ------
@@ -302,25 +328,45 @@ class Avro(ReadWriteFileFormat):
 
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-
-            from onetl.file.format import Avro
-
-            spark = SparkSession.builder.appName("AvroSerializationExample").getOrCreate()
-            schema_dict = {
-                "type": "record",
-                "name": "Person",
-                "fields": [{"name": "id", "type": "long"}, {"name": "name", "type": "string"}],
-            }
-
-            avro = Avro(schema_dict=schema_dict)
-            df = spark.createDataFrame([(1, "John Doe"), (2, "Jane Doe")], ["id", "name"])
-
-            serialized_df = df.select(avro.serialize_column("name"))
-            serialized_df.show()
-
+        >>> from pyspark.sql.functions import decode
+        >>> from onetl.file.format import Avro
+        >>> df.show()
+        +---+-----------+
+        |key|value      |
+        +---+-----------+
+        |1  |{Alice, 20}|
+        |2  |  {Bob, 25}|
+        +---+-----------+
+        >>> df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
+        >>> # serializing data into Avro format
+        >>> avro = Avro(
+        ...     schema_dict={
+        ...         "type": "record",
+        ...         "name": "Person",
+        ...         "fields": [
+        ...             {"name": "name", "type": "string"},
+        ...             {"name": "age", "type": "int"},
+        ...         ],
+        ...     }
+        ... )
+        >>> serialized_df = df.select("key", avro.serialize_column("value"))
+        >>> serialized_df.show(truncate=False)
+        +---+----------------------+
+        |key|value                 |
+        +---+----------------------+
+        |  1|[0A 41 6C 69 63 65 28]|
+        |  2|[06 42 6F 62 32]      |
+        +---+----------------------+
+        >>> serialized_df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: binary (nullable = true)
         """
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
         from pyspark.sql.functions import col

@@ -7,7 +7,9 @@ Kafka
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
+    troubleshooting
 
 .. toctree::
     :maxdepth: 1
@@ -30,12 +32,6 @@ Kafka
 
     read
     write
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Troubleshooting
-
-    format_handling
 
 .. toctree::
     :maxdepth: 1
