@@ -1,0 +1,4 @@
+Improve Kafka documentation:
+  * Add "Prerequisites" page describing different aspects of connecting to Kafka
+  * Improve "Reading from" and "Writing to" page of Kafka documentation, add more examples and usage notes.
+  * Add "Troubleshooting" page

@@ -66,7 +66,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
 
         protocol = Kafka.SSLProtocol.parse(
             {
-                # Just the same options as above, but using Kafka config naming
+                # Just the same options as above, but using Kafka config naming with dots
                 "ssl.keystore.type": "PEM",
                 "ssl.keystore.certificate_chain": "-----BEGIN CERTIFICATE-----\\nMIIDZjC...\\n-----END CERTIFICATE-----",
                 "ssl.keystore.key": "-----BEGIN PRIVATE KEY-----\\nMIIEvg..\\n-----END PRIVATE KEY-----",
@@ -79,7 +79,9 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
 
     .. dropdown :: Not recommended
 
-        Pass PEM certificates as files:
+        These options are error-prone and have several drawbacks, so it is not recommended to use them.
+
+        Passing PEM certificates as files:
 
         * ENCRYPT ``user.key`` file with password ``"some password"`` `using PKCS#8 scheme <https://www.mkssoftware.com/docs/man1/openssl_pkcs8.1.asp>`_.
         * Save encrypted key to file ``/path/to/user/encrypted_key_with_certificate_chain.pem``.
@@ -97,7 +99,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
                 truststore_location="/path/to/server.crt",
             )
 
-        Pass JKS (Java Key Store) location:
+        Passing JKS (Java Key Store) location:
 
         * `Add user key and certificate to JKS keystore <https://stackoverflow.com/a/4326346>`_.
         * `Add server certificate to JKS truststore <https://stackoverflow.com/a/373307>`_.

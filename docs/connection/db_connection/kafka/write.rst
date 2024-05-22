@@ -5,58 +5,68 @@ Writing to Kafka
 
 For writing data to Kafka, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>` with specific options (see below).
 
-.. note::
+Dataframe schema
+----------------
 
-    Unlike other connection classes, Kafka only accepts dataframe with fixed schema
-    (see `documentation <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_):
+Unlike other DB connections, Kafka does not have concept of columns.
+All the topics messages have the same set of fields. Only some of them can be written:
 
-    .. dropdown:: DataFrame Schema
+.. code:: text
 
-        .. code:: python
+    root
+    |-- key: binary (nullable = true)
+    |-- value: binary (nullable = true)
+    |-- headers: struct (nullable = true)
+        |-- key: string (nullable = false)
+        |-- value: binary (nullable = true)
 
-            from pyspark.sql.types import (
-                ArrayType,
-                BinaryType,
-                IntegerType,
-                StringType,
-                StructField,
-                StructType,
-            )
+``headers`` can be passed only with ``Kafka.WriteOptions(include_headers=True)`` (compatibility with Kafka 1.x).
 
-            schema = StructType(
-                [
-                    # mandatory fields:
-                    StructField("value", BinaryType(), nullable=True),
-                    # optional fields, can be omitted:
-                    StructField("key", BinaryType(), nullable=True),
-                    StructField("partition", IntegerType(), nullable=True),
-                    # this field can be passed only with ``include_headers=True``
-                    StructField(
-                        "headers",
-                        ArrayType(
-                            StructType(
-                                [
-                                    StructField("key", StringType(), nullable=False),
-                                    StructField("value", BinaryType(), nullable=True),
-                                ],
-                            ),
-                        ),
-                        nullable=True,
-                    ),
-                ],
-            )
+Field ``topic`` should not be present in the dataframe, as it is passed to ``DBWriter(target=...)``.
 
-    You cannot pass dataframe with other column names or types.
+Other fields, like ``partition``, ``offset``, ``timestamp`` are set by Kafka, and cannot be passed explicitly.
 
-.. warning::
+Value serialization
+-------------------
 
-    Columns:
+To write ``value`` or ``key`` of other type than bytes (e.g. struct or integer), users have to serialize values manually.
 
-    * ``value``
-    * ``key``
-    * ``headers[*].value``
+This could be done using following methods:
+    * :obj:`Avro.serialize_column <onetl.file.format.avro.Avro.serialize_column>`
+    * :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>`
+    * :obj:`CSV.serialize_column <onetl.file.format.csv.CSV.serialize_column>`
 
-    can only be string or raw bytes. If they contain values of custom type, these values should be serialized manually.
+Examples
+--------
+
+Convert ``value`` to JSON string, and write to Kafka:
+
+.. code-block:: python
+
+    from onetl.connection import Kafka
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
+
+    df = ...  # original data is here
+
+    # serialize struct data as JSON
+    json = JSON()
+    write_df = df.select(
+        df.key,
+        json.serialize_column(df.value),
+    )
+
+    # write data to Kafka
+    kafka = Kafka(...)
+
+    writer = DBWriter(
+        connection=kafka,
+        target="topic_name",
+    )
+    writer.run(write_df)
+
+Options
+-------
 
 .. currentmodule:: onetl.connection.db_connection.kafka.options
 

@@ -58,6 +58,7 @@ extensions = [
     "sphinxcontrib.plantuml",
     "sphinx.ext.extlinks",
     "sphinx_favicon",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False

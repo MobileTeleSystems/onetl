@@ -57,15 +57,13 @@ class Kafka(DBConnection):
     Based on `official Kafka Source For Spark
     <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
+    .. warning::
+
+        Before using this connector please take into account :ref:`kafka-prerequisites`
+
     .. note::
 
-        This connector is for batch download from kafka and not streaming.
-
-    .. dropdown:: Version compatibility
-
-        * Apache Kafka versions: 0.10 or higher
-        * Spark versions: 2.4.x - 3.5.x
-        * Scala versions: 2.11 - 2.13
+        This connector is for **batch** ETL processes, not streaming.
 
     Parameters
     ----------

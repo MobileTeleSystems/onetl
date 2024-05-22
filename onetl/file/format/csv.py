@@ -126,32 +126,52 @@ class CSV(ReadWriteFileFormat):
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing CSV strings to parse.
+            The name of the column or the column object containing CSV strings/bytes to parse.
 
         schema : StructType
-            The schema to apply when parsing the CSV data. This defines the structure of the output DataFrame CSV column.
+            The schema to apply when parsing the CSV data. This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        Column
-            A new Column object with data parsed from CSV string to the specified CSV structured format.
+        Column with deserialized data, with the same structure as the provided schema. Column name is the same as input column.
 
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-            from pyspark.sql.types import StructType, StructField, IntegerType, StringType
-
-            spark = SparkSession.builder.appName("CSVParsingExample").getOrCreate()
-            csv = CSV()
-            df = spark.createDataFrame([("1,some",), ("2,another",)], ["csv_string"])
-            schema = StructType(
-                [StructField("id", IntegerType()), StructField("text", StringType())]
-            )
-
-            parsed_df = df.select(csv.parse_column("csv_string", schema))
-            parsed_df.show()
+        >>> from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+        >>> from onetl.file.format import CSV
+        >>> df.show()
+        +--+--------+
+        |id|value   |
+        +--+--------+
+        |1 |Alice;20|
+        |2 |Bob;25  |
+        +--+--------+
+        >>> df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: string (nullable = true)
+        >>> csv = CSV(delimiter=";")
+        >>> csv_schema = StructType(
+        ...     [
+        ...         StructField("name", StringType(), nullable=True),
+        ...         StructField("age", IntegerType(), nullable=True),
+        ...     ],
+        ... )
+        >>> parsed_df = df.select("id", csv.parse_column("value", csv_schema))
+        >>> parsed_df.show()
+        +--+-----------+
+        |id|value      |
+        +--+-----------+
+        |1 |{Alice, 20}|
+        |2 |  {Bob, 25}|
+        +--+-----------+
+        >>> parsed_df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
         """
 
         from pyspark.sql import Column, SparkSession  # noqa: WPS442
@@ -188,23 +208,40 @@ class CSV(ReadWriteFileFormat):
 
         Returns
         -------
-        Column
-            A new Column object with data serialized from Spark SQL structures to CSV string.
+        Column with string CSV data. Column name is the same as input column.
 
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-            from pyspark.sql.functions import struct
-
-            spark = SparkSession.builder.appName("CSVSerializationExample").getOrCreate()
-            csv = CSV()
-            df = spark.createDataFrame([(123, "John")], ["id", "name"])
-            df = df.withColumn("combined", struct("id", "name"))
-
-            serialized_df = df.select(csv.serialize_column("combined"))
-            serialized_df.show()
+        >>> from pyspark.sql.functions import decode
+        >>> from onetl.file.format import CSV
+        >>> df.show()
+        +--+-----------+
+        |id|value      |
+        +--+-----------+
+        |1 |{Alice, 20}|
+        |2 |  {Bob, 25}|
+        +--+-----------+
+        >>> df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
+        >>> # serializing data into CSV format
+        >>> csv = CSV(delimiter=";")
+        >>> serialized_df = df.select("id", csv.serialize_column("value"))
+        >>> serialized_df.show(truncate=False)
+        +--+--------+
+        |id|value   |
+        +--+--------+
+        |1 |Alice;20|
+        |2 |Bob;25  |
+        +--+--------+
+        >>> serialized_df.printSchema()
+        root
+        |-- id: integer (nullable = true)
+        |-- value: string (nullable = true)
         """
 
         from pyspark.sql import Column, SparkSession  # noqa: WPS442

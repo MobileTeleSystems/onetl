@@ -113,32 +113,58 @@ class JSON(ReadOnlyFileFormat):
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing JSON strings to parse.
+            The name of the column or the column object containing JSON strings/bytes to parse.
 
         schema : StructType | ArrayType | MapType
             The schema to apply when parsing the JSON data. This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        Column
-            A new Column object with data parsed from JSON string to the specified structure.
+        Column with deserialized data, with the same structure as the provided schema. Column name is the same as input column.
 
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-            from pyspark.sql.types import StructType, StructField, IntegerType, StringType
-
-            spark = SparkSession.builder.appName("JSONParsingExample").getOrCreate()
-            json = JSON()
-            df = spark.createDataFrame([(1, '{"id":123, "name":"John"}')], ["id", "json_string"])
-            schema = StructType(
-                [StructField("id", IntegerType()), StructField("name", StringType())]
-            )
-
-            parsed_df = df.select(json.parse_column("json_string", schema))
-            parsed_df.show()
+        >>> from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+        >>> from pyspark.sql.functions import decode
+        >>> from onetl.file.format import JSON
+        >>> df.show()
+        +----+--------------------+----------+---------+------+-----------------------+-------------+
+        |key |value               |topic     |partition|offset|timestamp              |timestampType|
+        +----+--------------------+----------+---------+------+-----------------------+-------------+
+        |[31]|[7B 22 6E 61 6D 6...|topicJSON |0        |0     |2024-04-24 16:51:11.739|0            |
+        |[32]|[7B 22 6E 61 6D 6...|topicJSON |0        |1     |2024-04-24 16:51:11.749|0            |
+        +----+--------------------+----------+---------+------+-----------------------+-------------+
+        >>> df.printSchema()
+        root
+        |-- key: binary (nullable = true)
+        |-- value: binary (nullable = true)
+        |-- topic: string (nullable = true)
+        |-- partition: integer (nullable = true)
+        |-- offset: integer (nullable = true)
+        |-- timestamp: timestamp (nullable = true)
+        |-- timestampType: integer (nullable = true)
+        >>> json = JSON()
+        >>> json_schema = StructType(
+        ...     [
+        ...         StructField("name", StringType(), nullable=True),
+        ...         StructField("age", IntegerType(), nullable=True),
+        ...     ],
+        ... )
+        >>> parsed_df = df.select(decode("key", "UTF-8").alias("key"), json.parse_column("value", json_schema))
+        >>> parsed_df.show()
+        +---+-----------+
+        |key|value      |
+        +---+-----------+
+        |1  |{Alice, 20}|
+        |2  |  {Bob, 25}|
+        +---+-----------+
+        >>> parsed_df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
         """
         from pyspark.sql import Column, SparkSession  # noqa:  WPS442
         from pyspark.sql.functions import col, from_json
@@ -155,32 +181,50 @@ class JSON(ReadOnlyFileFormat):
 
     def serialize_column(self, column: str | Column) -> Column:
         """
-        Serializes a structured Spark SQL column into a JSON string column using Spark's `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+        Serializes a structured Spark SQL column into a JSON string column using Spark's
+        `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
 
         Parameters
         ----------
         column : str | Column
-            The name of the column or the Column object containing the data to serialize to JSON.
+            The name of the column or the column object containing the data to serialize to JSON format.
 
         Returns
         -------
-        Column
-            A new Column object with data serialized from Spark SQL structures to JSON string.
+        Column with string JSON data. Column name is the same as input column.
 
         Examples
         --------
-        .. code:: python
 
-            from pyspark.sql import SparkSession
-            from pyspark.sql.functions import struct
-
-            spark = SparkSession.builder.appName("JSONSerializationExample").getOrCreate()
-            json = JSON()
-            df = spark.createDataFrame([(123, "John")], ["id", "name"])
-            df = df.withColumn("combined", struct("id", "name"))
-
-            serialized_df = df.select(json.serialize_column("combined"))
-            serialized_df.show()
+        >>> from pyspark.sql.functions import decode
+        >>> from onetl.file.format import JSON
+        >>> df.show()
+        +---+-----------+
+        |key|value      |
+        +---+-----------+
+        |1  |{Alice, 20}|
+        |2  |  {Bob, 25}|
+        +---+-----------+
+        >>> df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: struct (nullable = true)
+        |    |-- name: string (nullable = true)
+        |    |-- age: integer (nullable = true)
+        >>> # serializing data into JSON format
+        >>> json = JSON()
+        >>> serialized_df = df.select("key", json.serialize_column("value"))
+        >>> serialized_df.show(truncate=False)
+        +---+-------------------------+
+        |key|value                    |
+        +---+-------------------------+
+        |  1|{"name":"Alice","age":20}|
+        |  2|{"name":"Bob","age":25}  |
+        +---+-------------------------+
+        >>> serialized_df.printSchema()
+        root
+        |-- key: string (nullable = true)
+        |-- value: string (nullable = true)
         """
         from pyspark.sql import Column, SparkSession  # noqa:  WPS442
         from pyspark.sql.functions import col, to_json
