@@ -53,31 +53,9 @@ class SparkS3(SparkFileDFConnection):
     Based on `Hadoop-AWS module <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_
     and `Spark integration with Cloud Infrastructures <https://spark.apache.org/docs/latest/cloud-integration.html>`_.
 
-    .. dropdown:: Version compatibility
-
-        * Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
-        * Scala versions: 2.12 - 2.13
-        * Java versions: 8 - 20
-
     .. warning::
 
-        See :ref:`spark-s3-troubleshooting` guide.
-
-    .. warning::
-
-        To use SparkS3 connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`spark-s3-prerequisites`
 
     .. note::
 

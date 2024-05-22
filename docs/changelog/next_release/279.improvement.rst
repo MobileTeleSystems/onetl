@@ -1,0 +1,1 @@
+Add "Prerequisites" page describing different aspects of using SparkHDFS and SparkS3 connectors.
