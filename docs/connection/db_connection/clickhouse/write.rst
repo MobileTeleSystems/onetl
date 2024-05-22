@@ -45,11 +45,12 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
+Method above accepts  :obj:`ClickhouseWriteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions>`
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.clickhouse.options
 
-.. autopydantic_model:: JDBCWriteOptions
+.. autopydantic_model:: ClickhouseWriteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

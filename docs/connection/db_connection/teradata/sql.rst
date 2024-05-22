@@ -71,7 +71,7 @@ Options
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 
 .. autopydantic_model:: TeradataSQLOptions
-    :inherited-members: JDBCOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

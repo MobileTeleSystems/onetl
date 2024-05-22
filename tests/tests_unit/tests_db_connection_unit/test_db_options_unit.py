@@ -39,8 +39,8 @@ def test_db_options_connection_parameters_cannot_be_passed(options_class, arg, v
     [
         (Hive.WriteOptions, "HiveWriteOptions", {"if_exists": "replace_overlapping_partitions"}),
         (Hive.Options, "HiveLegacyOptions", {"if_exists": "replace_overlapping_partitions"}),
-        (Postgres.ReadOptions, "JDBCReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
-        (Postgres.WriteOptions, "JDBCWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
+        (Postgres.ReadOptions, "PostgresReadOptions", {"fetchsize": 10, "keytab": "a/b/c"}),
+        (Postgres.WriteOptions, "PostgresWriteOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Postgres.Options, "JDBCLegacyOptions", {"if_exists": "replace_entire_table", "keytab": "a/b/c"}),
         (Greenplum.ReadOptions, "GreenplumReadOptions", {"partitions": 10}),
         (Greenplum.WriteOptions, "GreenplumWriteOptions", {"if_exists": "replace_entire_table"}),

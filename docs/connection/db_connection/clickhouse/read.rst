@@ -88,5 +88,7 @@ Options
 .. currentmodule:: onetl.connection.db_connection.clickhouse.options
 
 .. autopydantic_model:: ClickhouseReadOptions
-    :inherited-members: JDBCReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

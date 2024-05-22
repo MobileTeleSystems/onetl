@@ -118,5 +118,5 @@ Options
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 
 .. autopydantic_model:: TeradataReadOptions
-    :inherited-members: JDBCReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

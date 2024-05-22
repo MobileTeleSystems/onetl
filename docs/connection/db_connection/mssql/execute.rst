@@ -20,7 +20,7 @@ Use ``MSSQL.fetch``
 Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`MSSQLFetchOptions <onetl.connection.db_connection.mssql.options.MSSQLFetchOptions>`.
+Method accepts :obj:`MSSQL.FetchOptions <onetl.connection.db_connection.mssql.options.MSSQLFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -59,7 +59,7 @@ Use ``MSSQL.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`MSSQLExecuteOptions <onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions>`.
+Method accepts :obj:`MSSQL.ExecuteOptions <onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -106,9 +106,13 @@ Options
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 
 .. autopydantic_model:: MSSQLFetchOptions
-    :inherited-members: JDBCFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
 
 .. autopydantic_model:: MSSQLExecuteOptions
-    :inherited-members: JDBCExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

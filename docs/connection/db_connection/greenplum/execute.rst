@@ -20,7 +20,7 @@ Use ``Greenplum.fetch``
 Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 Greenplum config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`GreenplumFetchOptions <onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions>`.
+Method accepts :obj:`Greenplum.FetchOptions <onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -60,7 +60,7 @@ Use ``Greenplum.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`GreenplumExecuteOptions <onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions>`.
+Method accepts :obj:`Greenplum.ExecuteOptions <onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -146,10 +146,14 @@ Options
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 
 .. autopydantic_model:: GreenplumFetchOptions
-    :inherited-members: JDBCFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
 
 
 .. autopydantic_model:: GreenplumExecuteOptions
-    :inherited-members: JDBCExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

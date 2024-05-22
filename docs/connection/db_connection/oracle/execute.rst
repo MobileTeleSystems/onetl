@@ -20,7 +20,7 @@ Use ``Oracle.fetch``
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
 Oracle config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`OracleFetchOptions <onetl.connection.db_connection.oracle.options.OracleFetchOptions>`.
+Method accepts :obj:`Oracle.FetchOptions <onetl.connection.db_connection.oracle.options.OracleFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -60,7 +60,7 @@ Use ``Oracle.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`OracleExecuteOptions <onetl.connection.db_connection.oracle.options.OracleExecuteOptions>`.
+Method accepts :obj:`Oracle.ExecuteOptions <onetl.connection.db_connection.oracle.options.OracleExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -107,10 +107,10 @@ Options
 .. currentmodule:: onetl.connection.db_connection.oracle.options
 
 .. autopydantic_model:: OracleFetchOptions
-    :inherited-members: JDBCFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
 
 
 .. autopydantic_model:: OracleExecuteOptions
-    :inherited-members: JDBCExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

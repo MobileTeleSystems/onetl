@@ -90,5 +90,5 @@ Options
 .. currentmodule:: onetl.connection.db_connection.mysql.options
 
 .. autopydantic_model:: MySQLReadOptions
-    :inherited-members: JDBCReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

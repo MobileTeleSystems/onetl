@@ -74,7 +74,7 @@ Options
 .. currentmodule:: onetl.connection.db_connection.oracle.options
 
 .. autopydantic_model:: OracleSQLOptions
-    :inherited-members: JDBCOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

@@ -20,7 +20,7 @@ Use ``MySQL.fetch``
 Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 MySQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`MySQLFetchOptions <onetl.connection.db_connection.mysql.options.MySQLFetchOptions>`.
+Method accepts :obj:`MySQL.FetchOptions <onetl.connection.db_connection.mysql.options.MySQLFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -60,7 +60,7 @@ Use ``MySQL.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`MySQLExecuteOptions <onetl.connection.db_connection.mysql.options.MySQLExecuteOptions>`.
+Method accepts :obj:`MySQL.ExecuteOptions <onetl.connection.db_connection.mysql.options.MySQLExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -107,10 +107,10 @@ Options
 .. currentmodule:: onetl.connection.db_connection.mysql.options
 
 .. autopydantic_model:: MySQLFetchOptions
-    :inherited-members: JDBCFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
 
 
 .. autopydantic_model:: MySQLExecuteOptions
-    :inherited-members: JDBCExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

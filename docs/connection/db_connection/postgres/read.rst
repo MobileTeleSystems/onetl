@@ -88,5 +88,5 @@ Options
 .. currentmodule:: onetl.connection.db_connection.postgres.options
 
 .. autopydantic_model:: PostgresReadOptions
-    :inherited-members: JDBCReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

@@ -110,11 +110,12 @@ Choosing one of the modes can alter connector behavior. For example:
 Options
 -------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
+Method above accepts  :obj:`TeradataWriteOptions <onetl.connection.db_connection.teradata.options.TeradataWriteOptions>`
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.teradata.options
 
-.. autopydantic_model:: JDBCWriteOptions
+.. autopydantic_model:: TeradataWriteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

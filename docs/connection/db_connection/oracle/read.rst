@@ -90,5 +90,5 @@ Options
 .. currentmodule:: onetl.connection.db_connection.oracle.options
 
 .. autopydantic_model:: OracleReadOptions
-    :inherited-members: JDBCReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

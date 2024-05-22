@@ -20,7 +20,7 @@ Use ``Teradata.fetch``
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
 Teradata config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`TeradataFetchOptions <onetl.connection.db_connection.teradata.options.TeradataFetchOptions>`.
+Method accepts :obj:`Teradata.FetchOptions <onetl.connection.db_connection.teradata.options.TeradataFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -55,7 +55,7 @@ Use ``Teradata.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`TeradataExecuteOptions <onetl.connection.db_connection.teradata.options.TeradataExecuteOptions>`.
+Method accepts :obj:`Teradata.ExecuteOptions <onetl.connection.db_connection.teradata.options.TeradataExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -104,10 +104,10 @@ Options
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 
 .. autopydantic_model:: TeradataFetchOptions
-    :inherited-members: JDBCFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
 
 
 .. autopydantic_model:: TeradataExecuteOptions
-    :inherited-members: JDBCExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource

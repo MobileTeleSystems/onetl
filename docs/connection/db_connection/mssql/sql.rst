@@ -73,7 +73,7 @@ Options
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 
 .. autopydantic_model:: MSSQLSQLOptions
-    :inherited-members: JDBCOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

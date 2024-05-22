@@ -40,11 +40,12 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
+Method above accepts  :obj:`OracleWriteOptions <onetl.connection.db_connection.oracle.options.OracleWriteOptions>`
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.oracle.options
 
-.. autopydantic_model:: JDBCWriteOptions
+.. autopydantic_model:: OracleWriteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

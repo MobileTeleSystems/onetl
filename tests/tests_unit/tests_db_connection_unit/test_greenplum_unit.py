@@ -233,8 +233,8 @@ def test_greenplum_write_options_default():
     [
         (Greenplum.ReadOptions, "GreenplumReadOptions"),
         (Greenplum.WriteOptions, "GreenplumWriteOptions"),
-        (Greenplum.FetchOptions, "JDBCFetchOptions"),
-        (Greenplum.ExecuteOptions, "JDBCExecuteOptions"),
+        (Greenplum.FetchOptions, "GreenplumFetchOptions"),
+        (Greenplum.ExecuteOptions, "GreenplumExecuteOptions"),
         (Greenplum.Extra, "GreenplumExtra"),
     ],
 )
