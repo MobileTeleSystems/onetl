@@ -34,7 +34,8 @@ Supported DBReader features
     In case of Greenplum connector, ``DBReader`` does not generate raw ``SELECT`` query. Instead it relies on Spark SQL syntax
     which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.
 
-    So ``columns``, ``where`` and ``hwm.expression`` should be specified in Spark SQL syntax, not Greenplum SQL.
+    So ``columns``, ``where`` and ``hwm.expression`` should be specified in `Spark SQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html>`_ syntax,
+    not Greenplum SQL.
 
     This is OK:
 

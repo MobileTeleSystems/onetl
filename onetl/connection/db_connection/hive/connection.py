@@ -39,47 +39,9 @@ log = logging.getLogger(__name__)
 class Hive(DBConnection):
     """Spark connection with Hive MetaStore support. |support_hooks|
 
-    You don't need a Hive server to use this connector.
-
-    .. dropdown:: Version compatibility
-
-        * Hive metastore version: 0.12 - 3.1.2 (may require to add proper .jar file explicitly)
-        * Spark versions: 2.3.x - 3.5.x
-        * Java versions: 8 - 20
-
     .. warning::
 
-        To use Hive connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
-
-    .. warning::
-
-        This connector requires some additional configuration files to be present (``hive-site.xml`` and so on),
-        as well as .jar files with Hive MetaStore client.
-
-        See `Spark Hive Tables documentation <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_
-        and `this guide <https://dataedo.com/docs/apache-spark-hive-metastore>`_ for more details.
-
-    .. note::
-
-        Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
-        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`install-kerberos`.
-
-        In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
-        to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
-        See `Spark security documentation <https://spark.apache.org/docs/latest/security.html#kerberos>`_
-        for more details.
+        Before using this connector please take into account :ref:`hive-prerequisites`
 
     Parameters
     ----------
@@ -92,7 +54,7 @@ class Hive(DBConnection):
     Examples
     --------
 
-    Hive connection initialization
+    Hive connection initialization:
 
     .. code:: python
 
@@ -105,7 +67,11 @@ class Hive(DBConnection):
         # Create connection
         hive = Hive(cluster="rnd-dwh", spark=spark).check()
 
-    Hive connection initialization with Kerberos support
+    Hive connection initialization with Kerberos support:
+
+    .. code:: bash
+
+        $ kinit -kt /path/to/keytab user
 
     .. code:: python
 
@@ -221,28 +187,13 @@ class Hive(DBConnection):
         ----------
         query : str
 
-            SQL query to be executed, like:
-
-            * ``SELECT ... FROM ...``
-            * ``WITH ... AS (...) SELECT ... FROM ...``
-            * ``SHOW ...`` queries are also supported, like ``SHOW TABLES``
+            SQL query to be executed.
 
         Returns
         -------
         df : pyspark.sql.dataframe.DataFrame
 
             Spark dataframe
-
-        Examples
-        --------
-
-        Read data from Hive table:
-
-        .. code:: python
-
-            connection = Hive(cluster="rnd-dwh", spark=spark)
-
-            df = connection.sql("SELECT * FROM mytable")
         """
 
         query = clear_statement(query)
@@ -266,43 +217,7 @@ class Hive(DBConnection):
         ----------
         statement : str
 
-            Statement to be executed, like:
-
-            DML statements:
-
-            * ``INSERT INTO target_table SELECT * FROM source_table``
-            * ``TRUNCATE TABLE mytable``
-
-            DDL statements:
-
-            * ``CREATE TABLE mytable (...)``
-            * ``ALTER TABLE mytable ...``
-            * ``DROP TABLE mytable``
-            * ``MSCK REPAIR TABLE mytable``
-
-            The exact list of supported statements depends on Hive version,
-            for example some new versions support ``CREATE FUNCTION`` syntax.
-
-        Examples
-        --------
-
-        Create table:
-
-        .. code:: python
-
-            connection = Hive(cluster="rnd-dwh", spark=spark)
-
-            connection.execute(
-                "CREATE TABLE mytable (id NUMBER, data VARCHAR) PARTITIONED BY (date DATE)"
-            )
-
-        Drop table partition:
-
-        .. code:: python
-
-            connection = Hive(cluster="rnd-dwh", spark=spark)
-
-            connection.execute("ALTER TABLE mytable DROP PARTITION(date='2023-02-01')")
+            Statement to be executed.
         """
 
         statement = clear_statement(statement)
