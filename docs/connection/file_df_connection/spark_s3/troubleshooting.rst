@@ -215,13 +215,13 @@ If you change port number, this does not lead to changing protocol:
 
 .. code:: python
 
-    spark_s3 = SparkS3(host="s3.domain.com", port=8080, ...)
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
 
 You should pass protocol explicitly:
 
 .. code:: python
 
-    spark_s3 = SparkS3(host="s3.domain.com", port=8080, protocol="http", ...)
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
 
 SSL certificate is self-signed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -251,20 +251,14 @@ Accessing S3 without domain-style access style support
 
 .. code:: txt
 
-    Caused by: java.net.UnknownHostException: my-bucket.s3.domain.com
-
-By default, Hadoop AWS uses domain-style access ``my-bucket.domain.com`` instead of path-style access ``domain.com/my-bucket``,
-because this is default option for AWS S3.
-
-But some S3 implementations does not support domain-style access, e.g. MinIO by default allows only path-style access
-(see `MINIO_DOMAIN <https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_DOMAIN>`_).
+    Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
 
 To use path-style access, use option below:
 
 .. code:: python
 
     spark_s3 = SparkS3(
-        host="s3.domain.com",
+        host="s3provider.com",
         bucket="my-bucket",
         ...,
         extra={
