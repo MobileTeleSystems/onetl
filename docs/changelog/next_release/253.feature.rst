@@ -1,1 +1,1 @@
-:class:`MySQL` connection now uses MySQL JDBC driver ``8.3.0``, upgraded from ``8.0.33``, and supports passing custom versions: ``MySQL.get_packages(package_version=...)``.
+:class:`MySQL` connection now uses MySQL JDBC driver ``8.4.0``, upgraded from ``8.0.33``, and supports passing custom versions: ``MySQL.get_packages(package_version=...)``.
