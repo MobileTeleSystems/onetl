@@ -6,7 +6,7 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* MySQL server versions: 5.7, 8.0
+* MySQL server versions: 5.7 - 8.4
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 
