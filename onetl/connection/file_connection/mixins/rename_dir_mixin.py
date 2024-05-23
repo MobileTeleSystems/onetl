@@ -23,6 +23,8 @@ class RenameDirMixin(BaseFileConnection):
         """
         Rename or move dir on remote filesystem.
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         source_dir_path : str or :obj:`os.PathLike`

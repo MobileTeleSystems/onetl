@@ -30,6 +30,8 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
     * `IBM Documentation <https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/19.0.x?topic=fcee-kafka-using-ssl-kerberos-authentication>`_
     * `How to use PEM Certificates with Kafka <https://codingharbour.com/apache-kafka/using-pem-certificates-with-apache-kafka/>`_
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 

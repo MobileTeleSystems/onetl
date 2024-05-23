@@ -50,6 +50,8 @@ class Postgres(JDBCConnection):
 
         Before using this connector please take into account :ref:`postgres-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str
@@ -130,6 +132,8 @@ class Postgres(JDBCConnection):
     def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
         Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

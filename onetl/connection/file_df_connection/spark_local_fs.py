@@ -43,6 +43,8 @@ class SparkLocalFS(SparkFileDFConnection):
 
         Does NOT support file operations, like create, delete, rename, etc.
 
+    .. versionadded:: 0.9.0
+
     Parameters
     ----------
     spark : :class:`pyspark.sql.SparkSession`

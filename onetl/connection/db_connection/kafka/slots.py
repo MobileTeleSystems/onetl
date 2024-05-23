@@ -7,7 +7,11 @@ from onetl.hooks import slot, support_hooks
 
 @support_hooks
 class KafkaSlots:
-    """Kafka slots that could be implemented by third-party plugins"""
+    """
+    Kafka slots that could be implemented by third-party plugins
+
+    .. versionadded:: 0.9.0
+    """
 
     @slot
     @staticmethod
@@ -16,6 +20,8 @@ class KafkaSlots:
         Normalize the given Kafka cluster name.
 
         This can be used to ensure that the Kafka cluster name conforms to specific naming conventions.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -50,6 +56,8 @@ class KafkaSlots:
 
         This can be used to validate if the provided Kafka cluster name is recognized in the system.
 
+        .. versionadded:: 0.9.0
+
         Returns
         -------
         set[str] | None
@@ -77,6 +85,8 @@ class KafkaSlots:
         Normalize the given broker address for a specific Kafka cluster.
 
         This can be used to format the broker address according to specific rules, such as adding default ports.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -114,6 +124,8 @@ class KafkaSlots:
         Retrieve a collection of known broker addresses for the specified Kafka cluster.
 
         This can be used to obtain the broker addresses dynamically.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

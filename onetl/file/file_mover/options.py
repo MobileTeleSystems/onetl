@@ -13,7 +13,10 @@ from onetl.impl import FileExistBehavior, GenericOptions
 
 
 class FileMoverOptions(GenericOptions):
-    """File moving options"""
+    """File moving options.
+
+    .. versionadded:: 0.8.0
+    """
 
     if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
     """
@@ -24,6 +27,11 @@ class FileMoverOptions(GenericOptions):
         * ``ignore`` - do nothing, mark file as ignored
         * ``replace_file`` - replace existing file with a new one
         * ``replace_entire_directory`` - delete directory content before moving files
+
+    .. versionadded:: 0.8.0
+
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     workers: int = Field(default=1, ge=1)
@@ -34,6 +42,8 @@ class FileMoverOptions(GenericOptions):
     2 or more means files will be moved in parallel workers.
 
     Recommended value is ``min(32, os.cpu_count() + 4)``, e.g. ``5``.
+
+    .. versionadded:: 0.8.1
     """
 
     @root_validator(pre=True)

@@ -15,13 +15,17 @@ from onetl.base.path_stat_protocol import PathStatProtocol
 
 class BaseFileConnection(BaseConnection):
     """
-    Implements generic methods for files and directories manipulation on some filesystem (usually remote)
+    Implements generic methods for files and directories manipulation on some filesystem (usually remote).
+
+    .. versionadded:: 0.8.0
     """
 
     @abstractmethod
     def path_exists(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path exists on remote filesystem. |support_hooks|
+        Check if specified path exists on remote filesystem. |support_hooks|.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -47,6 +51,8 @@ class BaseFileConnection(BaseConnection):
     def is_file(self, path: os.PathLike | str) -> bool:
         """
         Check if specified path is a file. |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -76,6 +82,8 @@ class BaseFileConnection(BaseConnection):
         """
         Check if specified path is a directory. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -104,6 +112,8 @@ class BaseFileConnection(BaseConnection):
         """
         Returns stats for a specific path. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -131,6 +141,8 @@ class BaseFileConnection(BaseConnection):
     def resolve_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
         Returns directory at specific path, with stats. |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -164,6 +176,8 @@ class BaseFileConnection(BaseConnection):
         """
         Returns file at specific path, with stats. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -195,6 +209,8 @@ class BaseFileConnection(BaseConnection):
     def create_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
         Creates directory tree on remote filesystem. |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -229,6 +245,8 @@ class BaseFileConnection(BaseConnection):
 
             Supports only one file removal per call. Directory removal is **NOT** supported, use :obj:`~remove_dir` instead.
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -260,6 +278,8 @@ class BaseFileConnection(BaseConnection):
         Remove directory or directory tree. |support_hooks|
 
         If directory does not exist, no exception is raised.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -304,6 +324,8 @@ class BaseFileConnection(BaseConnection):
         .. warning::
 
             Supports only one file move per call. Directory move/rename is **NOT** supported.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -353,6 +375,8 @@ class BaseFileConnection(BaseConnection):
         """
         Return list of child files/directories in a specific directory. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -399,6 +423,8 @@ class BaseFileConnection(BaseConnection):
         Walk into directory tree, and iterate over its content in all nesting levels. |support_hooks|
 
         Just like :obj:`os.walk`, but with additional filter/limit logic.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -457,6 +483,8 @@ class BaseFileConnection(BaseConnection):
         .. warning::
 
             Supports only one file download per call. Directory download is **NOT** supported, use :ref:`file-downloader` instead.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -518,6 +546,8 @@ class BaseFileConnection(BaseConnection):
 
             Supports only one file upload per call. Directory upload is **NOT** supported, use :ref:`file-uploader` instead.
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         local_file_path : str or :obj:`os.PathLike`
@@ -569,6 +599,8 @@ class BaseFileConnection(BaseConnection):
         r"""
         Returns string content of a file at specific path. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -600,6 +632,8 @@ class BaseFileConnection(BaseConnection):
     def read_bytes(self, path: os.PathLike | str) -> bytes:
         """
         Returns binary content of a file at specific path. |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -638,6 +672,8 @@ class BaseFileConnection(BaseConnection):
         .. warning::
 
             If file already exists, its content will be replaced.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -680,6 +716,8 @@ class BaseFileConnection(BaseConnection):
         .. warning::
 
             If file already exists, its content will be replaced.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------

@@ -67,6 +67,8 @@ class FileMover(FrozenModel):
 
         This class does **not** support read strategies.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -89,7 +91,7 @@ class FileMover(FrozenModel):
         See :ref:`file-limits`
 
     options : :obj:`~FileMover.Options`  | dict | None, default: ``None``
-        File moving options. See :obj:`~FileMover.Options`
+        File moving options. See :obj:`FileMover.Options <onetl.file.file_mover.options.FileMoverOptions>`
 
     Examples
     --------
@@ -162,6 +164,8 @@ class FileMover(FrozenModel):
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:  # noqa: WPS231
         """
         Method for moving files from source to target directory. |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -308,6 +312,8 @@ class FileMover(FrozenModel):
         """
         Get file list in the ``source_path``,
         after ``filter`` and ``limit`` applied (if any). |support_hooks|
+
+        .. versionadded:: 0.8.0
 
         Raises
         ------

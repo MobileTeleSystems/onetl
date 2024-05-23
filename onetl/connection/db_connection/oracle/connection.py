@@ -88,6 +88,8 @@ class Oracle(JDBCConnection):
 
         Before using this connector please take into account :ref:`oracle-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str

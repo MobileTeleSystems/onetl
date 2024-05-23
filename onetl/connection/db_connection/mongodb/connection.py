@@ -57,6 +57,8 @@ class MongoDB(DBConnection):
 
         Before using this connector please take into account :ref:`mongodb-prerequisites`
 
+    .. versionadded:: 0.7.0
+
     Parameters
     ----------
     host : str
@@ -138,6 +140,8 @@ class MongoDB(DBConnection):
         """
         Get package names to be downloaded by Spark. Allows specifying custom MongoDB Spark connector versions. |support_hooks|
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         scala_version : str, optional
@@ -150,6 +154,8 @@ class MongoDB(DBConnection):
 
         package_version : str, optional
             Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.3.0``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------
@@ -237,6 +243,8 @@ class MongoDB(DBConnection):
             This method does not support :ref:`strategy`,
             use :obj:`DBReader <onetl.db.db_reader.db_reader.DBReader>` instead
 
+        .. versionadded:: 0.7.0
+
         Parameters
         ----------
 
@@ -251,7 +259,7 @@ class MongoDB(DBConnection):
             Schema describing the resulting DataFrame.
 
         options : PipelineOptions | dict, optional
-            Additional pipeline options, see :obj:`~PipelineOptions`.
+            Additional pipeline options, see :obj:`MongoDB.PipelineOptions <onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions>`.
 
         Examples
         --------

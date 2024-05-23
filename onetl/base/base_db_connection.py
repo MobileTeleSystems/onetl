@@ -132,6 +132,9 @@ class BaseDBConnection(BaseConnection):
     ) -> DataFrame:
         """
         Reads the source to dataframe. |support_hooks|
+
+        .. versionchanged:: 0.9.0
+            Renamed ``read_df`` → ``read_source_as_df``
         """
 
     @abstractmethod
@@ -142,4 +145,7 @@ class BaseDBConnection(BaseConnection):
     ) -> None:
         """
         Saves dataframe to a specific target. |support_hooks|
+
+        .. versionchanged:: 0.9.0
+            Renamed ``write_df`` → ``write_df_to_target``
         """

@@ -14,6 +14,8 @@ def limits_reached(limits: Iterable[BaseFileLimit]) -> bool:
     """
     Check if any of limits reached.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     limits : Iterable of :obj:`onetl.base.base_file_limit.BaseFileLimit`

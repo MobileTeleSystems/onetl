@@ -41,6 +41,8 @@ class MySQL(JDBCConnection):
 
         Before using this connector please take into account :ref:`mysql-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str
@@ -122,10 +124,14 @@ class MySQL(JDBCConnection):
         """
         Get package names to be downloaded by Spark. Allows specifying a custom JDBC driver version for MySQL. |support_hooks|
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         package_version : str, optional
             Specifies the version of the MySQL JDBC driver to use. Defaults to ``8.4.0``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------

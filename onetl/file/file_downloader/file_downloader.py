@@ -80,6 +80,11 @@ class FileDownloader(FrozenModel):
         It does NOT support direct file transfer between filesystems, like ``FTP -> SFTP``.
         You should use FileDownloader + :ref:`file-uploader` to implement ``FTP -> local dir -> SFTP``.
 
+    .. versionadded:: 0.1.0
+
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.FileDownloader`` → ``onetl.file.FileDownloader``
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -112,15 +117,30 @@ class FileDownloader(FrozenModel):
             Otherwise instead of ``rename``, remote OS will move file between filesystems,
             which is NOT atomic operation.
 
+        .. versionadded:: 0.5.0
+
     filters : list of :obj:`BaseFileFilter <onetl.base.base_file_filter.BaseFileFilter>`
         Return only files/directories matching these filters. See :ref:`file-filters`
+
+        .. versionchanged:: 0.3.0
+            Replaces old ``source_path_pattern: str`` and ``exclude_dirs: str`` options.
+
+        .. versionchanged:: 0.8.0
+            Renamed ``filter`` → ``filters``
 
     limits : list of :obj:`BaseFileLimit <onetl.base.base_file_limit.BaseFileLimit>`
         Apply limits to the list of files/directories, and stop if one of the limits is reached.
         See :ref:`file-limits`
 
+        .. versionadded:: 0.4.0
+
+        .. versionchanged:: 0.8.0
+            Renamed ``limit`` → ``limits``
+
     options : :obj:`~FileDownloader.Options`  | dict | None, default: ``None``
-        File downloading options. See :obj:`~FileDownloader.Options`
+        File downloading options. See :obj:`FileDownloader.Options <onetl.file.file_downloader.options.FileDownloaderOptions>`
+
+        .. versionadded:: 0.3.0
 
     hwm : type[HWM] | None, default: ``None``
 
@@ -128,6 +148,11 @@ class FileDownloader(FrozenModel):
 
         .. warning ::
             Used only in :obj:`IncrementalStrategy <onetl.strategy.incremental_strategy.IncrementalStrategy>`.
+
+        .. versionadded:: 0.5.0
+
+        .. versionchanged:: 0.10.0
+            Replaces deprecated ``hwm_type`` attribute
 
     Examples
     --------
@@ -235,6 +260,8 @@ class FileDownloader(FrozenModel):
 
             This method can return different results depending on :ref:`strategy`
 
+        .. versionadded:: 0.1.0
+
         Parameters
         ----------
 
@@ -246,6 +273,8 @@ class FileDownloader(FrozenModel):
 
             If not, download to ``local_path`` **all** input files, **ignoring**
             filters, limits and HWM.
+
+            .. versionadded:: 0.3.0
 
         Returns
         -------
@@ -398,6 +427,8 @@ class FileDownloader(FrozenModel):
         .. note::
 
             This method can return different results depending on :ref:`strategy`
+
+        .. versionadded:: 0.3.0
 
         Raises
         ------

@@ -17,12 +17,16 @@ class BaseFileLimit(ABC):
     to determine if internal loop should be stopped.
 
     Unlike file filters, limits have internal state which can be updated or reset.
+
+    .. versionadded:: 0.8.0
     """
 
     @abstractmethod
     def reset(self) -> Self:
         """
         Resets the internal limit state.
+
+        .. versionadded:: 0.8.0
 
         Returns
         -------
@@ -44,6 +48,8 @@ class BaseFileLimit(ABC):
     def stops_at(self, path: PathProtocol) -> bool:
         """
         Update internal state and return current state.
+
+        .. versionadded:: 0.8.0
 
         Parameters
         ----------
@@ -76,6 +82,8 @@ class BaseFileLimit(ABC):
     def is_reached(self) -> bool:
         """
         Check if limit is reached.
+
+        .. versionadded:: 0.8.0
 
         Returns
         -------

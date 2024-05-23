@@ -61,6 +61,11 @@ class DBReader(FrozenModel):
         This class operates with only one source at a time. It does NOT support executing queries
         to multiple source, like ``SELECT ... JOIN``.
 
+    .. versionadded:: 0.1.0
+
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.DBReader`` → ``onetl.db.DBReader``
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.BaseDBConnection`
@@ -71,6 +76,9 @@ class DBReader(FrozenModel):
 
         If connection has schema support, you need to specify the full name of the source
         including the schema, e.g. ``schema.name``.
+
+        .. versionchanged:: 0.7.0
+            Renamed ``table`` → ``source``
 
     columns : list of str, default: None
         The list of columns to be read.
@@ -147,6 +155,9 @@ class DBReader(FrozenModel):
 
             Some sources does not support passing expressions and can be used only with column/field
             names which present in the source.
+
+        .. versionchanged:: 0.10.0
+            Replaces deprecated ``hwm_column`` and ``hwm_expression``  attributes
 
     hint : Any, default: ``None``
         Hint expression used for querying the data.
@@ -506,12 +517,13 @@ class DBReader(FrozenModel):
 
         .. warning::
 
-               If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        .. versionadded:: 0.10.0
 
         Raises
         ------
         RuntimeError
-
             Current strategy is not compatible with HWM parameter.
 
         Examples
@@ -563,14 +575,14 @@ class DBReader(FrozenModel):
 
             If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
 
+        .. versionadded:: 0.10.0
+
         Raises
         ------
-         RuntimeError
-
+        RuntimeError
             Current strategy is not compatible with HWM parameter.
 
         :obj:`onetl.exception.NoDataError`
-
             There is no data in source.
 
         Examples
@@ -599,6 +611,8 @@ class DBReader(FrozenModel):
         .. warning::
 
             If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        .. versionadded:: 0.1.0
 
         Returns
         -------

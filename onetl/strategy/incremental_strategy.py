@@ -139,6 +139,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode>`.
             * It can remove files from the source if :obj:`delete_source <onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     offset : Any, default: ``None``
@@ -399,6 +401,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         Not every :ref:`DB connection <db-connections>`
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the IncrementalBatchStrategy.
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------

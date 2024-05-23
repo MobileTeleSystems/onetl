@@ -42,6 +42,8 @@ class Clickhouse(JDBCConnection):
 
         Before using this connector please take into account :ref:`clickhouse-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str
@@ -129,13 +131,19 @@ class Clickhouse(JDBCConnection):
         """
         Get package names to be downloaded by Spark. Allows specifying custom JDBC and Apache HTTP Client versions. |support_hooks|
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         package_version : str, optional
-             ClickHouse JDBC version client packages. Defaults to ``0.6.0-patch5``.
+            ClickHouse JDBC version client packages. Defaults to ``0.6.0-patch5``.
+
+            .. versionadded:: 0.11.0
 
         apache_http_client_version : str, optional
-             Apache HTTP Client version package. Defaults to ``5.3.1``.
+            Apache HTTP Client version package. Defaults to ``5.3.1``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------
@@ -145,11 +153,6 @@ class Clickhouse(JDBCConnection):
             from onetl.connection import Clickhouse
 
             Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
-
-        .. note::
-
-             Spark does not support ``.jar`` classifiers, so it is not possible to pass
-             ``com.clickhouse:clickhouse-jdbc:0.6.0:all`` to install all required packages.
 
         """
         default_jdbc_version = "0.6.0-patch5"

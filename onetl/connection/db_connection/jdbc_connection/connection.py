@@ -71,6 +71,8 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         Same as ``spark.read.jdbc(query)``.
 
+        .. versionadded:: 0.2.0
+
         Parameters
         ----------
         query : str

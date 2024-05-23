@@ -81,6 +81,8 @@ class Greenplum(JDBCMixin, DBConnection):
 
         Before using this connector please take into account :ref:`greenplum-prerequisites`
 
+    .. versionadded:: 0.5.0
+
     Parameters
     ----------
     host : str
@@ -186,6 +188,8 @@ class Greenplum(JDBCMixin, DBConnection):
 
             You should pass either ``scala_version`` or ``spark_version``.
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         scala_version : str, optional
@@ -200,6 +204,8 @@ class Greenplum(JDBCMixin, DBConnection):
 
         package_version : str, optional, default ``2.2.0``
             Package version in format ``major.minor.patch``
+
+            .. versionadded:: 0.10.1
 
         Examples
         --------

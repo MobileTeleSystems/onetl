@@ -80,6 +80,8 @@ class JSON(ReadOnlyFileFormat):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 
@@ -109,6 +111,8 @@ class JSON(ReadOnlyFileFormat):
     def parse_column(self, column: str | Column, schema: StructType | ArrayType | MapType) -> Column:
         """
         Parses a JSON string column to a structured Spark SQL column using Spark's `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_ function, based on the provided schema.
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------
@@ -183,6 +187,8 @@ class JSON(ReadOnlyFileFormat):
         """
         Serializes a structured Spark SQL column into a JSON string column using Spark's
         `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------

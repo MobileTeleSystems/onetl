@@ -43,6 +43,8 @@ class FileDFReader(FrozenModel):
 
         This class does **not** support read strategies.
 
+    .. versionadded:: 0.9.0
+
     Parameters
     ----------
     connection : :obj:`BaseFileDFConnection <onetl.base.base_file_df_connection.BaseFileDFConnection>`
@@ -114,6 +116,8 @@ class FileDFReader(FrozenModel):
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DataFrame:
         """
         Method for reading files as DataFrame. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

@@ -15,12 +15,16 @@ class BaseFileFilter(ABC):
     to determine if a file should be handled or not.
 
     All filters are stateless.
+
+    .. versionadded:: 0.8.0
     """
 
     @abstractmethod
     def match(self, path: PathProtocol) -> bool:
         """
         Returns ``True`` if path is matching the filter, ``False`` otherwise
+
+        .. versionadded:: 0.8.0
 
         Examples
         --------

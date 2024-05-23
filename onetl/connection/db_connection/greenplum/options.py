@@ -304,6 +304,8 @@ class GreenplumWriteOptions(JDBCOptions):
                 * Table exists
                     An error is raised, and no data is written to the table.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     @root_validator(pre=True)

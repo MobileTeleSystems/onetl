@@ -32,6 +32,8 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
     Created reader options
