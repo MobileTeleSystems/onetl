@@ -32,11 +32,11 @@ class MSSQLExtra(GenericOptions):
 class MSSQL(JDBCConnection):
     """MSSQL JDBC connection. |support_hooks|
 
-    Based on Maven package ``com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre8``
+    Based on Maven package `com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre8 <https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc/12.6.1.jre8>`_
     (`official MSSQL JDBC driver
     <https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`mssql-prerequisites`
 

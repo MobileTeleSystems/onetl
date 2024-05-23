@@ -14,7 +14,7 @@ Reading from Oracle
 This is how Oracle connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and Oracle type.
-* Find corresponding ``Oracle type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Oracle type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 Writing to some existing Oracle table
@@ -25,8 +25,8 @@ This is how Oracle connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-* **Find corresponding** ``Oracle type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
-* Find corresponding ``Spark type`` -> ``Oracle type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* **Find corresponding** ``Oracle type (read)`` → ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
+* Find corresponding ``Spark type`` → ``Oracle type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Oracle type (write)`` match ``Oracle type (read)``, no additional casts will be performed, DataFrame column will be written to Oracle as is.
 * If ``Oracle type (write)`` does not match ``Oracle type (read)``, DataFrame column will be casted to target column type **on Oracle side**.
   For example, you can write column with text data to ``int`` column, if column contains valid integer values within supported value range and precision.
@@ -48,7 +48,7 @@ Create new table using Spark
 
 This is how Oracle connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Oracle type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Oracle type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Oracle, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 

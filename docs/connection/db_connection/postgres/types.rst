@@ -14,7 +14,7 @@ Reading from Postgres
 This is how Postgres connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and Postgres type.
-* Find corresponding ``Postgres type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column [1]_. If no combination is found, raise exception.
+* Find corresponding ``Postgres type (read)`` → ``Spark type`` combination (see below) for each DataFrame column [1]_. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 .. [1]
@@ -28,7 +28,7 @@ This is how Postgres connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive) [2]_. For each found column get Postgres type.
-* Find corresponding ``Spark type`` -> ``Postgres type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Postgres type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Postgres type (write)`` match ``Postgres type (read)``, no additional casts will be performed, DataFrame column will be written to Postgres as is.
 * If ``Postgres type (write)`` does not match ``Postgres type (read)``, DataFrame column will be casted to target column type **on Postgres side**.
   For example, you can write column with text data to ``int`` column, if column contains valid integer values within supported value range and precision [3]_.
@@ -51,7 +51,7 @@ Create new table using Spark
 
 This is how Postgres connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Postgres type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Postgres type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Postgres, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -248,7 +248,7 @@ String types
 | ``jsonb``                   |                       |                       |                         |
 +-----------------------------+                       |                       |                         |
 | ``xml``                     |                       |                       |                         |
-+-----------------------------+-----------------------|                       |                         |
++-----------------------------+-----------------------+                       |                         |
 | ``CREATE TYPE ... AS ENUM`` | ``StringType()`` [1]_ |                       |                         |
 +-----------------------------+                       |                       |                         |
 | ``tsvector``                |                       |                       |                         |

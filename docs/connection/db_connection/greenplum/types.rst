@@ -15,7 +15,7 @@ This is how Greenplum connector performs this:
 
 * Execute query ``SELECT * FROM table LIMIT 0`` [1]_.
 * For each column in query result get column name and Greenplum type.
-* Find corresponding ``Greenplum type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Greenplum type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Use Spark column projection and predicate pushdown features to build a final query.
 * Create DataFrame from generated query with inferred schema.
 
@@ -34,7 +34,7 @@ This is how Greenplum connector performs this:
 * Match table columns with DataFrame columns (by name, case insensitive).
   If some column is present only in target table, but not in DataFrame (like ``DEFAULT`` or ``SERIAL`` column), and vice versa, raise an exception.
   See `Explicit type cast`_.
-* Find corresponding ``Spark type`` -> ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Greenplumtype (write)`` match ``Greenplum type (read)``, no additional casts will be performed, DataFrame column will be written to Greenplum as is.
 * If ``Greenplumtype (write)`` does not match ``Greenplum type (read)``, DataFrame column will be casted to target column type **on Greenplum side**. For example, you can write column with text data to ``json`` column which Greenplum connector currently does not support.
 
@@ -47,7 +47,7 @@ Create new table using Spark
 
 This is how Greenplum connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Greenplum type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Greenplum type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Greenplum, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 

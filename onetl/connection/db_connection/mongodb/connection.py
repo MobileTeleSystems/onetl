@@ -53,7 +53,7 @@ class MongoDB(DBConnection):
     Based on package `org.mongodb.spark:mongo-spark-connector:10.3.0 <https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.3.0>`_
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`mongodb-prerequisites`
 

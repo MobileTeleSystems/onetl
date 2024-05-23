@@ -65,7 +65,6 @@ class Avro(ReadWriteFileFormat):
 
         * Spark versions: 2.4.x - 3.5.x
         * Java versions: 8 - 20
-        * Scala versions: 2.11 - 2.13
 
         See documentation from link above.
 

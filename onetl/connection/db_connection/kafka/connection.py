@@ -57,7 +57,7 @@ class Kafka(DBConnection):
     Based on `official Kafka Source For Spark
     <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`kafka-prerequisites`
 

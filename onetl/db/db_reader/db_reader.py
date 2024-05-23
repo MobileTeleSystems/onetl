@@ -58,20 +58,8 @@ class DBReader(FrozenModel):
 
     .. note::
 
-        This class operates with only one table at a time. It does NOT support executing JOINs.
-
-        To get the JOIN result you can instead:
-
-            1. Use 2 instandes of DBReader with different tables,
-               call :obj:`~run` of each one to get a table dataframe,
-               and then use ``df1.join(df2)`` syntax (Hive)
-
-            2. Use ``connection.execute("INSERT INTO ... SELECT ... JOIN ...")``
-               to execute JOIN on RDBMS side, write the result into a temporary table,
-               and then use DBReader to get the data from this temporary table (MPP systems, like Greenplum)
-
-            3. Use ``connection.sql(query)`` method to pass SQL query with a JOIN,
-               and fetch the result (other RDBMS)
+        This class operates with only one source at a time. It does NOT support executing queries
+        to multiple source, like ``SELECT ... JOIN``.
 
     Parameters
     ----------
@@ -616,12 +604,6 @@ class DBReader(FrozenModel):
         -------
         df : pyspark.sql.dataframe.DataFrame
             Spark dataframe
-
-        .. note::
-
-            Keep in mind that with differences in the timezone settings of the source and Spark,
-            there may be discrepancies in the datetime on the source and in the Spark dataframe.
-            It depends on the ``spark.sql.session.timeZone`` option set when creating the Spark session.
 
         Examples
         --------

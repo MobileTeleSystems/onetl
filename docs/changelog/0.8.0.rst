@@ -62,8 +62,6 @@ Breaking Changes
       from onetl.core import DBWriter
       from onetl.core import FileDownloader
       from onetl.core import FileUploader
-      from onetl.core import FileResult
-      from onetl.core import FileSet
 
   with new modules ``onetl.db`` and ``onetl.file``:
 
@@ -75,10 +73,6 @@ Breaking Changes
 
       from onetl.file import FileDownloader
       from onetl.file import FileUploader
-
-      # not a public interface
-      from onetl.file.file_result import FileResult
-      from onetl.file.file_set import FileSet
 
   Imports from old module ``onetl.core`` still can be used, but marked as deprecated. Module will be removed in v1.0.0. (:github:pull:`46`)
 

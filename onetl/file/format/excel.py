@@ -57,7 +57,7 @@ class Excel(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.5.x.
+        * Spark versions: 3.2.x - 3.5.x
 
             .. warning::
 
@@ -65,7 +65,6 @@ class Excel(ReadWriteFileFormat):
                 See `Maven index <https://mvnrepository.com/artifact/com.crealytics/spark-excel>`_
                 and `official documentation <https://github.com/crealytics/spark-excel>`_.
 
-        * Scala versions: 2.12 - 2.13
         * Java versions: 8 - 20
 
         See documentation from link above.

@@ -14,7 +14,7 @@ Reading from Clickhouse
 This is how Clickhouse connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and Clickhouse type.
-* Find corresponding ``Clickhouse type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Clickhouse type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 Writing to some existing Clickhouse table
@@ -25,8 +25,8 @@ This is how Clickhouse connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-* **Find corresponding** ``Clickhouse type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
-* Find corresponding ``Spark type`` -> ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* **Find corresponding** ``Clickhouse type (read)`` → ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
+* Find corresponding ``Spark type`` → ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Clickhousetype (write)`` match ``Clickhouse type (read)``, no additional casts will be performed, DataFrame column will be written to Clickhouse as is.
 * If ``Clickhousetype (write)`` does not match ``Clickhouse type (read)``, DataFrame column will be casted to target column type **on Clickhouse side**. For example, you can write column with text data to ``Int32`` column, if column contains valid integer values within supported value range and precision.
 
@@ -47,7 +47,7 @@ Create new table using Spark
 
 This is how Clickhouse connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Clickhouse type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Clickhouse type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Clickhouse, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -218,7 +218,7 @@ Notes:
 +-----------------------------------+                                      |                                  |                               |
 | ``DateTime64(P, TZ)``             |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``IntervalNanosecond``            | ``LongType()``                       | ``Int64``                       |  ``Int64``                    |
+| ``IntervalNanosecond``            | ``LongType()``                       | ``Int64``                        |  ``Int64``                    |
 +-----------------------------------+                                      |                                  |                               |
 | ``IntervalMicrosecond``           |                                      |                                  |                               |
 +-----------------------------------+                                      |                                  |                               |

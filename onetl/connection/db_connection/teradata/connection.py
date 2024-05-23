@@ -38,10 +38,10 @@ class TeradataExtra(GenericOptions):
 class Teradata(JDBCConnection):
     """Teradata JDBC connection. |support_hooks|
 
-    Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
+    Based on package `com.teradata.jdbc:terajdbc:17.20.00.15 <https://central.sonatype.com/artifact/com.teradata.jdbc/terajdbc/17.20.00.15>`_
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`teradata-prerequisites`
 

@@ -88,8 +88,7 @@ class XML(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.5.x.
-        * Scala versions: 2.12 - 2.13
+        * Spark versions: 3.2.x - 3.5.x
         * Java versions: 8 - 20
 
         See documentation from link above.
