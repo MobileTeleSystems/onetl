@@ -1,0 +1,1 @@
+Add note about connecting to Clickhouse cluster.

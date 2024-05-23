@@ -21,7 +21,7 @@ BEFORE creating the connector instance.
 See :ref:`install-spark` installation instruction for more details.
 
 Connecting to Clickhouse
------------------------
+------------------------
 
 Connection port
 ~~~~~~~~~~~~~~~
@@ -30,11 +30,27 @@ Connector can only use **HTTP** (usually ``8123`` port) or **HTTPS** (usually ``
 
 TCP and GRPC protocols are NOT supported.
 
-Clickhouse cluster interaction
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Connecting to cluster
+~~~~~~~~~~~~~~~~~~~~~
 
-If you're using Clickhouse cluster, it is currently possible to connect only to one specific cluster node.
-Connecting to multiple nodes simultaneously is not supported.
+It is possible to connect to Clickhouse cluster, and use it's load balancing capabilities to read or write data in parallel.
+Each Spark executor can connect to random Clickhouse nodes, instead of sending all the data to a node specified in connection params.
+
+This requires all Clickhouse servers to run on different hosts, and **listen the same HTTP port**.
+Set ``auto_discovery=True`` to enable this feature (disabled by default):
+
+.. code:: python
+
+    Clickhouse(
+        host="node1.of.cluster",
+        port=8123,
+        extra={
+            "auto_discovery": True,
+            "load_balancing_policy": "roundRobin",
+        },
+    )
+
+See `official documentation <https://clickhouse.com/docs/en/integrations/java#configuring-node-discovery-load-balancing-and-failover>`_.
 
 Required grants
 ~~~~~~~~~~~~~~~
