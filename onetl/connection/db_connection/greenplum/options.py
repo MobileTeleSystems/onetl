@@ -319,12 +319,12 @@ class GreenplumWriteOptions(JDBCOptions):
 
 
 class GreenplumSQLOptions(JDBCSQLOptions):
-    pass
+    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
 
 
 class GreenplumFetchOptions(JDBCFetchOptions):
-    pass
+    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
 
 
 class GreenplumExecuteOptions(JDBCExecuteOptions):
-    pass
+    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]

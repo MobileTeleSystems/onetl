@@ -43,10 +43,10 @@ class PostgresExtra(GenericOptions):
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. |support_hooks|
 
-    Based on Maven package ``org.postgresql:postgresql:42.7.3``
+    Based on Maven package `org.postgresql:postgresql:42.7.3 <https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.3>`_
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`postgres-prerequisites`
 

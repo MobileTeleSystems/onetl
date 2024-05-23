@@ -53,7 +53,7 @@ class SparkS3(SparkFileDFConnection):
     Based on `Hadoop-AWS module <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_
     and `Spark integration with Cloud Infrastructures <https://spark.apache.org/docs/latest/cloud-integration.html>`_.
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`spark-s3-prerequisites`
 

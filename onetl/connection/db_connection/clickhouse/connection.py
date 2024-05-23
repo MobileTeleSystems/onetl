@@ -38,7 +38,7 @@ class Clickhouse(JDBCConnection):
     Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0-patch4 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch4>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`clickhouse-prerequisites`
 

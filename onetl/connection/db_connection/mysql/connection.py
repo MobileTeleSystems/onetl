@@ -37,7 +37,7 @@ class MySQL(JDBCConnection):
     Based on Maven package ``com.mysql:mysql-connector-j:8.0.33``
     (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.0.html>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`mysql-prerequisites`
 

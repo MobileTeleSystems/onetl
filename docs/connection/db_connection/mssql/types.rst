@@ -14,7 +14,7 @@ Reading from MSSQL
 This is how MSSQL connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and MSSQL type.
-* Find corresponding ``MSSQL type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``MSSQL type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 Writing to some existing MSSQL table
@@ -25,7 +25,7 @@ This is how MSSQL connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive). For each found column get MSSQL type.
-* Find corresponding ``Spark type`` -> ``MSSQL type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``MSSQL type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``MSSQL type (write)`` match ``MSSQL type (read)``, no additional casts will be performed, DataFrame column will be written to MSSQL as is.
 * If ``MSSQL type (write)`` does not match ``MSSQL type (read)``, DataFrame column will be casted to target column type **on MSSQL side**.
   For example, you can write column with text data to ``int`` column, if column contains valid integer values within supported value range and precision [2]_.
@@ -48,7 +48,7 @@ Create new table using Spark
 
 This is how MSSQL connector performs this:
 
-* Find corresponding ``Spark type`` -> ``MSSQL type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``MSSQL type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in MSSQL, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 

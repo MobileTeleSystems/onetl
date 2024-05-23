@@ -42,7 +42,7 @@ class DBWriter(FrozenModel):
         including the schema, e.g. ``schema.name``.
 
     options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
-        Spark write options.
+        Spark write options. Can be in form of special ``WriteOptions`` object or a dict.
 
         For example:
         ``{"if_exists": "replace_entire_table", "compression": "snappy"}``
@@ -107,9 +107,7 @@ class DBWriter(FrozenModel):
             spark=spark,
         )
 
-        options = {"truncate": "true", "batchsize": 1000}
-        # or (it is the same):
-        options = Postgres.WriteOptions(truncate=True, batchsize=1000)
+        options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
 
         writer = DBWriter(
             connection=postgres,

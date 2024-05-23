@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 class Hive(DBConnection):
     """Spark connection with Hive MetaStore support. |support_hooks|
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`hive-prerequisites`
 

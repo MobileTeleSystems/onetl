@@ -84,7 +84,7 @@ class Oracle(JDBCConnection):
     Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`oracle-prerequisites`
 

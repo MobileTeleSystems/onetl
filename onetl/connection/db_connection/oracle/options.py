@@ -14,20 +14,20 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 
 
 class OracleReadOptions(JDBCReadOptions):
-    pass
+    __doc__ = JDBCReadOptions.__doc__  # type: ignore[assignment]
 
 
 class OracleWriteOptions(JDBCWriteOptions):
-    pass
+    __doc__ = JDBCWriteOptions.__doc__  # type: ignore[assignment]
 
 
 class OracleSQLOptions(JDBCSQLOptions):
-    pass
+    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
 
 
 class OracleFetchOptions(JDBCFetchOptions):
-    pass
+    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
 
 
 class OracleExecuteOptions(JDBCExecuteOptions):
-    pass
+    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]

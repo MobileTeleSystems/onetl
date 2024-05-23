@@ -77,7 +77,7 @@ class Greenplum(JDBCMixin, DBConnection):
     Based on package ``io.pivotal:greenplum-spark:2.2.0``
     (`VMware Greenplum connector for Spark <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`greenplum-prerequisites`
 

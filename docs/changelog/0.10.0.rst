@@ -44,7 +44,7 @@ Breaking Changes
     - ``HWM`` classes used by previous onETL versions were moved from ``etl_entities`` to ``etl_entities.old_hwm`` submodule. They are here for compatibility reasons, but are planned to be removed in ``etl-entities`` v3 release.
     - New ``HWM`` classes have flat structure instead of nested.
     - New ``HWM`` classes have mandatory ``name`` attribute (it was known as ``qualified_name`` before).
-    - Type aliases used while serializing and deserializing ``HWM`` objects to ``dict`` representation were changed too: ``int`` -> ``column_int``.
+    - Type aliases used while serializing and deserializing ``HWM`` objects to ``dict`` representation were changed too: ``int`` → ``column_int``.
 
   To make migration simpler, you can use new method:
 
@@ -53,7 +53,7 @@ Breaking Changes
     old_hwm = OldIntHWM(...)
     new_hwm = old_hwm.as_new_hwm()
 
-  Which automatically converts all fields from old structure to new one, including ``qualified_name`` -> ``name``.
+  Which automatically converts all fields from old structure to new one, including ``qualified_name`` → ``name``.
 
 - **Breaking changes:**
 

@@ -37,7 +37,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     Based on `Spark Generic File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_.
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`spark-hdfs-prerequisites`
 
