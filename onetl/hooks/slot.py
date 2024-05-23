@@ -67,6 +67,8 @@ def bind_hook(method: Callable, inp=None):
 
     See :ref:`hooks-design` for more details.
 
+    .. versionadded:: 0.7.0
+
     Examples
     --------
 
@@ -254,6 +256,8 @@ def register_slot(cls: type, method_name: str):  # noqa: WPS231, WPS213, WPS212
 
     Also ``@classmethod`` is a descriptor, and it can be called only my accessing the class itself,
     which is not possible within a decorator.
+
+    .. versionadded:: 0.7.0
 
     Examples
     --------
@@ -465,7 +469,10 @@ def is_slot(method: Callable) -> bool:
 
 
 class Slot(Protocol):
-    """Protocol which is implemented by a method after applying :obj:`~slot` decorator."""
+    """Protocol which is implemented by a method after applying :obj:`~slot` decorator.
+
+    .. versionadded:: 0.7.0
+    """
 
     def __call__(self, *args, **kwargs): ...
 
@@ -636,6 +643,8 @@ def slot(method: Method) -> Method:
 
         It is not allowed to use this decorator over ``_private`` and ``__protected`` methods and ``@property``.
         But is allowed to use on ``__dunder__`` methods, like ``__init__``.
+
+    .. versionadded:: 0.7.0
 
     Examples
     ---------

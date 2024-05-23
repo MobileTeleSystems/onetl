@@ -88,6 +88,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
             You should pass at least one of these arguments: ``cluster``, ``host``.
 
+        .. versionadded:: 0.7.0
+
     host : str, optional
         Hadoop namenode host. For example: ``namenode1.domain.com``.
 
@@ -222,6 +224,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
             Can be used only if there are a some hooks bound to slot
             :obj:`Slots.get_current_cluster <onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_current_cluster>`
+
+        .. versionadded:: 0.7.0
 
         Parameters
         ----------

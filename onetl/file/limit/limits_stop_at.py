@@ -14,6 +14,8 @@ def limits_stop_at(path: PathProtocol, limits: Iterable[BaseFileLimit]) -> bool:
     """
     Check if some of limits stops at given path.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     path : :obj:`onetl.base.path_protocol.PathProtocol`

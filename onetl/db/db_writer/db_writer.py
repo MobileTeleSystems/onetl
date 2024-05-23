@@ -30,6 +30,11 @@ log = getLogger(__name__)
 class DBWriter(FrozenModel):
     """Class specifies schema and table where you can write your dataframe. |support_hooks|
 
+    .. versionadded:: 0.1.0
+
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.DBReader`` → ``onetl.db.DBReader``
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.DBConnection`
@@ -40,6 +45,9 @@ class DBWriter(FrozenModel):
 
         If connection has schema support, you need to specify the full name of the source
         including the schema, e.g. ``schema.name``.
+
+        .. versionchanged:: 0.7.0
+            Renamed ``table`` → ``target``
 
     options : dict, :obj:`onetl.connection.DBConnection.WriteOptions`, default: ``None``
         Spark write options. Can be in form of special ``WriteOptions`` object or a dict.
@@ -169,6 +177,8 @@ class DBWriter(FrozenModel):
         Method for writing your df to specified target. |support_hooks|
 
         .. note :: Method does support only **batching** DataFrames.
+
+        .. versionadded:: 0.1.0
 
         Parameters
         ----------

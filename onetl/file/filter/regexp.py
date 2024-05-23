@@ -17,6 +17,9 @@ from onetl.impl import FrozenModel
 class Regexp(BaseFileFilter, FrozenModel):
     r"""Filter files or directories with path matching a regular expression.
 
+    .. versionadded:: 0.8.0
+        Replaces deprecated ``onetl.core.FileFilter``
+
     Parameters
     ----------
 

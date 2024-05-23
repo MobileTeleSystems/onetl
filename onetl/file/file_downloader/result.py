@@ -17,10 +17,12 @@ class DownloadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * :obj:`successful`
-    * :obj:`failed`
-    * :obj:`skipped`
-    * :obj:`missing`
+    * :obj:`~successful`
+    * :obj:`~failed`
+    * :obj:`~skipped`
+    * :obj:`~missing`
+
+    .. versionadded:: 0.3.0
 
     Examples
     --------

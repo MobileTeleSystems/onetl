@@ -25,6 +25,8 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
 
     For more details see `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig>`_.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 

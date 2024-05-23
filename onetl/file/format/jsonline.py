@@ -72,6 +72,8 @@ class JSONLine(ReadWriteFileFormat):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 

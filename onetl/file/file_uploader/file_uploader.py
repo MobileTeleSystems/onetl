@@ -63,6 +63,11 @@ class FileUploader(FrozenModel):
 
         This class does **not** support read strategies.
 
+    .. versionadded:: 0.1.0
+
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.FileDownloader`` → ``onetl.file.FileDownloader``
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -76,6 +81,8 @@ class FileUploader(FrozenModel):
 
         Could be ``None``, but only if you pass absolute file paths directly to
         :obj:`~run` method
+
+        .. versionadded:: 0.3.0
 
     temp_path : os.PathLike or str, optional, default: ``None``
         If set, this path will be used for uploading a file, and then renaming it to the target file path.
@@ -95,8 +102,11 @@ class FileUploader(FrozenModel):
             Otherwise instead of ``rename``, remote OS will move file between filesystems,
             which is NOT atomic operation.
 
+        .. versionchanged:: 0.5.0
+            Default changed from ``/tmp`` to ``None``
+
     options : :obj:`~FileUploader.Options` | dict | None, default: ``None``
-        File upload options. See :obj:`~FileUploader.Options`
+        File upload options. See :obj:`FileUploader.Options <onetl.file.file_uploader.options.FileUploaderOptions>`
 
     Examples
     --------
@@ -150,6 +160,8 @@ class FileUploader(FrozenModel):
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
         Method for uploading files to remote host. |support_hooks|
+
+        .. versionadded:: 0.1.0
 
         Parameters
         ----------
@@ -304,6 +316,8 @@ class FileUploader(FrozenModel):
     def view_files(self) -> FileSet[LocalPath]:
         """
         Get file list in the ``local_path``. |support_hooks|
+
+        .. versionadded:: 0.3.0
 
         Raises
         ------

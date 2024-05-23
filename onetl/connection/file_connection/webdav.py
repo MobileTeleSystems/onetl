@@ -65,6 +65,8 @@ class WebDAV(FileConnection, RenameDirMixin):
 
         See :ref:`install-files` installation instruction for more details.
 
+    .. versionadded:: 0.6.0
+
     Parameters
     ----------
     host : str

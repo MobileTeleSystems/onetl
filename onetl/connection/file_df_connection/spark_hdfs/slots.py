@@ -7,7 +7,10 @@ from onetl.hooks import slot, support_hooks
 
 @support_hooks
 class SparkHDFSSlots:
-    """Spark HDFS slots that could be implemented by third-party plugins"""
+    """Spark HDFS slots that could be implemented by third-party plugins.
+
+    .. versionadded:: 0.9.0
+    """
 
     @slot
     @staticmethod
@@ -16,6 +19,8 @@ class SparkHDFSSlots:
         Normalize cluster name passed into SparkHDFS constructor.
 
         If hooks didn't return anything, cluster name is left intact.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -51,6 +56,8 @@ class SparkHDFSSlots:
         Normalize namenode host passed into SparkHDFS constructor.
 
         If hooks didn't return anything, host is left intact.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -97,6 +104,8 @@ class SparkHDFSSlots:
         Cluster passed into SparkHDFS constructor should be present in this list.
         If hooks didn't return anything, no validation will be performed.
 
+        .. versionadded:: 0.9.0
+
         Returns
         -------
         set[str] | None
@@ -127,6 +136,8 @@ class SparkHDFSSlots:
 
         Namenode host passed into SparkHDFS constructor should be present in this list.
         If hooks didn't return anything, no validation will be performed.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -166,6 +177,8 @@ class SparkHDFSSlots:
         Used in :obj:`~get_current_cluster` to  automatically fill up ``cluster`` attribute of a connection.
         If hooks didn't return anything, calling the method above will raise an exception.
 
+        .. versionadded:: 0.9.0
+
         Returns
         -------
         str | None
@@ -196,6 +209,8 @@ class SparkHDFSSlots:
         Get IPC port number for a specific cluster.
 
         Used by constructor to automatically set port number if omitted.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -241,6 +256,8 @@ class SparkHDFSSlots:
             * If SparkHDFS connection is created with ``host``
 
                 :obj:`~check` will determine whether this host is active.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

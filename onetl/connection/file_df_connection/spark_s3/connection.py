@@ -64,6 +64,8 @@ class SparkS3(SparkFileDFConnection):
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
         use :obj:`S3 <onetl.connection.file_connection.s3.S3>` connection.
 
+    .. versionadded:: 0.9.0
+
     Parameters
     ----------
     host : str
@@ -215,6 +217,8 @@ class SparkS3(SparkFileDFConnection):
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

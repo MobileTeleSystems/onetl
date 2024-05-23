@@ -65,6 +65,8 @@ class Kafka(DBConnection):
 
         This connector is for **batch** ETL processes, not streaming.
 
+    .. versionadded:: 0.9.0
+
     Parameters
     ----------
 

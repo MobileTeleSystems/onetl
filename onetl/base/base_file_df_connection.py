@@ -17,13 +17,17 @@ if TYPE_CHECKING:
 
 class FileDFReadOptions(ABC):
     """
-    Protocol for objects supporting altering Spark DataFrameReader options
+    Protocol for objects supporting altering Spark DataFrameReader options.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod
     def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameReader`.
+
+        .. versionadded:: 0.9.0
 
         Returns
         -------
@@ -38,13 +42,17 @@ class FileDFReadOptions(ABC):
 
 class FileDFWriteOptions(ABC):
     """
-    Protocol for objects supporting altering Spark DataFrameWriter options
+    Protocol for objects supporting altering Spark DataFrameWriter options.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod
     def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameWriter`.
+
+        .. versionadded:: 0.9.0
 
         Returns
         -------
@@ -59,7 +67,9 @@ class FileDFWriteOptions(ABC):
 
 class BaseFileDFConnection(BaseConnection):
     """
-    Implements generic methods for reading  and writing dataframe as files
+    Implements generic methods for reading  and writing dataframe as files.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod
@@ -69,6 +79,8 @@ class BaseFileDFConnection(BaseConnection):
     ) -> None:
         """
         Validate if specific file format is supported. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Raises
         ------
@@ -80,12 +92,17 @@ class BaseFileDFConnection(BaseConnection):
     def path_from_string(self, path: os.PathLike | str) -> PurePathProtocol:
         """
         Convert path from string to object. |support_hooks|
+
+        .. versionadded:: 0.9.0
         """
 
     @property
     @abstractmethod
     def instance_url(self) -> str:
-        """Instance URL"""
+        """Instance URL.
+
+        .. versionadded:: 0.9.0
+        """
 
     @abstractmethod
     def read_files_as_df(
@@ -98,6 +115,8 @@ class BaseFileDFConnection(BaseConnection):
     ) -> DataFrame:
         """
         Read files in some paths list as dataframe. |support_hooks|
+
+        .. versionadded:: 0.9.0
         """
 
     @abstractmethod
@@ -110,4 +129,6 @@ class BaseFileDFConnection(BaseConnection):
     ) -> None:
         """
         Write dataframe as files in some path. |support_hooks|
+
+        .. versionadded:: 0.9.0
         """

@@ -115,6 +115,9 @@ class JDBCReadOptions(JDBCOptions):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.5.0
+        Replace ``Connection.Options`` → ``Connection.ReadOptions``
+
     Examples
     --------
 
@@ -196,6 +199,9 @@ class JDBCReadOptions(JDBCOptions):
         default ``fetchsize=10``, which is absolutely not usable.
 
         Thus we've overridden default value with ``100_000``, which should increase reading performance.
+
+    .. versionchanged:: 0.2.0
+        Set explicit default value to ``100_000``
     """
 
     partitioning_mode: JDBCPartitioningMode = JDBCPartitioningMode.RANGE
@@ -306,6 +312,8 @@ class JDBCReadOptions(JDBCOptions):
             SELECT ... FROM table
             WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
 
+    .. versionadded:: 0.5.0
+
     Examples
     --------
 
@@ -382,6 +390,9 @@ class JDBCWriteOptions(JDBCOptions):
         even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
         The set of supported options depends on Spark version. See link above.
+
+    .. versionadded:: 0.5.0
+        Replace ``Connection.Options`` → ``Connection.WriteOptions``
 
     Examples
     --------
@@ -466,6 +477,8 @@ class JDBCWriteOptions(JDBCOptions):
                 * Table exists
                     An error is raised, and no data is written to the table.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     batchsize: int = 20_000
@@ -486,6 +499,9 @@ class JDBCWriteOptions(JDBCOptions):
         You can increase it even more, up to ``50_000``,
         but it depends on your database load and number of columns in the row.
         Higher values does not increase performance.
+
+    .. versionchanged:: 0.4.0
+        Changed default value from 1000 to 20_000
     """
 
     isolation_level: str = "READ_UNCOMMITTED"
@@ -527,6 +543,8 @@ class JDBCSQLOptions(JDBCOptions):
         `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
         tailored to optimize SQL query execution. Option names should be in ``camelCase``!
 
+    .. versionadded:: 0.11.0
+        Split up ``ReadOptions`` to ``SQLOptions``
     """
 
     partition_column: Optional[str] = None
@@ -599,6 +617,9 @@ class JDBCSQLOptions(JDBCOptions):
         default ``fetchsize=10``, which is absolutely not usable.
 
         Thus we've overridden default value with ``100_000``, which should increase reading performance.
+
+    .. versionchanged:: 0.2.0
+        Set explicit default value to ``100_000``
     """
 
     class Config:

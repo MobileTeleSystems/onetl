@@ -33,6 +33,9 @@ class JDBCOptions(GenericOptions):
         You can pass any value
         supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
+
+    .. deprecated:: 0.11.0
+        Use ``FetchOptions`` or ``ExecuteOptions`` instead
     """
 
     class Config:
@@ -67,6 +70,9 @@ class JDBCFetchOptions(GenericOptions):
         You can pass any value
         supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
+
+    .. versionadded:: 0.11.0
+        Replace ``Connection.JDBCOptions`` → ``Connection.FetchOptions``
     """
 
     class Config:
@@ -100,6 +106,9 @@ class JDBCExecuteOptions(GenericOptions):
         You can pass any value
         supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
+
+    .. versionadded:: 0.11.0
+        Replace ``Connection.JDBCOptions`` → ``Connection.ExecuteOptions``
     """
 
     class Config:

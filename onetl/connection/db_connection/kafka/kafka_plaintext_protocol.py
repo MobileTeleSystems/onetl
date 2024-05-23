@@ -21,6 +21,8 @@ class KafkaPlaintextProtocol(KafkaProtocol, FrozenModel):
         Not recommended to use on production environments.
         Prefer :obj:`SSLProtocol <onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol>`.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 

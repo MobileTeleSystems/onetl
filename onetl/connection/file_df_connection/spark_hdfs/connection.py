@@ -48,6 +48,8 @@ class SparkHDFS(SparkFileDFConnection):
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
         use :obj:`HDFS <onetl.connection.file_connection.hdfs.connection.HDFS>` connection.
 
+    .. versionadded:: 0.9.0
+
     Parameters
     ----------
     cluster : str
@@ -221,6 +223,8 @@ class SparkHDFS(SparkFileDFConnection):
 
             Can be used only if there are a some hooks bound to
             :obj:`Slots.get_current_cluster <onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_current_cluster>`.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

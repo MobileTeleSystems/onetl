@@ -107,6 +107,8 @@ class XML(ReadWriteFileFormat):
         Using ``mode=FAILFAST`` will throw an exception instead of producing ``null`` values.
         `Follow <https://github.com/databricks/spark-xml/issues/662>`_
 
+    .. versionadded:: 0.9.5
+
     Examples
     --------
     Describe options how to read from/write to XML file with specific options:
@@ -275,6 +277,8 @@ class XML(ReadWriteFileFormat):
                         ),
                     ],
                 )
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------

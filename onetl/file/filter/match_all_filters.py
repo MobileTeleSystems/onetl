@@ -14,6 +14,8 @@ def match_all_filters(path: PathProtocol, filters: Iterable[BaseFileFilter]) -> 
     """
     Check if input path satisfies all the filters.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     path : :obj:`onetl.base.path_protocol.PathProtocol`

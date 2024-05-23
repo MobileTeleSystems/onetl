@@ -59,6 +59,8 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     * `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig>`_
     * `Krb5LoginModule documentation <https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html>`_
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 

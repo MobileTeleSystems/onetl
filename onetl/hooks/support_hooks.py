@@ -91,6 +91,8 @@ def skip_hooks(cls: type):
             # running outside a decorated function restores previous behavior
             obj = MyClass()
             obj.my_method(2)  # will execute callback(obj, 2)
+
+    .. versionadded:: 0.7.0
     """
 
     slots = get_slots(cls)
@@ -126,6 +128,8 @@ def suspend_hooks(cls: type) -> None:
         MyClass.suspend_hooks()
 
         obj.my_method(2)  # will NOT execute callback
+
+    .. versionadded:: 0.7.0
     """
 
     slots = get_slots(cls)
@@ -161,6 +165,8 @@ def resume_hooks(cls: type) -> None:
         MyClass.resume_hooks()
 
         obj.my_method(2)  # will execute callback(obj, 2)
+
+    .. versionadded:: 0.7.0
     """
 
     slots = get_slots(cls)
@@ -176,6 +182,8 @@ def support_hooks(cls: Klass) -> Klass:
     Only methods decorated with :obj:`~slot` can be used for connecting hooks.
 
     Adds :obj:`~skip_hooks`, :obj:`~suspend_hooks` and :obj:`~resume_hooks` to the class.
+
+    .. versionadded:: 0.7.0
 
     Examples
     ---------

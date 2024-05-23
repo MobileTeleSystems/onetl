@@ -24,6 +24,8 @@ class HookPriority(int, Enum):
     Hook priority enum.
 
     All hooks within the same priority are executed in the same order they were registered.
+
+    .. versionadded:: 0.7.0
     """
 
     FIRST = -1
@@ -40,6 +42,8 @@ class HookPriority(int, Enum):
 class Hook(Generic[T]):  # noqa: WPS338
     """
     Hook representation.
+
+    .. versionadded:: 0.7.0
 
     Parameters
     ----------
@@ -81,6 +85,8 @@ class Hook(Generic[T]):  # noqa: WPS338
         """
         Enable the hook.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
@@ -106,6 +112,8 @@ class Hook(Generic[T]):  # noqa: WPS338
     def disable(self):
         """
         Disable the hook.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -140,6 +148,8 @@ class Hook(Generic[T]):  # noqa: WPS338
             its state will left intact after exiting the context.
 
             You should call :obj:`~enable` explicitly to change its state.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -364,6 +374,8 @@ class ContextDecorator:
 def hook(inp: Callable[..., T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
     """
     Initialize hook from callable/context manager.
+
+    .. versionadded:: 0.7.0
 
     Examples
     --------

@@ -17,10 +17,12 @@ class MoveResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * :obj:`successful`
-    * :obj:`failed`
-    * :obj:`skipped`
-    * :obj:`missing`
+    * :obj:`~successful`
+    * :obj:`~failed`
+    * :obj:`~skipped`
+    * :obj:`~missing`
+
+    .. versionadded:: 0.8.0
 
     Examples
     --------

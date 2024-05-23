@@ -85,6 +85,8 @@ class CSV(ReadWriteFileFormat):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 
@@ -122,6 +124,8 @@ class CSV(ReadWriteFileFormat):
         .. note::
 
             Can be used only with Spark 3.x+
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------
@@ -200,6 +204,8 @@ class CSV(ReadWriteFileFormat):
         .. note::
 
             Can be used only with Spark 3.x+
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------

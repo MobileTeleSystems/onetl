@@ -168,6 +168,8 @@ class MSSQL(JDBCConnection):
         """
         Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for MSSQL.  |support_hooks|
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         java_version : str, optional

@@ -174,6 +174,8 @@ class JDBCMixin(FrozenModel):
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
 
+        .. versionadded:: 0.2.0
+
         Parameters
         ----------
         query : str
@@ -232,6 +234,8 @@ class JDBCMixin(FrozenModel):
 
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
+
+        .. versionadded:: 0.2.0
 
         Parameters
         ----------

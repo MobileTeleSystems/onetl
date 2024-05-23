@@ -16,6 +16,8 @@ class HookCollection:
     """
     Representation of hooks collection.
 
+    .. versionadded:: 0.7.0
+
     Examples
     --------
 
@@ -37,6 +39,8 @@ class HookCollection:
         Return new HookCollection but containing only hooks with ``enabled=True`` state.
 
         If called after :obj:`~stop` or inside :obj:`~skip`, empty collection will be returned.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -63,6 +67,8 @@ class HookCollection:
     def stop(self) -> None:
         """
         Stop all hooks in the collection.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -91,6 +97,8 @@ class HookCollection:
 
             If hook is disabled by :obj:`onetl.hooks.hook.Hook.disable`, it will stay disabled.
             You should call :obj:`onetl.hooks.hook.Hook.enable` explicitly.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -127,6 +135,8 @@ class HookCollection:
             If hooks were stopped by :obj:`~stop`, they will not be resumed
             after exiting the context/decorated function.
             You should call :obj:`~resume` explicitly.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -165,6 +175,8 @@ class HookCollection:
     def add(self, item: Hook):
         """Appends hook to the collection.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
@@ -187,6 +199,8 @@ class HookCollection:
 
     def extend(self, hooks: Iterable[Hook]):
         """Extends collection using a iterator.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -211,6 +225,8 @@ class HookCollection:
     def __iter__(self):
         """Iterate over hooks in the collection.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
@@ -233,6 +249,8 @@ class HookCollection:
 
     def __len__(self):
         """Return collection length.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------

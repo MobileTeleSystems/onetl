@@ -43,10 +43,14 @@ class Hive(DBConnection):
 
         Before using this connector please take into account :ref:`hive-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     cluster : str
         Cluster name. Used for HWM and lineage.
+
+        .. versionadded:: 0.7.0
 
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session with Hive metastore support enabled
@@ -117,6 +121,8 @@ class Hive(DBConnection):
             Can be used only if there are some hooks bound to
             :obj:`Slots.get_current_cluster <onetl.connection.db_connection.hive.slots.HiveSlots.get_current_cluster>` slot.
 
+        .. versionadded:: 0.7.0
+
         Parameters
         ----------
         spark : :obj:`pyspark.sql.SparkSession`
@@ -183,6 +189,8 @@ class Hive(DBConnection):
 
         Same as ``spark.sql(query)``.
 
+        .. versionadded:: 0.2.0
+
         Parameters
         ----------
         query : str
@@ -212,6 +220,8 @@ class Hive(DBConnection):
     ) -> None:
         """
         Execute DDL or DML statement. |support_hooks|
+
+        .. versionadded:: 0.2.0
 
         Parameters
         ----------

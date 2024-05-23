@@ -45,6 +45,8 @@ class Teradata(JDBCConnection):
 
         Before using this connector please take into account :ref:`teradata-prerequisites`
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str
@@ -146,10 +148,14 @@ class Teradata(JDBCConnection):
         """
         Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for Teradata. |support_hooks|
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         package_version : str, optional
             Specifies the version of the Teradata JDBC driver to use. Defaults to ``17.20.00.15``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------

@@ -75,6 +75,8 @@ class Avro(ReadWriteFileFormat):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 
@@ -209,6 +211,8 @@ class Avro(ReadWriteFileFormat):
 
                 pip install requests
 
+        .. versionadded:: 0.11.0
+
         Parameters
         ----------
         column : str | Column
@@ -308,6 +312,8 @@ class Avro(ReadWriteFileFormat):
             .. code:: bash
 
                 pip install requests
+
+        .. versionadded:: 0.11.0
 
         Parameters
         ----------

@@ -46,6 +46,8 @@ class SnapshotStrategy(BaseStrategy):
                 },
             )
 
+    .. versionadded:: 0.1.0
+
     Examples
     --------
 
@@ -157,6 +159,8 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         Not every :ref:`DB connection <db-connections>`
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the SnapshotBatchStrategy.
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------

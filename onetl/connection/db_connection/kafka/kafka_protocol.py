@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 class KafkaProtocol(ABC):
     """
     Interface for Kafka connection Protocol classes.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod

@@ -22,6 +22,8 @@ class HooksState:
         """
         Stop all hooks for all classes.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
@@ -50,6 +52,8 @@ class HooksState:
 
             This function does not enable hooks which were disabled by :obj:`onetl.hooks.hook.Hook.disable`,
             or stopped by :obj:`onetl.hooks.support_hooks.suspend_hooks`.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
@@ -83,6 +87,8 @@ class HooksState:
             If hooks were stopped by :obj:`~stop_all_hooks`, they will not be resumed
             after exiting the context/decorated function.
             You should call :obj:`~resume_all_hooks` explicitly.
+
+        .. versionadded:: 0.7.0
 
         Examples
         --------
