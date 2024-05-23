@@ -1,1 +1,1 @@
-:class:`Oracle` connection now uses Oracle JDBC driver ``23.3.0.0.23.09``, upgraded from ``23.2.0.0``, and supports passing custom versions: ``Oracle.get_packages(java_version=..., package_version=...)``.
+:class:`Oracle` connection now uses Oracle JDBC driver ``23.4.0.24.05``, upgraded from ``23.2.0.0``, and supports passing custom versions: ``Oracle.get_packages(java_version=..., package_version=...)``.
