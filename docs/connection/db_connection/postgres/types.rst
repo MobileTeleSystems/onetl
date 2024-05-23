@@ -27,7 +27,7 @@ This is how Postgres connector performs this:
 
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
-* Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
+* Take only columns present in DataFrame (by name, case insensitive) [2]_. For each found column get Postgres type.
 * Find corresponding ``Spark type`` -> ``Postgres type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Postgres type (write)`` match ``Postgres type (read)``, no additional casts will be performed, DataFrame column will be written to Postgres as is.
 * If ``Postgres type (write)`` does not match ``Postgres type (read)``, DataFrame column will be casted to target column type **on Postgres side**.
