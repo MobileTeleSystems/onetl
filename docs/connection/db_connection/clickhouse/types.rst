@@ -329,7 +329,7 @@ Columns of these Clickhouse types cannot be read by Spark:
     * ``SimpleAggregateFunction(func, T)``
     * ``Tuple(T1, T2, ...)``
 
-Dataframe with these Spark types be written to Clickhouse:
+Dataframe with these Spark types cannot be written to Clickhouse:
     * ``ArrayType(T)``
     * ``BinaryType()``
     * ``CharType(N)``
@@ -365,6 +365,7 @@ For parsing JSON columns in ClickHouse, :obj:`JSON.parse_column <onetl.file.form
 
     reader = DBReader(
         connection=clickhouse,
+        table="default.source_tbl",
         columns=[
             "id",
             "toJSONString(array_column) array_column",
