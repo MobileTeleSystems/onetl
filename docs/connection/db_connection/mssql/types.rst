@@ -35,7 +35,7 @@ This is how MSSQL connector performs this:
     it will be populated by MSSQL.
 
 .. [2]
-    This is true only if DataFrame column is a ``StringType()``, because text value is parsed automatically to tagret column type.
+    This is true only if DataFrame column is a ``StringType()``, because text value is parsed automatically to target column type.
 
     But other types cannot be silently converted, like ``int -> text``. This requires explicit casting, see `DBWriter`_.
 
