@@ -38,6 +38,6 @@ class AutoDetectHWM(HWM):
     def dict(self, **kwargs):
         serialized_data = super().dict(**kwargs)
         # as in HWM classes default value for 'value' may be any structure,
-        # e.g. frozendict for KeyValueHWM, there should unifed dict representation
+        # e.g. frozendict for KeyValueHWM, there should unified dict representation
         serialized_data.pop("value")
         return serialized_data

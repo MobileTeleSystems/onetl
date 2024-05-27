@@ -3,7 +3,7 @@
 Logging
 =======
 
-Logging is quite important to understant what's going on under the hood of onETL.
+Logging is quite important to understand what's going on under the hood of onETL.
 
 Default logging level for Python interpreters is ``WARNING``,
 but most of onETL logs are in ``INFO`` level, so users usually don't see much.
