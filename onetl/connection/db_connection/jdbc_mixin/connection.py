@@ -9,6 +9,8 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
 
+from onetl.impl.generic_options import GenericOptions
+
 try:
     from pydantic.v1 import Field, PrivateAttr, SecretStr, validator
 except (ImportError, AttributeError):
@@ -222,7 +224,7 @@ class JDBCMixin(FrozenModel):
     def execute(
         self,
         statement: str,
-        options: JDBCExecuteOptions | JDBCMixinOptions | dict | None = None,
+        options: JDBCExecuteOptions | dict | None = None,
     ) -> DataFrame | None:
         """
         **Immediately** execute DDL, DML or procedure/function **on Spark driver**. |support_hooks|
@@ -267,7 +269,7 @@ class JDBCMixin(FrozenModel):
         log_lines(log, statement)
 
         call_options = (
-            self.ExecuteOptions.parse(options.dict())
+            self.ExecuteOptions.parse(options.dict())  # type: ignore
             if isinstance(options, JDBCMixinOptions)
             else self.ExecuteOptions.parse(options)
         )
@@ -302,7 +304,7 @@ class JDBCMixin(FrozenModel):
     def _query_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions | JDBCFetchOptions | JDBCExecuteOptions,
+        options: JDBCFetchOptions | JDBCExecuteOptions,
     ) -> DataFrame:
         return self._execute_on_driver(
             statement=query,
@@ -315,7 +317,7 @@ class JDBCMixin(FrozenModel):
     def _query_optional_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions | JDBCFetchOptions,
+        options: JDBCFetchOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
@@ -328,7 +330,7 @@ class JDBCMixin(FrozenModel):
     def _call_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions | JDBCExecuteOptions,
+        options: JDBCExecuteOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
@@ -340,7 +342,7 @@ class JDBCMixin(FrozenModel):
 
     def _get_jdbc_properties(
         self,
-        options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions,
+        options: GenericOptions,
         **kwargs,
     ) -> dict[str, str]:
         """
@@ -350,7 +352,7 @@ class JDBCMixin(FrozenModel):
         result.update(options.dict(by_alias=True, **kwargs))
         return stringify(result)
 
-    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions):
+    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
         """
         Converts human-readable Options class to ``java.util.Properties``.
 
@@ -371,7 +373,7 @@ class JDBCMixin(FrozenModel):
         )
         return jdbc_options.asConnectionProperties()
 
-    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions):
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions):
         if not self._last_connection_and_options:
             # connection class can be used in multiple threads.
             # each Python thread creates its own thread in JVM
@@ -413,7 +415,7 @@ class JDBCMixin(FrozenModel):
         statement: str,
         statement_type: JDBCStatementType,
         callback: Callable[..., T],
-        options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions,
+        options: JDBCFetchOptions | JDBCExecuteOptions,
         read_only: bool,
     ) -> T:
         """
@@ -435,7 +437,7 @@ class JDBCMixin(FrozenModel):
         self,
         jdbc_statement,
         statement: str,
-        options: JDBCMixinOptions | JDBCFetchOptions | JDBCExecuteOptions,
+        options: JDBCFetchOptions | JDBCExecuteOptions,
         callback: Callable[..., T],
         read_only: bool,
     ) -> T:

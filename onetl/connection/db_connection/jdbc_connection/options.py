@@ -6,6 +6,8 @@ import warnings
 from enum import Enum
 from typing import Optional
 
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
+
 try:
     from pydantic.v1 import Field, PositiveInt, root_validator
 except (ImportError, AttributeError):
@@ -14,11 +16,15 @@ except (ImportError, AttributeError):
 from typing_extensions import deprecated
 
 from onetl._internal import to_camel
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.impl import GenericOptions
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(
     (
+        "user",
+        "password",
+        "driver",
+        "url",
         "table",
         "dbtable",
         "query",
@@ -104,7 +110,7 @@ class JDBCPartitioningMode(str, Enum):
         return str(self.value)
 
 
-class JDBCReadOptions(JDBCOptions):
+class JDBCReadOptions(JDBCFetchOptions):
     """Spark JDBC reading options.
 
     .. note ::
@@ -136,7 +142,8 @@ class JDBCReadOptions(JDBCOptions):
 
     class Config:
         known_options = READ_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
+        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
+        extra = "allow"
         alias_generator = to_camel
 
     # Options in DataFrameWriter.jdbc() method
@@ -184,6 +191,14 @@ class JDBCReadOptions(JDBCOptions):
             END;
         """
     '''
+
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    """The number of seconds the driver will wait for a statement to execute.
+    Zero means there is no limit.
+
+    This option depends on driver implementation,
+    some drivers can check the timeout of each query instead of an entire JDBC batch.
+    """
 
     fetchsize: int = 100_000
     """Fetch N rows from an opened cursor per one read round.
@@ -380,7 +395,7 @@ class JDBCReadOptions(JDBCOptions):
         return values
 
 
-class JDBCWriteOptions(JDBCOptions):
+class JDBCWriteOptions(GenericOptions):
     """Spark JDBC writing options.
 
     .. note ::
@@ -406,7 +421,8 @@ class JDBCWriteOptions(JDBCOptions):
 
     class Config:
         known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
+        prohibited_options = GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
+        extra = "allow"
         alias_generator = to_camel
 
     if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
@@ -481,6 +497,14 @@ class JDBCWriteOptions(JDBCOptions):
         Renamed ``mode`` → ``if_exists``
     """
 
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    """The number of seconds the driver will wait for a statement to execute.
+    Zero means there is no limit.
+
+    This option depends on driver implementation,
+    some drivers can check the timeout of each query instead of an entire JDBC batch.
+    """
+
     batchsize: int = 20_000
     """How many rows can be inserted per round trip.
 
@@ -531,7 +555,7 @@ class JDBCWriteOptions(JDBCOptions):
         return values
 
 
-class JDBCSQLOptions(JDBCOptions):
+class JDBCSQLOptions(GenericOptions):
     """Options specifically for SQL queries
 
     These options allow you to specify configurations for executing SQL queries
@@ -580,10 +604,10 @@ class JDBCSQLOptions(JDBCOptions):
     """Number of jobs created by Spark to read the table content in parallel."""  # noqa: WPS322
 
     lower_bound: Optional[int] = None
-    """Defines the starting boundary for partitioning the query's data. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
+    """Defines the starting boundary for partitioning the query's data. Mandatory if :obj:`~partition_column` is set"""  # noqa: WPS322
 
     upper_bound: Optional[int] = None
-    """Sets the ending boundary for data partitioning. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
+    """Sets the ending boundary for data partitioning. Mandatory if :obj:`~partition_column` is set"""  # noqa: WPS322
 
     session_init_statement: Optional[str] = None
     '''After each database session is opened to the remote DB and before starting to read data,
@@ -602,6 +626,14 @@ class JDBCSQLOptions(JDBCOptions):
             END;
         """
     '''
+
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    """The number of seconds the driver will wait for a statement to execute.
+    Zero means there is no limit.
+
+    This option depends on driver implementation,
+    some drivers can check the timeout of each query instead of an entire JDBC batch.
+    """
 
     fetchsize: int = 100_000
     """Fetch N rows from an opened cursor per one read round.
@@ -624,7 +656,8 @@ class JDBCSQLOptions(JDBCOptions):
 
     class Config:
         known_options = READ_OPTIONS - {"partitioning_mode"}
-        prohibited_options = JDBCOptions.Config.prohibited_options | {"partitioning_mode"}
+        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"}
+        extra = "allow"
         alias_generator = to_camel
 
     @root_validator(pre=True)
@@ -645,4 +678,5 @@ class JDBCSQLOptions(JDBCOptions):
 )
 class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):
     class Config:
-        prohibited_options = JDBCOptions.Config.prohibited_options
+        prohibited_options = GENERIC_PROHIBITED_OPTIONS
+        extra = "allow"
