@@ -27,8 +27,10 @@ Connecting to MSSQL
 Connection port
 ~~~~~~~~~~~~~~~
 
-Connection is usually performed to port 1443. Port may differ for different MSSQL instances.
+Connection is usually performed to port 1433. Port may differ for different MSSQL instances.
 Please ask your MSSQL administrator to provide required information.
+
+For named MSSQL instances (``instanceName`` option), `port number is optional <https://learn.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url?view=sql-server-ver16#named-and-multiple-sql-server-instances>`_, and could be omitted.
 
 Connection host
 ~~~~~~~~~~~~~~~

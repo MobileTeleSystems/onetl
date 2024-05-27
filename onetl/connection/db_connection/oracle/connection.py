@@ -17,6 +17,8 @@ try:
 except (ImportError, AttributeError):
     from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
+from etl_entities.instance import Host
+
 from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
@@ -177,6 +179,7 @@ class Oracle(JDBCConnection):
 
     """
 
+    host: Host
     port: int = 1521
     sid: Optional[str] = None
     service_name: Optional[str] = None
@@ -259,9 +262,9 @@ class Oracle(JDBCConnection):
     @property
     def instance_url(self) -> str:
         if self.sid:
-            return f"{super().instance_url}/{self.sid}"
+            return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.sid}"
 
-        return f"{super().instance_url}/{self.service_name}"
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.service_name}"
 
     @slot
     def get_min_max_values(

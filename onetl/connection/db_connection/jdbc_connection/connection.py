@@ -7,8 +7,6 @@ import secrets
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from etl_entities.instance import Host
-
 from onetl._internal import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
@@ -47,18 +45,11 @@ WRITE_TOP_LEVEL_OPTIONS = frozenset("url")
 
 @support_hooks
 class JDBCConnection(JDBCMixin, DBConnection):
-    host: Host
-    port: int
-
     Dialect = JDBCDialect
     ReadOptions = JDBCReadOptions
     SQLOptions = JDBCSQLOptions
     WriteOptions = JDBCWriteOptions
     Options = JDBCLegacyOptions
-
-    @property
-    def instance_url(self) -> str:
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     @slot
     def sql(

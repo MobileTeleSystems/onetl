@@ -5,6 +5,8 @@ from __future__ import annotations
 import warnings
 from typing import ClassVar, Optional
 
+from etl_entities.instance import Host
+
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -103,6 +105,7 @@ class MySQL(JDBCConnection):
 
     """
 
+    host: Host
     port: int = 3306
     database: Optional[str] = None
     extra: MySQLExtra = MySQLExtra()
@@ -168,3 +171,7 @@ class MySQL(JDBCConnection):
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
         return result
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
