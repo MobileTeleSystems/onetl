@@ -5,6 +5,8 @@ from __future__ import annotations
 import warnings
 from typing import ClassVar, Optional
 
+from etl_entities.instance import Host
+
 from onetl._internal import stringify
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
@@ -123,6 +125,7 @@ class Teradata(JDBCConnection):
 
     """
 
+    host: Host
     port: int = 1025
     database: Optional[str] = None
     extra: TeradataExtra = TeradataExtra()
@@ -201,3 +204,7 @@ class Teradata(JDBCConnection):
                 connection_params.append(f"{key}={string_value}")
 
         return f"jdbc:teradata://{self.host}/{','.join(connection_params)}"
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"

@@ -92,6 +92,8 @@ def test_teradata(spark_mock):
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
 
+    assert conn.instance_url == "teradata://some_host:1025"
+
 
 def test_teradata_with_port(spark_mock):
     conn = Teradata(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
@@ -113,6 +115,8 @@ def test_teradata_with_port(spark_mock):
         "driver": "com.teradata.jdbc.TeraDriver",
         "url": conn.jdbc_url,
     }
+
+    assert conn.instance_url == "teradata://some_host:5000"
 
 
 def test_teradata_without_database(spark_mock):

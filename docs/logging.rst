@@ -69,7 +69,7 @@ This changes both log level and log formatting to something like this:
         2024-04-12 10:12:12,190 [INFO    ] MainThread:         host = 'mssql.host'
         2024-04-12 10:12:12,190 [INFO    ] MainThread:         port = 1433
         2024-04-12 10:12:12,191 [INFO    ] MainThread:         database = 'somedb'
-        2024-04-12 10:12:12,191 [INFO    ] MainThread:         extra = {'ApplicationIntent': 'ReadOnly', 'trustServerCertificate': 'true'}
+        2024-04-12 10:12:12,191 [INFO    ] MainThread:         extra = {'applicationIntent': 'ReadOnly', 'trustServerCertificate': 'true'}
         2024-04-12 10:12:12,191 [INFO    ] MainThread:         jdbc_url = 'jdbc:sqlserver:/mssql.host:1433'
         2024-04-12 10:12:12,579 [INFO    ] MainThread: |MSSQL| Connection is available.
         2024-04-12 10:12:12,581 [INFO    ] MainThread: |MSSQL| Executing SQL query (on driver):

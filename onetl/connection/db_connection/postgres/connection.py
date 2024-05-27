@@ -5,6 +5,8 @@ from __future__ import annotations
 import warnings
 from typing import ClassVar
 
+from etl_entities.instance import Host
+
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -112,6 +114,7 @@ class Postgres(JDBCConnection):
 
     """
 
+    host: Host
     database: str
     port: int = 5432
     extra: PostgresExtra = PostgresExtra()
@@ -178,7 +181,7 @@ class Postgres(JDBCConnection):
 
     @property
     def instance_url(self) -> str:
-        return f"{super().instance_url}/{self.database}"
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
     def _options_to_connection_properties(
         self,

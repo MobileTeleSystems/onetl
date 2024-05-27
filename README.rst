@@ -341,7 +341,7 @@ Read data from MSSQL, transform & write to Hive.
         database="Telecom",
         spark=spark,
         # These options are passed to MSSQL JDBC Driver:
-        extra={"ApplicationIntent": "ReadOnly"},
+        extra={"applicationIntent": "ReadOnly"},
     ).check()
 
     # >>> INFO:|MSSQL| Connection is available

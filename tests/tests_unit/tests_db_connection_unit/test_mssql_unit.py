@@ -86,26 +86,28 @@ def test_mssql(spark_mock):
     conn = MSSQL(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
-    assert conn.port == 1433
+    assert conn.port is None
     assert conn.user == "user"
     assert conn.password != "passwd"
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433"
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host"
     assert conn.jdbc_params == {
         "user": "user",
         "password": "passwd",
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "url": "jdbc:sqlserver://some_host:1433",
+        "url": "jdbc:sqlserver://some_host",
         "databaseName": "database",
     }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
 
+    assert conn.instance_url == "mssql://some_host:1433/database"
 
-def test_mssql_with_port(spark_mock):
+
+def test_mssql_with_custom_port(spark_mock):
     conn = MSSQL(host="some_host", port=5000, user="user", database="database", password="passwd", spark=spark_mock)
 
     assert conn.host == "some_host"
@@ -123,6 +125,38 @@ def test_mssql_with_port(spark_mock):
         "url": "jdbc:sqlserver://some_host:5000",
         "databaseName": "database",
     }
+
+    assert conn.instance_url == "mssql://some_host:5000/database"
+
+
+def test_mssql_with_instance_name(spark_mock):
+    conn = MSSQL(
+        host="some_host",
+        user="user",
+        database="database",
+        password="passwd",
+        extra={"instanceName": "myinstance"},
+        spark=spark_mock,
+    )
+
+    assert conn.host == "some_host"
+    assert conn.port is None
+    assert conn.user == "user"
+    assert conn.password != "passwd"
+    assert conn.password.get_secret_value() == "passwd"
+    assert conn.database == "database"
+
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "url": "jdbc:sqlserver://some_host",
+        "instanceName": "myinstance",
+        "databaseName": "database",
+    }
+
+    assert conn.instance_url == "mssql://some_host\\myinstance/database"
 
 
 def test_mssql_without_database_error(spark_mock):
@@ -145,12 +179,12 @@ def test_mssql_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == "jdbc:sqlserver://some_host:1433"
+    assert conn.jdbc_url == "jdbc:sqlserver://some_host"
     assert conn.jdbc_params == {
         "user": "user",
         "password": "passwd",
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "url": "jdbc:sqlserver://some_host:1433",
+        "url": "jdbc:sqlserver://some_host",
         "databaseName": "database",
         "characterEncoding": "UTF-8",
         "trustServerCertificate": "true",

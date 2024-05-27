@@ -113,6 +113,8 @@ def test_oracle(spark_mock):
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
 
+    assert conn.instance_url == "oracle://some_host:1521/sid"
+
 
 def test_oracle_with_port(spark_mock):
     conn = Oracle(host="some_host", port=5000, user="user", sid="sid", password="passwd", spark=spark_mock)
@@ -132,6 +134,8 @@ def test_oracle_with_port(spark_mock):
         "url": "jdbc:oracle:thin:@some_host:5000:sid",
     }
 
+    assert conn.instance_url == "oracle://some_host:5000/sid"
+
 
 def test_oracle_uri_with_service_name(spark_mock):
     conn = Oracle(host="some_host", user="user", password="passwd", service_name="service", spark=spark_mock)
@@ -143,6 +147,8 @@ def test_oracle_uri_with_service_name(spark_mock):
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@//some_host:1521/service",
     }
+
+    assert conn.instance_url == "oracle://some_host:1521/service"
 
 
 def test_oracle_without_sid_and_service_name(spark_mock):
