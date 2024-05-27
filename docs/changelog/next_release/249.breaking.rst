@@ -1,1 +1,1 @@
-Updated the Clickhouse JDBC driver from ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2`` to `com.clickhouse:clickhouse-jdbc:0.6.0-patch4 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch4>`_.
+Updated the Clickhouse JDBC driver from ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2`` to `com.clickhouse:clickhouse-jdbc:0.6.0-patch5 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch5>`_.
