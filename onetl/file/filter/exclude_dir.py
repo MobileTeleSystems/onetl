@@ -16,6 +16,9 @@ from onetl.impl import FrozenModel, RemotePath
 class ExcludeDir(BaseFileFilter, FrozenModel):
     """Filter files or directories which are included in a specific directory.
 
+    .. versionadded:: 0.8.0
+        Replaces deprecated ``onetl.core.FileFilter``
+
     Parameters
     ----------
 

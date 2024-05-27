@@ -21,9 +21,11 @@ if TYPE_CHECKING:
 
 class KafkaScramAuth(KafkaAuth, GenericOptions):
     """
-    Connect to Kafka using ``sasl.mechanism="SCRAM-SHA-*"``.
+    Connect to Kafka using ``sasl.mechanism="SCRAM-SHA-256"`` or ``sasl.mechanism="SCRAM-SHA-512"``.
 
     For more details see `Kafka Documentation <https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig>`_.
+
+    .. versionadded:: 0.9.0
 
     Examples
     --------
@@ -51,7 +53,7 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
                 "user": "me",
                 "password": "abc",
                 "digest": "SHA-512",
-                # options with sasl.login. prefix are passed to Kafka client config
+                # options with `sasl.login.` prefix are passed to Kafka client config as-is
                 "sasl.login.class": "com.example.CustomScramLogin",
             }
         )

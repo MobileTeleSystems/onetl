@@ -3,6 +3,8 @@
 Hooks
 =====
 
+.. versionadded:: 0.6.0
+
 .. toctree::
     :maxdepth: 1
     :caption: Hooks

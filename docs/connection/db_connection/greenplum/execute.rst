@@ -17,10 +17,10 @@ There are 2 ways to execute some statement in Greenplum
 Use ``Greenplum.fetch``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
+Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 Greenplum config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Greenplum.FetchOptions <onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -50,7 +50,7 @@ Examples
 
     df = greenplum.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Greenplum.JDBCOptions(query_timeout=10),
+        options=Greenplum.FetchOptions(query_timeout=10),
     )
     greenplum.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -60,7 +60,7 @@ Use ``Greenplum.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Greenplum.ExecuteOptions <onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -69,7 +69,7 @@ Syntax support
 
 This method supports **any** query syntax supported by Greenplum, like:
 
-* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, ``DROP TABLE ...``, and so on
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
@@ -99,7 +99,7 @@ Examples
             )
             DISTRIBUTED BY id
             """,
-            options=Greenplum.JDBCOptions(query_timeout=10),
+            options=Greenplum.ExecuteOptions(query_timeout=10),
         )
 
 Interaction schema
@@ -143,9 +143,17 @@ The only port used while interacting with Greenplum in this case is ``5432`` (Gr
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
+.. currentmodule:: onetl.connection.db_connection.greenplum.options
 
-.. autopydantic_model:: JDBCOptions
+.. autopydantic_model:: GreenplumFetchOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
+
+
+.. autopydantic_model:: GreenplumExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

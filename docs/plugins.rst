@@ -3,6 +3,8 @@
 Plugins
 =======
 
+.. versionadded:: 0.6.0
+
 What are plugins?
 -----------------
 
@@ -81,6 +83,8 @@ like :ref:`hook-decorator`, it will be executed during this import.
 
 How to enable/disable plugins?
 ------------------------------
+
+.. versionadded:: 0.7.0
 
 Disable/enable all plugins
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -76,10 +76,10 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-greenplum-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-greenplum-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/postgres.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-greenplum-
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-
 
       - name: Set up Postgres client
         if: runner.os == 'Linux'
@@ -113,7 +113,6 @@ jobs:
           export ONETL_GP_PACKAGE_VERSION=${{ inputs.package-version }}
           ./pytest_runner.sh -m greenplum
         env:
-          ONETL_DB_WITH_GREENPLUM: 'true'
           GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
           GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from typing_extensions import deprecated
+
 try:
     from pydantic.v1 import Field
 except (ImportError, AttributeError):
@@ -22,6 +24,7 @@ PROHIBITED_OPTIONS = frozenset(
 )
 
 
+@deprecated("Deprecated in 0.11.0 and will be removed in 1.0.0. Use FetchOptions or ExecuteOptions instead")
 class JDBCOptions(GenericOptions):
     """Generic options, related to specific JDBC driver.
 
@@ -30,6 +33,9 @@ class JDBCOptions(GenericOptions):
         You can pass any value
         supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
+
+    .. deprecated:: 0.11.0
+        Use ``FetchOptions`` or ``ExecuteOptions`` instead
     """
 
     class Config:
@@ -51,6 +57,78 @@ class JDBCOptions(GenericOptions):
 
     .. warning::
 
+        Default value depends on driver. For example, Oracle has
+        default ``fetchsize=10``.
+    """
+
+
+class JDBCFetchOptions(GenericOptions):
+    """Options related to fetching data from databases via JDBC.
+
+    .. note ::
+
+        You can pass any value
+        supported by underlying JDBC driver class,
+        even if it is not mentioned in this documentation.
+
+    .. versionadded:: 0.11.0
+        Replace ``Connection.JDBCOptions`` → ``Connection.FetchOptions``
+    """
+
+    class Config:
+        prohibited_options = PROHIBITED_OPTIONS
+        extra = "allow"
+
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    """The number of seconds the driver will wait for a statement to execute.
+    Zero means there is no limit.
+
+    This option depends on driver implementation,
+    some drivers can check the timeout of each query instead of an entire JDBC batch.
+    """
+
+    fetchsize: Optional[int] = None
+    """How many rows to fetch per round trip.
+
+    Tuning this option can influence performance of reading.
+
+    .. warning::
+        Default value depends on driver. For example, Oracle has
+        default ``fetchsize=10``.
+    """
+
+
+class JDBCExecuteOptions(GenericOptions):
+    """Options related to executing statements in databases via JDBC.
+
+    .. note ::
+
+        You can pass any value
+        supported by underlying JDBC driver class,
+        even if it is not mentioned in this documentation.
+
+    .. versionadded:: 0.11.0
+        Replace ``Connection.JDBCOptions`` → ``Connection.ExecuteOptions``
+    """
+
+    class Config:
+        prohibited_options = PROHIBITED_OPTIONS
+        extra = "allow"
+
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    """The number of seconds the driver will wait for a statement to execute.
+    Zero means there is no limit.
+
+    This option depends on driver implementation,
+    some drivers can check the timeout of each query instead of an entire JDBC batch.
+    """
+
+    fetchsize: Optional[int] = None
+    """How many rows to fetch per round trip.
+
+    Tuning this option can influence performance of reading.
+
+    .. warning::
         Default value depends on driver. For example, Oracle has
         default ``fetchsize=10``.
     """

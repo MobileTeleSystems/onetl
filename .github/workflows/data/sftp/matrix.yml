@@ -15,13 +15,13 @@ latest: &latest
 
 matrix:
   small:
-    - openssh-version: 9.3_p1-r3-ls120
+    - openssh-version: 9.6_p1-r0-ls154
       <<: *max
   full:
-  # prior image versions does not accept incoming connections, seems like a bug
+    # prior image versions does not accept incoming connections, seems like a bug
     - openssh-version: 8.1_p1-r0-ls5
       <<: *min
-    - openssh-version: 9.3_p1-r3-ls120
+    - openssh-version: 9.6_p1-r0-ls154
       <<: *max
   nightly:
     - openssh-version: 8.1_p1-r0-ls5

@@ -37,7 +37,14 @@ requirements_samba = parse_requirements(here / "requirements" / "samba.txt")
 requirements_hdfs = parse_requirements(here / "requirements" / "hdfs.txt")
 requirements_s3 = parse_requirements(here / "requirements" / "s3.txt")
 requirements_webdav = parse_requirements(here / "requirements" / "webdav.txt")
-requirements_files = [*requirements_ftp, *requirements_sftp, *requirements_hdfs, *requirements_s3, *requirements_webdav]
+requirements_files = [
+    *requirements_ftp,
+    *requirements_sftp,
+    *requirements_hdfs,
+    *requirements_s3,
+    *requirements_webdav,
+    *requirements_samba,
+]
 
 requirements_kerberos = parse_requirements(here / "requirements" / "kerberos.txt")
 requirements_spark = parse_requirements(here / "requirements" / "spark.txt")

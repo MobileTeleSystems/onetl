@@ -57,15 +57,15 @@ class Kafka(DBConnection):
     Based on `official Kafka Source For Spark
     <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
+    .. seealso::
+
+        Before using this connector please take into account :ref:`kafka-prerequisites`
+
     .. note::
 
-        This connector is for batch download from kafka and not streaming.
+        This connector is for **batch** ETL processes, not streaming.
 
-    .. dropdown:: Version compatibility
-
-        * Apache Kafka versions: 0.10 or higher
-        * Spark versions: 2.4.x - 3.5.x
-        * Scala versions: 2.11 - 2.13
+    .. versionadded:: 0.9.0
 
     Parameters
     ----------
@@ -392,8 +392,8 @@ class Kafka(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str | Version,
-        scala_version: str | Version | None = None,
+        spark_version: str,
+        scala_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -424,17 +424,17 @@ class Kafka(DBConnection):
         """
 
         # Connector version is same as Spark, do not perform any additional checks
-        spark_ver = Version.parse(spark_version)
-        if spark_ver < (2, 4):
+        spark_ver = Version(spark_version).min_digits(3)
+        if spark_ver < Version("2.4"):
             # Kafka connector for Spark 2.3 is build with Kafka client 0.10.0.1 which does not support
             # passing `sasl.jaas.config` option. It is supported only in 0.10.2.0,
             # see https://issues.apache.org/jira/browse/KAFKA-4259
             # Old client requires generating JAAS file and placing it to filesystem, which is not secure.
             raise ValueError(f"Spark version must be at least 2.4, got {spark_ver}")
 
-        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
-            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.digits(2)}:{spark_ver.digits(3)}",
+            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
         ]
 
     def __enter__(self):
@@ -592,7 +592,7 @@ class Kafka(DBConnection):
     @validator("spark")
     def _check_spark_version(cls, spark):
         spark_version = get_spark_version(spark)
-        if spark_version < (2, 4):
+        if spark_version < Version("2.4"):
             raise ValueError(f"Spark version must be at least 2.4, got {spark_version}")
 
         return spark
@@ -604,7 +604,7 @@ class Kafka(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).format("{major}.{minor}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

@@ -17,42 +17,43 @@ class DownloadResult(FileResult):
 
     Container for file paths, divided into certain categories:
 
-    * :obj:`successful`
-    * :obj:`failed`
-    * :obj:`skipped`
-    * :obj:`missing`
+    * :obj:`~successful`
+    * :obj:`~failed`
+    * :obj:`~skipped`
+    * :obj:`~missing`
+
+    .. versionadded:: 0.3.0
 
     Examples
     --------
 
-    Download files
-
-    .. code:: python
-
-        from onetl.impl import LocalPath, RemoteFile, FailedLocalFile
-        from onetl.file import FileDownloader, DownloadResult
-
-        downloader = FileDownloader(local_path="/local", ...)
-
-        downloaded_files = downloader.run(
-            [
-                "/remote/file1",
-                "/remote/file2",
-                "/failed/file",
-                "/existing/file",
-                "/missing/file",
-            ]
-        )
-
-        assert downloaded_files == DownloadResult(
-            successful={
-                LocalPath("/local/file1"),
-                LocalPath("/local/file2"),
-            },
-            failed={FailedLocalFile("/failed/file")},
-            skipped={RemoteFile("/existing/file")},
-            missing={RemotePath("/missing/file")},
-        )
+    >>> from onetl.file import FileDownloader
+    >>> downloader = FileDownloader(local_path="/local", ...)
+    >>> download_result = downloader.run(
+    ...     [
+    ...         "/remote/file1",
+    ...         "/remote/file2",
+    ...         "/failed/file",
+    ...         "/existing/file",
+    ...         "/missing/file",
+    ...     ]
+    ... )
+    >>> download_result
+    DownloadResult(
+        successful=FileSet([
+            LocalPath("/local/file1"),
+            LocalPath("/local/file2"),
+        ]),
+        failed=FileSet([
+            FailedLocalFile("/failed/file")
+        ]),
+        skipped=FileSet([
+            RemoteFile("/existing/file")
+        ]),
+        missing=FileSet([
+            RemotePath("/missing/file")
+        ]),
+    )
     """
 
     successful: FileSet[LocalPath] = Field(default_factory=FileSet)

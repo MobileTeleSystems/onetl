@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import CSV
 
+pytestmark = [pytest.mark.csv]
+
 
 def test_csv_options_default():
     csv = CSV()

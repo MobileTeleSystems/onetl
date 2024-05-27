@@ -13,18 +13,16 @@ class SparkTypeToHWM:
     Examples
     --------
 
-    .. code:: python
-
-        from etl_entities.hwm import ColumnIntHWM, ColumnDateHWM
-        from onetl.hwm.store import SparkTypeToHWM
-
-        assert SparkTypeToHWM.get("integer") == ColumnIntHWM
-        assert SparkTypeToHWM.get("short") == ColumnIntHWM  # multiple type names are supported
-
-        assert SparkTypeToHWM.get("date") == ColumnDateHWM
-
-        assert SparkTypeToHWM.get("unknown") is None
-
+    >>> from etl_entities.hwm import ColumnIntHWM, ColumnDateHWM
+    >>> from onetl.hwm.store import SparkTypeToHWM
+    >>> SparkTypeToHWM.get("integer")
+    <class 'etl_entities.hwm.column.int_hwm.ColumnIntHWM'>
+    >>> # multiple type names are supported
+    >>> SparkTypeToHWM.get("short")
+    <class 'etl_entities.hwm.column.int_hwm.ColumnIntHWM'>
+    >>> SparkTypeToHWM.get("date")
+    <class 'etl_entities.hwm.column.date_hwm.ColumnDateHWM'>
+    >>> SparkTypeToHWM.get("unknown")
     """
 
     _mapping: ClassVar[dict[str, type[HWM]]] = {
@@ -57,20 +55,15 @@ def register_spark_type_to_hwm_type_mapping(*type_names: str):
     Examples
     --------
 
-    .. code:: python
-
-        from etl_entities import HWM
-        from onetl.hwm.store import SparkTypeToHWM
-        from onetl.hwm.store import SparkTypeToHWM, register_spark_type_to_hwm_type_mapping
-
-
-        @register_spark_type_to_hwm_type_mapping("somename", "anothername")
-        class MyHWM(HWM): ...
-
-
-        assert SparkTypeToHWM.get("somename") == MyClass
-        assert SparkTypeToHWM.get("anothername") == MyClass
-
+    >>> from etl_entities.hwm import ColumnHWM
+    >>> from onetl.hwm.store import SparkTypeToHWM
+    >>> from onetl.hwm.store import SparkTypeToHWM, register_spark_type_to_hwm_type_mapping
+    >>> @register_spark_type_to_hwm_type_mapping("somename", "anothername")
+    ... class MyHWM(ColumnHWM): ...
+    >>> SparkTypeToHWM.get("somename")
+    <class 'onetl.hwm.store.hwm_class_registry.MyHWM'>
+    >>> SparkTypeToHWM.get("anothername")
+    <class 'onetl.hwm.store.hwm_class_registry.MyHWM'>
     """
 
     def wrapper(cls: type[HWM]):

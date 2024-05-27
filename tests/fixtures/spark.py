@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from onetl._util.spark import get_pyspark_version
+from onetl._util.version import Version
 
 
 @pytest.fixture(scope="session")
@@ -31,7 +32,7 @@ def ivysettings_path():
 
 
 @pytest.fixture(scope="session")
-def maven_packages():
+def maven_packages(request):
     from onetl.connection import (
         MSSQL,
         Clickhouse,
@@ -47,43 +48,63 @@ def maven_packages():
     from onetl.file.format import XML, Avro, Excel
 
     pyspark_version = get_pyspark_version()
-    packages = (
-        Clickhouse.get_packages()
-        + MSSQL.get_packages()
-        + MySQL.get_packages()
-        + Oracle.get_packages()
-        + Postgres.get_packages()
-        + Teradata.get_packages()
-    )
 
-    with_greenplum = os.getenv("ONETL_DB_WITH_GREENPLUM", "false").lower() == "true"
-    if with_greenplum:
-        # Greenplum connector jar is not publicly available,
+    # get markers from all downstream tests
+    markers = set()
+    for func in request.session.items:
+        markers.update(marker.name for marker in func.iter_markers())
+
+    packages: list[str] = []
+    if "clickhouse" in markers:
+        packages.extend(Clickhouse.get_packages())
+
+    if "mssql" in markers:
+        packages.extend(MSSQL.get_packages())
+
+    if "mysql" in markers:
+        packages.extend(MySQL.get_packages())
+
+    if "oracle" in markers:
+        packages.extend(Oracle.get_packages())
+
+    if "postgres" in markers:
+        packages.extend(Postgres.get_packages())
+
+    if "teradata" in markers:
+        packages.extend(Teradata.get_packages())
+
+    if "greenplum" in markers:
         packages.extend(
             Greenplum.get_packages(
-                spark_version=pyspark_version,
+                spark_version=str(pyspark_version),
                 package_version=os.getenv("ONETL_GP_PACKAGE_VERSION") or None,
             ),
         )
 
-    if pyspark_version >= (2, 4):
-        # There is no Avro package for Spark 2.3
-        packages.extend(Avro.get_packages(spark_version=pyspark_version))
-        # Kafka connector for Spark 2.3 is too old and not supported
-        packages.extend(Kafka.get_packages(spark_version=pyspark_version))
+    if pyspark_version >= Version("2.4"):
+        if "avro" in markers:
+            # There is no Avro package for Spark 2.3
+            packages.extend(Avro.get_packages(spark_version=str(pyspark_version)))
+        if "kafka" in markers:
+            # Kafka connector for Spark 2.3 is too old and not supported
+            packages.extend(Kafka.get_packages(spark_version=str(pyspark_version)))
 
-    if pyspark_version >= (3, 2):
-        # There is no SparkS3 connector for Spark less than 3
-        packages.extend(SparkS3.get_packages(spark_version=pyspark_version))
+    if pyspark_version >= Version("3.2"):
+        if "s3" in markers:
+            # There is no SparkS3 connector for Spark less than 3
+            packages.extend(SparkS3.get_packages(spark_version=str(pyspark_version)))
 
-        # There is no XML files support for Spark less than 3
-        packages.extend(XML.get_packages(spark_version=pyspark_version))
+        if "xml" in markers:
+            # There is no XML files support for Spark less than 3
+            packages.extend(XML.get_packages(spark_version=str(pyspark_version)))
 
-        # There is no MongoDB connector for Spark less than 3.2
-        packages.extend(MongoDB.get_packages(spark_version=pyspark_version))
+        if "mongodb" in markers:
+            # There is no MongoDB connector for Spark less than 3.2
+            packages.extend(MongoDB.get_packages(spark_version=str(pyspark_version)))
 
-        # There is no Excel files support for Spark less than 3.2
-        packages.extend(Excel.get_packages(spark_version=pyspark_version))
+        if "excel" in markers:
+            # There is no Excel files support for Spark less than 3.2
+            packages.extend(Excel.get_packages(spark_version=str(pyspark_version)))
 
     return packages
 

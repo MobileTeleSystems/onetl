@@ -12,12 +12,16 @@ if TYPE_CHECKING:
 class BaseReadableFileFormat(ABC):
     """
     Representation of readable file format.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod
     def check_if_supported(self, spark: SparkSession) -> None:
         """
         Check if Spark session does support this file format. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Raises
         ------
@@ -29,6 +33,8 @@ class BaseReadableFileFormat(ABC):
     def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameReader`. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Returns
         -------
@@ -44,12 +50,16 @@ class BaseReadableFileFormat(ABC):
 class BaseWritableFileFormat(ABC):
     """
     Representation of writable file format.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod
     def check_if_supported(self, spark: SparkSession) -> None:
         """
         Check if Spark session does support this file format. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Raises
         ------
@@ -61,6 +71,8 @@ class BaseWritableFileFormat(ABC):
     def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameWriter`. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Returns
         -------

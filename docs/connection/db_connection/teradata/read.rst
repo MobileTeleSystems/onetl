@@ -18,7 +18,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-batch-strategy`
 * ❌ ``hint`` (is not supported by Teradata)
 * ❌ ``df_schema``
-* ✅︎ ``options`` (see :obj:`JDBCReadOptions <onetl.connection.db_connection.jdbc.options.JDBCReadOptions>`)
+* ✅︎ ``options`` (see :obj:`Teradata.ReadOptions <onetl.connection.db_connection.teradata.options.TeradataReadOptions>`)
 
 Examples
 --------
@@ -115,9 +115,8 @@ Prefer using ``partitioning_mode="hash"`` from example above.
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.teradata.options
 
-.. autopydantic_model:: JDBCReadOptions
+.. autopydantic_model:: TeradataReadOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false

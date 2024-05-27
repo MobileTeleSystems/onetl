@@ -14,6 +14,8 @@ def match_all_filters(path: PathProtocol, filters: Iterable[BaseFileFilter]) -> 
     """
     Check if input path satisfies all the filters.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     path : :obj:`onetl.base.path_protocol.PathProtocol`
@@ -31,16 +33,15 @@ def match_all_filters(path: PathProtocol, filters: Iterable[BaseFileFilter]) -> 
     Examples
     --------
 
-    .. code:: python
-
-        from onetl.file.filter import Glob, ExcludeDir, match_all_filters
-        from onetl.impl import LocalPath
-
-        filters = [Glob("*.csv"), ExcludeDir("/excluded")]
-
-        assert match_all_filters(LocalPath("/path/to/file.csv"), filters)
-        assert not match_all_filters(LocalPath("/path/to/file.txt"), filters)
-        assert not match_all_filters(LocalPath("/excluded/path/file.csv"), filters)
+    >>> from onetl.file.filter import Glob, ExcludeDir, match_all_filters
+    >>> from onetl.impl import RemoteFile, RemotePathStat
+    >>> filters = [Glob("*.csv"), ExcludeDir("/excluded")]
+    >>> match_all_filters(RemoteFile("/path/to/file.csv", stats=RemotePathStat()), filters)
+    True
+    >>> match_all_filters(RemoteFile("/path/to/file.txt", stats=RemotePathStat()), filters)
+    False
+    >>> match_all_filters(RemoteFile("/excluded/path/file.csv", stats=RemotePathStat()), filters)
+    False
     """
 
     empty = True

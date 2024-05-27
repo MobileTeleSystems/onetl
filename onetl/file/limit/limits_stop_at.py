@@ -14,6 +14,8 @@ def limits_stop_at(path: PathProtocol, limits: Iterable[BaseFileLimit]) -> bool:
     """
     Check if some of limits stops at given path.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     path : :obj:`onetl.base.path_protocol.PathProtocol`
@@ -31,15 +33,13 @@ def limits_stop_at(path: PathProtocol, limits: Iterable[BaseFileLimit]) -> bool:
     Examples
     --------
 
-    .. code:: python
-
-        from onetl.file.limit import MaxFilesCount, limits_stop_at
-        from onetl.impl import LocalPath
-
-        limits = [MaxFilesCount(1)]
-
-        assert not limits_stop_at(LocalPath("/path/to/file.csv"), limits)
-        assert limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    >>> from onetl.file.limit import MaxFilesCount, limits_stop_at
+    >>> from onetl.impl import LocalPath
+    >>> limits = [MaxFilesCount(2)]
+    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    False
+    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    True
     """
     reached = []
     for limit in limits:

@@ -46,6 +46,21 @@ def test_clickhouse_connection_check_fail(spark):
         clickhouse.check()
 
 
+def test_clickhouse_connection_check_extra_is_handled_by_driver(spark, processing):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={"socket_timeout": "wrong_type"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        clickhouse.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix):
     clickhouse = Clickhouse(
@@ -227,9 +242,7 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     updated_df = pandas.concat([updated_rows, unchanged_rows])
     processing.assert_equal_df(df=df, other_frame=updated_df, order_by="id_int")
 
-    # not supported by Clickhouse
-    with pytest.raises(Exception):
-        clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
+    clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
 
     clickhouse.execute(f"ALTER TABLE {temp_table} DELETE WHERE id_int < 70{suffix}")
     df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
@@ -252,7 +265,7 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     assert not clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
 
 
-@pytest.mark.xfail(reason="Clickhouse 20.7 doesn't support functions")
+@pytest.mark.xfail(reason="CREATE FUNCTION is not supported in Clickhouse < 21.20")
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_execute_function(
     request,

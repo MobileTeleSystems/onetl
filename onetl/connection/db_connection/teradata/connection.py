@@ -5,9 +5,18 @@ from __future__ import annotations
 import warnings
 from typing import ClassVar, Optional
 
+from onetl._internal import stringify
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.teradata.dialect import TeradataDialect
+from onetl.connection.db_connection.teradata.options import (
+    TeradataExecuteOptions,
+    TeradataFetchOptions,
+    TeradataReadOptions,
+    TeradataSQLOptions,
+    TeradataWriteOptions,
+)
 from onetl.hooks import slot
 from onetl.impl import GenericOptions
 
@@ -29,12 +38,14 @@ class TeradataExtra(GenericOptions):
 class Teradata(JDBCConnection):
     """Teradata JDBC connection. |support_hooks|
 
-    Based on package ``com.teradata.jdbc:terajdbc:17.20.00.15``
+    Based on package `com.teradata.jdbc:terajdbc:17.20.00.15 <https://central.sonatype.com/artifact/com.teradata.jdbc/terajdbc/17.20.00.15>`_
     (`official Teradata JDBC driver <https://downloads.teradata.com/download/connectivity/jdbc-driver>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`teradata-prerequisites`
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------
@@ -116,6 +127,12 @@ class Teradata(JDBCConnection):
     database: Optional[str] = None
     extra: TeradataExtra = TeradataExtra()
 
+    ReadOptions = TeradataReadOptions
+    WriteOptions = TeradataWriteOptions
+    SQLOptions = TeradataSQLOptions
+    FetchOptions = TeradataFetchOptions
+    ExecuteOptions = TeradataExecuteOptions
+
     Extra = TeradataExtra
     Dialect = TeradataDialect
 
@@ -124,21 +141,37 @@ class Teradata(JDBCConnection):
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(
+        cls,
+        package_version: str | None = None,
+    ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for Teradata. |support_hooks|
+
+        .. versionadded:: 0.9.0
+
+        Parameters
+        ----------
+        package_version : str, optional
+            Specifies the version of the Teradata JDBC driver to use. Defaults to ``17.20.00.15``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------
-
         .. code:: python
 
             from onetl.connection import Teradata
 
             Teradata.get_packages()
 
+            # specify custom driver version
+            Teradata.get_packages(package_version="20.00.00.18")
         """
-        return ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+        default_package_version = "17.20.00.15"
+        version = Version(package_version or default_package_version).min_digits(4)
+
+        return [f"com.teradata.jdbc:terajdbc:{version}"]
 
     @classproperty
     def package(cls) -> str:
@@ -149,12 +182,22 @@ class Teradata(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        prop = self.extra.dict(by_alias=True)
+        # Teradata JDBC driver documentation specifically mentions that params from
+        # java.sql.DriverManager.getConnection(url, params) are used to only retrieve 'user' and 'password' values.
+        # Other params should be passed via url
+        properties = self.extra.dict(by_alias=True)
 
         if self.database:
-            prop["DATABASE"] = self.database
+            properties["DATABASE"] = self.database
 
-        prop["DBS_PORT"] = self.port
+        properties["DBS_PORT"] = self.port
 
-        conn = ",".join(f"{k}={v}" for k, v in sorted(prop.items()))
-        return f"jdbc:teradata://{self.host}/{conn}"
+        connection_params = []
+        for key, value in sorted(properties.items()):
+            string_value = stringify(value)
+            if "," in string_value:
+                connection_params.append(f"{key}='{string_value}'")
+            else:
+                connection_params.append(f"{key}={string_value}")
+
+        return f"jdbc:teradata://{self.host}/{','.join(connection_params)}"

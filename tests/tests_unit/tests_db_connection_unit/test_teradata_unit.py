@@ -17,8 +17,31 @@ def test_teradata_package():
         assert Teradata.package == "com.teradata.jdbc:terajdbc:17.20.00.15"
 
 
-def test_teradata_get_packages():
-    assert Teradata.get_packages() == ["com.teradata.jdbc:terajdbc:17.20.00.15"]
+@pytest.mark.parametrize(
+    "package_version, expected_package",
+    [
+        (None, ["com.teradata.jdbc:terajdbc:17.20.00.15"]),
+        ("17.20.00.15", ["com.teradata.jdbc:terajdbc:17.20.00.15"]),
+        ("16.20.00.13", ["com.teradata.jdbc:terajdbc:16.20.00.13"]),
+    ],
+)
+def test_teradata_get_packages_valid_versions(package_version, expected_package):
+    assert Teradata.get_packages(package_version=package_version) == expected_package
+
+
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "20.00.13",
+        "abc",
+    ],
+)
+def test_teradata_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 4\).",
+    ):
+        Teradata.get_packages(package_version=package_version)
 
 
 def test_teradata_missing_package(spark_no_packages):
@@ -59,6 +82,12 @@ def test_teradata(spark_mock):
         "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
         "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
     )
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.teradata.jdbc.TeraDriver",
+        "url": conn.jdbc_url,
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -78,6 +107,12 @@ def test_teradata_with_port(spark_mock):
         "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
         "DBS_PORT=5000,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
     )
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.teradata.jdbc.TeraDriver",
+        "url": conn.jdbc_url,
+    }
 
 
 def test_teradata_without_database(spark_mock):
@@ -94,6 +129,12 @@ def test_teradata_without_database(spark_mock):
         "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,"
         "DBS_PORT=1025,FLATTEN=ON,MAYBENULL=ON,STRICT_NAMES=OFF"
     )
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.teradata.jdbc.TeraDriver",
+        "url": conn.jdbc_url,
+    }
 
 
 def test_teradata_with_extra(spark_mock):
@@ -102,14 +143,20 @@ def test_teradata_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"TMODE": "TERA", "LOGMECH": "LDAP"},
+        extra={"TMODE": "TERA", "LOGMECH": "LDAP", "PARAM_WITH_COMMA": "some,value"},
         spark=spark_mock,
     )
 
     assert conn.jdbc_url == (
         "jdbc:teradata://some_host/CHARSET=UTF8,COLUMN_NAME=ON,DATABASE=database,"
-        "DBS_PORT=1025,FLATTEN=ON,LOGMECH=LDAP,MAYBENULL=ON,STRICT_NAMES=OFF,TMODE=TERA"
+        "DBS_PORT=1025,FLATTEN=ON,LOGMECH=LDAP,MAYBENULL=ON,PARAM_WITH_COMMA='some,value',STRICT_NAMES=OFF,TMODE=TERA"
     )
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.teradata.jdbc.TeraDriver",
+        "url": conn.jdbc_url,
+    }
 
     conn = Teradata(
         host="some_host",
@@ -124,6 +171,12 @@ def test_teradata_with_extra(spark_mock):
         "jdbc:teradata://some_host/CHARSET=CP-1251,COLUMN_NAME=OFF,DATABASE=database,"
         "DBS_PORT=1025,FLATTEN=OFF,MAYBENULL=OFF,STRICT_NAMES=ON"
     )
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.teradata.jdbc.TeraDriver",
+        "url": conn.jdbc_url,
+    }
 
 
 def test_teradata_with_extra_prohibited(spark_mock):

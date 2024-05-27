@@ -6,4 +6,4 @@ CSV
 .. currentmodule:: onetl.file.format.csv
 
 .. autoclass:: CSV
-    :members: __init__
+    :members: __init__, parse_column, serialize_column

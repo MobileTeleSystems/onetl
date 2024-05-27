@@ -3,6 +3,10 @@
 Spark S3 Troubleshooting
 ========================
 
+.. note::
+
+    General guide: :ref:`troubleshooting`.
+
 More details:
 
 * `Hadoop AWS Troubleshooting Guide <https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/troubleshooting_s3a.html>`_
@@ -34,12 +38,7 @@ How to determine reason
 Make logging more verbose
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Change Spark session log level to ``DEBUG`` to print result of each attempt:
-
-.. code:: python
-
-    spark.sparkContext.setLogLevel("debug")
-
+Change Spark session log level to :ref:`DEBUG <spark-troubleshooting>` to print result of each attempt.
 Resulting logs will look like this
 
 .. dropdown:: See log
@@ -171,15 +170,6 @@ Resulting logs will look like this
         23/08/03 11:25:10 DEBUG request: Retrying Request: GET https://test-bucket.localhost:9000 / Parameters: ({"list-type":["2"],"delimiter":["/"],"max-keys":["2"],"prefix":["fake/"],"fetch-owner":["false"]}Headers: (amz-sdk-invocation-id: e6d62603-96e4-a80f-10a1-816e0822bc71, Content-Type: application/octet-stream, User-Agent: Hadoop 3.3.4, aws-sdk-java/1.12.262 Linux/6.4.7-1-MANJARO OpenJDK_64-Bit_Server_VM/25.292-b10 java/1.8.0_292 scala/2.12.17 vendor/AdoptOpenJDK cfg/retry-mode/legacy, )
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Retriable error detected, will retry in 49ms, attempt number: 0
 
-After getting all information you need, make logs less verbose:
-
-.. code:: python
-
-    spark.sparkContext.setLogLevel("info")
-
-    # or
-    spark.sparkContext.setLogLevel("warn")
-
 Change number of retries
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -225,13 +215,13 @@ If you change port number, this does not lead to changing protocol:
 
 .. code:: python
 
-    spark_s3 = SparkS3(host="s3.domain.com", port=8080, ...)
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
 
 You should pass protocol explicitly:
 
 .. code:: python
 
-    spark_s3 = SparkS3(host="s3.domain.com", port=8080, protocol="http", ...)
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
 
 SSL certificate is self-signed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -261,20 +251,14 @@ Accessing S3 without domain-style access style support
 
 .. code:: txt
 
-    Caused by: java.net.UnknownHostException: my-bucket.s3.domain.com
-
-By default, Hadoop AWS uses domain-style access ``my-bucket.domain.com`` instead of path-style access ``domain.com/my-bucket``,
-because this is default option for AWS S3.
-
-But some S3 implementations does not support domain-style access, e.g. MinIO by default allows only path-style access
-(see `MINIO_DOMAIN <https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_DOMAIN>`_).
+    Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
 
 To use path-style access, use option below:
 
 .. code:: python
 
     spark_s3 = SparkS3(
-        host="s3.domain.com",
+        host="s3provider.com",
         bucket="my-bucket",
         ...,
         extra={

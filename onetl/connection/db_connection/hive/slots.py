@@ -7,7 +7,10 @@ from onetl.hooks import slot, support_hooks
 
 @support_hooks
 class HiveSlots:
-    """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins."""
+    """:ref:`Slots <slot-decorator>` that could be implemented by third-party plugins.
+
+    .. versionadded:: 0.7.0
+    """
 
     @slot
     @staticmethod
@@ -16,6 +19,8 @@ class HiveSlots:
         Normalize cluster name passed into Hive constructor. |support_hooks|
 
         If hooks didn't return anything, cluster name is left intact.
+
+        .. versionadded:: 0.7.0
 
         Parameters
         ----------
@@ -53,6 +58,8 @@ class HiveSlots:
         Cluster passed into Hive constructor should be present in this list.
         If hooks didn't return anything, no validation will be performed.
 
+        .. versionadded:: 0.7.0
+
         Returns
         -------
         set[str] | None
@@ -83,6 +90,8 @@ class HiveSlots:
 
         Used in :obj:`~check` method to verify that connection is created only from the same cluster.
         If hooks didn't return anything, no validation will be performed.
+
+        .. versionadded:: 0.7.0
 
         Returns
         -------

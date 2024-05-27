@@ -7,5 +7,6 @@ Spark S3
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     Connection <connection>
-    Troubleshooting Guide <troubleshooting>
+    Troubleshooting <troubleshooting>

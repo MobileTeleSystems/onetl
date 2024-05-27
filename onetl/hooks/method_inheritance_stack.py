@@ -20,30 +20,28 @@ class MethodInheritanceStack:
     Examples
     --------
 
-    .. code:: python
+    >>> from onetl.hooks import support_hooks, slot
+    >>> from onetl.hooks.method_inheritance_stack import MethodInheritanceStack
+    >>> @support_hooks
+    ... class BaseClass:
+    ...     @slot
+    ...     def some_method(self, *args, **kwargs):
+    ...         pass
+    >>> @support_hooks
+    ... class MyClass(BaseClass):
+    ...    @slot
+    ...    def some_method(self, *args, **kwargs):
+    ...        self.do_something()
+    ...        super().some_method(*args, **kwargs)
 
-        @support_hooks
-        class BaseClass:
-            @slot
-            def some_method(self, *args, **kwargs):
-                pass
-
-
-        @support_hooks
-        class MyClass(BaseClass):
-            @slot
-            def some_method(self, *args, **kwargs):
-                self.do_something()
-                super().some_method(*args, **kwargs)
-
-
-        # caused by MyClass.some_method() call
-        with MethodInheritanceStack(MyClass, "some_method") as method_call_stack:
-            assert method_call_stack.level == 0
-
-            # MyClass.some_method() called super().some_method()
-            with MethodInheritanceStack(BaseClass, "some_method") as method_call_stack:
-                assert method_call_stack.level == 1
+    >>> # caused by MyClass.some_method() call
+    >>> with MethodInheritanceStack(MyClass, "some_method") as method_call_stack:
+    ...     print("MyClass", method_call_stack.level)
+    ...     # MyClass.some_method() called super().some_method()
+    ...     with MethodInheritanceStack(BaseClass, "some_method") as method_call_stack:
+    ...         print("BaseClass", method_call_stack.level)
+    MyClass 0
+    BaseClass 1
     """
 
     _stack: dict[type, dict[str, int]] = defaultdict(lambda: defaultdict(int))

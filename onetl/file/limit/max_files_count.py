@@ -13,6 +13,9 @@ log = logging.getLogger(__name__)
 class MaxFilesCount(BaseFileLimit, FrozenModel):
     """Limits the total number of files handled by :ref:`file-downloader` or :ref:`file-mover`.
 
+    .. versionadded:: 0.8.0
+        Replaces deprecated ``onetl.core.FileLimit``
+
     Parameters
     ----------
 

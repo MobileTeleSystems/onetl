@@ -7,6 +7,7 @@ Hive
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
 
 .. toctree::
@@ -14,6 +15,7 @@ Hive
     :caption: Operations
 
     read
+    sql
     write
     execute
 

@@ -24,6 +24,8 @@ class HookPriority(int, Enum):
     Hook priority enum.
 
     All hooks within the same priority are executed in the same order they were registered.
+
+    .. versionadded:: 0.7.0
     """
 
     FIRST = -1
@@ -40,6 +42,8 @@ class HookPriority(int, Enum):
 class Hook(Generic[T]):  # noqa: WPS338
     """
     Hook representation.
+
+    .. versionadded:: 0.7.0
 
     Parameters
     ----------
@@ -81,16 +85,18 @@ class Hook(Generic[T]):  # noqa: WPS338
         """
         Enable the hook.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
-        .. code:: python
-
-            hook = Hook(..., enabled=False)
-            assert not hook.enabled
-
-            hook.enable()
-            assert hook.enabled
+        >>> def func1(): ...
+        >>> hook = Hook(callback=func1, enabled=False)
+        >>> hook.enabled
+        False
+        >>> hook.enable()
+        >>> hook.enabled
+        True
         """
         if self.enabled:
             logger.log(
@@ -107,16 +113,18 @@ class Hook(Generic[T]):  # noqa: WPS338
         """
         Disable the hook.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
-        .. code:: python
-
-            hook = Hook(..., enabled=True)
-            assert hook.enabled
-
-            hook.disable()
-            assert not hook.enabled
+        >>> def func1(): ...
+        >>> hook = Hook(callback=func1, enabled=True)
+        >>> hook.enabled
+        True
+        >>> hook.disable()
+        >>> hook.enabled
+        False
         """
         if self.enabled:
             logger.log(NOTICE, "|Hooks| Disable hook '%s.%s'", self.callback.__module__, self.callback.__qualname__)
@@ -141,35 +149,40 @@ class Hook(Generic[T]):  # noqa: WPS338
 
             You should call :obj:`~enable` explicitly to change its state.
 
+        .. versionadded:: 0.7.0
+
         Examples
         --------
 
         .. tabs::
 
-            .. code-tab:: py Context manager syntax
+            .. tab:: Context manager syntax
 
-                hook = Hook(..., enabled=True)
-                assert hook.enabled
+                >>> def func1(): ...
+                >>> hook = Hook(callback=func1, enabled=True)
+                >>> hook.enabled
+                True
+                >>> with hook.skip():
+                ...     print(hook.enabled)
+                False
+                >>> # hook state is restored as it was before entering the context manager
+                >>> hook.enabled
+                True
 
-                with hook.skip():
-                    assert not hook.enabled
+            .. tab:: Decorator syntax
 
-                # hook state is restored as it was before entering the context manager
-                assert hook.enabled
-
-            .. code-tab:: py Decorator syntax
-
-                hook = Hook(..., enabled=True)
-                assert hook.enabled
-
-                @hook.skip()
-                def hook_disabled():
-                    assert not hook.enabled
-
-                hook_disabled()
-
-                # hook state is restored as it was before entering the context manager
-                assert hook.enabled
+                >>> def func1(): ...
+                >>> hook = Hook(callback=func1, enabled=True)
+                >>> hook.enabled
+                True
+                >>> @hook.skip()
+                ... def hook_disabled():
+                ...     print(hook.enabled)
+                >>> hook_disabled()
+                False
+                >>> # hook state is restored as it was before entering the context manager
+                >>> hook.enabled
+                True
         """
         if not self.enabled:
             logger.log(
@@ -205,18 +218,17 @@ class Hook(Generic[T]):  # noqa: WPS338
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.hooks.hook import Hook, HookPriority
-
-
-            def some_func(*args, **kwargs): ...
-
-
-            hook = Hook(callback=some_func)
-
-            result = hook(1, "abc", some="arg")
-            assert result == some_func(1, "abc", some="arg")
+        >>> from onetl.hooks.hook import Hook, HookPriority
+        >>> def some_func(*args, **kwargs):
+        ...     print(args)
+        ...     print(kwargs)
+        ...     return "func result"
+        >>> hook = Hook(callback=some_func)
+        >>> result = hook(1, "abc", some="arg")
+        (1, 'abc')
+        {'some': 'arg'}
+        >>> result
+        'func result'
         """
         result = self.callback(*args, **kwargs)
         if isinstance(result, Generator):
@@ -362,6 +374,8 @@ class ContextDecorator:
 def hook(inp: Callable[..., T] | None = None, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
     """
     Initialize hook from callable/context manager.
+
+    .. versionadded:: 0.7.0
 
     Examples
     --------

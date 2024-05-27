@@ -28,17 +28,8 @@ class SparkLocalFS(SparkFileDFConnection):
 
     .. warning::
 
-        To use SparkLocalFS connector you should have PySpark installed (or injected to ``sys.path``)
+        To use SparkHDFS connector you should have PySpark installed (or injected to ``sys.path``)
         BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
 
         See :ref:`install-spark` installation instruction for more details.
 
@@ -51,6 +42,8 @@ class SparkLocalFS(SparkFileDFConnection):
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
         Does NOT support file operations, like create, delete, rename, etc.
+
+    .. versionadded:: 0.9.0
 
     Parameters
     ----------

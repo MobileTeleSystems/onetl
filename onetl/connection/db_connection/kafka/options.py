@@ -76,6 +76,8 @@ class KafkaReadOptions(GenericOptions):
 
         are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
+    .. versionadded:: 0.9.0
+
     Examples
     --------
 
@@ -120,6 +122,8 @@ class KafkaWriteOptions(GenericOptions):
             * ``topic``
 
         are populated from connection attributes, and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
+
+    .. versionadded:: 0.9.0
 
     Examples
     --------

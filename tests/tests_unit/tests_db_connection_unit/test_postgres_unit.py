@@ -14,14 +14,38 @@ def test_postgres_class_attributes():
 def test_postgres_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Postgres.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Postgres.package == "org.postgresql:postgresql:42.6.0"
+        assert Postgres.package == "org.postgresql:postgresql:42.7.3"
 
 
-def test_postgres_get_packages():
-    assert Postgres.get_packages() == ["org.postgresql:postgresql:42.6.0"]
+@pytest.mark.parametrize(
+    "package_version, expected_packages",
+    [
+        (None, ["org.postgresql:postgresql:42.7.3"]),
+        ("42.7.3", ["org.postgresql:postgresql:42.7.3"]),
+        ("42.7.3-patch", ["org.postgresql:postgresql:42.7.3-patch"]),
+        ("42.6.0", ["org.postgresql:postgresql:42.6.0"]),
+    ],
+)
+def test_postgres_get_packages(package_version, expected_packages):
+    assert Postgres.get_packages(package_version=package_version) == expected_packages
 
 
-def test_oracle_missing_package(spark_no_packages):
+@pytest.mark.parametrize(
+    "package_version",
+    [
+        "42.2",
+        "abc",
+    ],
+)
+def test_postgres_get_packages_invalid_version(package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 3\).",
+    ):
+        Postgres.get_packages(package_version=package_version)
+
+
+def test_postgres_missing_package(spark_no_packages):
     msg = "Cannot import Java class 'org.postgresql.Driver'"
     with pytest.raises(ValueError, match=msg):
         Postgres(
@@ -55,7 +79,16 @@ def test_postgres(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&stringtype=unspecified"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+        "stringtype": "unspecified",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -71,7 +104,16 @@ def test_postgres_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&stringtype=unspecified"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5000/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+        "stringtype": "unspecified",
+    }
 
 
 def test_postgres_without_database_error(spark_mock):
@@ -85,14 +127,28 @@ def test_postgres_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"ssl": "true", "autosave": "always"},
+        extra={
+            "stringtype": "VARCHAR",
+            "autosave": "always",
+            "tcpKeepAlive": "false",
+            "ApplicationName": "override",
+            "ssl": "true",
+        },
         spark=spark_mock,
     )
 
-    assert (
-        conn.jdbc_url
-        == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&autosave=always&ssl=true&stringtype=unspecified"
-    )
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "stringtype": "VARCHAR",
+        "autosave": "always",
+        "tcpKeepAlive": "false",
+        "ApplicationName": "override",
+        "ssl": "true",
+    }
 
 
 def test_postgres_without_mandatory_args(spark_mock):

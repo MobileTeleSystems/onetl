@@ -29,18 +29,18 @@ def reset_limits(limits: Iterable[BaseFileLimit]) -> list[BaseFileLimit]:
     Examples
     --------
 
-    .. code:: python
-
-        from onetl.file.limit import MaxFilesCount, limits_reached, reset_limits
-        from onetl.impl import LocalPath
-
-        limits = [MaxFilesCount(1)]
-
-        assert not limits_reached(limits)
-        # do something
-        assert limits_reached(limits)
-
-        new_limits = reset_limits(limits)
-        assert not limits_reached(new_limits)
+    >>> from onetl.file.limit import MaxFilesCount, limits_reached, limits_stop_at, reset_limits
+    >>> from onetl.impl import LocalPath
+    >>> limits = [MaxFilesCount(1)]
+    >>> limits_reached(limits)
+    False
+    >>> # do something
+    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    True
+    >>> limits_reached(limits)
+    True
+    >>> new_limits = reset_limits(limits)
+    >>> limits_reached(new_limits)
+    False
     """
     return [limit.reset() for limit in limits]

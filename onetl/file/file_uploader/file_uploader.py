@@ -63,6 +63,11 @@ class FileUploader(FrozenModel):
 
         This class does **not** support read strategies.
 
+    .. versionadded:: 0.1.0
+
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.FileDownloader`` → ``onetl.file.FileDownloader``
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -76,6 +81,8 @@ class FileUploader(FrozenModel):
 
         Could be ``None``, but only if you pass absolute file paths directly to
         :obj:`~run` method
+
+        .. versionadded:: 0.3.0
 
     temp_path : os.PathLike or str, optional, default: ``None``
         If set, this path will be used for uploading a file, and then renaming it to the target file path.
@@ -95,8 +102,11 @@ class FileUploader(FrozenModel):
             Otherwise instead of ``rename``, remote OS will move file between filesystems,
             which is NOT atomic operation.
 
+        .. versionchanged:: 0.5.0
+            Default changed from ``/tmp`` to ``None``
+
     options : :obj:`~FileUploader.Options` | dict | None, default: ``None``
-        File upload options. See :obj:`~FileUploader.Options`
+        File upload options. See :obj:`FileUploader.Options <onetl.file.file_uploader.options.FileUploaderOptions>`
 
     Examples
     --------
@@ -151,6 +161,8 @@ class FileUploader(FrozenModel):
         """
         Method for uploading files to remote host. |support_hooks|
 
+        .. versionadded:: 0.1.0
+
         Parameters
         ----------
 
@@ -161,7 +173,7 @@ class FileUploader(FrozenModel):
 
         Returns
         -------
-        uploaded_files : :obj:`UploadResult <onetl.file.file_uploader.upload_result.UploadResult>`
+        :obj:`UploadResult <onetl.file.file_uploader.upload_result.UploadResult>`
 
             Upload result object
 
@@ -182,85 +194,76 @@ class FileUploader(FrozenModel):
         Examples
         --------
 
-        Upload files from ``local_path`` to ``target_path``
+        Upload files from ``local_path`` to ``target_path``:
 
-        .. code:: python
-
-            from onetl.impl import (
-                RemoteFile,
-                LocalPath,
-            )
-            from onetl.file import FileUploader
-
-            uploader = FileUploader(local_path="/local", target_path="/remote", ...)
-            uploaded_files = uploader.run()
-
-            assert uploaded_files.successful == {
+        >>> from onetl.file import FileUploader
+        >>> uploader = FileUploader(local_path="/local", target_path="/remote", ...)
+        >>> upload_result = uploader.run()
+        >>> upload_result
+        UploadResult(
+            successful=FileSet([
                 RemoteFile("/remote/file1"),
                 RemoteFile("/remote/file2"),
-                RemoteFile("/remote/nested/path/file3"),  # directory structure is preserved
-            }
-            assert uploaded_files.failed == {FailedLocalFile("/local/failed.file")}
-            assert uploaded_files.skipped == {LocalPath("/local/already.exists")}
-            assert uploaded_files.missing == {LocalPath("/local/missing.file")}
+                # directory structure is preserved
+                RemoteFile("/remote/nested/path/file3")
+            ]),
+            failed=FileSet([
+                FailedLocalFile("/local/failed.file"),
+            ]),
+            skipped=FileSet([
+                LocalPath("/local/already.exists"),
+            ]),
+            missing=FileSet([
+                LocalPath("/local/missing.file"),
+            ]),
+        )
 
-        Upload only certain files from ``local_path``
+        Upload only certain files from ``local_path``:
 
-        .. code:: python
-
-            from onetl.impl import (
-                RemoteFile,
-                LocalPath,
-            )
-            from onetl.file import FileUploader
-
-            uploader = FileUploader(local_path="/local", target_path="/remote", ...)
-
-            # paths could be relative or absolute, but all should be in "/local"
-            uploaded_files = uploader.run(
-                [
-                    "/local/file1",
-                    "/local/nested/path/file3",
-                    # excluding "/local/file2",
-                ]
-            )
-
-            assert uploaded_files.successful == {
+        >>> from onetl.file import FileUploader
+        >>> uploader = FileUploader(local_path="/local", target_path="/remote", ...)
+        >>> # paths could be relative or absolute, but all should be in "/local"
+        >>> upload_result = uploader.run(
+        ...     [
+        ...         "/local/file1",
+        ...         "/local/nested/path/file3",
+        ...         # excluding "/local/file2",
+        ...     ]
+        ... )
+        >>> upload_result
+        UploadResult(
+            successful=FileSet([
                 RemoteFile("/remote/file1"),
-                RemoteFile("/remote/nested/path/file3"),  # directory structure is preserved
-            }
-            assert not uploaded_files.failed
-            assert not uploaded_files.skipped
-            assert not uploaded_files.missing
+                # directory structure is preserved
+                RemoteFile("/remote/nested/path/file3"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
 
-        Upload only certain files from any folder
+        Upload only certain files from any folder:
 
-        .. code:: python
-
-            from onetl.impl import (
-                RemoteFile,
-                LocalPath,
-            )
-            from onetl.file import FileUploader
-
-            uploader = FileUploader(target_path="/remote", ...)  # no local_path set
-
-            # only absolute paths
-            uploaded_files = uploader.run(
-                [
-                    "/local/file1.txt",
-                    "/any/nested/path/file3.txt",
-                ]
-            )
-
-            assert uploaded_files.successful == {
-                RemoteFile("/remote/file1"),
-                RemoteFile("/remote/file3"),
+        >>> from onetl.file import FileUploader
+        >>> uploader = FileUploader(target_path="/remote", ...)  # no local_path set
+        >>> # only absolute paths
+        >>> upload_result = uploader.run(
+        ...     [
+        ...         "/local/file1.txt",
+        ...         "/any/nested/path/file3.txt",
+        ...     ]
+        ... )
+        >>> upload_result
+        UploadResult(
+            successful=FileSet([
+                RemoteFile("/remote/file1.txt"),
                 # directory structure is NOT preserved without local_path
-            }
-            assert not uploaded_files.failed
-            assert not uploaded_files.skipped
-            assert not uploaded_files.missing
+                RemoteFile("/remote/file3.txt"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
         """
 
         entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
@@ -314,6 +317,8 @@ class FileUploader(FrozenModel):
         """
         Get file list in the ``local_path``. |support_hooks|
 
+        .. versionadded:: 0.3.0
+
         Raises
         ------
         :obj:`onetl.exception.DirectoryNotFoundError`
@@ -332,22 +337,16 @@ class FileUploader(FrozenModel):
         Examples
         --------
 
-        View files
+        View files:
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onetl.file import FileUploader
-
-            uploader = FileUploader(local_path="/local", ...)
-
-            view_files = uploader.view_files()
-
-            assert view_files == {
-                LocalPath("/local/file1.txt"),
-                LocalPath("/local/file3.txt"),
-                LocalPath("/local/nested/path/file3.txt"),
-            }
+        >>> from onetl.file import FileUploader
+        >>> uploader = FileUploader(local_path="/local", ...)
+        >>> uploader.view_files()
+        FileSet([
+            LocalPath("/local/file1.txt"),
+            LocalPath("/local/file3.txt"),
+            LocalPath("/local/nested/path/file3.txt"),
+        ])
         """
 
         if not self.local_path:

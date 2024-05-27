@@ -14,7 +14,7 @@ Reading from Clickhouse
 This is how Clickhouse connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and Clickhouse type.
-* Find corresponding ``Clickhouse type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Clickhouse type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 Writing to some existing Clickhouse table
@@ -25,8 +25,8 @@ This is how Clickhouse connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-* **Find corresponding** ``Clickhouse type (read)`` -> ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
-* Find corresponding ``Spark type`` -> ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* **Find corresponding** ``Clickhouse type (read)`` → ``Spark type`` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [2]_
+* Find corresponding ``Spark type`` → ``Clickhousetype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Clickhousetype (write)`` match ``Clickhouse type (read)``, no additional casts will be performed, DataFrame column will be written to Clickhouse as is.
 * If ``Clickhousetype (write)`` does not match ``Clickhouse type (read)``, DataFrame column will be casted to target column type **on Clickhouse side**. For example, you can write column with text data to ``Int32`` column, if column contains valid integer values within supported value range and precision.
 
@@ -47,7 +47,7 @@ Create new table using Spark
 
 This is how Clickhouse connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Clickhouse type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Clickhouse type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Clickhouse, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -125,11 +125,9 @@ Numeric types
 ~~~~~~~~~~~~~
 
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| Clickhouse type (read)         | Spark type                        | Clickhousetype (write)        | Clickhouse type (create)      |
+| Clickhouse type (read)         | Spark type                        | Clickhouse type (write)       | Clickhouse type (create)      |
 +================================+===================================+===============================+===============================+
-| ``Bool``                       | ``IntegerType()``                 | ``Int32``                     | ``Int32``                     |
-+--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``-``                          | ``BooleanType()``                 | ``UInt64``                    | ``UInt64``                    |
+| ``Bool``                       | ``BooleanType()``                 | ``Bool``                      | ``UInt64``                    |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Decimal``                    | ``DecimalType(P=10, S=0)``        | ``Decimal(P=10, S=0)``        | ``Decimal(P=10, S=0)``        |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
@@ -147,11 +145,9 @@ Numeric types
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Decimal256(S=0..76)``        | unsupported [3]_                  |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Float32``                    | ``DoubleType()``                  | ``Float64``                   | ``Float64``                   |
-+--------------------------------+                                   |                               |                               |
-| ``Float64``                    |                                   |                               |                               |
+| ``Float32``                    | ``FloatType()``                   | ``Float32``                   | ``Float32``                   |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``-``                          | ``FloatType()``                   | ``Float32``                   | ``Float32``                   |
+| ``Float64``                    | ``DoubleType()``                  | ``Float64``                   | ``Float64``                   |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Int8``                       | ``IntegerType()``                 | ``Int32``                     | ``Int32``                     |
 +--------------------------------+                                   |                               |                               |
@@ -161,25 +157,25 @@ Numeric types
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``Int64``                      | ``LongType()``                    | ``Int64``                     | ``Int64``                     |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Int128``                     | ``DecimalType(20,0)``             | ``Decimal(20,0)``             | ``Decimal(20,0)``             |
-+--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``Int256``                     | unsupported [3]_                  |                               |                               |
+| ``Int128``                     | unsupported [3]_                  |                               |                               |
++--------------------------------+                                   |                               |                               |
+| ``Int256``                     |                                   |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``-``                          | ``ByteType()``                    | ``Int8``                      | ``Int8``                      |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``-``                          | ``ShortType()``                   | ``Int32``                     | ``Int32``                     |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``UInt8``                      | ``IntegerType()``                 | ``Int32``                     | ``Int32``                     |
-+--------------------------------+                                   |                               |                               |
-| ``UInt16``                     |                                   |                               |                               |
++--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``UInt16``                     | ``LongType()``                    | ``Int64``                     | ``Int64``                     |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | ``UInt32``                     | ``DecimalType(20,0)``             | ``Decimal(20,0)``             | ``Decimal(20,0)``             |
 +--------------------------------+                                   |                               |                               |
 | ``UInt64``                     |                                   |                               |                               |
-+--------------------------------+                                   |                               |                               |
-| ``UInt128``                    |                                   |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``UInt256``                    | unsupported [3]_                  |                               |                               |
+| ``UInt128``                    | unsupported [3]_                  |                               |                               |
++--------------------------------+                                   |                               |                               |
+| ``UInt256``                    |                                   |                               |                               |
 +--------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 
 .. [3]
@@ -198,33 +194,37 @@ Notes:
     * ``TIMESTAMP`` is alias for ``DateTime32``, but ``TIMESTAMP(N)`` is alias for ``DateTime64(N)``
 
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| Clickhouse type (read)            | Spark type                           | Clickhousetype (write)           | Clickhouse type (create)      |
+| Clickhouse type (read)            | Spark type                           | Clickhouse type (write)          | Clickhouse type (create)      |
 +===================================+======================================+==================================+===============================+
 | ``Date``                          | ``DateType()``                       | ``Date``                         | ``Date``                      |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``Date32``                        | unsupported                          |                                  |                               |
+| ``Date32``                        | ``DateType()``                       | ``Date``                         | ``Date``,                     |
+|                                   |                                      |                                  | **cannot insert data** [4]_   |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``DateTime32``, seconds           | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
+| ``DateTime32``, seconds           | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds       |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
 | ``DateTime64(3)``, milliseconds   | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
 |                                   |                                      |                                  | **precision loss** [5]_       |
-|                                   |                                      |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``DateTime64(6)``, microseconds   | ``TimestampType()``, microseconds    | ``DateTime64(6)``, microseconds  | ``DateTime32``, seconds,      |
-+-----------------------------------+--------------------------------------+----------------------------------+ **cannot be inserted** [6]_   |
-| ``DateTime64(7..9)``, nanoseconds | ``TimestampType()``, microseconds,   | ``DateTime64(6)``, microseconds, |                               |
-|                                   | **precision loss** [4]_              | **precision loss** [4]_          |                               |
+| ``DateTime64(6)``, microseconds   | ``TimestampType()``, microseconds    |                                  | ``DateTime32``, seconds,      |
++-----------------------------------+--------------------------------------+                                  | **precision loss** [7]_       |
+| ``DateTime64(7..9)``, nanoseconds | ``TimestampType()``, microseconds,   |                                  |                               |
+|                                   | **precision loss** [6]_              |                                  |                               |
 |                                   |                                      |                                  |                               |
-+-----------------------------------+--------------------------------------+----------------------------------+                               |
-| ``-``                             | ``TimestampNTZType()``, microseconds | ``DateTime64(6)``                |                               |
++-----------------------------------+--------------------------------------+                                  |                               |
+| ``-``                             | ``TimestampNTZType()``, microseconds |                                  |                               |
 +-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``IntervalNanosecond``            | unsupported                          |                                  |                               |
+| ``DateTime32(TZ)``                | unsupported [7]_                     |                                  |                               |
++-----------------------------------+                                      |                                  |                               |
+| ``DateTime64(P, TZ)``             |                                      |                                  |                               |
++-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
+| ``IntervalNanosecond``            | ``LongType()``                       | ``Int64``                        |  ``Int64``                    |
 +-----------------------------------+                                      |                                  |                               |
 | ``IntervalMicrosecond``           |                                      |                                  |                               |
 +-----------------------------------+                                      |                                  |                               |
 | ``IntervalMillisecond``           |                                      |                                  |                               |
-+-----------------------------------+--------------------------------------+----------------------------------+-------------------------------+
-| ``IntervalSecond``                | ``IntegerType()``                    | ``Int32``                        | ``Int32``                     |
++-----------------------------------+                                      |                                  |                               |
+| ``IntervalSecond``                |                                      |                                  |                               |
 +-----------------------------------+                                      |                                  |                               |
 | ``IntervalMinute``                |                                      |                                  |                               |
 +-----------------------------------+                                      |                                  |                               |
@@ -267,17 +267,27 @@ Notes:
         * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
 
 .. [4]
-    Clickhouse support datetime up to nanoseconds precision (``23:59:59.999999999``),
-    but Spark ``TimestampType()`` supports datetime up to microseconds precision (``23:59:59.999999``).
-    Nanoseconds will be lost during read or write operations.
+    ``Date32`` has different bytes representation than ``Date``, and inserting value of type ``Date32`` to ``Date`` column
+    leads to errors on Clickhouse side, e.g. ``Date(106617) should be between 0 and 65535 inclusive of both values``.
+    Although Spark does properly read the ``Date32`` column as ``DateType()``, and there should be no difference at all.
+    Probably this is some bug in Clickhouse driver.
 
 .. [5]
     Generic JDBC dialect generates DDL with Clickhouse type ``TIMESTAMP`` which is alias for ``DateTime32`` with precision up to seconds (``23:59:59``).
     Inserting data with milliseconds precision (``23:59:59.999``) will lead to **throwing away milliseconds**.
+    Solution: create table manually, with proper column type.
 
 .. [6]
-    Clickhouse will raise an exception that data in format ``2001-01-01 23:59:59.999999`` has data ``.999999`` which does not match format ``YYYY-MM-DD hh:mm:ss``.
-    So you can create Clickhouse table with Spark, but cannot write data to column of this type.
+    Clickhouse support datetime up to nanoseconds precision (``23:59:59.999999999``),
+    but Spark ``TimestampType()`` supports datetime up to microseconds precision (``23:59:59.999999``).
+    Nanoseconds will be lost during read or write operations.
+    Solution: create table manually, with proper column type.
+
+.. [7]
+    Clickhouse will raise an exception that data in format ``2001-01-01 23:59:59.999999`` has data ``.999999`` which does not match format ``YYYY-MM-DD hh:mm:ss``
+    of ``DateTime32`` column type (see [5]_).
+    So Spark can create Clickhouse table, but cannot write data to column of this type.
+    Solution: create table manually, with proper column type.
 
 String types
 ~~~~~~~~~~~~~
@@ -296,6 +306,8 @@ String types
 | ``IPv4``                             |                  |                        |                          |
 +--------------------------------------+                  |                        |                          |
 | ``IPv6``                             |                  |                        |                          |
++--------------------------------------+                  |                        |                          |
+| ``UUID``                             |                  |                        |                          |
 +--------------------------------------+------------------+                        |                          |
 | ``-``                                | ``BinaryType()`` |                        |                          |
 +--------------------------------------+------------------+------------------------+--------------------------+
@@ -316,9 +328,8 @@ Columns of these Clickhouse types cannot be read by Spark:
     * ``Ring``
     * ``SimpleAggregateFunction(func, T)``
     * ``Tuple(T1, T2, ...)``
-    * ``UUID``
 
-Dataframe with these Spark types be written to Clickhouse:
+Dataframe with these Spark types cannot be written to Clickhouse:
     * ``ArrayType(T)``
     * ``BinaryType()``
     * ``CharType(N)``
@@ -341,15 +352,20 @@ Explicit type cast
 ~~~~~~~~~~~~
 
 Use ``CAST`` or ``toJSONString`` to get column data as string in JSON format,
-and then cast string column in resulting dataframe to proper type using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
 
-.. code:: python
+For parsing JSON columns in ClickHouse, :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
-    from pyspark.sql.functions import from_json
+.. code-block:: python
+
     from pyspark.sql.types import ArrayType, IntegerType
+
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBReader
 
     reader = DBReader(
         connection=clickhouse,
+        table="default.source_tbl",
         columns=[
             "id",
             "toJSONString(array_column) array_column",
@@ -360,18 +376,25 @@ and then cast string column in resulting dataframe to proper type using `from_js
     # Spark requires all columns to have some specific type, describe it
     column_type = ArrayType(IntegerType())
 
+    json = JSON()
     df = df.select(
         df.id,
-        from_json(df.array_column, column_type).alias("array_column"),
+        json.parse_column("array_column", column_type),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-Convert dataframe column to JSON using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_,
-and write it as ``String`` column in Clickhouse:
+For writing JSON data to ClickHouse, use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method to convert a DataFrame column to JSON format efficiently and write it as a ``String`` column in Clickhouse.
 
-.. code:: python
+
+.. code-block:: python
+
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBWriter
+
+    clickhouse = ClickHouse(...)
 
     clickhouse.execute(
         """
@@ -384,11 +407,10 @@ and write it as ``String`` column in Clickhouse:
         """,
     )
 
-    from pyspark.sql.functions import to_json
-
+    json = JSON()
     df = df.select(
         df.id,
-        to_json(df.array_column).alias("array_column_json"),
+        json.serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer.run(df)

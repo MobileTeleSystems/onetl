@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from packaging import version as Version
+from packaging.version import Version
 
 PROJECT_ROOT_DIR = Path(__file__).parent.parent.resolve()
 
@@ -34,7 +34,7 @@ author = "DataOps.ETL"
 #
 # The short X.Y version.
 
-ver = Version.parse(subprocess.check_output("python ../setup.py --version", shell=True, text=True).strip())
+ver = Version(subprocess.check_output("python ../setup.py --version", shell=True, text=True).strip())
 version = ver.base_version
 # The full version, including alpha/beta/rc tags.
 release = ver.public
@@ -54,11 +54,11 @@ extensions = [
     "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.towncrier",  # provides `towncrier-draft-entries` directive
     "sphinxcontrib.plantuml",
     "sphinx.ext.extlinks",
     "sphinx_favicon",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
@@ -69,6 +69,12 @@ autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_field_list_validators = False
 sphinx_tabs_disable_tab_closing = True
+
+# prevent >>>, ... and doctest outputs from copying
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+copybutton_copy_empty_lines = False
+copybutton_only_copy_prompt_lines = True
 
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = False

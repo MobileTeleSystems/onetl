@@ -44,7 +44,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=MySQL.ReadOptions(
+        options=MySQL.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,
@@ -67,3 +67,14 @@ Pay attention to ``where`` value
 Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``WHERE column = 'value'`` clause.
 This both reduces the amount of data send from MySQL to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in ``where`` clause.
+
+Options
+-------
+
+.. currentmodule:: onetl.connection.db_connection.mysql.options
+
+.. autopydantic_model:: MySQLSQLOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

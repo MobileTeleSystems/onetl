@@ -4,22 +4,26 @@ import pytest
 
 from onetl.file.format import XML
 
+pytestmark = [pytest.mark.xml]
+
 
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version, expected_packages",
     [
-        ("3.2.4", None, None, ["com.databricks:spark-xml_2.12:0.17.0"]),
+        ("3.2.4", None, None, ["com.databricks:spark-xml_2.12:0.18.0"]),
         ("3.4.1", "2.12", "0.18.0", ["com.databricks:spark-xml_2.12:0.18.0"]),
-        ("3.0.0", None, None, ["com.databricks:spark-xml_2.12:0.17.0"]),
-        ("3.0.0", "2.12", "0.17.0", ["com.databricks:spark-xml_2.12:0.17.0"]),
-        ("3.1.2", None, None, ["com.databricks:spark-xml_2.12:0.17.0"]),
+        ("3.0.0", None, None, ["com.databricks:spark-xml_2.12:0.18.0"]),
+        ("3.0.0", "2.12", "0.18.0", ["com.databricks:spark-xml_2.12:0.18.0"]),
+        ("3.1.2", None, None, ["com.databricks:spark-xml_2.12:0.18.0"]),
         ("3.1.2", "2.12", "0.16.0", ["com.databricks:spark-xml_2.12:0.16.0"]),
-        ("3.2.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.17.0"]),
+        ("3.2.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.18.0"]),
         ("3.2.0", "2.12", "0.15.0", ["com.databricks:spark-xml_2.12:0.15.0"]),
-        ("3.2.4", "2.13", None, ["com.databricks:spark-xml_2.13:0.17.0"]),
+        ("3.2.4", "2.13", None, ["com.databricks:spark-xml_2.13:0.18.0"]),
         ("3.4.1", "2.13", "0.18.0", ["com.databricks:spark-xml_2.13:0.18.0"]),
+        ("3.4.1", "3.0", "0.18.0", ["com.databricks:spark-xml_3.0:0.18.0"]),
         ("3.3.0", None, "0.16.0", ["com.databricks:spark-xml_2.12:0.16.0"]),
-        ("3.3.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.17.0"]),
+        ("3.3.0", "2.12", None, ["com.databricks:spark-xml_2.12:0.18.0"]),
+        ("3.2.4", "2.12.1", "0.15.0", ["com.databricks:spark-xml_2.12:0.15.0"]),
     ],
 )
 def test_xml_get_packages(spark_version, scala_version, package_version, expected_packages):
@@ -51,11 +55,11 @@ def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version,
     "spark_version, scala_version, package_version",
     [
         ("3.2.4", "2.11", None),
-        ("3.4.1", "2.14", None),
+        ("3.4.1", "2.10", None),
     ],
 )
 def test_xml_get_packages_scala_version_error(spark_version, scala_version, package_version):
-    with pytest.raises(ValueError, match=r"Scala version must be 2.12 or 2.13, got \d+\.\d+"):
+    with pytest.raises(ValueError, match=f"Scala version must be at least 2.12, got {scala_version}"):
         XML.get_packages(
             spark_version=spark_version,
             scala_version=scala_version,
@@ -120,10 +124,3 @@ def test_xml_options_unknown(caplog):
         xml = XML(row_tag="item", unknownOption="abc")
         assert xml.unknownOption == "abc"
     assert "Options ['unknownOption'] are not known by XML, are you sure they are valid?" in caplog.text
-
-
-@pytest.mark.local_fs
-def test_xml_missing_package(spark_no_packages):
-    msg = "Cannot import Java class 'com.databricks.spark.xml.XmlReader'"
-    with pytest.raises(ValueError, match=msg):
-        XML(row_tag="item").check_if_supported(spark_no_packages)

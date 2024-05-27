@@ -11,7 +11,7 @@ Limitations
 
 We should keep close to these items during development:
 
-* Some companies still use old Spark versions, like 2.3.0. So it is required to keep compatibility if possible, e.g. adding branches for different Spark versions.
+* Some companies still use old Spark versions, like 2.3.1. So it is required to keep compatibility if possible, e.g. adding branches for different Spark versions.
 * Different users uses onETL in different ways - some uses only DB connectors, some only files. Connector-specific dependencies should be optional.
 * Instead of creating classes with a lot of different options, prefer splitting them into smaller classes, e.g. options class, context manager, etc, and using composition.
 
@@ -71,7 +71,7 @@ Create virtualenv and install dependencies:
         -r requirements/tests/postgres.txt \
         -r requirements/tests/oracle.txt \
         -r requirements/tests/pydantic-2.txt \
-        -r requirements/tests/spark-3.5.0.txt
+        -r requirements/tests/spark-3.5.1.txt
 
     # TODO: remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
     pip install sphinx-plantuml --no-deps
@@ -176,7 +176,6 @@ Without docker-compose
 
     * Download `VMware Greenplum connector for Spark <https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html>`_
     * Either move it to ``~/.ivy2/jars/``, or pass file path to ``CLASSPATH``
-    * Set environment variable ``ONETL_DB_WITH_GREENPLUM=true`` to enable adding connector to Spark session
 
 Start all containers with dependencies:
 

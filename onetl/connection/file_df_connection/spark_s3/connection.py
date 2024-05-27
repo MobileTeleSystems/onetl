@@ -53,31 +53,9 @@ class SparkS3(SparkFileDFConnection):
     Based on `Hadoop-AWS module <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_
     and `Spark integration with Cloud Infrastructures <https://spark.apache.org/docs/latest/cloud-integration.html>`_.
 
-    .. dropdown:: Version compatibility
+    .. seealso::
 
-        * Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
-        * Scala versions: 2.12 - 2.13
-        * Java versions: 8 - 20
-
-    .. warning::
-
-        See :ref:`spark-s3-troubleshooting` guide.
-
-    .. warning::
-
-        To use SparkS3 connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
+        Before using this connector please take into account :ref:`spark-s3-prerequisites`
 
     .. note::
 
@@ -85,6 +63,8 @@ class SparkS3(SparkFileDFConnection):
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
         use :obj:`S3 <onetl.connection.file_connection.s3.S3>` connection.
+
+    .. versionadded:: 0.9.0
 
     Parameters
     ----------
@@ -232,11 +212,13 @@ class SparkS3(SparkFileDFConnection):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str | Version,
-        scala_version: str | Version | None = None,
+        spark_version: str,
+        scala_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -260,14 +242,14 @@ class SparkS3(SparkFileDFConnection):
 
         """
 
-        spark_ver = Version.parse(spark_version)
+        spark_ver = Version(spark_version).min_digits(3)
         if spark_ver.major < 3:
             # https://issues.apache.org/jira/browse/SPARK-23977
             raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
 
-        scala_ver = Version.parse(scala_version) if scala_version else get_default_scala_version(spark_ver)
+        scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
-        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.digits(2)}:{spark_ver.digits(3)}"]
+        return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
@@ -365,7 +347,7 @@ class SparkS3(SparkFileDFConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(3)
+            spark_version = get_spark_version(spark).format("{major}.{minor}.{patch}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,

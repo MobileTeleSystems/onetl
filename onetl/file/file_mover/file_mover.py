@@ -67,6 +67,8 @@ class FileMover(FrozenModel):
 
         This class does **not** support read strategies.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     connection : :obj:`onetl.connection.FileConnection`
@@ -89,7 +91,7 @@ class FileMover(FrozenModel):
         See :ref:`file-limits`
 
     options : :obj:`~FileMover.Options`  | dict | None, default: ``None``
-        File moving options. See :obj:`~FileMover.Options`
+        File moving options. See :obj:`FileMover.Options <onetl.file.file_mover.options.FileMoverOptions>`
 
     Examples
     --------
@@ -163,6 +165,8 @@ class FileMover(FrozenModel):
         """
         Method for moving files from source to target directory. |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Parameters
         ----------
 
@@ -177,7 +181,7 @@ class FileMover(FrozenModel):
 
         Returns
         -------
-        moved_files : :obj:`MoveResult <onetl.file.file_mover.move_result.MoveResult>`
+        :obj:`MoveResult <onetl.file.file_mover.move_result.MoveResult>`
 
             Move result object
 
@@ -194,76 +198,76 @@ class FileMover(FrozenModel):
         Examples
         --------
 
-        Move files from ``source_path``
+        Move files from ``source_path``:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, RemotePath
-            from onetl.file import FileMover
-
-            mover = FileMover(source_path="/source", target_path="/target", ...)
-            moved_files = mover.run()
-
-            assert moved_files.successful == {
+        >>> from onetl.file import FileMover
+        >>> mover = FileMover(source_path="/source", target_path="/target", ...)
+        >>> move_result = mover.run()
+        >>> move_result
+        MoveResult(
+            successful=FileSet([
                 RemoteFile("/target/file1.txt"),
                 RemoteFile("/target/file2.txt"),
-                RemoteFile("/target/nested/path/file3.txt"),  # directory structure is preserved
-            }
-            assert moved_files.failed == {FailedRemoteFile("/source/failed.file")}
-            assert moved_files.skipped == {RemoteFile("/source/already.exists")}
-            assert moved_files.missing == {RemotePath("/source/missing.file")}
+                # directory structure is preserved
+                RemoteFile("/target/nested/path/file3.txt"),
+            ]),
+            failed=FileSet([
+                FailedRemoteFile("/source/failed.file"),
+            ]),
+            skipped=FileSet([
+                RemoteFile("/source/already.exists"),
+            ]),
+            missing=FileSet([
+                RemotePath("/source/missing.file"),
+            ]),
+        )
 
-        Move only certain files from ``source_path``
+        Move only certain files from ``source_path``:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onetl.file import FileMover
-
-            mover = FileMover(source_path="/source", target_path="/target", ...)
-
-            # paths could be relative or absolute, but all should be in "/source"
-            moved_files = mover.run(
-                [
-                    "/source/file1.txt",
-                    "/source/nested/path/file3.txt",
-                    # excluding "/source/file2.txt"
-                ]
-            )
-
-            assert moved_files.successful == {
+        >>> from onetl.file import FileMover
+        >>> mover = FileMover(source_path="/source", target_path="/target", ...)
+        >>> # paths could be relative or absolute, but all should be in "/source"
+        >>> move_result = mover.run(
+        ...     [
+        ...         "/source/file1.txt",
+        ...         "/source/nested/path/file3.txt",
+        ...         # excluding "/source/file2.txt"
+        ...     ]
+        ... )
+        >>> move_result
+        MoveResult(
+            successful=FileSet([
                 RemoteFile("/target/file1.txt"),
-                RemoteFile("/target/nested/path/file3.txt"),  # directory structure is preserved
-            }
-            assert not moved_files.failed
-            assert not moved_files.skipped
-            assert not moved_files.missing
+                # directory structure is preserved
+                RemoteFile("/target/nested/path/file3.txt"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
 
-        Move certain files from any folder
+        Move certain files from any folder:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onetl.file import FileMover
-
-            mover = FileMover(target_path="/target", ...)  # no source_path set
-
-            # only absolute paths
-            moved_files = mover.run(
-                [
-                    "/remote/file1.txt",
-                    "/any/nested/path/file3.txt",
-                ]
-            )
-
-            assert moved_files.successful == {
+        >>> from onetl.file import FileMover
+        >>> mover = FileMover(target_path="/target", ...)  # no source_path set
+        >>> # only absolute paths
+        >>> move_result = mover.run(
+        ...     [
+        ...         "/remote/file1.txt",
+        ...         "/any/nested/path/file3.txt",
+        ...     ]
+        ... )
+        >>> move_result
+        MoveResult(
+            successful=FileSet([
                 RemoteFile("/target/file1.txt"),
-                RemoteFile("/target/file3.txt"),
                 # directory structure is NOT preserved without source_path
-            }
-            assert not moved_files.failed
-            assert not moved_files.skipped
-            assert not moved_files.missing
+                RemoteFile("/target/file3.txt"),
+            ]),
+            failed=FileSet([]),
+            skipped=FileSet([]),
+            missing=FileSet([]),
+        )
         """
 
         entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
@@ -309,6 +313,8 @@ class FileMover(FrozenModel):
         Get file list in the ``source_path``,
         after ``filter`` and ``limit`` applied (if any). |support_hooks|
 
+        .. versionadded:: 0.8.0
+
         Raises
         ------
         :obj:`onetl.exception.DirectoryNotFoundError`
@@ -327,22 +333,16 @@ class FileMover(FrozenModel):
         Examples
         --------
 
-        View files
+        View files:
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onetl.file import FileMover
-
-            mover = FileMover(source_path="/remote", ...)
-
-            view_files = mover.view_files()
-
-            assert view_files == {
-                RemoteFile("/remote/file1.txt"),
-                RemoteFile("/remote/file3.txt"),
-                RemoteFile("/remote/nested/path/file3.txt"),
-            }
+        >>> from onetl.file import FileMover
+        >>> mover = FileMover(source_path="/remote", ...)
+        >>> mover.view_files()
+        FileSet([
+            RemoteFile("/remote/file1.txt"),
+            RemoteFile("/remote/file2.txt"),
+            RemoteFile("/remote/nested/path/file3.txt"),
+        ])
         """
 
         if not self.source_path:

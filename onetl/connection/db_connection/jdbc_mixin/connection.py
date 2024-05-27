@@ -17,6 +17,11 @@ except (ImportError, AttributeError):
 from onetl._internal import clear_statement, stringify
 from onetl._util.java import get_java_gateway, try_import_java_class
 from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCOptions as JDBCMixinOptions,
 )
@@ -63,6 +68,8 @@ class JDBCMixin(FrozenModel):
     password: SecretStr
 
     JDBCOptions = JDBCMixinOptions
+    FetchOptions = JDBCFetchOptions
+    ExecuteOptions = JDBCExecuteOptions
 
     DRIVER: ClassVar[str]
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
@@ -74,6 +81,16 @@ class JDBCMixin(FrozenModel):
     @abstractmethod
     def jdbc_url(self) -> str:
         """JDBC Connection URL"""
+
+    @property
+    def jdbc_params(self) -> dict:
+        """JDBC Connection params"""
+        return {
+            "user": self.user,
+            "password": self.password.get_secret_value() if self.password is not None else "",
+            "driver": self.DRIVER,
+            "url": self.jdbc_url,
+        }
 
     @slot
     def close(self):
@@ -96,7 +113,6 @@ class JDBCMixin(FrozenModel):
         .. code:: python
 
             df = connection.fetch("SELECT * FROM mytable LIMIT 10")
-            assert df.count()
             connection.close()
 
             # or
@@ -130,7 +146,7 @@ class JDBCMixin(FrozenModel):
         log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._query_optional_on_driver(self._CHECK_QUERY, self.JDBCOptions(fetchsize=1))  # type: ignore
+            self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -142,7 +158,7 @@ class JDBCMixin(FrozenModel):
     def fetch(
         self,
         query: str,
-        options: JDBCMixinOptions | dict | None = None,
+        options: JDBCFetchOptions | dict | None = None,
     ) -> DataFrame:
         """
         **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. |support_hooks|
@@ -158,13 +174,15 @@ class JDBCMixin(FrozenModel):
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
 
+        .. versionadded:: 0.2.0
+
         Parameters
         ----------
         query : str
 
             SQL query to be executed.
 
-        options : dict, :obj:`~JDBCOptions`, default: ``None``
+        options : dict, :obj:`~FetchOptions`, default: ``None``
 
             Options to be passed directly to JDBC driver, like ``fetchsize`` or ``queryTimeout``
 
@@ -184,7 +202,14 @@ class JDBCMixin(FrozenModel):
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_driver(query, self.JDBCOptions.parse(options))
+        df = self._query_on_driver(
+            query,
+            (
+                self.FetchOptions.parse(options.dict())  # type: ignore
+                if isinstance(options, JDBCMixinOptions)
+                else self.FetchOptions.parse(options)
+            ),
+        )
 
         log.info(
             "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
@@ -197,7 +222,7 @@ class JDBCMixin(FrozenModel):
     def execute(
         self,
         statement: str,
-        options: JDBCMixinOptions | dict | None = None,
+        options: JDBCExecuteOptions | JDBCMixinOptions | dict | None = None,
     ) -> DataFrame | None:
         """
         **Immediately** execute DDL, DML or procedure/function **on Spark driver**. |support_hooks|
@@ -210,13 +235,15 @@ class JDBCMixin(FrozenModel):
             First call of the method opens the connection to a database.
             Call ``.close()`` method to close it, or use context manager to do it automatically.
 
+        .. versionadded:: 0.2.0
+
         Parameters
         ----------
         statement : str
 
             Statement to be executed.
 
-        options : dict, :obj:`~JDBCOptions`, default: ``None``
+        options : dict, :obj:`~JDBCExecuteOptions`, default: ``None``
 
             Options to be passed directly to JDBC driver, like ``queryTimeout``
 
@@ -239,7 +266,11 @@ class JDBCMixin(FrozenModel):
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
-        call_options = self.JDBCOptions.parse(options)
+        call_options = (
+            self.ExecuteOptions.parse(options.dict())
+            if isinstance(options, JDBCMixinOptions)
+            else self.ExecuteOptions.parse(options)
+        )
         df = self._call_on_driver(statement, call_options)
 
         if df is not None:
@@ -271,7 +302,7 @@ class JDBCMixin(FrozenModel):
     def _query_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions,
+        options: JDBCMixinOptions | JDBCFetchOptions | JDBCExecuteOptions,
     ) -> DataFrame:
         return self._execute_on_driver(
             statement=query,
@@ -284,7 +315,7 @@ class JDBCMixin(FrozenModel):
     def _query_optional_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions,
+        options: JDBCMixinOptions | JDBCFetchOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
@@ -297,7 +328,7 @@ class JDBCMixin(FrozenModel):
     def _call_on_driver(
         self,
         query: str,
-        options: JDBCMixinOptions,
+        options: JDBCMixinOptions | JDBCExecuteOptions,
     ) -> DataFrame | None:
         return self._execute_on_driver(
             statement=query,
@@ -309,25 +340,17 @@ class JDBCMixin(FrozenModel):
 
     def _get_jdbc_properties(
         self,
-        options: JDBCMixinOptions,
+        options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, str]:
         """
         Fills up human-readable Options class to a format required by Spark internal methods
         """
-
-        result = options.copy(
-            update={
-                "user": self.user,
-                "password": self.password.get_secret_value() if self.password is not None else "",
-                "driver": self.DRIVER,
-                "url": self.jdbc_url,
-            },
-        ).dict(by_alias=True, **kwargs)
-
+        result = self.jdbc_params
+        result.update(options.dict(by_alias=True, **kwargs))
         return stringify(result)
 
-    def _options_to_connection_properties(self, options: JDBCMixinOptions):
+    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions):
         """
         Converts human-readable Options class to ``java.util.Properties``.
 
@@ -338,8 +361,7 @@ class JDBCMixin(FrozenModel):
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/DataFrameReader.scala#L248-L255
         """
 
-        jdbc_properties = self._get_jdbc_properties(options, exclude_unset=True)
-
+        jdbc_properties = self._get_jdbc_properties(options, exclude_none=True)
         jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_options = jdbc_utils_package.JDBCOptions(
             self.jdbc_url,
@@ -349,7 +371,7 @@ class JDBCMixin(FrozenModel):
         )
         return jdbc_options.asConnectionProperties()
 
-    def _get_jdbc_connection(self, options: JDBCMixinOptions):
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions):
         if not self._last_connection_and_options:
             # connection class can be used in multiple threads.
             # each Python thread creates its own thread in JVM
@@ -391,7 +413,7 @@ class JDBCMixin(FrozenModel):
         statement: str,
         statement_type: JDBCStatementType,
         callback: Callable[..., T],
-        options: JDBCMixinOptions,
+        options: JDBCFetchOptions | JDBCExecuteOptions | JDBCMixinOptions,
         read_only: bool,
     ) -> T:
         """
@@ -413,7 +435,7 @@ class JDBCMixin(FrozenModel):
         self,
         jdbc_statement,
         statement: str,
-        options: JDBCMixinOptions,
+        options: JDBCMixinOptions | JDBCFetchOptions | JDBCExecuteOptions,
         callback: Callable[..., T],
         read_only: bool,
     ) -> T:
@@ -521,7 +543,7 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if get_spark_version(self.spark) >= (3, 4):
+        if get_spark_version(self.spark) >= Version("3.4"):
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:

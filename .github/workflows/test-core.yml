@@ -57,10 +57,10 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-core-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark*.txt') }}
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-core-
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip setuptools wheel
@@ -72,7 +72,7 @@ jobs:
       - name: Run tests
         run: |
           ./run_tests.sh -m 'not connection'
-          ./run_tests.sh onetl/_util
+          ./run_tests.sh onetl/_util onetl/_internal.py onetl/hooks onetl/file/filter onetl/file/limit onetl/hwm/store/hwm_class_registry.py
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

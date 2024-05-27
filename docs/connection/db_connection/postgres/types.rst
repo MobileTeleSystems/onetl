@@ -14,7 +14,7 @@ Reading from Postgres
 This is how Postgres connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and Postgres type.
-* Find corresponding ``Postgres type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column [1]_. If no combination is found, raise exception.
+* Find corresponding ``Postgres type (read)`` → ``Spark type`` combination (see below) for each DataFrame column [1]_. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 .. [1]
@@ -27,8 +27,8 @@ This is how Postgres connector performs this:
 
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
-* Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-* Find corresponding ``Spark type`` -> ``Postgres type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Take only columns present in DataFrame (by name, case insensitive) [2]_. For each found column get Postgres type.
+* Find corresponding ``Spark type`` → ``Postgres type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Postgres type (write)`` match ``Postgres type (read)``, no additional casts will be performed, DataFrame column will be written to Postgres as is.
 * If ``Postgres type (write)`` does not match ``Postgres type (read)``, DataFrame column will be casted to target column type **on Postgres side**.
   For example, you can write column with text data to ``int`` column, if column contains valid integer values within supported value range and precision [3]_.
@@ -51,7 +51,7 @@ Create new table using Spark
 
 This is how Postgres connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Postgres type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Postgres type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Postgres, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -248,7 +248,7 @@ String types
 | ``jsonb``                   |                       |                       |                         |
 +-----------------------------+                       |                       |                         |
 | ``xml``                     |                       |                       |                         |
-+-----------------------------+-----------------------|                       |                         |
++-----------------------------+-----------------------+                       |                         |
 | ``CREATE TYPE ... AS ENUM`` | ``StringType()`` [1]_ |                       |                         |
 +-----------------------------+                       |                       |                         |
 | ``tsvector``                |                       |                       |                         |
@@ -348,17 +348,15 @@ It is possible to explicitly cast column of unsupported type using ``DBReader(co
 
 For example, you can use ``CAST(column AS text)`` to convert data to string representation on Postgres side, and so it will be read as Spark's ``StringType()``.
 
-It is also possible to use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function
-to convert column of any type to string representation, and then parse this column on Spark side using
-`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+It is also possible to use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function to convert column of any type to string representation, and then parse this column on Spark side you can use the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method:
 
 .. code-block:: python
 
-    from pyspark.sql.functions import from_json
     from pyspark.sql.types import IntegerType
 
     from onetl.connection import Postgres
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     postgres = Postgres(...)
 
@@ -374,35 +372,37 @@ to convert column of any type to string representation, and then parse this colu
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = IntegerType()
-
-    # cast column content to proper Spark type
+    json_schema = StructType(
+        [
+            StructField("id", IntegerType(), nullable=True),
+            StructField("name", StringType(), nullable=True),
+            ...,
+        ]
+    )
     df = df.select(
         df.id,
         df.supported_column,
         # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-        # or explicit json parsing
-        from_json(df.array_column_json, schema).alias("array_column"),
+        JSON().parse_column("array_column_json", json_schema).alias("json_string"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Postgres table.
+It is always possible to convert data on the Spark side to a string, and then write it to a text column in a Postgres table.
 
-Using ``to_json``
-^^^^^^^^^^^^^^^^^
+Using JSON.serialize_column
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+You can use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method for data serialization:
 
-For example, you can convert data using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+.. code-block:: python
 
-.. code:: python
-
-    from pyspark.sql.functions import to_json
+    from onetl.file.format import JSON
+    from pyspark.sql.functions import col
 
     from onetl.connection import Postgres
-    from onetl.db import DBReader
+    from onetl.db import DBWriter
 
     postgres = Postgres(...)
 
@@ -419,7 +419,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.unsupported_column).alias("array_column_json"),
+        JSON().serialize_column(df.unsupported_column).alias("array_column_json"),
     )
 
     writer = DBWriter(
@@ -428,7 +428,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     )
     writer.run(write_df)
 
-Then you can parse this column on Postgres side (for example, by creating a view):
+Then you can parse this column on the Postgres side (for example, by creating a view):
 
 .. code-block:: sql
 

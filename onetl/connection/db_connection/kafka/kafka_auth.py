@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 class KafkaAuth(ABC):
     """
     Interface for Kafka connection Auth classes.
+
+    .. versionadded:: 0.9.0
     """
 
     @abstractmethod

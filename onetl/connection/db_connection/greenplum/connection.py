@@ -26,12 +26,19 @@ from onetl.connection.db_connection.greenplum.connection_limit import (
 )
 from onetl.connection.db_connection.greenplum.dialect import GreenplumDialect
 from onetl.connection.db_connection.greenplum.options import (
+    GreenplumExecuteOptions,
+    GreenplumFetchOptions,
     GreenplumReadOptions,
+    GreenplumSQLOptions,
     GreenplumTableExistBehavior,
     GreenplumWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+    JDBCOptions,
+)
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
@@ -70,9 +77,11 @@ class Greenplum(JDBCMixin, DBConnection):
     Based on package ``io.pivotal:greenplum-spark:2.2.0``
     (`VMware Greenplum connector for Spark <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`greenplum-prerequisites`
+
+    .. versionadded:: 0.5.0
 
     Parameters
     ----------
@@ -150,10 +159,14 @@ class Greenplum(JDBCMixin, DBConnection):
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
 
-    Extra = GreenplumExtra
-    Dialect = GreenplumDialect
     ReadOptions = GreenplumReadOptions
     WriteOptions = GreenplumWriteOptions
+    SQLOptions = GreenplumSQLOptions
+    FetchOptions = GreenplumFetchOptions
+    ExecuteOptions = GreenplumExecuteOptions
+
+    Extra = GreenplumExtra
+    Dialect = GreenplumDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
@@ -164,9 +177,9 @@ class Greenplum(JDBCMixin, DBConnection):
     def get_packages(
         cls,
         *,
-        scala_version: str | Version | None = None,
-        spark_version: str | Version | None = None,
-        package_version: str | Version | None = None,
+        scala_version: str | None = None,
+        spark_version: str | None = None,
+        package_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -174,6 +187,8 @@ class Greenplum(JDBCMixin, DBConnection):
         .. warning::
 
             You should pass either ``scala_version`` or ``spark_version``.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------
@@ -190,6 +205,8 @@ class Greenplum(JDBCMixin, DBConnection):
         package_version : str, optional, default ``2.2.0``
             Package version in format ``major.minor.patch``
 
+            .. versionadded:: 0.10.1
+
         Examples
         --------
 
@@ -204,24 +221,24 @@ class Greenplum(JDBCMixin, DBConnection):
 
         # Connector version is fixed, so we can perform checks for Scala/Spark version
         if package_version:
-            package_ver = Version.parse(package_version)
+            package_ver = Version(package_version)
         else:
-            package_ver = Version(2, 2, 0)
+            package_ver = Version("2.2.0")
 
         if scala_version:
-            scala_ver = Version.parse(scala_version)
+            scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
-            spark_ver = Version.parse(spark_version)
-            if spark_ver.digits(2) > (3, 2) or spark_ver.digits(2) < (2, 3):
+            spark_ver = Version(spark_version).min_digits(2)
+            if spark_ver >= Version("3.3") or spark_ver < Version("2.3"):
                 raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver.digits(2) < (2, 11) or scala_ver.digits(2) > (2, 12):
-            raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver}")
+        if scala_ver < Version("2.11") or scala_ver > Version("2.12"):
+            raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver.format('{0}.{1}')}")
 
-        return [f"io.pivotal:greenplum-spark_{scala_ver.digits(2)}:{package_ver.digits(3)}"]
+        return [f"io.pivotal:greenplum-spark_{scala_ver.format('{0}.{1}')}:{package_ver}"]
 
     @classproperty
     def package_spark_2_3(cls) -> str:
@@ -250,15 +267,20 @@ class Greenplum(JDBCMixin, DBConnection):
 
     @property
     def jdbc_url(self) -> str:
-        extra = {
-            key: value
-            for key, value in self.extra.dict(by_alias=True).items()
-            if not (key.startswith("server.") or key.startswith("pool."))
-        }
-        extra["ApplicationName"] = extra.get("ApplicationName", self.spark.sparkContext.appName)
+        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-        return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(
+            {
+                key: value
+                for key, value in self.extra.dict(by_alias=True).items()
+                if not (key.startswith("server.") or key.startswith("pool."))
+            },
+        )
+        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        return result
 
     @slot
     def read_source_as_df(
@@ -387,7 +409,7 @@ class Greenplum(JDBCMixin, DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).digits(2)
+            spark_version = get_spark_version(spark).format("{major}.{minor}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
@@ -415,7 +437,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCOptions):
+    def _options_to_connection_properties(self, options: JDBCOptions | JDBCExecuteOptions | JDBCFetchOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only
@@ -434,7 +456,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):")
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.JDBCOptions())
+        df = self._query_on_driver(query, self.FetchOptions())
         result = df.collect()
 
         log.debug(
@@ -455,7 +477,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):")
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.JDBCOptions())
+        df = self._query_on_driver(query, self.FetchOptions())
         result = df.collect()
 
         log.debug(

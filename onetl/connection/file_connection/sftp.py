@@ -65,6 +65,8 @@ class SFTP(FileConnection, RenameDirMixin):
 
         See :ref:`install-files` installation instruction for more details.
 
+    .. versionadded:: 0.1.0
+
     Parameters
     ----------
     host : str

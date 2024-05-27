@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import JSONLine
 
+pytestmark = [pytest.mark.json]
+
 
 def test_jsonline_options_default():
     jsonline = JSONLine()

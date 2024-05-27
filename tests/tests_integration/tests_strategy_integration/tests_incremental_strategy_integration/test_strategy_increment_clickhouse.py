@@ -212,7 +212,7 @@ def test_clickhouse_strategy_incremental_nothing_to_read(spark, processing, prep
     [
         ("float_value", ValueError, "Expression 'float_value' returned values"),
         ("text_string", RuntimeError, "Cannot detect HWM type for"),
-        ("unknown_column", Exception, "Missing columns"),
+        ("unknown_column", Exception, "(Missing columns|Unknown expression).*"),
     ],
 )
 def test_clickhouse_strategy_incremental_wrong_hwm(
@@ -302,9 +302,34 @@ def test_clickhouse_strategy_incremental_explicit_hwm_type(
             ColumnDateHWM,
             lambda x: x.isoformat(),
         ),
+        pytest.param(
+            "hwm_date",
+            "CAST(text_string AS Date32)",
+            ColumnDateHWM,
+            lambda x: x.isoformat(),
+            marks=pytest.mark.xfail(reason="Date32 type was added in ClickHouse 21.9"),
+        ),
         (
             "hwm_datetime",
             "CAST(text_string AS DateTime)",
+            ColumnDateTimeHWM,
+            lambda x: x.isoformat(),
+        ),
+        (
+            "hwm_datetime",
+            "CAST(text_string AS DateTime64)",
+            ColumnDateTimeHWM,
+            lambda x: x.isoformat(),
+        ),
+        (
+            "hwm_datetime",
+            "CAST(text_string AS DateTime64(3))",
+            ColumnDateTimeHWM,
+            lambda x: x.isoformat(),
+        ),
+        (
+            "hwm_datetime",
+            "CAST(text_string AS DateTime64(6))",
             ColumnDateTimeHWM,
             lambda x: x.isoformat(),
         ),

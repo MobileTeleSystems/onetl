@@ -42,6 +42,7 @@ def create_temp_file(tmp_path_factory):
         ("3.3.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
         ("3.3.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
         ("3.3.0", "2.13", "org.apache.spark:spark-sql-kafka-0-10_2.13:3.3.0"),
+        ("3.3.1", "2.12.2", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.1"),
     ],
 )
 def test_kafka_get_packages(spark_version, scala_version, package):

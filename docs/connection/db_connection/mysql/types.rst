@@ -14,7 +14,7 @@ Reading from MySQL
 This is how MySQL connector performs this:
 
 * For each column in query result (``SELECT column1, column2, ... FROM table ...``) get column name and MySQL type.
-* Find corresponding ``MySQL type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``MySQL type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Create DataFrame from query with specific column names and Spark types.
 
 Writing to some existing MySQL table
@@ -25,7 +25,7 @@ This is how MySQL connector performs this:
 * Get names of columns in DataFrame. [1]_
 * Perform ``SELECT * FROM table LIMIT 0`` query.
 * Take only columns present in DataFrame (by name, case insensitive). For each found column get MySQL type.
-* Find corresponding ``Spark type`` -> ``MySQL type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``MySQL type (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``MySQL type (write)`` match ``MySQL type (read)``, no additional casts will be performed, DataFrame column will be written to MySQL as is.
 * If ``MySQL type (write)`` does not match ``MySQL type (read)``, DataFrame column will be casted to target column type **on MySQL side**. For example, you can write column with text data to ``int`` column, if column contains valid integer values within supported value range and precision.
 
@@ -42,7 +42,7 @@ Create new table using Spark
 
 This is how MySQL connector performs this:
 
-* Find corresponding ``Spark type`` -> ``MySQL type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``MySQL type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in MySQL, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -289,16 +289,15 @@ It is possible to explicitly cast column type using ``DBReader(columns=...)`` sy
 
 For example, you can use ``CAST(column AS text)`` to convert data to string representation on MySQL side, and so it will be read as Spark's ``StringType()``.
 
-It is also possible to use `JSON_OBJECT <https://dev.mysql.com/doc/refman/en/json.html>`_ MySQL function
-to convert column of any type to string representation, and then parse this column on Spark side using
-`from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
+It is also possible to use `JSON_OBJECT <https://dev.mysql.com/doc/refman/en/json.html>`_ MySQL function and parse JSON columns in MySQL with the :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
 .. code-block:: python
 
-    from pyspark.sql.types import IntegerType, StructField, StructType
+    from pyspark.sql.types import IntegerType, StructType, StructField
 
     from onetl.connection import MySQL
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     mysql = MySQL(...)
 
@@ -314,30 +313,30 @@ to convert column of any type to string representation, and then parse this colu
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = StructType([StructField("key", IntegerType())])
+    json_scheme = StructType([StructField("key", IntegerType())])
 
-    # cast column content to proper Spark type
     df = df.select(
         df.id,
         df.supported_column,
         # explicit cast
         df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-        # or explicit json parsing
-        from_json(df.json_column, schema).alias("struct_column"),
+        JSON().parse_column("json_column", json_scheme).alias("struct_column"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-Convert dataframe column to JSON using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_,
-and write it as ``text`` column in MySQL:
+To write JSON data to a ``json`` or ``text`` column in a MySQL table, use the :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
-.. code:: python
+.. code-block:: python
+
+    from onetl.connection import MySQL
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
 
     mysql.execute(
         """
-        CREATE TABLE schema.target_tbl AS (
+        CREATE TABLE schema.target_tbl (
             id bigint,
             array_column_json json -- any string type, actually
         )
@@ -345,11 +344,9 @@ and write it as ``text`` column in MySQL:
         """,
     )
 
-    from pyspark.sql.functions import to_json
-
     df = df.select(
         df.id,
-        to_json(df.array_column).alias("array_column_json"),
+        JSON().serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer.run(df)

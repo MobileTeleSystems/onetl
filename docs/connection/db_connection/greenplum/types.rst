@@ -15,7 +15,7 @@ This is how Greenplum connector performs this:
 
 * Execute query ``SELECT * FROM table LIMIT 0`` [1]_.
 * For each column in query result get column name and Greenplum type.
-* Find corresponding ``Greenplum type (read)`` -> ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Greenplum type (read)`` → ``Spark type`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Use Spark column projection and predicate pushdown features to build a final query.
 * Create DataFrame from generated query with inferred schema.
 
@@ -34,7 +34,7 @@ This is how Greenplum connector performs this:
 * Match table columns with DataFrame columns (by name, case insensitive).
   If some column is present only in target table, but not in DataFrame (like ``DEFAULT`` or ``SERIAL`` column), and vice versa, raise an exception.
   See `Explicit type cast`_.
-* Find corresponding ``Spark type`` -> ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Greenplumtype (write)`` match ``Greenplum type (read)``, no additional casts will be performed, DataFrame column will be written to Greenplum as is.
 * If ``Greenplumtype (write)`` does not match ``Greenplum type (read)``, DataFrame column will be casted to target column type **on Greenplum side**. For example, you can write column with text data to ``json`` column which Greenplum connector currently does not support.
 
@@ -47,7 +47,7 @@ Create new table using Spark
 
 This is how Greenplum connector performs this:
 
-* Find corresponding ``Spark type`` -> ``Greenplum type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
+* Find corresponding ``Spark type`` → ``Greenplum type (create)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * Generate DDL for creating table in Greenplum, like ``CREATE TABLE (col1 ...)``, and run it.
 * Write DataFrame to created table as is.
 
@@ -301,35 +301,29 @@ Explicit type cast
 ``DBReader``
 ~~~~~~~~~~~~
 
-Unfortunately, it is not possible to cast unsupported column to some supported type on ``DBReader`` side:
+Direct casting of Greenplum types is not supported by DBReader due to the connector’s implementation specifics.
 
 .. code-block:: python
 
-    DBReader(
+    reader = DBReader(
         connection=greenplum,
         # will fail
-        columns=["CAST(column AS text)"],
+        columns=["CAST(unsupported_column AS text)"],
     )
 
-This is related to Greenplum connector implementation. Instead of passing this ``CAST`` expression to ``SELECT`` query
-as is, it performs type cast on Spark side, so this syntax is not supported.
+But there is a workaround - create a view with casting unsupported column to text (or any other supported type).
+For example, you can use `to_json <https://www.postgresql.org/docs/current/functions-json.html>`_ Postgres function to convert column of any type to string representation and then parse this column on Spark side using :obj:`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
 
-But there is a workaround - create a view with casting unsupported column to ``text`` (or any other supported type).
+.. code-block:: python
 
-For example, you can use ``to_json`` Postgres function for convert column of any type to string representation.
-You can then parse this column on Spark side using `from_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html>`_:
-
-.. code:: python
-
-    from pyspark.sql.functions import from_json
     from pyspark.sql.types import ArrayType, IntegerType
 
     from onetl.connection import Greenplum
     from onetl.db import DBReader
+    from onetl.file.format import JSON
 
     greenplum = Greenplum(...)
 
-    # create view with proper type cast
     greenplum.execute(
         """
         CREATE VIEW schema.view_with_json_column AS
@@ -350,29 +344,26 @@ You can then parse this column on Spark side using `from_json <https://spark.apa
     )
     df = reader.run()
 
-    # Spark requires all columns to have some type, describe it
-    column_type = ArrayType(IntegerType())
+    # Define the schema for the JSON data
+    json_scheme = ArrayType(IntegerType())
 
-    # cast column content to proper Spark type
     df = df.select(
         df.id,
         df.supported_column,
-        from_json(df.array_column_as_json, schema).alias("array_column"),
+        JSON().parse_column(df.array_column_as_json, json_scheme).alias("array_column"),
     )
 
 ``DBWriter``
 ~~~~~~~~~~~~
 
-It is always possible to convert data on Spark side to string, and then write it to ``text`` column in Greenplum table.
+To write data to a ``text`` or ``json`` column in a Greenplum table, use :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
-For example, you can convert data using `to_json <https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html>`_ function.
+.. code-block:: python
 
-.. code:: python
-
-    from pyspark.sql.functions import to_json
 
     from onetl.connection import Greenplum
-    from onetl.db import DBReader
+    from onetl.db import DBWriter
+    from onetl.file.format import JSON
 
     greenplum = Greenplum(...)
 
@@ -390,7 +381,7 @@ For example, you can convert data using `to_json <https://spark.apache.org/docs/
     write_df = df.select(
         df.id,
         df.supported_column,
-        to_json(df.array_column).alias("array_column_json"),
+        JSON().serialize_column(df.array_column).alias("array_column_json"),
     )
 
     writer = DBWriter(

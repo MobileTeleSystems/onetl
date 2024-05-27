@@ -20,7 +20,7 @@ Use ``Postgres.fetch``
 Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
 Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Postgres.FetchOptions <onetl.connection.db_connection.postgres.options.PostgresFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -48,7 +48,7 @@ Examples
 
     df = postgres.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Postgres.JDBCOptions(query_timeout=10),
+        options=Postgres.FetchOptions(query_timeout=10),
     )
     postgres.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -58,7 +58,7 @@ Use ``Postgres.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Postgres.ExecuteOptions <onetl.connection.db_connection.postgres.options.PostgresExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -67,7 +67,7 @@ Syntax support
 
 This method supports **any** query syntax supported by Postgres, like:
 
-* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, ``DROP TABLE ...``, and so on
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
@@ -96,15 +96,19 @@ Examples
                 value real
             )
             """,
-            options=Postgres.JDBCOptions(query_timeout=10),
+            options=Postgres.ExecuteOptions(query_timeout=10),
         )
 
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
+.. currentmodule:: onetl.connection.db_connection.postgres.options
 
-.. autopydantic_model:: JDBCOptions
+.. autopydantic_model:: PostgresFetchOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+
+
+.. autopydantic_model:: PostgresExecuteOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource

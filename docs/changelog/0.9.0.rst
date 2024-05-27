@@ -6,43 +6,43 @@ Breaking Changes
 
 - Rename methods:
 
-  * ``DBConnection.read_df`` -> ``DBConnection.read_source_as_df``
-  * ``DBConnection.write_df`` -> ``DBConnection.write_df_to_target`` (:github:pull:`66`)
+  * ``DBConnection.read_df`` → ``DBConnection.read_source_as_df``
+  * ``DBConnection.write_df`` → ``DBConnection.write_df_to_target`` (:github:pull:`66`)
 - Rename classes:
 
-  * ``HDFS.slots`` -> ``HDFS.Slots``
-  * ``Hive.slots`` -> ``Hive.Slots``
+  * ``HDFS.slots`` → ``HDFS.Slots``
+  * ``Hive.slots`` → ``Hive.Slots``
 
   Old names are left intact, but will be removed in v1.0.0 (:github:pull:`103`)
 - Rename options to make them self-explanatory:
 
-  * ``Hive.WriteOptions(mode="append")`` -> ``Hive.WriteOptions(if_exists="append")``
-  * ``Hive.WriteOptions(mode="overwrite_table")`` -> ``Hive.WriteOptions(if_exists="replace_entire_table")``
-  * ``Hive.WriteOptions(mode="overwrite_partitions")`` -> ``Hive.WriteOptions(if_exists="replace_overlapping_partitions")``
+  * ``Hive.WriteOptions(mode="append")`` → ``Hive.WriteOptions(if_exists="append")``
+  * ``Hive.WriteOptions(mode="overwrite_table")`` → ``Hive.WriteOptions(if_exists="replace_entire_table")``
+  * ``Hive.WriteOptions(mode="overwrite_partitions")`` → ``Hive.WriteOptions(if_exists="replace_overlapping_partitions")``
 
-  * ``JDBC.WriteOptions(mode="append")`` -> ``JDBC.WriteOptions(if_exists="append")``
-  * ``JDBC.WriteOptions(mode="overwrite")`` -> ``JDBC.WriteOptions(if_exists="replace_entire_table")``
+  * ``JDBC.WriteOptions(mode="append")`` → ``JDBC.WriteOptions(if_exists="append")``
+  * ``JDBC.WriteOptions(mode="overwrite")`` → ``JDBC.WriteOptions(if_exists="replace_entire_table")``
 
-  * ``Greenplum.WriteOptions(mode="append")`` -> ``Greenplum.WriteOptions(if_exists="append")``
-  * ``Greenplum.WriteOptions(mode="overwrite")`` -> ``Greenplum.WriteOptions(if_exists="replace_entire_table")``
+  * ``Greenplum.WriteOptions(mode="append")`` → ``Greenplum.WriteOptions(if_exists="append")``
+  * ``Greenplum.WriteOptions(mode="overwrite")`` → ``Greenplum.WriteOptions(if_exists="replace_entire_table")``
 
-  * ``MongoDB.WriteOptions(mode="append")`` -> ``Greenplum.WriteOptions(if_exists="append")``
-  * ``MongoDB.WriteOptions(mode="overwrite")`` -> ``Greenplum.WriteOptions(if_exists="replace_entire_collection")``
+  * ``MongoDB.WriteOptions(mode="append")`` → ``Greenplum.WriteOptions(if_exists="append")``
+  * ``MongoDB.WriteOptions(mode="overwrite")`` → ``Greenplum.WriteOptions(if_exists="replace_entire_collection")``
 
-  * ``FileDownloader.Options(mode="error")`` -> ``FileDownloader.Options(if_exists="error")``
-  * ``FileDownloader.Options(mode="ignore")`` -> ``FileDownloader.Options(if_exists="ignore")``
-  * ``FileDownloader.Options(mode="overwrite")`` -> ``FileDownloader.Options(if_exists="replace_file")``
-  * ``FileDownloader.Options(mode="delete_all")`` -> ``FileDownloader.Options(if_exists="replace_entire_directory")``
+  * ``FileDownloader.Options(mode="error")`` → ``FileDownloader.Options(if_exists="error")``
+  * ``FileDownloader.Options(mode="ignore")`` → ``FileDownloader.Options(if_exists="ignore")``
+  * ``FileDownloader.Options(mode="overwrite")`` → ``FileDownloader.Options(if_exists="replace_file")``
+  * ``FileDownloader.Options(mode="delete_all")`` → ``FileDownloader.Options(if_exists="replace_entire_directory")``
 
-  * ``FileUploader.Options(mode="error")`` -> ``FileUploader.Options(if_exists="error")``
-  * ``FileUploader.Options(mode="ignore")`` -> ``FileUploader.Options(if_exists="ignore")``
-  * ``FileUploader.Options(mode="overwrite")`` -> ``FileUploader.Options(if_exists="replace_file")``
-  * ``FileUploader.Options(mode="delete_all")`` -> ``FileUploader.Options(if_exists="replace_entire_directory")``
+  * ``FileUploader.Options(mode="error")`` → ``FileUploader.Options(if_exists="error")``
+  * ``FileUploader.Options(mode="ignore")`` → ``FileUploader.Options(if_exists="ignore")``
+  * ``FileUploader.Options(mode="overwrite")`` → ``FileUploader.Options(if_exists="replace_file")``
+  * ``FileUploader.Options(mode="delete_all")`` → ``FileUploader.Options(if_exists="replace_entire_directory")``
 
-  * ``FileMover.Options(mode="error")`` -> ``FileMover.Options(if_exists="error")``
-  * ``FileMover.Options(mode="ignore")`` -> ``FileMover.Options(if_exists="ignore")``
-  * ``FileMover.Options(mode="overwrite")`` -> ``FileMover.Options(if_exists="replace_file")``
-  * ``FileMover.Options(mode="delete_all")`` -> ``FileMover.Options(if_exists="replace_entire_directory")``
+  * ``FileMover.Options(mode="error")`` → ``FileMover.Options(if_exists="error")``
+  * ``FileMover.Options(mode="ignore")`` → ``FileMover.Options(if_exists="ignore")``
+  * ``FileMover.Options(mode="overwrite")`` → ``FileMover.Options(if_exists="replace_file")``
+  * ``FileMover.Options(mode="delete_all")`` → ``FileMover.Options(if_exists="replace_entire_directory")``
 
   Old names are left intact, but will be removed in v1.0.0 (:github:pull:`108`)
 - Rename ``onetl.log.disable_clients_logging()`` to ``onetl.log.setup_clients_logging()``. (:github:pull:`120`)

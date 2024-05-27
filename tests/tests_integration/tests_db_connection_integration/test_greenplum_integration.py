@@ -48,6 +48,21 @@ def test_greenplum_connection_check_fail(spark):
         greenplum.check()
 
 
+def test_greenplum_connection_check_extra_is_handled_by_driver(spark, processing):
+    greenplum = Greenplum(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+        extra={**processing.extra, "connectTimeout": "wrong_type"},
+    )
+
+    with pytest.raises(RuntimeError, match="Connection is unavailable"):
+        greenplum.check()
+
+
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
     greenplum = Greenplum(
@@ -62,7 +77,7 @@ def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
-    df = greenplum.fetch(f"SELECT * FROM {table}{suffix}", Greenplum.JDBCOptions(fetchsize=2))
+    df = greenplum.fetch(f"SELECT * FROM {table}{suffix}", Greenplum.FetchOptions(fetchsize=2))
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -93,7 +108,10 @@ def test_greenplum_connection_ddl(spark, processing, get_schema_table, suffix):
     table_name, schema, table = get_schema_table
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
 
-    assert not greenplum.execute(f"SET search_path TO {schema}, public{suffix}", Greenplum.JDBCOptions(queryTimeout=1))
+    assert not greenplum.execute(
+        f"SET search_path TO {schema}, public{suffix}",
+        Greenplum.ExecuteOptions(queryTimeout=1),
+    )
 
     assert not greenplum.execute(processing.create_schema_ddl(schema) + suffix)
     assert not greenplum.execute(processing.create_table_ddl(table, fields, schema) + suffix)

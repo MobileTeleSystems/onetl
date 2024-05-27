@@ -4,6 +4,8 @@ import pytest
 
 from onetl.file.format import JSON
 
+pytestmark = [pytest.mark.json]
+
 
 def test_json_options_default():
     json = JSON()

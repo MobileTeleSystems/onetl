@@ -37,31 +37,9 @@ class SparkHDFS(SparkFileDFConnection):
 
     Based on `Spark Generic File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_.
 
-    .. warning::
+    .. seealso::
 
-        To use Hive connector you should have PySpark installed (or injected to ``sys.path``)
-        BEFORE creating the connector instance.
-
-        You can install PySpark as follows:
-
-        .. code:: bash
-
-            pip install onetl[spark]  # latest PySpark version
-
-            # or
-            pip install onetl pyspark=3.5.0  # pass specific PySpark version
-
-        See :ref:`install-spark` installation instruction for more details.
-
-    .. note::
-
-        Most of Hadoop instances use Kerberos authentication. In this case, you should call ``kinit``
-        **BEFORE** starting Spark session to generate Kerberos ticket. See :ref:`install-kerberos`.
-
-        In case of creating session with ``"spark.master": "yarn"``, you should also pass some additional options
-        to Spark session, allowing executors to generate their own Kerberos tickets to access HDFS.
-        See `Spark security documentation <https://spark.apache.org/docs/latest/security.html#kerberos>`_
-        for more details.
+        Before using this connector please take into account :ref:`spark-hdfs-prerequisites`
 
     .. note::
 
@@ -69,6 +47,8 @@ class SparkHDFS(SparkFileDFConnection):
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
         use :obj:`HDFS <onetl.connection.file_connection.hdfs.connection.HDFS>` connection.
+
+    .. versionadded:: 0.9.0
 
     Parameters
     ----------
@@ -105,7 +85,7 @@ class SparkHDFS(SparkFileDFConnection):
     Examples
     --------
 
-    SparkHDFS connection initialization
+    SparkHDFS connection initialization:
 
     .. code:: python
 
@@ -122,11 +102,15 @@ class SparkHDFS(SparkFileDFConnection):
             spark=spark,
         ).check()
 
-    SparkHDFS connection initialization with Kerberos support
+    SparkHDFS connection initialization with Kerberos support:
+
+    .. code:: bash
+
+        $ kinit -kt /path/to/keytab user
 
     .. code:: python
 
-        from onetl.connection import Hive
+        from onetl.connection import SparkHDFS
         from pyspark.sql import SparkSession
 
         # Create Spark session.
@@ -239,6 +223,8 @@ class SparkHDFS(SparkFileDFConnection):
 
             Can be used only if there are a some hooks bound to
             :obj:`Slots.get_current_cluster <onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_current_cluster>`.
+
+        .. versionadded:: 0.9.0
 
         Parameters
         ----------

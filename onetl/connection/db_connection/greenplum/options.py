@@ -11,7 +11,12 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl.connection.db_connection.jdbc_connection.options import JDBCSQLOptions
 from onetl.connection.db_connection.jdbc_mixin import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 
 # options from which are populated by Greenplum class methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(
@@ -299,6 +304,8 @@ class GreenplumWriteOptions(JDBCOptions):
                 * Table exists
                     An error is raised, and no data is written to the table.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     @root_validator(pre=True)
@@ -311,3 +318,15 @@ class GreenplumWriteOptions(JDBCOptions):
                 stacklevel=3,
             )
         return values
+
+
+class GreenplumSQLOptions(JDBCSQLOptions):
+    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
+
+
+class GreenplumFetchOptions(JDBCFetchOptions):
+    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
+
+
+class GreenplumExecuteOptions(JDBCExecuteOptions):
+    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]

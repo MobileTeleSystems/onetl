@@ -58,20 +58,13 @@ class DBReader(FrozenModel):
 
     .. note::
 
-        This class operates with only one table at a time. It does NOT support executing JOINs.
+        This class operates with only one source at a time. It does NOT support executing queries
+        to multiple source, like ``SELECT ... JOIN``.
 
-        To get the JOIN result you can instead:
+    .. versionadded:: 0.1.0
 
-            1. Use 2 instandes of DBReader with different tables,
-               call :obj:`~run` of each one to get a table dataframe,
-               and then use ``df1.join(df2)`` syntax (Hive)
-
-            2. Use ``connection.execute("INSERT INTO ... SELECT ... JOIN ...")``
-               to execute JOIN on RDBMS side, write the result into a temporary table,
-               and then use DBReader to get the data from this temporary table (MPP systems, like Greenplum)
-
-            3. Use ``connection.sql(query)`` method to pass SQL query with a JOIN,
-               and fetch the result (other RDBMS)
+    .. versionchanged:: 0.8.0
+        Moved ``onetl.core.DBReader`` → ``onetl.db.DBReader``
 
     Parameters
     ----------
@@ -83,6 +76,9 @@ class DBReader(FrozenModel):
 
         If connection has schema support, you need to specify the full name of the source
         including the schema, e.g. ``schema.name``.
+
+        .. versionchanged:: 0.7.0
+            Renamed ``table`` → ``source``
 
     columns : list of str, default: None
         The list of columns to be read.
@@ -159,6 +155,9 @@ class DBReader(FrozenModel):
 
             Some sources does not support passing expressions and can be used only with column/field
             names which present in the source.
+
+        .. versionchanged:: 0.10.0
+            Replaces deprecated ``hwm_column`` and ``hwm_expression``  attributes
 
     hint : Any, default: ``None``
         Hint expression used for querying the data.
@@ -518,12 +517,13 @@ class DBReader(FrozenModel):
 
         .. warning::
 
-               If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+            If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
+
+        .. versionadded:: 0.10.0
 
         Raises
         ------
         RuntimeError
-
             Current strategy is not compatible with HWM parameter.
 
         Examples
@@ -575,14 +575,14 @@ class DBReader(FrozenModel):
 
             If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
 
+        .. versionadded:: 0.10.0
+
         Raises
         ------
-         RuntimeError
-
+        RuntimeError
             Current strategy is not compatible with HWM parameter.
 
         :obj:`onetl.exception.NoDataError`
-
             There is no data in source.
 
         Examples
@@ -612,16 +612,12 @@ class DBReader(FrozenModel):
 
             If :etl-entities:`hwm <hwm/index.html>` is used, then method should be called inside :ref:`strategy` context. And vise-versa, if HWM is not used, this method should not be called within strategy.
 
+        .. versionadded:: 0.1.0
+
         Returns
         -------
         df : pyspark.sql.dataframe.DataFrame
             Spark dataframe
-
-        .. note::
-
-            Keep in mind that with differences in the timezone settings of the source and Spark,
-            there may be discrepancies in the datetime on the source and in the Spark dataframe.
-            It depends on the ``spark.sql.session.timeZone`` option set when creating the Spark session.
 
         Examples
         --------

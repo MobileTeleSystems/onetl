@@ -91,7 +91,7 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
-    df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.JDBCOptions(fetchsize=2))
+    df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -122,7 +122,7 @@ def test_postgres_connection_ddl(spark, processing, get_schema_table, suffix):
     table_name, schema, table = get_schema_table
     fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}
 
-    assert not postgres.execute(f"SET search_path TO {schema}, public{suffix}", Postgres.JDBCOptions(queryTimeout=1))
+    assert not postgres.execute(f"SET search_path TO {schema}, public{suffix}", Postgres.ExecuteOptions(queryTimeout=1))
 
     assert not postgres.execute(processing.create_schema_ddl(schema) + suffix)
     assert not postgres.execute(processing.create_table_ddl(table, fields, schema) + suffix)
@@ -213,7 +213,7 @@ def test_postgres_connection_dml(request, spark, processing, load_table_data, su
         SELECT * FROM {table_name}
         WHERE id_int >= 50
         RETURNING id_int{suffix}
-    """,
+        """,
     )
 
     df = postgres.fetch(f"SELECT * FROM {temp_table}{suffix}")
@@ -302,7 +302,7 @@ def test_postgres_connection_execute_procedure(
         AS $$
             SELECT COUNT(*) FROM {table};
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -358,7 +358,7 @@ def test_postgres_connection_execute_procedure(
         AS $$
             SELECT COUNT(*) FROM {table};
         $${suffix}
-    """,
+        """,
     )
 
     with pytest.raises(Exception):
@@ -412,7 +412,7 @@ def test_postgres_connection_execute_procedure_arguments(
             SELECT COUNT(*) FROM {table}
             WHERE id_int = idd;
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -471,7 +471,7 @@ def test_postgres_connection_execute_procedure_inout(
                 WHERE id_int < idd;
             END
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -518,7 +518,7 @@ def test_postgres_connection_execute_procedure_ddl(
         AS $$
             CREATE TABLE {table} (iid INT, text VARCHAR(400));
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -565,7 +565,7 @@ def test_postgres_connection_execute_procedure_dml(
         AS $$
             INSERT INTO {table} VALUES(idd, text);
         $${suffix}
-    """,
+        """,
     )
 
     def proc_finalizer():
@@ -605,7 +605,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -667,7 +667,7 @@ def test_postgres_connection_execute_function(
                     RETURN 100;
                 END
             $$ LANGUAGE PLPGSQL{suffix}
-        """,
+            """,
         )
 
     # replace
@@ -681,7 +681,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     # missing
@@ -706,7 +706,7 @@ def test_postgres_connection_execute_function(
                 RETURN 100
             END
             $$ LANGUAGE PLPGSQL{suffix}
-        """,
+            """,
         )
 
 
@@ -746,7 +746,7 @@ def test_postgres_connection_execute_function_arguments(
                 RETURN i*100;
             END
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -825,7 +825,7 @@ def test_postgres_connection_execute_function_table(
             FROM {table}
             WHERE id_int < i;
         $$ LANGUAGE SQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -873,7 +873,7 @@ def test_postgres_connection_execute_function_ddl(
             RETURN 1;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -941,7 +941,7 @@ def test_postgres_connection_execute_function_dml(
             RETURN idd;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
-    """,
+        """,
     )
 
     def function_finalizer():
@@ -961,3 +961,77 @@ def test_postgres_connection_execute_function_dml(
     df = postgres.sql(f"SELECT {func}(2, 'cde') AS result")
     result_df = pandas.DataFrame([[2]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
+
+
+@pytest.mark.parametrize(
+    "options_class, options_kwargs, expected_warning",
+    [
+        (Postgres.ReadOptions, {"fetchsize": 5000, "sessionInitStatement": "SET timezone TO 'UTC'"}, UserWarning),
+        (Postgres.SQLOptions, {"fetchsize": 5000, "sessionInitStatement": "SET timezone TO 'UTC'"}, None),
+    ],
+)
+def test_postgres_connection_sql_options(
+    options_class,
+    options_kwargs,
+    expected_warning,
+    spark,
+    processing,
+    load_table_data,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    table = load_table_data.full_name
+    options = options_class(**options_kwargs)
+
+    if expected_warning:
+        with pytest.warns(
+            expected_warning,
+            match="Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead.",
+        ):
+            df = postgres.sql(f"SELECT * FROM {table}", options=options)
+    else:
+        df = postgres.sql(f"SELECT * FROM {table}", options=options)
+
+    table_df = processing.get_expected_dataframe(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        order_by="id_int",
+    )
+
+    processing.assert_equal_df(df=df, other_frame=table_df)
+
+
+def test_postgres_fetch_with_legacy_jdbc_options(spark, processing):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    options = Postgres.JDBCOptions(fetchsize=10)
+
+    df = postgres.fetch("SELECT CURRENT_TIMESTAMP;", options=options)
+    assert df is not None
+
+
+def test_postgres_execute_with_legacy_jdbc_options(spark, processing):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    options = Postgres.JDBCOptions(query_timeout=30)
+    postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)

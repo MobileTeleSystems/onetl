@@ -75,21 +75,26 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
 
             .. code:: python
 
-                assert download_result == DownloadResult(
-                    successful=[
-                        "/path/my/file1",
-                        "/path/my/file2",
-                    ]
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file1"),
+                        LocalFile("/downloaded/file2"),
+                    },
                 )
 
             Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
-                [
-                    "/path/my/file1",
-                    "/path/my/file2",
-                ]
+                FileListHWM(
+                    ...,
+                    entity="/path",
+                    value=[
+                        "/path/my/file1",
+                        "/path/my/file2",
+                    ],
+                )
 
             Next incremental run will download only new files from the source:
 
@@ -104,22 +109,26 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             .. code:: python
 
                 # only files which are not in FileListHWM
-
-                assert download_result == DownloadResult(
-                    successful=[
-                        "/path/my/file3",
-                    ]
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file3"),
+                    },
                 )
 
             New files will be added to the ``FileListHWM`` and saved to :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
-                [
-                    "/path/my/file1",
-                    "/path/my/file2",
-                    "/path/my/file3",
-                ]
+                FileListHWM(
+                    ...,
+                    entity="/path",
+                    value=[
+                        "/path/my/file1",
+                        "/path/my/file2",
+                        "/path/my/file3",
+                    ],
+                )
 
         .. warning::
 
@@ -129,6 +138,8 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
             * FileDownloader does not raise exceptions if some file cannot be downloaded.
             * FileDownloader creates files on local filesystem, and file content may differ for different :obj:`modes <onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode>`.
             * It can remove files from the source if :obj:`delete_source <onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source>` is set to ``True``.
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------
@@ -390,6 +401,8 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
         Not every :ref:`DB connection <db-connections>`
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the IncrementalBatchStrategy.
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------

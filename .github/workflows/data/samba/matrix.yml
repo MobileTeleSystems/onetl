@@ -15,6 +15,7 @@ latest: &latest
 
 matrix:
   small:
+    # elswork/samba image versions does not correlate with smbd version, it is always 4.x
     - server-version: latest
       <<: *max
   full:

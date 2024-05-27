@@ -62,6 +62,8 @@ class S3(FileConnection):
 
         See :ref:`install-files` installation instruction for more details.
 
+    .. versionadded:: 0.5.1
+
     Parameters
     ----------
     host : str
@@ -81,6 +83,9 @@ class S3(FileConnection):
 
     protocol : str, default : ``https``
         Connection protocol. Allowed values: ``https`` or ``http``
+
+        .. versionchanged:: 0.6.0
+            Renamed ``secure: bool`` to ``protocol: Literal["https", "http"]``
 
     session_token : str, optional
         Session token of your account in S3 service

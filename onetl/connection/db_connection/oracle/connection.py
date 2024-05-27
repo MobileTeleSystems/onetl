@@ -22,8 +22,19 @@ from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+    JDBCOptions,
+)
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
+from onetl.connection.db_connection.oracle.options import (
+    OracleExecuteOptions,
+    OracleFetchOptions,
+    OracleReadOptions,
+    OracleSQLOptions,
+    OracleWriteOptions,
+)
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.impl import GenericOptions
@@ -70,12 +81,14 @@ class OracleExtra(GenericOptions):
 class Oracle(JDBCConnection):
     """Oracle JDBC connection. |support_hooks|
 
-    Based on Maven package ``com.oracle.database.jdbc:ojdbc8:23.2.0.0``
+    Based on Maven package `com.oracle.database.jdbc:ojdbc8:23.4.0.24.05 <https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.4.0.24.05>`_
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`oracle-prerequisites`
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------
@@ -169,6 +182,12 @@ class Oracle(JDBCConnection):
     service_name: Optional[str] = None
     extra: OracleExtra = OracleExtra()
 
+    ReadOptions = OracleReadOptions
+    WriteOptions = OracleWriteOptions
+    SQLOptions = OracleSQLOptions
+    FetchOptions = OracleFetchOptions
+    ExecuteOptions = OracleExecuteOptions
+
     Extra = OracleExtra
     Dialect = OracleDialect
 
@@ -179,15 +198,18 @@ class Oracle(JDBCConnection):
     @classmethod
     def get_packages(
         cls,
-        java_version: str | Version | None = None,
+        java_version: str | None = None,
+        package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC driver versions for Oracle. |support_hooks|
 
         Parameters
         ----------
-        java_version : str, default ``8``
-            Java major version.
+        java_version : str, optional
+            Java major version, defaults to "8". Must be "8" or "11".
+        package_version : str, optional
+            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.4.0.24.05".
 
         Examples
         --------
@@ -197,35 +219,42 @@ class Oracle(JDBCConnection):
             from onetl.connection import Oracle
 
             Oracle.get_packages()
-            Oracle.get_packages(java_version="8")
 
+            # specify Java and package versions
+            Oracle.get_packages(java_version="8", package_version="23.4.0.24.05")
         """
-        if java_version is None:
-            java_version = "8"
 
-        java_ver = Version.parse(java_version)
+        default_java_version = "8"
+        default_package_version = "23.4.0.24.05"
+
+        java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
-            raise ValueError(f"Java version must be at least 8, got {java_ver}")
+            raise ValueError(f"Java version must be at least 8, got {java_ver.major}")
 
         jre_ver = "8" if java_ver.major < 11 else "11"
-        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:23.2.0.0"]
+        jdbc_version = Version(package_version or default_package_version).min_digits(4)
+
+        return [f"com.oracle.database.jdbc:ojdbc{jre_ver}:{jdbc_version}"]
 
     @classproperty
     def package(cls) -> str:
         """Get package name to be downloaded by Spark."""
         msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
+        return "com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"
 
     @property
     def jdbc_url(self) -> str:
-        extra = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
         if self.sid:
-            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}?{parameters}".rstrip("?")
+            return f"jdbc:oracle:thin:@{self.host}:{self.port}:{self.sid}"
 
-        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}?{parameters}".rstrip("?")
+        return f"jdbc:oracle:thin:@//{self.host}:{self.port}/{self.service_name}"
+
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        return result
 
     @property
     def instance_url(self) -> str:
@@ -262,14 +291,14 @@ class Oracle(JDBCConnection):
     def execute(
         self,
         statement: str,
-        options: JDBCOptions | dict | None = None,  # noqa: WPS437
+        options: JDBCOptions | JDBCExecuteOptions | dict | None = None,  # noqa: WPS437
     ) -> DataFrame | None:
         statement = clear_statement(statement)
 
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
-        call_options = self.JDBCOptions.parse(options)
+        call_options = self.ExecuteOptions.parse(options)
         df = self._call_on_driver(statement, call_options)
         self._handle_compile_errors(statement.strip(), call_options)
 
@@ -326,7 +355,7 @@ class Oracle(JDBCConnection):
         type_name: str,
         schema: str,
         object_name: str,
-        options: JDBCOptions,
+        options: JDBCExecuteOptions | JDBCFetchOptions,
     ) -> list[tuple[ErrorPosition, str]]:
         """
         Get compile errors for the object.
@@ -396,7 +425,7 @@ class Oracle(JDBCConnection):
     def _handle_compile_errors(
         self,
         statement: str,
-        options: JDBCOptions,
+        options: JDBCExecuteOptions,
     ) -> None:
         """
         Oracle does not return compilation errors immediately.

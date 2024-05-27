@@ -9,7 +9,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.5.0
+        SPARK_VERSION: 3.5.1
     env_file: .env.docker
     volumes:
       - ./:/app/
@@ -31,6 +31,8 @@ services:
       - 5433:5432
     networks:
       - onetl
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
 
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}
@@ -83,11 +85,14 @@ services:
       - onetl
 
   mssql:
-    image: ${MSSQL_IMAGE:-mcmoe/mssqldocker:latest}
+    image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:latest}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
       - 1433:1433
+    volumes:
+      - ./docker/mssql/:/usr/config/
+    entrypoint: ["/usr/config/entrypoint.sh"]
     networks:
       - onetl
     platform: linux/amd64
@@ -173,7 +178,7 @@ services:
       - onetl
 
   samba:
-    image: elswork/samba
+    image: ${SAMBA_IMAGE:-elswork/samba}
     restart: unless-stopped
     ports:
       - "139:139"

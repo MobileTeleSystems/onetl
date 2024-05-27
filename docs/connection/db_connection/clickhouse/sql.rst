@@ -43,7 +43,7 @@ Examples
         WHERE
             key = 'something'
         """,
-        options=Clickhouse.ReadOptions(
+        options=Clickhouse.SQLOptions(
             partition_column="id",
             num_partitions=10,
             lower_bound=0,
@@ -66,3 +66,14 @@ Pay attention to ``where`` value
 Instead of filtering data on Spark side using ``df.filter(df.column == 'value')`` pass proper ``WHERE column = 'value'`` clause.
 This both reduces the amount of data send from Clickhouse to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in ``where`` clause.
+
+Options
+-------
+
+.. currentmodule:: onetl.connection.db_connection.clickhouse.options
+
+.. autopydantic_model:: ClickhouseSQLOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

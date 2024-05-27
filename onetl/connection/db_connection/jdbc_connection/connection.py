@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from etl_entities.instance import Host
@@ -15,6 +16,7 @@ from onetl.connection.db_connection.jdbc_connection.options import (
     JDBCLegacyOptions,
     JDBCPartitioningMode,
     JDBCReadOptions,
+    JDBCSQLOptions,
     JDBCTableExistBehavior,
     JDBCWriteOptions,
 )
@@ -50,6 +52,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
     Dialect = JDBCDialect
     ReadOptions = JDBCReadOptions
+    SQLOptions = JDBCSQLOptions
     WriteOptions = JDBCWriteOptions
     Options = JDBCLegacyOptions
 
@@ -61,12 +64,14 @@ class JDBCConnection(JDBCMixin, DBConnection):
     def sql(
         self,
         query: str,
-        options: JDBCReadOptions | dict | None = None,
+        options: JDBCSQLOptions | dict | None = None,
     ) -> DataFrame:
         """
         **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. |support_hooks|
 
         Same as ``spark.read.jdbc(query)``.
+
+        .. versionadded:: 0.2.0
 
         Parameters
         ----------
@@ -74,7 +79,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
             SQL query to be executed.
 
-        options : dict, :obj:`~ReadOptions`, default: ``None``
+        options : dict, :obj:`~SQLOptions`, default: ``None``
 
             Spark options to be used while fetching data.
 
@@ -86,12 +91,17 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         """
 
+        if isinstance(options, JDBCReadOptions):
+            msg = "Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead."
+            warnings.warn(msg, UserWarning, stacklevel=3)
+            options = self.SQLOptions.parse_obj(options.dict(exclude={"partitioning_mode"}, exclude_none=True))
+
         query = clear_statement(query)
 
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_executor(query, self.ReadOptions.parse(options))
+        df = self._query_on_executor(query, self.SQLOptions.parse(options))
 
         log.info("|Spark| DataFrame successfully created from SQL statement ")
         return df
@@ -151,7 +161,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
             limit=limit,
         )
 
-        result = self.sql(query, read_options)
+        log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
+        log_lines(log, query)
+
+        result = self._query_on_executor(query, self.ReadOptions.parse(read_options))
+
+        log.info("|Spark| DataFrame successfully created from SQL statement ")
         if alias:
             result = result.drop(alias)
 
@@ -165,7 +180,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         options: JDBCWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        jdbc_params = self.options_to_jdbc_params(write_options)
+        jdbc_properties = self._get_jdbc_properties(write_options, exclude={"if_exists"}, exclude_none=True)
 
         mode = (
             "overwrite"
@@ -173,7 +188,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             else write_options.if_exists.value
         )
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        df.write.jdbc(table=target, mode=mode, **jdbc_params)
+        df.write.format("jdbc").mode(mode).options(dbtable=target, **jdbc_properties).save()
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
     @slot
@@ -195,38 +210,6 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
-
-    def options_to_jdbc_params(
-        self,
-        options: JDBCReadOptions | JDBCWriteOptions,
-    ) -> dict:
-        # Have to replace the <partitionColumn> parameter with <column>
-        # since the method takes the named <column> parameter
-        # link to source below
-        # https://github.com/apache/spark/blob/2ef8ced27a6b0170a691722a855d3886e079f037/python/pyspark/sql/readwriter.py#L465
-
-        partition_column = getattr(options, "partition_column", None)
-        if partition_column:
-            options = options.copy(
-                update={"column": partition_column},
-                exclude={"partition_column"},
-            )
-
-        result = self._get_jdbc_properties(
-            options,
-            include=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS,
-            exclude={"if_exists"},
-            exclude_none=True,
-        )
-
-        result["properties"] = self._get_jdbc_properties(
-            options,
-            exclude=READ_TOP_LEVEL_OPTIONS | WRITE_TOP_LEVEL_OPTIONS | {"if_exists"},
-            exclude_none=True,
-        )
-
-        result["properties"].pop("partitioningMode", None)
-        return result
 
     @slot
     def get_min_max_values(
@@ -273,10 +256,10 @@ class JDBCConnection(JDBCMixin, DBConnection):
     def _query_on_executor(
         self,
         query: str,
-        options: JDBCReadOptions,
+        options: JDBCSQLOptions | JDBCReadOptions,
     ) -> DataFrame:
-        jdbc_params = self.options_to_jdbc_params(options)
-        return self.spark.read.jdbc(table=f"({query}) T", **jdbc_params)
+        jdbc_properties = self._get_jdbc_properties(options, exclude_none=True)
+        return self.spark.read.format("jdbc").options(dbtable=f"({query}) T", **jdbc_properties).load()
 
     def _exclude_partition_options(
         self,

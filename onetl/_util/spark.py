@@ -63,14 +63,14 @@ def get_pyspark_version() -> Version:
     try_import_pyspark()
     import pyspark
 
-    return Version.parse(pyspark.__version__)
+    return Version(pyspark.__version__)
 
 
 def get_spark_version(spark_session: SparkSession) -> Version:
     """
     Get Spark version from active Spark session
     """
-    return Version.parse(spark_session.version)
+    return Version(spark_session.version)
 
 
 def get_executor_total_cores(spark_session: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:

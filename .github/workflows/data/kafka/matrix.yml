@@ -1,6 +1,8 @@
 min: &min
-  # kafka_version: 0.10.2-1-r3
-  kafka-version: 3.5.1
+  # Headers are supported only since 2.x.
+  # Images before 3.2.3 are not creating kafka_jaas.conf properly, and failing to start
+  # https://github.com/bitnami/containers/blob/9db9064668365cac89bff58259f63eb78bb97e79/bitnami/kafka/README.md?plain=1#L933
+  kafka-version: 3.2.3
   pydantic-version: 1
   spark-version: 2.4.8
   python-version: '3.7'
@@ -8,9 +10,9 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  kafka-version: 3.5.1
+  kafka-version: 3.7.0
   pydantic-version: 2
-  spark-version: 3.5.0
+  spark-version: 3.5.1
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest

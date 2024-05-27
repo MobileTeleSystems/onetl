@@ -16,6 +16,9 @@ from onetl.impl import FrozenModel
 class Glob(BaseFileFilter, FrozenModel):
     """Filter files or directories with path matching a glob expression.
 
+    .. versionadded:: 0.8.0
+        Replaces deprecated ``onetl.core.FileFilter``
+
     Parameters
     ----------
 

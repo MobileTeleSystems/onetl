@@ -7,7 +7,9 @@ Kafka
     :maxdepth: 1
     :caption: Connection
 
+    prerequisites
     connection
+    troubleshooting
 
 .. toctree::
     :maxdepth: 1

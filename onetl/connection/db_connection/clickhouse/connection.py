@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import logging
-import warnings
 from typing import ClassVar, Optional
 
 from onetl._util.classproperty import classproperty
+from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
+from onetl.connection.db_connection.clickhouse.options import (
+    ClickhouseExecuteOptions,
+    ClickhouseFetchOptions,
+    ClickhouseReadOptions,
+    ClickhouseSQLOptions,
+    ClickhouseWriteOptions,
+)
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
 from onetl.hooks import slot, support_hooks
@@ -28,12 +35,14 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package ``ru.yandex.clickhouse:clickhouse-jdbc:0.3.2``
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0-patch5 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch5>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
-    .. warning::
+    .. seealso::
 
         Before using this connector please take into account :ref:`clickhouse-prerequisites`
+
+    .. versionadded:: 0.1.0
 
     Parameters
     ----------
@@ -104,13 +113,37 @@ class Clickhouse(JDBCConnection):
     Extra = ClickhouseExtra
     Dialect = ClickhouseDialect
 
-    DRIVER: ClassVar[str] = "ru.yandex.clickhouse.ClickHouseDriver"
+    ReadOptions = ClickhouseReadOptions
+    WriteOptions = ClickhouseWriteOptions
+    SQLOptions = ClickhouseSQLOptions
+    FetchOptions = ClickhouseFetchOptions
+    ExecuteOptions = ClickhouseExecuteOptions
+
+    DRIVER: ClassVar[str] = "com.clickhouse.jdbc.ClickHouseDriver"
 
     @slot
     @classmethod
-    def get_packages(cls) -> list[str]:
+    def get_packages(
+        cls,
+        package_version: str | None = None,
+        apache_http_client_version: str | None = None,
+    ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. |support_hooks|
+        Get package names to be downloaded by Spark. Allows specifying custom JDBC and Apache HTTP Client versions. |support_hooks|
+
+        .. versionadded:: 0.9.0
+
+        Parameters
+        ----------
+        package_version : str, optional
+            ClickHouse JDBC version client packages. Defaults to ``0.6.0-patch5``.
+
+            .. versionadded:: 0.11.0
+
+        apache_http_client_version : str, optional
+            Apache HTTP Client version package. Defaults to ``5.3.1``.
+
+            .. versionadded:: 0.11.0
 
         Examples
         --------
@@ -119,27 +152,42 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
-            Clickhouse.get_packages()
+            Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
 
         """
-        return ["ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"]
+        default_jdbc_version = "0.6.0-patch5"
+        default_http_version = "5.3.1"
+
+        jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
+        http_version = Version(apache_http_client_version or default_http_version).min_digits(3)
+
+        result = [
+            f"com.clickhouse:clickhouse-jdbc:{jdbc_version}",
+            f"com.clickhouse:clickhouse-http-client:{jdbc_version}",
+        ]
+
+        if jdbc_version >= Version("0.5.0"):
+            result.append(f"org.apache.httpcomponents.client5:httpclient5:{http_version}")
+
+        return result
 
     @classproperty
-    def package(cls) -> str:
-        """Get package name to be downloaded by Spark."""
-        msg = "`Clickhouse.package` will be removed in 1.0.0, use `Clickhouse.get_packages()` instead"
-        warnings.warn(msg, UserWarning, stacklevel=3)
-        return "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
+    def package(self) -> str:
+        """Get a single string of package names to be downloaded by Spark for establishing a Clickhouse connection."""
+        return "com.clickhouse:clickhouse-jdbc:0.6.0-patch5,com.clickhouse:clickhouse-http-client:0.6.0-patch5,org.apache.httpcomponents.client5:httpclient5:5.3.1"
 
     @property
     def jdbc_url(self) -> str:
-        extra = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(extra.items()))
-
         if self.database:
-            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}?{parameters}".rstrip("?")
+            return f"jdbc:clickhouse://{self.host}:{self.port}/{self.database}"
 
-        return f"jdbc:clickhouse://{self.host}:{self.port}?{parameters}".rstrip("?")
+        return f"jdbc:clickhouse://{self.host}:{self.port}"
+
+    @property
+    def jdbc_params(self) -> dict:
+        result = super().jdbc_params
+        result.update(self.extra.dict(by_alias=True))
+        return result
 
     @staticmethod
     def _build_statement(

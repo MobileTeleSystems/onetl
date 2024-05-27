@@ -6,7 +6,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.0
+  spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
@@ -22,19 +22,19 @@ latest: &latest
 matrix:
   small:
     - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 23.6.1-alpine
+      clickhouse-version: 24.3.2.23-alpine
       <<: *max
   full:
-  # the lowest supported Clickhouse version by JDBC driver
+    # Clickhouse version with proper DateTime > DateTime64 comparison
     - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '20.7'
+      clickhouse-version: '21.1'
       <<: *min
     - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 23.6.1-alpine
+      clickhouse-version: 24.3.2.23-alpine
       <<: *max
   nightly:
     - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '20.7'
+      clickhouse-version: '21.1'
       <<: *min
     - clickhouse-image: clickhouse/clickhouse-server
       clickhouse-version: latest-alpine

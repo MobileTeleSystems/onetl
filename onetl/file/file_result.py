@@ -61,16 +61,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
-            )
-
-            assert file_result.successful_count == 2
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
+        ... )
+        >>> file_result.successful_count
+        2
         """
 
         return len(self.successful)
@@ -83,16 +80,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                failed={RemoteFile("/some/file"), RemoteFile("/some/another.file")},
-            )
-
-            assert file_result.failed_count == 2
+        >>> from onetl.impl import RemoteFile
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     failed={RemoteFile("/some/file"), RemoteFile("/some/another.file")},
+        ... )
+        >>> file_result.failed_count
+        2
         """
 
         return len(self.failed)
@@ -105,16 +99,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
-            )
-
-            assert file_result.skipped_count == 2
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
+        ... )
+        >>> file_result.skipped_count
+        2
         """
 
         return len(self.skipped)
@@ -127,16 +118,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                missing={LocalPath("/some/file"), LocalPath("/some/another.file")},
-            )
-
-            assert file_result.missing_count == 2
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     missing={LocalPath("/some/file"), LocalPath("/some/another.file")},
+        ... )
+        >>> file_result.missing_count
+        2
         """
 
         return len(self.missing)
@@ -149,19 +137,16 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
-                failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={LocalPath("/skipped/file")},
-                missing={LocalPath("/missing/file")},
-            )
-
-            assert file_result.total_count == 6
+        >>> from onetl.impl import RemoteFile
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
+        ...     failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
+        ...     skipped={LocalPath("/skipped/file")},
+        ...     missing={LocalPath("/missing/file")},
+        ... )
+        >>> file_result.total_count
+        6
         """
 
         return self.successful_count + self.failed_count + self.missing_count + self.skipped_count
@@ -174,16 +159,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
-            )
-
-            assert file_result.successful_size == 1_000_000  # in bytes
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     successful={LocalPath("/some/file"), LocalPath("/some/another.file")},
+        ... )
+        >>> file_result.successful_size  # in bytes
+        1024
         """
 
         return self.successful.total_size
@@ -196,16 +178,16 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                failed={RemoteFile("/some/file"), RemoteFile("/some/another.file")},
-            )
-
-            assert file_result.failed_size == 1_000_000  # in bytes
+        >>> from onetl.impl import RemoteFile, RemotePathStat
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     failed={
+        ...         RemoteFile("/some/file", stats=RemotePathStat(st_size=1024)),
+        ...         RemoteFile("/some/another.file"), stats=RemotePathStat(st_size=1024)),
+        ...     },
+        ... )
+        >>> file_result.failed_size  # in bytes
+        2048
         """
 
         return self.failed.total_size
@@ -218,16 +200,13 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
-            )
-
-            assert file_result.skipped_size == 1_000_000  # in bytes
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     skipped={LocalPath("/some/file"), LocalPath("/some/another.file")},
+        ... )
+        >>> file_result.skipped_size  # in bytes
+        1024
         """
 
         return self.skipped.total_size
@@ -240,19 +219,19 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
-                failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={LocalPath("/skipped/file")},
-                missing={LocalPath("/missing/file")},
-            )
-
-            assert file_result.total_size == 10_000_000  # in bytes
+        >>> from onetl.impl import RemoteFile, RemotePathStat, LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
+        ...     failed={
+        ...         RemoteFile("/remote/file", stats=RemotePathStat(st_size=1024)),
+        ...         RemoteFile("/remote/another.file", stats=RemotePathStat(st_size=1024))
+        ...     },
+        ...     skipped={LocalPath("/skipped/file")},
+        ...     missing={LocalPath("/missing/file")},
+        ... )
+        >>> file_result.total_size  # in bytes
+        4096
         """
 
         return self.successful_size + self.failed_size + self.skipped_size
@@ -270,33 +249,31 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            files_with_exception = [
-                FailedRemoteFile(
-                    path="/remote/file1",
-                    exception=NotAFileError("'/remote/file1' is not a file"),
-                ),
-                FailedRemoteFile(
-                    path="/remote/file2",
-                    exception=FileMissingError("'/remote/file2' does not exist"),
-                ),
-            ]
-
-            file_result = FileResult(failed=files_with_exception)
-
-            file_result.raise_if_failed()
-            # will raise FailedFilesError('''
-            #    Failed 2 files (10MB):
-            #        '/remote/file1' (1 MB)
-            #           NotAFileError("'/remote/file1' is not a file")
-            #
-            #        '/remote/file2' (9 MB)
-            #           FileMissingError("'/remote/file2' does not exist")
-            # ''')
+        >>> from onetl.impl import FailedRemoteFile, RemotePathStat
+        >>> from onetl.exception import NotAFileError, FileMissingError
+        >>> from onetl.file.file_result import FileResult
+        >>> files_with_exception = [
+        ...     FailedRemoteFile(
+        ...         path="/remote/file1",
+        ...         stats=RemotePathStat(st_size=0),
+        ...         exception=NotAFileError("'/remote/file1' is not a file"),
+        ...     ),
+        ...     FailedRemoteFile(
+        ...         path="/remote/file2",
+        ...         stats=RemotePathStat(st_size=0),
+        ...         exception=PermissionError("'/remote/file2': [Errno 13] Permission denied"),
+        ...     ),
+        ... ]
+        >>> file_result = FileResult(failed=files_with_exception)
+        >>> file_result.raise_if_failed()
+        Traceback (most recent call last)
+        ...
+        onetl.exception.FailedFilesError: Failed 2 files (size='0 bytes'):
+            '/remote/file1' (size='0 bytes')
+                NotAFileError("'/remote/file1' is not a file")
+        <BLANKLINE>
+            '/remote/file2' (size='0 Bytes')
+                PermissionError("'/remote/file2': [Errno 13] Permission denied")
         """
 
         if self.failed:
@@ -315,24 +292,20 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                missing={
-                    LocalPath("/missing/file1"),
-                    LocalPath("/missing/file2"),
-                },
-            )
-
-            file_result.raise_if_missing()
-            # will raise MissingFilesError('''
-            #    Missing 2 files:
-            #        '/missing/file1'
-            #        '/missing/file2'
-            # ''')
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     missing={
+        ...         LocalPath("/missing/file1"),
+        ...         LocalPath("/missing/file2"),
+        ...     },
+        ... )
+        >>> file_result.raise_if_missing()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.MissingFilesError: Missing 2 files:
+            '/missing/file1'
+            '/missing/file2'
         """
 
         if self.missing:
@@ -351,21 +324,20 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
-            )
-
-            file_result.raise_if_skipped()
-            # will raise SkippedFilesError('''
-            #    Skipped 2 files (15 kB):
-            #        '/skipped/file1' (10kB)
-            #        '/skipped/file2' (5 kB)
-            # ''')
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     skipped={
+        ...         LocalPath("/skipped/file1"),
+        ...         LocalPath("/skipped/file2"),
+        ...     },
+        ... )
+        >>> file_result.raise_if_skipped()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.SkippedFilesError: Skipped 2 files (15 kB):
+            '/skipped/file1' (10kB)
+            '/skipped/file2' (5 kB)
         """
 
         if self.skipped:
@@ -384,25 +356,22 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult(
-                successful={
-                    LocalPath("/local/empty1.file"),
-                    LocalPath("/local/empty2.file"),
-                    LocalPath("/local/normal.file"),
-                },
-            )
-
-            file_result.raise_if_contains_zero_size()
-            # will raise ZeroFileSizeError('''
-            #    2 files out of 3 have zero size:
-            #        '/local/empty1.file'
-            #        '/local/empty2.file'
-            # ''')
+        >>> from onetl.exception import ZeroFileSizeError
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult(
+        ...     successful={
+        ...         LocalPath("/local/empty1.file"),
+        ...         LocalPath("/local/empty2.file"),
+        ...         LocalPath("/local/normal.file"),
+        ...     },
+        ... )
+        >>> file_result.raise_if_contains_zero_size()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.ZeroFileSizeError: 2 files out of 3 have zero size:
+            '/local/empty1.file'
+            '/local/empty2.file'
         """
 
         self.successful.raise_if_contains_zero_size()
@@ -415,18 +384,16 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result1 = FileResult()
-            assert file_result1.is_empty
-
-            file_result2 = FileResult(
-                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
-            )
-            assert not file_result2.is_empty
+        >>> from onetl.impl import LocalPath
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result1 = FileResult()
+        >>> file_result1.is_empty
+        True
+        >>> file_result2 = FileResult(
+        ...     successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
+        ... )
+        >>> file_result2.is_empty
+        False
         """
 
         return not self.failed and not self.successful and not self.skipped
@@ -444,15 +411,12 @@ class FileResult(BaseModel):
         Examples
         --------
 
-        .. code:: python
-
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result = FileResult()
-
-            file_result.raise_if_empty()
-            # will raise EmptyFilesError("There are no files in the result")
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result = FileResult()
+        >>> file_result.raise_if_empty()
+        Traceback (most recent call last):
+            ...
+        onetl.exception.EmptyFilesError: There are no files in the result
         """
 
         if self.is_empty:
@@ -460,71 +424,66 @@ class FileResult(BaseModel):
 
     @property
     def details(self) -> str:
-        '''
+        """
         Return detailed information about files in the result object
 
         Examples
         --------
 
-        .. code:: python
+        >>> from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePathStat
+        >>> from onetl.exception import NotAFileError
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result1 = FileResult(
+        ...     successful={
+        ...         RemoteFile("/local/file", stats=RemotePathStat(st_size=1024)),
+        ...         RemoteFile("/local/another.file", stats=RemotePathStat(st_size=1024)),
+        ...     },
+        ...     failed={
+        ...         FailedRemoteFile(
+        ...             path="/remote/file1",
+        ...             stats=RemotePathStat(st_size=0),
+        ...             exception=NotAFileError("'/remote/file1' is not a file"),
+        ...         ),
+        ...         FailedRemoteFile(
+        ...             path="/remote/file2",
+        ...             stats=RemotePathStat(st_size=0),
+        ...             exception=PermissionError("'/remote/file2': [Errno 13] Permission denied"),
+        ...         ),
+        ...     },
+        ...     skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
+        ...     missing={LocalPath("/missing/file1"), LocalPath("/missing/file2")},
+        ... )
+        >>> print(file_result1.details)
+        Total: 8 files (size='2.0 kB')
+        <BLANKLINE>
+        Successful 2 files (size='2.0 kB'):
+            '/local/another.file' (size='1.0 kB')
+            '/local/file' (size='1.0 kB')
+        <BLANKLINE>
+        Failed 2 files (size='0 Bytes'):
+            '/remote/file2' (size='0 Bytes')
+                PermissionError("'/remote/file2': [Errno 13] Permission denied")
+            '/remote/file1' (size='0 Bytes')
+                NotAFileError("'/remote/file1' is not a file")
+        <BLANKLINE>
+        Skipped 2 files (size='0 Bytes'):
+            '/skipped/file1'
+            '/skipped/file2'
+        <BLANKLINE>
+        Missing 2 files:
+            '/missing/file2'
+            '/missing/file1'
 
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result1 = FileResult(
-                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
-                failed={
-                    FailedRemoteFile(
-                        path="/remote/file1",
-                        exception=NotAFileError("'/remote/file1' is not a file"),
-                    ),
-                    FailedRemoteFile(
-                        path="/remote/file2",
-                        exception=FileMissingError("'/remote/file2' does not exist"),
-                    ),
-                },
-                skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
-                missing={LocalPath("/missing/file1"), LocalPath("/missing/file2")},
-            )
-
-            details1 = """
-                Total: 8 files (10.4 MB)
-
-                Successful 2 files (30.7 kB):
-                    '/successful1' (10.2 kB)
-                    '/successful2' (20.5 kB)
-
-                Failed 2 files (10MB):
-                    '/remote/file1' (1 MB)
-                        NotAFileError("'/remote/file1' is not a file")
-
-                    '/remote/file2' (9 MB)
-                        FileMissingError("'/remote/file2' does not exist")
-
-                Skipped 2 files (15 kB):
-                    '/skipped/file1' (10kB)
-                    '/skipped/file2' (5 kB)
-
-                Missing 2 files:
-                    '/missing/file1'
-                    '/missing/file2'
-            """
-
-            assert file_result1.details == details1
-
-            file_result2 = FileResult()
-            details2 = """
-                No successful files
-
-                No failed files
-
-                No skipped files
-
-                No missing files
-            """
-
-            assert file_result2.details == details2
-        '''
+        >>> file_result2 = FileResult()
+        >>> print(file_result2.details)
+        No successful files
+        <BLANKLINE>
+        No failed files
+        <BLANKLINE>
+        No skipped files
+        <BLANKLINE>
+        No missing files
+        """
 
         result = []
 
@@ -540,41 +499,50 @@ class FileResult(BaseModel):
 
     @property
     def summary(self) -> str:
-        '''
+        """
         Return short summary about files in the result object
 
         Examples
         --------
 
-        .. code:: python
+        >>> from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePathStat
+        >>> from onetl.exception import NotAFileError
+        >>> from onetl.file.file_result import FileResult
+        >>> file_result1 = FileResult(
+        ...     successful={
+        ...         RemoteFile("/local/file", stats=RemotePathStat(st_size=1024)),
+        ...         RemoteFile("/local/another.file", stats=RemotePathStat(st_size=1024)),
+        ...     },
+        ...     failed={
+        ...         FailedRemoteFile(
+        ...             path="/remote/file1",
+        ...             stats=RemotePathStat(st_size=0),
+        ...             exception=NotAFileError("'/remote/file1' is not a file"),
+        ...         ),
+        ...         FailedRemoteFile(
+        ...             path="/remote/file2",
+        ...             stats=RemotePathStat(st_size=0),
+        ...             exception=PermissionError("'/remote/file2': [Errno 13] Permission denied"),
+        ...         ),
+        ...     },
+        ...     skipped={LocalPath("/skipped/file1"), LocalPath("/skipped/file2")},
+        ...     missing={LocalPath("/missing/file1"), LocalPath("/missing/file2")},
+        ... )
+        >>> print(file_result1.summary)
+        Total: 8 files (size='2.0 kB')
+        <BLANKLINE>
+        Successful: 2 files (size='2.0 kB')
+        <BLANKLINE>
+        Failed: 2 files (size='0 Bytes')
+        <BLANKLINE>
+        Skipped: 2 files (size='0 Bytes')
+        <BLANKLINE>
+        Missing: 2 files
 
-            from onetl.impl import RemoteFile, LocalPath
-            from onet.file.file_result import FileResult
-
-            file_result1 = FileResult(
-                successful={LocalPath("/local/file"), LocalPath("/local/another.file")},
-                failed={RemoteFile("/remote/file"), RemoteFile("/remote/another.file")},
-                skipped={LocalPath("/skipped/file")},
-                missing={LocalPath("/missing/file")},
-            )
-
-            result = """
-                Total: 8 files (10.4 MB)
-
-                Successful: 2 files (30.7 kB)
-
-                Failed: 2 files (10MB)
-
-                Skipped: 2 files (15 kB)
-
-                Missing: 2 files
-            """
-
-            assert file_result1.summary == result
-
-            file_result2 = FileResult()
-            assert file_result1.summary == "No files"
-        '''
+        >>> file_result2 = FileResult()
+        >>> print(file_result2.summary)
+        No files
+        """
         return self._total_message
 
     def __str__(self):

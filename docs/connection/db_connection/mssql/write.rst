@@ -40,11 +40,12 @@ Examples
 Options
 -------
 
-Method above accepts  :obj:`JDBCWriteOptions <onetl.connection.db_connection.jdbc.options.JDBCWriteOptions>`
+Method above accepts  :obj:`MSSQL.WriteOptions <onetl.connection.db_connection.mssql.options.MSSQLWriteOptions>`
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_connection.options
+.. currentmodule:: onetl.connection.db_connection.mssql.options
 
-.. autopydantic_model:: JDBCWriteOptions
+.. autopydantic_model:: MSSQLWriteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

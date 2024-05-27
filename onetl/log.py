@@ -56,6 +56,9 @@ def setup_notebook_logging(level: int | str = logging.INFO) -> None:
         Should **NOT** be used in applications, you should set up logging settings manually,
         according to your framework documentation.
 
+    .. deprecated:: 0.5.0
+        Use :obj:`~setup_logging` instead
+
     Parameters
     ----------
     level : ``int`` or ``str``, default ``INFO``
@@ -80,6 +83,9 @@ def setup_logging(level: int | str = logging.INFO, enable_clients: bool = False)
         Should be used only in IDEs (like Jupyter notebooks or PyCharm),
         or scripts (ETL pipelines).
 
+    .. versionchanged:: 0.5.0
+        Renamed ``setup_notebook_logging`` → ``setup_logging``
+
     Parameters
     ----------
     level : ``int`` or ``str``, default ``INFO``
@@ -92,6 +98,8 @@ def setup_logging(level: int | str = logging.INFO, enable_clients: bool = False)
         .. note::
 
             For ``level="DEBUG"`` it is recommended to use ``enable_clients=True``
+
+        .. versionadded:: 0.9.0
     """
 
     logging.basicConfig(level=level)
@@ -118,6 +126,9 @@ def setup_clients_logging(level: int | str = DISABLED) -> None:
         Can be used in applications, but it is recommended to set up these loggers
         according to your framework documentation.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``disable_clients_logging`` → ``setup_clients_logging``
+
     Parameters
     ----------
     level : ``int`` or ``str``, default ``DISABLED``
@@ -127,6 +138,8 @@ def setup_clients_logging(level: int | str = DISABLED) -> None:
 
             For ``py4j``, logging level with maximum verbosity is ``INFO`` because ``DEBUG`` logs are
             totally unreadable.
+
+        .. versionadded:: 0.9.0
     """
 
     for client_module in CLIENT_MODULES:

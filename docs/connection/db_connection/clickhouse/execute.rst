@@ -17,10 +17,10 @@ There are 2 ways to execute some statement in Clickhouse
 Use ``Clickhouse.fetch``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use this method to execute some ``SELECT`` query which returns **small number or rows**, like reading
+Use this method to perform some ``SELECT`` query which returns **small number or rows**, like reading
 Clickhouse config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Clickhouse.FetchOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -50,7 +50,7 @@ Examples
 
     df = clickhouse.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Clickhouse.JDBCOptions(query_timeout=10),
+        options=Clickhouse.FetchOptions(query_timeout=10),
     )
     clickhouse.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -60,7 +60,7 @@ Use ``Clickhouse.execute``
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts :obj:`JDBCOptions <onetl.connection.db_connection.jdbc_mixin.options.JDBCOptions>`.
+Method accepts :obj:`Clickhouse.ExecuteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions>`.
 
 Connection opened using this method should be then closed with ``connection.close()`` or ``with connection:``.
 
@@ -69,7 +69,7 @@ Syntax support
 
 This method supports **any** query syntax supported by Clickhouse, like:
 
-* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, ``DROP TABLE ...``, and so on
+* ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
@@ -98,7 +98,7 @@ Examples
             ENGINE = MergeTree()
             ORDER BY id
             """,
-            options=Clickhouse.JDBCOptions(query_timeout=10),
+            options=Clickhouse.ExecuteOptions(query_timeout=10),
         )
 
 Notes
@@ -111,9 +111,17 @@ So it should **NOT** be used to read large amounts of data. Use :ref:`DBReader <
 Options
 -------
 
-.. currentmodule:: onetl.connection.db_connection.jdbc_mixin.options
+.. currentmodule:: onetl.connection.db_connection.clickhouse.options
 
-.. autopydantic_model:: JDBCOptions
+.. autopydantic_model:: ClickhouseFetchOptions
+    :inherited-members: GenericOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
+
+
+.. autopydantic_model:: ClickhouseExecuteOptions
+    :inherited-members: GenericOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false

@@ -17,6 +17,7 @@ exclude_lines =
     class .*\bProtocol\):
     @(abc\.)?abstractmethod
     if pyspark_version
+    if spark_version
     spark = SparkSession._instantiatedSession
     if log.isEnabledFor(logging.DEBUG):
     if sys.version_info

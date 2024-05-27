@@ -65,6 +65,8 @@ def test_greenplum_get_packages_scala_version_not_supported(scala_version):
         # Override Scala version detected automatically
         ("2.3", "2.11", "io.pivotal:greenplum-spark_2.11:2.2.0"),
         ("2.4", "2.12", "io.pivotal:greenplum-spark_2.12:2.2.0"),
+        # Scala version contain three digits when only two needed
+        ("3.2.4", "2.11.1", "io.pivotal:greenplum-spark_2.11:2.2.0"),
     ],
 )
 def test_greenplum_get_packages(spark_version, scala_version, package):
@@ -117,7 +119,15 @@ def test_greenplum(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -133,7 +143,15 @@ def test_greenplum_with_port(spark_mock):
     assert conn.password.get_secret_value() == "passwd"
     assert conn.database == "database"
 
-    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true"
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5000/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5000/database",
+        "ApplicationName": "abc",
+        "tcpKeepAlive": "true",
+    }
 
 
 def test_greenplum_without_database_error(spark_mock):
@@ -159,9 +177,16 @@ def test_greenplum_with_extra(spark_mock):
 
     # `server.*` and `pool.*` options are ignored while generating jdbc_url
     # they are used only in `read_source_as_df` and `write_df_to_target`
-    assert conn.jdbc_url == (
-        "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&tcpKeepAlive=false"
-    )
+    assert conn.jdbc_url == "jdbc:postgresql://some_host:5432/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database",
+        "ApplicationName": "override",
+        "tcpKeepAlive": "false",
+        "autosave": "always",
+    }
 
 
 def test_greenplum_without_mandatory_args(spark_mock):
@@ -208,7 +233,8 @@ def test_greenplum_write_options_default():
     [
         (Greenplum.ReadOptions, "GreenplumReadOptions"),
         (Greenplum.WriteOptions, "GreenplumWriteOptions"),
-        (Greenplum.JDBCOptions, "JDBCOptions"),
+        (Greenplum.FetchOptions, "GreenplumFetchOptions"),
+        (Greenplum.ExecuteOptions, "GreenplumExecuteOptions"),
         (Greenplum.Extra, "GreenplumExtra"),
     ],
 )
@@ -218,7 +244,8 @@ def test_greenplum_jdbc_options_populated_by_connection_class(klass, name):
         klass(user="me", password="abc", driver="some.Class", url="jdbc:postgres://some/db")
 
 
-def test_greenplum_read_write_options_populated_by_connection_class():
+@pytest.mark.parametrize("options_class", [Greenplum.FetchOptions, Greenplum.ExecuteOptions])
+def test_greenplum_read_write_options_populated_by_connection_class(options_class):
     error_msg = r"Options \['dbschema', 'dbtable'\] are not allowed to use in a GreenplumReadOptions"
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.ReadOptions(dbschema="myschema", dbtable="mytable")
@@ -227,8 +254,8 @@ def test_greenplum_read_write_options_populated_by_connection_class():
     with pytest.raises(ValueError, match=error_msg):
         Greenplum.WriteOptions(dbschema="myschema", dbtable="mytable")
 
-    # JDBCOptions does not have such restriction
-    options = Greenplum.JDBCOptions(dbschema="myschema", dbtable="mytable")
+    # FetchOptions & ExecuteOptions does not have such restriction
+    options = options_class(dbschema="myschema", dbtable="mytable")
     assert options.dbschema == "myschema"
     assert options.dbtable == "mytable"
 

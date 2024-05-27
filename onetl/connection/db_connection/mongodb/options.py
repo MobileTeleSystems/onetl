@@ -94,7 +94,7 @@ class MongoDBCollectionExistBehavior(str, Enum):
 class MongoDBPipelineOptions(GenericOptions):
     """Aggregation pipeline options for MongoDB connector.
 
-    The only difference from :obj:`MongoDBReadOptions` that it is allowed to pass the ``hint`` parameter.
+    The only difference from :obj:`MongoDB.ReadOptions <MongoDBReadOptions>` that it is allowed to pass the ``hint`` parameter.
 
     .. note ::
 
@@ -108,6 +108,8 @@ class MongoDBPipelineOptions(GenericOptions):
 
         Options ``uri``, ``database``, ``collection``, ``pipeline`` are populated from connection attributes,
         and cannot be overridden by the user in ``PipelineOptions`` to avoid issues.
+
+    .. versionadded:: 0.7.0
 
     Examples
     --------
@@ -143,6 +145,8 @@ class MongoDBReadOptions(GenericOptions):
         Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
         attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
 
+    .. versionadded:: 0.7.0
+
     Examples
     --------
 
@@ -151,7 +155,7 @@ class MongoDBReadOptions(GenericOptions):
     .. code:: python
 
         MongoDB.ReadOptions(
-            batchSize=10000,
+            sampleSize=100,
         )
     """
 
@@ -176,6 +180,8 @@ class MongoDBWriteOptions(GenericOptions):
 
         Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
         and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
+
+    .. versionadded:: 0.7.0
 
     Examples
     --------
@@ -246,6 +252,8 @@ class MongoDBWriteOptions(GenericOptions):
                 * Collection exists
                     An error is raised, and no data is written to the collection.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     class Config:

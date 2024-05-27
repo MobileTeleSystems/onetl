@@ -115,6 +115,9 @@ class JDBCReadOptions(JDBCOptions):
 
         The set of supported options depends on Spark version. See link above.
 
+    .. versionadded:: 0.5.0
+        Replace ``Connection.Options`` → ``Connection.ReadOptions``
+
     Examples
     --------
 
@@ -196,6 +199,9 @@ class JDBCReadOptions(JDBCOptions):
         default ``fetchsize=10``, which is absolutely not usable.
 
         Thus we've overridden default value with ``100_000``, which should increase reading performance.
+
+    .. versionchanged:: 0.2.0
+        Set explicit default value to ``100_000``
     """
 
     partitioning_mode: JDBCPartitioningMode = JDBCPartitioningMode.RANGE
@@ -306,6 +312,8 @@ class JDBCReadOptions(JDBCOptions):
             SELECT ... FROM table
             WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
 
+    .. versionadded:: 0.5.0
+
     Examples
     --------
 
@@ -382,6 +390,9 @@ class JDBCWriteOptions(JDBCOptions):
         even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
         The set of supported options depends on Spark version. See link above.
+
+    .. versionadded:: 0.5.0
+        Replace ``Connection.Options`` → ``Connection.WriteOptions``
 
     Examples
     --------
@@ -466,6 +477,8 @@ class JDBCWriteOptions(JDBCOptions):
                 * Table exists
                     An error is raised, and no data is written to the table.
 
+    .. versionchanged:: 0.9.0
+        Renamed ``mode`` → ``if_exists``
     """
 
     batchsize: int = 20_000
@@ -486,6 +499,9 @@ class JDBCWriteOptions(JDBCOptions):
         You can increase it even more, up to ``50_000``,
         but it depends on your database load and number of columns in the row.
         Higher values does not increase performance.
+
+    .. versionchanged:: 0.4.0
+        Changed default value from 1000 to 20_000
     """
 
     isolation_level: str = "READ_UNCOMMITTED"
@@ -512,6 +528,114 @@ class JDBCWriteOptions(JDBCOptions):
                 category=UserWarning,
                 stacklevel=3,
             )
+        return values
+
+
+class JDBCSQLOptions(JDBCOptions):
+    """Options specifically for SQL queries
+
+    These options allow you to specify configurations for executing SQL queries
+    without relying on Spark's partitioning mechanisms.
+
+    .. note::
+
+        You can pass any JDBC configuration
+        `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
+        tailored to optimize SQL query execution. Option names should be in ``camelCase``!
+
+    .. versionadded:: 0.11.0
+        Split up ``ReadOptions`` to ``SQLOptions``
+    """
+
+    partition_column: Optional[str] = None
+    """Column used to partition data across multiple executors for parallel query processing.
+
+    .. warning::
+        It is highly recommended to use primary key, or at least a column with an index
+        to avoid performance issues.
+
+    Example of using partition_column for range-based partitioning:
+
+    .. code-block:: sql
+
+        -- If partition_column is 'id', with num_partitions=4, lower_bound=1, and upper_bound=100:
+        -- Executor 1 processes IDs from 1 to 25
+        SELECT ... FROM table WHERE id >= 1 AND id < 26
+        -- Executor 2 processes IDs from 26 to 50
+        SELECT ... FROM table WHERE id >= 26 AND id < 51
+        -- Executor 3 processes IDs from 51 to 75
+        SELECT ... FROM table WHERE id >= 51 AND id < 76
+        -- Executor 4 processes IDs from 76 to 100
+        SELECT ... FROM table WHERE id >= 76 AND id <= 100
+
+
+        -- General case for Executor N
+        SELECT ... FROM table
+        WHERE partition_column >= (lower_bound + (N-1) * stride)
+          AND partition_column <= upper_bound
+        -- Where ``stride`` is calculated as ``(upper_bound - lower_bound) / num_partitions``.
+    """
+
+    num_partitions: Optional[int] = None
+    """Number of jobs created by Spark to read the table content in parallel."""  # noqa: WPS322
+
+    lower_bound: Optional[int] = None
+    """Defines the starting boundary for partitioning the query's data. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
+
+    upper_bound: Optional[int] = None
+    """Sets the ending boundary for data partitioning. Mandatory if :obj:`~partition_column~ is set"""  # noqa: WPS322
+
+    session_init_statement: Optional[str] = None
+    '''After each database session is opened to the remote DB and before starting to read data,
+    this option executes a custom SQL statement (or a PL/SQL block).
+
+    Use this to implement session initialization code.
+
+    Example:
+
+    .. code:: python
+
+        sessionInitStatement = """
+            BEGIN
+                execute immediate
+                'alter session set "_serial_direct_read"=true';
+            END;
+        """
+    '''
+
+    fetchsize: int = 100_000
+    """Fetch N rows from an opened cursor per one read round.
+
+    Tuning this option can influence performance of reading.
+
+    .. warning::
+
+        Default value is different from Spark.
+
+        Spark uses driver's own value, and it may be different in different drivers,
+        and even versions of the same driver. For example, Oracle has
+        default ``fetchsize=10``, which is absolutely not usable.
+
+        Thus we've overridden default value with ``100_000``, which should increase reading performance.
+
+    .. versionchanged:: 0.2.0
+        Set explicit default value to ``100_000``
+    """
+
+    class Config:
+        known_options = READ_OPTIONS - {"partitioning_mode"}
+        prohibited_options = JDBCOptions.Config.prohibited_options | {"partitioning_mode"}
+        alias_generator = to_camel
+
+    @root_validator(pre=True)
+    def _check_partition_fields(cls, values):
+        num_partitions = values.get("num_partitions")
+        lower_bound = values.get("lower_bound")
+        upper_bound = values.get("upper_bound")
+
+        if num_partitions is not None and num_partitions > 1:
+            if lower_bound is None or upper_bound is None:
+                raise ValueError("lower_bound and upper_bound must be set if num_partitions > 1")
         return values
 
 

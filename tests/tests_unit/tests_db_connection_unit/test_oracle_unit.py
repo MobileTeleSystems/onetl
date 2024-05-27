@@ -14,11 +14,11 @@ def test_oracle_class_attributes():
 def test_oracle_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Oracle.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.2.0.0"
+        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"
 
 
 def test_oracle_get_packages_no_input():
-    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.2.0.0"]
+    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]
 
 
 @pytest.mark.parametrize("java_version", ["7", "6"])
@@ -28,17 +28,44 @@ def test_oracle_get_packages_java_version_not_supported(java_version):
 
 
 @pytest.mark.parametrize(
-    "java_version, package",
+    "java_version, package_version, expected_packages",
     [
-        ("8", "com.oracle.database.jdbc:ojdbc8:23.2.0.0"),
-        ("9", "com.oracle.database.jdbc:ojdbc8:23.2.0.0"),
-        ("11", "com.oracle.database.jdbc:ojdbc11:23.2.0.0"),
-        ("17", "com.oracle.database.jdbc:ojdbc11:23.2.0.0"),
-        ("20", "com.oracle.database.jdbc:ojdbc11:23.2.0.0"),
+        (None, None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        ("8", None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        ("8", "23.4.0.24.05", ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        ("8", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
+        ("9", None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        ("9", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
+        ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"]),
+        ("11", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
+        ("17", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
+        ("20", "23.4.0.24.05", ["com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"]),
     ],
 )
-def test_oracle_get_packages(java_version, package):
-    assert Oracle.get_packages(java_version=java_version) == [package]
+def test_oracle_get_packages(java_version, package_version, expected_packages):
+    assert Oracle.get_packages(java_version=java_version, package_version=package_version) == expected_packages
+
+
+@pytest.mark.parametrize(
+    "java_version, package_version",
+    [
+        ("8", "23.3.0"),
+        ("11", "23.3"),
+        ("11", "a.b.c.d"),
+    ],
+)
+def test_oracle_get_packages_invalid_version(java_version, package_version):
+    with pytest.raises(
+        ValueError,
+        match=rf"Version '{package_version}' does not have enough numeric components for requested format \(expected at least 4\).",
+    ):
+        Oracle.get_packages(java_version=java_version, package_version=package_version)
+
+
+@pytest.mark.parametrize("java_version", ["7", "6"])
+def test_oracle_get_packages_java_version_not_supported(java_version):
+    with pytest.raises(ValueError, match=f"Java version must be at least 8, got {java_version}"):
+        Oracle.get_packages(java_version=java_version)
 
 
 def test_oracle_missing_package(spark_no_packages):
@@ -76,6 +103,12 @@ def test_oracle(spark_mock):
     assert conn.sid == "sid"
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:1521:sid",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -92,12 +125,24 @@ def test_oracle_with_port(spark_mock):
     assert conn.sid == "sid"
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:5000:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:5000:sid",
+    }
 
 
 def test_oracle_uri_with_service_name(spark_mock):
     conn = Oracle(host="some_host", user="user", password="passwd", service_name="service", spark=spark_mock)
 
     assert conn.jdbc_url == "jdbc:oracle:thin:@//some_host:1521/service"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@//some_host:1521/service",
+    }
 
 
 def test_oracle_without_sid_and_service_name(spark_mock):
@@ -140,7 +185,15 @@ def test_oracle_with_extra(spark_mock):
         spark=spark_mock,
     )
 
-    assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid?connectTimeout=10&tcpKeepAlive=false"
+    assert conn.jdbc_url == "jdbc:oracle:thin:@some_host:1521:sid"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "oracle.jdbc.driver.OracleDriver",
+        "url": "jdbc:oracle:thin:@some_host:1521:sid",
+        "tcpKeepAlive": "false",
+        "connectTimeout": "10",
+    }
 
 
 def test_oracle_without_mandatory_args(spark_mock):

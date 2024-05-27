@@ -77,10 +77,10 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
+          key: ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-oracle-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/oracle.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
-            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-oracle-
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-${{ hashFiles('requirements/core.txt', 'requirements/tests/base.txt', 'requirements/tests/spark-*.txt', 'requirements/tests/pydantic-*.txt') }}
+            ${{ runner.os }}-python-${{ inputs.python-version }}-spark-${{ inputs.spark-version }}-pydantic-${{ inputs.pydantic-version }}-tests-spark-
 
       - name: Set up Oracle instantclient
         if: runner.os == 'Linux'
@@ -97,10 +97,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/oracle.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
-
-      - name: Wait for Oracle to be ready
-        run: |
-          ./docker/wait-for-it.sh -h localhost -p 1522 -t 60
 
       - name: Run tests
         run: |
