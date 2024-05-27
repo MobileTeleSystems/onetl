@@ -188,14 +188,14 @@ Improve user experience with Kafka messages and Database tables with serialized 
     * ``CSV.parse_column(col, schema=...)`` (:github:pull:`258`).
     * ``XML.parse_column(col, schema=...)`` (:github:pull:`269`).
 
-   This allows parsing data in ``value`` field of Kafka message or string/binary column of some table as a nested Spark structure.
+  This allows parsing data in ``value`` field of Kafka message or string/binary column of some table as a nested Spark structure.
 
 - Add ``FileFormat.serialize_column(...)`` method to several classes:
-    * ``Avro.serialize_column(col)`` (:github:pull:`265`).
-    * ``JSON.serialize_column(col)`` (:github:pull:`257`).
-    * ``CSV.serialize_column(col)`` (:github:pull:`258`).
+   * ``Avro.serialize_column(col)`` (:github:pull:`265`).
+   * ``JSON.serialize_column(col)`` (:github:pull:`257`).
+   * ``CSV.serialize_column(col)`` (:github:pull:`258`).
 
-   This allows saving Spark nested structures or arrays to ``value`` field of Kafka message or string/binary column of some table.
+  This allows saving Spark nested structures or arrays to ``value`` field of Kafka message or string/binary column of some table.
 
 Improvements
 ------------
@@ -220,7 +220,7 @@ Few documentation improvements.
 
 - Add note about connecting to Clickhouse cluster. (:github:pull:`280`).
 
-- Add notes about versions when specific class/method/attribute/argument was added, renamed or changed behavior (:github:`282`).
+- Add notes about versions when specific class/method/attribute/argument was added, renamed or changed behavior (:github:pull:`282`).
 
 
 Bug Fixes
