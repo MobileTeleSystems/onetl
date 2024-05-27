@@ -150,6 +150,8 @@ class XML(ReadWriteFileFormat):
         """
         Get package names to be downloaded by Spark. |support_hooks|
 
+        .. versionadded:: 0.9.5
+
         Parameters
         ----------
         spark_version : str

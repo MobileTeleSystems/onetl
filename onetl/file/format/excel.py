@@ -126,6 +126,8 @@ class Excel(ReadWriteFileFormat):
             See `Maven index <https://mvnrepository.com/artifact/com.crealytics/spark-excel>`_
             and `official documentation <https://github.com/crealytics/spark-excel>`_.
 
+        .. versionadded:: 0.9.4
+
         Parameters
         ----------
         spark_version : str

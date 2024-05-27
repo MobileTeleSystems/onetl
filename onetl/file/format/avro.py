@@ -131,6 +131,8 @@ class Avro(ReadWriteFileFormat):
         See `Maven package index <https://mvnrepository.com/artifact/org.apache.spark/spark-avro>`_
         for all available packages.
 
+        .. versionadded:: 0.9.0
+
         Parameters
         ----------
         spark_version : str
