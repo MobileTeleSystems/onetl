@@ -220,6 +220,8 @@ Few documentation improvements.
 
 - Add note about connecting to Clickhouse cluster. (:github:pull:`280`).
 
+- Add notes about versions when specific class/method/attribute/argument was added, renamed or changed behavior (:github:`282`).
+
 
 Bug Fixes
 ---------
