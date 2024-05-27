@@ -1,1 +1,0 @@
-:class:`MongoDB` connection now uses MongoDB Spark connector ``10.3.0``, upgraded from ``10.1.1``, and supports passing custom versions: ``MongoDB.get_packages(scala_version=..., package_version=...)``.

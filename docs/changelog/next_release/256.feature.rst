@@ -1,1 +1,0 @@
-:class:`Teradata` connection now supports passing custom versions: ``Teradata.get_packages(package_version=...)``.

@@ -1,1 +1,0 @@
-Add ``XML.parse_column`` method for handling XML data within Spark. This method allows for direct parsing of XML strings into structured Spark DataFrame columns.

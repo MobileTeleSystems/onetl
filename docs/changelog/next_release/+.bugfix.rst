@@ -1,1 +1,0 @@
-Fix missing ``pysmb`` package after installing ``pip install onetl[files]`` .

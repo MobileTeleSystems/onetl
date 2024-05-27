@@ -1,1 +1,0 @@
-Allow passing JDBC connection extra params without urlencode.

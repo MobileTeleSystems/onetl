@@ -1,4 +1,0 @@
-Improve Hive documentation:
-  * Add "Prerequisites" page describing different aspects of connecting to Hive
-  * Improve "Reading from" and "Writing to" page of Hive documentation, add more examples and recommendations.
-  * Improve "Executing statements in Hive" page of Hive documentation.

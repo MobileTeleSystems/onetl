@@ -1,1 +1,0 @@
-Add ``JSON.parse_column`` and ``JSON.serialize_column`` methods to facilitate direct parsing of JSON strings into Spark DataFrame columns and serialization of structured DataFrame columns back into JSON strings.

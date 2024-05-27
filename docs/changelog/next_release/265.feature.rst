@@ -1,1 +1,0 @@
-Add ``Avro.parse_column`` and ``Avro.serialize_column`` methods to enhance the handling of Avro binary data within Spark. These methods allow for direct parsing of binary Avro data into structured Spark DataFrame columns and serialization of Spark DataFrame columns back into Avro binary format.
