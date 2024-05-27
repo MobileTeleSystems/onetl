@@ -53,8 +53,6 @@ class Excel(ReadWriteFileFormat):
 
     Supports reading/writing files with ``.xlsx`` (read/write) and ``.xls`` (read only) extensions.
 
-    .. versionadded:: 0.9.4
-
     .. dropdown:: Version compatibility
 
         * Spark versions: 3.2.x - 3.5.x
