@@ -21,7 +21,7 @@ from onetl.connection.db_connection.jdbc_connection.options import (
     JDBCWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -265,10 +265,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
         self,
         options: JDBCReadOptions,
         fetchsize: int,
-    ) -> JDBCOptions:
-        return options.copy(
-            update={"fetchsize": fetchsize},
-            exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
+    ) -> JDBCFetchOptions:
+        return self.FetchOptions.parse(
+            options.copy(
+                update={"fetchsize": fetchsize},
+                exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
+            ).dict(),
         )
 
     def _set_lower_upper_bound(
