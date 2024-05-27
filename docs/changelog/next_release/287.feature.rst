@@ -1,1 +1,0 @@
-Change ``MSSQL.port`` default from ``1433`` to ``None``, allowing use of ``instanceName`` to detect port number.
