@@ -47,8 +47,12 @@ class MSSQL(JDBCConnection):
     host : str
         Host of MSSQL database. For example: ``test.mssql.domain.com`` or ``192.168.1.14``
 
-    port : int, default: ``1433``
+    port : int, default: ``None``
         Port of MSSQL database
+
+        .. versionchanged:: 0.11.1
+            Default value was changed from ``1433`` to ``None``,
+            to allow automatic port discovery with ``instanceName``.
 
     user : str
         User, which have proper access to the database. For example: ``some_user``
