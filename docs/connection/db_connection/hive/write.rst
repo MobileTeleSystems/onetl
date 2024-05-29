@@ -21,8 +21,15 @@ Examples
     # Use the Hive partitioning columns to group the data. Create only 20 files per Hive partition.
     # Also sort the data by column which most data is correlated with, reducing files size.
     write_df = df.repartition(
-        20, "country", "business_date", "user_id"
-    ).sortWithinPartitions("country", "business_date", "user_id")
+        20,
+        "country",
+        "business_date",
+        "user_id",
+    ).sortWithinPartitions(
+        "country",
+        "business_date",
+        "user_id",
+    )
 
     writer = DBWriter(
         connection=hive,
