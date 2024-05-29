@@ -3,7 +3,7 @@
 Logging
 =======
 
-Logging is quite important to understant what's going on under the hood of onETL.
+Logging is quite important to understand what's going on under the hood of onETL.
 
 Default logging level for Python interpreters is ``WARNING``,
 but most of onETL logs are in ``INFO`` level, so users usually don't see much.
@@ -69,7 +69,7 @@ This changes both log level and log formatting to something like this:
         2024-04-12 10:12:12,190 [INFO    ] MainThread:         host = 'mssql.host'
         2024-04-12 10:12:12,190 [INFO    ] MainThread:         port = 1433
         2024-04-12 10:12:12,191 [INFO    ] MainThread:         database = 'somedb'
-        2024-04-12 10:12:12,191 [INFO    ] MainThread:         extra = {'ApplicationIntent': 'ReadOnly', 'trustServerCertificate': 'true'}
+        2024-04-12 10:12:12,191 [INFO    ] MainThread:         extra = {'applicationIntent': 'ReadOnly', 'trustServerCertificate': 'true'}
         2024-04-12 10:12:12,191 [INFO    ] MainThread:         jdbc_url = 'jdbc:sqlserver:/mssql.host:1433'
         2024-04-12 10:12:12,579 [INFO    ] MainThread: |MSSQL| Connection is available.
         2024-04-12 10:12:12,581 [INFO    ] MainThread: |MSSQL| Executing SQL query (on driver):

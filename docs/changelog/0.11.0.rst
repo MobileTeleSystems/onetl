@@ -28,41 +28,6 @@ most of users will not see any differences.
 
   This brings few bugfixes with datetime format handling.
 
-- Serialize ``ColumnDatetimeHWM`` to Clickhouse's ``DateTime64(6)`` (precision up to microseconds) instead of ``DateTime`` (precision up to seconds)  (:github:pull:`267`).
-
-  In previous onETL versions, ``ColumnDatetimeHWM`` value was rounded to the second, and thus reading some rows that were read in previous runs,
-  producing duplicates.
-
-  For Clickhouse versions below 21.1 comparing column of type ``DateTime`` with a value of type ``DateTime64`` is not supported, returning an empty dataframe.
-  To avoid this, replace:
-
-  .. code:: python
-
-    DBReader(
-        ...,
-        hwm=DBReader.AutoDetectHWM(
-            name="my_hwm",
-            expression="hwm_column",  # <--
-        ),
-    )
-
-  with:
-
-  .. code:: python
-
-    DBReader(
-        ...,
-        hwm=DBReader.AutoDetectHWM(
-            name="my_hwm",
-            expression="CAST(hwm_column AS DateTime64)",  # <-- add explicit CAST
-        ),
-    )
-
-- Pass JDBC connection extra params as ``properties`` dict instead of URL with query part (:github:pull:`268`).
-
-  This allows passing custom connection parameters like ``Clickhouse(extra={"custom_http_options": "option1=value1,option2=value2"})``
-  without need to apply urlencode to parameter value, like ``option1%3Dvalue1%2Coption2%3Dvalue2``.
-
 - For JDBC connections add new ``SQLOptions`` class for ``DB.sql(query, options=...)`` method (:github:pull:`272`).
 
   Firsly, to keep naming more consistent.
@@ -166,6 +131,41 @@ most of users will not see any differences.
   For now, ``DB.fetch(query, options=...)`` and ``DB.execute(query, options=...)`` can accept ``JDBCOptions``,  to keep backward compatibility,
   but emit a deprecation warning. The old class will be removed in ``v1.0.0``.
 
+- Serialize ``ColumnDatetimeHWM`` to Clickhouse's ``DateTime64(6)`` (precision up to microseconds) instead of ``DateTime`` (precision up to seconds)  (:github:pull:`267`).
+
+  In previous onETL versions, ``ColumnDatetimeHWM`` value was rounded to the second, and thus reading some rows that were read in previous runs,
+  producing duplicates.
+
+  For Clickhouse versions below 21.1 comparing column of type ``DateTime`` with a value of type ``DateTime64`` is not supported, returning an empty dataframe.
+  To avoid this, replace:
+
+  .. code:: python
+
+    DBReader(
+        ...,
+        hwm=DBReader.AutoDetectHWM(
+            name="my_hwm",
+            expression="hwm_column",  # <--
+        ),
+    )
+
+  with:
+
+  .. code:: python
+
+    DBReader(
+        ...,
+        hwm=DBReader.AutoDetectHWM(
+            name="my_hwm",
+            expression="CAST(hwm_column AS DateTime64)",  # <-- add explicit CAST
+        ),
+    )
+
+- Pass JDBC connection extra params as ``properties`` dict instead of URL with query part (:github:pull:`268`).
+
+  This allows passing custom connection parameters like ``Clickhouse(extra={"custom_http_options": "option1=value1,option2=value2"})``
+  without need to apply urlencode to parameter value, like ``option1%3Dvalue1%2Coption2%3Dvalue2``.
+
 Features
 --------
 
@@ -188,14 +188,14 @@ Improve user experience with Kafka messages and Database tables with serialized 
     * ``CSV.parse_column(col, schema=...)`` (:github:pull:`258`).
     * ``XML.parse_column(col, schema=...)`` (:github:pull:`269`).
 
-   This allows parsing data in ``value`` field of Kafka message or string/binary column of some table as a nested Spark structure.
+  This allows parsing data in ``value`` field of Kafka message or string/binary column of some table as a nested Spark structure.
 
 - Add ``FileFormat.serialize_column(...)`` method to several classes:
-    * ``Avro.serialize_column(col)`` (:github:pull:`265`).
-    * ``JSON.serialize_column(col)`` (:github:pull:`257`).
-    * ``CSV.serialize_column(col)`` (:github:pull:`258`).
+   * ``Avro.serialize_column(col)`` (:github:pull:`265`).
+   * ``JSON.serialize_column(col)`` (:github:pull:`257`).
+   * ``CSV.serialize_column(col)`` (:github:pull:`258`).
 
-   This allows saving Spark nested structures or arrays to ``value`` field of Kafka message or string/binary column of some table.
+  This allows saving Spark nested structures or arrays to ``value`` field of Kafka message or string/binary column of some table.
 
 Improvements
 ------------
@@ -220,7 +220,7 @@ Few documentation improvements.
 
 - Add note about connecting to Clickhouse cluster. (:github:pull:`280`).
 
-- Add notes about versions when specific class/method/attribute/argument was added, renamed or changed behavior (:github:`282`).
+- Add notes about versions when specific class/method/attribute/argument was added, renamed or changed behavior (:github:pull:`282`).
 
 
 Bug Fixes

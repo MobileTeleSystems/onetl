@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import ClassVar, Optional
 
+from etl_entities.instance import Host
+
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
@@ -106,6 +108,7 @@ class Clickhouse(JDBCConnection):
 
     """
 
+    host: Host
     port: int = 8123
     database: Optional[str] = None
     extra: ClickhouseExtra = ClickhouseExtra()
@@ -188,6 +191,10 @@ class Clickhouse(JDBCConnection):
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
         return result
+
+    @property
+    def instance_url(self) -> str:
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     @staticmethod
     def _build_statement(

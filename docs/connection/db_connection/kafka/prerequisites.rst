@@ -46,6 +46,7 @@ Authentication mechanism
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Kafka can support different authentication mechanism (also known as `SASL <https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer>`_).
+
 List of currently supported mechanisms:
   * :obj:`PLAIN <onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth>`. To no confuse this with ``PLAINTEXT`` connection protocol, onETL uses name ``BasicAuth``.
   * :obj:`GSSAPI <onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth>`. To simplify naming, onETL uses name ``KerberosAuth``.

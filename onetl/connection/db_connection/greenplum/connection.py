@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from etl_entities.instance import Host
 
+from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
+
 try:
     from pydantic.v1 import validator
 except (ImportError, AttributeError):
@@ -346,17 +348,17 @@ class Greenplum(JDBCMixin, DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-        options: JDBCOptions | None = None,
+        options: JDBCReadOptions | None = None,
     ) -> StructType:
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
-        jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 0})
+        jdbc_options = self.ReadOptions.parse(options).copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, jdbc_options)
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
         log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
@@ -368,10 +370,10 @@ class Greenplum(JDBCMixin, DBConnection):
         window: Window,
         hint: Any | None = None,
         where: Any | None = None,
-        options: JDBCOptions | None = None,
+        options: JDBCReadOptions | None = None,
     ) -> tuple[Any, Any]:
         log.info("|%s| Getting min and max values for %r ...", self.__class__.__name__, window.expression)
-        jdbc_options = self.JDBCOptions.parse(options).copy(update={"fetchsize": 1})
+        jdbc_options = self.ReadOptions.parse(options).copy(update={"fetchsize": 1})
 
         query = self.dialect.get_sql_query(
             table=source,
@@ -391,7 +393,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_driver(query, jdbc_options)
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
         row = df.collect()[0]
         min_value = row["min"]
         max_value = row["max"]
@@ -437,7 +439,7 @@ class Greenplum(JDBCMixin, DBConnection):
             **extra,
         }
 
-    def _options_to_connection_properties(self, options: JDBCOptions | JDBCExecuteOptions | JDBCFetchOptions):
+    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
         # See https://github.com/pgjdbc/pgjdbc/pull/1252
         # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
         # Which is not a desired behavior, because `.fetch()` method should always be read-only

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import warnings
-from typing import ClassVar
+from typing import ClassVar, Optional
+
+from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
@@ -45,8 +47,12 @@ class MSSQL(JDBCConnection):
     host : str
         Host of MSSQL database. For example: ``test.mssql.domain.com`` or ``192.168.1.14``
 
-    port : int, default: ``1433``
+    port : int, default: ``None``
         Port of MSSQL database
+
+        .. versionchanged:: 0.11.1
+            Default value was changed from ``1433`` to ``None``,
+            to allow automatic port discovery with ``instanceName``.
 
     user : str
         User, which have proper access to the database. For example: ``some_user``
@@ -92,6 +98,7 @@ class MSSQL(JDBCConnection):
         # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
+            port=1433,
             user="user",
             password="*****",
             extra={
@@ -110,12 +117,33 @@ class MSSQL(JDBCConnection):
         # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
+            port=1433,
             user="user",
             password="*****",
             extra={
-                "Domain": "some.domain.com",  # add here your domain
-                "IntegratedSecurity": "true",
+                "domain": "some.domain.com",  # add here your domain
+                "integratedSecurity": "true",
                 "authenticationScheme": "NTLM",
+                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+            },
+            spark=spark,
+        )
+
+    MSSQL connection with instance name:
+
+    .. code:: python
+
+        # Create Spark session with MSSQL driver loaded
+        ...
+
+        # Create connection
+        mssql = MSSQL(
+            host="database.host.or.ip",
+            # !!! no port !!!
+            user="user",
+            password="*****",
+            extra={
+                "instanceName": "myinstance",  # add here your instance name
                 "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
             },
             spark=spark,
@@ -131,10 +159,11 @@ class MSSQL(JDBCConnection):
         # Create connection
         mssql = MSSQL(
             host="database.host.or.ip",
+            port=1433,
             user="user",
             password="*****",
             extra={
-                "ApplicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
+                "applicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
                 "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
             },
             spark=spark,
@@ -143,7 +172,8 @@ class MSSQL(JDBCConnection):
     """
 
     database: str
-    port: int = 1433
+    host: Host
+    port: Optional[int] = None
     extra: MSSQLExtra = MSSQLExtra()
 
     ReadOptions = MSSQLReadOptions
@@ -215,7 +245,11 @@ class MSSQL(JDBCConnection):
 
     @property
     def jdbc_url(self) -> str:
-        return f"jdbc:sqlserver://{self.host}:{self.port}"
+        if self.port:
+            # automatic port discovery, like used with custom instanceName
+            # https://learn.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url?view=sql-server-ver16#named-and-multiple-sql-server-instances
+            return f"jdbc:sqlserver://{self.host}:{self.port}"
+        return f"jdbc:sqlserver://{self.host}"
 
     @property
     def jdbc_params(self) -> dict:
@@ -226,4 +260,11 @@ class MSSQL(JDBCConnection):
 
     @property
     def instance_url(self) -> str:
-        return f"{super().instance_url}/{self.database}"
+        extra_dict = self.extra.dict(by_alias=True)
+        instance_name = extra_dict.get("instanceName")
+        if instance_name:
+            return rf"{self.__class__.__name__.lower()}://{self.host}\{instance_name}/{self.database}"
+
+        # for backward compatibility keep port number in legacy HWM instance url
+        port = self.port or 1433
+        return f"{self.__class__.__name__.lower()}://{self.host}:{port}/{self.database}"

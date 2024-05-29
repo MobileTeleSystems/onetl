@@ -43,7 +43,7 @@ Resulting logs will look like this
 
 .. dropdown:: See log
 
-    .. code:: txt
+    .. code:: text
 
         23/08/03 11:25:10 DEBUG S3AFileSystem: Using S3ABlockOutputStream with buffer = disk; block=67108864; queue limit=4
         23/08/03 11:25:10 DEBUG S3Guard: Metastore option source [core-default.xml]
@@ -193,7 +193,7 @@ Most common mistakes
 No network access
 ^^^^^^^^^^^^^^^^^
 
-.. code:: txt
+.. code:: text
 
     Caused by: java.net.ConnectException: Connection refused
 
@@ -206,7 +206,7 @@ Mostly caused by:
 Using HTTPS protocol for HTTP port
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: txt
+.. code:: text
 
     Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
 
@@ -226,7 +226,7 @@ You should pass protocol explicitly:
 SSL certificate is self-signed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: txt
+.. code:: text
 
     sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
 
@@ -249,7 +249,7 @@ But is is **NOT** recommended.
 Accessing S3 without domain-style access style support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: txt
+.. code:: text
 
     Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
 
@@ -285,7 +285,7 @@ There are `different types of committers <https://hadoop.apache.org/docs/stable/
 
 This committer is quite slow and unstable, so it is not recommended to use:
 
-.. code:: txt
+.. code:: text
 
     WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
 

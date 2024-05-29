@@ -131,6 +131,8 @@ def test_clickhouse(spark_mock):
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
 
+    assert conn.instance_url == "clickhouse://some_host:8123"
+
 
 def test_clickhouse_with_port(spark_mock):
     conn = Clickhouse(

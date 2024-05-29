@@ -7,8 +7,6 @@ import secrets
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from etl_entities.instance import Host
-
 from onetl._internal import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
@@ -21,7 +19,7 @@ from onetl.connection.db_connection.jdbc_connection.options import (
     JDBCWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCOptions
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -47,18 +45,11 @@ WRITE_TOP_LEVEL_OPTIONS = frozenset("url")
 
 @support_hooks
 class JDBCConnection(JDBCMixin, DBConnection):
-    host: Host
-    port: int
-
     Dialect = JDBCDialect
     ReadOptions = JDBCReadOptions
     SQLOptions = JDBCSQLOptions
     WriteOptions = JDBCWriteOptions
     Options = JDBCLegacyOptions
-
-    @property
-    def instance_url(self) -> str:
-        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
 
     @slot
     def sql(
@@ -265,10 +256,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
         self,
         options: JDBCReadOptions,
         fetchsize: int,
-    ) -> JDBCOptions:
-        return options.copy(
-            update={"fetchsize": fetchsize},
-            exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
+    ) -> JDBCFetchOptions:
+        return self.FetchOptions.parse(
+            options.copy(
+                update={"fetchsize": fetchsize},
+                exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
+            ).dict(),
         )
 
     def _set_lower_upper_bound(
