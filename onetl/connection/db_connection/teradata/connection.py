@@ -7,8 +7,8 @@ from typing import ClassVar, Optional
 
 from etl_entities.instance import Host
 
-from onetl._internal import stringify
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import stringify
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.teradata.dialect import TeradataDialect

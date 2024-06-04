@@ -10,8 +10,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field  # type: ignore[no-redef, assignment]
 
-from onetl._internal import stringify
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 

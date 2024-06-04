@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import os
 import textwrap
 from contextlib import contextmanager
 from math import inf
@@ -9,9 +10,71 @@ from typing import TYPE_CHECKING, Any
 
 from onetl._util.version import Version
 
+try:
+    from pydantic.v1 import SecretStr
+except (ImportError, AttributeError):
+    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
     from pyspark.sql.conf import RuntimeConfig
+
+
+def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
+    """
+    Convert values to strings.
+
+    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``.
+
+    If input is dict, return dict with stringified values and keys (recursive).
+
+    If input is list, return list with stringified values (recursive).
+
+    If ``quote=True``, wrap string values with double quotes.
+
+    Examples
+    --------
+
+    >>> stringify(1)
+    '1'
+    >>> stringify(True)
+    'true'
+    >>> stringify(False)
+    'false'
+    >>> stringify(None)
+    'null'
+    >>> stringify("string")
+    'string'
+    >>> stringify("string", quote=True)
+    '"string"'
+    >>> stringify({"abc": 1})
+    {'abc': '1'}
+    >>> stringify([1, True, False, None, "string"])
+    ['1', 'true', 'false', 'null', 'string']
+    """
+
+    if isinstance(value, dict):
+        return {stringify(k): stringify(v, quote) for k, v in value.items()}
+
+    if isinstance(value, list):
+        return [stringify(v, quote) for v in value]
+
+    if value is None:
+        return "null"
+
+    if isinstance(value, bool):
+        return "true" if value else "false"
+
+    if isinstance(value, SecretStr):
+        value = value.get_secret_value()
+
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
+
+    if isinstance(value, str):
+        return f'"{value}"' if quote else value
+
+    return str(value)
 
 
 @contextmanager

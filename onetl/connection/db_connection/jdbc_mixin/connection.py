@@ -16,9 +16,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import clear_statement, stringify
 from onetl._util.java import get_java_gateway, try_import_java_class
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
+from onetl._util.sql import clear_statement
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,

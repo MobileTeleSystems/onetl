@@ -13,8 +13,8 @@ try:
 except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import clear_statement
 from onetl._util.spark import inject_spark_param
+from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive.dialect import HiveDialect
 from onetl.connection.db_connection.hive.options import (

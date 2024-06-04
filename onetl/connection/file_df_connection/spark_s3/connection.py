@@ -16,11 +16,10 @@ except (ImportError, AttributeError):
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
 from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.base import (
     BaseReadableFileFormat,

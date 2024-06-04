@@ -3,13 +3,14 @@ from datetime import datetime
 from pathlib import PurePath
 
 import pytest
-from etl_entities.process import Process
 
-from onetl._internal import generate_temp_path
+from onetl._util.file import generate_temp_path
 
 
 @pytest.mark.flaky(reruns=5)
 def test_generate_temp_path():
+    from etl_entities.process import Process
+
     root = PurePath("/path")
 
     dt_prefix = datetime.now().strftime("%Y%m%d%H%M")  # up to minutes, not seconds

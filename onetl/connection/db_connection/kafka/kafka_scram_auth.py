@@ -11,7 +11,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
+from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 

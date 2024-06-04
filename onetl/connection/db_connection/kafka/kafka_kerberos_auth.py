@@ -12,8 +12,8 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import stringify
 from onetl._util.file import get_file_hash, is_file_readable
+from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
