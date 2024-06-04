@@ -14,10 +14,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import stringify
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect

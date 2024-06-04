@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
+from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 

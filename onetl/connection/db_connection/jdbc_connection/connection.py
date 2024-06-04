@@ -7,7 +7,7 @@ import secrets
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from onetl._internal import clear_statement
+from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
 from onetl.connection.db_connection.jdbc_connection.options import (

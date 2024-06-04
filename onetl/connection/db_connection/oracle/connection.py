@@ -19,8 +19,8 @@ except (ImportError, AttributeError):
 
 from etl_entities.instance import Host
 
-from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
+from onetl._util.sql import clear_statement
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions

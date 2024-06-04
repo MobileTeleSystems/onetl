@@ -15,7 +15,6 @@ except (ImportError, AttributeError):
 
 from typing_extensions import deprecated
 
-from onetl._internal import to_camel
 from onetl.impl import GenericOptions
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
@@ -144,10 +143,9 @@ class JDBCReadOptions(JDBCFetchOptions):
         known_options = READ_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
         extra = "allow"
-        alias_generator = to_camel
 
     # Options in DataFrameWriter.jdbc() method
-    partition_column: Optional[str] = None
+    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
     """Column used to parallelize reading from a table.
 
     .. warning::
@@ -164,17 +162,17 @@ class JDBCReadOptions(JDBCFetchOptions):
 
     See documentation for :obj:`~partitioning_mode` for more details"""
 
-    num_partitions: PositiveInt = 1
+    num_partitions: PositiveInt = Field(default=1, alias="numPartitions")
     """Number of jobs created by Spark to read the table content in parallel.
     See documentation for :obj:`~partitioning_mode` for more details"""
 
-    lower_bound: Optional[int] = None
+    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
     """See documentation for :obj:`~partitioning_mode` for more details"""  # noqa: WPS322
 
-    upper_bound: Optional[int] = None
+    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
     """See documentation for :obj:`~partitioning_mode` for more details"""  # noqa: WPS322
 
-    session_init_statement: Optional[str] = None
+    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,
     this option executes a custom SQL statement (or a PL/SQL block).
 
@@ -423,7 +421,6 @@ class JDBCWriteOptions(GenericOptions):
         known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
         extra = "allow"
-        alias_generator = to_camel
 
     if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
     """Behavior of writing data into existing table.
@@ -528,7 +525,7 @@ class JDBCWriteOptions(GenericOptions):
         Changed default value from 1000 to 20_000
     """
 
-    isolation_level: str = "READ_UNCOMMITTED"
+    isolation_level: str = Field(default="READ_UNCOMMITTED", alias="isolationLevel")
     """The transaction isolation level, which applies to current connection.
 
     Possible values:
@@ -571,7 +568,7 @@ class JDBCSQLOptions(GenericOptions):
         Split up ``ReadOptions`` to ``SQLOptions``
     """
 
-    partition_column: Optional[str] = None
+    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
     """Column used to partition data across multiple executors for parallel query processing.
 
     .. warning::
@@ -600,16 +597,16 @@ class JDBCSQLOptions(GenericOptions):
         -- Where ``stride`` is calculated as ``(upper_bound - lower_bound) / num_partitions``.
     """
 
-    num_partitions: Optional[int] = None
+    num_partitions: Optional[int] = Field(default=None, alias="numPartitions")
     """Number of jobs created by Spark to read the table content in parallel."""  # noqa: WPS322
 
-    lower_bound: Optional[int] = None
+    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
     """Defines the starting boundary for partitioning the query's data. Mandatory if :obj:`~partition_column` is set"""  # noqa: WPS322
 
-    upper_bound: Optional[int] = None
+    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
     """Sets the ending boundary for data partitioning. Mandatory if :obj:`~partition_column` is set"""  # noqa: WPS322
 
-    session_init_statement: Optional[str] = None
+    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,
     this option executes a custom SQL statement (or a PL/SQL block).
 
@@ -658,7 +655,6 @@ class JDBCSQLOptions(GenericOptions):
         known_options = READ_OPTIONS - {"partitioning_mode"}
         prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"}
         extra = "allow"
-        alias_generator = to_camel
 
     @root_validator(pre=True)
     def _check_partition_fields(cls, values):
