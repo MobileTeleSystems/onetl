@@ -16,7 +16,7 @@ pytestmark = pytest.mark.postgres
         {"if_exists": "ignore"},
     ],
 )
-def test_postgres_writer_snapshot(spark, processing, get_schema_table, options):
+def test_postgres_writer(spark, processing, get_schema_table, options):
     df = processing.create_spark_df(spark=spark)
 
     postgres = Postgres(
@@ -44,7 +44,7 @@ def test_postgres_writer_snapshot(spark, processing, get_schema_table, options):
     )
 
 
-def test_postgres_writer_snapshot_with_dict_options(spark, processing, prepare_schema_table):
+def test_postgres_writer_with_dict_options(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
 
     postgres = Postgres(
@@ -72,7 +72,7 @@ def test_postgres_writer_snapshot_with_dict_options(spark, processing, prepare_s
     )
 
 
-def test_postgres_writer_snapshot_with_pydantic_options(spark, processing, prepare_schema_table):
+def test_postgres_writer_with_pydantic_options(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
 
     postgres = Postgres(

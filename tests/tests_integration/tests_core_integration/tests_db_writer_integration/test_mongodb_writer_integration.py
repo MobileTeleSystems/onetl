@@ -19,7 +19,7 @@ pytestmark = pytest.mark.mongodb
         {"if_exists": "ignore"},
     ],
 )
-def test_mongodb_writer_snapshot(spark, processing, get_schema_table, options, caplog):
+def test_mongodb_writer(spark, processing, get_schema_table, options, caplog):
     df = processing.create_spark_df(spark=spark)
 
     mongo = MongoDB(

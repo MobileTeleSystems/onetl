@@ -24,13 +24,15 @@ services:
     # no dependencies from other containers to allow running limited set of tests instead of all
 
   greenplum:
-    image: ${GREENPLUM_IMAGE:-andruche/greenplum:7.0.0}
+    image: ${GREENPLUM_IMAGE:-andruche/greenplum:6}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
       - 5433:5432
     networks:
       - onetl
+    extra_hosts:
+      - host.docker.internal:host-gateway
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
 

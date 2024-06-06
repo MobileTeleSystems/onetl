@@ -73,11 +73,12 @@ def maven_packages(request):
     if "teradata" in markers:
         packages.extend(Teradata.get_packages())
 
-    if "greenplum" in markers:
+    gp_package_version = os.getenv("ONETL_GP_PACKAGE_VERSION")
+    if "greenplum" in markers and gp_package_version != "local":
         packages.extend(
             Greenplum.get_packages(
                 spark_version=str(pyspark_version),
-                package_version=os.getenv("ONETL_GP_PACKAGE_VERSION") or None,
+                package_version=gp_package_version,
             ),
         )
 
@@ -139,8 +140,6 @@ def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, mave
         .config("spark.driver.memory", "1g")
         .config("spark.driver.maxResultSize", "1g")
         .config("spark.executor.cores", "1")
-        .config("spark.driver.bindAddress", "127.0.0.1")  # prevent Spark from unreachable network connection
-        .config("spark.driver.host", "127.0.0.1")
         .config("spark.executor.memory", "1g")
         .config("spark.executor.allowSparkContext", "true")  # Greenplum uses SparkContext on executor if master==local
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")

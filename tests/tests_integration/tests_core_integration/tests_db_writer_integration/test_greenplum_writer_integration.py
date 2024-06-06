@@ -16,7 +16,7 @@ pytestmark = pytest.mark.greenplum
         {"if_exists": "ignore"},
     ],
 )
-def test_greenplum_writer_snapshot(spark, processing, get_schema_table, options):
+def test_greenplum_writer(spark, processing, get_schema_table, options):
     df = processing.create_spark_df(spark=spark)
 
     greenplum = Greenplum(
