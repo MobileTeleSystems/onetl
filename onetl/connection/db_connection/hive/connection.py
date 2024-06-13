@@ -23,6 +23,7 @@ from onetl.connection.db_connection.hive.options import (
     HiveWriteOptions,
 )
 from onetl.connection.db_connection.hive.slots import HiveSlots
+from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -423,7 +424,12 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
+        unsupported_options = write_options.dict(
+            by_alias=True,
+            exclude_unset=True,
+            exclude_defaults=True,
+            exclude={"if_exists"},
+        )
         if unsupported_options:
             log.warning(
                 "|%s| User-specified options %r are ignored while inserting into existing table. "
@@ -458,16 +464,25 @@ class Hive(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         writer = df.write
-        for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
-            # <value> is the arguments that will be passed to the <method>
-            # format orc, parquet methods and format simultaneously
+        for method, value in write_options.dict(  # noqa: WPS352
+            by_alias=True,
+            exclude_none=True,
+            exclude={"if_exists", "format"},
+        ).items():
             if hasattr(writer, method):
                 if isinstance(value, Iterable) and not isinstance(value, str):
-                    writer = getattr(writer, method)(*value)  # noqa: WPS220
+                    writer = getattr(writer, method)(*value)
                 else:
-                    writer = getattr(writer, method)(value)  # noqa: WPS220
+                    writer = getattr(writer, method)(value)
             else:
                 writer = writer.option(method, value)
+
+        # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
+        if isinstance(write_options.format, ReadWriteFileFormat):
+            writer = writer.format(write_options.format.name)
+            writer = writer.options(**write_options.format.dict())
+        elif isinstance(write_options.format, str):
+            writer = writer.format(write_options.format)
 
         mode = "append" if write_options.if_exists == HiveTableExistBehavior.APPEND else "overwrite"
 
