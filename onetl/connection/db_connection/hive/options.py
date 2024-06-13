@@ -13,6 +13,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import deprecated
 
+from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.impl import GenericOptions
 
 
@@ -198,10 +199,30 @@ class HiveWriteOptions(GenericOptions):
         does not affect behavior.
     """
 
-    format: str = "orc"
+    format: Union[str, ReadWriteFileFormat] = "orc"
     """Format of files which should be used for storing table data.
 
-    Examples: ``orc`` (default), ``parquet``, ``csv`` (NOT recommended)
+    Examples
+    --------
+
+    - string format: ``"orc"`` (default), ``"parquet"``, ``"csv"`` (NOT recommended).
+    - format class instance: ``ORC(compression="snappy")``, ``Parquet()``, ``CSV(header=True, delimiter=",")``.
+
+    .. code::
+
+        options = Hive.WriteOptions(
+            if_exists="append",
+            partition_by="reg_id",
+            format="orc",
+        )
+
+        # or using an ORC format class instance:
+
+        options = Hive.WriteOptions(
+            if_exists="append",
+            partition_by="reg_id",
+            format=ORC(compression="snappy"),
+        )
 
     .. note::
 
@@ -284,6 +305,16 @@ class HiveWriteOptions(GenericOptions):
 
         Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
+
+    def dict(self, **kwargs):
+        d = super().dict(**kwargs)
+        if isinstance(self.format, ReadWriteFileFormat):
+            if self.format.name != self.__fields__["format"].default:
+                d["format"] = self.format.name
+            elif "format" in d:
+                d.pop("format")
+            d.update(self.format.dict(exclude={"name"}))
+        return d
 
     @validator("sort_by")
     def _sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
