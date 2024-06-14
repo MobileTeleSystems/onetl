@@ -23,7 +23,7 @@ from onetl.connection.db_connection.hive.options import (
     HiveWriteOptions,
 )
 from onetl.connection.db_connection.hive.slots import HiveSlots
-from onetl.file.format.file_format import ReadWriteFileFormat
+from onetl.file.format.file_format import WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -423,13 +423,7 @@ class Hive(DBConnection):
         options: HiveWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-
-        unsupported_options = write_options.dict(
-            by_alias=True,
-            exclude_unset=True,
-            exclude_defaults=True,
-            exclude={"if_exists"},
-        )
+        unsupported_options = self._format_write_options(write_options)
         if unsupported_options:
             log.warning(
                 "|%s| User-specified options %r are ignored while inserting into existing table. "
@@ -455,6 +449,24 @@ class Hive(DBConnection):
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
+    def _format_write_options(self, write_options: HiveWriteOptions) -> dict:
+        options_dict = write_options.dict(
+            by_alias=True,
+            exclude_unset=True,
+            exclude_defaults=True,
+            exclude={"if_exists"},
+        )
+
+        if isinstance(write_options.format, WriteOnlyFileFormat):
+            if write_options.format.name != HiveWriteOptions.__fields__["format"].default:
+                options_dict["format"] = write_options.format.name
+            elif "format" in options_dict:
+                options_dict.pop("format")  # remove format key if it matches the default
+
+            options_dict.update(write_options.format.dict(exclude={"name"}))
+
+        return options_dict
+
     def _save_as_table(
         self,
         df: DataFrame,
@@ -478,9 +490,8 @@ class Hive(DBConnection):
                 writer = writer.option(method, value)
 
         # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
-        if isinstance(write_options.format, ReadWriteFileFormat):
-            writer = writer.format(write_options.format.name)
-            writer = writer.options(**write_options.format.dict())
+        if isinstance(write_options.format, WriteOnlyFileFormat):
+            writer = write_options.format.apply_to_writer(writer)
         elif isinstance(write_options.format, str):
             writer = writer.format(write_options.format)
 
