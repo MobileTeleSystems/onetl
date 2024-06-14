@@ -218,6 +218,8 @@ class HiveWriteOptions(GenericOptions):
 
         # or using an ORC format class instance:
 
+        from onetl.file.format import ORC
+
         options = Hive.WriteOptions(
             if_exists="append",
             partition_by="reg_id",
@@ -305,16 +307,6 @@ class HiveWriteOptions(GenericOptions):
 
         Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
     """
-
-    def dict(self, **kwargs):
-        d = super().dict(**kwargs)
-        if isinstance(self.format, ReadWriteFileFormat):
-            if self.format.name != self.__fields__["format"].default:
-                d["format"] = self.format.name
-            elif "format" in d:
-                d.pop("format")
-            d.update(self.format.dict(exclude={"name"}))
-        return d
 
     @validator("sort_by")
     def _sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
