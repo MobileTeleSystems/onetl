@@ -453,16 +453,11 @@ class Hive(DBConnection):
         options_dict = write_options.dict(
             by_alias=True,
             exclude_unset=True,
-            exclude_defaults=True,
             exclude={"if_exists"},
         )
 
         if isinstance(write_options.format, WriteOnlyFileFormat):
-            if write_options.format.name != HiveWriteOptions.__fields__["format"].default:
-                options_dict["format"] = write_options.format.name
-            elif "format" in options_dict:
-                options_dict.pop("format")  # remove format key if it matches the default
-
+            options_dict["format"] = write_options.format.name
             options_dict.update(write_options.format.dict(exclude={"name"}))
 
         return options_dict

@@ -271,7 +271,8 @@ def test_hive_writer_create_table_if_exists(spark, processing, get_schema_table,
         (Hive.WriteOptions(format="parquet"), "{'format': 'parquet'}"),
         (Hive.WriteOptions(format=Parquet()), "{'format': 'parquet'}"),
         (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
-        (Hive.WriteOptions(format=ORC(compression="snappy")), "{'compression': 'snappy'}"),
+        (Hive.WriteOptions(format="orc"), "{'format': 'orc'}"),
+        (Hive.WriteOptions(format=ORC(compression="snappy")), "{'format': 'orc', 'compression': 'snappy'}"),
     ],
 )
 def test_hive_writer_insert_into_with_options_ignored(spark, processing, get_schema_table, options, option_kv, caplog):

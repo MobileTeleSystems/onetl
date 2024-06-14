@@ -5,6 +5,10 @@ Writing to Hive using ``DBWriter``
 
 For writing data to Hive, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
 
+.. warning::
+    When using ``DBWriter`` with ``Hive.WriteOptions``, the default spark data format configured in ``spark.sql.sources.default`` is overridden to use ``orc`` by default. This may affect performance and storage characteristics.
+
+
 Examples
 --------
 
