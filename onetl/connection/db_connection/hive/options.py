@@ -13,7 +13,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import deprecated
 
-from onetl.file.format.file_format import ReadWriteFileFormat
+from onetl.file.format.file_format import WriteOnlyFileFormat
 from onetl.impl import GenericOptions
 
 
@@ -199,7 +199,7 @@ class HiveWriteOptions(GenericOptions):
         does not affect behavior.
     """
 
-    format: Union[str, ReadWriteFileFormat] = "orc"
+    format: Union[str, WriteOnlyFileFormat] = "orc"
     """Format of files which should be used for storing table data.
 
     Examples
