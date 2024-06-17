@@ -75,7 +75,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         mysql.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint,
                 key text,
                 value timestamp(6) -- specific type and precision

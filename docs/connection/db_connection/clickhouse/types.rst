@@ -84,7 +84,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         clickhouse.execute(
             """
-            CREATE TABLE default.target_tbl AS (
+            CREATE TABLE default.target_tbl (
                 id UInt8,
                 value DateTime64(6) -- specific type and precision
             )
@@ -398,7 +398,7 @@ For writing JSON data to ClickHouse, use the :obj:`JSON.serialize_column <onetl.
 
     clickhouse.execute(
         """
-        CREATE TABLE default.target_tbl AS (
+        CREATE TABLE default.target_tbl (
             id Int32,
             array_column_json String,
         )
@@ -430,7 +430,7 @@ to avoid writing such expression in every ``SELECT`` clause all the time:
 
 .. code-block:: sql
 
-    CREATE TABLE default.target_tbl AS (
+    CREATE TABLE default.target_tbl (
         id Int32,
         array_column_json String,
         -- computed column

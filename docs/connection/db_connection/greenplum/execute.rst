@@ -92,7 +92,7 @@ Examples
         greenplum.execute("DROP TABLE schema.table")
         greenplum.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id int,
                 key text,
                 value real

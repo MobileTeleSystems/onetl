@@ -90,7 +90,7 @@ Examples
         postgres.execute("DROP TABLE schema.table")
         postgres.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint GENERATED ALWAYS AS IDENTITY,
                 key text,
                 value real

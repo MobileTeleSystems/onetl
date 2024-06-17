@@ -80,7 +80,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         mssql.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint,
                 key text,
                 value datetime2(6) -- specific type and precision
@@ -328,7 +328,7 @@ and write it as ``text`` column in MSSQL:
 
     mssql.execute(
         """
-        CREATE TABLE schema.target_tbl AS (
+        CREATE TABLE schema.target_tbl (
             id bigint,
             struct_column_json text -- any string type, actually
         )

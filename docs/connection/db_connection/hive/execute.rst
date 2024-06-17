@@ -35,7 +35,7 @@ Examples
     hive.execute("DROP TABLE schema.table")
     hive.execute(
         """
-        CREATE TABLE schema.table AS (
+        CREATE TABLE schema.table (
             id NUMBER,
             key VARCHAR,
             value DOUBLE

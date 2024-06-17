@@ -80,7 +80,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         greenplum.execute(
             """
-            CREATE TABLE public.table AS (
+            CREATE TABLE public.table (
                 id int32,
                 business_dt timestamp(6),
                 value json

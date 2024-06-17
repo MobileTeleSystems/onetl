@@ -80,7 +80,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         postgres.execute(
             """
-            CREATE TABLE public.table AS (
+            CREATE TABLE public.table (
                 id bigint,
                 business_dt timestamp(6),
                 value json

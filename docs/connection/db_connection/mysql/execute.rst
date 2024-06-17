@@ -91,7 +91,7 @@ Examples
         mysql.execute("DROP TABLE schema.table")
         mysql.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint,
                 key text,
                 value float

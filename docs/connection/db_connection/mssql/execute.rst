@@ -91,7 +91,7 @@ Examples
         mssql.execute("DROP TABLE schema.table")
         mssql.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint GENERATED ALWAYS AS IDENTITY,
                 key VARCHAR2(4000),
                 value NUMBER

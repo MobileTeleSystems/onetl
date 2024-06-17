@@ -74,7 +74,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         oracle.execute(
             """
-            CREATE TABLE username.table AS (
+            CREATE TABLE username.table (
                 id NUMBER,
                 business_dt TIMESTAMP(6),
                 value VARCHAR2(2000)
