@@ -24,14 +24,14 @@ matrix:
     - mysql-version: 8.4.0
       <<: *max
   full:
-    # Min supported version by JDBC driver is 5.7
-    - mysql-version: 5.7.6
+    # Tags 5.7.6-5.6.12 cannot be downloaded since Docker v26:
+    # "Docker Image Format v1 and Docker Image manifest version 2, schema 1 support is disabled by default"
+    - mysql-version: 5.7.13
       <<: *min
-    # Max supported version by JDBC driver is 8.3
     - mysql-version: 8.4.0
       <<: *max
   nightly:
-    - mysql-version: 5.7.6
+    - mysql-version: 5.7.13
       <<: *min
     - mysql-version: latest
       <<: *latest
