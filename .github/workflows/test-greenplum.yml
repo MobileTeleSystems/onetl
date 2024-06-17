@@ -45,6 +45,7 @@ jobs:
           TZ: UTC
         ports:
           - 5433:5432
+        # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
         options: --sysctl net.ipv6.conf.all.disable_ipv6=1
 
     steps:
