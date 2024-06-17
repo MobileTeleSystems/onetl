@@ -45,6 +45,7 @@ jobs:
           TZ: UTC
         ports:
           - 5433:5432
+        options: --sysctl net.ipv6.conf.all.disable_ipv6=1
 
     steps:
       - name: Checkout code
