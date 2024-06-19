@@ -384,10 +384,9 @@ jobs:
       - name: Download all coverage reports
         uses: actions/download-artifact@v4
         with:
-          path: reports
-
-      - name: Move coverage data to the root folder
-        run: find reports -type f -exec mv '{}' reports \;
+          path: reports/
+          pattern: coverage-*
+          merge-multiple: true
 
       - name: Generate coverate reports
         run: ./combine_coverage.sh

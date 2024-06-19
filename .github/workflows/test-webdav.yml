@@ -75,5 +75,5 @@ jobs:
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: webdav-${{ inputs.webdav-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          name: coverage-webdav-${{ inputs.webdav-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
