@@ -38,7 +38,7 @@ How to determine reason
 Make logging more verbose
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Change Spark session log level to :ref:`DEBUG <spark-troubleshooting>` to print result of each attempt.
+Change Spark session log level to :ref:`DEBUG <troubleshooting-spark>` to print result of each attempt.
 Resulting logs will look like this
 
 .. dropdown:: See log

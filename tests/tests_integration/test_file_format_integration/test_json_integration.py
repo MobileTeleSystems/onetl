@@ -22,13 +22,10 @@ try:
         StructField,
         StructType,
     )
-except ImportError:
-    pytest.skip("Missing pyspark", allow_module_level=True)
 
-try:
     from tests.util.assert_df import assert_equal_df
 except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.json]
 

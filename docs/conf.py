@@ -59,6 +59,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx_favicon",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_last_updated_by_git",
 ]
 numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
@@ -79,6 +80,9 @@ copybutton_only_copy_prompt_lines = True
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = False
 towncrier_draft_working_directory = PROJECT_ROOT_DIR
+
+# TODO: remove after https://github.com/mgeier/sphinx-last-updated-by-git/pull/77
+git_exclude_patterns = ["docs/_static/logo_wide.svg"]
 
 github_username = "MobileTeleSystems"
 github_repository = "onetl"
