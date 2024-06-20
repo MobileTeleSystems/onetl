@@ -81,9 +81,6 @@ towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = False
 towncrier_draft_working_directory = PROJECT_ROOT_DIR
 
-# TODO: remove after https://github.com/mgeier/sphinx-last-updated-by-git/pull/77
-git_exclude_patterns = ["docs/_static/logo_wide.svg"]
-
 github_username = "MobileTeleSystems"
 github_repository = "onetl"
 
@@ -122,6 +119,10 @@ html_logo = "./_static/logo.svg"
 favicons = [
     {"rel": "icon", "href": "icon.svg", "type": "image/svg+xml"},
 ]
+
+# TODO: remove after https://github.com/mgeier/sphinx-last-updated-by-git/pull/77
+git_exclude_patterns = ["docs/_static/logo_wide.svg"]
+
 # The master toctree document.
 master_doc = "index"
 
