@@ -4,17 +4,13 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
-  commands:
-    - git fetch --unshallow || true
-  # TODO: remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
-    - python -m virtualenv $READTHEDOCS_VIRTUALENV_PATH
-    - python -m pip install --upgrade --no-cache-dir pip setuptools wheel
-    - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
-    - python -m pip install --exists-action=w --no-cache-dir -r requirements/docs.txt
-    - python -m pip install --exists-action=w --no-cache-dir --no-deps sphinx-plantuml
-    - python -m pip install --exists-action=w --upgrade --upgrade-strategy only-if-needed --no-cache-dir .[ftp,ftps,hdfs,samba,s3,sftp,webdav,spark]
-    - cat docs/conf.py
-    - cd docs && python -m sphinx -T -E -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html
+  jobs:
+    post_checkout:
+      - git fetch --unshallow || true
+    post_create_environment:
+      - python -m pip install --exists-action=w --no-cache-dir --no-deps sphinx-plantuml # remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
+      - python -m pip install --exists-action=w --no-cache-dir -r requirements/docs.txt
+      - python -m pip install --exists-action=w --upgrade --upgrade-strategy only-if-needed --no-cache-dir .[ftp,ftps,hdfs,samba,s3,sftp,webdav,spark]
 
 # TODO: uncomment after https://github.com/zqmillet/sphinx-plantuml/pull/4
 #python:
