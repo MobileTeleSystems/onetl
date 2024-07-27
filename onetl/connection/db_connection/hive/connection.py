@@ -16,6 +16,7 @@ except (ImportError, AttributeError):
 from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.spark import inject_spark_param, override_job_description
 from onetl._util.sql import clear_statement
+from onetl.base import BaseWritableFileFormat
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive.dialect import HiveDialect
 from onetl.connection.db_connection.hive.options import (
@@ -24,7 +25,7 @@ from onetl.connection.db_connection.hive.options import (
     HiveWriteOptions,
 )
 from onetl.connection.db_connection.hive.slots import HiveSlots
-from onetl.file.format.file_format import WriteOnlyFileFormat
+from onetl.file.format.file_format import ReadWriteFileFormat, WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -504,7 +505,7 @@ class Hive(DBConnection):
             exclude={"if_exists"},
         )
 
-        if isinstance(write_options.format, WriteOnlyFileFormat):
+        if isinstance(write_options.format, (WriteOnlyFileFormat, ReadWriteFileFormat)):
             options_dict["format"] = write_options.format.name
             options_dict.update(write_options.format.dict(exclude={"name"}))
 
@@ -533,7 +534,7 @@ class Hive(DBConnection):
                 writer = writer.option(method, value)
 
         # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
-        if isinstance(write_options.format, WriteOnlyFileFormat):
+        if isinstance(write_options.format, BaseWritableFileFormat):
             writer = write_options.format.apply_to_writer(writer)
         elif isinstance(write_options.format, str):
             writer = writer.format(write_options.format)
