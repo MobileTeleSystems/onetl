@@ -6,23 +6,11 @@ from typing import Any, Optional
 
 from etl_entities.hwm import HWM
 
-from onetl.impl import BaseModel
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
 
 
-class OffsetMixin(BaseModel):
-    hwm: Optional[HWM] = None
-    offset: Any = None
-
-    def fetch_hwm(self) -> None:
-        super().fetch_hwm()
-
-        if self.hwm and self.hwm.value is not None and self.offset is not None:
-            self.hwm -= self.offset
-
-
-class IncrementalStrategy(OffsetMixin, HWMStrategy):
+class IncrementalStrategy(HWMStrategy):
     """Incremental strategy for :ref:`db-reader`/:ref:`file-downloader`.
 
     Used for fetching only new rows/files from a source
@@ -353,8 +341,17 @@ class IncrementalStrategy(OffsetMixin, HWMStrategy):
         # current run will download only files which were not downloaded in previous runs
     """
 
+    hwm: Optional[HWM] = None
+    offset: Any = None
 
-class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
+    def fetch_hwm(self) -> None:
+        super().fetch_hwm()
+
+        if self.hwm and self.hwm.value is not None and self.offset is not None:
+            self.hwm -= self.offset
+
+
+class IncrementalBatchStrategy(BatchHWMStrategy):
     """Incremental batch strategy for :ref:`db-reader`.
 
     .. note::
@@ -668,6 +665,15 @@ class IncrementalBatchStrategy(OffsetMixin, BatchHWMStrategy):
             AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """
+
+    hwm: Optional[HWM] = None
+    offset: Any = None
+
+    def fetch_hwm(self) -> None:
+        super().fetch_hwm()
+
+        if self.hwm and self.hwm.value is not None and self.offset is not None:
+            self.hwm -= self.offset
 
     def __next__(self):
         self.save_hwm()

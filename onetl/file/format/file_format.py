@@ -51,5 +51,19 @@ class WriteOnlyFileFormat(BaseWritableFileFormat, GenericOptions):
         return writer.format(self.name).options(**options)
 
 
-class ReadWriteFileFormat(ReadOnlyFileFormat, WriteOnlyFileFormat):
-    pass
+@support_hooks
+class ReadWriteFileFormat(BaseReadableFileFormat, BaseWritableFileFormat, GenericOptions):
+    name: ClassVar[str]
+
+    class Config:
+        prohibited_options = PROHIBITED_OPTIONS
+
+    @slot
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+        options = self.dict(by_alias=True)
+        return reader.format(self.name).options(**options)
+
+    @slot
+    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
+        options = self.dict(by_alias=True)
+        return writer.format(self.name).options(**options)
