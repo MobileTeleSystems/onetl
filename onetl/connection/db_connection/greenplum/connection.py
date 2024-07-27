@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import os
 import textwrap
+import threading
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
 from etl_entities.instance import Host
@@ -14,9 +15,9 @@ from etl_entities.instance import Host
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 
 try:
-    from pydantic.v1 import validator
+    from pydantic.v1 import PrivateAttr, SecretStr, validator
 except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+    from pydantic import validator, SecretStr, PrivateAttr  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -40,7 +41,9 @@ from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,
     JDBCFetchOptions,
-    JDBCOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCOptions as JDBCMixinOptions,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
@@ -70,11 +73,11 @@ class GreenplumExtra(GenericOptions):
 
     class Config:
         extra = "allow"
-        prohibited_options = JDBCOptions.Config.prohibited_options
+        prohibited_options = JDBCMixinOptions.Config.prohibited_options
 
 
 @support_hooks
-class Greenplum(JDBCMixin, DBConnection):
+class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
     """Greenplum connection. |support_hooks|
 
     Based on package ``io.pivotal:greenplum-spark:2.2.0``
@@ -158,6 +161,8 @@ class Greenplum(JDBCMixin, DBConnection):
     """
 
     host: Host
+    user: str
+    password: SecretStr
     database: str
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
@@ -167,6 +172,7 @@ class Greenplum(JDBCMixin, DBConnection):
     SQLOptions = GreenplumSQLOptions
     FetchOptions = GreenplumFetchOptions
     ExecuteOptions = GreenplumExecuteOptions
+    JDBCOptions = JDBCMixinOptions
 
     Extra = GreenplumExtra
     Dialect = GreenplumDialect
@@ -174,6 +180,9 @@ class Greenplum(JDBCMixin, DBConnection):
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
+
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
+    _last_connection_and_options: Optional[threading.local] = PrivateAttr(default=None)
 
     @slot
     @classmethod

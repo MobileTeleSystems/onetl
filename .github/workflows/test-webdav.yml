@@ -33,6 +33,12 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
+      - name: Set up lxml libs
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends libxml2-dev libxslt-dev
+
       - name: Cache pip
         uses: actions/cache@v4
         if: inputs.with-cache

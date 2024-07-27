@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, ContextManager
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrameReader, DataFrameWriter, SparkSession
@@ -30,7 +30,7 @@ class BaseReadableFileFormat(ABC):
         """
 
     @abstractmethod
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameReader`. |support_hooks|
 
@@ -40,10 +40,6 @@ class BaseReadableFileFormat(ABC):
         -------
         :obj:`pyspark.sql.DataFrameReader`
             DataFrameReader with options applied.
-
-        ``ContextManager[DataFrameReader]``
-            If returned context manager, it will be entered before reading data and exited after creating a DataFrame.
-            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameReader` instance.
         """
 
 
@@ -68,7 +64,7 @@ class BaseWritableFileFormat(ABC):
         """
 
     @abstractmethod
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
+    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameWriter`. |support_hooks|
 
@@ -78,8 +74,4 @@ class BaseWritableFileFormat(ABC):
         -------
         :obj:`pyspark.sql.DataFrameWriter`
             DataFrameWriter with options applied.
-
-        ``ContextManager[DataFrameWriter]``
-            If returned context manager, it will be entered before writing and exited after writing a DataFrame.
-            Context manager's ``__enter__`` method should return :obj:`pyspark.sql.DataFrameWriter` instance.
         """

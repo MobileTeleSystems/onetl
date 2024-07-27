@@ -10,12 +10,12 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
 
 try:
-    from pydantic.v1 import Field, PrivateAttr, SecretStr, validator
+    from pydantic.v1 import Field, PrivateAttr, SecretStr
 except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
+    from pydantic import Field, PrivateAttr, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.command import SparkCommandMetrics
-from onetl._util.java import get_java_gateway, try_import_java_class
+from onetl._util.java import get_java_gateway
 from onetl._util.spark import (
     estimate_dataframe_size,
     get_spark_version,
@@ -31,9 +31,8 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCOptions as JDBCMixinOptions,
 )
-from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
-from onetl.impl import FrozenModel, GenericOptions
+from onetl.impl import GenericOptions
 from onetl.log import log_lines
 
 if TYPE_CHECKING:
@@ -61,7 +60,7 @@ class JDBCStatementType(Enum):
 
 
 @support_hooks
-class JDBCMixin(FrozenModel):
+class JDBCMixin:
     """
     Compatibility layer between Python and Java SQL Module.
 
@@ -309,21 +308,6 @@ class JDBCMixin(FrozenModel):
             log.info("|%s| Recorded metrics:", self.__class__.__name__)
             log_lines(log, str(metrics))
         return df
-
-    @validator("spark")
-    def _check_java_class_imported(cls, spark):
-        try:
-            try_import_java_class(spark, cls.DRIVER)
-        except Exception as e:
-            msg = MISSING_JVM_CLASS_MSG.format(
-                java_class=cls.DRIVER,
-                package_source=cls.__name__,
-                args="",
-            )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
-            raise ValueError(msg) from e
-        return spark
 
     def _query_on_driver(
         self,
