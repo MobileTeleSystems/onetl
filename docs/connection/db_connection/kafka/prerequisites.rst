@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * Kafka server versions: 0.10 or higher
-* Spark versions: 2.4.x - 3.5.x
-* Java versions: 8 - 17
+* Spark versions: 2.4.x - 4.0.x
+* Java versions: 8 - 22
 
 See `official documentation <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 

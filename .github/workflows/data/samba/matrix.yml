@@ -1,5 +1,5 @@
 min: &min
-  # elswork/samba image versions does not correlate with smbd version, it is always 4.x
+  # elswork/samba image versions does not correlate with smbd version, it is always 4x
   server-version: latest
   pydantic-version: 1
   python-version: '3.7'

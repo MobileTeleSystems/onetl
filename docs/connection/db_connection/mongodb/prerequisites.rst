@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * MongoDB server versions: 4.0 or higher
-* Spark versions: 3.2.x - 3.5.x
-* Java versions: 8 - 20
+* Spark versions: 3.2.x - 4.0.x
+* Java versions: 8 - 22
 
 See `official documentation <https://www.mongodb.com/docs/spark-connector/v10.1/>`_.
 

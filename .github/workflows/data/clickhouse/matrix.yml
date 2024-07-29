@@ -1,4 +1,4 @@
-min: &min
+2x: &2x
   # Clickhouse version with proper DateTime > DateTime64 comparison
   clickhouse-image: yandex/clickhouse-server
   clickhouse-version: '21.1'
@@ -8,13 +8,22 @@ min: &min
   java-version: 8
   os: ubuntu-latest
 
-max: &max
+3x: &3x
   clickhouse-image: clickhouse/clickhouse-server
   clickhouse-version: 24.6.3.70-alpine
   spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
+  os: ubuntu-latest
+
+4x: &4x
+  clickhouse-image: clickhouse/clickhouse-server
+  clickhouse-version: 24.6.3.70-alpine
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.12'
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -27,6 +36,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  small: [*3x]
+  full: [*2x, *3x, *4x]
+  nightly: [*2x, *3x, *latest]

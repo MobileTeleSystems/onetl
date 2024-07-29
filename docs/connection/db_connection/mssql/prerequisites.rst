@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * SQL Server versions: 2014 - 2022
-* Spark versions: 2.3.x - 3.5.x
-* Java versions: 8 - 20
+* Spark versions: 2.3.x - 4.0.x
+* Java versions: 8 - 22
 
 See `official documentation <https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver>`_
 and `official compatibility matrix <https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix>`_.

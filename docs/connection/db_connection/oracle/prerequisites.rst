@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * Oracle Server versions: 23, 21, 19, 18, 12.2 and __probably__ 11.2 (tested, but it's not mentioned in official docs).
-* Spark versions: 2.3.x - 3.5.x
-* Java versions: 8 - 20
+* Spark versions: 2.3.x - 4.0.x
+* Java versions: 8 - 22
 
 See `official documentation <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_.
 
