@@ -340,7 +340,7 @@ class ContextDecorator:
             raise
         raise RuntimeError("generator didn't stop after throw()")
 
-    def process_result(self, result: T) -> T | None:
+    def process_result(self, result):
         """
         Handle original method call result, and return new value.
 
