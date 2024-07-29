@@ -116,6 +116,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m kafka
 
+      - name: Dump Kafka logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: bitnami/kafka
+          dest: ./logs
+
+      - name: Upload Kafka logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-kafka-${{ inputs.kafka-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:

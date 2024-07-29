@@ -88,6 +88,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m mssql
 
+      - name: Dump MSSQL logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: mcr.microsoft.com/mssql/server
+          dest: ./logs
+
+      - name: Upload MSSQL logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-mssql-${{ inputs.mssql-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Shutdown MSSQL
         if: always()
         run: |

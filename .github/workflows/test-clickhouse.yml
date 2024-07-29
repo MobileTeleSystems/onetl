@@ -95,3 +95,17 @@ jobs:
         with:
           name: coverage-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
+
+      - name: Dump Clickhouse logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: ${{ inputs.clickhouse-image }}
+          dest: ./logs
+
+      - name: Upload Clickhouse logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}
+          path: logs/*

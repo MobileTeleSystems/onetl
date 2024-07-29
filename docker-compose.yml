@@ -91,9 +91,6 @@ services:
     image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:latest}
     restart: unless-stopped
     env_file: .env.dependencies
-    environment:
-      # fix for https://github.com/microsoft/mssql-docker/issues/892
-      PATH: /opt/mssql-tools18/bin:/opt/mssql-tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     ports:
       - 1433:1433
     volumes:
@@ -104,7 +101,8 @@ services:
     platform: linux/amd64
     healthcheck:
       # Container is healthy only when database is created
-      test: ["CMD-SHELL", "sqlcmd -S localhost -d $$MSSQL_DATABASE -U $$MSSQL_USER -P $$MSSQL_PASSWORD -Q 'SELECT 1'"]
+      # TODO: replace with SELECT after fixing sqlcmd location: https://github.com/microsoft/mssql-docker/issues/892
+      test: ["CMD-SHELL", "ls -lsah /var/opt/mssql/data/onetl.mdf"]
       interval: 10s
       timeout: 5s
       retries: 5

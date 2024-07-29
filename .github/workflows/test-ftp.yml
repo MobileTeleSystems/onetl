@@ -67,6 +67,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m ftp
 
+      - name: Dump FTP logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: chonjay21/ftps
+          dest: ./logs
+
+      - name: Upload FTP logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-ftp-${{ inputs.ftp-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Shutdown FTP
         if: always()
         run: |

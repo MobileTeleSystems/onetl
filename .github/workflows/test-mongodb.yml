@@ -88,6 +88,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m mongodb
 
+      - name: Dump MongoDB logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: mongo
+          dest: ./logs
+
+      - name: Upload MongoDB logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-mongodb-${{ inputs.mongodb-version }}
+          path: logs/*
+
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:

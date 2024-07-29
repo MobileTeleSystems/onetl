@@ -65,6 +65,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m samba
 
+      - name: Dump Samba logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: elswork/samba
+          dest: ./logs
+
+      - name: Upload Samba logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-samba-${{ inputs.server-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Shutdown Samba
         if: always()
         run: |

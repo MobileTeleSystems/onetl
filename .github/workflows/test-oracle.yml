@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     services:
       oracle:
-        image: "${{ inputs.oracle-image }}:${{ inputs.oracle-version }}"
+        image: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
         env:
           TZ: UTC
           ORACLE_PASSWORD: maaxohmiGe9eep5x
@@ -109,6 +109,20 @@ jobs:
           source ./env
           export "ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}"
           ./pytest_runner.sh -m oracle
+
+      - name: Dump Oracle logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: ${{ inputs.oracle-image }}
+          dest: ./logs
+
+      - name: Upload Oracle logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-oracle-${{ inputs.oracle-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

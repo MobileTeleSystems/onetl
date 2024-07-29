@@ -67,6 +67,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m webdav
 
+      - name: Dump WebDAV logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: chonjay21/webdav
+          dest: ./logs
+
+      - name: Upload WebDAV logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-webdav-${{ inputs.webdav-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Shutdown WebDAV
         if: always()
         run: |
