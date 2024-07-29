@@ -388,6 +388,10 @@ class XML(ReadWriteFileFormat):
             )
 
         """
+        spark_ver = Version(spark_version)
+        if spark_ver.major >= 4:
+            # since Spark 4.0, XML is bundled with Spark
+            return []
 
         if package_version:
             version = Version(package_version).min_digits(3)
@@ -397,7 +401,6 @@ class XML(ReadWriteFileFormat):
         else:
             version = Version("0.18.0")
 
-        spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
 
         # Ensure compatibility with Spark and Scala versions
@@ -411,8 +414,12 @@ class XML(ReadWriteFileFormat):
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:
-        java_class = "com.databricks.spark.xml.XmlReader"
+        version = get_spark_version(spark)
+        if version.major >= 4:
+            # since Spark 4.0, XML is bundled with Spark
+            return
 
+        java_class = "com.databricks.spark.xml.XmlReader"
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
@@ -533,13 +540,20 @@ class XML(ReadWriteFileFormat):
         self.check_if_supported(spark)
         self._check_unsupported_serialization_options()
 
-        from pyspark.sql.column import _to_java_column  # noqa: WPS450
         from pyspark.sql.functions import col
 
         if isinstance(column, Column):
             column_name, column = column._jc.toString(), column.cast("string")  # noqa: WPS437
         else:
             column_name, column = column, col(column).cast("string")
+
+        version = get_spark_version(spark)
+        if version.major >= 4:
+            from pyspark.sql.functions import from_xml  # noqa: WPS450
+
+            return from_xml(column, schema, self.dict()).alias(column_name)
+
+        from pyspark.sql.column import _to_java_column  # noqa: WPS450
 
         java_column = _to_java_column(column)
         java_schema = spark._jsparkSession.parseDataType(schema.json())  # noqa: WPS437

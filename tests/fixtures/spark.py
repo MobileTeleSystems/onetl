@@ -103,8 +103,8 @@ def maven_packages(request):
             # There is no MongoDB connector for Spark less than 3.2
             packages.extend(MongoDB.get_packages(spark_version=str(pyspark_version)))
 
-        if "excel" in markers:
-            # There is no Excel files support for Spark less than 3.2.
+        if "excel" in markers and pyspark_version.major < 4:
+            # There is no Excel files support for Spark less than 3.2 and higher than 4.0.
             # There are package versions only for specific Spark versions,
             # see https://github.com/nightscape/spark-excel/issues/902
             if pyspark_version.minor == 2:

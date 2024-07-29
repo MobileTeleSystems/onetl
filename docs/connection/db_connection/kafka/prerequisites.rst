@@ -9,8 +9,8 @@ Version Compatibility
 * Kafka server versions:
     * Officially declared: 0.10 or higher
     * Actually tested: 3.2.3, 3.9.0 (only Kafka 3.x supports message headers)
-* Spark versions: 2.4.x - 3.5.x
-* Java versions: 8 - 17
+* Spark versions: 2.4.x - 4.0.x
+* Java versions: 8 - 22
 
 See `official documentation <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_.
 
