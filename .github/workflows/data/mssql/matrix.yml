@@ -1,4 +1,5 @@
 min: &min
+  mssql-version: 2017-GA-ubuntu
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
@@ -6,6 +7,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
+  mssql-version: 2022-CU14-ubuntu-22.04
   spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
@@ -13,6 +15,7 @@ max: &max
   os: ubuntu-latest
 
 latest: &latest
+  mssql-version: latest
   spark-version: latest
   pydantic-version: latest
   python-version: '3.12'
@@ -20,16 +23,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - mssql-version: 2022-CU14-ubuntu-22.04
-      <<: *max
-  full:
-    - mssql-version: 2017-GA-ubuntu
-      <<: *min
-    - mssql-version: 2022-CU14-ubuntu-22.04
-      <<: *max
-  nightly:
-    - mssql-version: 2017-GA-ubuntu
-      <<: *min
-    - mssql-version: latest
-      <<: *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *latest]

@@ -9,7 +9,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  minio-version: 2024.4.18
+  minio-version: 2024.7.26
   spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
@@ -25,11 +25,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - *max
-  full:
-    - *min
-    - *max
-  nightly:
-    - *min
-    - *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *latest]

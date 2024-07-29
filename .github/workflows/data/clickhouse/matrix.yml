@@ -22,7 +22,7 @@ latest: &latest
 matrix:
   small:
     - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 24.3.2.23-alpine
+      clickhouse-version: 24.6.3.70-alpine
       <<: *max
   full:
     # Clickhouse version with proper DateTime > DateTime64 comparison
@@ -30,7 +30,7 @@ matrix:
       clickhouse-version: '21.1'
       <<: *min
     - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 24.3.2.23-alpine
+      clickhouse-version: 24.6.3.70-alpine
       <<: *max
   nightly:
     - clickhouse-image: yandex/clickhouse-server

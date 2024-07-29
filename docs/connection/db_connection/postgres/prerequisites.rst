@@ -6,7 +6,7 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* PostgreSQL server versions: 8.2 or higher
+* PostgreSQL server versions: 8.2  - 16
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 
