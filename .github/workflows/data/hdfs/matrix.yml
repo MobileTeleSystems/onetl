@@ -14,6 +14,15 @@
   java-version: 20
   os: ubuntu-latest
 
+4_0_x: &4_0_x
+  hadoop-version: hadoop3-hdfs
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.13'
+  # https://stackoverflow.com/a/79017758/23601543
+  java-version: 22
+  os: ubuntu-latest
+
 latest: &latest
   hadoop-version: hadoop3-hdfs
   spark-version: latest
@@ -24,5 +33,5 @@ latest: &latest
 
 matrix:
   small: [*3_5_x]
-  full: [*3_2_x, *3_5_x]
+  full: [*3_2_x, *3_5_x, *4_0_x]
   nightly: [*latest]

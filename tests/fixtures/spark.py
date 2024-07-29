@@ -115,6 +115,8 @@ def maven_packages(request):
             packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.4.4"))
         elif version == (3, 5):
             packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.5.6"))
+        elif version == (4, 0):
+            packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="4.0.0"))
 
     if "iceberg" in markers:
         version = (pyspark_version.major, pyspark_version.minor)

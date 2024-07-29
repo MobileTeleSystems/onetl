@@ -2,8 +2,17 @@ import logging
 
 import pytest
 
+from onetl._util.version import Version
 from onetl.connection import Iceberg
 from onetl.db import DBWriter
+
+try:
+    import pyspark
+except ImportError:
+    pytest.skip("Missing pyspark", allow_module_level=True)
+
+if Version(pyspark.__version__).major > 3:
+    pytest.skip("Iceberg doesn't support Spark 4 yet", allow_module_level=True)
 
 pytestmark = pytest.mark.iceberg
 

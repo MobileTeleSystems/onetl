@@ -1,12 +1,17 @@
 import pytest
 
-try:
-    import pandas
-except ImportError:
-    pytest.skip("Missing pandas", allow_module_level=True)
-
+from onetl._util.version import Version
 from onetl.db import DBReader
 from tests.util.rand import rand_str
+
+try:
+    import pandas
+    import pyspark
+except ImportError:
+    pytest.skip("Missing pandas or pyspark", allow_module_level=True)
+
+if Version(pyspark.__version__).major > 3:
+    pytest.skip("Iceberg doesn't support Spark 4 yet", allow_module_level=True)
 
 pytestmark = pytest.mark.iceberg
 
