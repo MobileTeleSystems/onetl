@@ -21,12 +21,12 @@ latest: &latest
 
 matrix:
   small:
-    - mssql-version: 2022-CU12-ubuntu-22.04
+    - mssql-version: 2022-CU14-ubuntu-22.04
       <<: *max
   full:
     - mssql-version: 2017-GA-ubuntu
       <<: *min
-    - mssql-version: 2022-CU12-ubuntu-22.04
+    - mssql-version: 2022-CU14-ubuntu-22.04
       <<: *max
   nightly:
     - mssql-version: 2017-GA-ubuntu
