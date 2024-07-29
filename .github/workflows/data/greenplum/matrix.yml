@@ -1,4 +1,4 @@
-min: &min
+23: &23
   greenplum-version: 6.23.1
   package-version: 2.2.0
   # Spark 2.3.0 does not support passing ivysettings.xml
@@ -8,7 +8,7 @@ min: &min
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
+32: &32
   greenplum-version: 7.0.0
   package-version: 2.3.1
   # Greenplum connector does not support Spark 3.3+
@@ -29,6 +29,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *latest]
+  small: [*32]
+  full: [*23, *32]
+  nightly: [*23, *latest]
