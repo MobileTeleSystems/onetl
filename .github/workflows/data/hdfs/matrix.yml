@@ -23,11 +23,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - *max
-  full:
-    - *min
-    - *max
-  nightly:
-    - *min
-    - *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *max, *latest]

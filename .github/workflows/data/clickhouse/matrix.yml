@@ -1,4 +1,7 @@
 min: &min
+  # Clickhouse version with proper DateTime > DateTime64 comparison
+  clickhouse-image: yandex/clickhouse-server
+  clickhouse-version: '21.1'
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
@@ -6,6 +9,8 @@ min: &min
   os: ubuntu-latest
 
 max: &max
+  clickhouse-image: clickhouse/clickhouse-server
+  clickhouse-version: 24.6.3.70-alpine
   spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
@@ -13,6 +18,8 @@ max: &max
   os: ubuntu-latest
 
 latest: &latest
+  clickhouse-image: clickhouse/clickhouse-server
+  clickhouse-version: latest-alpine
   spark-version: latest
   pydantic-version: latest
   python-version: '3.12'
@@ -20,22 +27,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 24.6.3.70-alpine
-      <<: *max
-  full:
-    # Clickhouse version with proper DateTime > DateTime64 comparison
-    - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '21.1'
-      <<: *min
-    - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: 24.6.3.70-alpine
-      <<: *max
-  nightly:
-    - clickhouse-image: yandex/clickhouse-server
-      clickhouse-version: '21.1'
-      <<: *min
-    - clickhouse-image: clickhouse/clickhouse-server
-      clickhouse-version: latest-alpine
-      <<: *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *max, *latest]
