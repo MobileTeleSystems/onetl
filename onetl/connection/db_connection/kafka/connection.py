@@ -425,8 +425,13 @@ class Kafka(DBConnection):
             raise ValueError(f"Spark version must be at least 2.4, got {spark_ver}")
 
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
+
+        if spark_ver.major < 4:
+            version = spark_ver.format("{0}.{1}.{2}")
+        else:
+            version = "4.0.0-preview2"
         return [
-            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
+            f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{version}",
         ]
 
     @slot
