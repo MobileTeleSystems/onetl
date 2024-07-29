@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class DBDialect(BaseDBDialect):
     def detect_hwm_class(self, field: StructField) -> type[HWM] | None:
-        return SparkTypeToHWM.get(field.dataType.typeName())  # type: ignore
+        return SparkTypeToHWM.get(field.dataType)  # type: ignore
 
     def get_sql_query(
         self,

@@ -9,7 +9,11 @@ def get_default_scala_version(spark_version: Version) -> Version:
     """
     Get default Scala version for specific Spark version
     """
-    return Version("2.12")
+    if spark_version.major == 2:
+        return Version("2.11")
+    if spark_version.major == 3:
+        return Version("2.12")
+    return Version("2.13")
 
 
 def scala_seq_to_python_list(seq) -> list:

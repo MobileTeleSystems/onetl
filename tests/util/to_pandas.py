@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 import pandas
 
+from onetl._util.version import Version
+
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame as SparkDataFrame
 
@@ -16,16 +18,23 @@ def fix_pyspark_df(df: SparkDataFrame) -> SparkDataFrame:
     """
     Fix Spark DataFrame column types before converting it to Pandas DataFrame.
 
-    Using ``df.toPandas()`` on Spark 3.x with Pandas 2.x raises the following exception:
+    On Spark 4.0, it returns dataframe as-is, see https://issues.apache.org/jira/browse/SPARK-43194.
+
+    On Spark 3.x with Pandas 2.x, ``df.toPandas()`` raises the following exception:
 
     .. code::
 
         TypeError: Casting to unit-less dtype 'datetime64' is not supported. Pass e.g. 'datetime64[ns]' instead.
 
     This method converts dates and timestamps to strings, to convert them back to original type later.
-
-    TODO: remove after https://issues.apache.org/jira/browse/SPARK-43194
     """
+    import pyspark
+
+    pyspark_version = Version(pyspark.__version__)
+    if pyspark_version >= Version("4"):
+        return df
+
+    # https://issues.apache.org/jira/browse/SPARK-43194
     from pyspark.sql.functions import date_format
     from pyspark.sql.types import DateType, TimestampType
 
@@ -84,9 +93,13 @@ def fix_pandas_df(
         column_name = column.lower()
 
         if "datetime" in column_name:
-            df[column] = parse_datetime(df[column])
+            if df.dtypes[column] == "object":
+                df[column] = parse_datetime(df[column])
         elif "date" in column_name:
-            df[column] = parse_date(df[column]).dt.date
+            if df.dtypes[column] == "object":
+                df[column] = parse_date(df[column]).dt.date
+            else:
+                df[column] = df[column].dt.date
 
     return df
 

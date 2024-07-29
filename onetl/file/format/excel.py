@@ -35,7 +35,7 @@ class Excel(ReadWriteFileFormat):
 
     .. dropdown:: Version compatibility
 
-        * Spark versions: 3.2.x - 3.5.x
+        * Spark versions: 3.2.x - 4.0.x
 
             .. warning::
 
@@ -43,7 +43,7 @@ class Excel(ReadWriteFileFormat):
                 See `Maven index <https://mvnrepository.com/artifact/dev.mauch/spark-excel>`_
                 and `official documentation <https://github.com/crealytics/spark-excel>`_.
 
-        * Java versions: 8 - 20
+        * Java versions: 8 - 22
 
         See documentation from link above.
 

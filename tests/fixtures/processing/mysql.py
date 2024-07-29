@@ -155,3 +155,17 @@ class MySQLProcessing(BaseProcessing):
             self.get_expected_dataframe_ddl(schema, table, order_by) + ";",
             con=self.url,
         )
+
+    def fix_pandas_df(
+        self,
+        df: pandas.DataFrame,
+    ) -> pandas.DataFrame:
+        df = super().fix_pandas_df(df)
+
+        for column in df.columns:
+            if "float" in column:
+                # Spark 4.0 returns float32 instead float64
+                # https://github.com/apache/spark/pull/45666/files
+                df[column] = df[column].astype("float32")
+
+        return df

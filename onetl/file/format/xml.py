@@ -388,6 +388,10 @@ class XML(ReadWriteFileFormat):
             )
 
         """
+        spark_ver = Version(spark_version)
+        if spark_ver.major >= 4:
+            # since Spark 4.0, XML is bundled with Spark
+            return []
 
         if package_version:
             version = Version(package_version).min_digits(3)
@@ -397,14 +401,17 @@ class XML(ReadWriteFileFormat):
         else:
             version = Version("0.18.0")
 
-        spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [f"com.databricks:spark-xml_{scala_ver.format('{0}.{1}')}:{version}"]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:
-        java_class = "com.databricks.spark.xml.XmlReader"
+        version = get_spark_version(spark)
+        if version.major >= 4:
+            # since Spark 4.0, XML is bundled with Spark
+            return
 
+        java_class = "com.databricks.spark.xml.XmlReader"
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
@@ -523,7 +530,6 @@ class XML(ReadWriteFileFormat):
         self.check_if_supported(spark)
         self._check_unsupported_serialization_options()
 
-        from pyspark.sql.column import _to_java_column  # noqa: WPS450
         from pyspark.sql.functions import col
 
         if isinstance(column, Column):
@@ -531,10 +537,19 @@ class XML(ReadWriteFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
+        options = self.dict(by_alias=True, exclude_none=True)
+        version = get_spark_version(spark)
+        if version.major >= 4:
+            from pyspark.sql.functions import from_xml  # noqa: WPS450
+
+            return from_xml(column, schema, stringify(options)).alias(column_name)
+
+        from pyspark.sql.column import _to_java_column  # noqa: WPS450
+
         java_column = _to_java_column(column)
         java_schema = spark._jsparkSession.parseDataType(schema.json())  # noqa: WPS437
         scala_options = spark._jvm.org.apache.spark.api.python.PythonUtils.toScalaMap(  # noqa: WPS219, WPS437
-            stringify(self.dict(by_alias=True, exclude_none=True)),
+            stringify(options),
         )
         jc = spark._jvm.com.databricks.spark.xml.functions.from_xml(  # noqa: WPS219, WPS437
             java_column,

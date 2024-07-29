@@ -6,7 +6,7 @@ from onetl.db import DBWriter
 pytestmark = pytest.mark.iceberg
 
 
-def test_Iceberg_writer_wrong_table_name(spark_mock):
+def test_iceberg_writer_wrong_table_name(spark_mock):
     iceberg = Iceberg(catalog_name="my_catalog", spark=spark_mock)
 
     with pytest.raises(
