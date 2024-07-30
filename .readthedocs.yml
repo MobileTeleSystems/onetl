@@ -11,6 +11,9 @@ build:
       - python -m pip install --exists-action=w --no-cache-dir --no-deps sphinx-plantuml # remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
       - python -m pip install --exists-action=w --no-cache-dir -r requirements/docs.txt
       - python -m pip install --exists-action=w --upgrade --upgrade-strategy only-if-needed --no-cache-dir .[ftp,ftps,hdfs,samba,s3,sftp,webdav,spark]
+    post_install:
+      # TODO: remove after upgrading autodoc-pydantic to v2
+      - python -m pip install --exists-action=w --no-cache-dir "sphinx<8"
 
 # TODO: uncomment after https://github.com/zqmillet/sphinx-plantuml/pull/4
 #python:

@@ -1,8 +1,10 @@
+# TODO: remove version limit after upgrading all Pydantic models to v2
 autodoc-pydantic<2
 furo
 importlib-resources<6
 numpydoc
 pygments-csv-lexer
+# TODO: remove version limit after upgrading autodoc-pydantic to v2
 sphinx<8
 sphinx-copybutton
 sphinx-design
