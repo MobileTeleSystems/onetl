@@ -16,4 +16,5 @@ sphinx-tabs
 sphinx-toolbox
 sphinx_substitution_extensions
 sphinxcontrib-towncrier
-towncrier
+# TODO: remove upper limit after https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/92
+towncrier<24.7
