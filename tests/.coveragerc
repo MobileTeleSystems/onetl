@@ -7,6 +7,7 @@ data_file = reports/.coverage
 [report]
 exclude_lines =
     pragma: no cover
+    no cover: start(?s:.)*?no cover: stop
     def __repr__
     if self.debug:
     if settings.DEBUG

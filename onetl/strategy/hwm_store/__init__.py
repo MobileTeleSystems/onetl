@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         register_spark_type_to_hwm_type_mapping,
     )
 
-__all__ = [  # noqa: WPS410
+__all__ = [
     "BaseHWMStore",
     "SparkTypeToHWM",
     "register_spark_type_to_hwm_type_mapping",

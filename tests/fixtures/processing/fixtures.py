@@ -21,10 +21,14 @@ def processing(request, spark):
         "kafka": ("tests.fixtures.processing.kafka", "KafkaProcessing"),
     }
 
-    db_storage_name = request.function.__name__.split("_")[1]
-    if db_storage_name not in processing_classes:
-        raise ValueError(f"Wrong name. Please use one of: {list(processing_classes.keys())}")
+    test_name_parts = set(request.function.__name__.split("_"))
+    matches = set(processing_classes.keys()) & test_name_parts
+    if not matches or len(matches) > 1:
+        raise ValueError(
+            f"Test name {request.function.__name__} should have one of these components: {list(processing_classes.keys())}",
+        )
 
+    db_storage_name = matches.pop()
     module_name, class_name = processing_classes[db_storage_name]
     module = import_module(module_name)
     db_processing = getattr(module, class_name)
