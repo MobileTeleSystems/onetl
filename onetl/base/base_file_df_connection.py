@@ -11,7 +11,7 @@ from onetl.base.base_file_format import BaseReadableFileFormat, BaseWritableFile
 from onetl.base.pure_path_protocol import PurePathProtocol
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame, DataFrameReader, DataFrameWriter
+    from pyspark.sql import DataFrame, DataFrameReader, DataFrameWriter, SparkSession
     from pyspark.sql.types import StructType
 
 
@@ -71,6 +71,8 @@ class BaseFileDFConnection(BaseConnection):
 
     .. versionadded:: 0.9.0
     """
+
+    spark: SparkSession
 
     @abstractmethod
     def check_if_format_supported(

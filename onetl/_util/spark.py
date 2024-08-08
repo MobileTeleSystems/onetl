@@ -16,7 +16,7 @@ except (ImportError, AttributeError):
     from pydantic import SecretStr  # type: ignore[no-redef, assignment]
 
 if TYPE_CHECKING:
-    from pyspark.sql import SparkSession
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.conf import RuntimeConfig
 
 
@@ -134,6 +134,21 @@ def get_spark_version(spark_session: SparkSession) -> Version:
     Get Spark version from active Spark session
     """
     return Version(spark_session.version)
+
+
+def estimate_dataframe_size(spark_session: SparkSession, df: DataFrame) -> int:
+    """
+    Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
+
+    Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.1/api/java/org/apache/spark/util/SizeEstimator.html>`_.
+    """
+    try:
+        size_estimator = spark_session._jvm.org.apache.spark.util.SizeEstimator  # type: ignore[union-attr]
+        return size_estimator.estimate(df._jdf)
+    except Exception:
+        # SizeEstimator uses Java reflection which may behave differently in different Java versions,
+        # and also may be prohibited.
+        return 0
 
 
 def get_executor_total_cores(spark_session: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:

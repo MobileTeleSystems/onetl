@@ -13,6 +13,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
+from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.spark import inject_spark_param
 from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -210,8 +211,29 @@ class Hive(DBConnection):
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._execute_sql(query)
-        log.info("|Spark| DataFrame successfully created from SQL statement")
+        with SparkMetricsRecorder(self.spark) as recorder:
+            try:
+                df = self._execute_sql(query)
+            except Exception:
+                log.error("|%s| Query failed", self.__class__.__name__)
+
+                metrics = recorder.metrics()
+                if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                    # as SparkListener results are not guaranteed to be received in time,
+                    # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                    log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                    log_lines(log, str(metrics), level=logging.DEBUG)
+                raise
+
+            log.info("|Spark| DataFrame successfully created from SQL statement")
+
+            metrics = recorder.metrics()
+            if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                # as SparkListener results are not guaranteed to be received in time,
+                # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                log_lines(log, str(metrics), level=logging.DEBUG)
+
         return df
 
     @slot
@@ -236,8 +258,27 @@ class Hive(DBConnection):
         log.info("|%s| Executing statement:", self.__class__.__name__)
         log_lines(log, statement)
 
-        self._execute_sql(statement).collect()
-        log.info("|%s| Call succeeded", self.__class__.__name__)
+        with SparkMetricsRecorder(self.spark) as recorder:
+            try:
+                self._execute_sql(statement).collect()
+            except Exception:
+                log.error("|%s| Execution failed", self.__class__.__name__)
+                metrics = recorder.metrics()
+                if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                    # as SparkListener results are not guaranteed to be received in time,
+                    # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                    log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                    log_lines(log, str(metrics), level=logging.DEBUG)
+                raise
+
+            log.info("|%s| Execution succeeded", self.__class__.__name__)
+
+            metrics = recorder.metrics()
+            if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                # as SparkListener results are not guaranteed to be received in time,
+                # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                log_lines(log, str(metrics), level=logging.DEBUG)
 
     @slot
     def write_df_to_target(

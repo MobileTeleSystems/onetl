@@ -11,6 +11,7 @@ exclude_lines =
     def __repr__
     if self.debug:
     if settings.DEBUG
+    if log.isEnabledFor\(logging.DEBUG\)
     raise AssertionError
     raise NotImplementedError
     if __name__ == .__main__.:
@@ -20,6 +21,5 @@ exclude_lines =
     if pyspark_version
     if spark_version
     spark = SparkSession._instantiatedSession
-    if log.isEnabledFor(logging.DEBUG):
     if sys.version_info
     except .*ImportError

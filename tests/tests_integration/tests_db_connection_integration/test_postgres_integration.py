@@ -1007,7 +1007,7 @@ def test_postgres_connection_sql_options(
     processing.assert_equal_df(df=df, other_frame=table_df)
 
 
-def test_postgres_fetch_with_legacy_jdbc_options(spark, processing):
+def test_postgres_connection_fetch_with_legacy_jdbc_options(spark, processing):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -1023,7 +1023,7 @@ def test_postgres_fetch_with_legacy_jdbc_options(spark, processing):
     assert df is not None
 
 
-def test_postgres_execute_with_legacy_jdbc_options(spark, processing):
+def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
