@@ -8,35 +8,36 @@ pytestmark = [pytest.mark.ftps, pytest.mark.file_connection, pytest.mark.connect
 def test_ftps_connection():
     from onetl.connection import FTPS
 
-    ftps = FTPS(host="some_host", user="some_user", password="pwd")
-    assert isinstance(ftps, FileConnection)
-    assert ftps.host == "some_host"
-    assert ftps.user == "some_user"
-    assert ftps.password != "pwd"
-    assert ftps.password.get_secret_value() == "pwd"
-    assert ftps.port == 21
+    conn = FTPS(host="some_host", user="some_user", password="pwd")
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some_host"
+    assert conn.user == "some_user"
+    assert conn.password != "pwd"
+    assert conn.password.get_secret_value() == "pwd"
+    assert conn.port == 21
 
-    assert "password='pwd'" not in str(ftps)
-    assert "password='pwd'" not in repr(ftps)
+    assert str(conn) == "FTPS[some_host:21]"
+    assert "pwd" not in repr(conn)
 
 
 def test_ftps_connection_anonymous():
     from onetl.connection import FTPS
 
-    ftps = FTPS(host="some_host")
+    conn = FTPS(host="some_host")
 
-    assert isinstance(ftps, FileConnection)
-    assert ftps.host == "some_host"
-    assert ftps.user is None
-    assert ftps.password is None
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some_host"
+    assert conn.user is None
+    assert conn.password is None
 
 
 def test_ftps_connection_with_port():
     from onetl.connection import FTPS
 
-    ftps = FTPS(host="some_host", user="some_user", password="pwd", port=500)
+    conn = FTPS(host="some_host", user="some_user", password="pwd", port=500)
 
-    assert ftps.port == 500
+    assert conn.port == 500
+    assert str(conn) == "FTPS[some_host:500]"
 
 
 def test_ftps_connection_without_mandatory_args():

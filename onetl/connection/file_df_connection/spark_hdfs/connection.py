@@ -164,6 +164,9 @@ class SparkHDFS(SparkFileDFConnection):
     def instance_url(self):
         return self.cluster
 
+    def __str__(self):
+        return f"HDFS[{self.cluster}]"
+
     def __enter__(self):
         return self
 

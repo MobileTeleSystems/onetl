@@ -14,7 +14,7 @@ except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import inject_spark_param
+from onetl._util.spark import inject_spark_param, override_job_description
 from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive.dialect import HiveDialect
@@ -159,6 +159,9 @@ class Hive(DBConnection):
     def instance_url(self) -> str:
         return self.cluster
 
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.cluster}]"
+
     @slot
     def check(self):
         log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
@@ -173,7 +176,8 @@ class Hive(DBConnection):
         log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._execute_sql(self._CHECK_QUERY).limit(1).collect()
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._execute_sql(self._CHECK_QUERY).limit(1).collect()
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -213,7 +217,8 @@ class Hive(DBConnection):
 
         with SparkMetricsRecorder(self.spark) as recorder:
             try:
-                df = self._execute_sql(query)
+                with override_job_description(self.spark, f"{self}.sql()"):
+                    df = self._execute_sql(query)
             except Exception:
                 log.error("|%s| Query failed", self.__class__.__name__)
 
@@ -260,7 +265,8 @@ class Hive(DBConnection):
 
         with SparkMetricsRecorder(self.spark) as recorder:
             try:
-                self._execute_sql(statement).collect()
+                with override_job_description(self.spark, f"{self}.execute()"):
+                    self._execute_sql(statement).collect()
             except Exception:
                 log.error("|%s| Execution failed", self.__class__.__name__)
                 metrics = recorder.metrics()

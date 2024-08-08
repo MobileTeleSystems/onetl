@@ -268,3 +268,12 @@ class MSSQL(JDBCConnection):
         # for backward compatibility keep port number in legacy HWM instance url
         port = self.port or 1433
         return f"{self.__class__.__name__.lower()}://{self.host}:{port}/{self.database}"
+
+    def __str__(self):
+        extra_dict = self.extra.dict(by_alias=True)
+        instance_name = extra_dict.get("instanceName")
+        if instance_name:
+            return rf"{self.__class__.__name__}[{self.host}\{instance_name}/{self.database}]"
+
+        port = self.port or 1433
+        return f"{self.__class__.__name__}[{self.host}:{port}/{self.database}]"

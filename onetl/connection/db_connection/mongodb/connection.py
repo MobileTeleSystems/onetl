@@ -18,7 +18,7 @@ except (ImportError, AttributeError):
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, override_job_description
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.mongodb.dialect import MongoDBDialect
@@ -347,16 +347,24 @@ class MongoDB(DBConnection):
         if pipeline:
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
-        spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
-        if df_schema:
-            spark_reader = spark_reader.schema(df_schema)
+        with override_job_description(
+            self.spark,
+            f"{self}.pipeline()",
+        ):
+            spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
-        return spark_reader.load()
+            if df_schema:
+                spark_reader = spark_reader.schema(df_schema)
+
+            return spark_reader.load()
 
     @property
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
 
     @slot
     def check(self):
@@ -532,7 +540,7 @@ class MongoDB(DBConnection):
         return spark
 
     def _collection_exists(self, source: str) -> bool:
-        jvm = self.spark._jvm
+        jvm = self.spark._jvm  # type: ignore[attr-defined]
         client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
         collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
         if source in collections:

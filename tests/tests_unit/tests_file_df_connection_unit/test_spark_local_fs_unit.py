@@ -13,6 +13,7 @@ def test_spark_local_fs_spark_local(spark_mock):
     conn = SparkLocalFS(spark=spark_mock)
     assert conn.spark == spark_mock
     assert conn.instance_url == f"file://{socket.getfqdn()}"
+    assert str(conn) == "LocalFS"
 
 
 @pytest.mark.parametrize("master", ["k8s", "yarn"])

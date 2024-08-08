@@ -17,7 +17,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.spark import try_import_pyspark
+from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
     ContainsGetDFSchemaMethod,
@@ -542,26 +542,30 @@ class DBReader(FrozenModel):
         """
         self._check_strategy()
 
-        if not self._connection_checked:
-            self._log_parameters()
-            self.connection.check()
+        with override_job_description(
+            self.connection.spark,
+            f"{self.connection} -> {self.__class__.__name__}.has_data()",
+        ):
+            if not self._connection_checked:
+                self._log_parameters()
+                self.connection.check()
 
-        window, limit = self._calculate_window_and_limit()
-        if limit == 0:
-            return False
+            window, limit = self._calculate_window_and_limit()
+            if limit == 0:
+                return False
 
-        df = self.connection.read_source_as_df(
-            source=str(self.source),
-            columns=self.columns,
-            hint=self.hint,
-            where=self.where,
-            df_schema=self.df_schema,
-            window=window,
-            limit=1,
-            **self._get_read_kwargs(),
-        )
+            df = self.connection.read_source_as_df(
+                source=str(self.source),
+                columns=self.columns,
+                hint=self.hint,
+                where=self.where,
+                df_schema=self.df_schema,
+                window=window,
+                limit=1,
+                **self._get_read_kwargs(),
+            )
 
-        return bool(df.take(1))
+            return bool(df.take(1))
 
     @slot
     def raise_if_no_data(self) -> None:
@@ -633,28 +637,32 @@ class DBReader(FrozenModel):
 
         self._check_strategy()
 
-        if not self._connection_checked:
-            self._log_parameters()
-            self.connection.check()
-            self._connection_checked = True
+        with override_job_description(
+            self.connection.spark,
+            f"{self.connection} -> {self.__class__.__name__}.run()",
+        ):
+            if not self._connection_checked:
+                self._log_parameters()
+                self.connection.check()
+                self._connection_checked = True
 
-        window, limit = self._calculate_window_and_limit()
+            window, limit = self._calculate_window_and_limit()
 
-        # update the HWM with the stop value
-        if self.hwm and window:
-            strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
-            strategy.update_hwm(window.stop_at.value)
+            # update the HWM with the stop value
+            if self.hwm and window:
+                strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
+                strategy.update_hwm(window.stop_at.value)
 
-        df = self.connection.read_source_as_df(
-            source=str(self.source),
-            columns=self.columns,
-            hint=self.hint,
-            where=self.where,
-            df_schema=self.df_schema,
-            window=window,
-            limit=limit,
-            **self._get_read_kwargs(),
-        )
+            df = self.connection.read_source_as_df(
+                source=str(self.source),
+                columns=self.columns,
+                hint=self.hint,
+                where=self.where,
+                df_schema=self.df_schema,
+                window=window,
+                limit=limit,
+                **self._get_read_kwargs(),
+            )
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df

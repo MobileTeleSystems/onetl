@@ -7,6 +7,7 @@ import secrets
 import warnings
 from typing import TYPE_CHECKING, Any
 
+from onetl._util.spark import override_job_description
 from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
@@ -93,7 +94,8 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log_lines(log, query)
 
         try:
-            df = self._query_on_executor(query, self.SQLOptions.parse(options))
+            with override_job_description(self.spark, f"{self}.sql()"):
+                df = self._query_on_executor(query, self.SQLOptions.parse(options))
         except Exception:
             log.error("|%s| Query failed!", self.__class__.__name__)
             raise

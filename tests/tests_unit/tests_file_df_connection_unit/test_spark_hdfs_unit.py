@@ -12,28 +12,31 @@ pytestmark = [pytest.mark.hdfs, pytest.mark.file_df_connection, pytest.mark.conn
 
 
 def test_spark_hdfs_with_cluster(spark_mock):
-    hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark_mock)
-    assert isinstance(hdfs, BaseFileDFConnection)
-    assert hdfs.cluster == "rnd-dwh"
-    assert hdfs.host is None
-    assert hdfs.ipc_port == 8020
-    assert hdfs.instance_url == "rnd-dwh"
+    conn = SparkHDFS(cluster="rnd-dwh", spark=spark_mock)
+    assert isinstance(conn, BaseFileDFConnection)
+    assert conn.cluster == "rnd-dwh"
+    assert conn.host is None
+    assert conn.ipc_port == 8020
+    assert conn.instance_url == "rnd-dwh"
+    assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_spark_hdfs_with_cluster_and_host(spark_mock):
-    hdfs = SparkHDFS(cluster="rnd-dwh", host="some-host.domain.com", spark=spark_mock)
-    assert isinstance(hdfs, BaseFileDFConnection)
-    assert hdfs.cluster == "rnd-dwh"
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.instance_url == "rnd-dwh"
+    conn = SparkHDFS(cluster="rnd-dwh", host="some-host.domain.com", spark=spark_mock)
+    assert isinstance(conn, BaseFileDFConnection)
+    assert conn.cluster == "rnd-dwh"
+    assert conn.host == "some-host.domain.com"
+    assert conn.instance_url == "rnd-dwh"
+    assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_spark_hdfs_with_port(spark_mock):
-    hdfs = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
-    assert isinstance(hdfs, BaseFileDFConnection)
-    assert hdfs.cluster == "rnd-dwh"
-    assert hdfs.ipc_port == 9020
-    assert hdfs.instance_url == "rnd-dwh"
+    conn = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
+    assert isinstance(conn, BaseFileDFConnection)
+    assert conn.cluster == "rnd-dwh"
+    assert conn.ipc_port == 9020
+    assert conn.instance_url == "rnd-dwh"
+    assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_spark_hdfs_without_cluster(spark_mock):
@@ -143,5 +146,5 @@ def test_spark_hdfs_known_get_current(request, spark_mock):
 
     request.addfinalizer(get_current_cluster.disable)
 
-    hdfs = SparkHDFS.get_current(spark=spark_mock)
-    assert hdfs.cluster == "rnd-dwh"
+    conn = SparkHDFS.get_current(spark=spark_mock)
+    assert conn.cluster == "rnd-dwh"

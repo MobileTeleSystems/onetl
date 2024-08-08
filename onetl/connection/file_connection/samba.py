@@ -125,7 +125,10 @@ class Samba(FileConnection):
 
     @property
     def instance_url(self) -> str:
-        return f"smb://{self.host}:{self.port}"
+        return f"smb://{self.host}:{self.port}/{self.share}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.share}]"
 
     @slot
     def check(self):

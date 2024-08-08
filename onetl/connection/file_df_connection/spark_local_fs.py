@@ -74,6 +74,10 @@ class SparkLocalFS(SparkFileDFConnection):
         fqdn = socket.getfqdn()
         return f"file://{fqdn}"
 
+    def __str__(self):
+        # str should not make network requests
+        return "LocalFS"
+
     @validator("spark")
     def _validate_spark(cls, spark):
         master = spark.conf.get("spark.master")

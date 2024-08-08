@@ -264,6 +264,11 @@ class HDFS(FileConnection, RenameDirMixin):
             return self.cluster
         return f"hdfs://{self.host}:{self.webhdfs_port}"
 
+    def __str__(self):
+        if self.cluster:
+            return f"{self.__class__.__name__}[{self.cluster}]"
+        return f"{self.__class__.__name__}[{self.host}:{self.webhdfs_port}]"
+
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)

@@ -89,10 +89,10 @@ def test_mysql(spark_mock):
         "useUnicode": "yes",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "mysql://some_host:3306"
+    assert str(conn) == "MySQL[some_host:3306]"
 
 
 def test_mysql_with_port(spark_mock):
@@ -116,6 +116,7 @@ def test_mysql_with_port(spark_mock):
     }
 
     assert conn.instance_url == "mysql://some_host:5000"
+    assert str(conn) == "MySQL[some_host:5000]"
 
 
 def test_mysql_without_database(spark_mock):
@@ -139,6 +140,7 @@ def test_mysql_without_database(spark_mock):
     }
 
     assert conn.instance_url == "mysql://some_host:3306"
+    assert str(conn) == "MySQL[some_host:3306]"
 
 
 def test_mysql_with_extra(spark_mock):

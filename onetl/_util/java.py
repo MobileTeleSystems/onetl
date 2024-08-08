@@ -16,7 +16,7 @@ def get_java_gateway(spark_session: SparkSession) -> JavaGateway:
     """
     Get py4j Java gateway object
     """
-    return spark_session._sc._gateway  # noqa: WPS437  # type: ignore
+    return spark_session._sc._gateway  # noqa: WPS437 # type: ignore[attr-defined]
 
 
 def try_import_java_class(spark_session: SparkSession, name: str):

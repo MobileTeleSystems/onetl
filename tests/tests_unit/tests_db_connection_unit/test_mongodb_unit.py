@@ -126,9 +126,10 @@ def test_mongodb(spark_mock):
     assert conn.database == "database"
 
     assert conn.connection_url == "mongodb://user:password@host:27017/database"
+    assert conn.instance_url == "mongodb://host:27017/database"
+    assert str(conn) == "MongoDB[host:27017/database]"
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
 
 @pytest.mark.parametrize(
@@ -150,7 +151,7 @@ def test_mongodb_options_hint():
 
 
 def test_mongodb_with_port(spark_mock):
-    mongo = MongoDB(
+    conn = MongoDB(
         host="host",
         user="user",
         password="password",
@@ -159,14 +160,15 @@ def test_mongodb_with_port(spark_mock):
         spark=spark_mock,
     )
 
-    assert mongo.host == "host"
-    assert mongo.port == 12345
-    assert mongo.user == "user"
-    assert mongo.password != "password"
-    assert mongo.password.get_secret_value() == "password"
-    assert mongo.database == "database"
+    assert conn.host == "host"
+    assert conn.port == 12345
+    assert conn.user == "user"
+    assert conn.password != "password"
+    assert conn.password.get_secret_value() == "password"
+    assert conn.database == "database"
 
-    assert mongo.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.instance_url == "mongodb://host:12345/database"
 
 
 def test_mongodb_without_mandatory_args(spark_mock):

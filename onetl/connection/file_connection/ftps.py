@@ -95,10 +95,6 @@ class FTPS(FTP):
         )
     """
 
-    @property
-    def instance_url(self) -> str:
-        return f"ftps://{self.host}:{self.port}"
-
     def _get_client(self) -> FTPHost:
         """
         Returns a FTPS connection object
