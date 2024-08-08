@@ -92,9 +92,13 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_executor(query, self.SQLOptions.parse(options))
+        try:
+            df = self._query_on_executor(query, self.SQLOptions.parse(options))
+        except Exception:
+            log.error("|%s| Query failed!", self.__class__.__name__)
+            raise
 
-        log.info("|Spark| DataFrame successfully created from SQL statement ")
+        log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
     @slot

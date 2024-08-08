@@ -10,7 +10,7 @@ from onetl.hwm import Window
 
 if TYPE_CHECKING:
     from etl_entities.hwm import HWM
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructField, StructType
 
 
@@ -106,6 +106,7 @@ class BaseDBConnection(BaseConnection):
     Implements generic methods for reading and writing dataframe from/to database-like source
     """
 
+    spark: SparkSession
     Dialect = BaseDBDialect
 
     @property

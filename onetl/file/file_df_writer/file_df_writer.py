@@ -10,6 +10,8 @@ try:
 except (ImportError, AttributeError):
     from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
+from onetl._metrics.command import SparkCommandMetrics
+from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
 from onetl.file.file_df_writer.options import FileDFWriterOptions
 from onetl.hooks import slot, support_hooks
@@ -17,6 +19,7 @@ from onetl.impl import FrozenModel
 from onetl.log import (
     entity_boundary_log,
     log_dataframe_schema,
+    log_lines,
     log_options,
     log_with_indent,
 )
@@ -125,12 +128,32 @@ class FileDFWriter(FrozenModel):
             self.connection.check()
             self._connection_checked = True
 
-        self.connection.write_df_as_files(
-            df=df,
-            path=self.target_path,
-            format=self.format,
-            options=self.options,
-        )
+        with SparkMetricsRecorder(self.connection.spark) as recorder:
+            try:
+                self.connection.write_df_as_files(
+                    df=df,
+                    path=self.target_path,
+                    format=self.format,
+                    options=self.options,
+                )
+            except Exception:
+                metrics = recorder.metrics()
+                if metrics.output.is_empty:
+                    # SparkListener is not a reliable source of information, metrics may or may not be present.
+                    # Because of this we also do not return these metrics as method result
+                    log.error(
+                        "|%s| Error while writing dataframe.",
+                        self.__class__.__name__,
+                    )
+                else:
+                    log.error(
+                        "|%s| Error while writing dataframe. Target MAY contain partially written data!",
+                        self.__class__.__name__,
+                    )
+                self._log_metrics(metrics)
+                raise
+            finally:
+                self._log_metrics(recorder.metrics())
 
         entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
 
@@ -142,6 +165,11 @@ class FileDFWriter(FrozenModel):
         options_dict = self.options.dict(exclude_none=True)
         log_options(log, options_dict)
         log_dataframe_schema(log, df)
+
+    def _log_metrics(self, metrics: SparkCommandMetrics) -> None:
+        if not metrics.is_empty:
+            log.debug("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+            log_lines(log, str(metrics), level=logging.DEBUG)
 
     @validator("target_path", pre=True)
     def _validate_target_path(cls, target_path, values):

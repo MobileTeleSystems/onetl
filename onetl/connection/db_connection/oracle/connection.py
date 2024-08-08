@@ -20,14 +20,12 @@ except (ImportError, AttributeError):
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
-from onetl._util.sql import clear_statement
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,
     JDBCFetchOptions,
-    JDBCOptions,
 )
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
 from onetl.connection.db_connection.oracle.options import (
@@ -43,8 +41,6 @@ from onetl.impl import GenericOptions
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session
-
-
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
@@ -290,32 +286,6 @@ class Oracle(JDBCConnection):
             max_value = int(max_value)
         return min_value, max_value
 
-    @slot
-    def execute(
-        self,
-        statement: str,
-        options: JDBCOptions | JDBCExecuteOptions | dict | None = None,  # noqa: WPS437
-    ) -> DataFrame | None:
-        statement = clear_statement(statement)
-
-        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_lines(log, statement)
-
-        call_options = self.ExecuteOptions.parse(options)
-        df = self._call_on_driver(statement, call_options)
-        self._handle_compile_errors(statement.strip(), call_options)
-
-        if df is not None:
-            rows_count = df.count()
-            log.info(
-                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
-                self.__class__.__name__,
-                rows_count,
-            )
-        else:
-            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
-        return df
-
     @root_validator
     def _only_one_of_sid_or_service_name(cls, values):
         sid = values.get("sid")
@@ -328,6 +298,15 @@ class Oracle(JDBCConnection):
             raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
 
         return values
+
+    def _call_on_driver(
+        self,
+        query: str,
+        options: JDBCExecuteOptions,
+    ) -> DataFrame | None:
+        result = super()._call_on_driver(query, options)
+        self._handle_compile_errors(query.strip(), options)
+        return result
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
         """

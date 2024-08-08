@@ -1,0 +1,10 @@
+Collect Spark execution metrics in following methods, and log then in DEBUG mode:
+* ``DBWriter.run()``
+* ``FileDFWriter.run()``
+* ``Hive.sql()``
+* ``Hive.execute()``
+
+This is implemented using custom ``SparkListener`` which wraps the entire method call, and
+then report collected metrics. But these metrics sometimes may be missing due to Spark architecture,
+so they are not reliable source of information. That's why logs are printed only in DEBUG mode, and
+are not returned as method call result.
