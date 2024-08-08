@@ -262,6 +262,12 @@ class Oracle(JDBCConnection):
 
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.service_name}"
 
+    def __str__(self):
+        if self.sid:
+            return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.sid}]"
+
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.service_name}]"
+
     @slot
     def get_min_max_values(
         self,

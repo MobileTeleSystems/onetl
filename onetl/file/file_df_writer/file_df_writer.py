@@ -12,6 +12,7 @@ except (ImportError, AttributeError):
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.recorder import SparkMetricsRecorder
+from onetl._util.spark import override_job_description
 from onetl.base import BaseFileDFConnection, BaseWritableFileFormat, PurePathProtocol
 from onetl.file.file_df_writer.options import FileDFWriterOptions
 from onetl.hooks import slot, support_hooks
@@ -123,19 +124,27 @@ class FileDFWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        if not self._connection_checked:
-            self._log_parameters(df)
-            self.connection.check()
-            self._connection_checked = True
+        with override_job_description(
+            self.connection.spark,
+            f"{self.__class__.__name__}.run() -> {self.connection}",
+        ):
+            if not self._connection_checked:
+                self._log_parameters(df)
+                self.connection.check()
+                self._connection_checked = True
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
-                self.connection.write_df_as_files(
-                    df=df,
-                    path=self.target_path,
-                    format=self.format,
-                    options=self.options,
-                )
+                with override_job_description(
+                    self.connection.spark,
+                    f"{self.__class__.__name__}.run() -> {self.connection}",
+                ):
+                    self.connection.write_df_as_files(
+                        df=df,
+                        path=self.target_path,
+                        format=self.format,
+                        options=self.options,
+                    )
             except Exception:
                 metrics = recorder.metrics()
                 if metrics.output.is_empty:

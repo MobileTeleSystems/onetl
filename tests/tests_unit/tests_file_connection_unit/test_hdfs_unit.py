@@ -15,73 +15,74 @@ pytestmark = [pytest.mark.hdfs, pytest.mark.file_connection, pytest.mark.connect
 def test_hdfs_connection_with_host():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(host="some-host.domain.com")
-    assert isinstance(hdfs, FileConnection)
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 50070
-    assert not hdfs.user
-    assert not hdfs.password
-    assert not hdfs.keytab
-    assert hdfs.instance_url == "hdfs://some-host.domain.com:50070"
+    conn = HDFS(host="some-host.domain.com")
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some-host.domain.com"
+    assert conn.webhdfs_port == 50070
+    assert not conn.user
+    assert not conn.password
+    assert not conn.keytab
+    assert conn.instance_url == "hdfs://some-host.domain.com:50070"
+    assert str(conn) == "HDFS[some-host.domain.com:50070]"
 
 
 def test_hdfs_connection_with_cluster():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(cluster="rnd-dwh")
-    assert isinstance(hdfs, FileConnection)
-    assert hdfs.cluster == "rnd-dwh"
-    assert hdfs.webhdfs_port == 50070
-    assert not hdfs.user
-    assert not hdfs.password
-    assert not hdfs.keytab
-    assert hdfs.instance_url == "rnd-dwh"
+    conn = HDFS(cluster="rnd-dwh")
+    assert conn.cluster == "rnd-dwh"
+    assert conn.webhdfs_port == 50070
+    assert not conn.user
+    assert not conn.password
+    assert not conn.keytab
+    assert conn.instance_url == "rnd-dwh"
+    assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_hdfs_connection_with_cluster_and_host():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(cluster="rnd-dwh", host="some-host.domain.com")
-    assert isinstance(hdfs, FileConnection)
-    assert hdfs.cluster == "rnd-dwh"
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.instance_url == "rnd-dwh"
+    conn = HDFS(cluster="rnd-dwh", host="some-host.domain.com")
+    assert conn.cluster == "rnd-dwh"
+    assert conn.host == "some-host.domain.com"
+    assert conn.instance_url == "rnd-dwh"
+    assert str(conn) == "HDFS[rnd-dwh]"
 
 
-def test_hdfs_connection_with_port():
+def test_hdfs_connection_with_host_and_port():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(host="some-host.domain.com", port=9080)
-    assert isinstance(hdfs, FileConnection)
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 9080
-    assert hdfs.instance_url == "hdfs://some-host.domain.com:9080"
+    conn = HDFS(host="some-host.domain.com", port=9080)
+    assert conn.host == "some-host.domain.com"
+    assert conn.webhdfs_port == 9080
+    assert conn.instance_url == "hdfs://some-host.domain.com:9080"
+    assert str(conn) == "HDFS[some-host.domain.com:9080]"
 
 
 def test_hdfs_connection_with_user():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(host="some-host.domain.com", user="some_user")
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 50070
-    assert hdfs.user == "some_user"
-    assert not hdfs.password
-    assert not hdfs.keytab
+    conn = HDFS(host="some-host.domain.com", user="some_user")
+    assert conn.host == "some-host.domain.com"
+    assert conn.webhdfs_port == 50070
+    assert conn.user == "some_user"
+    assert not conn.password
+    assert not conn.keytab
 
 
 def test_hdfs_connection_with_password():
     from onetl.connection import HDFS
 
-    hdfs = HDFS(host="some-host.domain.com", user="some_user", password="pwd")
-    assert hdfs.host == "some-host.domain.com"
-    assert hdfs.webhdfs_port == 50070
-    assert hdfs.user == "some_user"
-    assert hdfs.password != "pwd"
-    assert hdfs.password.get_secret_value() == "pwd"
-    assert not hdfs.keytab
+    conn = HDFS(host="some-host.domain.com", user="some_user", password="pwd")
+    assert conn.host == "some-host.domain.com"
+    assert conn.webhdfs_port == 50070
+    assert conn.user == "some_user"
+    assert conn.password != "pwd"
+    assert conn.password.get_secret_value() == "pwd"
+    assert not conn.keytab
+    assert str(conn) == "HDFS[some-host.domain.com:50070]"
 
-    assert "password='pwd'" not in str(hdfs)
-    assert "password='pwd'" not in repr(hdfs)
+    assert "pwd" not in repr(conn)
 
 
 def test_hdfs_connection_with_keytab(request, tmp_path_factory):
@@ -91,15 +92,15 @@ def test_hdfs_connection_with_keytab(request, tmp_path_factory):
     folder.mkdir(exist_ok=True, parents=True)
     keytab = folder / "user.keytab"
     keytab.touch()
-    hdfs = HDFS(host="some-host.domain.com", user="some_user", keytab=keytab)
+    conn = HDFS(host="some-host.domain.com", user="some_user", keytab=keytab)
 
     def finalizer():
         shutil.rmtree(folder)
 
     request.addfinalizer(finalizer)
 
-    assert hdfs.user == "some_user"
-    assert not hdfs.password
+    assert conn.user == "some_user"
+    assert not conn.password
 
 
 def test_hdfs_connection_keytab_does_not_exist():
@@ -242,7 +243,7 @@ def test_hdfs_get_webhdfs_port_hook(request):
     assert HDFS(host="some-node.domain.com", cluster="rnd-dwh").webhdfs_port == 9080
 
 
-def test_hdfs_known_get_current(request, mocker):
+def test_hdfs_known_get_current(request):
     from onetl.connection import HDFS
 
     # no hooks bound to HDFS.Slots.get_current_cluster
@@ -259,5 +260,5 @@ def test_hdfs_known_get_current(request, mocker):
 
     request.addfinalizer(get_current_cluster.disable)
 
-    hdfs = HDFS.get_current()
-    assert hdfs.cluster == "rnd-dwh"
+    conn = HDFS.get_current()
+    assert conn.cluster == "rnd-dwh"

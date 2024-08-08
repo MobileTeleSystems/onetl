@@ -101,10 +101,10 @@ def test_mssql(spark_mock):
         "databaseName": "database",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "mssql://some_host:1433/database"
+    assert str(conn) == "MSSQL[some_host:1433/database]"
 
 
 def test_mssql_with_custom_port(spark_mock):
@@ -127,6 +127,7 @@ def test_mssql_with_custom_port(spark_mock):
     }
 
     assert conn.instance_url == "mssql://some_host:5000/database"
+    assert str(conn) == "MSSQL[some_host:5000/database]"
 
 
 def test_mssql_with_instance_name(spark_mock):
@@ -157,6 +158,7 @@ def test_mssql_with_instance_name(spark_mock):
     }
 
     assert conn.instance_url == "mssql://some_host\\myinstance/database"
+    assert str(conn) == "MSSQL[some_host\\myinstance/database]"
 
 
 def test_mssql_without_database_error(spark_mock):

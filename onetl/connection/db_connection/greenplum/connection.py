@@ -267,6 +267,9 @@ class Greenplum(JDBCMixin, DBConnection):
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
+
     @property
     def jdbc_url(self) -> str:
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"

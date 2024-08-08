@@ -120,7 +120,10 @@ class SFTP(FileConnection, RenameDirMixin):
 
     @property
     def instance_url(self) -> str:
-        return f"sftp://{self.host}:{self.port}"
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}]"
 
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:

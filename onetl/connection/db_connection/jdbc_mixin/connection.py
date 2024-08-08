@@ -16,7 +16,12 @@ except (ImportError, AttributeError):
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway, try_import_java_class
-from onetl._util.spark import estimate_dataframe_size, get_spark_version, stringify
+from onetl._util.spark import (
+    estimate_dataframe_size,
+    get_spark_version,
+    override_job_description,
+    stringify,
+)
 from onetl._util.sql import clear_statement
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -209,21 +214,22 @@ class JDBCMixin(FrozenModel):
             else self.FetchOptions.parse(options)
         )
 
-        try:
-            df = self._query_on_driver(query, call_options)
-        except Exception:
-            log.error("|%s| Query failed!", self.__class__.__name__)
-            raise
+        with override_job_description(self.spark, f"{self}.fetch()"):
+            try:
+                df = self._query_on_driver(query, call_options)
+            except Exception:
+                log.error("|%s| Query failed!", self.__class__.__name__)
+                raise
 
-        log.info("|%s| Query succeeded, created in-memory dataframe.", self.__class__.__name__)
+            log.info("|%s| Query succeeded, created in-memory dataframe.", self.__class__.__name__)
 
-        # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
-        # Just create metrics by hand, and fill them up using information based on dataframe content.
-        metrics = SparkCommandMetrics()
-        metrics.input.read_rows = df.count()
-        metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
-        log.info("|%s| Recorded metrics:", self.__class__.__name__)
-        log_lines(log, str(metrics))
+            # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
+            # Just create metrics by hand, and fill them up using information based on dataframe content.
+            metrics = SparkCommandMetrics()
+            metrics.input.read_rows = df.count()
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+            log.info("|%s| Recorded metrics:", self.__class__.__name__)
+            log_lines(log, str(metrics))
         return df
 
     @slot
@@ -280,25 +286,26 @@ class JDBCMixin(FrozenModel):
             else self.ExecuteOptions.parse(options)
         )
 
-        try:
-            df = self._call_on_driver(statement, call_options)
-        except Exception:
-            log.error("|%s| Execution failed!", self.__class__.__name__)
-            raise
+        with override_job_description(self.spark, f"{self}.execute()"):
+            try:
+                df = self._call_on_driver(statement, call_options)
+            except Exception:
+                log.error("|%s| Execution failed!", self.__class__.__name__)
+                raise
 
-        if not df:
-            log.info("|%s| Execution succeeded, nothing returned.", self.__class__.__name__)
-            return None
+            if not df:
+                log.info("|%s| Execution succeeded, nothing returned.", self.__class__.__name__)
+                return None
 
-        log.info("|%s| Execution succeeded, created in-memory dataframe.", self.__class__.__name__)
-        # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
-        # Just create metrics by hand, and fill them up using information based on dataframe content.
-        metrics = SparkCommandMetrics()
-        metrics.input.read_rows = df.count()
-        metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+            log.info("|%s| Execution succeeded, created in-memory dataframe.", self.__class__.__name__)
+            # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
+            # Just create metrics by hand, and fill them up using information based on dataframe content.
+            metrics = SparkCommandMetrics()
+            metrics.input.read_rows = df.count()
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
 
-        log.info("|%s| Recorded metrics:", self.__class__.__name__)
-        log_lines(log, str(metrics))
+            log.info("|%s| Recorded metrics:", self.__class__.__name__)
+            log_lines(log, str(metrics))
         return df
 
     @validator("spark")

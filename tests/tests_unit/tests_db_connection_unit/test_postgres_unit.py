@@ -90,10 +90,10 @@ def test_postgres(spark_mock):
         "stringtype": "unspecified",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "postgres://some_host:5432/database"
+    assert str(conn) == "Postgres[some_host:5432/database]"
 
 
 def test_postgres_with_port(spark_mock):
@@ -118,6 +118,7 @@ def test_postgres_with_port(spark_mock):
     }
 
     assert conn.instance_url == "postgres://some_host:5000/database"
+    assert str(conn) == "Postgres[some_host:5000/database]"
 
 
 def test_postgres_without_database_error(spark_mock):

@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.conf import RuntimeConfig
 
+SPARK_JOB_DESCRIPTION_PROPERTY = "spark.job.description"
+SPARK_JOB_GROUP_PROPERTY = "spark.jobGroup.id"
+
 
 def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
     """
@@ -200,3 +203,23 @@ def get_executor_total_cores(spark_session: SparkSession, include_driver: bool =
             expected_cores += 1
 
     return expected_cores, config
+
+
+@contextmanager
+def override_job_description(spark_session: SparkSession, job_description: str):
+    """
+    Override Spark job description.
+
+    Unlike ``spark_session.sparkContext.setJobDescription``, this method resets job description
+    before exiting the context manager, instead of keeping it.
+
+    If user set custom description, it will be left intact.
+    """
+    spark_context = spark_session.sparkContext
+    original_description = spark_context.getLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY)
+
+    try:
+        spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description or job_description)
+        yield
+    finally:
+        spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description)  # type: ignore[arg-type]

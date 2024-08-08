@@ -1,0 +1,6 @@
+Generate default ``jobDescription`` based on currently executed method. Examples:
+* ``DBWriter() -> Postgres[host:5432/database]``
+* ``MongoDB[localhost:27017/admin] -> DBReader.run()``
+* ``Hive[cluster].execute()``
+
+If user already set custom ``jobDescription``, it will left intact.

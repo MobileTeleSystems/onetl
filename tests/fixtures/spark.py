@@ -123,12 +123,11 @@ def excluded_packages():
 
 @pytest.fixture(
     scope="session",
-    name="spark",
     params=[
         pytest.param("real-spark", marks=[pytest.mark.db_connection, pytest.mark.connection]),
     ],
 )
-def get_spark_session(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, excluded_packages):
+def spark(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, excluded_packages):
     from pyspark.sql import SparkSession
 
     spark = (

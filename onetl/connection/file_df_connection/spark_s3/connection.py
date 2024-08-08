@@ -256,7 +256,10 @@ class SparkS3(SparkFileDFConnection):
 
     @property
     def instance_url(self):
-        return f"s3://{self.host}:{self.port}"
+        return f"s3://{self.host}:{self.port}/{self.bucket}"
+
+    def __str__(self):
+        return f"S3[{self.host}:{self.port}/{self.bucket}]"
 
     def __enter__(self):
         return self

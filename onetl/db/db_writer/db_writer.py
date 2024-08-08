@@ -12,6 +12,7 @@ except (ImportError, AttributeError):
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.recorder import SparkMetricsRecorder
+from onetl._util.spark import override_job_description
 from onetl.base import BaseDBConnection
 from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel, GenericOptions
@@ -201,19 +202,27 @@ class DBWriter(FrozenModel):
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
-        if not self._connection_checked:
-            self._log_parameters()
-            log_dataframe_schema(log, df)
-            self.connection.check()
-            self._connection_checked = True
+        with override_job_description(
+            self.connection.spark,
+            f"{self.__class__.__name__}.run() -> {self.connection}",
+        ):
+            if not self._connection_checked:
+                self._log_parameters()
+                log_dataframe_schema(log, df)
+                self.connection.check()
+                self._connection_checked = True
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
-                self.connection.write_df_to_target(
-                    df=df,
-                    target=str(self.target),
-                    **self._get_write_kwargs(),
-                )
+                with override_job_description(
+                    self.connection.spark,
+                    f"{self.__class__.__name__}.run() -> {self.connection}",
+                ):
+                    self.connection.write_df_to_target(
+                        df=df,
+                        target=str(self.target),
+                        **self._get_write_kwargs(),
+                    )
             except Exception:
                 metrics = recorder.metrics()
                 # SparkListener is not a reliable source of information, metrics may or may not be present.

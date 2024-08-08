@@ -84,7 +84,7 @@ def spark_mock_hadoop_3(spark_mock):
 
 
 def test_spark_s3(spark_mock_hadoop_3):
-    s3 = SparkS3(
+    conn = SparkS3(
         host="some_host",
         access_key="access key",
         secret_key="some key",
@@ -92,20 +92,20 @@ def test_spark_s3(spark_mock_hadoop_3):
         spark=spark_mock_hadoop_3,
     )
 
-    assert s3.host == "some_host"
-    assert s3.access_key == "access key"
-    assert s3.secret_key != "some key"
-    assert s3.secret_key.get_secret_value() == "some key"
-    assert s3.protocol == "https"
-    assert s3.port == 443
-    assert s3.instance_url == "s3://some_host:443"
+    assert conn.host == "some_host"
+    assert conn.access_key == "access key"
+    assert conn.secret_key != "some key"
+    assert conn.secret_key.get_secret_value() == "some key"
+    assert conn.protocol == "https"
+    assert conn.port == 443
+    assert conn.instance_url == "s3://some_host:443/bucket"
+    assert str(conn) == "S3[some_host:443/bucket]"
 
-    assert "some key" not in str(s3)
-    assert "some key" not in repr(s3)
+    assert "some key" not in repr(conn)
 
 
 def test_spark_s3_with_protocol_https(spark_mock_hadoop_3):
-    s3 = SparkS3(
+    conn = SparkS3(
         host="some_host",
         access_key="access_key",
         secret_key="secret_key",
@@ -114,13 +114,14 @@ def test_spark_s3_with_protocol_https(spark_mock_hadoop_3):
         spark=spark_mock_hadoop_3,
     )
 
-    assert s3.protocol == "https"
-    assert s3.port == 443
-    assert s3.instance_url == "s3://some_host:443"
+    assert conn.protocol == "https"
+    assert conn.port == 443
+    assert conn.instance_url == "s3://some_host:443/bucket"
+    assert str(conn) == "S3[some_host:443/bucket]"
 
 
 def test_spark_s3_with_protocol_http(spark_mock_hadoop_3):
-    s3 = SparkS3(
+    conn = SparkS3(
         host="some_host",
         access_key="access_key",
         secret_key="secret_key",
@@ -129,14 +130,15 @@ def test_spark_s3_with_protocol_http(spark_mock_hadoop_3):
         spark=spark_mock_hadoop_3,
     )
 
-    assert s3.protocol == "http"
-    assert s3.port == 80
-    assert s3.instance_url == "s3://some_host:80"
+    assert conn.protocol == "http"
+    assert conn.port == 80
+    assert conn.instance_url == "s3://some_host:80/bucket"
+    assert str(conn) == "S3[some_host:80/bucket]"
 
 
 @pytest.mark.parametrize("protocol", ["http", "https"])
 def test_spark_s3_with_port(spark_mock_hadoop_3, protocol):
-    s3 = SparkS3(
+    conn = SparkS3(
         host="some_host",
         port=9000,
         access_key="access_key",
@@ -146,9 +148,10 @@ def test_spark_s3_with_port(spark_mock_hadoop_3, protocol):
         spark=spark_mock_hadoop_3,
     )
 
-    assert s3.protocol == protocol
-    assert s3.port == 9000
-    assert s3.instance_url == "s3://some_host:9000"
+    assert conn.protocol == protocol
+    assert conn.port == 9000
+    assert conn.instance_url == "s3://some_host:9000/bucket"
+    assert str(conn) == "S3[some_host:9000/bucket]"
 
 
 @pytest.mark.parametrize(
