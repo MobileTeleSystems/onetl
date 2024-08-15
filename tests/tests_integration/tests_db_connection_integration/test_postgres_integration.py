@@ -1035,3 +1035,41 @@ def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing)
 
     options = Postgres.JDBCOptions(query_timeout=30)
     postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)
+
+
+def test_postgres_connection_jdbc_dialect_usage(spark, processing, load_table_data, caplog):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    table = load_table_data.full_name
+    postgres.get_df_schema(table)
+
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
+    # clear the caplog buffer
+    caplog.clear()
+    postgres.sql("SELECT version()")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
+    caplog.clear()
+    postgres.fetch("SELECT version()")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
+    caplog.clear()
+    postgres.fetch("SELECT version()")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
+    caplog.clear()
+    postgres.execute(f"TRUNCATE TABLE {table}")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
