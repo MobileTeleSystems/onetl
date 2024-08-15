@@ -321,3 +321,38 @@ def test_clickhouse_connection_execute_function(
     # wrong syntax
     with pytest.raises(Exception):
         clickhouse.execute(f"CREATE FUNCTION wrong_function AS (a, b) -> {suffix}")
+
+
+def test_clickhouse_connection_no_jdbc_dialect(spark, processing, load_table_data, caplog):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    table = load_table_data.full_name
+    clickhouse.get_df_schema(table)
+
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
+
+    # clear the caplog buffer
+    caplog.clear()
+    clickhouse.sql("SELECT version()")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
+
+    # clear the caplog buffer
+    caplog.clear()
+    clickhouse.fetch("SELECT version()")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
+
+    # clear the caplog buffer
+    caplog.clear()
+    clickhouse.execute(f"TRUNCATE TABLE {table}")
+    with caplog.at_level(logging.INFO):
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text

@@ -90,6 +90,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         query = clear_statement(query)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self.jdbc_dialect)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -195,6 +196,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self.jdbc_dialect)
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
