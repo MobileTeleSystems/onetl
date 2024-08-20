@@ -9,7 +9,8 @@ sphinx<8
 sphinx-copybutton
 sphinx-design
 sphinx-favicon
-sphinx-last-updated-by-git
+# https://github.com/mgeier/sphinx-last-updated-by-git/pull/77
+sphinx-last-updated-by-git>=0.3.8
 # TODO: uncomment after https://github.com/zqmillet/sphinx-plantuml/pull/4
 # sphinx-plantuml
 sphinx-tabs
