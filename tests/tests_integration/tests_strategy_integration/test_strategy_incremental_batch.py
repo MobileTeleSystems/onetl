@@ -1,3 +1,4 @@
+import logging
 import re
 import secrets
 from datetime import date, datetime, timedelta
@@ -182,6 +183,7 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
     hwm_column,
     new_type,
     step,
+    caplog,
 ):
     postgres = Postgres(
         host=processing.host,
@@ -200,7 +202,9 @@ def test_postgres_strategy_incremental_batch_different_hwm_type_in_store(
 
     with IncrementalBatchStrategy(step=step) as batches:
         for _ in batches:
-            reader.run()
+            with caplog.at_level(logging.INFO):
+                reader.run()
+                assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
 
     # change table schema
     new_fields = {column_name: processing.get_column_type(column_name) for column_name in processing.column_names}

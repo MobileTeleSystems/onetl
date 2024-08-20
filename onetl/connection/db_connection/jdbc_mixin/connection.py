@@ -205,6 +205,7 @@ class JDBCMixin(FrozenModel):
 
         query = clear_statement(query)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -277,6 +278,7 @@ class JDBCMixin(FrozenModel):
 
         statement = clear_statement(statement)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
@@ -416,6 +418,17 @@ class JDBCMixin(FrozenModel):
 
         self._last_connection_and_options.data = (new_connection, options)
         return new_connection
+
+    def _get_spark_dialect_name(self) -> str:
+        """
+        Returns the name of the JDBC dialect associated with the connection URL.
+        """
+        dialect = self._get_spark_dialect().toString()
+        return dialect.split("$")[0] if "$" in dialect else dialect
+
+    def _get_spark_dialect(self):
+        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
+        return jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
 
     def _close_connections(self):
         with suppress(Exception):
@@ -559,9 +572,7 @@ class JDBCMixin(FrozenModel):
 
         from pyspark.sql import DataFrame  # noqa: WPS442
 
-        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc  # type: ignore
-        jdbc_dialect = jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
-
+        jdbc_dialect = self._get_spark_dialect()
         jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_utils = jdbc_utils_package.JdbcUtils
 

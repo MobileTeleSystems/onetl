@@ -48,7 +48,7 @@ def test_postgres_connection_check_fail(spark):
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_connection_sql(spark, processing, load_table_data, suffix):
+def test_postgres_connection_sql(spark, processing, load_table_data, suffix, caplog):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -60,7 +60,10 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
-    df = postgres.sql(f"SELECT * FROM {table}{suffix}")
+    with caplog.at_level(logging.INFO):
+        df = postgres.sql(f"SELECT * FROM {table}{suffix}")
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -79,7 +82,7 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix):
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_connection_fetch(spark, processing, load_table_data, suffix):
+def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, caplog):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -91,7 +94,10 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
-    df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
+    with caplog.at_level(logging.INFO):
+        df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
+
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -1023,7 +1029,7 @@ def test_postgres_connection_fetch_with_legacy_jdbc_options(spark, processing):
     assert df is not None
 
 
-def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing):
+def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing, caplog):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -1034,4 +1040,7 @@ def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing)
     )
 
     options = Postgres.JDBCOptions(query_timeout=30)
-    postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)
+
+    with caplog.at_level(logging.INFO):
+        postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text

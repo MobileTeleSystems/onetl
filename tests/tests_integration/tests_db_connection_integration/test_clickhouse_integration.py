@@ -62,7 +62,7 @@ def test_clickhouse_connection_check_extra_is_handled_by_driver(spark, processin
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix):
+def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix, caplog):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -73,7 +73,11 @@ def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix):
     )
 
     table = load_table_data.full_name
-    df = clickhouse.sql(f"SELECT * FROM {table}{suffix}")
+
+    with caplog.at_level(logging.INFO):
+        df = clickhouse.sql(f"SELECT * FROM {table}{suffix}")
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
+
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -91,7 +95,7 @@ def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix):
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix):
+def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix, caplog):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -103,7 +107,10 @@ def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix)
 
     schema = load_table_data.schema
     table = load_table_data.full_name
-    df = clickhouse.fetch(f"SELECT * FROM {table}{suffix}")
+
+    with caplog.at_level(logging.INFO):
+        df = clickhouse.fetch(f"SELECT * FROM {table}{suffix}")
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
 
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -192,7 +199,7 @@ def test_clickhouse_connection_execute_ddl(spark, processing, get_schema_table, 
 
 @pytest.mark.flaky
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_clickhouse_connection_execute_dml(request, spark, processing, load_table_data, suffix):
+def test_clickhouse_connection_execute_dml(request, spark, processing, load_table_data, suffix, caplog):
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -242,7 +249,9 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     updated_df = pandas.concat([updated_rows, unchanged_rows])
     processing.assert_equal_df(df=df, other_frame=updated_df, order_by="id_int")
 
-    clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
+    with caplog.at_level(logging.INFO):
+        clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
 
     clickhouse.execute(f"ALTER TABLE {temp_table} DELETE WHERE id_int < 70{suffix}")
     df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
@@ -273,6 +282,7 @@ def test_clickhouse_connection_execute_function(
     processing,
     load_table_data,
     suffix,
+    caplog,
 ):
     clickhouse = Clickhouse(
         host=processing.host,
