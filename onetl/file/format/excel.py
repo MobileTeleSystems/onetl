@@ -87,7 +87,7 @@ class Excel(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Excel package loaded
-        maven_packages = Excel.get_packages(spark_version="3.5.0")
+        maven_packages = Excel.get_packages(spark_version="3.5.1")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -139,7 +139,7 @@ class Excel(ReadWriteFileFormat):
             If ``None``, ``spark_version`` is used to determine Scala version.
 
         package_version : str, optional
-            Package version in format ``major.minor.patch``. Default is ``0.20.3``.
+            Package version in format ``major.minor.patch``. Default is ``0.20.4``.
 
             .. warning::
 
@@ -157,12 +157,12 @@ class Excel(ReadWriteFileFormat):
 
             from onetl.file.format import Excel
 
-            Excel.get_packages(spark_version="3.5.0")
-            Excel.get_packages(spark_version="3.5.0", scala_version="2.13")
+            Excel.get_packages(spark_version="3.5.1")
+            Excel.get_packages(spark_version="3.5.1", scala_version="2.12")
             Excel.get_packages(
-                spark_version="3.5.0",
-                scala_version="2.13",
-                package_version="0.20.3",
+                spark_version="3.5.1",
+                scala_version="2.12",
+                package_version="0.20.4",
             )
 
         """
@@ -176,7 +176,7 @@ class Excel(ReadWriteFileFormat):
                 raise ValueError(f"Package version should be at least 0.15, got {package_version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version("0.20.3")
+            version = Version("0.20.4")
 
         spark_ver = Version(spark_version).min_digits(3)
         if spark_ver < Version("3.2"):

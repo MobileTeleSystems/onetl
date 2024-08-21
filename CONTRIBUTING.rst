@@ -71,7 +71,7 @@ Create virtualenv and install dependencies:
         -r requirements/tests/postgres.txt \
         -r requirements/tests/oracle.txt \
         -r requirements/tests/pydantic-2.txt \
-        -r requirements/tests/spark-3.5.1.txt
+        -r requirements/tests/spark-3.5.2.txt
 
     # TODO: remove after https://github.com/zqmillet/sphinx-plantuml/pull/4
     pip install sphinx-plantuml --no-deps
