@@ -88,7 +88,7 @@ class Avro(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Avro package loaded
-        maven_packages = Avro.get_packages(spark_version="3.5.0")
+        maven_packages = Avro.get_packages(spark_version="3.5.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -151,7 +151,7 @@ class Avro(ReadWriteFileFormat):
             from onetl.file.format import Avro
 
             Avro.get_packages(spark_version="3.2.4")
-            Avro.get_packages(spark_version="3.2.4", scala_version="2.13")
+            Avro.get_packages(spark_version="3.2.4", scala_version="2.12")
 
         """
 

@@ -29,14 +29,14 @@ def test_avro_get_packages_scala_version_not_supported():
     [
         # Detect Scala version by Spark version
         ("2.4.0", None, "org.apache.spark:spark-avro_2.11:2.4.0"),
-        ("3.5.0", None, "org.apache.spark:spark-avro_2.12:3.5.0"),
+        ("3.5.2", None, "org.apache.spark:spark-avro_2.12:3.5.2"),
         # Override Scala version
         ("2.4.0", "2.11", "org.apache.spark:spark-avro_2.11:2.4.0"),
         ("2.4.0", "2.12", "org.apache.spark:spark-avro_2.12:2.4.0"),
-        ("3.5.0", "2.12", "org.apache.spark:spark-avro_2.12:3.5.0"),
-        ("3.5.0", "2.13", "org.apache.spark:spark-avro_2.13:3.5.0"),
+        ("3.5.2", "2.12", "org.apache.spark:spark-avro_2.12:3.5.2"),
+        ("3.5.2", "2.13", "org.apache.spark:spark-avro_2.13:3.5.2"),
         # Scala version contain three digits when only two needed
-        ("3.5.0", "2.12.1", "org.apache.spark:spark-avro_2.12:3.5.0"),
+        ("3.5.2", "2.12.1", "org.apache.spark:spark-avro_2.12:3.5.2"),
     ],
 )
 def test_avro_get_packages(spark_version, scala_version, package):

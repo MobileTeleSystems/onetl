@@ -10,7 +10,7 @@ min: &min
 
 max: &max
   mysql-version: 9.0.1
-  spark-version: 3.5.1
+  spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20

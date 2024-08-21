@@ -12,7 +12,7 @@ min: &min
 max: &max
   kafka-version: 3.7.1
   pydantic-version: 2
-  spark-version: 3.5.1
+  spark-version: 3.5.2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest

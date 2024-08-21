@@ -332,7 +332,7 @@ class Kafka(DBConnection):
         write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
-        # As of Apache Spark version 3.5.0, the mode 'error' is not functioning as expected.
+        # As of Apache Spark version 3.5.2, the mode 'error' is not functioning as expected.
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
@@ -418,7 +418,7 @@ class Kafka(DBConnection):
             from onetl.connection import Kafka
 
             Kafka.get_packages(spark_version="3.2.4")
-            Kafka.get_packages(spark_version="3.2.4", scala_version="2.13")
+            Kafka.get_packages(spark_version="3.2.4", scala_version="2.12")
 
         """
 
