@@ -285,7 +285,7 @@ class ContextDecorator:
         try:
             self.first_yield_result = self.gen.send(None)
         except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
+            pass
 
         return self
 
