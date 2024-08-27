@@ -7,6 +7,7 @@ import os
 import textwrap
 import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
+from urllib.parse import quote, urlencode, urlparse, urlunparse
 
 from etl_entities.instance import Host
 
@@ -275,16 +276,19 @@ class Greenplum(JDBCMixin, DBConnection):
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
 
     @property
+    def jdbc_custom_params(self) -> dict:
+        result = {
+            key: value
+            for key, value in self.extra.dict(by_alias=True).items()
+            if not (key.startswith("server.") or key.startswith("pool."))
+        }
+        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        return result
+
+    @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(
-            {
-                key: value
-                for key, value in self.extra.dict(by_alias=True).items()
-                if not (key.startswith("server.") or key.startswith("pool."))
-            },
-        )
-        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        result.update(self.jdbc_custom_params)
         return result
 
     @slot
@@ -305,7 +309,7 @@ class Greenplum(JDBCMixin, DBConnection):
         fake_query_for_log = self.dialect.get_sql_query(table=source, columns=columns, where=where, limit=limit)
         log_lines(log, fake_query_for_log)
 
-        df = self.spark.read.format("greenplum").options(**self._connector_params(source), **read_options).load()
+        df = self.spark.read.format("greenplum").options(**self._get_connector_params(source), **read_options).load()
         self._check_expected_jobs_number(df, action="read")
 
         if where:
@@ -340,7 +344,7 @@ class Greenplum(JDBCMixin, DBConnection):
             else write_options.if_exists.value
         )
         df.write.format("greenplum").options(
-            **self._connector_params(target),
+            **self._get_connector_params(target),
             **options_dict,
         ).mode(mode).save()
 
@@ -425,21 +429,31 @@ class Greenplum(JDBCMixin, DBConnection):
             raise ValueError(msg) from e
         return spark
 
-    def _connector_params(
+    def _get_connector_params(
         self,
         table: str,
     ) -> dict:
         schema, table_name = table.split(".")  # noqa: WPS414
         extra = self.extra.dict(by_alias=True, exclude_none=True)
-        extra = {key: value for key, value in extra.items() if key.startswith("server.") or key.startswith("pool.")}
+        greenplum_connector_options = {
+            key: value for key, value in extra.items() if key.startswith("server.") or key.startswith("pool.")
+        }
+
+        # Greenplum connector requires all JDBC params to be passed via JDBC URL:
+        # https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/using_the_connector.html#specifying-session-parameters
+        parsed_jdbc_url = urlparse(self.jdbc_url)
+        sorted_jdbc_params = [(k, v) for k, v in sorted(self.jdbc_custom_params.items(), key=lambda x: x[0].lower())]
+        jdbc_url_query = urlencode(sorted_jdbc_params, quote_via=quote)
+        jdbc_url = urlunparse(parsed_jdbc_url._replace(query=jdbc_url_query))
+
         return {
             "driver": self.DRIVER,
-            "url": self.jdbc_url,
+            "url": jdbc_url,
             "user": self.user,
             "password": self.password.get_secret_value(),
             "dbschema": schema,
             "dbtable": table_name,
-            **extra,
+            **greenplum_connector_options,
         }
 
     def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
