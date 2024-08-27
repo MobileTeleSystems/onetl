@@ -128,6 +128,14 @@ def test_greenplum(spark_mock):
         "ApplicationName": "abc",
         "tcpKeepAlive": "true",
     }
+    assert conn._get_connector_params("some.table") == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true",
+        "dbschema": "some",
+        "dbtable": "table",
+    }
 
     assert "password='passwd'" not in str(conn)
     assert "password='passwd'" not in repr(conn)
@@ -154,6 +162,14 @@ def test_greenplum_with_port(spark_mock):
         "ApplicationName": "abc",
         "tcpKeepAlive": "true",
     }
+    assert conn._get_connector_params("some.table") == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true",
+        "dbschema": "some",
+        "dbtable": "table",
+    }
 
     assert conn.instance_url == "greenplum://some_host:5000/database"
 
@@ -173,6 +189,7 @@ def test_greenplum_with_extra(spark_mock):
             "autosave": "always",
             "tcpKeepAlive": "false",
             "ApplicationName": "override",
+            "options": "-c search_path=public",
             "server.port": 8000,
             "pool.maxSize": 40,
         },
@@ -190,6 +207,17 @@ def test_greenplum_with_extra(spark_mock):
         "ApplicationName": "override",
         "tcpKeepAlive": "false",
         "autosave": "always",
+        "options": "-c search_path=public",
+    }
+    assert conn._get_connector_params("some.table") == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "org.postgresql.Driver",
+        "url": "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&options=-c%20search_path%3Dpublic&tcpKeepAlive=false",
+        "dbschema": "some",
+        "dbtable": "table",
+        "pool.maxSize": 40,
+        "server.port": 8000,
     }
 
 
