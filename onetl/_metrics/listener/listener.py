@@ -12,6 +12,8 @@ from onetl._metrics.listener.execution import (
     SparkSQLMetricNames,
 )
 
+KNOWN_METRICS = SparkSQLMetricNames.values()
+
 
 @dataclass
 class SparkMetricsListener(BaseSparkListener):
@@ -81,7 +83,7 @@ class SparkMetricsListener(BaseSparkListener):
             for i in range(metrics.size()):
                 metric = metrics.apply(i)
                 metric_name = metric.name()
-                if metric_name not in SparkSQLMetricNames:
+                if metric_name not in KNOWN_METRICS:
                     continue
                 metric_value = metric_values.get(metric.accumulatorId())
                 if not metric_value.isDefined():

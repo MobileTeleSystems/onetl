@@ -40,6 +40,10 @@ class SparkSQLMetricNames(str, Enum):  # noqa: WPS338
     def __str__(self):
         return self.value
 
+    @classmethod
+    def values(cls):
+        return set(cls.__members__.values())
+
 
 @dataclass
 class SparkListenerExecution:
