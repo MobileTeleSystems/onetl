@@ -79,7 +79,7 @@ class OracleExtra(GenericOptions):
 class Oracle(JDBCConnection):
     """Oracle JDBC connection. |support_hooks|
 
-    Based on Maven package `com.oracle.database.jdbc:ojdbc8:23.4.0.24.05 <https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.4.0.24.05>`_
+    Based on Maven package `com.oracle.database.jdbc:ojdbc8:23.5.0.24.07 <https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.5.0.24.07>`_
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
     .. seealso::
@@ -208,7 +208,7 @@ class Oracle(JDBCConnection):
         java_version : str, optional
             Java major version, defaults to "8". Must be "8" or "11".
         package_version : str, optional
-            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.4.0.24.05".
+            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.5.0.24.07".
 
         Examples
         --------
@@ -220,11 +220,11 @@ class Oracle(JDBCConnection):
             Oracle.get_packages()
 
             # specify Java and package versions
-            Oracle.get_packages(java_version="8", package_version="23.4.0.24.05")
+            Oracle.get_packages(java_version="8", package_version="23.5.0.24.07")
         """
 
         default_java_version = "8"
-        default_package_version = "23.4.0.24.05"
+        default_package_version = "23.5.0.24.07"
 
         java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
@@ -240,7 +240,7 @@ class Oracle(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"
+        return "com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"
 
     @property
     def jdbc_url(self) -> str:

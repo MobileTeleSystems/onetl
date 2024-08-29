@@ -8,6 +8,14 @@ Breaking Changes
     * ``smb://host:port`` -> ``smb://host:port/share``
     * ``s3://host:port`` -> ``s3://host:port/bucket`` (:github:pull:`304`)
 
+- Update DB connectors/drivers to latest versions:
+    * Clickhouse ``0.6.0-patch5`` → ``0.6.4``
+    * MongoDB ``10.3.0`` → ``10.4.0``
+    * MSSQL ``12.6.2`` → ``12.8.1``
+    * MySQL ``8.4.0`` → ``9.0.0``
+    * Oracle ``23.4.0.24.05`` → ``23.5.0.24.07``
+    * Postgres ``42.7.3`` → ``42.7.4``
+
 - Update ``Excel`` package from ``0.20.3`` to ``0.20.4``, to include Spark 3.5.1 support. (:github:pull:`306`)
 
 Features

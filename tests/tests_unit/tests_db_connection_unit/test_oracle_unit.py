@@ -14,11 +14,11 @@ def test_oracle_class_attributes():
 def test_oracle_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Oracle.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"
+        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"
 
 
 def test_oracle_get_packages_no_input():
-    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]
+    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]
 
 
 @pytest.mark.parametrize("java_version", ["7", "6"])
@@ -30,16 +30,16 @@ def test_oracle_get_packages_java_version_not_supported(java_version):
 @pytest.mark.parametrize(
     "java_version, package_version, expected_packages",
     [
-        (None, None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
-        ("8", None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
-        ("8", "23.4.0.24.05", ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        (None, None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
+        ("8", None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
+        ("8", "23.5.0.24.07", ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
         ("8", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
-        ("9", None, ["com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"]),
+        ("9", None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
         ("9", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
-        ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"]),
+        ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"]),
         ("11", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
         ("17", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
-        ("20", "23.4.0.24.05", ["com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"]),
+        ("20", "23.5.0.24.07", ["com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"]),
     ],
 )
 def test_oracle_get_packages(java_version, package_version, expected_packages):

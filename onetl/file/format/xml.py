@@ -200,7 +200,7 @@ class XML(ReadWriteFileFormat):
                 raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version("0.18.0").min_digits(3)
+            version = Version("0.18.0")
 
         spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
