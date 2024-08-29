@@ -159,6 +159,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             limit=limit,
         )
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 

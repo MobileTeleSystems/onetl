@@ -357,6 +357,7 @@ class Greenplum(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
