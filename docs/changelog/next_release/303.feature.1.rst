@@ -1,1 +1,0 @@
-Log estimated size of in-memory dataframe created by ``JDBC.fetch`` and ``JDBC.execute`` methods.

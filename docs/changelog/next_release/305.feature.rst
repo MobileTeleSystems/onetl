@@ -1,1 +1,0 @@
-Add log.info about JDBC dialect usage: ``Detected dialect: 'org.apache.spark.sql.jdbc.MySQLDialect'``

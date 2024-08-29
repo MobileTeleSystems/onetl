@@ -1,1 +1,0 @@
-Fix passing ``Greenplum(extra={"options": ...)`` during read/write operations.

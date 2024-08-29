@@ -1,3 +1,0 @@
-Change connection URL used for generating HWM names of S3 and Samba sources:
-* ``smb://host:port`` -> ``smb://host:port/share``
-* ``s3://host:port`` -> ``s3://host:port/bucket``

@@ -1,1 +1,0 @@
-Add support for specifying file formats (``ORC``, ``Parquet``, ``CSV``, etc.) in ``HiveWriteOptions.format``: ``Hive.WriteOptions(format=ORC(compression="snappy"))``.

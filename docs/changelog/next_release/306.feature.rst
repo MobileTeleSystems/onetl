@@ -1,1 +1,0 @@
-Update ``Excel`` package from ``0.20.3`` to ``0.20.4``, to include Spark 3.5.1 support.

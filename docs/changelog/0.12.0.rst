@@ -1,0 +1,53 @@
+0.12.0 (2024-08-29)
+===================
+
+Breaking Changes
+----------------
+
+- Change connection URL used for generating HWM names of S3 and Samba sources:
+    * ``smb://host:port`` -> ``smb://host:port/share``
+    * ``s3://host:port`` -> ``s3://host:port/bucket`` (:github:pull:`304`)
+
+- Update ``Excel`` package from ``0.20.3`` to ``0.20.4``, to include Spark 3.5.1 support. (:github:pull:`306`)
+
+Features
+--------
+
+- Add support for specifying file formats (``ORC``, ``Parquet``, ``CSV``, etc.) in ``HiveWriteOptions.format`` (:github:pull:`292`):
+
+  .. code:: python
+
+    Hive.WriteOptions(format=ORC(compression="snappy"))
+
+- Collect Spark execution metrics in following methods, and log then in DEBUG mode:
+    * ``DBWriter.run()``
+    * ``FileDFWriter.run()``
+    * ``Hive.sql()``
+    * ``Hive.execute()``
+
+  This is implemented using custom ``SparkListener`` which wraps the entire method call, and
+  then report collected metrics. But these metrics sometimes may be missing due to Spark architecture,
+  so they are not reliable source of information. That's why logs are printed only in DEBUG mode, and
+  are not returned as method call result. (:github:pull:`303`)
+
+- Generate default ``jobDescription`` based on currently executed method. Examples:
+    * ``DBWriter() -> Postgres[host:5432/database]``
+    * ``MongoDB[localhost:27017/admin] -> DBReader.run()``
+    * ``Hive[cluster].execute()``
+
+  If user already set custom ``jobDescription``, it will left intact. (:github:pull:`304`)
+
+- Add log.info about JDBC dialect usage (:github:pull:`305`):
+
+  .. code:: text
+
+    |MySQL| Detected dialect: 'org.apache.spark.sql.jdbc.MySQLDialect'
+
+- Log estimated size of in-memory dataframe created by ``JDBC.fetch`` and ``JDBC.execute`` methods. (:github:pull:`303`)
+
+
+Bug Fixes
+---------
+
+- Fix passing ``Greenplum(extra={"options": ...)`` during read/write operations. (:github:pull:`308`)
+- Do not raise exception if yield-based hook whas something past (and only one) ``yield``.
