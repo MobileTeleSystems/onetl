@@ -10,7 +10,7 @@ Version Compatibility
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 
-See `official documentation <https://jdbc.postgresql.org/download/>`_.
+See `official documentation <https://jdbc.postgresql.org/>`_.
 
 Installing PySpark
 ------------------

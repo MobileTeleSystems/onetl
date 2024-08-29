@@ -6,7 +6,9 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Oracle Server versions: 23, 21, 19, 18, 12.2 and __probably__ 11.2 (tested, but it's not mentioned in official docs).
+* Oracle Server versions:
+    * Officially declared: 19 - 23
+    * Actually supported: 11.2 - 23
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 

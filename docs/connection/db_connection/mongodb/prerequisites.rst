@@ -10,7 +10,7 @@ Version Compatibility
 * Spark versions: 3.2.x - 3.5.x
 * Java versions: 8 - 20
 
-See `official documentation <https://www.mongodb.com/docs/spark-connector/v10.1/>`_.
+See `official documentation <https://www.mongodb.com/docs/spark-connector/>`_.
 
 Installing PySpark
 ------------------

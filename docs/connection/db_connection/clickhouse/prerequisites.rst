@@ -6,7 +6,9 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Clickhouse server versions: 21.1 or higher
+* Clickhouse server versions:
+    * Officially declared: 22.8 or higher
+    * Actually supported: 21.1 or higher
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 
