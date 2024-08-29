@@ -1,15 +1,22 @@
-min: &min
+2x: &2x
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-latest
 
-max: &max
+3x: &3x
   spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
+  os: ubuntu-latest
+
+4x: &4x
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.12'
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -20,6 +27,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  small: [*3x]
+  full: [*2x, *3x, *4x]
+  nightly: [*2x, *3x, *latest]
