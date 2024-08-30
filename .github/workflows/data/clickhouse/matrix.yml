@@ -10,7 +10,7 @@ min: &min
 
 max: &max
   clickhouse-image: clickhouse/clickhouse-server
-  clickhouse-version: 24.6.3.70-alpine
+  clickhouse-version: 24.8.2.3-alpine
   spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'

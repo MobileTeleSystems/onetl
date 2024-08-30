@@ -118,7 +118,7 @@ services:
     platform: linux/amd64
 
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:15.2-alpine}
+    image: ${POSTGRES_IMAGE:-postgres:alpine}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

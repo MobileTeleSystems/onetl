@@ -8,7 +8,7 @@ Version Compatibility
 
 * Clickhouse server versions:
     * Officially declared: 22.8 or higher
-    * Actually supported: 21.1 or higher
+    * Actually tested: 21.1, 24.8
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 

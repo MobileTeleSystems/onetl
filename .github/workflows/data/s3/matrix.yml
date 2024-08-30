@@ -9,7 +9,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  minio-version: 2024.7.26
+  minio-version: RELEASE.2024-08-29T01-40-52Z
   spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'

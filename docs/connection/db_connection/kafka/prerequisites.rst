@@ -6,7 +6,9 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Kafka server versions: 0.10 or higher
+* Kafka server versions:
+    * Officially declared: 0.10 or higher
+    * Actually tested: 3.2.3, 3.7.1 (only 3.x supports message headers)
 * Spark versions: 2.4.x - 3.5.x
 * Java versions: 8 - 17
 

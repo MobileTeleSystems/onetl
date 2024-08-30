@@ -1,5 +1,5 @@
 min: &min
-  # Min supported version by JDBC driver is 8.4, but it is too ancient to be used by anyone in real life
+  # Min supported version by JDBC driver is 8.2, but it is too ancient to be used by anyone in real life
   postgres-version: 9.4.26-alpine
   spark-version: 2.3.1
   pydantic-version: 1
@@ -8,7 +8,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  postgres-version: 16.3-alpine
+  postgres-version: 16.4-alpine
   spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'

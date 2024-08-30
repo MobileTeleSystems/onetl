@@ -6,7 +6,9 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Teradata server versions: 16.10 - 20.0
+* Teradata server versions:
+    * Officially declared: 16.10 - 20.0
+    * Actually tested: 16.10
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 
