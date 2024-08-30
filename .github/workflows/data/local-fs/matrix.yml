@@ -20,7 +20,8 @@ min_excel: &min_excel
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.2
+  # Excel pagkage currently supports Spark 3.5.1 max
+  spark-version: 3.5.1
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
