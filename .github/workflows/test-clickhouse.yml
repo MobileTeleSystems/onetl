@@ -90,12 +90,6 @@ jobs:
           source ./env
           ./pytest_runner.sh -m clickhouse
 
-      - name: Upload coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
-          path: reports/*
-
       - name: Dump Clickhouse logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2
@@ -109,3 +103,11 @@ jobs:
         with:
           name: container-logs-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}
           path: logs/*
+
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: reports/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true

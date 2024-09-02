@@ -80,6 +80,8 @@ jobs:
         with:
           name: container-logs-ftp-${{ inputs.ftp-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true
 
       - name: Shutdown FTP
         if: always()

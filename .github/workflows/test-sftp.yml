@@ -86,3 +86,5 @@ jobs:
         with:
           name: coverage-sftp-${{ inputs.openssh-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true
