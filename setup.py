@@ -67,6 +67,7 @@ setup(
         "Development Status :: 3 - Alpha",
         "Framework :: Pydantic",
         "Framework :: Pydantic :: 1",
+        "Framework :: Pydantic :: 2",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
