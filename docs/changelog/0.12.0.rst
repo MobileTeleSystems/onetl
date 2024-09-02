@@ -39,8 +39,8 @@ Features
   are not returned as method call result. (:github:pull:`303`)
 
 - Generate default ``jobDescription`` based on currently executed method. Examples:
-    * ``DBWriter[schema.table].run() -> Postgres[host:5432/database]``
-    * ``MongoDB[localhost:27017/admin] -> DBReader[mycollection].run()``
+    * ``DBWriter.run(schema.table) -> Postgres[host:5432/database]``
+    * ``MongoDB[localhost:27017/admin] -> DBReader.has_data(mycollection)``
     * ``Hive[cluster].execute()``
 
   If user already set custom ``jobDescription``, it will left intact. (:github:pull:`304`)

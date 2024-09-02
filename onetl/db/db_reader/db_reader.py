@@ -542,7 +542,7 @@ class DBReader(FrozenModel):
         """
         self._check_strategy()
 
-        job_description = f"{self}.has_data()"
+        job_description = f"{self.__class__.__name__}.has_data({self.source})"
         with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters()
@@ -635,7 +635,7 @@ class DBReader(FrozenModel):
 
         self._check_strategy()
 
-        job_description = f"{self}.run() -> {self.connection}"
+        job_description = f"{self.__class__.__name__}.run({self.source}) -> {self.connection}"
         with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters()
@@ -662,9 +662,6 @@ class DBReader(FrozenModel):
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df
-
-    def __str__(self):
-        return f"{self.__class__.__name__}[{self.source}]"
 
     def _check_strategy(self):
         strategy = StrategyManager.get_current()

@@ -203,7 +203,7 @@ class DBWriter(FrozenModel):
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
 
-        job_description = f"{self}.run() -> {self.connection}"
+        job_description = f"{self.__class__.__name__}.run({self.target}) -> {self.connection}"
         with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters()
@@ -239,9 +239,6 @@ class DBWriter(FrozenModel):
                 self._log_metrics(recorder.metrics())
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
-
-    def __str__(self):
-        return f"{self.__class__.__name__}[{self.target}]"
 
     def _log_parameters(self) -> None:
         log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)

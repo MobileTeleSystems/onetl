@@ -211,7 +211,11 @@ class FileDFReader(FrozenModel):
         if not self._connection_checked:
             self._log_parameters(files)
 
-        job_description = f"{self}.run() -> {self.connection}"
+        if files:
+            job_description = f"{self.__class__.__name__}.run([..files..]) -> {self.connection}"
+        else:
+            job_description = f"{self.__class__.__name__}.run({self.source_path}) -> {self.connection}"
+
         with override_job_description(self.connection.spark, job_description):
             paths: FileSet[PurePathProtocol] = FileSet()
             if files is not None:
@@ -228,11 +232,6 @@ class FileDFReader(FrozenModel):
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df
-
-    def __str__(self):
-        if self.source_path:
-            return f"{self.__class__.__name__}[{os.fspath(self.source_path)}]"
-        return f"{self.__class__.__name__}"
 
     def _read_files(self, paths: FileSet[PurePathProtocol]) -> DataFrame:
         log.info("|%s| Paths to be read:", self.__class__.__name__)
