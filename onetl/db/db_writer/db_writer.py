@@ -202,10 +202,9 @@ class DBWriter(FrozenModel):
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
-        with override_job_description(
-            self.connection.spark,
-            f"{self.__class__.__name__}.run() -> {self.connection}",
-        ):
+
+        job_description = f"{self}.run() -> {self.connection}"
+        with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters()
                 log_dataframe_schema(log, df)
@@ -214,10 +213,7 @@ class DBWriter(FrozenModel):
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
-                with override_job_description(
-                    self.connection.spark,
-                    f"{self.__class__.__name__}.run() -> {self.connection}",
-                ):
+                with override_job_description(self.connection.spark, job_description):
                     self.connection.write_df_to_target(
                         df=df,
                         target=str(self.target),
@@ -243,6 +239,9 @@ class DBWriter(FrozenModel):
                 self._log_metrics(recorder.metrics())
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.target}]"
 
     def _log_parameters(self) -> None:
         log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)

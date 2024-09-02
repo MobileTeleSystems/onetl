@@ -348,10 +348,7 @@ class MongoDB(DBConnection):
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
 
-        with override_job_description(
-            self.spark,
-            f"{self}.pipeline()",
-        ):
+        with override_job_description(self.spark, f"{self}.pipeline()"):
             spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
             if df_schema:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING
 
 try:
@@ -124,10 +125,8 @@ class FileDFWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        with override_job_description(
-            self.connection.spark,
-            f"{self.__class__.__name__}.run() -> {self.connection}",
-        ):
+        job_description = f"{self}).run() -> {self.connection}"
+        with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters(df)
                 self.connection.check()
@@ -135,10 +134,7 @@ class FileDFWriter(FrozenModel):
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
-                with override_job_description(
-                    self.connection.spark,
-                    f"{self.__class__.__name__}.run() -> {self.connection}",
-                ):
+                with override_job_description(self.connection.spark, job_description):
                     self.connection.write_df_as_files(
                         df=df,
                         path=self.target_path,
@@ -165,6 +161,9 @@ class FileDFWriter(FrozenModel):
                 self._log_metrics(recorder.metrics())
 
         entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{os.fspath(self.target_path)}]"
 
     def _log_parameters(self, df: DataFrame) -> None:
         log.info("|Spark| -> |%s| Writing dataframe using parameters:", self.connection.__class__.__name__)
