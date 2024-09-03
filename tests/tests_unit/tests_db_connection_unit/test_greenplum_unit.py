@@ -137,10 +137,10 @@ def test_greenplum(spark_mock):
         "dbtable": "table",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "greenplum://some_host:5432/database"
+    assert str(conn) == "Greenplum[some_host:5432/database]"
 
 
 def test_greenplum_with_port(spark_mock):
@@ -172,6 +172,7 @@ def test_greenplum_with_port(spark_mock):
     }
 
     assert conn.instance_url == "greenplum://some_host:5000/database"
+    assert str(conn) == "Greenplum[some_host:5000/database]"
 
 
 def test_greenplum_without_database_error(spark_mock):

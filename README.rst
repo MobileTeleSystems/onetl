@@ -65,62 +65,49 @@ Supported storages
 Database
 ~~~~~~~~
 
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Storage      | Powered by                                                                                                              |
-+==============+=========================================================================================================================+
-| Clickhouse   | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| MSSQL        | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| MySQL        | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Postgres     | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Oracle       | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Teradata     | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Hive         | Apache Spark `Hive integration <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_               |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Kafka        | Apache Spark `Kafka integration <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_    |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| Greenplum    | VMware `Greenplum Spark connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html>`_ |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-| MongoDB      | `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/current>`_                                       |
-+--------------+-------------------------------------------------------------------------------------------------------------------------+
-
-File
-~~~~
-+--------------+--------------------------------------------------------------------+
-| Storage      | Powered by                                                         |
-+==============+====================================================================+
-| HDFS         | `HDFS Python client <https://pypi.org/project/hdfs/>`_             |
-+--------------+--------------------------------------------------------------------+
-| S3           | `minio-py client <https://pypi.org/project/minio/>`_               |
-+--------------+--------------------------------------------------------------------+
-| SFTP         | `Paramiko library <https://pypi.org/project/paramiko/>`_           |
-+--------------+--------------------------------------------------------------------+
-| FTP          | `FTPUtil library <https://pypi.org/project/ftputil/>`_             |
-+--------------+--------------------------------------------------------------------+
-| FTPS         | `FTPUtil library <https://pypi.org/project/ftputil/>`_             |
-+--------------+--------------------------------------------------------------------+
-| WebDAV       | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_ |
-+--------------+--------------------------------------------------------------------+
-| Samba        | `pysmb library <https://pypi.org/project/pysmb/>`_                 |
-+--------------+--------------------------------------------------------------------+
-
-Files as DataFrame
-~~~~~~~~~~~~~~~~~~
-
-+--------------+---------------------------------------------------------------------------------------------------------------+
-| Storage      | Powered by                                                                                                    |
-+==============+===============================================================================================================+
-| SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_ |
-+--------------+---------------------------------------------------------------------------------------------------------------+
-| SparkHDFS    | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_ |
-+--------------+---------------------------------------------------------------------------------------------------------------+
-| SparkS3      | `Hadoop AWS <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_ library        |
-+--------------+---------------------------------------------------------------------------------------------------------------+
++--------------------+--------------+-------------------------------------------------------------------------------------------------------------------------+
+| Type               | Storage      | Powered by                                                                                                              |
++====================+==============+=========================================================================================================================+
+| Database           | Clickhouse   | Apache Spark `JDBC Data Source <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_                      |
++                    +--------------+                                                                                                                         +
+|                    | MSSQL        |                                                                                                                         |
++                    +--------------+                                                                                                                         +
+|                    | MySQL        |                                                                                                                         |
++                    +--------------+                                                                                                                         +
+|                    | Postgres     |                                                                                                                         |
++                    +--------------+                                                                                                                         +
+|                    | Oracle       |                                                                                                                         |
++                    +--------------+                                                                                                                         +
+|                    | Teradata     |                                                                                                                         |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | Hive         | Apache Spark `Hive integration <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_               |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | Kafka        | Apache Spark `Kafka integration <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_    |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | Greenplum    | VMware `Greenplum Spark connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html>`_ |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | MongoDB      | `MongoDB Spark connector <https://www.mongodb.com/docs/spark-connector/current>`_                                       |
++--------------------+--------------+-------------------------------------------------------------------------------------------------------------------------+
+| File               | HDFS         | `HDFS Python client <https://pypi.org/project/hdfs/>`_                                                                  |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | S3           | `minio-py client <https://pypi.org/project/minio/>`_                                                                    |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | SFTP         | `Paramiko library <https://pypi.org/project/paramiko/>`_                                                                |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | FTP          | `FTPUtil library <https://pypi.org/project/ftputil/>`_                                                                  |
++                    +--------------+                                                                                                                         +
+|                    | FTPS         |                                                                                                                         |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | WebDAV       | `WebdavClient3 library <https://pypi.org/project/webdavclient3/>`_                                                      |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | Samba        | `pysmb library <https://pypi.org/project/pysmb/>`_                                                                      |
++--------------------+--------------+-------------------------------------------------------------------------------------------------------------------------+
+| Files as DataFrame | SparkLocalFS | Apache Spark `File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_           |
+|                    +--------------+                                                                                                                         +
+|                    | SparkHDFS    |                                                                                                                         |
+|                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | SparkS3      | `Hadoop AWS <https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html>`_ library                  |
++--------------------+--------------+-------------------------------------------------------------------------------------------------------------------------+
 
 .. documentation
 
@@ -197,7 +184,7 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.4.x <https://spark.apache.org/docs/3.4.3/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.1/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.2/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
@@ -212,7 +199,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.5.1  # install a specific PySpark version
+    pip install onetl pyspark==3.5.2  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise connection object cannot be created.**
@@ -553,7 +540,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(spark_version="3.5.1") + Postgres.get_packages()
+    maven_packages = SparkS3.get_packages(spark_version="3.5.2") + Postgres.get_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))

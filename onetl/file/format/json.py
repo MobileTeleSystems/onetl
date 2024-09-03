@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
+from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 

@@ -8,35 +8,34 @@ pytestmark = [pytest.mark.ftp, pytest.mark.file_connection, pytest.mark.connecti
 def test_ftp_connection():
     from onetl.connection import FTP
 
-    ftp = FTP(host="some_host", user="some_user", password="pwd")
-    assert isinstance(ftp, FileConnection)
-    assert ftp.host == "some_host"
-    assert ftp.user == "some_user"
-    assert ftp.password != "pwd"
-    assert ftp.password.get_secret_value() == "pwd"
-    assert ftp.port == 21
+    conn = FTP(host="some_host", user="some_user", password="pwd")
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some_host"
+    assert conn.user == "some_user"
+    assert conn.password != "pwd"
+    assert conn.password.get_secret_value() == "pwd"
+    assert conn.port == 21
 
-    assert "password='pwd'" not in str(ftp)
-    assert "password='pwd'" not in repr(ftp)
+    assert str(conn) == "FTP[some_host:21]"
+    assert "pwd" not in repr(conn)
 
 
 def test_ftp_connection_anonymous():
     from onetl.connection import FTP
 
-    ftp = FTP(host="some_host")
-
-    assert isinstance(ftp, FileConnection)
-    assert ftp.host == "some_host"
-    assert ftp.user is None
-    assert ftp.password is None
+    conn = FTP(host="some_host")
+    assert conn.host == "some_host"
+    assert conn.user is None
+    assert conn.password is None
 
 
 def test_ftp_connection_with_port():
     from onetl.connection import FTP
 
-    ftp = FTP(host="some_host", user="some_user", password="pwd", port=500)
+    conn = FTP(host="some_host", user="some_user", password="pwd", port=500)
 
-    assert ftp.port == 500
+    assert conn.port == 500
+    assert str(conn) == "FTP[some_host:500]"
 
 
 def test_ftp_connection_without_mandatory_args():

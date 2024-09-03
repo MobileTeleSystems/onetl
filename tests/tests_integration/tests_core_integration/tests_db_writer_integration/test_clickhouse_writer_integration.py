@@ -6,7 +6,7 @@ from onetl.db import DBWriter
 pytestmark = pytest.mark.clickhouse
 
 
-def test_clickhouse_writer_snapshot(spark, processing, prepare_schema_table):
+def test_clickhouse_writer(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
 
     clickhouse = Clickhouse(

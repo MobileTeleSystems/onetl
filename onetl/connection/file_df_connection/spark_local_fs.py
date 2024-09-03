@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -73,6 +73,10 @@ class SparkLocalFS(SparkFileDFConnection):
     def instance_url(self):
         fqdn = socket.getfqdn()
         return f"file://{fqdn}"
+
+    def __str__(self):
+        # str should not make network requests
+        return "LocalFS"
 
     @validator("spark")
     def _validate_spark(cls, spark):

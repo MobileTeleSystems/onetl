@@ -45,6 +45,8 @@ jobs:
           TZ: UTC
         ports:
           - 5433:5432
+        # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
+        options: --sysctl net.ipv6.conf.all.disable_ipv6=1
 
     steps:
       - name: Checkout code
@@ -116,8 +118,24 @@ jobs:
           GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
           GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 
+      - name: Dump Greenplum logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: andruche/greenplum
+          dest: ./logs
+
+      - name: Upload Greenplum logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-greenplum-${{ inputs.greenplum-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: greenplum-${{ inputs.greenplum-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          name: coverage-greenplum-${{ inputs.greenplum-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true

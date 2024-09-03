@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import generate_temp_path
+from onetl._util.file import generate_temp_path
 from onetl.base import BaseFileConnection
 from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol

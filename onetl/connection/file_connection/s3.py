@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -131,7 +131,10 @@ class S3(FileConnection):
 
     @property
     def instance_url(self) -> str:
-        return f"s3://{self.host}:{self.port}"
+        return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.bucket}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.bucket}]"
 
     @slot
     def create_dir(self, path: os.PathLike | str) -> RemoteDirectory:

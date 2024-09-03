@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -16,11 +16,10 @@ except (ImportError, AttributeError):
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
 from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.base import (
     BaseReadableFileFormat,
@@ -134,7 +133,7 @@ class SparkS3(SparkFileDFConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(spark_version="3.5.0")
+        maven_packages = SparkS3.get_packages(spark_version="3.5.2")
         # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
         excluded_packages = [
             "com.google.cloud.bigdataoss:gcs-connector",
@@ -237,8 +236,8 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.5.0")
-            SparkS3.get_packages(spark_version="3.5.0", scala_version="2.12")
+            SparkS3.get_packages(spark_version="3.5.2")
+            SparkS3.get_packages(spark_version="3.5.2", scala_version="2.12")
 
         """
 
@@ -257,7 +256,10 @@ class SparkS3(SparkFileDFConnection):
 
     @property
     def instance_url(self):
-        return f"s3://{self.host}:{self.port}"
+        return f"s3://{self.host}:{self.port}/{self.bucket}"
+
+    def __str__(self):
+        return f"S3[{self.host}:{self.port}/{self.bucket}]"
 
     def __enter__(self):
         return self

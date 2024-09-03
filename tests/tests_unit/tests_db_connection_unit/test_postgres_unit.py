@@ -14,15 +14,15 @@ def test_postgres_class_attributes():
 def test_postgres_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Postgres.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Postgres.package == "org.postgresql:postgresql:42.7.3"
+        assert Postgres.package == "org.postgresql:postgresql:42.7.4"
 
 
 @pytest.mark.parametrize(
     "package_version, expected_packages",
     [
-        (None, ["org.postgresql:postgresql:42.7.3"]),
-        ("42.7.3", ["org.postgresql:postgresql:42.7.3"]),
-        ("42.7.3-patch", ["org.postgresql:postgresql:42.7.3-patch"]),
+        (None, ["org.postgresql:postgresql:42.7.4"]),
+        ("42.7.4", ["org.postgresql:postgresql:42.7.4"]),
+        ("42.7.4-patch", ["org.postgresql:postgresql:42.7.4-patch"]),
         ("42.6.0", ["org.postgresql:postgresql:42.6.0"]),
     ],
 )
@@ -90,10 +90,10 @@ def test_postgres(spark_mock):
         "stringtype": "unspecified",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "postgres://some_host:5432/database"
+    assert str(conn) == "Postgres[some_host:5432/database]"
 
 
 def test_postgres_with_port(spark_mock):
@@ -118,6 +118,7 @@ def test_postgres_with_port(spark_mock):
     }
 
     assert conn.instance_url == "postgres://some_host:5000/database"
+    assert str(conn) == "Postgres[some_host:5000/database]"
 
 
 def test_postgres_without_database_error(spark_mock):

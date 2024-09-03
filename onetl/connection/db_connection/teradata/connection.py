@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from typing import ClassVar, Optional
 
 from etl_entities.instance import Host
 
-from onetl._internal import stringify
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import stringify
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.teradata.dialect import TeradataDialect
@@ -208,3 +208,6 @@ class Teradata(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}]"

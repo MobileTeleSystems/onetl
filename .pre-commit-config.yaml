@@ -58,7 +58,7 @@ repos:
         args: [-w]
 
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.13.0
+    rev: v2.14.0
     hooks:
       - id: pretty-format-yaml
         args: [--autofix, --indent, '2', --preserve-quotes, --offset, '2']
@@ -90,7 +90,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.2
+    rev: v3.17.0
     hooks:
       - id: pyupgrade
         args: [--py37-plus, --keep-runtime-typing]
@@ -101,20 +101,20 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 24.8.0
     hooks:
       - id: black
         language_version: python3
 
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.16.0
+    rev: 1.18.0
     hooks:
       - id: blacken-docs
         additional_dependencies:
           - black==24.4.2
 
   - repo: https://github.com/pycqa/bandit
-    rev: 1.7.8
+    rev: 1.7.9
     hooks:
       - id: bandit
         args:

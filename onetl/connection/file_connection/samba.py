@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -125,7 +125,10 @@ class Samba(FileConnection):
 
     @property
     def instance_url(self) -> str:
-        return f"smb://{self.host}:{self.port}"
+        return f"smb://{self.host}:{self.port}/{self.share}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.share}]"
 
     @slot
     def check(self):

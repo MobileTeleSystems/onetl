@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import Literal
 
-from onetl._internal import stringify
+from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 

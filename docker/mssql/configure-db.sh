@@ -12,6 +12,13 @@ TIMEOUT=60
 START=$(date +%s)
 echo "Configure DB script started at $(date)"
 
+# fix for https://github.com/microsoft/mssql-docker/issues/892
+if [[ -d "/opt/mssql-tools18/bin" ]]; then
+    SQLCMD="/opt/mssql-tools18/bin/sqlcmd -No"
+else
+    SQLCMD=/opt/mssql-tools/bin/sqlcmd
+fi
+
 while true; do
     DELTA=$(($(date +%s) - START))
     if [[ $DELTA -gt $TIMEOUT ]]; then
@@ -19,7 +26,7 @@ while true; do
         exit 1
     fi
 
-    DBSTATUS=$(/opt/mssql-tools/bin/sqlcmd -h -1 -t 1 -U sa -P ${MSSQL_SA_PASSWORD} -Q "SET NOCOUNT ON; Select SUM(state) from sys.databases" 2>/dev/null | sed -e 's/^[[:space:]]*//')
+    DBSTATUS=$($SQLCMD -h -1 -t 1 -U sa -P ${MSSQL_SA_PASSWORD} -Q "SET NOCOUNT ON; Select SUM(state) from sys.databases" 2>/dev/null | sed -e 's/^[[:space:]]*//')
     ERRCODE=$?
     if [[ "$DBSTATUS" -eq "0" && "$ERRCODE" -eq "0" ]]; then
         echo "INFO: Database ready."
@@ -32,5 +39,5 @@ done
 
 # Run the setup script to create the DB and the schema in the DB
 echo "Running setup.sql";
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -d master -i /usr/config/setup.sql;
+$SQLCMD -S localhost -U sa -P $MSSQL_SA_PASSWORD -d master -i /usr/config/setup.sql;
 echo "Success";

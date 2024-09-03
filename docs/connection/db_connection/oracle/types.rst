@@ -74,7 +74,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         oracle.execute(
             """
-            CREATE TABLE username.table AS (
+            CREATE TABLE username.table (
                 id NUMBER,
                 business_dt TIMESTAMP(6),
                 value VARCHAR2(2000)
@@ -101,8 +101,8 @@ See `List of Oracle types <https://docs.oracle.com/en/database/oracle/oracle-dat
 
 Here you can find source code with type conversions:
 
-* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/jdbc/OracleDialect.scala#L83-L109>`_
-* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/jdbc/OracleDialect.scala#L111-L123>`_
+* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/OracleDialect.scala#L83-L109>`_
+* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/OracleDialect.scala#L111-L123>`_
 
 Numeric types
 ~~~~~~~~~~~~~

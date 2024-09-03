@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import deprecated
 
+from onetl.file.format.file_format import WriteOnlyFileFormat
 from onetl.impl import GenericOptions
 
 
@@ -198,10 +199,32 @@ class HiveWriteOptions(GenericOptions):
         does not affect behavior.
     """
 
-    format: str = "orc"
+    format: Union[str, WriteOnlyFileFormat] = "orc"
     """Format of files which should be used for storing table data.
 
-    Examples: ``orc`` (default), ``parquet``, ``csv`` (NOT recommended)
+    Examples
+    --------
+
+    - string format: ``"orc"`` (default), ``"parquet"``, ``"csv"`` (NOT recommended).
+    - format class instance: ``ORC(compression="snappy")``, ``Parquet()``, ``CSV(header=True, delimiter=",")``.
+
+    .. code::
+
+        options = Hive.WriteOptions(
+            if_exists="append",
+            partition_by="reg_id",
+            format="orc",
+        )
+
+        # or using an ORC format class instance:
+
+        from onetl.file.format import ORC
+
+        options = Hive.WriteOptions(
+            if_exists="append",
+            partition_by="reg_id",
+            format=ORC(compression="snappy"),
+        )
 
     .. note::
 

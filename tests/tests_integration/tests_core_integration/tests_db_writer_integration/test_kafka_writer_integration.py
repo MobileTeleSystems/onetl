@@ -62,7 +62,7 @@ def kafka_spark_df(spark, kafka_processing):
     return spark.createDataFrame(data, schema=schema)
 
 
-def test_kafka_writer_snapshot(spark, kafka_processing, kafka_spark_df):
+def test_kafka_writer(spark, kafka_processing, kafka_spark_df):
     from pyspark.sql.functions import lit
 
     if get_spark_version(spark).major < 3:

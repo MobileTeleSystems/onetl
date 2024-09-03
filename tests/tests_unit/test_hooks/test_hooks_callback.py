@@ -291,8 +291,8 @@ def test_hooks_execute_callback_nothing_yielded(caplog):
     def modify_callback(self, arg: int):
         yield from (i for i in ())  # noqa: WPS335
 
-    with pytest.raises(RuntimeError, match="generator didn't yield"):
-        Calculator(1).plus(2)
+    # no yield = no override
+    assert Calculator(1).plus(2) == 3
 
 
 def test_hooks_execute_callback_too_many_yields(caplog):

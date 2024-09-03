@@ -8,34 +8,39 @@ pytestmark = [pytest.mark.webdav, pytest.mark.file_connection, pytest.mark.conne
 def test_webdav_connection():
     from onetl.connection import WebDAV
 
-    webdav = WebDAV(host="some_host", user="some_user", password="pwd")
-    assert isinstance(webdav, FileConnection)
-    assert webdav.host == "some_host"
-    assert webdav.protocol == "https"
-    assert webdav.port == 443
-    assert webdav.user == "some_user"
-    assert webdav.password != "pwd"
-    assert webdav.password.get_secret_value() == "pwd"
+    conn = WebDAV(host="some_host", user="some_user", password="pwd")
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some_host"
+    assert conn.protocol == "https"
+    assert conn.port == 443
+    assert conn.user == "some_user"
+    assert conn.password != "pwd"
+    assert conn.password.get_secret_value() == "pwd"
+    assert conn.instance_url == "webdav://some_host:443"
+    assert str(conn) == "WebDAV[some_host:443]"
 
-    assert "password='pwd'" not in str(webdav)
-    assert "password='pwd'" not in repr(webdav)
+    assert "pwd" not in repr(conn)
 
 
 def test_webdav_connection_with_http():
     from onetl.connection import WebDAV
 
-    webdav = WebDAV(host="some_host", user="some_user", password="pwd", protocol="http")
-    assert webdav.protocol == "http"
-    assert webdav.port == 80
+    conn = WebDAV(host="some_host", user="some_user", password="pwd", protocol="http")
+    assert conn.protocol == "http"
+    assert conn.port == 80
+    assert conn.instance_url == "webdav://some_host:80"
+    assert str(conn) == "WebDAV[some_host:80]"
 
 
 @pytest.mark.parametrize("protocol", ["http", "https"])
 def test_webdav_connection_with_custom_port(protocol):
     from onetl.connection import WebDAV
 
-    webdav = WebDAV(host="some_host", user="some_user", password="pwd", port=500, protocol=protocol)
-    assert webdav.protocol == protocol
-    assert webdav.port == 500
+    conn = WebDAV(host="some_host", user="some_user", password="pwd", port=500, protocol=protocol)
+    assert conn.protocol == protocol
+    assert conn.port == 500
+    assert conn.instance_url == "webdav://some_host:500"
+    assert str(conn) == "WebDAV[some_host:500]"
 
 
 def test_webdav_connection_without_mandatory_args():

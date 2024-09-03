@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -163,6 +163,9 @@ class SparkHDFS(SparkFileDFConnection):
     @property
     def instance_url(self):
         return self.cluster
+
+    def __str__(self):
+        return f"HDFS[{self.cluster}]"
 
     def __enter__(self):
         return self

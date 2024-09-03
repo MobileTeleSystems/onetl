@@ -80,7 +80,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         mssql.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id bigint,
                 key text,
                 value datetime2(6) -- specific type and precision
@@ -101,8 +101,8 @@ References
 Here you can find source code with type conversions:
 
 * `MSSQL -> JDBC <https://github.com/microsoft/mssql-jdbc/blob/v12.2.0/src/main/java/com/microsoft/sqlserver/jdbc/SQLServerResultSetMetaData.java#L117-L170>`_
-* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L102-L119>`_
-* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L121-L130>`_
+* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L117-L134>`_
+* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L136-L145>`_
 * `JDBC -> MSSQL <https://github.com/microsoft/mssql-jdbc/blob/v12.2.0/src/main/java/com/microsoft/sqlserver/jdbc/DataTypes.java#L625-L676>`_
 
 Supported types
@@ -328,7 +328,7 @@ and write it as ``text`` column in MSSQL:
 
     mssql.execute(
         """
-        CREATE TABLE schema.target_tbl AS (
+        CREATE TABLE schema.target_tbl (
             id bigint,
             struct_column_json text -- any string type, actually
         )

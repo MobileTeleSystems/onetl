@@ -84,7 +84,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         clickhouse.execute(
             """
-            CREATE TABLE default.target_tbl AS (
+            CREATE TABLE default.target_tbl (
                 id UInt8,
                 value DateTime64(6) -- specific type and precision
             )
@@ -106,8 +106,8 @@ References
 Here you can find source code with type conversions:
 
 * `Clickhouse -> JDBC <https://github.com/ClickHouse/clickhouse-java/blob/0.3.2/clickhouse-jdbc/src/main/java/com/clickhouse/jdbc/JdbcTypeMapping.java#L39-L176>`_
-* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L307>`_
-* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L141-L164>`_
+* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L307>`_
+* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L141-L164>`_
 * `JDBC -> Clickhouse <https://github.com/ClickHouse/clickhouse-java/blob/0.3.2/clickhouse-jdbc/src/main/java/com/clickhouse/jdbc/JdbcTypeMapping.java#L185-L311>`_
 
 Supported types
@@ -398,7 +398,7 @@ For writing JSON data to ClickHouse, use the :obj:`JSON.serialize_column <onetl.
 
     clickhouse.execute(
         """
-        CREATE TABLE default.target_tbl AS (
+        CREATE TABLE default.target_tbl (
             id Int32,
             array_column_json String,
         )
@@ -430,7 +430,7 @@ to avoid writing such expression in every ``SELECT`` clause all the time:
 
 .. code-block:: sql
 
-    CREATE TABLE default.target_tbl AS (
+    CREATE TABLE default.target_tbl (
         id Int32,
         array_column_json String,
         -- computed column

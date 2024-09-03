@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ import secrets
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from onetl._internal import clear_statement
+from onetl._util.spark import override_job_description
+from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.jdbc_connection.dialect import JDBCDialect
 from onetl.connection.db_connection.jdbc_connection.options import (
@@ -89,12 +90,18 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         query = clear_statement(query)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_executor(query, self.SQLOptions.parse(options))
+        try:
+            with override_job_description(self.spark, f"{self}.sql()"):
+                df = self._query_on_executor(query, self.SQLOptions.parse(options))
+        except Exception:
+            log.error("|%s| Query failed!", self.__class__.__name__)
+            raise
 
-        log.info("|Spark| DataFrame successfully created from SQL statement ")
+        log.info("|Spark| DataFrame successfully created from SQL statement")
         return df
 
     @slot
@@ -152,6 +159,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             limit=limit,
         )
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -189,6 +197,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)

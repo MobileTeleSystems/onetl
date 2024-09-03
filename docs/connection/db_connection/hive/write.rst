@@ -5,6 +5,7 @@ Writing to Hive using ``DBWriter``
 
 For writing data to Hive, use :obj:`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
 
+
 Examples
 --------
 
@@ -51,13 +52,16 @@ Use column-based write formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Prefer these write formats:
-  * `ORC <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_
+  * `ORC <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_ (**default**)
   * `Parquet <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_
   * `Iceberg <https://iceberg.apache.org/spark-quickstart/>`_
   * `Hudi <https://hudi.apache.org/docs/quick-start-guide/>`_
   * `Delta <https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake>`_
 
-For colum-based write formats, each file contains separated sections there column data is stored. The file footer contains
+.. warning::
+    When using ``DBWriter``, the default spark data format configured in ``spark.sql.sources.default`` is ignored, as  ``Hive.WriteOptions(format=...)`` default value is explicitly set to ``orc``.
+
+For column-based write formats, each file contains separated sections where column data is stored. The file footer contains
 location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
 to drastically speed up the query.
 

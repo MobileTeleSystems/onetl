@@ -1,4 +1,6 @@
 min: &min
+  # Min supported version by JDBC driver is 8.2, but it is too ancient to be used by anyone in real life
+  postgres-version: 9.4.26-alpine
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
@@ -6,13 +8,15 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.1
+  postgres-version: 16.4-alpine
+  spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
+  postgres-version: alpine
   spark-version: latest
   pydantic-version: latest
   python-version: '3.12'
@@ -20,17 +24,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - postgres-version: 16.2-alpine
-      <<: *max
-  full:
-    # Min supported version by JDBC driver is 8.4, but it is too ancient to be used by anyone in real life
-    - postgres-version: 9.4.26-alpine
-      <<: *min
-    - postgres-version: 16.2-alpine
-      <<: *max
-  nightly:
-    - postgres-version: 9.4.26-alpine
-      <<: *min
-    - postgres-version: alpine
-      <<: *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *latest]

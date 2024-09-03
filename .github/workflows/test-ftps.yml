@@ -67,6 +67,20 @@ jobs:
           source ./env
           ./pytest_runner.sh -m ftps
 
+      - name: Dump FTPS logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          images: chonjay21/ftps
+          dest: ./logs
+
+      - name: Upload FTPS logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: container-logs-ftps-${{ inputs.ftps-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          path: logs/*
+
       - name: Shutdown FTPS
         if: always()
         run: |
@@ -75,5 +89,7 @@ jobs:
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: ftps-${{ inputs.ftps-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          name: coverage-ftps-${{ inputs.ftps-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true

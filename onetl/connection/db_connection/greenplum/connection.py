@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -268,6 +268,9 @@ class Greenplum(JDBCMixin, DBConnection):
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
 
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
+
     @property
     def jdbc_url(self) -> str:
         return f"jdbc:postgresql://{self.host}:{self.port}/{self.database}"
@@ -354,6 +357,7 @@ class Greenplum(JDBCMixin, DBConnection):
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)

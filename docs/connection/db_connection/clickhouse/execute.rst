@@ -90,7 +90,7 @@ Examples
         clickhouse.execute("DROP TABLE schema.table")
         clickhouse.execute(
             """
-            CREATE TABLE schema.table AS (
+            CREATE TABLE schema.table (
                 id UInt8,
                 key String,
                 value Float32

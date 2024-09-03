@@ -2,7 +2,6 @@ import re
 
 import pytest
 
-from onetl._internal import to_camel
 from onetl.connection import MSSQL, Clickhouse, MySQL, Oracle, Postgres, Teradata
 from onetl.connection.db_connection.jdbc_connection import JDBCTableExistBehavior
 
@@ -181,7 +180,8 @@ def test_jdbc_old_options_allowed_but_deprecated(arg, value):
     with pytest.warns(UserWarning, match=warning_msg):
         options = Postgres.Options.parse({arg: value})
 
-    assert options.dict(by_alias=True)[to_camel(arg)] == value
+    parsed_value = options.dict().get(arg) or options.dict(by_alias=True).get(arg)
+    assert parsed_value == value
 
 
 @pytest.mark.parametrize(

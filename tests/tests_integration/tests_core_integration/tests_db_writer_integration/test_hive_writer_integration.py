@@ -7,6 +7,7 @@ import pytest
 from onetl._util.spark import get_spark_version
 from onetl.connection import Hive
 from onetl.db import DBWriter
+from onetl.file.format import CSV, ORC, Parquet
 
 pytestmark = pytest.mark.hive
 
@@ -69,14 +70,17 @@ def test_hive_writer_with_options(spark, processing, get_schema_table, options):
 
 
 @pytest.mark.parametrize(
-    "options, fmt",
+    "options, format",
     [
-        (Hive.WriteOptions(format="orc"), "orc"),
         (Hive.WriteOptions(), "orc"),  # default
+        (Hive.WriteOptions(format="orc"), "orc"),
         (Hive.WriteOptions(format="parquet"), "parquet"),
+        (Hive.WriteOptions(format=ORC(compression="snappy")), "orc"),
+        (Hive.WriteOptions(format=CSV(sep=",", encoding="utf-8", inferSchema=True, compression="gzip")), "csv"),
+        (Hive.WriteOptions(format=Parquet(compression="snappy")), "parquet"),
     ],
 )
-def test_hive_writer_with_format(spark, processing, get_schema_table, options, fmt):
+def test_hive_writer_with_format(spark, processing, get_schema_table, options, format):
     df = processing.create_spark_df(spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
 
@@ -90,7 +94,7 @@ def test_hive_writer_with_format(spark, processing, get_schema_table, options, f
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    assert f"USING {fmt}" in response
+    assert f"USING {format}" in response
 
 
 @pytest.mark.parametrize(
@@ -264,11 +268,14 @@ def test_hive_writer_create_table_if_exists(spark, processing, get_schema_table,
             Hive.WriteOptions(bucketBy=(5, "id_int"), sortBy="hwm_int"),
             "{'bucketBy': (5, 'id_int'), 'sortBy': 'hwm_int'}",
         ),
-        (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
         (Hive.WriteOptions(format="parquet"), "{'format': 'parquet'}"),
+        (Hive.WriteOptions(format=Parquet()), "{'format': 'parquet'}"),
+        (Hive.WriteOptions(compression="snappy"), "{'compression': 'snappy'}"),
+        (Hive.WriteOptions(format="orc"), "{'format': 'orc'}"),
+        (Hive.WriteOptions(format=ORC(compression="snappy")), "{'format': 'orc', 'compression': 'snappy'}"),
     ],
 )
-def test_hive_writer_insert_into_with_options(spark, processing, get_schema_table, options, option_kv, caplog):
+def test_hive_writer_insert_into_with_options_ignored(spark, processing, get_schema_table, options, option_kv, caplog):
     df = processing.create_spark_df(spark)
     hive = Hive(cluster="rnd-dwh", spark=spark)
 

@@ -14,14 +14,14 @@ def test_mysql_class_attributes():
 def test_mysql_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MySQL.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MySQL.package == "com.mysql:mysql-connector-j:8.4.0"
+        assert MySQL.package == "com.mysql:mysql-connector-j:9.0.0"
 
 
 @pytest.mark.parametrize(
     "package_version, expected_packages",
     [
-        (None, ["com.mysql:mysql-connector-j:8.4.0"]),
-        ("8.4.0", ["com.mysql:mysql-connector-j:8.4.0"]),
+        (None, ["com.mysql:mysql-connector-j:9.0.0"]),
+        ("9.0.0", ["com.mysql:mysql-connector-j:9.0.0"]),
         ("8.1.0", ["com.mysql:mysql-connector-j:8.1.0"]),
         ("8.0.33", ["com.mysql:mysql-connector-j:8.0.33"]),
     ],
@@ -89,10 +89,10 @@ def test_mysql(spark_mock):
         "useUnicode": "yes",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "mysql://some_host:3306"
+    assert str(conn) == "MySQL[some_host:3306]"
 
 
 def test_mysql_with_port(spark_mock):
@@ -116,6 +116,7 @@ def test_mysql_with_port(spark_mock):
     }
 
     assert conn.instance_url == "mysql://some_host:5000"
+    assert str(conn) == "MySQL[some_host:5000]"
 
 
 def test_mysql_without_database(spark_mock):
@@ -139,6 +140,7 @@ def test_mysql_without_database(spark_mock):
     }
 
     assert conn.instance_url == "mysql://some_host:3306"
+    assert str(conn) == "MySQL[some_host:3306]"
 
 
 def test_mysql_with_extra(spark_mock):

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.0-patch5 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.0-patch5>`_
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.5 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.5>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. seealso::
@@ -139,7 +139,7 @@ class Clickhouse(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-            ClickHouse JDBC version client packages. Defaults to ``0.6.0-patch5``.
+            ClickHouse JDBC version client packages. Defaults to ``0.6.5``.
 
             .. versionadded:: 0.11.0
 
@@ -158,7 +158,7 @@ class Clickhouse(JDBCConnection):
             Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
 
         """
-        default_jdbc_version = "0.6.0-patch5"
+        default_jdbc_version = "0.6.5"
         default_http_version = "5.3.1"
 
         jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
@@ -177,7 +177,7 @@ class Clickhouse(JDBCConnection):
     @classproperty
     def package(self) -> str:
         """Get a single string of package names to be downloaded by Spark for establishing a Clickhouse connection."""
-        return "com.clickhouse:clickhouse-jdbc:0.6.0-patch5,com.clickhouse:clickhouse-http-client:0.6.0-patch5,org.apache.httpcomponents.client5:httpclient5:5.3.1"
+        return "com.clickhouse:clickhouse-jdbc:0.6.5,com.clickhouse:clickhouse-http-client:0.6.5,org.apache.httpcomponents.client5:httpclient5:5.3.1"
 
     @property
     def jdbc_url(self) -> str:
@@ -195,6 +195,9 @@ class Clickhouse(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}]"
 
     @staticmethod
     def _build_statement(

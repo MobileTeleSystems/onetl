@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -14,10 +14,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import stringify
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
@@ -333,7 +332,7 @@ class Kafka(DBConnection):
         write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
-        # As of Apache Spark version 3.5.0, the mode 'error' is not functioning as expected.
+        # As of Apache Spark version 3.5.2, the mode 'error' is not functioning as expected.
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
@@ -419,7 +418,7 @@ class Kafka(DBConnection):
             from onetl.connection import Kafka
 
             Kafka.get_packages(spark_version="3.2.4")
-            Kafka.get_packages(spark_version="3.2.4", scala_version="2.13")
+            Kafka.get_packages(spark_version="3.2.4", scala_version="2.12")
 
         """
 
@@ -498,7 +497,7 @@ class Kafka(DBConnection):
             # https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#partitionsFor-java.lang.String-
             partition_infos = consumer.partitionsFor(source)
 
-            jvm = self.spark._jvm
+            jvm = self.spark._jvm  # type: ignore[attr-defined]
             topic_partitions = [
                 jvm.org.apache.kafka.common.TopicPartition(source, p.partition())  # type: ignore[union-attr]
                 for p in partition_infos
@@ -542,6 +541,9 @@ class Kafka(DBConnection):
     @property
     def instance_url(self):
         return "kafka://" + self.cluster
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.cluster}]"
 
     @root_validator(pre=True)
     def _get_addresses_by_cluster(cls, values):
@@ -640,7 +642,7 @@ class Kafka(DBConnection):
         return consumer_class(connection_properties)
 
     def _get_topics(self, timeout: int = 10) -> set[str]:
-        jvm = self.spark._jvm
+        jvm = self.spark._jvm  # type: ignore[attr-defined]
         # Maybe we should not pass explicit timeout at all,
         # and instead use default.api.timeout.ms which is configurable via self.extra.
         # Think about this next time if someone see issues in real use

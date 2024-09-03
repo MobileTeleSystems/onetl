@@ -25,7 +25,7 @@ sys.path.insert(0, os.fspath(PROJECT_ROOT_DIR))
 # -- Project information -----------------------------------------------------
 
 project = "onETL"
-copyright = "2021-2024 MTS (Mobile Telesystems)"
+copyright = "2021-2024 MTS PJSC"
 author = "DataOps.ETL"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -59,6 +59,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx_favicon",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_last_updated_by_git",
 ]
 numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
@@ -118,6 +119,7 @@ html_logo = "./_static/logo.svg"
 favicons = [
     {"rel": "icon", "href": "icon.svg", "type": "image/svg+xml"},
 ]
+
 # The master toctree document.
 master_doc = "index"
 

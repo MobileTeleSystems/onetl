@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -13,8 +13,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import clear_statement
-from onetl._util.spark import inject_spark_param
+from onetl._metrics.recorder import SparkMetricsRecorder
+from onetl._util.spark import inject_spark_param, override_job_description
+from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive.dialect import HiveDialect
 from onetl.connection.db_connection.hive.options import (
@@ -23,6 +24,7 @@ from onetl.connection.db_connection.hive.options import (
     HiveWriteOptions,
 )
 from onetl.connection.db_connection.hive.slots import HiveSlots
+from onetl.file.format.file_format import WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -157,6 +159,9 @@ class Hive(DBConnection):
     def instance_url(self) -> str:
         return self.cluster
 
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.cluster}]"
+
     @slot
     def check(self):
         log.debug("|%s| Detecting current cluster...", self.__class__.__name__)
@@ -171,7 +176,8 @@ class Hive(DBConnection):
         log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
 
         try:
-            self._execute_sql(self._CHECK_QUERY).limit(1).collect()
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._execute_sql(self._CHECK_QUERY).limit(1).collect()
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -209,8 +215,30 @@ class Hive(DBConnection):
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._execute_sql(query)
-        log.info("|Spark| DataFrame successfully created from SQL statement")
+        with SparkMetricsRecorder(self.spark) as recorder:
+            try:
+                with override_job_description(self.spark, f"{self}.sql()"):
+                    df = self._execute_sql(query)
+            except Exception:
+                log.error("|%s| Query failed", self.__class__.__name__)
+
+                metrics = recorder.metrics()
+                if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                    # as SparkListener results are not guaranteed to be received in time,
+                    # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                    log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                    log_lines(log, str(metrics), level=logging.DEBUG)
+                raise
+
+            log.info("|Spark| DataFrame successfully created from SQL statement")
+
+            metrics = recorder.metrics()
+            if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                # as SparkListener results are not guaranteed to be received in time,
+                # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                log_lines(log, str(metrics), level=logging.DEBUG)
+
         return df
 
     @slot
@@ -235,8 +263,28 @@ class Hive(DBConnection):
         log.info("|%s| Executing statement:", self.__class__.__name__)
         log_lines(log, statement)
 
-        self._execute_sql(statement).collect()
-        log.info("|%s| Call succeeded", self.__class__.__name__)
+        with SparkMetricsRecorder(self.spark) as recorder:
+            try:
+                with override_job_description(self.spark, f"{self}.execute()"):
+                    self._execute_sql(statement).collect()
+            except Exception:
+                log.error("|%s| Execution failed", self.__class__.__name__)
+                metrics = recorder.metrics()
+                if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                    # as SparkListener results are not guaranteed to be received in time,
+                    # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                    log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                    log_lines(log, str(metrics), level=logging.DEBUG)
+                raise
+
+            log.info("|%s| Execution succeeded", self.__class__.__name__)
+
+            metrics = recorder.metrics()
+            if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
+                # as SparkListener results are not guaranteed to be received in time,
+                # some metrics may be missing. To avoid confusion, log only in debug, and with a notice
+                log.info("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
+                log_lines(log, str(metrics), level=logging.DEBUG)
 
     @slot
     def write_df_to_target(
@@ -422,8 +470,7 @@ class Hive(DBConnection):
         options: HiveWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-
-        unsupported_options = write_options.dict(by_alias=True, exclude_unset=True, exclude={"if_exists"})
+        unsupported_options = self._format_write_options(write_options)
         if unsupported_options:
             log.warning(
                 "|%s| User-specified options %r are ignored while inserting into existing table. "
@@ -449,6 +496,19 @@ class Hive(DBConnection):
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
+    def _format_write_options(self, write_options: HiveWriteOptions) -> dict:
+        options_dict = write_options.dict(
+            by_alias=True,
+            exclude_unset=True,
+            exclude={"if_exists"},
+        )
+
+        if isinstance(write_options.format, WriteOnlyFileFormat):
+            options_dict["format"] = write_options.format.name
+            options_dict.update(write_options.format.dict(exclude={"name"}))
+
+        return options_dict
+
     def _save_as_table(
         self,
         df: DataFrame,
@@ -458,16 +518,24 @@ class Hive(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         writer = df.write
-        for method, value in write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
-            # <value> is the arguments that will be passed to the <method>
-            # format orc, parquet methods and format simultaneously
+        for method, value in write_options.dict(  # noqa: WPS352
+            by_alias=True,
+            exclude_none=True,
+            exclude={"if_exists", "format"},
+        ).items():
             if hasattr(writer, method):
                 if isinstance(value, Iterable) and not isinstance(value, str):
-                    writer = getattr(writer, method)(*value)  # noqa: WPS220
+                    writer = getattr(writer, method)(*value)
                 else:
-                    writer = getattr(writer, method)(value)  # noqa: WPS220
+                    writer = getattr(writer, method)(value)
             else:
                 writer = writer.option(method, value)
+
+        # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
+        if isinstance(write_options.format, WriteOnlyFileFormat):
+            writer = write_options.format.apply_to_writer(writer)
+        elif isinstance(write_options.format, str):
+            writer = writer.format(write_options.format)
 
         mode = "append" if write_options.if_exists == HiveTableExistBehavior.APPEND else "overwrite"
 

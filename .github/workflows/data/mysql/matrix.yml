@@ -1,4 +1,7 @@
 min: &min
+  # Tags 5.7.6-5.6.12 cannot be downloaded since Docker v26:
+  # "Docker Image Format v1 and Docker Image manifest version 2, schema 1 support is disabled by default"
+  mysql-version: 5.7.13
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
@@ -6,13 +9,15 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.1
+  mysql-version: 9.0.1
+  spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
+  mysql-version: latest
   spark-version: latest
   pydantic-version: latest
   python-version: '3.12'
@@ -20,18 +25,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - mysql-version: 8.4.0
-      <<: *max
-  full:
-    # Min supported version by JDBC driver is 5.7
-    - mysql-version: 5.7.6
-      <<: *min
-    # Max supported version by JDBC driver is 8.3
-    - mysql-version: 8.4.0
-      <<: *max
-  nightly:
-    - mysql-version: 5.7.6
-      <<: *min
-    - mysql-version: latest
-      <<: *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *latest]

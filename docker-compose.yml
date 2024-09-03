@@ -9,7 +9,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.5.1
+        SPARK_VERSION: 3.5.2
     env_file: .env.docker
     volumes:
       - ./:/app/
@@ -24,13 +24,16 @@ services:
     # no dependencies from other containers to allow running limited set of tests instead of all
 
   greenplum:
-    image: ${GREENPLUM_IMAGE:-andruche/greenplum:7.0.0}
+    image: ${GREENPLUM_IMAGE:-andruche/greenplum:6}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:
       - 5433:5432
     networks:
       - onetl
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
 
@@ -96,6 +99,13 @@ services:
     networks:
       - onetl
     platform: linux/amd64
+    healthcheck:
+      # Container is healthy only when database is created
+      # TODO: replace with SELECT after fixing sqlcmd location: https://github.com/microsoft/mssql-docker/issues/892
+      test: ["CMD-SHELL", "ls -lsah /var/opt/mssql/data/onetl.mdf"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql:
     image: ${MYSQL_IMAGE:-mysql:latest}
@@ -108,7 +118,7 @@ services:
     platform: linux/amd64
 
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:15.2-alpine}
+    image: ${POSTGRES_IMAGE:-postgres:alpine}
     restart: unless-stopped
     env_file: .env.dependencies
     ports:

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ except (ImportError, AttributeError):
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_spark_version, override_job_description
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.mongodb.dialect import MongoDBDialect
@@ -50,7 +50,7 @@ class MongoDBExtra(GenericOptions):
 class MongoDB(DBConnection):
     """MongoDB connection. |support_hooks|
 
-    Based on package `org.mongodb.spark:mongo-spark-connector:10.3.0 <https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.3.0>`_
+    Based on package `org.mongodb.spark:mongo-spark-connector:10.4.0 <https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.4.0>`_
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
 
     .. seealso::
@@ -153,7 +153,7 @@ class MongoDB(DBConnection):
             Spark version in format ``major.minor``. Used only if ``scala_version=None``.
 
         package_version : str, optional
-            Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.3.0``.
+            Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.4.0``.
 
             .. versionadded:: 0.11.0
 
@@ -166,10 +166,10 @@ class MongoDB(DBConnection):
             MongoDB.get_packages(scala_version="2.12")
 
             # specify custom connector version
-            MongoDB.get_packages(scala_version="2.12", package_version="10.3.0")
+            MongoDB.get_packages(scala_version="2.12", package_version="10.4.0")
         """
 
-        default_package_version = "10.3.0"
+        default_package_version = "10.4.0"
 
         if scala_version:
             scala_ver = Version(scala_version).min_digits(2)
@@ -196,7 +196,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.2')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
 
     @classproperty
     def package_spark_3_3(cls) -> str:
@@ -206,7 +206,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.3')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
 
     @classproperty
     def package_spark_3_4(cls) -> str:
@@ -216,7 +216,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.4')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
 
     @slot
     def pipeline(
@@ -347,16 +347,21 @@ class MongoDB(DBConnection):
         if pipeline:
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
         read_options["connection.uri"] = self.connection_url
-        spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
-        if df_schema:
-            spark_reader = spark_reader.schema(df_schema)
+        with override_job_description(self.spark, f"{self}.pipeline()"):
+            spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
-        return spark_reader.load()
+            if df_schema:
+                spark_reader = spark_reader.schema(df_schema)
+
+            return spark_reader.load()
 
     @property
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
 
     @slot
     def check(self):
@@ -532,7 +537,7 @@ class MongoDB(DBConnection):
         return spark
 
     def _collection_exists(self, source: str) -> bool:
-        jvm = self.spark._jvm
+        jvm = self.spark._jvm  # type: ignore[attr-defined]
         client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
         collections = set(client.getDatabase(self.database).listCollectionNames().iterator())
         if source in collections:

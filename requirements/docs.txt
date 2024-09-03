@@ -1,16 +1,21 @@
+# TODO: remove version limit after upgrading all Pydantic models to v2
 autodoc-pydantic<2
 furo
 importlib-resources<6
 numpydoc
 pygments-csv-lexer
-sphinx
+# TODO: remove version limit after upgrading autodoc-pydantic to v2
+sphinx<8
 sphinx-copybutton
 sphinx-design
 sphinx-favicon
+# https://github.com/mgeier/sphinx-last-updated-by-git/pull/77
+sphinx-last-updated-by-git>=0.3.8
 # TODO: uncomment after https://github.com/zqmillet/sphinx-plantuml/pull/4
 # sphinx-plantuml
 sphinx-tabs
 sphinx-toolbox
 sphinx_substitution_extensions
 sphinxcontrib-towncrier
-towncrier
+# TODO: remove upper limit after https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/92
+towncrier<24.7

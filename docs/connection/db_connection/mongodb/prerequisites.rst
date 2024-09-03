@@ -6,11 +6,13 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* MongoDB server versions: 4.0 or higher
+* MongoDB server versions:
+    * Officially declared: 4.0 or higher
+    * Actually tested: 4.0, 7.0
 * Spark versions: 3.2.x - 3.5.x
 * Java versions: 8 - 20
 
-See `official documentation <https://www.mongodb.com/docs/spark-connector/v10.1/>`_.
+See `official documentation <https://www.mongodb.com/docs/spark-connector/>`_.
 
 Installing PySpark
 ------------------

@@ -7,35 +7,41 @@ pytestmark = [pytest.mark.sftp, pytest.mark.file_connection, pytest.mark.connect
 
 
 def test_sftp_connection_anonymous():
-    from onetl.connection import SFTP
+    from onetl.connection import SFTP, FileConnection
 
-    sftp = SFTP(host="some_host")
-    assert sftp.host == "some_host"
-    assert sftp.port == 22
-    assert not sftp.user
-    assert not sftp.password
-    assert not sftp.key_file
+    conn = SFTP(host="some_host")
+    assert isinstance(conn, FileConnection)
+    assert conn.host == "some_host"
+    assert conn.port == 22
+    assert not conn.user
+    assert not conn.password
+    assert not conn.key_file
+    assert conn.instance_url == "sftp://some_host:22"
+    assert str(conn) == "SFTP[some_host:22]"
 
 
 def test_sftp_connection_with_port():
     from onetl.connection import SFTP
 
-    sftp = SFTP(host="some_host", port=500)
+    conn = SFTP(host="some_host", port=500)
 
-    assert sftp.port == 500
+    assert conn.port == 500
+    assert conn.instance_url == "sftp://some_host:500"
+    assert str(conn) == "SFTP[some_host:500]"
 
 
 def test_sftp_connection_with_password():
     from onetl.connection import SFTP
 
-    sftp = SFTP(host="some_host", user="some_user", password="pwd")
-    assert sftp.user == "some_user"
-    assert sftp.password != "pwd"
-    assert sftp.password.get_secret_value() == "pwd"
-    assert not sftp.key_file
+    conn = SFTP(host="some_host", user="some_user", password="pwd")
+    assert conn.user == "some_user"
+    assert conn.password != "pwd"
+    assert conn.password.get_secret_value() == "pwd"
+    assert not conn.key_file
+    assert conn.instance_url == "sftp://some_host:22"
+    assert str(conn) == "SFTP[some_host:22]"
 
-    assert "password='pwd'" not in str(sftp)
-    assert "password='pwd'" not in repr(sftp)
+    assert "pwd" not in repr(conn)
 
 
 def test_sftp_connection_with_key_file(request, tmp_path_factory):
@@ -51,10 +57,10 @@ def test_sftp_connection_with_key_file(request, tmp_path_factory):
 
     request.addfinalizer(finalizer)
 
-    sftp = SFTP(host="some_host", user="some_user", key_file=key_file)
-    assert sftp.user == "some_user"
-    assert not sftp.password
-    assert sftp.key_file == key_file
+    conn = SFTP(host="some_host", user="some_user", key_file=key_file)
+    assert conn.user == "some_user"
+    assert not conn.password
+    assert conn.key_file == key_file
 
 
 def test_sftp_connection_key_file_does_not_exist():

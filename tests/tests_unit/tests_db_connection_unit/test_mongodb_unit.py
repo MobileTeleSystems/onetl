@@ -12,9 +12,9 @@ pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connec
 def test_mongodb_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MongoDB.get_packages(spark_version=")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
-        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
-        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"
+        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
+        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
+        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
 
 
 def test_mongodb_get_packages_no_input():
@@ -50,16 +50,16 @@ def test_mongodb_get_packages_scala_version_not_supported(scala_version):
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version, package",
     [
-        (None, "2.12", "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"),
-        (None, "2.13", "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.13:10.3.0"),
-        ("3.2", None, "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"),
-        ("3.3", None, "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"),
-        ("3.4", None, "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"),
+        (None, "2.12", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
+        (None, "2.13", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.13:10.4.0"),
+        ("3.2", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
+        ("3.3", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
+        ("3.4", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
         ("3.2", "2.12", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
         ("3.4", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
         ("3.2", "2.12", "10.2.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.1"),
         ("3.2", "2.12", "10.2.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.0"),
-        ("3.2.4", "2.12.1", "10.3.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0"),
+        ("3.2.4", "2.12.1", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
     ],
 )
 def test_mongodb_get_packages(spark_version, scala_version, package_version, package):
@@ -126,9 +126,10 @@ def test_mongodb(spark_mock):
     assert conn.database == "database"
 
     assert conn.connection_url == "mongodb://user:password@host:27017/database"
+    assert conn.instance_url == "mongodb://host:27017/database"
+    assert str(conn) == "MongoDB[host:27017/database]"
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
 
 @pytest.mark.parametrize(
@@ -150,7 +151,7 @@ def test_mongodb_options_hint():
 
 
 def test_mongodb_with_port(spark_mock):
-    mongo = MongoDB(
+    conn = MongoDB(
         host="host",
         user="user",
         password="password",
@@ -159,14 +160,15 @@ def test_mongodb_with_port(spark_mock):
         spark=spark_mock,
     )
 
-    assert mongo.host == "host"
-    assert mongo.port == 12345
-    assert mongo.user == "user"
-    assert mongo.password != "password"
-    assert mongo.password.get_secret_value() == "password"
-    assert mongo.database == "database"
+    assert conn.host == "host"
+    assert conn.port == 12345
+    assert conn.user == "user"
+    assert conn.password != "password"
+    assert conn.password.get_secret_value() == "password"
+    assert conn.database == "database"
 
-    assert mongo.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.instance_url == "mongodb://host:12345/database"
 
 
 def test_mongodb_without_mandatory_args(spark_mock):

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -119,7 +119,7 @@ class XML(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with XML package loaded
-        maven_packages = XML.get_packages(spark_version="3.5.0")
+        maven_packages = XML.get_packages(spark_version="3.5.2")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -184,10 +184,10 @@ class XML(ReadWriteFileFormat):
 
             from onetl.file.format import XML
 
-            XML.get_packages(spark_version="3.5.0")
-            XML.get_packages(spark_version="3.5.0", scala_version="2.12")
+            XML.get_packages(spark_version="3.5.2")
+            XML.get_packages(spark_version="3.5.2", scala_version="2.12")
             XML.get_packages(
-                spark_version="3.5.0",
+                spark_version="3.5.2",
                 scala_version="2.12",
                 package_version="0.18.0",
             )
@@ -200,7 +200,7 @@ class XML(ReadWriteFileFormat):
                 raise ValueError(f"Package version must be above 0.13, got {version}")
             log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
         else:
-            version = Version("0.18.0").min_digits(3)
+            version = Version("0.18.0")
 
         spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)

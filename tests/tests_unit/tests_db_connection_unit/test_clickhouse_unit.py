@@ -11,7 +11,7 @@ def test_clickhouse_driver():
 
 def test_clickhouse_package():
     expected_packages = (
-        "com.clickhouse:clickhouse-jdbc:0.6.0-patch5,com.clickhouse:clickhouse-http-client:0.6.0-patch5,"
+        "com.clickhouse:clickhouse-jdbc:0.6.5,com.clickhouse:clickhouse-http-client:0.6.5,"
         "org.apache.httpcomponents.client5:httpclient5:5.3.1"
     )
     assert Clickhouse.package == expected_packages
@@ -24,8 +24,8 @@ def test_clickhouse_package():
             None,
             None,
             [
-                "com.clickhouse:clickhouse-jdbc:0.6.0-patch5",
-                "com.clickhouse:clickhouse-http-client:0.6.0-patch5",
+                "com.clickhouse:clickhouse-jdbc:0.6.5",
+                "com.clickhouse:clickhouse-http-client:0.6.5",
                 "org.apache.httpcomponents.client5:httpclient5:5.3.1",
             ],
         ),
@@ -128,10 +128,10 @@ def test_clickhouse(spark_mock):
         "url": "jdbc:clickhouse://some_host:8123/database",
     }
 
-    assert "password='passwd'" not in str(conn)
-    assert "password='passwd'" not in repr(conn)
+    assert "passwd" not in repr(conn)
 
     assert conn.instance_url == "clickhouse://some_host:8123"
+    assert str(conn) == "Clickhouse[some_host:8123]"
 
 
 def test_clickhouse_with_port(spark_mock):

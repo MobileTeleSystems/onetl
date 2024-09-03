@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import os
 import textwrap
 from contextlib import contextmanager
 from math import inf
@@ -9,9 +10,74 @@ from typing import TYPE_CHECKING, Any
 
 from onetl._util.version import Version
 
+try:
+    from pydantic.v1 import SecretStr
+except (ImportError, AttributeError):
+    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+
 if TYPE_CHECKING:
-    from pyspark.sql import SparkSession
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.conf import RuntimeConfig
+
+SPARK_JOB_DESCRIPTION_PROPERTY = "spark.job.description"
+SPARK_JOB_GROUP_PROPERTY = "spark.jobGroup.id"
+
+
+def stringify(value: Any, quote: bool = False) -> Any:  # noqa: WPS212
+    """
+    Convert values to strings.
+
+    Values ``True``, ``False`` and ``None`` become ``"true"``, ``"false"`` and ``"null"``.
+
+    If input is dict, return dict with stringified values and keys (recursive).
+
+    If input is list, return list with stringified values (recursive).
+
+    If ``quote=True``, wrap string values with double quotes.
+
+    Examples
+    --------
+
+    >>> stringify(1)
+    '1'
+    >>> stringify(True)
+    'true'
+    >>> stringify(False)
+    'false'
+    >>> stringify(None)
+    'null'
+    >>> stringify("string")
+    'string'
+    >>> stringify("string", quote=True)
+    '"string"'
+    >>> stringify({"abc": 1})
+    {'abc': '1'}
+    >>> stringify([1, True, False, None, "string"])
+    ['1', 'true', 'false', 'null', 'string']
+    """
+
+    if isinstance(value, dict):
+        return {stringify(k): stringify(v, quote) for k, v in value.items()}
+
+    if isinstance(value, list):
+        return [stringify(v, quote) for v in value]
+
+    if value is None:
+        return "null"
+
+    if isinstance(value, bool):
+        return "true" if value else "false"
+
+    if isinstance(value, SecretStr):
+        value = value.get_secret_value()
+
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
+
+    if isinstance(value, str):
+        return f'"{value}"' if quote else value
+
+    return str(value)
 
 
 @contextmanager
@@ -73,6 +139,21 @@ def get_spark_version(spark_session: SparkSession) -> Version:
     return Version(spark_session.version)
 
 
+def estimate_dataframe_size(spark_session: SparkSession, df: DataFrame) -> int:
+    """
+    Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
+
+    Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.2/api/java/org/apache/spark/util/SizeEstimator.html>`_.
+    """
+    try:
+        size_estimator = spark_session._jvm.org.apache.spark.util.SizeEstimator  # type: ignore[union-attr]
+        return size_estimator.estimate(df._jdf)
+    except Exception:
+        # SizeEstimator uses Java reflection which may behave differently in different Java versions,
+        # and also may be prohibited.
+        return 0
+
+
 def get_executor_total_cores(spark_session: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
     """
     Calculate maximum number of cores which can be used by Spark on all executors.
@@ -122,3 +203,23 @@ def get_executor_total_cores(spark_session: SparkSession, include_driver: bool =
             expected_cores += 1
 
     return expected_cores, config
+
+
+@contextmanager
+def override_job_description(spark_session: SparkSession, job_description: str):
+    """
+    Override Spark job description.
+
+    Unlike ``spark_session.sparkContext.setJobDescription``, this method resets job description
+    before exiting the context manager, instead of keeping it.
+
+    If user set custom description, it will be left intact.
+    """
+    spark_context = spark_session.sparkContext
+    original_description = spark_context.getLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY)
+
+    try:
+        spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description or job_description)
+        yield
+    finally:
+        spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description)  # type: ignore[arg-type]

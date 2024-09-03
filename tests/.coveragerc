@@ -7,9 +7,11 @@ data_file = reports/.coverage
 [report]
 exclude_lines =
     pragma: no cover
+    no cover: start(?s:.)*?no cover: stop
     def __repr__
     if self.debug:
     if settings.DEBUG
+    if log.isEnabledFor\(logging.DEBUG\)
     raise AssertionError
     raise NotImplementedError
     if __name__ == .__main__.:
@@ -19,6 +21,5 @@ exclude_lines =
     if pyspark_version
     if spark_version
     spark = SparkSession._instantiatedSession
-    if log.isEnabledFor(logging.DEBUG):
     if sys.version_info
     except .*ImportError

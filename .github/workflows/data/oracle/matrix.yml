@@ -1,4 +1,7 @@
 min: &min
+  oracle-image: gvenzl/oracle-xe
+  oracle-version: 11.2.0.2-slim-faststart
+  db-name: XE
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
@@ -6,13 +9,19 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  spark-version: 3.5.1
+  oracle-image: gvenzl/oracle-free
+  oracle-version: 23.4-slim-faststart
+  db-name: FREEPDB1
+  spark-version: 3.5.2
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
   os: ubuntu-latest
 
 latest: &latest
+  oracle-image: gvenzl/oracle-free
+  oracle-version: slim-faststart
+  db-name: FREEPDB1
   spark-version: latest
   pydantic-version: latest
   python-version: '3.12'
@@ -20,26 +29,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - oracle-image: gvenzl/oracle-free
-      oracle-version: 23.3-slim-faststart
-      db-name: FREEPDB1
-      <<: *max
-  full:
-    - oracle-image: gvenzl/oracle-xe
-      oracle-version: 11.2.0.2-slim-faststart
-      db-name: XE
-      <<: *min
-    - oracle-image: gvenzl/oracle-free
-      oracle-version: 23.3-slim-faststart
-      db-name: FREEPDB1
-      <<: *max
-  nightly:
-    - oracle-image: gvenzl/oracle-xe
-      oracle-version: 11.2.0.2-slim-faststart
-      db-name: XE
-      <<: *min
-    - oracle-image: gvenzl/oracle-free
-      oracle-version: slim-faststart
-      db-name: FREEPDB1
-      <<: *latest
+  small: [*max]
+  full: [*min, *max]
+  nightly: [*min, *latest]

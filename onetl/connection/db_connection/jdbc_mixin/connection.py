@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -9,16 +9,20 @@ from contextlib import closing, suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
 
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import Field, PrivateAttr, SecretStr, validator
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
 
-from onetl._internal import clear_statement, stringify
+from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway, try_import_java_class
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import (
+    estimate_dataframe_size,
+    get_spark_version,
+    override_job_description,
+    stringify,
+)
+from onetl._util.sql import clear_statement
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,
@@ -29,7 +33,7 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
-from onetl.impl import FrozenModel
+from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import log_lines
 
 if TYPE_CHECKING:
@@ -201,23 +205,32 @@ class JDBCMixin(FrozenModel):
 
         query = clear_statement(query)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_driver(
-            query,
-            (
-                self.FetchOptions.parse(options.dict())  # type: ignore
-                if isinstance(options, JDBCMixinOptions)
-                else self.FetchOptions.parse(options)
-            ),
+        call_options = (
+            self.FetchOptions.parse(options.dict())  # type: ignore
+            if isinstance(options, JDBCMixinOptions)
+            else self.FetchOptions.parse(options)
         )
 
-        log.info(
-            "|%s| Query succeeded, resulting in-memory dataframe contains %d rows",
-            self.__class__.__name__,
-            df.count(),
-        )
+        with override_job_description(self.spark, f"{self}.fetch()"):
+            try:
+                df = self._query_on_driver(query, call_options)
+            except Exception:
+                log.error("|%s| Query failed!", self.__class__.__name__)
+                raise
+
+            log.info("|%s| Query succeeded, created in-memory dataframe.", self.__class__.__name__)
+
+            # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
+            # Just create metrics by hand, and fill them up using information based on dataframe content.
+            metrics = SparkCommandMetrics()
+            metrics.input.read_rows = df.count()
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+            log.info("|%s| Recorded metrics:", self.__class__.__name__)
+            log_lines(log, str(metrics))
         return df
 
     @slot
@@ -265,6 +278,7 @@ class JDBCMixin(FrozenModel):
 
         statement = clear_statement(statement)
 
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
@@ -273,17 +287,27 @@ class JDBCMixin(FrozenModel):
             if isinstance(options, JDBCMixinOptions)
             else self.ExecuteOptions.parse(options)
         )
-        df = self._call_on_driver(statement, call_options)
 
-        if df is not None:
-            rows_count = df.count()
-            log.info(
-                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
-                self.__class__.__name__,
-                rows_count,
-            )
-        else:
-            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
+        with override_job_description(self.spark, f"{self}.execute()"):
+            try:
+                df = self._call_on_driver(statement, call_options)
+            except Exception:
+                log.error("|%s| Execution failed!", self.__class__.__name__)
+                raise
+
+            if not df:
+                log.info("|%s| Execution succeeded, nothing returned.", self.__class__.__name__)
+                return None
+
+            log.info("|%s| Execution succeeded, created in-memory dataframe.", self.__class__.__name__)
+            # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
+            # Just create metrics by hand, and fill them up using information based on dataframe content.
+            metrics = SparkCommandMetrics()
+            metrics.input.read_rows = df.count()
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+
+            log.info("|%s| Recorded metrics:", self.__class__.__name__)
+            log_lines(log, str(metrics))
         return df
 
     @validator("spark")
@@ -394,6 +418,17 @@ class JDBCMixin(FrozenModel):
 
         self._last_connection_and_options.data = (new_connection, options)
         return new_connection
+
+    def _get_spark_dialect_name(self) -> str:
+        """
+        Returns the name of the JDBC dialect associated with the connection URL.
+        """
+        dialect = self._get_spark_dialect().toString()
+        return dialect.split("$")[0] if "$" in dialect else dialect
+
+    def _get_spark_dialect(self):
+        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
+        return jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
 
     def _close_connections(self):
         with suppress(Exception):
@@ -537,9 +572,7 @@ class JDBCMixin(FrozenModel):
 
         from pyspark.sql import DataFrame  # noqa: WPS442
 
-        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc  # type: ignore
-        jdbc_dialect = jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
-
+        jdbc_dialect = self._get_spark_dialect()
         jdbc_utils_package = self.spark._jvm.org.apache.spark.sql.execution.datasources.jdbc  # type: ignore
         jdbc_utils = jdbc_utils_package.JdbcUtils
 

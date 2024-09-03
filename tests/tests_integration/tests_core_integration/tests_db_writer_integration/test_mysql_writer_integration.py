@@ -6,7 +6,7 @@ from onetl.db import DBWriter
 pytestmark = pytest.mark.mysql
 
 
-def test_mysql_writer_snapshot(spark, processing, prepare_schema_table):
+def test_mysql_writer(spark, processing, prepare_schema_table):
     df = processing.create_spark_df(spark=spark)
 
     mysql = MySQL(

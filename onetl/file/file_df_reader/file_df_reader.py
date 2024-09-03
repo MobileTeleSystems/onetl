@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.spark import try_import_pyspark
+from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
 from onetl.file.file_df_reader.options import FileDFReaderOptions
 from onetl.file.file_set import FileSet
@@ -211,18 +211,25 @@ class FileDFReader(FrozenModel):
         if not self._connection_checked:
             self._log_parameters(files)
 
-        paths: FileSet[PurePathProtocol] = FileSet()
-        if files is not None:
-            paths = FileSet(self._validate_files(files))
-        elif self.source_path:
-            paths = FileSet([self.source_path])
+        if files:
+            job_description = f"{self.__class__.__name__}.run([..files..]) -> {self.connection}"
+        else:
+            job_description = f"{self.__class__.__name__}.run({self.source_path}) -> {self.connection}"
 
-        if not self._connection_checked:
-            self.connection.check()
-            log_with_indent(log, "")
-            self._connection_checked = True
+        with override_job_description(self.connection.spark, job_description):
+            paths: FileSet[PurePathProtocol] = FileSet()
+            if files is not None:
+                paths = FileSet(self._validate_files(files))
+            elif self.source_path:
+                paths = FileSet([self.source_path])
 
-        df = self._read_files(paths)
+            if not self._connection_checked:
+                self.connection.check()
+                log_with_indent(log, "")
+                self._connection_checked = True
+
+            df = self._read_files(paths)
+
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
         return df
 

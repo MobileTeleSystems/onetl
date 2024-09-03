@@ -1,0 +1,7 @@
+0.11.2 (2024-09-02)
+===================
+
+Bug Fixes
+---------
+
+- Fix passing ``Greenplum(extra={"options": ...})`` during read/write operations. (:github:pull:`308`)

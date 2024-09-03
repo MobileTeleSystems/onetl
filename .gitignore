@@ -153,3 +153,6 @@ dmypy.json
 # Local stuff
 docker-compose*override*
 !docker-compose.override.sample.yml
+
+metastore_db/
+spark-warehouse/

@@ -181,6 +181,7 @@ def test_kafka_basic_auth_get_jaas_conf(spark_mock):
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
+    assert str(conn) == "Kafka[some_cluster]"
 
 
 def test_kafka_anon_auth(spark_mock):
@@ -194,6 +195,7 @@ def test_kafka_anon_auth(spark_mock):
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
+    assert str(conn) == "Kafka[some_cluster]"
 
 
 @pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
@@ -217,6 +219,7 @@ def test_kafka_scram_auth(spark_mock, digest):
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
+    assert str(conn) == "Kafka[some_cluster]"
 
 
 def test_kafka_auth_keytab(spark_mock, create_keytab):
@@ -235,6 +238,7 @@ def test_kafka_auth_keytab(spark_mock, create_keytab):
     assert conn.addresses == ["192.168.1.1"]
 
     assert conn.instance_url == "kafka://some_cluster"
+    assert str(conn) == "Kafka[some_cluster]"
 
 
 def test_kafka_empty_addresses(spark_mock):

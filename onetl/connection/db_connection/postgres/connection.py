@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ class PostgresExtra(GenericOptions):
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. |support_hooks|
 
-    Based on Maven package `org.postgresql:postgresql:42.7.3 <https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.3>`_
+    Based on Maven package `org.postgresql:postgresql:42.7.4 <https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.4>`_
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
     .. seealso::
@@ -140,7 +140,7 @@ class Postgres(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.3``.
+            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.4``.
 
         Examples
         --------
@@ -155,7 +155,7 @@ class Postgres(JDBCConnection):
             Postgres.get_packages(package_version="42.6.0")
 
         """
-        default_version = "42.7.3"
+        default_version = "42.7.4"
         version = Version(package_version or default_version).min_digits(3)
 
         return [f"org.postgresql:postgresql:{version}"]
@@ -165,7 +165,7 @@ class Postgres(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.postgresql:postgresql:42.7.3"
+        return "org.postgresql:postgresql:42.7.4"
 
     @property
     def jdbc_url(self) -> str:
@@ -181,6 +181,9 @@ class Postgres(JDBCConnection):
     @property
     def instance_url(self) -> str:
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.database}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
 
     def _options_to_connection_properties(
         self,

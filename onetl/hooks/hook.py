@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -285,7 +285,7 @@ class ContextDecorator:
         try:
             self.first_yield_result = self.gen.send(None)
         except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
+            pass
 
         return self
 
@@ -340,7 +340,7 @@ class ContextDecorator:
             raise
         raise RuntimeError("generator didn't stop after throw()")
 
-    def process_result(self, result: T) -> T | None:
+    def process_result(self, result):
         """
         Handle original method call result, and return new value.
 

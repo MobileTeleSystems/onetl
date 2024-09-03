@@ -14,49 +14,49 @@ MongoDB is, by design, __schemaless__. So there are 2 ways how this can be handl
 
   .. dropdown:: See example
 
-      .. code-block:: python
+    .. code-block:: python
 
-          from onetl.connection import MongoDB
-          from onetl.db import DBReader
+        from onetl.connection import MongoDB
+        from onetl.db import DBReader
 
-          from pyspark.sql.types import (
-              StructType,
-              StructField,
-              IntegerType,
-              StringType,
-              TimestampType,
-          )
+        from pyspark.sql.types import (
+            StructType,
+            StructField,
+            IntegerType,
+            StringType,
+            TimestampType,
+        )
 
-          mongodb = MongoDB(...)
+        mongodb = MongoDB(...)
 
-          df_schema = StructType(
-              [
-                  StructField("_id", StringType()),
-                  StructField("some", StringType()),
-                  StructField(
-                      "field",
-                      StructType(
-                          [
-                              StructField("nested", IntegerType()),
-                          ]
-                      ),
-                  ),
-              ]
-          )
+        df_schema = StructType(
+            [
+                StructField("_id", StringType()),
+                StructField("some", StringType()),
+                StructField(
+                    "field",
+                    StructType(
+                        [
+                            StructField("nested", IntegerType()),
+                        ]
+                    ),
+                ),
+            ]
+        )
 
-          reader = DBReader(
-              connection=mongodb,
-              source="some_collection",
-              df_schema=df_schema,
-          )
-          df = reader.run()
+        reader = DBReader(
+            connection=mongodb,
+            source="some_collection",
+            df_schema=df_schema,
+        )
+        df = reader.run()
 
-          # or
+        # or
 
-          df = mongodb.pipeline(
-              collection="some_collection",
-              df_schema=df_schema,
-          )
+        df = mongodb.pipeline(
+            collection="some_collection",
+            df_schema=df_schema,
+        )
 
 * Rely on MongoDB connector schema infer:
 
@@ -73,8 +73,8 @@ References
 
 Here you can find source code with type conversions:
 
-* `MongoDB -> Spark <https://github.com/mongodb/mongo-spark/blob/r10.3.0/src/main/java/com/mongodb/spark/sql/connector/schema/InferSchema.java#L154-L200>`_
-* `Spark -> MongoDB <https://github.com/mongodb/mongo-spark/blob/r10.3.0/src/main/java/com/mongodb/spark/sql/connector/schema/RowToBsonDocumentConverter.java#L157-L260>`_
+* `MongoDB -> Spark <https://github.com/mongodb/mongo-spark/blob/r10.4.0/src/main/java/com/mongodb/spark/sql/connector/schema/InferSchema.java#L214-L260>`_
+* `Spark -> MongoDB <https://github.com/mongodb/mongo-spark/blob/r10.4.0/src/main/java/com/mongodb/spark/sql/connector/schema/RowToBsonDocumentConverter.java#L157-L260>`_
 
 Supported types
 ---------------

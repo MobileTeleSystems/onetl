@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import ftplib  # noqa: S402  # nosec
 import textwrap
@@ -94,10 +94,6 @@ class FTPS(FTP):
             password="*****",
         )
     """
-
-    @property
-    def instance_url(self) -> str:
-        return f"ftps://{self.host}:{self.port}"
 
     def _get_client(self) -> FTPHost:
         """

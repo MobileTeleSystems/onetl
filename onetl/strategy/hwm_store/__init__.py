@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 # TODO: remove in 1.0.0
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         register_spark_type_to_hwm_type_mapping,
     )
 
-__all__ = [  # noqa: WPS410
+__all__ = [
     "BaseHWMStore",
     "SparkTypeToHWM",
     "register_spark_type_to_hwm_type_mapping",

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 MTS (Mobile Telesystems)
+# SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -19,7 +19,6 @@ except (ImportError, AttributeError):
 
 from etl_entities.instance import Host
 
-from onetl._internal import clear_statement
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -27,7 +26,6 @@ from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptio
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,
     JDBCFetchOptions,
-    JDBCOptions,
 )
 from onetl.connection.db_connection.oracle.dialect import OracleDialect
 from onetl.connection.db_connection.oracle.options import (
@@ -43,8 +41,6 @@ from onetl.impl import GenericOptions
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session
-
-
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
@@ -83,7 +79,7 @@ class OracleExtra(GenericOptions):
 class Oracle(JDBCConnection):
     """Oracle JDBC connection. |support_hooks|
 
-    Based on Maven package `com.oracle.database.jdbc:ojdbc8:23.4.0.24.05 <https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.4.0.24.05>`_
+    Based on Maven package `com.oracle.database.jdbc:ojdbc8:23.5.0.24.07 <https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.5.0.24.07>`_
     (`official Oracle JDBC driver <https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html>`_).
 
     .. seealso::
@@ -212,7 +208,7 @@ class Oracle(JDBCConnection):
         java_version : str, optional
             Java major version, defaults to "8". Must be "8" or "11".
         package_version : str, optional
-            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.4.0.24.05".
+            Specifies the version of the Oracle JDBC driver to use. Defaults to "23.5.0.24.07".
 
         Examples
         --------
@@ -224,11 +220,11 @@ class Oracle(JDBCConnection):
             Oracle.get_packages()
 
             # specify Java and package versions
-            Oracle.get_packages(java_version="8", package_version="23.4.0.24.05")
+            Oracle.get_packages(java_version="8", package_version="23.5.0.24.07")
         """
 
         default_java_version = "8"
-        default_package_version = "23.4.0.24.05"
+        default_package_version = "23.5.0.24.07"
 
         java_ver = Version(java_version or default_java_version)
         if java_ver.major < 8:
@@ -244,7 +240,7 @@ class Oracle(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Oracle.package` will be removed in 1.0.0, use `Oracle.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.oracle.database.jdbc:ojdbc8:23.4.0.24.05"
+        return "com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"
 
     @property
     def jdbc_url(self) -> str:
@@ -265,6 +261,12 @@ class Oracle(JDBCConnection):
             return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.sid}"
 
         return f"{self.__class__.__name__.lower()}://{self.host}:{self.port}/{self.service_name}"
+
+    def __str__(self):
+        if self.sid:
+            return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.sid}]"
+
+        return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.service_name}]"
 
     @slot
     def get_min_max_values(
@@ -290,32 +292,6 @@ class Oracle(JDBCConnection):
             max_value = int(max_value)
         return min_value, max_value
 
-    @slot
-    def execute(
-        self,
-        statement: str,
-        options: JDBCOptions | JDBCExecuteOptions | dict | None = None,  # noqa: WPS437
-    ) -> DataFrame | None:
-        statement = clear_statement(statement)
-
-        log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
-        log_lines(log, statement)
-
-        call_options = self.ExecuteOptions.parse(options)
-        df = self._call_on_driver(statement, call_options)
-        self._handle_compile_errors(statement.strip(), call_options)
-
-        if df is not None:
-            rows_count = df.count()
-            log.info(
-                "|%s| Execution succeeded, resulting in-memory dataframe contains %d rows",
-                self.__class__.__name__,
-                rows_count,
-            )
-        else:
-            log.info("|%s| Execution succeeded, nothing returned", self.__class__.__name__)
-        return df
-
     @root_validator
     def _only_one_of_sid_or_service_name(cls, values):
         sid = values.get("sid")
@@ -328,6 +304,15 @@ class Oracle(JDBCConnection):
             raise ValueError("One of parameters ``sid``, ``service_name`` should be set, got none")
 
         return values
+
+    def _call_on_driver(
+        self,
+        query: str,
+        options: JDBCExecuteOptions,
+    ) -> DataFrame | None:
+        result = super()._call_on_driver(query, options)
+        self._handle_compile_errors(query.strip(), options)
+        return result
 
     def _parse_create_statement(self, statement: str) -> tuple[str, str, str] | None:
         """
