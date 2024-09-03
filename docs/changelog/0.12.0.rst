@@ -9,7 +9,7 @@ Breaking Changes
     * ``s3://host:port`` -> ``s3://host:port/bucket`` (:github:pull:`304`)
 
 - Update DB connectors/drivers to latest versions:
-    * Clickhouse ``0.6.0-patch5`` → ``0.6.4``
+    * Clickhouse ``0.6.0-patch5`` → ``0.6.5``
     * MongoDB ``10.3.0`` → ``10.4.0``
     * MSSQL ``12.6.2`` → ``12.8.1``
     * MySQL ``8.4.0`` → ``9.0.0``

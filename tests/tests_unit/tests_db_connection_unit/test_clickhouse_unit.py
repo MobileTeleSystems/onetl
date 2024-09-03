@@ -11,7 +11,7 @@ def test_clickhouse_driver():
 
 def test_clickhouse_package():
     expected_packages = (
-        "com.clickhouse:clickhouse-jdbc:0.6.4,com.clickhouse:clickhouse-http-client:0.6.4,"
+        "com.clickhouse:clickhouse-jdbc:0.6.5,com.clickhouse:clickhouse-http-client:0.6.5,"
         "org.apache.httpcomponents.client5:httpclient5:5.3.1"
     )
     assert Clickhouse.package == expected_packages
@@ -24,8 +24,8 @@ def test_clickhouse_package():
             None,
             None,
             [
-                "com.clickhouse:clickhouse-jdbc:0.6.4",
-                "com.clickhouse:clickhouse-http-client:0.6.4",
+                "com.clickhouse:clickhouse-jdbc:0.6.5",
+                "com.clickhouse:clickhouse-http-client:0.6.5",
                 "org.apache.httpcomponents.client5:httpclient5:5.3.1",
             ],
         ),
