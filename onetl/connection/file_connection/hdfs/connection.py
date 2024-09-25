@@ -378,7 +378,7 @@ class HDFS(FileConnection, RenameDirMixin):
             raise RuntimeError(f"Cannot get list of namenodes for a cluster {self.cluster!r}")
 
         nodes_len = len(namenodes)
-        for i, namenode in enumerate(namenodes):
+        for i, namenode in enumerate(namenodes, start=1):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
             if self.Slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)

@@ -313,7 +313,7 @@ class SparkHDFS(SparkFileDFConnection):
             raise RuntimeError(f"Cannot get list of namenodes for a cluster {self.cluster!r}")
 
         nodes_len = len(namenodes)
-        for i, namenode in enumerate(namenodes):
+        for i, namenode in enumerate(namenodes, start=1):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
             if self.Slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
@@ -343,13 +343,9 @@ class SparkHDFS(SparkFileDFConnection):
 
     def _convert_to_url(self, path: PurePathProtocol) -> str:
         # "hdfs://namenode:8020/absolute/path" if host is set
-        if self._active_host:
-            host = self._active_host
-        else:
-            host = self._get_host()
-            # cache value to avoid getting active namenode for every path
-            self._active_host = host
-        return f"hdfs://{host}:{self.ipc_port}" + path.as_posix()
+        if not self._active_host:
+            self._active_host = self._get_host()
+        return f"hdfs://{self._active_host}:{self.ipc_port}" + path.as_posix()
 
     def _get_default_path(self):
         return RemotePath("/user") / getpass.getuser()
