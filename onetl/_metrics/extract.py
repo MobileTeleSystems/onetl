@@ -70,7 +70,7 @@ def extract_metrics_from_execution(execution: SparkListenerExecution) -> SparkCo
             disk_spilled_bytes += stage.metrics.disk_spilled_bytes
             result_size_bytes += stage.metrics.result_size_bytes
 
-    # https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala#L467-L473
+    # https://github.com/apache/spark/blob/v3.5.3/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala#L467-L473
     input_file_count = (
         _get_int(execution.metrics, SparkSQLMetricNames.NUMBER_OF_FILES_READ)
         or _get_int(execution.metrics, SparkSQLMetricNames.STATIC_NUMBER_OF_FILES_READ)
