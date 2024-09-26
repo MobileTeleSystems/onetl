@@ -352,7 +352,7 @@ class SparkHDFS(SparkFileDFConnection):
         return f"hdfs://{self._active_host}:{self.ipc_port}"
 
     def _convert_to_url(self, path: PurePathProtocol) -> str:
-        # "hdfs://namenode:8020/absolute/path"
+        # example: "hdfs://namenode:8020/absolute/path"
         return self._get_conn_str() + path.as_posix()
 
     def _get_default_path(self):
