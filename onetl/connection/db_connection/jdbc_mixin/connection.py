@@ -228,7 +228,7 @@ class JDBCMixin(FrozenModel):
             # Just create metrics by hand, and fill them up using information based on dataframe content.
             metrics = SparkCommandMetrics()
             metrics.input.read_rows = df.count()
-            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(df)
             log.info("|%s| Recorded metrics:", self.__class__.__name__)
             log_lines(log, str(metrics))
         return df
@@ -304,7 +304,7 @@ class JDBCMixin(FrozenModel):
             # Just create metrics by hand, and fill them up using information based on dataframe content.
             metrics = SparkCommandMetrics()
             metrics.input.read_rows = df.count()
-            metrics.driver.in_memory_bytes = estimate_dataframe_size(self.spark, df)
+            metrics.driver.in_memory_bytes = estimate_dataframe_size(df)
 
             log.info("|%s| Recorded metrics:", self.__class__.__name__)
             log_lines(log, str(metrics))

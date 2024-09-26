@@ -139,12 +139,13 @@ def get_spark_version(spark_session: SparkSession) -> Version:
     return Version(spark_session.version)
 
 
-def estimate_dataframe_size(spark_session: SparkSession, df: DataFrame) -> int:
+def estimate_dataframe_size(df: DataFrame) -> int:
     """
     Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
 
     Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/util/SizeEstimator.html>`_.
     """
+    spark_session = df._session
     try:
         size_estimator = spark_session._jvm.org.apache.spark.util.SizeEstimator  # type: ignore[union-attr]
         return size_estimator.estimate(df._jdf)
