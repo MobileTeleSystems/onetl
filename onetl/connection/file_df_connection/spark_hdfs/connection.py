@@ -7,6 +7,7 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
+from threading import Lock
 from typing import TYPE_CHECKING, Optional
 
 from etl_entities.instance import Cluster, Host
@@ -154,6 +155,7 @@ class SparkHDFS(SparkFileDFConnection):
     host: Optional[Host] = None
     ipc_port: int = Field(default=8020, alias="port")
 
+    _active_host_lock: Lock = PrivateAttr(default_factory=Lock)
     _active_host: Optional[Host] = PrivateAttr(default=None)
 
     @slot
@@ -341,11 +343,17 @@ class SparkHDFS(SparkFileDFConnection):
 
         raise RuntimeError(f"Host {self.host!r} is not an active namenode of cluster {self.cluster!r}")
 
+    def _get_conn_str(self) -> str:
+        # cache active host to reduce number of requests.
+        # acquire a lock to avoid sending the same request for each thread.
+        with self._active_host_lock:
+            if not self._active_host:
+                self._active_host = self._get_host()
+        return f"hdfs://{self._active_host}:{self.ipc_port}"
+
     def _convert_to_url(self, path: PurePathProtocol) -> str:
-        # "hdfs://namenode:8020/absolute/path" if host is set
-        if not self._active_host:
-            self._active_host = self._get_host()
-        return f"hdfs://{self._active_host}:{self.ipc_port}" + path.as_posix()
+        # "hdfs://namenode:8020/absolute/path"
+        return self._get_conn_str() + path.as_posix()
 
     def _get_default_path(self):
         return RemotePath("/user") / getpass.getuser()

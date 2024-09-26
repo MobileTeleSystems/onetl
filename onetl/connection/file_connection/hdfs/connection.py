@@ -6,14 +6,22 @@ import os
 import stat
 import textwrap
 from logging import getLogger
+from threading import Lock
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from etl_entities.instance import Cluster, Host
 
 try:
-    from pydantic.v1 import Field, FilePath, SecretStr, root_validator, validator
+    from pydantic.v1 import (
+        Field,
+        FilePath,
+        PrivateAttr,
+        SecretStr,
+        root_validator,
+        validator,
+    )
 except (ImportError, AttributeError):
-    from pydantic import Field, FilePath, SecretStr, root_validator, validator  # type: ignore[no-redef, assignment]
+    from pydantic import Field, FilePath, SecretStr, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -211,6 +219,9 @@ class HDFS(FileConnection, RenameDirMixin):
     Slots = HDFSSlots
     # TODO: remove in v1.0.0
     slots = Slots
+
+    _active_host_lock: Lock = PrivateAttr(default_factory=Lock)
+    _active_host: Optional[Host] = PrivateAttr(default=None)
 
     @slot
     @classmethod
@@ -412,10 +423,15 @@ class HDFS(FileConnection, RenameDirMixin):
 
         raise RuntimeError(f"Host {self.host!r} is not an active namenode")
 
-    def _get_client(self) -> Client:
-        host = self._get_host()
-        conn_str = f"http://{host}:{self.webhdfs_port}"  # NOSONAR
+    def _get_conn_str(self) -> str:
+        # cache active host to reduce number of requests.
+        # acquire a lock to avoid sending the same request for each thread.
+        with self._active_host_lock:
+            if not self._active_host:
+                self._active_host = self._get_host()
+        return f"http://{self._active_host}:{self.webhdfs_port}"
 
+    def _get_client(self) -> Client:
         if self.user and (self.keytab or self.password):
             from hdfs.ext.kerberos import KerberosClient  # noqa: F811
 
@@ -424,10 +440,13 @@ class HDFS(FileConnection, RenameDirMixin):
                 keytab=self.keytab,
                 password=self.password.get_secret_value() if self.password else None,
             )
+            # checking if namenode is active requires a Kerberos ticket
+            conn_str = self._get_conn_str()
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
             from hdfs import InsecureClient  # noqa: F401, WPS442, F811
 
+            conn_str = self._get_conn_str()
             client = InsecureClient(conn_str, user=self.user)
 
         return client

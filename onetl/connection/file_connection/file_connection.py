@@ -11,6 +11,11 @@ from typing import Any, Iterable, Iterator
 
 from humanize import naturalsize
 
+try:
+    from pydantic.v1 import PrivateAttr
+except (ImportError, AttributeError):
+    from pydantic import PrivateAttr  # type: ignore[no-redef, assignment]
+
 from onetl.base import (
     BaseFileConnection,
     BaseFileFilter,
@@ -41,7 +46,7 @@ log = getLogger(__name__)
 
 @support_hooks
 class FileConnection(BaseFileConnection, FrozenModel):
-    _clients_cache: Any = None
+    _clients_cache: Any = PrivateAttr(default=None)
 
     @property
     def client(self):
