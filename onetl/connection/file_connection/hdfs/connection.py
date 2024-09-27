@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import stat
 import textwrap
+from contextlib import suppress
 from logging import getLogger
 from threading import Lock
 from typing import TYPE_CHECKING, Optional, Tuple
@@ -283,6 +284,14 @@ class HDFS(FileConnection, RenameDirMixin):
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
+
+    @slot
+    def close(self):
+        super().close()
+
+        with suppress(Exception):
+            self._active_host = None
+        return self
 
     @validator("user", pre=True)
     def _validate_packages(cls, user):
