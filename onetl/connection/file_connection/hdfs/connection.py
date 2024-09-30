@@ -7,7 +7,6 @@ import stat
 import textwrap
 from contextlib import suppress
 from logging import getLogger
-from threading import Lock
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from etl_entities.instance import Cluster, Host
@@ -221,7 +220,6 @@ class HDFS(FileConnection, RenameDirMixin):
     # TODO: remove in v1.0.0
     slots = Slots
 
-    _active_host_lock: Lock = PrivateAttr(default_factory=Lock)
     _active_host: Optional[Host] = PrivateAttr(default=None)
 
     @slot
@@ -434,10 +432,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
     def _get_conn_str(self) -> str:
         # cache active host to reduce number of requests.
-        # acquire a lock to avoid sending the same request for each thread.
-        with self._active_host_lock:
-            if not self._active_host:
-                self._active_host = self._get_host()
+        if not self._active_host:
+            self._active_host = self._get_host()
         return f"http://{self._active_host}:{self.webhdfs_port}"
 
     def _get_client(self) -> Client:
