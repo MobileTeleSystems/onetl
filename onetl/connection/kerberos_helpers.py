@@ -5,35 +5,39 @@ from __future__ import annotations
 import os
 import subprocess
 from logging import getLogger
+from threading import Lock
 
 from onetl._util.file import is_file_readable
 
 log = getLogger(__name__)
+_kinit_lock = Lock()
 
 
 def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
     path = is_file_readable(keytab)
 
-    cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
-    log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
-    subprocess.check_call(cmd)
+    with _kinit_lock:
+        cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
+        log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
+        subprocess.check_call(cmd)
 
 
 def kinit_password(user: str, password: str) -> None:
     cmd = ["kinit", user]
     log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
 
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
+    with _kinit_lock:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+        )
 
-    _stdout, stderr = proc.communicate(password.encode("utf-8"))
-    exit_code = proc.poll()
-    if exit_code:
-        raise subprocess.CalledProcessError(exit_code, cmd, output=stderr)
+        _stdout, stderr = proc.communicate(password.encode("utf-8"))
+        exit_code = proc.poll()
+        if exit_code:
+            raise subprocess.CalledProcessError(exit_code, cmd, output=stderr)
 
 
 def kinit(user: str, keytab: os.PathLike | None = None, password: str | None = None) -> None:
