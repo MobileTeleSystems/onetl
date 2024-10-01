@@ -3,6 +3,16 @@
 Clickhouse <-> Spark type mapping
 =================================
 
+.. note::
+
+    The results below are valid for Spark 3.5.3, and may differ on other Spark versions.
+
+.. note::
+
+    It is recommended to use `spark-dialect-extension <https://github.com/MobileTeleSystems/spark-dialect-extension>`_ package,
+    which implements writing Arrays from Spark to Clickhouse, fixes dropping fractions of seconds in ``TimestampType``,
+    and fixes other type conversion issues.
+
 Type detection & casting
 ------------------------
 
