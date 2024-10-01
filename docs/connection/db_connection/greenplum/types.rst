@@ -3,6 +3,10 @@
 Greenplum <-> Spark type mapping
 =================================
 
+.. note::
+
+    The results below are valid for Spark 3.2.4, and may differ on other Spark versions.
+
 Type detection & casting
 ------------------------
 

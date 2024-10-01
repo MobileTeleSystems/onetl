@@ -1,7 +1,11 @@
 .. _mysql-types:
 
 MySQL <-> Spark type mapping
-=================================
+============================
+
+.. note::
+
+    The results below are valid for Spark 3.5.3, and may differ on other Spark versions.
 
 Type detection & casting
 ------------------------

@@ -1,0 +1,1 @@
+Add note about `spark-dialect-extension <https://github.com/MobileTeleSystems/spark-dialect-extension>`_ package to Clickhouse connector documentation.
