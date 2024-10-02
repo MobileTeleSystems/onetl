@@ -1,0 +1,1 @@
+Log detected JDBC dialect while using ``DBWriter``.

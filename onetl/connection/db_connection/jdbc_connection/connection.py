@@ -187,6 +187,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             else write_options.if_exists.value
         )
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
         df.write.format("jdbc").mode(mode).options(dbtable=target, **jdbc_properties).save()
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
