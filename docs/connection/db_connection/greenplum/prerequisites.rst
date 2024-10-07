@@ -93,7 +93,7 @@ Number of connections can be limited by 2 ways:
 
         spark = (
             SparkSession.builder
-            # Spark will start EXACTLY 5 executors with 1 core each, so max number of parallel jobs is 10
+            # Spark will run with 5 threads in local mode, allowing up to 5 parallel tasks
             .config("spark.master", "local[5]")
             .config("spark.executor.cores", 1)
         ).getOrCreate()
