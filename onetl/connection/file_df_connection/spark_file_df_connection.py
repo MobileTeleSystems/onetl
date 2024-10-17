@@ -76,11 +76,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
         reader: DataFrameReader = self.spark.read
         with ExitStack() as stack:
-            format_result = format.apply_to_reader(reader)
-            if isinstance(format_result, AbstractContextManager):
-                reader = stack.enter_context(format_result)
-            else:
-                reader = format_result
+            reader = format.apply_to_reader(reader)
 
             if root:
                 reader = reader.option("basePath", self._convert_to_url(root))
@@ -111,12 +107,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
         writer: DataFrameWriter = df.write
         with ExitStack() as stack:
-            format_result = format.apply_to_writer(writer)
-
-            if isinstance(format_result, AbstractContextManager):
-                writer = stack.enter_context(format_result)
-            else:
-                writer = format_result
+            writer = format.apply_to_writer(writer)
 
             if options:
                 options_result = options.apply_to_writer(writer)
