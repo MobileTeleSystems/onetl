@@ -1,4 +1,5 @@
 import time
+from contextlib import suppress
 
 import pytest
 
@@ -161,6 +162,67 @@ def test_spark_metrics_recorder_postgres_write_empty(spark, processing, get_sche
 
     with SparkMetricsRecorder(spark) as recorder:
         writer.run(df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+
+
+def test_spark_metrics_recorder_postgres_write_driver_failed(spark, processing, prepare_schema_table):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+    df = processing.create_spark_df(spark).limit(0)
+
+    mismatch_df = df.withColumn("mismatch", df.id_int)
+
+    writer = DBWriter(
+        connection=postgres,
+        target=prepare_schema_table.full_name,
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(mismatch_df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+
+
+def test_spark_metrics_recorder_postgres_write_executor_failed(spark, processing, get_schema_table):
+    from pyspark.sql.functions import udf
+    from pyspark.sql.types import IntegerType
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    @udf(returnType=IntegerType())
+    def raise_exception():
+        raise ValueError("Force task failure")
+
+    df = processing.create_spark_df(spark).limit(0)
+    failing_df = df.select(raise_exception().alias("some"))
+
+    writer = DBWriter(
+        connection=postgres,
+        target=get_schema_table.full_name,
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(failing_df)
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
