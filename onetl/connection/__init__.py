@@ -76,4 +76,4 @@ def __getattr__(name: str):
         submodule = file_df_connections_modules[name]
         return getattr(import_module(f"onetl.connection.file_df_connection.{submodule}"), name)
 
-    raise ImportError(f"cannot import name {name!r} from {__name__!r}")
+    raise AttributeError(name)

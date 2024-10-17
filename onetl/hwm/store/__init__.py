@@ -45,4 +45,4 @@ def __getattr__(name: str):
 
         return getattr(import_module("etl_entities.hwm_store"), name)
 
-    raise ImportError(f"cannot import name {name!r} from {__name__!r}")
+    raise AttributeError(name)

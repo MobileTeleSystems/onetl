@@ -1,0 +1,1 @@
+Use ``AttributeError`` instead of ``ImportError`` in module's ``__getattr__`` method, to make code compliant with Python spec.

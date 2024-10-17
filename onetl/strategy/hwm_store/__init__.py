@@ -39,7 +39,7 @@ __all__ = [
 
 def __getattr__(name: str):
     if name not in __all__:
-        raise ImportError(f"cannot import name {name!r} from {__name__!r}")
+        raise AttributeError(name)
 
     message = f"""
         Imports from module {__name__!r} are deprecated since v0.6.0 and will be removed in v1.0.0.
