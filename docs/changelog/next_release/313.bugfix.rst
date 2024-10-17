@@ -1,0 +1,1 @@
+Fix ``SparkMetricsRecorder`` failing when receiving ``SparkListenerTaskEnd`` without ``taskMetrics`` (e.g. executor was killed by OOM).

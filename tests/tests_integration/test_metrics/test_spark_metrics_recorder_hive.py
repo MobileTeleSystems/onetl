@@ -1,4 +1,5 @@
 import time
+from contextlib import suppress
 
 import pytest
 
@@ -131,6 +132,53 @@ def test_spark_metrics_recorder_hive_write_empty(spark, processing, get_schema_t
 
     with SparkMetricsRecorder(spark) as recorder:
         writer.run(df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+
+
+def test_spark_metrics_recorder_hive_write_driver_failed(spark, processing, prepare_schema_table):
+    df = processing.create_spark_df(spark).limit(0)
+
+    mismatch_df = df.withColumn("mismatch", df.id_int)
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    writer = DBWriter(
+        connection=hive,
+        target=prepare_schema_table.full_name,
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(mismatch_df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+
+
+def test_spark_metrics_recorder_hive_write_executor_failed(spark, processing, get_schema_table):
+    from pyspark.sql.functions import udf
+    from pyspark.sql.types import IntegerType
+
+    df = processing.create_spark_df(spark).limit(0)
+
+    @udf(returnType=IntegerType())
+    def raise_exception():
+        raise ValueError("Force task failure")
+
+    failing_df = df.select(raise_exception().alias("some"))
+
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+    writer = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(failing_df)
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()

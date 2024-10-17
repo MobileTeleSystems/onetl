@@ -61,6 +61,8 @@ class SparkListenerTaskMetrics:
 
     @classmethod
     def create(cls, task_metrics):
+        if not task_metrics:
+            return cls()
         return cls(
             executor_run_time_milliseconds=task_metrics.executorRunTime(),
             executor_cpu_time_nanoseconds=task_metrics.executorCpuTime(),
