@@ -27,17 +27,17 @@ def kinit_password(user: str, password: str) -> None:
     log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
 
     with _kinit_lock:
-        proc = subprocess.Popen(
+        with subprocess.Popen(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
-        )
-
-        _stdout, stderr = proc.communicate(password.encode("utf-8"))
-        exit_code = proc.poll()
-        if exit_code:
-            raise subprocess.CalledProcessError(exit_code, cmd, output=stderr)
+            # do not show user 'Please enter password' banner
+            stderr=subprocess.PIPE,
+            # do not capture stderr, immediately show all errors to user
+        ) as proc:
+            proc.communicate(password.encode("utf-8"))
+            exit_code = proc.poll()
+            if exit_code:
+                raise subprocess.CalledProcessError(exit_code, cmd)
 
 
 def kinit(user: str, keytab: os.PathLike | None = None, password: str | None = None) -> None:
