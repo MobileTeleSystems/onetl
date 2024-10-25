@@ -31,7 +31,7 @@ def kinit_password(user: str, password: str) -> None:
             cmd,
             stdin=subprocess.PIPE,
             # do not show user 'Please enter password' banner
-            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
             # do not capture stderr, immediately show all errors to user
         ) as proc:
             proc.communicate(password.encode("utf-8"))
