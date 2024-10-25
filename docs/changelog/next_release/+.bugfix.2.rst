@@ -1,1 +1,0 @@
-Wrap ``kinit`` with ``threading.Lock`` to avoid multithreading issues.

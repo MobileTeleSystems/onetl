@@ -1,1 +1,0 @@
-Call ``kinit`` before checking for HDFS active namenode.

@@ -1,1 +1,0 @@
-Immediately show ``kinit`` errors to user, instead of hiding them.
