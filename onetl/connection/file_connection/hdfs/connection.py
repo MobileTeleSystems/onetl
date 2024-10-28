@@ -5,15 +5,23 @@ from __future__ import annotations
 import os
 import stat
 import textwrap
+from contextlib import suppress
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from etl_entities.instance import Cluster, Host
 
 try:
-    from pydantic.v1 import Field, FilePath, SecretStr, root_validator, validator
+    from pydantic.v1 import (
+        Field,
+        FilePath,
+        PrivateAttr,
+        SecretStr,
+        root_validator,
+        validator,
+    )
 except (ImportError, AttributeError):
-    from pydantic import Field, FilePath, SecretStr, root_validator, validator  # type: ignore[no-redef, assignment]
+    from pydantic import Field, FilePath, SecretStr, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -212,6 +220,8 @@ class HDFS(FileConnection, RenameDirMixin):
     # TODO: remove in v1.0.0
     slots = Slots
 
+    _active_host: Optional[Host] = PrivateAttr(default=None)
+
     @slot
     @classmethod
     def get_current(cls, **kwargs):
@@ -272,6 +282,14 @@ class HDFS(FileConnection, RenameDirMixin):
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         return self.client.status(os.fspath(path), strict=False)
+
+    @slot
+    def close(self):
+        super().close()
+
+        with suppress(Exception):
+            self._active_host = None
+        return self
 
     @validator("user", pre=True)
     def _validate_packages(cls, user):
@@ -378,7 +396,7 @@ class HDFS(FileConnection, RenameDirMixin):
             raise RuntimeError(f"Cannot get list of namenodes for a cluster {self.cluster!r}")
 
         nodes_len = len(namenodes)
-        for i, namenode in enumerate(namenodes):
+        for i, namenode in enumerate(namenodes, start=1):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
             if self.Slots.is_namenode_active(namenode, self.cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
@@ -412,10 +430,13 @@ class HDFS(FileConnection, RenameDirMixin):
 
         raise RuntimeError(f"Host {self.host!r} is not an active namenode")
 
-    def _get_client(self) -> Client:
-        host = self._get_host()
-        conn_str = f"http://{host}:{self.webhdfs_port}"  # NOSONAR
+    def _get_conn_str(self) -> str:
+        # cache active host to reduce number of requests.
+        if not self._active_host:
+            self._active_host = self._get_host()
+        return f"http://{self._active_host}:{self.webhdfs_port}"
 
+    def _get_client(self) -> Client:
         if self.user and (self.keytab or self.password):
             from hdfs.ext.kerberos import KerberosClient  # noqa: F811
 
@@ -424,10 +445,13 @@ class HDFS(FileConnection, RenameDirMixin):
                 keytab=self.keytab,
                 password=self.password.get_secret_value() if self.password else None,
             )
+            # checking if namenode is active requires a Kerberos ticket
+            conn_str = self._get_conn_str()
             client = KerberosClient(conn_str, timeout=self.timeout)
         else:
             from hdfs import InsecureClient  # noqa: F401, WPS442, F811
 
+            conn_str = self._get_conn_str()
             client = InsecureClient(conn_str, user=self.user)
 
         return client

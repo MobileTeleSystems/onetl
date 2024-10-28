@@ -169,3 +169,62 @@ def test_spark_metrics_recorder_file_df_writer_empty_input(
         metrics = recorder.metrics()
         assert not metrics.output.written_rows
         assert not metrics.output.written_bytes
+
+
+def test_spark_metrics_recorder_file_df_writer_driver_failed(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+):
+    local_fs, target_path = local_fs_file_df_connection_with_path
+
+    df = file_df_dataframe
+
+    writer = FileDFWriter(
+        connection=local_fs,
+        format=CSV(),
+        target_path=target_path,
+        options=FileDFWriter.Options(if_exists="error"),
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+        assert not metrics.output.written_bytes
+
+
+def test_spark_metrics_recorder_file_df_writer_executor_failed(
+    spark,
+    local_fs_file_df_connection_with_path,
+    file_df_dataframe,
+):
+    from pyspark.sql.functions import udf
+    from pyspark.sql.types import IntegerType
+
+    @udf(returnType=IntegerType())
+    def raise_exception():
+        raise ValueError("Force task failure")
+
+    local_fs, target_path = local_fs_file_df_connection_with_path
+
+    failing_df = file_df_dataframe.select(raise_exception().alias("some"))
+
+    writer = FileDFWriter(
+        connection=local_fs,
+        format=CSV(),
+        target_path=target_path,
+        options=FileDFWriter.Options(if_exists="append"),
+    )
+
+    with SparkMetricsRecorder(spark) as recorder:
+        with suppress(Exception):
+            writer.run(failing_df)
+
+        time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
+        metrics = recorder.metrics()
+        assert not metrics.output.written_rows
+        assert not metrics.output.written_bytes

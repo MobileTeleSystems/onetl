@@ -1,7 +1,11 @@
 .. _postgres-types:
 
 Postgres <-> Spark type mapping
-=================================
+===============================
+
+.. note::
+
+    The results below are valid for Spark 3.5.3, and may differ on other Spark versions.
 
 Type detection & casting
 ------------------------
@@ -109,8 +113,8 @@ See `List of Postgres types <https://www.postgresql.org/docs/current/datatype.ht
 Here you can find source code with type conversions:
 
 * `Postgres <-> JDBC <https://github.com/pgjdbc/pgjdbc/blob/REL42.6.0/pgjdbc/src/main/java/org/postgresql/jdbc/TypeInfoCache.java#L78-L112>`_
-* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L50-L106>`_
-* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.2/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L116-L130>`_
+* `JDBC -> Spark <https://github.com/apache/spark/blob/v3.5.3/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L50-L106>`_
+* `Spark -> JDBC <https://github.com/apache/spark/blob/v3.5.3/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L116-L130>`_
 
 Numeric types
 ~~~~~~~~~~~~~

@@ -40,4 +40,4 @@ def __getattr__(name: str):
         )
         return getattr(import_module(f"onetl.{submodule}"), name)
 
-    raise ImportError(f"cannot import name {name!r} from {__name__!r}")
+    raise AttributeError(name)

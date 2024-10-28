@@ -65,7 +65,7 @@ def test_hive_known_normalize_cluster_name_hook(request, spark_mock):
     assert Hive(cluster="RND-DWH", spark=spark_mock).cluster == "rnd-dwh"
 
 
-def test_hive_known_get_current_cluster_hook(request, spark_mock, mocker):
+def test_hive_known_get_current_cluster_hook(request, spark_mock):
     # no exception
     Hive(cluster="rnd-prod", spark=spark_mock).check()
     Hive(cluster="rnd-dwh", spark=spark_mock).check()

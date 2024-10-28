@@ -61,6 +61,8 @@ class SparkListenerTaskMetrics:
 
     @classmethod
     def create(cls, task_metrics):
+        if not task_metrics:
+            return cls()
         return cls(
             executor_run_time_milliseconds=task_metrics.executorRunTime(),
             executor_cpu_time_nanoseconds=task_metrics.executorCpuTime(),
@@ -81,14 +83,14 @@ class SparkListenerTask:
 
     @classmethod
     def create(cls, task_info):
-        # https://spark.apache.org/docs/3.5.2/api/java/org/apache/spark/scheduler/TaskInfo.html
+        # https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/scheduler/TaskInfo.html
         return cls(id=task_info.taskId())
 
     def on_task_start(self, event):
-        # https://spark.apache.org/docs/3.5.2/api/java/org/apache/spark/scheduler/SparkListenerTaskStart.html
+        # https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/scheduler/SparkListenerTaskStart.html
         self.status = SparkListenerTaskStatus(event.taskInfo().status())
 
     def on_task_end(self, event):
-        # https://spark.apache.org/docs/3.5.2/api/java/org/apache/spark/scheduler/SparkListenerTaskEnd.html
+        # https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/scheduler/SparkListenerTaskEnd.html
         self.status = SparkListenerTaskStatus(event.taskInfo().status())
         self.metrics = SparkListenerTaskMetrics.create(event.taskMetrics())

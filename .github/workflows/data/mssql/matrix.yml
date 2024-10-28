@@ -1,14 +1,14 @@
 min: &min
-  mssql-version: 2017-GA-ubuntu
+  mssql-version: 2017-latest
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-20.04
 
 max: &max
-  mssql-version: 2022-CU14-ubuntu-22.04
-  spark-version: 3.5.2
+  mssql-version: 2022-latest
+  spark-version: 3.5.3
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20

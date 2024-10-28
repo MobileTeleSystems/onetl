@@ -19,18 +19,17 @@ Examples
     df = ...  # data is here
 
     # Create dataframe with specific number of Spark partitions.
-    # Use the Hive partitioning columns to group the data. Create only 20 files per Hive partition.
-    # Also sort the data by column which most data is correlated with, reducing files size.
+    # Use the Hive partitioning columns to group the data. Create max 20 files per Hive partition.
+    # Also sort the data by column which most data is correlated with (e.g. user_id), reducing files size.
+
+    num_files_per_partition = 20
+    partition_columns = ["country", "business_date"]
+    sort_columns = ["user_id"]
     write_df = df.repartition(
-        20,
-        "country",
-        "business_date",
-        "user_id",
-    ).sortWithinPartitions(
-        "country",
-        "business_date",
-        "user_id",
-    )
+        num_files_per_partition,
+        *partition_columns,
+        *sort_columns,
+    ).sortWithinPartitions(*partition_columns, *sort_columns)
 
     writer = DBWriter(
         connection=hive,
@@ -38,8 +37,7 @@ Examples
         options=Hive.WriteOptions(
             if_exists="append",
             # Hive partitioning columns.
-            # `user_id`` column is not included, as it has a lot of distinct values.
-            partitionBy=["country", "business_date"],
+            partitionBy=partition_columns,
         ),
     )
 

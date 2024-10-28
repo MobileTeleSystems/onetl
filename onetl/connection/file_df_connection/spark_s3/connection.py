@@ -133,7 +133,7 @@ class SparkS3(SparkFileDFConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(spark_version="3.5.2")
+        maven_packages = SparkS3.get_packages(spark_version="3.5.3")
         # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
         excluded_packages = [
             "com.google.cloud.bigdataoss:gcs-connector",
@@ -236,8 +236,8 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.5.2")
-            SparkS3.get_packages(spark_version="3.5.2", scala_version="2.12")
+            SparkS3.get_packages(spark_version="3.5.3")
+            SparkS3.get_packages(spark_version="3.5.3", scala_version="2.12")
 
         """
 
