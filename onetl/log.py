@@ -9,7 +9,7 @@ import sys
 from contextlib import redirect_stdout
 from enum import Enum
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Collection, Iterable
+from typing import TYPE_CHECKING, Any, Collection, Iterable, Mapping, Set
 
 from etl_entities.hwm import HWM
 from typing_extensions import deprecated
@@ -315,6 +315,8 @@ def log_collection(
 
         log_collection(logger, "myvar", [])
         log_collection(logger, "myvar", ["item1", {"item2": "value2"}, None])
+        log_collection(logger, "myvar", {"item1", "item2", None})
+        log_collection(logger, "myvar", {"key1": "value1", "key2": None})
         log_collection(logger, "myvar", ["item1", "item2", "item3"], max_items=1)
         log_collection(
             logger,
@@ -334,6 +336,17 @@ def log_collection(
         INFO  onetl.module            None,
         INFO  onetl.module        ]
 
+        INFO  onetl.module        myvar = {
+        INFO  onetl.module            'item1',
+        INFO  onetl.module            'item2',
+        INFO  onetl.module            None,
+        INFO  onetl.module        }
+
+        INFO  onetl.module        myvar = {
+        INFO  onetl.module            'key1': 'value1',
+        INFO  onetl.module            'key2': None,
+        INFO  onetl.module        }
+
         INFO onetl.module        myvar = [
         INFO onetl.module            'item1',
         INFO onetl.module            # ... 2 more items of type <class 'str'>
@@ -350,21 +363,30 @@ def log_collection(
 
     base_indent = " " * (BASE_LOG_INDENT + indent)
     stacklevel += 1
-    items = list(collection)  # force convert all iterators to list to know size
-    if not items:
-        _log(logger, "%s%s = []", base_indent, name, level=level, stacklevel=stacklevel)
+
+    if not isinstance(collection, (Mapping, Set)):
+        collection = list(collection)  # force convert all iterators to list to know size
+
+    start_bracket = "["
+    end_bracket = "]"
+    if isinstance(collection, (Mapping, Set)):
+        start_bracket = "{"
+        end_bracket = "}"
+
+    if not collection:
+        _log(logger, "%s%s = %s%s", base_indent, name, start_bracket, end_bracket, level=level, stacklevel=stacklevel)
         return
 
     nested_indent = " " * (BASE_LOG_INDENT + indent + 4)
-    _log(logger, "%s%s = [", base_indent, name, level=level, stacklevel=stacklevel)
+    _log(logger, "%s%s = %s", base_indent, name, start_bracket, level=level, stacklevel=stacklevel)
 
-    for i, item in enumerate(items, start=1):
-        if max_items and i > max_items and level >= logging.DEBUG:
+    for i, item in enumerate(sorted(collection), start=1):
+        if max_items and i > max_items and level > logging.DEBUG:
             _log(
                 logger,
                 "%s# ... %d more items of type %r",
                 nested_indent,
-                len(items) - max_items,
+                len(collection) - max_items,
                 type(item),
                 level=level,
                 stacklevel=stacklevel,
@@ -377,9 +399,13 @@ def log_collection(
                 stacklevel=stacklevel,
             )
             break
-        _log(logger, "%s%r,", nested_indent, item, level=level, stacklevel=stacklevel)
 
-    _log(logger, "%s]", base_indent, level=level, stacklevel=stacklevel)
+        if isinstance(collection, Mapping):
+            _log(logger, "%s%r: %r,", nested_indent, item, collection[item], level=level, stacklevel=stacklevel)
+        else:
+            _log(logger, "%s%r,", nested_indent, item, level=level, stacklevel=stacklevel)
+
+    _log(logger, "%s%s", base_indent, end_bracket, level=level, stacklevel=stacklevel)
 
 
 def entity_boundary_log(logger: logging.Logger, msg: str, char: str = "=", stacklevel: int = 1) -> None:
