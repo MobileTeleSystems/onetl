@@ -72,7 +72,7 @@ This method supports **any** query syntax supported by MSSQL, like:
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... AS SELECT ...``
 * ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
-* ✅︎ ``CALL procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
+* ✅︎ ``EXEC procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
 * ✅︎ ``DECLARE ... BEGIN ... END`` - execute PL/SQL statement
 * ✅︎ other statements not mentioned here
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported

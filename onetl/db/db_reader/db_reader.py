@@ -635,7 +635,7 @@ class DBReader(FrozenModel):
 
         self._check_strategy()
 
-        job_description = f"{self.__class__.__name__}.run({self.source}) -> {self.connection}"
+        job_description = f"{self.connection} -> {self.__class__.__name__}.run({self.source})"
         with override_job_description(self.connection.spark, job_description):
             if not self._connection_checked:
                 self._log_parameters()

@@ -527,13 +527,14 @@ class Kafka(DBConnection):
                 max_offsets[partition_id] = end_offset
 
         log.info("|%s| Received min and max offset values for each partition.", self.__class__.__name__)
-        for partition_id in sorted(min_offsets.keys()):
+        partitions = sorted(set(min_offsets.keys() | max_offsets.keys()))
+        for partition_id in partitions:
             log.debug(
                 "|%s| Partition %d: Min Offset = %d, Max Offset = %d",
                 self.__class__.__name__,
                 partition_id,
-                min_offsets[partition_id],
-                max_offsets[partition_id],
+                min_offsets.get(partition_id),
+                max_offsets.get(partition_id),
             )
 
         return min_offsets, max_offsets

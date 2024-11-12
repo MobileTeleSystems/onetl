@@ -1,4 +1,4 @@
-etl-entities>=2.2,<2.4
+etl-entities>=2.2,<2.5
 evacuator>=1.0,<1.1
 frozendict
 humanize

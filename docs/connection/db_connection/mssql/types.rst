@@ -197,8 +197,7 @@ Temporal types
     So not all of values in Spark DataFrame can be written to MSSQL.
 
     References:
-        * `Clickhouse DateTime documentation <https://clickhouse.com/docs/en/sql-reference/data-types/datetime>`_
-        * `Clickhouse DateTime documentation <https://clickhouse.com/docs/en/sql-reference/data-types/datetime>`_
+        * `MSSQL date & time types documentation <https://learn.microsoft.com/en-us/sql/t-sql/data-types/date-and-time-types>`_
         * `Spark DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
         * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
 
@@ -213,7 +212,7 @@ Temporal types
     Last digit will be lost during read or write operations.
 
 .. [5]
-    ``time`` type is the same as ``timestamp`` with date ``1970-01-01``. So instead of reading data from MSSQL like ``23:59:59.999999``
+    ``time`` type is the same as ``datetime2`` with date ``1970-01-01``. So instead of reading data from MSSQL like ``23:59:59.999999``
     it is actually read ``1970-01-01 23:59:59.999999``, and vice versa.
 
 String types

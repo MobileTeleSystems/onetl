@@ -28,7 +28,6 @@ def test_kafka_strategy_incremental(
 ):
     from pyspark.sql.functions import max as spark_max
 
-    hwm_type = KeyValueIntHWM
     hwm_name = secrets.token_hex(5)
     store = HWMStoreStackManager.get_current()
 
@@ -77,7 +76,7 @@ def test_kafka_strategy_incremental(
 
     hwm = store.get_hwm(hwm_name)
     assert hwm is not None
-    assert isinstance(hwm, hwm_type)
+    assert isinstance(hwm, KeyValueIntHWM)
 
     # HWM contains mapping `partition: max offset + 1`
     partition_offsets_initial = dict.fromkeys(range(num_partitions or 1), 0)

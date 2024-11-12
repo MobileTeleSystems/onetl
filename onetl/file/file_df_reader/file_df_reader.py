@@ -212,9 +212,9 @@ class FileDFReader(FrozenModel):
             self._log_parameters(files)
 
         if files:
-            job_description = f"{self.__class__.__name__}.run([..files..]) -> {self.connection}"
+            job_description = f"{self.connection} -> {self.__class__.__name__}.run([..files..])"
         else:
-            job_description = f"{self.__class__.__name__}.run({self.source_path}) -> {self.connection}"
+            job_description = f"{self.connection} -> {self.__class__.__name__}.run({self.source_path})"
 
         with override_job_description(self.connection.spark, job_description):
             paths: FileSet[PurePathProtocol] = FileSet()
