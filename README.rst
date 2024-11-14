@@ -30,7 +30,7 @@ onETL
 .. |Test Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
     :alt: Test coverage - percent
     :target: https://codecov.io/gh/MobileTeleSystems/onetl
-.. |pre-commit.ci Status| image:: https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.
+.. |pre-commit.ci Status| image:: https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg
     :alt: pre-commit.ci - status
     :target: https://results.pre-commit.ci/latest/github/MobileTeleSystems/onetl/develop
 
