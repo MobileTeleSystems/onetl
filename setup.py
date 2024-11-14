@@ -64,7 +64,7 @@ setup(
     license_files=("LICENSE.txt",),
     url="https://github.com/MobileTeleSystems/onetl",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Framework :: Pydantic",
         "Framework :: Pydantic :: 1",
         "Framework :: Pydantic :: 2",
