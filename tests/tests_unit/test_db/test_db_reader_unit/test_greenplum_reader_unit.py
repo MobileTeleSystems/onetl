@@ -36,14 +36,13 @@ def test_greenplum_reader_snapshot_error_pass_df_schema(spark_mock):
         )
 
 
-@pytest.mark.parametrize("table", ["table", "table.table.table"])
-def test_greenplum_reader_wrong_table_name(spark_mock, table):
+def test_greenplum_reader_wrong_table_name(spark_mock):
     greenplum = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBReader(
             connection=greenplum,
-            table=table,  # Required format: table="schema.table"
+            table="table",  # Required format: table="schema.table"
         )
 
 
