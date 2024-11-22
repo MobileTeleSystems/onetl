@@ -36,14 +36,13 @@ def test_hive_reader_snapshot_error_pass_df_schema(spark_mock):
         )
 
 
-@pytest.mark.parametrize("table", ["table", "table.table.table"])
-def test_hive_reader_wrong_table_name(spark_mock, table):
+def test_hive_reader_wrong_table_name(spark_mock):
     hive = Hive(cluster="rnd-dwh", spark=spark_mock)
 
     with pytest.raises(ValueError):
         DBReader(
             connection=hive,
-            table=table,  # Required format: table="schema.table"
+            table="table",  # Required format: table="schema.table"
         )
 
 

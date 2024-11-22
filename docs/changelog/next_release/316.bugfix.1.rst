@@ -1,1 +1,0 @@
-Fix ``log_hwm`` result for ``KeyValueIntHWM`` (used by Kafka).

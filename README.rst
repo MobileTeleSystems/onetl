@@ -3,24 +3,35 @@
 onETL
 =====
 
-|Repo Status| |PyPI| |PyPI License| |PyPI Python Version|
-|Documentation| |Build Status| |Coverage| |pre-commit.ci|
+|Repo Status| |PyPI Latest Release| |PyPI License| |PyPI Python Version| |PyPI Downloads|
+|Documentation| |CI Status| |Test Coverage| |pre-commit.ci Status|
 
 .. |Repo Status| image:: https://www.repostatus.org/badges/latest/active.svg
+    :alt: Repo status - Active
     :target: https://github.com/MobileTeleSystems/onetl
-.. |PyPI| image:: https://img.shields.io/pypi/v/onetl
+.. |PyPI Latest Release| image:: https://img.shields.io/pypi/v/onetl
+    :alt: PyPI - Latest Release
     :target: https://pypi.org/project/onetl/
 .. |PyPI License| image:: https://img.shields.io/pypi/l/onetl.svg
+    :alt: PyPI - License
     :target: https://github.com/MobileTeleSystems/onetl/blob/develop/LICENSE.txt
 .. |PyPI Python Version| image:: https://img.shields.io/pypi/pyversions/onetl.svg
-    :target: https://badge.fury.io/py/onetl
+    :alt: PyPI - Python Version
+    :target: https://pypi.org/project/onetl/
+.. |PyPI Downloads| image:: https://img.shields.io/pypi/dm/onetl
+    :alt: PyPI - Downloads
+    :target: https://pypi.org/project/onetl/
 .. |Documentation| image:: https://readthedocs.org/projects/onetl/badge/?version=stable
+    :alt: Documentation - ReadTheDocs
     :target: https://onetl.readthedocs.io/
-.. |Build Status| image:: https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg
+.. |CI Status| image:: https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg
+    :alt: Github Actions - latest CI build status
     :target: https://github.com/MobileTeleSystems/onetl/actions
-.. |Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
+.. |Test Coverage| image:: https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ
+    :alt: Test coverage - percent
     :target: https://codecov.io/gh/MobileTeleSystems/onetl
-.. |pre-commit.ci| image:: https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg
+.. |pre-commit.ci Status| image:: https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg
+    :alt: pre-commit.ci - status
     :target: https://results.pre-commit.ci/latest/github/MobileTeleSystems/onetl/develop
 
 |Logo|

@@ -1,1 +1,0 @@
-Fix ``log_collection`` hiding values of ``Kafka.addresses`` in logs with ``INFO`` level.
