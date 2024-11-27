@@ -1,0 +1,1 @@
+Fix ``DBReader(conn=oracle, options={"partitioning_mode": "hash"})`` lead to data skew in last partition due to wrong ``ora_hash`` usage.

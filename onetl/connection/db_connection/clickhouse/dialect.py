@@ -10,7 +10,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 class ClickhouseDialect(JDBCDialect):
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"modulo(halfMD5({partition_column}), {num_partitions})"
+        return f"halfMD5({partition_column}) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         return f"{partition_column} % {num_partitions}"
