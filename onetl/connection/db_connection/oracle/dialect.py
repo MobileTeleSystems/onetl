@@ -43,7 +43,9 @@ class OracleDialect(JDBCDialect):
         )
 
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"ora_hash({partition_column}, {num_partitions})"
+        # ora_hash returns values from 0 to N including N.
+        # Balancing N+1 splits to N partitions leads to data skew in last partition.
+        return f"ora_hash({partition_column}, {num_partitions - 1})"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         return f"MOD({partition_column}, {num_partitions})"
