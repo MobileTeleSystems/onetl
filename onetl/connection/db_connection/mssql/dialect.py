@@ -10,7 +10,7 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 class MSSQLDialect(JDBCDialect):
     # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"CONVERT(BIGINT, HASHBYTES ( 'SHA' , {partition_column} )) % {num_partitions}"
+        return f"CONVERT(BIGINT, HASHBYTES ('SHA', {partition_column})) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         return f"{partition_column} % {num_partitions}"

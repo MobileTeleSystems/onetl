@@ -4,4 +4,4 @@
 Bug Fixes
 ---------
 
-- Allow passing table names in format ``schema."table.with.dots"`` to ``DBReader(name=...)`` and ``DBWriter(name=...)``.
+- Allow passing table names in format ``schema."table.with.dots"`` to ``DBReader(source=...)`` and ``DBWriter(target=...)``.

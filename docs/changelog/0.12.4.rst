@@ -1,0 +1,7 @@
+0.12.4 (2024-11-27)
+===================
+
+Bug Fixes
+---------
+
+- Fix ``DBReader(conn=oracle, options={"partitioning_mode": "hash"})`` lead to data skew in last partition due to wrong ``ora_hash`` usage. (:github:pull:`319`)
