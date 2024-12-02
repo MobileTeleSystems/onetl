@@ -48,7 +48,8 @@ class OracleDialect(JDBCDialect):
         return f"ora_hash({partition_column}, {num_partitions - 1})"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
-        return f"MOD({partition_column}, {num_partitions})"
+        # Return positive value even for negative input
+        return f"ABS(MOD({partition_column}, {num_partitions}))"
 
     def _serialize_datetime(self, value: datetime) -> str:
         result = value.strftime("%Y-%m-%d %H:%M:%S")

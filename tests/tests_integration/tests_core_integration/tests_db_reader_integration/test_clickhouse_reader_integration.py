@@ -7,6 +7,8 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl._util.spark import get_spark_version
+from onetl._util.version import Version
 from onetl.connection import Clickhouse
 from onetl.db import DBReader
 from tests.util.rand import rand_str
@@ -38,15 +40,9 @@ def test_clickhouse_reader_snapshot(spark, processing, load_table_data):
     )
 
 
-@pytest.mark.parametrize(
-    "mode, column",
-    [
-        ("range", "id_int"),
-        ("hash", "text_string"),
-        ("mod", "id_int"),
-    ],
-)
-def test_clickhouse_reader_snapshot_partitioning_mode(mode, column, spark, processing, load_table_data):
+def test_clickhouse_reader_snapshot_with_partitioning_mode_range_int(spark, processing, load_table_data):
+    from pyspark.sql.functions import spark_partition_id
+
     clickhouse = Clickhouse(
         host=processing.host,
         port=processing.port,
@@ -59,13 +55,12 @@ def test_clickhouse_reader_snapshot_partitioning_mode(mode, column, spark, proce
     reader = DBReader(
         connection=clickhouse,
         source=load_table_data.full_name,
-        options=Clickhouse.ReadOptions(
-            partitioning_mode=mode,
-            partition_column=column,
-            num_partitions=5,
-        ),
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": "hwm_int",
+            "numPartitions": 3,
+        },
     )
-
     table_df = reader.run()
 
     processing.assert_equal_df(
@@ -75,7 +70,342 @@ def test_clickhouse_reader_snapshot_partitioning_mode(mode, column, spark, proce
         order_by="id_int",
     )
 
-    assert table_df.rdd.getNumPartitions() == 5
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows with very low variance.
+    average_count_per_partition = table_df.count() // table_df.rdd.getNumPartitions()
+    min_count_per_partition = average_count_per_partition - 1
+    max_count_per_partition = average_count_per_partition + 1
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+@pytest.mark.parametrize(
+    "bounds",
+    [
+        pytest.param({"lowerBound": "50"}, id="lower_bound"),
+        pytest.param({"upperBound": "70"}, id="upper_bound"),
+        pytest.param({"lowerBound": "50", "upperBound": "70"}, id="both_bounds"),
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_range_int_explicit_bounds(
+    spark,
+    processing,
+    load_table_data,
+    bounds,
+):
+    from pyspark.sql.functions import spark_partition_id
+
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": "hwm_int",
+            "numPartitions": 3,
+            **bounds,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "hwm_date",
+        "hwm_datetime",
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_range_date_datetime(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        # https://issues.apache.org/jira/browse/SPARK-22814
+        pytest.skip("partitionColumn of date/datetime is supported only since 2.4.0")
+
+    from pyspark.sql.functions import spark_partition_id
+
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_range_unsupported_column_type(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+
+    with pytest.raises(Exception):
+        reader.run()
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        # all column types are supported
+        "hwm_int",
+        "hwm_date",
+        "hwm_datetime",
+        "float_value",
+        "text_string",
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_hash(spark, processing, load_table_data, column):
+    from pyspark.sql.functions import spark_partition_id
+
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "hash",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
+    # with some variance caused by randomness & hash distribution
+    min_count_per_partition = 10
+    max_count_per_partition = 50
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "hwm_int",
+        "float_value",
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_mod_number(spark, processing, load_table_data, column):
+    from pyspark.sql.functions import spark_partition_id
+
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "mod",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows with very low variance.
+    average_count_per_partition = table_df.count() // table_df.rdd.getNumPartitions()
+    min_count_per_partition = average_count_per_partition - 1
+    max_count_per_partition = average_count_per_partition + 1
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+# Apparently, Clickhouse supports `date % number` operation
+def test_clickhouse_reader_snapshot_with_partitioning_mode_mod_date(spark, processing, load_table_data):
+    from pyspark.sql.functions import spark_partition_id
+
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "mod",
+            "partitionColumn": "hwm_date",
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
+    # with some variance caused by randomness & hash distribution
+    min_count_per_partition = 10
+    max_count_per_partition = 50
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "hwm_datetime",
+        "text_string",
+    ],
+)
+def test_clickhouse_reader_snapshot_with_partitioning_mode_mod_unsupported_column_type(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    clickhouse = Clickhouse(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=clickhouse,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "mod",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+
+    with pytest.raises(Exception, match=r"Illegal types .* of arguments of function modulo"):
+        reader.run()
 
 
 def test_clickhouse_reader_snapshot_without_set_database(spark, processing, load_table_data):

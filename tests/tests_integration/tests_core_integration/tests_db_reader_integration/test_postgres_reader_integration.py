@@ -2,11 +2,14 @@ from string import ascii_letters
 
 import pytest
 
+from onetl._util.version import Version
+
 try:
     import pandas
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl._util.spark import get_spark_version
 from onetl.connection import Postgres
 from onetl.db import DBReader
 from tests.util.rand import rand_str
@@ -278,6 +281,326 @@ def test_postgres_reader_snapshot_with_columns_and_where(spark, processing, load
     assert count_df.collect()[0][0] == table_df.count()
 
 
+def test_postgres_reader_snapshot_with_partitioning_mode_range_int(spark, processing, load_table_data):
+    from pyspark.sql.functions import spark_partition_id
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": "hwm_int",
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows with very low variance.
+    average_count_per_partition = table_df.count() // table_df.rdd.getNumPartitions()
+    min_count_per_partition = average_count_per_partition - 1
+    max_count_per_partition = average_count_per_partition + 1
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+@pytest.mark.parametrize(
+    "bounds",
+    [
+        pytest.param({"lowerBound": "50"}, id="lower_bound"),
+        pytest.param({"upperBound": "70"}, id="upper_bound"),
+        pytest.param({"lowerBound": "50", "upperBound": "70"}, id="both_bounds"),
+    ],
+)
+def test_postgres_reader_snapshot_with_partitioning_mode_range_int_explicit_bounds(
+    spark,
+    processing,
+    load_table_data,
+    bounds,
+):
+    from pyspark.sql.functions import spark_partition_id
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": "hwm_int",
+            "numPartitions": 3,
+            **bounds,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "hwm_date",
+        "hwm_datetime",
+    ],
+)
+def test_postgres_reader_snapshot_with_partitioning_mode_range_date_datetime(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    spark_version = get_spark_version(spark)
+    if spark_version < Version("2.4"):
+        # https://issues.apache.org/jira/browse/SPARK-22814
+        pytest.skip("partitionColumn of date/datetime is supported only since 2.4.0")
+
+    from pyspark.sql.functions import spark_partition_id
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "float_value",
+        "text_string",
+    ],
+)
+def test_postgres_reader_snapshot_with_partitioning_mode_range_unsupported_column_type(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "range",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+
+    with pytest.raises(Exception):
+        reader.run()
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        # all column types are supported
+        "hwm_int",
+        "hwm_date",
+        "hwm_datetime",
+        "float_value",
+        "text_string",
+    ],
+)
+def test_postgres_reader_snapshot_with_partitioning_mode_hash(spark, processing, load_table_data, column):
+    from pyspark.sql.functions import spark_partition_id
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "hash",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
+    # with some variance caused by randomness & hash distribution
+    min_count_per_partition = 10
+    max_count_per_partition = 50
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+def test_postgres_reader_snapshot_with_partitioning_mode_mod(spark, processing, load_table_data):
+    from pyspark.sql.functions import spark_partition_id
+
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "mod",
+            "partitionColumn": "hwm_int",
+            "numPartitions": 3,
+        },
+    )
+    table_df = reader.run()
+
+    processing.assert_equal_df(
+        schema=load_table_data.schema,
+        table=load_table_data.table,
+        df=table_df,
+        order_by="id_int",
+    )
+
+    assert table_df.rdd.getNumPartitions() == 3
+    # So just check that any partition has at least 0 rows
+    assert table_df.groupBy(spark_partition_id()).count().count() == 3
+
+    # 100 rows per 3 partitions -> each partition should contain about ~33 rows with very low variance.
+    average_count_per_partition = table_df.count() // table_df.rdd.getNumPartitions()
+    min_count_per_partition = average_count_per_partition - 1
+    max_count_per_partition = average_count_per_partition + 1
+
+    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
+    for partition in count_per_partition:
+        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
+
+
+@pytest.mark.parametrize(
+    "column",
+    [
+        "hwm_date",
+        "hwm_datetime",
+        "float_value",
+        "text_string",
+    ],
+)
+def test_postgres_reader_snapshot_with_partitioning_mode_mod_unsupported_column_type(
+    spark,
+    processing,
+    load_table_data,
+    column,
+):
+    postgres = Postgres(
+        host=processing.host,
+        port=processing.port,
+        user=processing.user,
+        password=processing.password,
+        database=processing.database,
+        spark=spark,
+    )
+
+    reader = DBReader(
+        connection=postgres,
+        source=load_table_data.full_name,
+        options={
+            "partitioning_mode": "mod",
+            "partitionColumn": column,
+            "numPartitions": 3,
+        },
+    )
+
+    with pytest.raises(Exception, match="operator does not exist"):
+        reader.run()
+
+
 def test_postgres_reader_snapshot_with_pydantic_options(spark, processing, load_table_data):
     postgres = Postgres(
         host=processing.host,
@@ -294,48 +617,6 @@ def test_postgres_reader_snapshot_with_pydantic_options(spark, processing, load_
         options=Postgres.ReadOptions(fetchsize=500),
     )
 
-    table_df = reader.run()
-
-    processing.assert_equal_df(
-        schema=load_table_data.schema,
-        table=load_table_data.table,
-        df=table_df,
-        order_by="id_int",
-    )
-
-
-@pytest.mark.parametrize(
-    "mode",
-    [
-        {"partitioning_mode": "range"},
-        {"partitioning_mode": "hash"},
-        {"partitioning_mode": "mod"},
-    ],
-)
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"numPartitions": "2", "partitionColumn": "hwm_int"},
-        {"numPartitions": "2", "partitionColumn": "hwm_int", "lowerBound": "50"},
-        {"numPartitions": "2", "partitionColumn": "hwm_int", "upperBound": "70"},
-        {"fetchsize": "2"},
-    ],
-)
-def test_postgres_reader_different_options(spark, processing, load_table_data, options, mode):
-    postgres = Postgres(
-        host=processing.host,
-        port=processing.port,
-        user=processing.user,
-        password=processing.password,
-        database=processing.database,
-        spark=spark,
-    )
-
-    reader = DBReader(
-        connection=postgres,
-        source=load_table_data.full_name,
-        options=options.update(mode),
-    )
     table_df = reader.run()
 
     processing.assert_equal_df(

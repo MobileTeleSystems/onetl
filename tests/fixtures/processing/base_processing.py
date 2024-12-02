@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -137,7 +138,7 @@ class BaseProcessing(ABC):
                 elif "float" in column_name:
                     values[column].append(float(f"{i}.{i}"))
                 elif "text" in column_name:
-                    values[column].append("This line is made to test the work")
+                    values[column].append(secrets.token_hex(16))
                 elif "datetime" in column_name:
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     values[column].append(self.current_datetime() + timedelta(seconds=rand_second))
