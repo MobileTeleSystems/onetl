@@ -1,0 +1,15 @@
+0.12.5 (2024-12-02)
+===================
+
+Improvements
+------------
+
+- Use ``sipHash64`` instead of ``md5`` in Clickhouse for reading data with ``{"partitioning_mode": "hash"}``, as it is 5 times faster.
+- Use ``hashtext`` instead of ``md5`` in Postgres for reading data with ``{"partitioning_mode": "hash"}``, as it is 3-5 times faster.
+- Use ``BINARY_CHECKSUM`` instead of ``HASHBYTES`` in MSSQL for reading data with ``{"partitioning_mode": "hash"}``, as it is 5 times faster.
+
+Big fixes
+---------
+
+- In JDBC sources wrap ``MOD(partitionColumn, numPartitions)`` with ``ABS(...)`` to make al returned values positive. This prevents data sked.
+- Fix reading table data from MSSQL using ``{"partitioning_mode": "hash"}`` with ``partitionColumn`` of integer type.

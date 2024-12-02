@@ -10,10 +10,15 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 class ClickhouseDialect(JDBCDialect):
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"halfMD5({partition_column}) % {num_partitions}"
+        # SipHash is 3 times faster thah MD5
+        # https://clickhouse.com/docs/en/sql-reference/functions/hash-functions#siphash64
+        return f"sipHash64({partition_column}) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} % {num_partitions}"
+        # Return positive value even for negative input.
+        # Don't use positiveModulo as it is 4-5 times slower:
+        # https://clickhouse.com/docs/en/sql-reference/functions/arithmetic-functions#positivemoduloa-b
+        return f"abs({partition_column} % {num_partitions})"
 
     def get_max_value(self, value: Any) -> str:
         # Max function in Clickhouse returns 0 instead of NULL for empty table

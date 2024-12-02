@@ -13,7 +13,8 @@ class TeradataDialect(JDBCDialect):
         return f"HASHAMP(HASHBUCKET(HASHROW({partition_column}))) mod {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} mod {num_partitions}"
+        # Return positive value even for negative input
+        return f"ABS({partition_column} mod {num_partitions})"
 
     def _serialize_datetime(self, value: datetime) -> str:
         result = value.isoformat()
