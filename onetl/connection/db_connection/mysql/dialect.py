@@ -9,10 +9,13 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 class MySQLDialect(JDBCDialect):
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"MOD(CONV(CONV(RIGHT(MD5({partition_column}), 16), 16, 2), 2, 10), {num_partitions})"
+        # MD5 is the fastest hash function https://stackoverflow.com/a/3118889/23601543
+        # But it returns 32 char string (128 bit), which we need to convert to integer
+        return f"CAST(CONV(RIGHT(MD5({partition_column}), 16), 16, 10) AS UNSIGNED) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
-        return f"MOD({partition_column}, {num_partitions})"
+        # Return positive value even for negative input
+        return f"ABS({partition_column} % {num_partitions})"
 
     def escape_column(self, value: str) -> str:
         return f"`{value}`"

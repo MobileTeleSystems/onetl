@@ -8,12 +8,15 @@ from onetl.connection.db_connection.jdbc_connection import JDBCDialect
 
 
 class MSSQLDialect(JDBCDialect):
-    # https://docs.microsoft.com/ru-ru/sql/t-sql/functions/hashbytes-transact-sql?view=sql-server-ver16
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        return f"CONVERT(BIGINT, HASHBYTES ('SHA', {partition_column})) % {num_partitions}"
+        # CHECKSUM/BINARY_CHECKSUM are faster than MD5 in 5 times:
+        # https://stackoverflow.com/a/4691861/23601543
+        # https://learn.microsoft.com/en-us/sql/t-sql/functions/checksum-transact-sql?view=sql-server-ver16
+        return f"ABS(BINARY_CHECKSUM({partition_column})) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
-        return f"{partition_column} % {num_partitions}"
+        # Return positive value even for negative input
+        return f"ABS({partition_column} % {num_partitions})"
 
     def get_sql_query(
         self,

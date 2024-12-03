@@ -155,10 +155,9 @@ class JDBCReadOptions(JDBCFetchOptions):
     .. note::
         Column type depends on :obj:`~partitioning_mode`.
 
-        * ``partitioning_mode="range"`` requires column to be an integer or date (can be NULL, but not recommended).
-        * ``partitioning_mode="hash"`` requires column to be an string (NOT NULL).
+        * ``partitioning_mode="range"`` requires column to be an integer, date or timestamp (can be NULL, but not recommended).
+        * ``partitioning_mode="hash"`` accepts any column type (NOT NULL).
         * ``partitioning_mode="mod"`` requires column to be an integer (NOT NULL).
-
 
     See documentation for :obj:`~partitioning_mode` for more details"""
 
@@ -258,6 +257,10 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         .. note::
 
+            Can be used only with columns of integer, date or timestamp types.
+
+        .. note::
+
             :obj:`~lower_bound`, :obj:`~upper_bound` and :obj:`~num_partitions` are used just to
             calculate the partition stride, **NOT** for filtering the rows in table.
             So all rows in the table will be returned (unlike *Incremental* :ref:`strategy`).
@@ -297,7 +300,7 @@ class JDBCReadOptions(JDBCFetchOptions):
         .. note::
 
             The hash function implementation depends on RDBMS. It can be ``MD5`` or any other fast hash function,
-            or expression based on this function call.
+            or expression based on this function call. Usually such functions accepts any column type as an input.
 
     * ``mod``
         Allocate each executor a set of values based on modulus of the :obj:`~partition_column` column.
@@ -324,6 +327,10 @@ class JDBCReadOptions(JDBCFetchOptions):
 
             SELECT ... FROM table
             WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
+
+        .. note::
+
+            Can be used only with columns of integer type.
 
     .. versionadded:: 0.5.0
 

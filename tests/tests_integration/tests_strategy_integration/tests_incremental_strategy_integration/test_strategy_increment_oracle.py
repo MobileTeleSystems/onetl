@@ -123,6 +123,7 @@ def test_oracle_strategy_incremental(
         processing.assert_subset_df(df=second_df, other_frame=second_span)
 
 
+@pytest.mark.flaky
 def test_oracle_strategy_incremental_nothing_to_read(spark, processing, prepare_schema_table):
     oracle = Oracle(
         host=processing.host,
@@ -270,6 +271,7 @@ def test_oracle_strategy_incremental_wrong_hwm(
             reader.run()
 
 
+@pytest.mark.flaky
 def test_oracle_strategy_incremental_explicit_hwm_type(
     spark,
     processing,

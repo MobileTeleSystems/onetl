@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from collections import defaultdict
 from datetime import datetime, timedelta
 from logging import getLogger
@@ -149,7 +150,7 @@ class MongoDBProcessing(BaseProcessing):
                 elif "float" in column_name:
                     values[column_name].append(float(f"{i}.{i}"))
                 elif "text" in column_name:
-                    values[column_name].append("This line is made to test the work")
+                    values[column_name].append(secrets.token_hex(16))
                 elif "datetime" in column_name:
                     rand_second = randint(0, i * time_multiplier)  # noqa: S311
                     now = self.current_datetime() + timedelta(seconds=rand_second)
