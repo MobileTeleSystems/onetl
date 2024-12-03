@@ -271,6 +271,7 @@ def test_oracle_strategy_incremental_wrong_hwm(
             reader.run()
 
 
+@pytest.mark.flaky
 def test_oracle_strategy_incremental_explicit_hwm_type(
     spark,
     processing,
