@@ -11,5 +11,5 @@ Improvements
 Big fixes
 ---------
 
-- In JDBC sources wrap ``MOD(partitionColumn, numPartitions)`` with ``ABS(...)`` to make al returned values positive. This prevents data sked.
+- In JDBC sources wrap ``MOD(partitionColumn, numPartitions)`` with ``ABS(...)`` to make al returned values positive. This prevents data skew.
 - Fix reading table data from MSSQL using ``{"partitioning_mode": "hash"}`` with ``partitionColumn`` of integer type.
