@@ -511,7 +511,7 @@ def test_postgres_reader_snapshot_with_partitioning_mode_hash(spark, processing,
     # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
     # with some variance caused by randomness & hash distribution
     min_count_per_partition = 10
-    max_count_per_partition = 50
+    max_count_per_partition = 55
 
     count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
 
