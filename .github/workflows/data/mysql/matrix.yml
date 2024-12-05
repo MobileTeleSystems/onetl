@@ -9,7 +9,7 @@ min: &min
   os: ubuntu-latest
 
 max: &max
-  mysql-version: 9.0.1
+  mysql-version: 9.1.0
   spark-version: 3.5.3
   pydantic-version: 2
   python-version: '3.12'
