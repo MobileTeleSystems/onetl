@@ -1,4 +1,4 @@
-min: &min
+2x: &2x
   oracle-image: gvenzl/oracle-xe
   oracle-version: 11.2.0.2-slim-faststart
   db-name: XE
@@ -8,7 +8,7 @@ min: &min
   java-version: 8
   os: ubuntu-latest
 
-max: &max
+3x: &3x
   oracle-image: gvenzl/oracle-free
   oracle-version: 23.5-slim-faststart
   db-name: FREEPDB1
@@ -16,6 +16,16 @@ max: &max
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20
+  os: ubuntu-latest
+
+4x: &4x
+  oracle-image: gvenzl/oracle-free
+  oracle-version: 23.4-slim-faststart
+  db-name: FREEPDB1
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.12'
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -29,6 +39,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *latest]
+  small: [*3x]
+  full: [*2x, *3x, *4x]
+  nightly: [*2x, *3x, *latest]

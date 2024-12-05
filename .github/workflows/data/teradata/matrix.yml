@@ -1,4 +1,4 @@
-max: &max
+3x: &3x
   spark-version: 3.5.3
   pydantic-version: 2
   python-version: '3.12'
@@ -13,6 +13,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*max]
+  small: [*3x]
+  full: [*3x]
   nightly: [*latest]

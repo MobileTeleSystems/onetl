@@ -205,7 +205,7 @@ class JDBCMixin(FrozenModel):
 
         query = clear_statement(query)
 
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -278,7 +278,7 @@ class JDBCMixin(FrozenModel):
 
         statement = clear_statement(statement)
 
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Executing statement (on driver):", self.__class__.__name__)
         log_lines(log, statement)
 
@@ -419,12 +419,16 @@ class JDBCMixin(FrozenModel):
         self._last_connection_and_options.data = (new_connection, options)
         return new_connection
 
-    def _get_spark_dialect_name(self) -> str:
+    def _get_spark_dialect_class_name(self) -> str:
         """
         Returns the name of the JDBC dialect associated with the connection URL.
         """
-        dialect = self._get_spark_dialect().toString()
-        return dialect.split("$")[0] if "$" in dialect else dialect
+        from py4j.java_gateway import JavaObject
+
+        dialect = self._get_spark_dialect()
+        if isinstance(dialect, JavaObject):
+            dialect = dialect.getClass()
+        return dialect.getCanonicalName().split("$")[0]
 
     def _get_spark_dialect(self):
         jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
@@ -466,10 +470,11 @@ class JDBCMixin(FrozenModel):
         statement_args = self._get_statement_args()
         jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
 
-        return self._execute_statement(jdbc_statement, statement, options, callback, read_only)
+        return self._execute_statement(jdbc_connection, jdbc_statement, statement, options, callback, read_only)
 
     def _execute_statement(
         self,
+        jdbc_connection,
         jdbc_statement,
         statement: str,
         options: JDBCFetchOptions | JDBCExecuteOptions,
@@ -507,7 +512,7 @@ class JDBCMixin(FrozenModel):
             else:
                 jdbc_statement.executeUpdate(statement)
 
-            return callback(jdbc_statement)
+            return callback(jdbc_connection, jdbc_statement)
 
     @staticmethod
     def _build_statement(
@@ -536,11 +541,11 @@ class JDBCMixin(FrozenModel):
 
         return jdbc_connection.createStatement(*statement_args)
 
-    def _statement_to_dataframe(self, jdbc_statement) -> DataFrame:
+    def _statement_to_dataframe(self, jdbc_connection, jdbc_statement) -> DataFrame:
         result_set = jdbc_statement.getResultSet()
-        return self._resultset_to_dataframe(result_set)
+        return self._resultset_to_dataframe(jdbc_connection, result_set)
 
-    def _statement_to_optional_dataframe(self, jdbc_statement) -> DataFrame | None:
+    def _statement_to_optional_dataframe(self, jdbc_connection, jdbc_statement) -> DataFrame | None:
         """
         Returns ``org.apache.spark.sql.DataFrame`` or ``None``, if ResultSet is does not contain any columns.
 
@@ -557,9 +562,9 @@ class JDBCMixin(FrozenModel):
         if not result_column_count:
             return None
 
-        return self._resultset_to_dataframe(result_set)
+        return self._resultset_to_dataframe(jdbc_connection, result_set)
 
-    def _resultset_to_dataframe(self, result_set) -> DataFrame:
+    def _resultset_to_dataframe(self, jdbc_connection, result_set) -> DataFrame:
         """
         Converts ``java.sql.ResultSet`` to ``org.apache.spark.sql.DataFrame`` using Spark's internal methods.
 
@@ -578,13 +583,27 @@ class JDBCMixin(FrozenModel):
 
         java_converters = self.spark._jvm.scala.collection.JavaConverters  # type: ignore
 
-        if get_spark_version(self.spark) >= Version("3.4"):
+        spark_version = get_spark_version(self.spark)
+
+        if spark_version >= Version("4.0"):
+            result_schema = jdbc_utils.getSchema(
+                jdbc_connection,
+                result_set,
+                jdbc_dialect,
+                False,  # noqa: WPS425
+                False,  # noqa: WPS425
+            )
+        elif spark_version >= Version("3.4"):
             # https://github.com/apache/spark/commit/2349175e1b81b0a61e1ed90c2d051c01cf78de9b
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False, False)  # noqa: WPS425
         else:
             result_schema = jdbc_utils.getSchema(result_set, jdbc_dialect, False)  # noqa: WPS425
 
-        result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema)
+        if spark_version.major >= 4:
+            result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema, jdbc_dialect)
+        else:
+            result_iterator = jdbc_utils.resultSetToRows(result_set, result_schema)
+
         result_list = java_converters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
         jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)  # type: ignore
 
