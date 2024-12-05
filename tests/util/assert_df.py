@@ -66,5 +66,12 @@ def assert_subset_df(
         columns = [column.lower() for column in columns]
 
     for column in columns:  # noqa: WPS528
-        difference = ~small_pdf[column].isin(large_pdf[column])
-        assert not difference.all(), small_pdf[difference]
+        small_column = small_pdf[column]
+        large_column = large_pdf[column]
+        different_indices = ~small_column.isin(large_column)
+        assert not different_indices.all(), (
+            column,
+            small_column.dtype,
+            large_column.dtype,
+            small_pdf[different_indices],
+        )
