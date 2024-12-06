@@ -128,6 +128,11 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
             Same as Spark's ``df.write.mode("overwrite").save()`` +
             ``spark.sql.sources.partitionOverwriteMode=dynamic``.
 
+            .. DANGER::
+
+                This mode does make sense **ONLY** if the directory is partitioned.
+                **IF NOT, YOU'LL LOOSE YOUR DATA!**
+
             .. dropdown:: Behavior in details
 
                 * Directory does not exist

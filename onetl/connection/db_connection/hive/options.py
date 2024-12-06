@@ -136,6 +136,11 @@ class HiveWriteOptions(GenericOptions):
             Same as Spark's ``df.write.insertInto(table, overwrite=True)`` +
             ``spark.sql.sources.partitionOverwriteMode=dynamic``.
 
+            .. DANGER::
+
+                This mode does make sense **ONLY** if the table is partitioned.
+                **IF NOT, YOU'LL LOOSE YOUR DATA!**
+
             .. dropdown:: Behavior in details
 
                 * Table does not exist
