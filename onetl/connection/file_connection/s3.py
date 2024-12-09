@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import os
 import textwrap
+from contextlib import suppress
 from logging import getLogger
 from typing import Optional
 
@@ -261,8 +262,11 @@ class S3(FileConnection):
         )
 
     def _remove_dir(self, path: RemotePath) -> None:
-        # Empty. S3 does not have directories.
-        pass
+        path_str = self._delete_absolute_path_slash(path)
+        with suppress(Exception):
+            # S3 does not have directories, but some integrations (like Spark 4.0)
+            # may create empty object with name ending with /, and it will be considered as a directory
+            self.client.remove_object(self.bucket, path_str + "/")
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         path_str = self._delete_absolute_path_slash(path)
