@@ -679,7 +679,19 @@ class JDBCSQLOptions(GenericOptions):
     "Deprecated in 0.5.0 and will be removed in 1.0.0. Use 'ReadOptions' or 'WriteOptions' instead",
     category=UserWarning,
 )
-class JDBCLegacyOptions(JDBCReadOptions, JDBCWriteOptions):
+class JDBCLegacyOptions(GenericOptions):
     class Config:
         prohibited_options = GENERIC_PROHIBITED_OPTIONS
+        known_options = READ_OPTIONS | WRITE_OPTIONS | READ_WRITE_OPTIONS
         extra = "allow"
+
+    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
+    num_partitions: PositiveInt = Field(default=1, alias="numPartitions")
+    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
+    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
+    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
+    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
+    isolation_level: str = Field(default="READ_UNCOMMITTED", alias="isolationLevel")
+    fetchsize: int = 100_000
+    batchsize: int = 20_000
