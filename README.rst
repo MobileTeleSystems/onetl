@@ -263,8 +263,8 @@ The exact installation instruction depends on your OS, here are some examples:
 
 .. code:: bash
 
-    dnf install krb5-devel gcc  # CentOS, OracleLinux
-    apt install libkrb5-dev gcc  # Debian-based
+    apt install libkrb5-dev krb5-user gcc  # Debian-based
+    dnf install krb5-devel krb5-libs krb5-workstation gcc  # CentOS, OracleLinux
 
 Also you should pass ``kerberos`` to ``extras`` to install required Python packages:
 
