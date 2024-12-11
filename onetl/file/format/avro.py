@@ -163,7 +163,12 @@ class Avro(ReadWriteFileFormat):
         if scala_ver < Version("2.11"):
             raise ValueError(f"Scala version should be at least 2.11, got {scala_ver.format('{0}.{1}')}")
 
-        return [f"org.apache.spark:spark-avro_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
+        if spark_ver.major < 4:
+            version = spark_ver.format("{0}.{1}.{2}")
+        else:
+            version = "4.0.0-preview2"
+
+        return [f"org.apache.spark:spark-avro_{scala_ver.format('{0}.{1}')}:{version}"]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:
