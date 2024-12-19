@@ -1,8 +1,7 @@
 min: &min
   # Clickhouse version with proper DateTime > DateTime64 comparison
   clickhouse-image: yandex/clickhouse-server
-  # alpine image is failing on 21.1
-  clickhouse-version: '21.1'
+  clickhouse-version: '21.1-alpine'
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
