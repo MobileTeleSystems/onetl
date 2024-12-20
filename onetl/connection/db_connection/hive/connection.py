@@ -300,7 +300,8 @@ class Hive(DBConnection):
             table_exists = True
 
             log.info("|%s| Table %r already exists", self.__class__.__name__, target)
-        except Exception:
+        except Exception as e:
+            log.debug("|%s| Cannot get schema of table %r: %s", self.__class__.__name__, target, e)
             table_exists = False
 
         # https://stackoverflow.com/a/72747050
