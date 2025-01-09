@@ -31,4 +31,4 @@ latest: &latest
 matrix:
   small: [*max]
   full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  nightly: [*min, *latest]
