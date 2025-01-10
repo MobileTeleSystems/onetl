@@ -1,5 +1,5 @@
 max: &max
-  spark-version: 3.5.3
+  spark-version: 3.5.4
   pydantic-version: 2
   python-version: '3.12'
   java-version: 20

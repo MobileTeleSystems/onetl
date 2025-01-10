@@ -119,7 +119,7 @@ class XML(ReadWriteFileFormat):
         from pyspark.sql import SparkSession
 
         # Create Spark session with XML package loaded
-        maven_packages = XML.get_packages(spark_version="3.5.3")
+        maven_packages = XML.get_packages(spark_version="3.5.4")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -184,10 +184,10 @@ class XML(ReadWriteFileFormat):
 
             from onetl.file.format import XML
 
-            XML.get_packages(spark_version="3.5.3")
-            XML.get_packages(spark_version="3.5.3", scala_version="2.12")
+            XML.get_packages(spark_version="3.5.4")
+            XML.get_packages(spark_version="3.5.4", scala_version="2.12")
             XML.get_packages(
-                spark_version="3.5.3",
+                spark_version="3.5.4",
                 scala_version="2.12",
                 package_version="0.18.0",
             )

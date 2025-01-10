@@ -35,17 +35,17 @@ def test_excel_get_packages_package_version_not_supported():
     [
         # Detect Scala version by Spark version
         ("3.2.4", None, None, ["com.crealytics:spark-excel_2.12:3.2.4_0.20.4"]),
-        ("3.5.3", None, None, ["com.crealytics:spark-excel_2.12:3.5.3_0.20.4"]),
+        ("3.5.4", None, None, ["com.crealytics:spark-excel_2.12:3.5.4_0.20.4"]),
         # Override Scala version
         ("3.2.4", "2.12", None, ["com.crealytics:spark-excel_2.12:3.2.4_0.20.4"]),
         ("3.2.4", "2.13", None, ["com.crealytics:spark-excel_2.13:3.2.4_0.20.4"]),
-        ("3.5.3", "2.12", None, ["com.crealytics:spark-excel_2.12:3.5.3_0.20.4"]),
-        ("3.5.3", "2.13", None, ["com.crealytics:spark-excel_2.13:3.5.3_0.20.4"]),
+        ("3.5.4", "2.12", None, ["com.crealytics:spark-excel_2.12:3.5.4_0.20.4"]),
+        ("3.5.4", "2.13", None, ["com.crealytics:spark-excel_2.13:3.5.4_0.20.4"]),
         # Override package version
         ("3.2.0", None, "0.16.0", ["com.crealytics:spark-excel_2.12:3.2.0_0.16.0"]),
-        ("3.5.3", None, "0.18.0", ["com.crealytics:spark-excel_2.12:3.5.3_0.18.0"]),
+        ("3.5.4", None, "0.18.0", ["com.crealytics:spark-excel_2.12:3.5.4_0.18.0"]),
         # Scala version contain three digits when only two needed
-        ("3.5.3", "2.12.1", None, ["com.crealytics:spark-excel_2.12:3.5.3_0.20.4"]),
+        ("3.5.4", "2.12.1", None, ["com.crealytics:spark-excel_2.12:3.5.4_0.20.4"]),
     ],
 )
 def test_excel_get_packages(caplog, spark_version, scala_version, package_version, packages):

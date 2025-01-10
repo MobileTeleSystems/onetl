@@ -5,7 +5,7 @@ MongoDB <-> Spark type mapping
 
 .. note::
 
-    The results below are valid for Spark 3.5.3, and may differ on other Spark versions.
+    The results below are valid for Spark 3.5.4, and may differ on other Spark versions.
 
 Type detection & casting
 ------------------------
