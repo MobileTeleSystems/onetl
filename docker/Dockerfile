@@ -1,4 +1,4 @@
-FROM python:3.12-slim as base
+FROM python:3.13-slim as base
 LABEL maintainer="DataOps.ETL"
 
 ARG ONETL_USER_HOME=/usr/local/onetl

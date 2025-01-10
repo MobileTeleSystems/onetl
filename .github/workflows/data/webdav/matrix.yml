@@ -14,7 +14,7 @@ max: &max
 latest: &latest
   webdav-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   os: ubuntu-latest
 
 matrix:

@@ -65,7 +65,7 @@ Non-goals
 Requirements
 ------------
 
-* **Python 3.7 - 3.12**
+* **Python 3.7 - 3.13**
 * PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)

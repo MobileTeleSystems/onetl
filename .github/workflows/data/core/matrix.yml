@@ -16,7 +16,7 @@ max: &max
 latest: &latest
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

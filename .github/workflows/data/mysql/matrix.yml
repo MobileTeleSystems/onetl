@@ -12,7 +12,7 @@ max: &max
   mysql-version: 9.1.0
   spark-version: 3.5.4
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -20,7 +20,7 @@ latest: &latest
   mysql-version: latest
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

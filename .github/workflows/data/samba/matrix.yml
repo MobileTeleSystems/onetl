@@ -8,13 +8,13 @@ min: &min
 max: &max
   server-version: latest
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   os: ubuntu-latest
 
 latest: &latest
   server-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   os: ubuntu-latest
 
 matrix:

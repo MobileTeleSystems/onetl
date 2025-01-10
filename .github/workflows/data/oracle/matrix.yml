@@ -14,7 +14,7 @@ max: &max
   db-name: FREEPDB1
   spark-version: 3.5.4
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -24,7 +24,7 @@ latest: &latest
   db-name: FREEPDB1
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
