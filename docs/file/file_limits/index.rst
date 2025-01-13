@@ -8,6 +8,7 @@ File Limits
     :caption: File limits
 
     max_files_count
+    total_files_size
 
 .. toctree::
     :maxdepth: 1

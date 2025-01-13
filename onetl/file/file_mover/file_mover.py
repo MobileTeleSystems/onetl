@@ -121,7 +121,7 @@ class FileMover(FrozenModel):
         from onetl.connection import SFTP
         from onetl.file import FileMover
         from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount
+        from onetl.file.limit import MaxFilesCount, TotalFilesSize
 
         sftp = SFTP(...)
 
@@ -134,7 +134,7 @@ class FileMover(FrozenModel):
                 Glob("*.txt"),
                 ExcludeDir("/path/to/source/dir/exclude"),
             ],
-            limits=[MaxFilesCount(100)],
+            limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
             options=FileMover.Options(if_exists="replace_file"),
         )
 

@@ -1,23 +1,44 @@
 import pytest
 
-from onetl.file.limit import MaxFilesCount
+from onetl.file.limit import TotalFilesSize
 from onetl.impl import RemoteDirectory, RemoteFile, RemotePathStat
 
 
-def test_max_files_count_invalid():
+def test_total_files_size_invalid():
     with pytest.raises(ValueError, match="Limit should be positive number"):
-        MaxFilesCount(0)
+        TotalFilesSize(0)
 
     with pytest.raises(ValueError, match="Limit should be positive number"):
-        MaxFilesCount(-1)
+        TotalFilesSize(-1)
+
+    with pytest.raises(ValueError, match="could not parse value and unit from byte string"):
+        TotalFilesSize("wtf")
 
 
-def test_max_files_count_repr():
-    assert repr(MaxFilesCount(10)) == "MaxFilesCount(10)"
+def test_total_files_size_repr():
+    assert repr(TotalFilesSize("10KiB")) == 'TotalFilesSize("10.0KiB")'
 
 
-def test_max_files_count():
-    limit = MaxFilesCount(3)
+@pytest.mark.parametrize(
+    ["input", "expected"],
+    [
+        ("10", 10),
+        ("10B", 10),
+        ("10KB", 10_000),
+        ("10KiB", 10 * 1024),
+        ("10MB", 10_000_000),
+        ("10MiB", 10 * 1024 * 1024),
+        ("10GB", 10_000_000_000),
+        ("10GiB", 10 * 1024 * 1024 * 1024),
+    ],
+)
+def test_total_files_size_parse_units(input: str, expected: int):
+    assert TotalFilesSize(input.replace("B", "b")).limit == expected
+    assert TotalFilesSize(input).limit == expected
+
+
+def test_total_files_size():
+    limit = TotalFilesSize("30KiB")
     assert not limit.is_reached
 
     directory = RemoteDirectory("some")
