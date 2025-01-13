@@ -10,6 +10,7 @@ File Filters
     glob
     regexp
     exclude_dir
+    file_size_filter
 
 .. toctree::
     :maxdepth: 1
