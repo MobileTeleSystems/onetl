@@ -9,7 +9,7 @@ def test_reset_limits():
 
     file = RemoteFile(path="file1.csv", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50))
 
-    for _ in range(3):
+    for _ in range(4):
         limit1.stops_at(file)
         limit2.stops_at(file)
 

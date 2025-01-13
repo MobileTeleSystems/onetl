@@ -36,9 +36,11 @@ def limits_stop_at(path: PathProtocol, limits: Iterable[BaseFileLimit]) -> bool:
     >>> from onetl.file.limit import MaxFilesCount, limits_stop_at
     >>> from onetl.impl import LocalPath
     >>> limits = [MaxFilesCount(2)]
-    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    >>> limits_stop_at(LocalPath("/path/to/file1.csv"), limits)
     False
-    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    >>> limits_stop_at(LocalPath("/path/to/file2.csv"), limits)
+    False
+    >>> limits_stop_at(LocalPath("/path/to/file3.csv"), limits)
     True
     """
     reached = []

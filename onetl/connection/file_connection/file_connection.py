@@ -415,6 +415,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         limits = reset_limits(limits or [])
 
         for entry in self._scan_entries(remote_dir):
+            if limits_reached(limits):
+                break
+
             name = self._extract_name_from_entry(entry)
             stat = self._extract_stat_from_entry(remote_dir, entry)
 
@@ -423,11 +426,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
             else:
                 path = RemoteFile(path=name, stats=stat)
 
-            if match_all_filters(path, filters):
+            if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                 result.append(path)
-
-            if limits_stop_at(path, limits):
-                break
 
         return result
 
@@ -491,6 +491,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         dirs, files = [], []
 
         for entry in self._scan_entries(root):
+            if limits_reached(limits):
+                break
+
             name = self._extract_name_from_entry(entry)
             stat = self._extract_stat_from_entry(root, entry)
 
@@ -499,21 +502,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
                     yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 
                 path = RemoteDirectory(path=root / name, stats=stat)
-                if match_all_filters(path, filters):
+                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
-
-                    if limits_stop_at(path, limits):
-                        break
             else:
                 path = RemoteFile(path=root / name, stats=stat)
 
-                if match_all_filters(path, filters):
+                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                     files.append(RemoteFile(path=name, stats=stat))
 
-                    if limits_stop_at(path, limits):
-                        break
-
-        if topdown:
+        if topdown and not limits_reached(limits):
             for name in dirs:
                 yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 

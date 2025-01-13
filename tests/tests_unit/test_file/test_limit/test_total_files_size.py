@@ -77,5 +77,5 @@ def test_total_files_size():
     assert not limit.stops_at(file1)
     assert not limit.is_reached
 
-    assert limit.stops_at(file1)
+    assert limit.stops_at(file3)
     assert limit.is_reached
