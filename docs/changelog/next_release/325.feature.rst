@@ -1,0 +1,1 @@
+Introduce ``FileSizeRange(min=..., max=...)`` filter class. Now users can set ``FileDownloader`` / ``FileMover`` to download/move only files with specific file size range.
