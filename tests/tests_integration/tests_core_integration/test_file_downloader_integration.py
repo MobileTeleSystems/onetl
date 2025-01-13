@@ -790,7 +790,7 @@ def test_file_downloader_run_input_is_not_file(request, file_connection, tmp_pat
         downloader.run([not_a_file])
 
 
-def test_file_downloader_with_file_limit(file_connection_with_path_and_files, tmp_path_factory, caplog):
+def test_file_downloader_with_limit(file_connection_with_path_and_files, tmp_path_factory, caplog):
     file_connection, remote_path, _ = file_connection_with_path_and_files
     limit = 2
     local_path = tmp_path_factory.mktemp("local_path")
@@ -814,7 +814,7 @@ def test_file_downloader_with_file_limit(file_connection_with_path_and_files, tm
     assert len(download_result.successful) == limit
 
 
-def test_file_downloader_file_limit_is_ignored_by_user_input(
+def test_file_downloader_limit_is_ignored_by_user_input(
     file_connection_with_path_and_files,
     tmp_path_factory,
 ):

@@ -36,10 +36,10 @@ def test_max_files_count():
     assert not limit.stops_at(directory)
     assert not limit.is_reached
 
-    # limit is reached - all check are True, input does not matter
-    assert limit.stops_at(file3)
-    assert limit.is_reached
+    assert not limit.stops_at(file3)
+    assert not limit.is_reached
 
+    # limit is reached - all check are True, input does not matter
     assert limit.stops_at(file4)
     assert limit.is_reached
 
@@ -56,5 +56,8 @@ def test_max_files_count():
     assert not limit.stops_at(file1)
     assert not limit.is_reached
 
-    assert limit.stops_at(file1)
+    assert not limit.stops_at(file3)
+    assert not limit.is_reached
+
+    assert limit.stops_at(file4)
     assert limit.is_reached

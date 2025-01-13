@@ -35,7 +35,9 @@ def reset_limits(limits: Iterable[BaseFileLimit]) -> list[BaseFileLimit]:
     >>> limits_reached(limits)
     False
     >>> # do something
-    >>> limits_stop_at(LocalPath("/path/to/file.csv"), limits)
+    >>> limits_stop_at(LocalPath("/path/to/file1.csv"), limits)
+    False
+    >>> limits_stop_at(LocalPath("/path/to/file2.csv"), limits)
     True
     >>> limits_reached(limits)
     True

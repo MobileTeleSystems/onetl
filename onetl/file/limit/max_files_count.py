@@ -76,4 +76,4 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
 
     @property
     def is_reached(self) -> bool:
-        return self._handled >= self.limit
+        return self._handled > self.limit
