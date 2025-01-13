@@ -182,7 +182,7 @@ class FileDownloader(FrozenModel):
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount
+        from onetl.file.limit import MaxFilesCount, TotalFileSize
 
         sftp = SFTP(...)
 
@@ -196,7 +196,7 @@ class FileDownloader(FrozenModel):
                 Glob("*.txt"),
                 ExcludeDir("/path/to/remote/source/exclude_dir"),
             ],
-            limits=[MaxFilesCount(100)],
+            limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
             options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
         )
 
