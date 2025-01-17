@@ -1,0 +1,1 @@
+Avoid suppressing Hive Metastore errors while using ``DBWriter``. Previously this could lead to overriding already existing table if Hive Metastore was overloaded and responded with an exception.
