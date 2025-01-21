@@ -1,7 +1,7 @@
 min: &min
   pydantic-version: 1
   python-version: '3.7'
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
   pydantic-version: 2

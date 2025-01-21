@@ -3,7 +3,7 @@ min: &min
   openssh-version: 8.1_p1-r0-ls5
   pydantic-version: 1
   python-version: '3.7'
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
   openssh-version: 9.7_p1-r4-ls179

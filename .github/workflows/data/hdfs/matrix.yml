@@ -4,7 +4,7 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
   hadoop-version: hadoop3-hdfs

@@ -3,7 +3,7 @@ min: &min
   webdav-version: latest
   pydantic-version: 1
   python-version: '3.7'
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
   webdav-version: latest
