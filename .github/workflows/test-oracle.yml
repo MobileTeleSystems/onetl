@@ -86,7 +86,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends libaio1 || sudo apt-get install --no-install-recommends libaio1t64 && sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
+          sudo apt-get install --no-install-recommends libaio1 || sudo apt-get install --no-install-recommends libaio1t64
+          [ -f "/usr/lib/x86_64-linux-gnu/libaio.so.1t64" ] && sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
           mkdir ./tmp
           wget -P ./tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
           mkdir -p ./oracle
