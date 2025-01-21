@@ -461,7 +461,7 @@ class Hive(DBConnection):
 
         log.info("|%s| Checking if table %r exists ...", self.__class__.__name__, name)
 
-        # Do not use SELECT * FROM table, because it may fail if users have no parmissions,
+        # Do not use SELECT * FROM table, because it may fail if users have no permissions,
         # or Hive Metastore is overloaded.
         # Also we ignore VIEW's as they are not insertable.
         schema, table = name.split(".", maxsplit=1)
