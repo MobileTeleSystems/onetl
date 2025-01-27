@@ -172,24 +172,25 @@ class FileConnection(BaseFileConnection, FrozenModel):
     def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
+        remote_path = RemotePath(path)
 
         if not is_dir:
-            raise NotADirectoryError(
-                f"{path_repr(RemoteFile(path, stats=stat))} is not a directory",
-            )
+            remote_file = RemoteFile(path=remote_path, stats=stat)
+            raise NotADirectoryError(f"{path_repr(remote_file)} is not a directory")
 
-        return RemoteDirectory(path=path, stats=stat)
+        return RemoteDirectory(path=remote_path, stats=stat)
 
     @slot
     def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
         stat = self.get_stat(path)
-        remote_path = RemoteFile(path=path, stats=stat)
+        remote_path = RemotePath(path)
 
         if not is_file:
-            raise NotAFileError(f"{path_repr(remote_path)} is not a file")
+            remote_directory = RemoteDirectory(path=remote_path, stats=stat)
+            raise NotAFileError(f"{path_repr(remote_directory)} is not a file")
 
-        return remote_path
+        return RemoteFile(path=remote_path, stats=stat)
 
     @slot
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:

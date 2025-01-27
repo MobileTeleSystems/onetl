@@ -1,8 +1,8 @@
 import os
 import stat
 import textwrap
-from datetime import datetime
-from time import time
+import time
+from datetime import datetime, timezone
 
 import pytest
 
@@ -342,8 +342,8 @@ def test_path_repr_stats_with_size(st_size, details):
     ],
 )
 def test_path_repr_stats_with_mtime(path_class, kind):
-    current_timestamp = time()
-    current_datetime = datetime.fromtimestamp(current_timestamp).isoformat()
+    current_timestamp = time.time()
+    current_datetime = datetime.fromtimestamp(current_timestamp, tz=timezone.utc).isoformat()
     options = {"with_size": False, "with_mode": False, "with_owner": False}
 
     file1 = path_class("a/b/c", stats=RemotePathStat(st_mtime=current_timestamp))

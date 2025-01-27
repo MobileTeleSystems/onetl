@@ -43,7 +43,7 @@ except (ImportError, NameError) as e:
     ) from e
 
 log = getLogger(__name__)
-DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
+DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S %Z"
 
 
 @support_hooks

@@ -7,7 +7,7 @@ import re
 import stat
 import textwrap
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import PurePath
 
 from humanize import naturalsize
@@ -49,7 +49,7 @@ class PathRepr:
             if path.exists() and isinstance(path, PathWithStatsProtocol):
                 details = path.stat()
                 result.size = details.st_size
-                result.mtime = datetime.fromtimestamp(details.st_mtime) if details.st_mtime else None
+                result.mtime = datetime.fromtimestamp(details.st_mtime, tz=timezone.utc) if details.st_mtime else None
                 result.mode = details.st_mode
                 result.user = details.st_uid
                 result.group = details.st_gid

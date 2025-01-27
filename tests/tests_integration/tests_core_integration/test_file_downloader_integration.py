@@ -11,8 +11,7 @@ from etl_entities.hwm import FileListHWM
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileDownloader
-from onetl.file.file_set import FileSet
-from onetl.file.filter import ExcludeDir, Glob
+from onetl.file.filter import ExcludeDir, FileModifiedTime, FileSizeRange, Glob, Regexp
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import (
     FailedRemoteFile,
@@ -39,6 +38,8 @@ def test_file_downloader_view_file(file_connection_with_path_and_files):
     remote_files = downloader.view_files()
     remote_files_list = []
 
+    # some clients return different st_mtime in .walk(root) and in .get_stat(file),
+    # so don't use .resolve_file(path) here
     for root, _dirs, files in file_connection.walk(remote_path):
         for file in files:
             remote_files_list.append(RemotePath(root) / file)
@@ -160,11 +161,7 @@ def test_file_downloader_run_delete_source(
         # S3 does not support creating directories
         return
 
-    remote_files = FileSet()
-    for root, _dirs, files in file_connection.walk(remote_path):
-        for file in files:
-            remote_files.add(RemoteFile(path=root / file.name, stats=file.stats))
-
+    remote_files = [file for _root, _dirs, files in file_connection.walk(remote_path) for file in files]
     assert not remote_files
 
 
@@ -175,7 +172,7 @@ def test_file_downloader_file_filter_exclude_dir(
     tmp_path_factory,
     caplog,
 ):
-    file_connection, remote_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -184,11 +181,6 @@ def test_file_downloader_file_filter_exclude_dir(
         local_path=local_path,
         filters=[ExcludeDir(path_type(remote_path / "exclude_dir"))],
     )
-
-    excluded = [
-        remote_path / "exclude_dir/excluded1.txt",
-        remote_path / "exclude_dir/nested/excluded2.txt",
-    ]
 
     with caplog.at_level(logging.INFO):
         download_result = downloader.run()
@@ -201,13 +193,16 @@ def test_file_downloader_file_filter_exclude_dir(
     assert not download_result.missing
     assert download_result.successful
 
-    assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(remote_path) for file in uploaded_files if file not in excluded
-    )
+    assert sorted(download_result.successful) == [
+        local_path / "ascii.txt",
+        local_path / "nested/exclude_dir/excluded3.txt",
+        local_path / "some.csv",
+        local_path / "utf-8.txt",
+    ]
 
 
 def test_file_downloader_file_filter_glob(file_connection_with_path_and_files, tmp_path_factory, caplog):
-    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    file_connection, source_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
     downloader = FileDownloader(
@@ -216,14 +211,6 @@ def test_file_downloader_file_filter_glob(file_connection_with_path_and_files, t
         local_path=local_path,
         filters=[Glob("*.csv")],
     )
-
-    excluded = [
-        source_path / "utf-8.txt",
-        source_path / "ascii.txt",
-        source_path / "exclude_dir/excluded1.txt",
-        source_path / "exclude_dir/nested/excluded2.txt",
-        source_path / "nested/exclude_dir/excluded3.txt",
-    ]
 
     with caplog.at_level(logging.INFO):
         download_result = downloader.run()
@@ -236,9 +223,130 @@ def test_file_downloader_file_filter_glob(file_connection_with_path_and_files, t
     assert not download_result.missing
     assert download_result.successful
 
-    assert sorted(download_result.successful) == sorted(
-        local_path / file.relative_to(source_path) for file in uploaded_files if file not in excluded
+    assert sorted(download_result.successful) == [local_path / "some.csv"]
+
+
+def test_file_downloader_file_filter_regexp(file_connection_with_path_and_files, tmp_path_factory, caplog):
+    file_connection, source_path, _ = file_connection_with_path_and_files
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        filters=[Regexp(r"\d+\.txt")],
     )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "    filters = [" in caplog.text
+        assert "        Regexp(re.compile('\\\\d+\\\\.txt', re.IGNORECASE|re.DOTALL))," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    assert sorted(download_result.successful) == [
+        local_path / "exclude_dir/excluded1.txt",
+        local_path / "exclude_dir/nested/excluded2.txt",
+        local_path / "nested/exclude_dir/excluded3.txt",
+        local_path / "utf-8.txt",
+    ]
+
+
+def test_file_downloader_file_filter_file_size(file_connection_with_path_and_files, tmp_path_factory, caplog):
+    file_connection, source_path, _ = file_connection_with_path_and_files
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        filters=[FileSizeRange(min="1B")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    # other files are empty
+    assert sorted(download_result.successful) == [
+        local_path / "ascii.txt",
+        local_path / "some.csv",
+        local_path / "utf-8.txt",
+    ]
+
+
+def test_file_downloader_file_filter_file_mtime_since(file_connection_with_path_and_files, tmp_path_factory, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    remote_files = [file_connection.resolve_file(file) for file in uploaded_files]
+    remote_files.sort(key=lambda file: file.stat().st_mtime)
+    minimal_mtime = remote_files[0].stat().st_mtime
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        # some connectors return truncated timestamps in `.walk()`.
+        filters=[FileModifiedTime(since=int(minimal_mtime))],
+    )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileModifiedTime(since=" in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    # all files are newer than minimal_mtime
+    assert sorted(download_result.successful) == sorted(
+        local_path / file.relative_to(source_path) for file in remote_files
+    )
+
+
+def test_file_downloader_file_filter_file_mtime_until(file_connection_with_path_and_files, tmp_path_factory, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    remote_files = [file_connection.resolve_file(file) for file in uploaded_files]
+    remote_files.sort(key=lambda file: file.stat().st_mtime)
+    minimal_mtime = remote_files[0].stat().st_mtime
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        # some connectors return truncated timestamps in `.walk()`.
+        # also we should exclude files created exactly at minimal_mtime
+        filters=[FileModifiedTime(until=int(minimal_mtime) - 1)],
+    )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileModifiedTime(since=" in caplog.text
+        assert "    ]" in caplog.text
+
+    # all files are older than minimal_mtime
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert not download_result.successful
 
 
 def test_file_downloader_file_filter_is_ignored_by_user_input(

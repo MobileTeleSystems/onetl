@@ -358,7 +358,7 @@ class FileMover(FrozenModel):
         try:
             for root, _dirs, files in self.connection.walk(self.source_path, filters=self.filters, limits=self.limits):
                 for file in files:
-                    result.append(RemoteFile(path=root / file, stats=file.stats))
+                    result.append(RemoteFile(path=root / file, stats=file.stat()))
 
         except Exception as e:
             raise RuntimeError(
