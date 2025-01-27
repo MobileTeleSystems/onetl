@@ -468,16 +468,15 @@ class FileDownloader(FrozenModel):
         if not self._connection_checked:
             self._check_source_path()
 
-        result = FileSet()
-
         filters = self.filters.copy()
         if self.hwm:
             filters.append(FileHWMFilter(hwm=self._init_hwm(self.hwm)))
 
+        result = FileSet()
         try:
             for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
                 for file in files:
-                    result.append(RemoteFile(path=root / file, stats=file.stats))
+                    result.append(RemoteFile(path=root / file, stats=file.stat()))
 
         except Exception as e:
             raise RuntimeError(

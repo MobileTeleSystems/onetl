@@ -18,8 +18,8 @@ from onetl.impl import FrozenModel
 class FileSizeRange(BaseFileFilter, FrozenModel):
     """Filter files matching a specified size.
 
-    If file size doesn't match boundaries, it will be excluded.
-    Doesn't affect directories or paths without defined size.
+    If file size (``.stat().st_size``) doesn't match the range, it will be excluded.
+    Doesn't affect directories or paths without ``.stat()`` method.
 
     .. versionadded:: 0.13.0
 
@@ -36,8 +36,6 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
         Minimal allowed file size. ``None`` means no limit.
 
     max : int or str, optional
-
-        If file size is greater than this value, it will be excluded.
 
         Maximum allowed file size. ``None`` means no limit.
 
@@ -72,7 +70,7 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
     min: Optional[ByteSize] = None
     max: Optional[ByteSize] = None
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def _validate_min_max(cls, values):
         min_value = values.get("min")
         max_value = values.get("max")

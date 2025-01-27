@@ -29,8 +29,7 @@ class BaseFileFilter(ABC):
         Examples
         --------
 
-        from onetl.impl import LocalPath
-
+        >>> from onetl.impl import LocalPath
         >>> filter.match(LocalPath("/path/to/file.csv"))
         True
         >>> filter.match(LocalPath("/path/to/excluded.csv"))

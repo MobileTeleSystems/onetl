@@ -40,25 +40,30 @@ def test_file_size_range_repr():
         ("10GiB", 10 * 1024 * 1024 * 1024),
     ],
 )
-def test_file_size_range_parse_units(input: str, expected: int):
-    assert FileSizeRange(min=input.replace("B", "b")).min == expected
+def test_file_size_range_parse(input: str, expected: int):
+    assert FileSizeRange(min=expected).min == expected
     assert FileSizeRange(min=input).min == expected
-    assert FileSizeRange(max=input.replace("B", "b")).max == expected
+    assert FileSizeRange(min=input.replace("B", "b")).min == expected
+    assert FileSizeRange(max=expected).max == expected
     assert FileSizeRange(max=input).max == expected
+    assert FileSizeRange(max=input.replace("B", "b")).max == expected
 
 
 @pytest.mark.parametrize(
-    "matched, path",
+    "matched, size",
     [
-        (False, RemoteFile(path="file.csv", stats=RemotePathStat(st_size=1024, st_mtime=50))),
-        (True, RemoteFile(path="file.csv", stats=RemotePathStat(st_size=10 * 1024, st_mtime=50))),
-        (True, RemoteFile(path="file.csv", stats=RemotePathStat(st_size=15 * 1024, st_mtime=50))),
-        (True, RemoteFile(path="file.csv", stats=RemotePathStat(st_size=20 * 1024, st_mtime=50))),
-        (False, RemoteFile(path="file.csv", stats=RemotePathStat(st_size=30 * 1024, st_mtime=50))),
-        (True, RemoteDirectory("some")),
+        (False, 1024),
+        (True, 10 * 1024),
+        (True, 15 * 1024),
+        (True, 20 * 1024),
+        (False, 30 * 1024),
     ],
 )
-def test_file_size_range_match(matched, path):
+def test_file_size_range_match(matched: bool, size: int):
     file_filter = FileSizeRange(min="10Kib", max="20Kib")
 
-    assert file_filter.match(path) == matched
+    file = RemoteFile(path="file.csv", stats=RemotePathStat(st_size=size, st_mtime=50))
+    assert file_filter.match(file) == matched
+
+    directory = RemoteDirectory("some")
+    assert file_filter.match(directory)
