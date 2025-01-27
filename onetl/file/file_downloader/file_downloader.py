@@ -206,7 +206,7 @@ class FileDownloader(FrozenModel):
         # and stop before downloading 101 file
         downloader.run()
 
-    Incremental download:
+    Incremental download (by tracking list of file paths):
 
     .. code:: python
 
@@ -222,12 +222,37 @@ class FileDownloader(FrozenModel):
             connection=sftp,
             source_path="/path/to/remote/source",
             local_path="/path/to/local",
-            hwm=FileListHWM(
-                name="my_unique_hwm_name", directory="/path/to/remote/source"
-            ),  # mandatory for IncrementalStrategy
+            hwm=FileListHWM(  # mandatory for IncrementalStrategy
+                name="my_unique_hwm_name",
+            ),
         )
 
-        # download files to "/path/to/local", but only new ones
+        # download files to "/path/to/local", but only added since previous run
+        with IncrementalStrategy():
+            downloader.run()
+
+    Incremental download (by tracking file modification time):
+
+    .. code:: python
+
+        from onetl.connection import SFTP
+        from onetl.file import FileDownloader
+        from onetl.strategy import IncrementalStrategy
+        from etl_entities.hwm import FileModifiedTimeHWM
+
+        sftp = SFTP(...)
+
+        # create downloader
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/path/to/remote/source",
+            local_path="/path/to/local",
+            hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
+                name="my_unique_hwm_name",
+            ),
+        )
+
+        # download files to "/path/to/local", but only modified/created since previous run
         with IncrementalStrategy():
             downloader.run()
 

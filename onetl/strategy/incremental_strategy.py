@@ -71,7 +71,7 @@ class IncrementalStrategy(HWMStrategy):
                     },
                 )
 
-            Then the downloaded files list is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
+            Then the list of original file paths is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
@@ -84,7 +84,7 @@ class IncrementalStrategy(HWMStrategy):
                     ],
                 )
 
-            Next incremental run will download only new files from the source:
+            Next incremental run will download only new files which were added to the source since previous run:
 
             .. code:: bash
 
@@ -96,7 +96,7 @@ class IncrementalStrategy(HWMStrategy):
 
             .. code:: python
 
-                # only files which are not in FileListHWM
+                # only files which are not covered by FileListHWM
                 DownloadResult(
                     ...,
                     successful={
@@ -104,18 +104,79 @@ class IncrementalStrategy(HWMStrategy):
                     },
                 )
 
-            New files will be added to the ``FileListHWM`` and saved to :ref:`HWM Store <hwm>`:
+            Value of ``FileListHWM`` will be updated and saved to :ref:`HWM Store <hwm>`:
 
             .. code:: python
 
                 FileListHWM(
                     ...,
-                    entity="/path",
+                    directory="/path",
                     value=[
                         "/path/my/file1",
                         "/path/my/file2",
                         "/path/my/file3",
                     ],
+                )
+
+        ``hwm=FileModifiedTimeHWM(...)``:
+            First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
+            all files are downloaded:
+
+            .. code:: bash
+
+                $ hdfs dfs -ls /path
+
+                /path/my/file1
+                /path/my/file2
+
+            .. code:: python
+
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file1"),
+                        LocalFile("/downloaded/file2"),
+                    },
+                )
+
+            Then the maximum modified time of original files is saved as ``FileModifiedTimeHWM`` object into :ref:`HWM Store <hwm>`:
+
+            .. code:: python
+
+                FileModifiedTimeHWM(
+                    ...,
+                    directory="/path",
+                    value=datetime.datetime(2025, 1, 1, 11, 22, 33, 456789, tzinfo=timezone.utc),
+                )
+
+            Next incremental run will download only files from the source which were modified or created since previous run:
+
+            .. code:: bash
+
+                $ hdfs dfs -ls /path
+
+                /path/my/file1
+                /path/my/file2
+                /path/my/file3
+
+            .. code:: python
+
+                # only files which are not covered by FileModifiedTimeHWM
+                DownloadResult(
+                    ...,
+                    successful={
+                        LocalFile("/downloaded/file3"),
+                    },
+                )
+
+            Value of ``FileModifiedTimeHWM`` will be updated and and saved to :ref:`HWM Store <hwm>`:
+
+            .. code:: python
+
+                FileModifiedTimeHWM(
+                    ...,
+                    directory="/path",
+                    value=datetime.datetime(2025, 1, 1, 22, 33, 44, 567890, tzinfo=timezone.utc),
                 )
 
         .. warning::
@@ -177,7 +238,7 @@ class IncrementalStrategy(HWMStrategy):
 
         .. warning::
 
-            Cannot be used with :ref:`file-downloader` and ``hwm=FileListHWM(...)``
+            Cannot be used with :ref:`file-downloader`
 
         .. note::
 
@@ -332,13 +393,44 @@ class IncrementalStrategy(HWMStrategy):
             connection=sftp,
             source_path="/remote",
             local_path="/local",
-            hwm=FileListHWM(name="some_hwm_name"),
+            hwm=FileListHWM(  # mandatory for IncrementalStrategy
+                name="my_unique_hwm_name",
+            ),
         )
 
         with IncrementalStrategy():
             df = downloader.run()
 
-        # current run will download only files which were not downloaded in previous runs
+        # current run will download only files which were added since previous run
+
+    Incremental run with :ref:`file-downloader` and ``hwm=FileModifiedTimeHWM(...)``:
+
+    .. code:: python
+
+        from onetl.connection import SFTP
+        from onetl.file import FileDownloader
+        from onetl.strategy import SnapshotStrategy
+        from etl_entities.hwm import FileModifiedTimeHWM
+
+        sftp = SFTP(
+            host="sftp.domain.com",
+            user="user",
+            password="*****",
+        )
+
+        downloader = FileDownloader(
+            connection=sftp,
+            source_path="/remote",
+            local_path="/local",
+            hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
+                name="my_unique_hwm_name",
+            ),
+        )
+
+        with IncrementalStrategy():
+            df = downloader.run()
+
+        # current run will download only files which were modified/created since previous run
     """
 
     hwm: Optional[HWM] = None
