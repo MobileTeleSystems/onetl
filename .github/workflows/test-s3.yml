@@ -34,10 +34,12 @@ jobs:
         image: bitnami/minio:${{ inputs.minio-version }}
         env:
           TZ: UTC
-          MINIO_ROOT_USER: onetl
+          # MINIO_ACCESS_KEY and MINIO_SECRET_KEY are deprecated by new Minio version, but used by old version.
+          # so we keeping both
           MINIO_ACCESS_KEY: onetl
-          MINIO_ROOT_PASSWORD: woh3fogh3Biereu3quee1aidu9theiro
-          MINIO_SECRET_KEY: woh3fogh3Biereu3quee1aidu9theiro
+          MINIO_ROOT_USER: onetl
+          MINIO_SECRET_KEY: 123UsedForTestOnly@!
+          MINIO_ROOT_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 9010:9000
 

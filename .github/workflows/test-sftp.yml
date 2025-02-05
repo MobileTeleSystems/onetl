@@ -30,7 +30,7 @@ jobs:
           TZ: UTC
           USER_NAME: onetl
           PASSWORD_ACCESS: 'true'
-          USER_PASSWORD: AesujeifohgoaCu0Boosiet5aimeitho
+          USER_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 2222:2222
 

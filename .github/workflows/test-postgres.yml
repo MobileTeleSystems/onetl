@@ -36,7 +36,7 @@ jobs:
           TZ: UTC
           POSTGRES_USER: onetl
           POSTGRES_DB: onetl
-          POSTGRES_PASSWORD: ohtae0luxeshi1uraeluMoh9IShah7ai
+          POSTGRES_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 5432:5432
 

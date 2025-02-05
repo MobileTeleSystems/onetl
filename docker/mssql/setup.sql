@@ -10,7 +10,7 @@ GO
 USE onetl;
 GO
 
-CREATE LOGIN onetl WITH PASSWORD = '7ellowEl7akey';
+CREATE LOGIN onetl WITH PASSWORD = '123UsedForTestOnly@!';
 GO
 
 CREATE USER onetl FOR LOGIN onetl;

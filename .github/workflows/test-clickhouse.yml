@@ -37,9 +37,15 @@ jobs:
         image: ${{ inputs.clickhouse-image }}:${{ inputs.clickhouse-version }}
         env:
           TZ: UTC
+          # yandex/clickhouse-server doesn't read these options at all, so we using default values
+          CLICKHOUSE_DB: default
+          CLICKHOUSE_USER: default
+          CLICKHOUSE_PASSWORD: test_only
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
         ports:
           - 8123:8123
           - 9001:9000
+        options: --sysctl net.ipv6.conf.all.disable_ipv6=1
 
     steps:
       - name: Checkout code

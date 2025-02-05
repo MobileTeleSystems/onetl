@@ -1,5 +1,5 @@
 .github/workflows/data/file/**
-onetl/file_connection/file_connection.py
+onetl/connection/file_connection/file_connection.py
 onetl/file/file_downloader/**
 onetl/file/file_mover/**
 onetl/file/file_uploader/**

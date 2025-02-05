@@ -26,7 +26,8 @@ services:
   greenplum:
     image: ${GREENPLUM_IMAGE:-andruche/greenplum:6}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
     ports:
       - 5433:5432
     networks:
@@ -40,11 +41,20 @@ services:
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}
     restart: unless-stopped
+    environment:
+      TZ: UTC
+      # yandex/clickhouse-server doesn't read these options at all, so we using default values
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: 123UsedForTestOnly@!
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
     ports:
       - 8123:8123
       - 9001:9000
     networks:
       - onetl
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
 
   zookeeper:
     image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
@@ -53,7 +63,8 @@ services:
     networks:
       - onetl
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      TZ: UTC
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 2181 || exit"]
       interval: 10s
@@ -66,7 +77,20 @@ services:
     ports:
       - 9093:9093
       - 9095:9095
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      KAFKA_ENABLE_KRAFT: 'no'
+      KAFKA_CLIENT_USERS: onetl
+      KAFKA_CLIENT_PASSWORDS: 123UsedForTestOnly@!
+      KAFKA_ZOOKEEPER_BOOTSTRAP_SCRAM_USERS: 'true'
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL_PLAINTEXT_ANONYMOUS
+      KAFKA_CFG_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://:9093,INTERNAL_PLAINTEXT_SASL://:9094,EXTERNAL_PLAINTEXT_SASL://:9095
+      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL_PLAINTEXT_ANONYMOUS://kafka:9092,EXTERNAL_PLAINTEXT_ANONYMOUS://localhost:9093,INTERNAL_PLAINTEXT_SASL://kafka:9094,EXTERNAL_PLAINTEXT_SASL://localhost:9095
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,EXTERNAL_PLAINTEXT_ANONYMOUS:PLAINTEXT,INTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT,EXTERNAL_PLAINTEXT_SASL:SASL_PLAINTEXT
+      KAFKA_CFG_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
     networks:
       - onetl
     depends_on:
@@ -83,14 +107,20 @@ services:
     restart: unless-stopped
     ports:
       - 27017:27017
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      MONGO_INITDB_ROOT_USERNAME: onetl
+      MONGO_INITDB_ROOT_PASSWORD: 123UsedForTestOnly@!
     networks:
       - onetl
 
   mssql:
     image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 123AdminUserForTests@!
     ports:
       - 1433:1433
     volumes:
@@ -110,7 +140,12 @@ services:
   mysql:
     image: ${MYSQL_IMAGE:-mysql:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      MYSQL_ROOT_PASSWORD: 123RootUserForTestsOnly@!
+      MYSQL_DATABASE: onetl
+      MYSQL_USER: onetl
+      MYSQL_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 3306:3306
     networks:
@@ -120,7 +155,11 @@ services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:alpine}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      POSTGRES_USER: onetl
+      POSTGRES_DB: onetl
+      POSTGRES_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 5432:5432
     networks:
@@ -130,7 +169,8 @@ services:
     image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
     hostname: hdfs
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
     ports:
       - 9820:9820 # HDFS IPC
       - 9870:9870 # WebHDFS
@@ -143,7 +183,11 @@ services:
   oracle:
     image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.3-slim-faststart}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      ORACLE_PASSWORD: 123AdminUserForTests@!
+      APP_USER: onetl
+      APP_USER_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 1522:1521
     networks:
@@ -158,11 +202,15 @@ services:
   ftp:
     image: ${FTP_IMAGE:-chonjay21/ftps:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
     environment:
-      - USE_SSL=false
-      - PASSV_MIN_PORT=30000
-      - PASSV_MAX_PORT=30010
+      TZ: UTC
+      APP_UID: 1000
+      APP_GID: 1000
+      APP_USER_NAME: onetl
+      APP_USER_PASSWD: 123UsedForTestOnly@!
+      USE_SSL: 'false'
+      PASSV_MIN_PORT: 30000
+      PASSV_MAX_PORT: 30010
     ports:
       - 2121:21
       - 30000-30010:30000-30010
@@ -174,11 +222,15 @@ services:
   ftps:
     image: ${FTPS_IMAGE:-chonjay21/ftps:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
     environment:
-      - USE_SSL=true
-      - PASSV_MIN_PORT=30020
-      - PASSV_MAX_PORT=30030
+      TZ: UTC
+      APP_UID: 1000
+      APP_GID: 1000
+      APP_USER_NAME: onetl
+      APP_USER_PASSWD: 123UsedForTestOnly@!
+      USE_SSL: 'true'
+      PASSV_MIN_PORT: 30020
+      PASSV_MAX_PORT: 30030
     ports:
       - 2122:21
       - 30020-30030:30020-30030
@@ -190,6 +242,8 @@ services:
   samba:
     image: ${SAMBA_IMAGE:-elswork/samba}
     restart: unless-stopped
+    environment:
+      TZ: UTC
     ports:
       - "139:139"
       - "445:445"
@@ -202,7 +256,14 @@ services:
   s3:
     image: ${S3_IMAGE:-bitnami/minio:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      # MINIO_ACCESS_KEY and MINIO_SECRET_KEY are deprecated by new Minio version, but used by old version.
+      # so we keeping both
+      MINIO_ACCESS_KEY: onetl
+      MINIO_ROOT_USER: onetl
+      MINIO_SECRET_KEY: 123UsedForTestOnly@!
+      MINIO_ROOT_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 9010:9000
       - 9011:9001
@@ -212,7 +273,14 @@ services:
   sftp:
     image: ${SFTP_IMAGE:-linuxserver/openssh-server}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      PUID: 1000
+      PGID: 1000
+      USER_NAME: onetl
+      PASSWORD_ACCESS: 'true'
+      SUDO_ACCESS: 'true'
+      USER_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 2222:2222
     networks:
@@ -221,7 +289,12 @@ services:
   webdav:
     image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
     restart: unless-stopped
-    env_file: .env.dependencies
+    environment:
+      TZ: UTC
+      APP_UID: 1000
+      APP_GID: 1000
+      APP_USER_NAME: onetl
+      APP_USER_PASSWD: 123UsedForTestOnly@!
     ports:
       - 8000:80
     volumes:

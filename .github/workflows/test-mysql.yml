@@ -34,10 +34,10 @@ jobs:
         image: mysql:${{ inputs.mysql-version }}
         env:
           TZ: UTC
-          MYSQL_ROOT_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
+          MYSQL_ROOT_PASSWORD: 123RootUserForTestsOnly@!
           MYSQL_DATABASE: onetl
           MYSQL_USER: onetl
-          MYSQL_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
+          MYSQL_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 3306:3306
 

@@ -1,4 +1,3 @@
 **/*ftp*
 **/*ftp*/**
 docker-compose.yml
-.env.dependencies
