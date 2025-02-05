@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import secrets
-import threading
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 try:
-    from pydantic.v1 import PrivateAttr, SecretStr, validator
+    from pydantic.v1 import SecretStr, validator
 except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
+    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.java import try_import_java_class
 from onetl._util.spark import override_job_description
@@ -65,7 +64,6 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
     DRIVER: ClassVar[str]
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
-    _last_connection_and_options: Optional[threading.local] = PrivateAttr(default=None)
 
     JDBCOptions = JDBCMixinOptions
     FetchOptions = JDBCFetchOptions

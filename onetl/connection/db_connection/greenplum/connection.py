@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 import os
 import textwrap
-import threading
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
 from etl_entities.instance import Host
@@ -15,9 +14,9 @@ from etl_entities.instance import Host
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 
 try:
-    from pydantic.v1 import PrivateAttr, SecretStr, validator
+    from pydantic.v1 import SecretStr, validator
 except (ImportError, AttributeError):
-    from pydantic import validator, SecretStr, PrivateAttr  # type: ignore[no-redef, assignment]
+    from pydantic import validator, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -182,7 +181,6 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
 
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
-    _last_connection_and_options: Optional[threading.local] = PrivateAttr(default=None)
 
     @slot
     @classmethod

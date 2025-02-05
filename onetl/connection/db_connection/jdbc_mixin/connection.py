@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import logging
-import threading
+import warnings
 from abc import abstractmethod
-from contextlib import closing, suppress
+from contextlib import closing
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, ClassVar, TypeVar
 
 try:
-    from pydantic.v1 import Field, PrivateAttr, SecretStr
+    from pydantic.v1 import Field, SecretStr
 except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, SecretStr  # type: ignore[no-redef, assignment]
+    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway
@@ -79,9 +79,6 @@ class JDBCMixin:
     DRIVER: ClassVar[str]
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
-    # cached JDBC connection (Java object), plus corresponding GenericOptions (Python object)
-    _last_connection_and_options: Optional[threading.local] = PrivateAttr(default=None)
-
     @property
     @abstractmethod
     def jdbc_url(self) -> str:
@@ -101,6 +98,9 @@ class JDBCMixin:
     def close(self):
         """
         Close all connections, opened by ``.fetch()``, ``.execute()`` or ``.check()`` methods. |support_hooks|
+
+        .. deprecated:: 0.13.0
+            Connections are now closed immediately. Method is now no-op.
 
         .. note::
 
@@ -128,7 +128,11 @@ class JDBCMixin:
 
         """
 
-        self._close_connections()
+        warnings.warn(
+            "Connections are now closed immediately. Method is no-op since 0.13.0",
+            UserWarning,
+            stacklevel=2,
+        )
         return self
 
     def __enter__(self):
@@ -382,26 +386,9 @@ class JDBCMixin:
         return jdbc_options.asConnectionProperties()
 
     def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions):
-        if not self._last_connection_and_options:
-            # connection class can be used in multiple threads.
-            # each Python thread creates its own thread in JVM
-            # so we need local variable to create per-thread persistent connection
-            self._last_connection_and_options = threading.local()
-
-        with suppress(Exception):  # nothing cached, or JVM failed
-            last_connection, last_options = self._last_connection_and_options.data
-            if options == last_options and not last_connection.isClosed():
-                return last_connection
-
-            # only one connection can be opened in one moment of time
-            last_connection.close()
-
         connection_properties = self._options_to_connection_properties(options)
         driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
-        new_connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
-
-        self._last_connection_and_options.data = (new_connection, options)
-        return new_connection
+        return driver_manager.getConnection(self.jdbc_url, connection_properties)
 
     def _get_spark_dialect_name(self) -> str:
         """
@@ -411,18 +398,8 @@ class JDBCMixin:
         return dialect.split("$")[0] if "$" in dialect else dialect
 
     def _get_spark_dialect(self):
-        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc
+        jdbc_dialects_package = self.spark._jvm.org.apache.spark.sql.jdbc  # type: ignore
         return jdbc_dialects_package.JdbcDialects.get(self.jdbc_url)
-
-    def _close_connections(self):
-        with suppress(Exception):
-            # connection maybe not opened yet
-            last_connection, _ = self._last_connection_and_options.data
-            last_connection.close()
-
-        with suppress(Exception):
-            # connection maybe not opened yet
-            del self._last_connection_and_options.data
 
     def _get_statement_args(self) -> tuple[int, ...]:
         resultset = self.spark._jvm.java.sql.ResultSet  # type: ignore
@@ -442,15 +419,18 @@ class JDBCMixin:
 
         Almost like ``org.apache.spark.sql.execution.datasources.jdbc.JDBCRDD`` is fetching data:
         * https://github.com/apache/spark/blob/v2.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JDBCRDD.scala#L297-L306
+
+        Each time new connection is opened to execute the statement, and then closed.
         """
 
         jdbc_connection = self._get_jdbc_connection(options)
-        jdbc_connection.setReadOnly(read_only)  # type: ignore
+        with closing(jdbc_connection):
+            jdbc_connection.setReadOnly(read_only)  # type: ignore
 
-        statement_args = self._get_statement_args()
-        jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
+            statement_args = self._get_statement_args()
+            jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
 
-        return self._execute_statement(jdbc_statement, statement, options, callback, read_only)
+            return self._execute_statement(jdbc_statement, statement, options, callback, read_only)
 
     def _execute_statement(
         self,
