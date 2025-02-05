@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
+from urllib.parse import quote
 
 import cx_Oracle
 import pandas
@@ -61,7 +62,7 @@ class OracleProcessing(BaseProcessing):
     @property
     def url(self) -> str:
         dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
-        return f"oracle://{self.user}:{self.password}@{dsn}"
+        return f"oracle://{self.user}:{quote(self.password)}@{dsn}"
 
     def get_conn(self) -> cx_Oracle.Connection:
         try:

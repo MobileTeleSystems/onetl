@@ -621,8 +621,8 @@ def test_mysql_connection_execute_function(request, spark, processing, load_tabl
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -722,8 +722,8 @@ def test_mysql_connection_execute_function_arguments(
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -802,8 +802,8 @@ def test_mysql_connection_execute_function_ddl(spark, processing, get_schema_tab
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -841,8 +841,8 @@ def test_mysql_connection_execute_function_dml(request, spark, processing, get_s
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )

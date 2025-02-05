@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
+from urllib.parse import quote
 
 import pandas
 import pymysql
@@ -35,8 +36,16 @@ class MySQLProcessing(BaseProcessing):
         return os.environ["ONETL_MYSQL_USER"]
 
     @property
+    def root_user(self) -> str:
+        return os.environ["ONETL_MYSQL_ROOT_USER"]
+
+    @property
     def password(self) -> str:
         return os.environ["ONETL_MYSQL_PASSWORD"]
+
+    @property
+    def root_password(self) -> str:
+        return os.environ["ONETL_MYSQL_ROOT_PASSWORD"]
 
     @property
     def host(self) -> str:
@@ -56,7 +65,7 @@ class MySQLProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"mysql+pymysql://{self.user}:{quote(self.password)}@{self.host}:{self.port}/{self.database}"
 
     def get_conn(self):
         return pymysql.connect(

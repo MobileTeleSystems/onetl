@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from logging import getLogger
+from urllib.parse import quote
 
 import pandas
 import pymssql
@@ -57,7 +58,7 @@ class MSSQLProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"mssql+pymssql://{self.user}:{quote(self.password)}@{self.host}:{self.port}/{self.database}"
 
     def get_conn(self):
         return pymssql.connect(

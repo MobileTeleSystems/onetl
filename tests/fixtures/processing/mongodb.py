@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from logging import getLogger
 from random import randint
-from urllib import parse as parser
+from urllib.parse import quote
 
 import pandas
 from pymongo import MongoClient
@@ -65,7 +65,7 @@ class MongoDBProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        return f"mongodb://{self.user}:{parser.quote(self.password)}@{self.host}:{self.port}"
+        return f"mongodb://{self.user}:{quote(self.password)}@{self.host}:{self.port}"
 
     def get_conn(self):
         return MongoClient(self.url)

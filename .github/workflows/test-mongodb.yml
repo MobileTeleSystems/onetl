@@ -35,7 +35,7 @@ jobs:
         env:
           TZ: UTC
           MONGO_INITDB_ROOT_USERNAME: onetl
-          MONGO_INITDB_ROOT_PASSWORD: E4j7h!9A
+          MONGO_INITDB_ROOT_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 27017:27017
 

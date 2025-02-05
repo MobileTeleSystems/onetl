@@ -136,7 +136,13 @@ class ClickhouseProcessing(BaseProcessing):
         self.connection.execute(self.drop_table_ddl(table, schema))
 
     def get_conn(self) -> clickhouse_driver.client.Client:
-        return clickhouse_driver.Client(host=self.host, port=self.client_port)
+        return clickhouse_driver.Client(
+            host=self.host,
+            port=self.client_port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+        )
 
     def insert_data(
         self,

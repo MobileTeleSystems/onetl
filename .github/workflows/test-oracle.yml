@@ -41,9 +41,9 @@ jobs:
         image: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
         env:
           TZ: UTC
-          ORACLE_PASSWORD: maaxohmiGe9eep5x
+          ORACLE_PASSWORD: 123AdminUserForTests@!
           APP_USER: onetl
-          APP_USER_PASSWORD: Yoequ2Hoeceit4ch
+          APP_USER_PASSWORD: 123UsedForTestOnly@!
         ports:
           - 1522:1521
 

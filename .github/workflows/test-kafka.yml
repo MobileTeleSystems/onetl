@@ -49,7 +49,7 @@ jobs:
           ALLOW_PLAINTEXT_LISTENER: 'yes'
           KAFKA_ENABLE_KRAFT: 'no'
           KAFKA_CLIENT_USERS: onetl
-          KAFKA_CLIENT_PASSWORDS: uufoFae9sahSoidoo0eagaidaoreif6z
+          KAFKA_CLIENT_PASSWORDS: 123UsedForTestOnly@!
           KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
           KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
           KAFKA_ZOOKEEPER_BOOTSTRAP_SCRAM_USERS: 'true'

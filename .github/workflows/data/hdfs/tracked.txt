@@ -2,4 +2,3 @@
 **/*hdfs*/**
 onetl/connection/kerberos_helpers.py
 docker-compose.yml
-.env.dependencies

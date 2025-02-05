@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
+from urllib.parse import quote
 
 import pandas
 from pandas.io import sql as psql
@@ -57,7 +58,7 @@ class PostgresProcessing(BaseProcessing):
 
     @property
     def url(self) -> str:
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"postgresql://{self.user}:{quote(self.password)}@{self.host}:{self.port}/{self.database}"
 
     def get_conn(self) -> connection:
         return pg_connect(self.url)
