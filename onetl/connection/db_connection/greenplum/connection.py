@@ -464,15 +464,16 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
             **greenplum_connector_options,
         }
 
-    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
-        # See https://github.com/pgjdbc/pgjdbc/pull/1252
-        # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
-        # Which is not a desired behavior, because `.fetch()` method should always be read-only
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # To properly support pgbouncer, we have to create connection with readOnly option set.
+            # See https://github.com/pgjdbc/pgjdbc/issues/848
+            options = options.copy(update={"readOnly": True})
 
-        if not getattr(options, "readOnlyMode", None):
-            options = options.copy(update={"readOnlyMode": "always"})
-
-        return super()._options_to_connection_properties(options)
+        connection_properties = self._options_to_connection_properties(options)
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
+        # avoid calling .setReadOnly(True) here
+        return driver_manager.getConnection(self.jdbc_url, connection_properties)
 
     def _get_server_setting(self, name: str) -> Any:
         query = f"""

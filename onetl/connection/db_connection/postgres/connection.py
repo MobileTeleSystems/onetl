@@ -86,7 +86,7 @@ class Postgres(JDBCConnection):
     Examples
     --------
 
-    Postgres connection initialization
+    Create read-write connection:
 
     .. code:: python
 
@@ -107,7 +107,22 @@ class Postgres(JDBCConnection):
             user="user",
             password="*****",
             database="target_database",
-            extra={"ssl": "false"},
+            spark=spark,
+        )
+
+    Create read-only connection:
+
+    .. code:: python
+
+        ...
+
+        # Create connection
+        postgres = Postgres(
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            database="target_database",
+            extra={"readOnly": True, "readOnlyMode": "always"},
             spark=spark,
         )
 
@@ -185,15 +200,13 @@ class Postgres(JDBCConnection):
     def __str__(self):
         return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
 
-    def _options_to_connection_properties(
-        self,
-        options: JDBCFetchOptions | JDBCExecuteOptions,
-    ):  # noqa: WPS437
-        # See https://github.com/pgjdbc/pgjdbc/pull/1252
-        # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
-        # Which is not a desired behavior, because `.fetch()` method should always be read-only
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # To properly support pgbouncer, we have to create connection with readOnly option set.
+            # See https://github.com/pgjdbc/pgjdbc/issues/848
+            options = options.copy(update={"readOnly": True})
 
-        if not getattr(options, "readOnlyMode", None):
-            options = options.copy(update={"readOnlyMode": "always"})
-
-        return super()._options_to_connection_properties(options)
+        connection_properties = self._options_to_connection_properties(options)
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
+        # avoid calling .setReadOnly(True) here
+        return driver_manager.getConnection(self.jdbc_url, connection_properties)
