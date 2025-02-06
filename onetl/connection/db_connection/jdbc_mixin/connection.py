@@ -141,11 +141,6 @@ class JDBCMixin:
     def __exit__(self, _exc_type, _exc_value, _traceback):  # noqa: U101
         self.close()
 
-    def __del__(self):  # noqa: WPS603
-        # If current object is collected by GC, close all opened connections
-        # This is safe because closing connection on Spark driver does not influence Spark executors
-        self.close()
-
     @slot
     def check(self):
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
@@ -176,12 +171,8 @@ class JDBCMixin:
 
         .. note::
 
-            Statement is executed in read-only connection, so it cannot change any data in the database.
-
-        .. note::
-
-            First call of the method opens the connection to a database.
-            Call ``.close()`` method to close it, or use context manager to do it automatically.
+            Statement is executed in read-only connection, so it should not change any data in the database.
+            However, behavior may depend on RDBMS type and JDBC driver options.
 
         .. versionadded:: 0.2.0
 
@@ -247,11 +238,6 @@ class JDBCMixin:
 
         There is no method like this in :obj:`pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
-
-        .. note::
-
-            First call of the method opens the connection to a database.
-            Call ``.close()`` method to close it, or use context manager to do it automatically.
 
         .. versionadded:: 0.2.0
 
