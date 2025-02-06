@@ -902,15 +902,20 @@ def test_postgres_connection_execute_function_ddl(
     table_finalizer()
 
     df = postgres.execute(f"{{call {func}()}}")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
     table_finalizer()
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        postgres.fetch(f"SELECT {func}() AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = postgres.fetch(f"SELECT {func}() AS result")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
+    table_finalizer()
 
-    # unfortunately, we cannot pass read-only flag to spark.read.jdbc
     df = postgres.sql(f"SELECT {func}() AS result")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
 
@@ -949,6 +954,7 @@ def test_postgres_connection_execute_function_dml(
         BEGIN
             INSERT INTO {table} VALUES(idd, text);
             RETURN idd;
+            COMMIT;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
         """,
@@ -963,13 +969,15 @@ def test_postgres_connection_execute_function_dml(
     result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        postgres.fetch(f"SELECT {func}(1, 'abc') AS result")
-
-    # unfortunately, we cannot pass read-only flag to spark.read.jdbc
-    df = postgres.sql(f"SELECT {func}(2, 'cde') AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = postgres.fetch(f"SELECT {func}(2, 'cde') AS result")
     result_df = pandas.DataFrame([[2]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
+
+    df = postgres.sql(f"SELECT {func}(3, 'def') AS result")
+    result_df = pandas.DataFrame([[3]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
 

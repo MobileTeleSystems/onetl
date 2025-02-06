@@ -110,13 +110,13 @@ Start all containers with dependencies:
 
 .. code:: bash
 
-    docker-compose up -d
+    docker-compose --profile all up -d
 
 You can run limited set of dependencies:
 
 .. code:: bash
 
-    docker-compose up -d mongodb
+    docker-compose --profile mongodb up -d
 
 Run tests:
 
@@ -148,7 +148,7 @@ Stop all containers and remove created volumes:
 
 .. code:: bash
 
-    docker-compose down -v
+    docker-compose --profile all down -v
 
 Without docker-compose
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -189,13 +189,13 @@ Start all containers with dependencies:
 
 .. code:: bash
 
-    docker-compose up -d
+    docker-compose --profile all up -d
 
 You can run limited set of dependencies:
 
 .. code:: bash
 
-    docker-compose up -d mongodb
+    docker-compose --profile mongodb up -d
 
 Load environment variables with connection properties:
 
@@ -219,7 +219,7 @@ Stop all containers and remove created volumes:
 
 .. code:: bash
 
-    docker-compose down -v
+    docker-compose --profile all down -v
 
 
 Build documentation

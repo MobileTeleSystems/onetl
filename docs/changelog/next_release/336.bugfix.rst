@@ -1,0 +1,30 @@
+Fix using onETL to write data to PostgreSQL or Greenplum instances behind *pgbouncer* with ``pool_mode=transaction``.
+
+Previously ``connection.check()`` opened a read-only transaction, pgbouncer changed the entire connection type from read-write to read-only,
+and when ``DBWriter.run(df)`` executed in read-only connection, producing errors like:
+
+.. code::
+
+    org.postgresql.util.PSQLException: ERROR: cannot execute INSERT in a read-only transaction
+
+Added a workaround by passing ``readOnly=True`` to JDBC params for read-only connections, so pgbouncer may differ read-only and read-write connections properly.
+
+Note that this may affect behavior of ``connection.fetch("SELECT func()")`` if ``func()`` executes DML/DDL operations in the database, like ``INSERT`` or ``DROP``.
+Before 0.13.0 calling those functions raised an exception, but now it will not.
+
+This is because by default Postgres JDBC driver option ``readOnlyMode=transaction`` is applied only if ``autoCommit=False``, which is not the case here.
+To make truly read-only connection, use the following code:
+
+.. code:: python
+
+    postgres = Postgres(
+        host=...,
+        port=...,
+        database=...,
+        user=...,
+        password=...,
+        extra={"readOnly": True, "readOnlyMode": "always"},
+        spark=spark,
+    )
+
+See `Postgres JDBC driver documentation <https://jdbc.postgresql.org/documentation/use/>`_.

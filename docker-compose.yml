@@ -22,6 +22,7 @@ services:
         soft: 10000
         hard: 10000
     # no dependencies from other containers to allow running limited set of tests instead of all
+    profiles: [onetl]
 
   greenplum:
     image: ${GREENPLUM_IMAGE:-andruche/greenplum:6}
@@ -37,6 +38,25 @@ services:
     # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
+    profiles: [greenplum, db, all]
+
+  pgbouncer-transaction-gp:
+    image: ${PGBOUNCER_IMAGE:-bitnami/pgbouncer:latest}
+    restart: unless-stopped
+    environment:
+      TZ: UTC
+      PGBOUNCER_DATABASE: postgres
+      PGBOUNCER_POOL_MODE: transaction
+      POSTGRESQL_HOST: greenplum
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DATABASE: postgres
+      POSTGRESQL_USERNAME: gpadmin
+      POSTGRESQL_PASSWORD: 123UsedForTestOnly@!
+    ports:
+      - 6433:6432
+    networks:
+      - onetl
+    profiles: [greenplum, db, all]
 
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:latest-alpine}
@@ -55,6 +75,7 @@ services:
       - onetl
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
+    profiles: [clickhouse, jdbc, db, all]
 
   zookeeper:
     image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
@@ -70,6 +91,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles: [kafka, db, all]
 
   kafka:
     image: ${KAFKA_IMAGE:-bitnami/kafka:latest}
@@ -101,6 +123,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles: [kafka, db, all]
 
   mongodb:
     image: ${MONGODB_IMAGE:-mongo:latest}
@@ -113,6 +136,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: 123UsedForTestOnly@!
     networks:
       - onetl
+    profiles: [mongodb, db, all]
 
   mssql:
     image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:latest}
@@ -136,6 +160,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles: [mssql, jdbc, db, all]
 
   mysql:
     image: ${MYSQL_IMAGE:-mysql:latest}
@@ -151,6 +176,7 @@ services:
     networks:
       - onetl
     platform: linux/amd64
+    profiles: [mysql, jdbc, db, all]
 
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:alpine}
@@ -164,6 +190,25 @@ services:
       - 5432:5432
     networks:
       - onetl
+    profiles: [postgres, jdbc, db, all]
+
+  pgbouncer-transaction-pg:
+    image: ${PGBOUNCER_IMAGE:-bitnami/pgbouncer:latest}
+    restart: unless-stopped
+    environment:
+      TZ: UTC
+      PGBOUNCER_DATABASE: onetl
+      PGBOUNCER_POOL_MODE: transaction
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DATABASE: onetl
+      POSTGRESQL_USERNAME: onetl
+      POSTGRESQL_PASSWORD: 123UsedForTestOnly@!
+    ports:
+      - 6432:6432
+    networks:
+      - onetl
+    profiles: [postgres, jdbc, db, all]
 
   hdfs:
     image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
@@ -179,6 +224,7 @@ services:
       - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
     networks:
       - onetl
+    profiles: [hdfs, file_df, file, all]
 
   oracle:
     image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.3-slim-faststart}
@@ -198,6 +244,7 @@ services:
       timeout: 5s
       retries: 10
     platform: linux/amd64
+    profiles: [oracle, jdbc, db, all]
 
   ftp:
     image: ${FTP_IMAGE:-chonjay21/ftps:latest}
@@ -218,6 +265,7 @@ services:
       - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
       - onetl
+    profiles: [ftp, file, all]
 
   ftps:
     image: ${FTPS_IMAGE:-chonjay21/ftps:latest}
@@ -238,6 +286,7 @@ services:
       - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
       - onetl
+    profiles: [fts, file, all]
 
   samba:
     image: ${SAMBA_IMAGE:-elswork/samba}
@@ -252,6 +301,7 @@ services:
     entrypoint: ["/custom_entrypoint.sh"]
     networks:
       - onetl
+    profiles: [samba, file, all]
 
   s3:
     image: ${S3_IMAGE:-bitnami/minio:latest}
@@ -269,6 +319,7 @@ services:
       - 9011:9001
     networks:
       - onetl
+    profiles: [s3, file_df, file, all]
 
   sftp:
     image: ${SFTP_IMAGE:-linuxserver/openssh-server}
@@ -285,6 +336,7 @@ services:
       - 2222:2222
     networks:
       - onetl
+    profiles: [sftp, file, all]
 
   webdav:
     image: ${WEBDAV_IMAGE:-chonjay21/webdav:latest}
@@ -302,6 +354,7 @@ services:
       - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
       - onetl
+    profiles: [webdav, file, all]
 
 networks:
   onetl:
