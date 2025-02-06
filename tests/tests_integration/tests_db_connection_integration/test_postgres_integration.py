@@ -113,9 +113,13 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, c
     with pytest.raises(Exception):
         postgres.fetch(f"SELEC 1{suffix}")
 
+    # fetch is read-only
+    with pytest.raises(Exception):
+        postgres.fetch(f"DROP TABLE {table}{suffix}")
+
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_connection_ddl(spark, processing, get_schema_table, suffix):
+def test_postgres_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,

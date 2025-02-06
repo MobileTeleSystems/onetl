@@ -132,6 +132,10 @@ def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix,
     with pytest.raises(Exception):
         clickhouse.fetch(f"SELEC 1{suffix}")
 
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        clickhouse.fetch(f"DROP TABLE {table}{suffix}")
+
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_clickhouse_connection_execute_ddl(spark, processing, get_schema_table, suffix):

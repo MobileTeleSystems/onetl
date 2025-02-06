@@ -92,6 +92,10 @@ def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
     with pytest.raises(Exception):
         greenplum.fetch(f"SELEC 1{suffix}")
 
+    # fetch is read-only
+    with pytest.raises(Exception):
+        greenplum.fetch(f"DROP TABLE {table}{suffix}")
+
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_greenplum_connection_ddl(spark, processing, get_schema_table, suffix):

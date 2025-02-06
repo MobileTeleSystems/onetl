@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import closing
 from typing import ClassVar, Optional
 
 from etl_entities.instance import Host
@@ -10,6 +11,10 @@ from etl_entities.instance import Host
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 from onetl.connection.db_connection.mysql.dialect import MySQLDialect
 from onetl.connection.db_connection.mysql.options import (
     MySQLExecuteOptions,
@@ -178,3 +183,16 @@ class MySQL(JDBCConnection):
 
     def __str__(self):
         return f"{self.__class__.__name__}[{self.host}:{self.port}]"
+
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        connection = super()._get_jdbc_connection(options, read_only)
+
+        # connection.setReadOnly() is no-op in MySQL JDBC driver. Session type can be changed by statement:
+        # https://stackoverflow.com/questions/10240890/sql-open-connection-in-read-only-mode#comment123789248_48959180
+        # https://dev.mysql.com/doc/refman/8.4/en/set-transaction.html
+        transaction = "READ ONLY" if read_only else "READ WRITE"
+        statement = connection.prepareStatement(f"SET SESSION TRANSACTION {transaction};")
+        with closing(statement):
+            statement.execute()
+
+        return connection
