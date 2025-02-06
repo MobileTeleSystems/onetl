@@ -371,10 +371,12 @@ class JDBCMixin:
         )
         return jdbc_options.asConnectionProperties()
 
-    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions):
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
         connection_properties = self._options_to_connection_properties(options)
         driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
-        return driver_manager.getConnection(self.jdbc_url, connection_properties)
+        connection = driver_manager.getConnection(self.jdbc_url, connection_properties)
+        connection.setReadOnly(read_only)  # type: ignore
+        return connection
 
     def _get_spark_dialect_name(self) -> str:
         """
@@ -389,7 +391,6 @@ class JDBCMixin:
 
     def _get_statement_args(self) -> tuple[int, ...]:
         resultset = self.spark._jvm.java.sql.ResultSet  # type: ignore
-
         return resultset.TYPE_FORWARD_ONLY, resultset.CONCUR_READ_ONLY
 
     def _execute_on_driver(
@@ -409,13 +410,10 @@ class JDBCMixin:
         Each time new connection is opened to execute the statement, and then closed.
         """
 
-        jdbc_connection = self._get_jdbc_connection(options)
+        statement_args = self._get_statement_args()
+        jdbc_connection = self._get_jdbc_connection(options, read_only)
         with closing(jdbc_connection):
-            jdbc_connection.setReadOnly(read_only)  # type: ignore
-
-            statement_args = self._get_statement_args()
             jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
-
             return self._execute_statement(jdbc_statement, statement, options, callback, read_only)
 
     def _execute_statement(

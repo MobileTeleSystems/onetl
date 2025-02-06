@@ -132,6 +132,10 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        oracle.fetch(f"DROP TABLE {table}{suffix}")
+
     # not supported by JDBC, use SELECT * FROM v$tables
     with pytest.raises(Exception):
         oracle.fetch(f"SHOW TABLES{suffix}")

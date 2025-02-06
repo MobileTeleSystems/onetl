@@ -10,6 +10,10 @@ from etl_entities.instance import Host
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 from onetl.connection.db_connection.mssql.dialect import MSSQLDialect
 from onetl.connection.db_connection.mssql.options import (
     MSSQLExecuteOptions,
@@ -277,3 +281,13 @@ class MSSQL(JDBCConnection):
 
         port = self.port or 1433
         return f"{self.__class__.__name__}[{self.host}:{port}/{self.database}]"
+
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # connection.setReadOnly() is no-op in MSSQL:
+            # https://learn.microsoft.com/en-us/sql/connect/jdbc/reference/setreadonly-method-sqlserverconnection?view=sql-server-ver16
+            # Instead, we should change connection type via option:
+            # https://github.com/microsoft/mssql-jdbc/issues/484
+            options = options.copy(update={"ApplicationIntent": "ReadOnly"})
+
+        return super()._get_jdbc_connection(options, read_only)
