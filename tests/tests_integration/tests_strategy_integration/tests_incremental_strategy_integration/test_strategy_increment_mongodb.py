@@ -8,7 +8,7 @@ from onetl.connection import MongoDB
 from onetl.db import DBReader
 from onetl.strategy import IncrementalStrategy
 
-pytestmark = pytest.mark.mongodb
+pytestmark = [pytest.mark.mongodb, pytest.mark.flaky]
 
 
 @pytest.fixture()
