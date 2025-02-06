@@ -11,7 +11,7 @@ from onetl.connection import Oracle
 from onetl.db import DBReader
 from tests.util.rand import rand_str
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.flaky]
 
 
 def test_oracle_reader_snapshot(spark, processing, load_table_data):

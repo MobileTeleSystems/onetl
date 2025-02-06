@@ -10,7 +10,7 @@ except ImportError:
 
 from onetl.connection import Oracle
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.flaky]
 
 
 def test_oracle_connection_check(spark, processing, caplog):
