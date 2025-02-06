@@ -40,7 +40,7 @@ jobs:
           # yandex/clickhouse-server doesn't read these options at all, so we using default values
           CLICKHOUSE_DB: default
           CLICKHOUSE_USER: default
-          CLICKHOUSE_PASSWORD: test_only
+          CLICKHOUSE_PASSWORD: 123UsedForTestOnly@!
           CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
         ports:
           - 8123:8123
