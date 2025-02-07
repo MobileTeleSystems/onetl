@@ -327,6 +327,40 @@ def test_file_mover_file_filter_file_mtime_until(request, file_connection_with_p
     assert not move_result.successful
 
 
+def test_file_mover_several_file_filters(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        filters=[Glob("*.csv"), FileSizeRange(min="1B")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        Glob('*.csv')," in caplog.text
+        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert move_result.successful
+
+    included = [source_path / "some.csv"]
+    assert sorted(move_result.successful) == sorted(
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
+    )
+
+
 def test_file_mover_file_filter_is_ignored_by_user_input(
     request,
     file_connection_with_path_and_files,

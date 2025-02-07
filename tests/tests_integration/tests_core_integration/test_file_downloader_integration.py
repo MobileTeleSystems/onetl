@@ -351,6 +351,32 @@ def test_file_downloader_file_filter_file_mtime_until(file_connection_with_path_
     assert not download_result.successful
 
 
+def test_file_downloader_several_file_filters(file_connection_with_path_and_files, tmp_path_factory, caplog):
+    file_connection, source_path, _ = file_connection_with_path_and_files
+    local_path = tmp_path_factory.mktemp("local_path")
+
+    downloader = FileDownloader(
+        connection=file_connection,
+        source_path=source_path,
+        local_path=local_path,
+        filters=[Glob("*.csv"), FileSizeRange(min="1B")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        download_result = downloader.run()
+        assert "    filters = [" in caplog.text
+        assert "        Glob('*.csv')," in caplog.text
+        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not download_result.failed
+    assert not download_result.skipped
+    assert not download_result.missing
+    assert download_result.successful
+
+    assert sorted(download_result.successful) == [local_path / "some.csv"]
+
+
 def test_file_downloader_file_filter_is_ignored_by_user_input(
     file_connection_with_path_and_files,
     tmp_path_factory,
