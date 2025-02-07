@@ -380,7 +380,7 @@ def log_collection(
     nested_indent = " " * (BASE_LOG_INDENT + indent + 4)
     _log(logger, "%s%s = %s", base_indent, name, start_bracket, level=level, stacklevel=stacklevel)
 
-    for i, item in enumerate(sorted(collection), start=1):
+    for i, item in enumerate(collection, start=1):
         if max_items and i > max_items and level > logging.DEBUG:
             _log(
                 logger,

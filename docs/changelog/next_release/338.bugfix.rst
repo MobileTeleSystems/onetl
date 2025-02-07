@@ -1,0 +1,1 @@
+Remove sorting of the filters collection in logging to avoid issues due to missing comparison methods. Now ``FileDownloader`` and ``FileMover`` work properly with several filters.
