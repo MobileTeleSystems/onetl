@@ -70,7 +70,7 @@ This method supports **any** query syntax supported by Postgres, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...``
 * ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
 * ✅︎ other statements not mentioned here
@@ -85,19 +85,17 @@ Examples
 
     postgres = Postgres(...)
 
-    with postgres:
-        # automatically close connection after exiting this context manager
-        postgres.execute("DROP TABLE schema.table")
-        postgres.execute(
-            """
-            CREATE TABLE schema.table (
-                id bigint GENERATED ALWAYS AS IDENTITY,
-                key text,
-                value real
-            )
-            """,
-            options=Postgres.ExecuteOptions(query_timeout=10),
+    postgres.execute("DROP TABLE schema.table")
+    postgres.execute(
+        """
+        CREATE TABLE schema.table (
+            id bigint GENERATED ALWAYS AS IDENTITY,
+            key text,
+            value real
         )
+        """,
+        options=Postgres.ExecuteOptions(query_timeout=10),
+    )
 
 Options
 -------

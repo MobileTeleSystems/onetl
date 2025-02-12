@@ -71,7 +71,7 @@ This method supports **any** query syntax supported by MSSQL, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... AS SELECT ...``
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ ``EXEC procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
 * ✅︎ ``DECLARE ... BEGIN ... END`` - execute PL/SQL statement
 * ✅︎ other statements not mentioned here
@@ -86,19 +86,17 @@ Examples
 
     mssql = MSSQL(...)
 
-    with mssql:
-        # automatically close connection after exiting this context manager
-        mssql.execute("DROP TABLE schema.table")
-        mssql.execute(
-            """
-            CREATE TABLE schema.table (
-                id bigint GENERATED ALWAYS AS IDENTITY,
-                key VARCHAR2(4000),
-                value NUMBER
-            )
-            """,
-            options=MSSQL.ExecuteOptions(query_timeout=10),
+    mssql.execute("DROP TABLE schema.table")
+    mssql.execute(
+        """
+        CREATE TABLE schema.table (
+            id bigint GENERATED ALWAYS AS IDENTITY,
+            key VARCHAR2(4000),
+            value NUMBER
         )
+        """,
+        options=MSSQL.ExecuteOptions(query_timeout=10),
+    )
 
 Options
 -------

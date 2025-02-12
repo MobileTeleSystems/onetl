@@ -72,7 +72,7 @@ This method supports **any** query syntax supported by Greenplum, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...``
 * ✅︎ ``SELECT func(arg1, arg2)`` or ``{call func(arg1, arg2)}`` - special syntax for calling functions
 * ✅︎ other statements not mentioned here
@@ -87,20 +87,18 @@ Examples
 
     greenplum = Greenplum(...)
 
-    with greenplum:
-        # automatically close connection after exiting this context manager
-        greenplum.execute("DROP TABLE schema.table")
-        greenplum.execute(
-            """
-            CREATE TABLE schema.table (
-                id int,
-                key text,
-                value real
-            )
-            DISTRIBUTED BY id
-            """,
-            options=Greenplum.ExecuteOptions(query_timeout=10),
+    greenplum.execute("DROP TABLE schema.table")
+    greenplum.execute(
+        """
+        CREATE TABLE schema.table (
+            id int,
+            key text,
+            value real
         )
+        DISTRIBUTED BY id
+        """,
+        options=Greenplum.ExecuteOptions(query_timeout=10),
+    )
 
 Interaction schema
 ------------------
