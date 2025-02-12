@@ -167,7 +167,7 @@ class BaseFileConnection(BaseConnection):
         >>> dir_path = connection.resolve_dir("/path/to/dir")
         >>> os.fspath(dir_path)
         '/path/to/dir'
-        >>> dir_path.stat.st_uid  # owner id
+        >>> dir_path.stat().st_uid  # owner id
         12345
         """
 
@@ -201,7 +201,7 @@ class BaseFileConnection(BaseConnection):
         >>> file_path = connection.resolve_file("/path/to/dir/file.csv")
         >>> os.fspath(file_path)
         '/path/to/dir/file.csv'
-        >>> file_path.stat.st_uid  # owner id
+        >>> file_path.stat().st_uid  # owner id
         12345
         """
 
@@ -406,7 +406,7 @@ class BaseFileConnection(BaseConnection):
 
         >>> dir_content = connection.list_dir("/path/to/dir")
         >>> os.fspath(dir_content[0])
-        '/path/to/dir/file.csv'
+        'file.csv'
         >>> connection.path_exists("/path/to/dir/file.csv")
         True
         """
@@ -465,7 +465,7 @@ class BaseFileConnection(BaseConnection):
         >>> dirs
         []
         >>> os.fspath(files[0])
-        '/path/to/dir/file.csv'
+        'file.csv'
         >>> connection.path_exists("/path/to/dir/file.csv")
         True
         """
@@ -704,7 +704,7 @@ class BaseFileConnection(BaseConnection):
         >>> file_path = connection.write_text("/path/to/dir/file.csv", "some;header\n1;2")
         >>> os.fspath(file_path)
         '/path/to/dir/file.csv'
-        >>> file_path.stat.st_size  # in bytes
+        >>> file_path.stat().st_size  # in bytes
         1024
         """
 
@@ -745,7 +745,7 @@ class BaseFileConnection(BaseConnection):
         >>> file_path = connection.write_bytes("/path/to/dir/file.csv", b"0xdeadbeef")
         >>> os.fspath(file_path)
         '/path/to/dir/file.csv'
-        >>> file_path.stat.st_size  # in bytes
+        >>> file_path.stat().st_size  # in bytes
         1024
         """
 
