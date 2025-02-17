@@ -225,3 +225,23 @@ def override_job_description(spark_session: SparkSession, job_description: str):
         yield
     finally:
         spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description)  # type: ignore[arg-type]
+
+
+def get_client_info(spark_session: SparkSession, limit: int | None = None, unsupported: str = "") -> str:
+    """Get client info string for DB connections"""
+    from onetl import __version__ as onetl_version
+
+    result = (
+        # client info fields in some DB connections (like Oracle) are very limited.
+        # applicationId allows to track the exact Spark session, so more it to the beginning.
+        # less important fields are moved to the end
+        f"{spark_session.sparkContext.applicationId} {spark_session.sparkContext.appName} "
+        # using User-Agent format
+        f"onETL/{onetl_version} "
+        f"Spark/{spark_session.version}"
+    )
+    if unsupported:
+        result = result.translate(str.maketrans(unsupported, "_" * len(unsupported)))
+    if limit:
+        result = result[:limit]
+    return result

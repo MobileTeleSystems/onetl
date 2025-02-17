@@ -9,6 +9,7 @@ from typing import ClassVar, Optional
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -175,6 +176,14 @@ class MySQL(JDBCConnection):
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
+        # https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-connection.html
+        # https://stackoverflow.com/questions/31722323/mysql-connection-with-advanced-attributes-such-as-program-name
+        client_info = f"program_name:{get_client_info(self.spark, unsupported=':,')}"
+        connection_attributes = result.get("connectionAttributes")
+        if connection_attributes and "program_name:" not in connection_attributes:
+            result["connectionAttributes"] = f"{connection_attributes},{client_info}"
+        elif not connection_attributes:
+            result["connectionAttributes"] = client_info
         return result
 
     @property

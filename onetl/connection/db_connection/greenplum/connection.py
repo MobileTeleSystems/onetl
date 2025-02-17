@@ -21,7 +21,11 @@ except (ImportError, AttributeError):
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_executor_total_cores, get_spark_version
+from onetl._util.spark import (
+    get_client_info,
+    get_executor_total_cores,
+    get_spark_version,
+)
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.greenplum.connection_limit import (
@@ -289,7 +293,8 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
             for key, value in self.extra.dict(by_alias=True).items()
             if not (key.startswith("server.") or key.startswith("pool."))
         }
-        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
+        result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result
 
     @property

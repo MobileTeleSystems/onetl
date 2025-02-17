@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import MSSQL
 
 pytestmark = [pytest.mark.mssql, pytest.mark.db_connection, pytest.mark.connection]
@@ -99,6 +100,7 @@ def test_mssql(spark_mock):
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "url": "jdbc:sqlserver://some_host",
         "databaseName": "database",
+        "applicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert "passwd" not in repr(conn)
@@ -124,6 +126,7 @@ def test_mssql_with_custom_port(spark_mock):
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "url": "jdbc:sqlserver://some_host:5000",
         "databaseName": "database",
+        "applicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "mssql://some_host:5000/database"
@@ -155,6 +158,7 @@ def test_mssql_with_instance_name(spark_mock):
         "url": "jdbc:sqlserver://some_host",
         "instanceName": "myinstance",
         "databaseName": "database",
+        "applicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "mssql://some_host\\myinstance/database"
@@ -177,7 +181,11 @@ def test_mssql_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"characterEncoding": "UTF-8", "trustServerCertificate": "true"},
+        extra={
+            "characterEncoding": "UTF-8",
+            "trustServerCertificate": "true",
+            "applicationName": "override",
+        },
         spark=spark_mock,
     )
 
@@ -188,6 +196,7 @@ def test_mssql_with_extra(spark_mock):
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "url": "jdbc:sqlserver://some_host",
         "databaseName": "database",
+        "applicationName": "override",
         "characterEncoding": "UTF-8",
         "trustServerCertificate": "true",
     }

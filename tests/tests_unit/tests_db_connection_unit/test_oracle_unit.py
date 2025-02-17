@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Oracle
 
 pytestmark = [pytest.mark.oracle, pytest.mark.db_connection, pytest.mark.connection]
@@ -108,6 +109,7 @@ def test_oracle(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@some_host:1521:sid",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert "passwd" not in repr(conn)
@@ -132,6 +134,7 @@ def test_oracle_with_port(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@some_host:5000:sid",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "oracle://some_host:5000/sid"
@@ -147,6 +150,7 @@ def test_oracle_uri_with_service_name(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@//some_host:1521/service",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "oracle://some_host:1521/service"
@@ -189,7 +193,11 @@ def test_oracle_with_extra(spark_mock):
         user="user",
         password="passwd",
         sid="sid",
-        extra={"tcpKeepAlive": "false", "connectTimeout": "10"},
+        extra={
+            "tcpKeepAlive": "false",
+            "connectTimeout": "10",
+            "v$session.program": "override",
+        },
         spark=spark_mock,
     )
 
@@ -201,6 +209,7 @@ def test_oracle_with_extra(spark_mock):
         "url": "jdbc:oracle:thin:@some_host:1521:sid",
         "tcpKeepAlive": "false",
         "connectTimeout": "10",
+        "v$session.program": "override",
     }
 
 

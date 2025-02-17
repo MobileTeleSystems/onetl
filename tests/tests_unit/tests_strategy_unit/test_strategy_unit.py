@@ -54,5 +54,5 @@ def test_strategy_hwm_not_set(check, strategy, kwargs, spark_mock):
             table=f"{secrets.token_hex()}.{secrets.token_hex()}",
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             reader.run()

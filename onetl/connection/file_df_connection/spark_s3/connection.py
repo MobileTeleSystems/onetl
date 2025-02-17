@@ -19,7 +19,7 @@ from typing_extensions import Literal
 from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import get_client_info, get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.base import (
     BaseReadableFileFormat,
@@ -205,7 +205,11 @@ class SparkS3(SparkFileDFConnection):
     region: Optional[str] = None
     extra: SparkS3Extra = SparkS3Extra()
 
-    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.magic.enabled", "committer.name"]
+    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = [
+        "committer.magic.enabled",
+        "committer.name",
+        "user.agent.prefix",
+    ]
 
     @slot
     @classmethod
@@ -402,6 +406,14 @@ class SparkS3(SparkFileDFConnection):
 
         for key, value in self.extra.dict(by_alias=True, exclude_none=True).items():
             conf[f"{prefix}.{key}"] = value
+
+        # https://hadoop.apache.org/docs/r3.4.1/hadoop-aws/tools/hadoop-aws/index.html
+        user_agent = conf.get(f"{prefix}.user.agent.prefix")
+        client_info = get_client_info(self.spark)
+        if user_agent:
+            conf[f"{prefix}.user.agent.prefix"] = f"{user_agent} {client_info}"
+        else:
+            conf[f"{prefix}.user.agent.prefix"] = client_info
 
         self._fix_root_conf(conf, prefix)
         return stringify(conf)

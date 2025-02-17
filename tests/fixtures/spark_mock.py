@@ -14,6 +14,7 @@ def spark_stopped():
     spark = Mock(spec=SparkSession)
     spark.sparkContext = Mock()
     spark.sparkContext.appName = "abc"
+    spark.sparkContext.applicationId = "local-123"
     spark.version = pyspark.__version__
     spark._sc = Mock()
     spark._sc._gateway = Mock()
@@ -31,6 +32,7 @@ def spark_no_packages():
     spark = Mock(spec=SparkSession)
     spark.sparkContext = Mock()
     spark.sparkContext.appName = "abc"
+    spark.sparkContext.applicationId = "local-123"
     spark.version = pyspark.__version__
     spark._jsc = Mock()
     spark._jsc.sc = Mock()
@@ -49,6 +51,7 @@ def spark_mock():
     spark = Mock(spec=SparkSession)
     spark.sparkContext = Mock()
     spark.sparkContext.appName = "abc"
+    spark.sparkContext.applicationId = "local-123"
     spark.version = pyspark.__version__
     spark._sc = Mock()
     spark._sc._gateway = Mock()

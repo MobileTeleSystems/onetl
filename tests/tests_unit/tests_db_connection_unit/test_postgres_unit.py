@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Postgres
 
 pytestmark = [pytest.mark.postgres, pytest.mark.db_connection, pytest.mark.connection]
@@ -85,7 +86,7 @@ def test_postgres(spark_mock):
         "password": "passwd",
         "driver": "org.postgresql.Driver",
         "url": "jdbc:postgresql://some_host:5432/database",
-        "ApplicationName": "abc",
+        "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
         "tcpKeepAlive": "true",
         "stringtype": "unspecified",
     }
@@ -112,7 +113,7 @@ def test_postgres_with_port(spark_mock):
         "password": "passwd",
         "driver": "org.postgresql.Driver",
         "url": "jdbc:postgresql://some_host:5000/database",
-        "ApplicationName": "abc",
+        "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
         "tcpKeepAlive": "true",
         "stringtype": "unspecified",
     }

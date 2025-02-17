@@ -8,6 +8,7 @@ from typing import ClassVar, Optional
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -260,6 +261,8 @@ class MSSQL(JDBCConnection):
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
         result["databaseName"] = self.database
+        # https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties
+        result["applicationName"] = result.get("applicationName", get_client_info(self.spark, limit=128))
         return result
 
     @property

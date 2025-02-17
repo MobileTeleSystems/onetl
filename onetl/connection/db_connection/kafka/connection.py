@@ -16,7 +16,7 @@ except (ImportError, AttributeError):
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import get_client_info, get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
@@ -625,7 +625,7 @@ class Kafka(DBConnection):
         if self.auth:
             result.update(self.auth.get_options(self))
 
-        result["client.id"] = self.spark.sparkContext.appName  # type: ignore[assignment]
+        result["client.id"] = result.get("client.id", get_client_info(self.spark))
         return stringify(result)
 
     def _get_java_consumer(self):
