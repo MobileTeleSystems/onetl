@@ -8,6 +8,7 @@ from typing import ClassVar
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -190,7 +191,8 @@ class Postgres(JDBCConnection):
     def jdbc_params(self) -> dict[str, str]:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
-        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
+        result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result
 
     @property

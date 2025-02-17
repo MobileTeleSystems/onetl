@@ -1,5 +1,6 @@
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Clickhouse
 
 pytestmark = [pytest.mark.clickhouse, pytest.mark.db_connection, pytest.mark.connection]
@@ -126,6 +127,7 @@ def test_clickhouse(spark_mock):
         "password": "passwd",
         "driver": "com.clickhouse.jdbc.ClickHouseDriver",
         "url": "jdbc:clickhouse://some_host:8123/database",
+        "client_name": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert "passwd" not in repr(conn)
@@ -157,6 +159,7 @@ def test_clickhouse_with_port(spark_mock):
         "password": "passwd",
         "driver": "com.clickhouse.jdbc.ClickHouseDriver",
         "url": "jdbc:clickhouse://some_host:5000/database",
+        "client_name": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
 
@@ -176,6 +179,7 @@ def test_clickhouse_without_database(spark_mock):
         "password": "passwd",
         "driver": "com.clickhouse.jdbc.ClickHouseDriver",
         "url": "jdbc:clickhouse://some_host:8123",
+        "client_name": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
 
@@ -185,7 +189,11 @@ def test_clickhouse_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"socket_timeout": 120000, "custom_http_params": "key1=value1,key2=value2"},
+        extra={
+            "socket_timeout": 120000,
+            "client_name": "override",
+            "custom_http_params": "key1=value1,key2=value2",
+        },
         spark=spark_mock,
     )
 
@@ -195,6 +203,7 @@ def test_clickhouse_with_extra(spark_mock):
         "driver": "com.clickhouse.jdbc.ClickHouseDriver",
         "url": "jdbc:clickhouse://some_host:8123/database",
         "socket_timeout": 120000,
+        "client_name": "override",
         "custom_http_params": "key1=value1,key2=value2",
     }
 

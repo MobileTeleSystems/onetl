@@ -8,6 +8,7 @@ from typing import ClassVar, Optional
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.clickhouse.dialect import ClickhouseDialect
 from onetl.connection.db_connection.clickhouse.options import (
@@ -190,6 +191,8 @@ class Clickhouse(JDBCConnection):
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
+        # https://github.com/ClickHouse/clickhouse-java/issues/691#issuecomment-975545784
+        result["client_name"] = result.get("client_name", get_client_info(self.spark))
         return result
 
     @property

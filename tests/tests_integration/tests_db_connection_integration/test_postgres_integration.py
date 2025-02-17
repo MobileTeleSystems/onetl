@@ -7,6 +7,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Postgres
 
 pytestmark = pytest.mark.postgres
@@ -64,6 +65,7 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix, cap
         df = postgres.sql(f"SELECT * FROM {table}{suffix}")
         assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -75,6 +77,12 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix, cap
     df = postgres.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df)
+
+    # Client info is expected
+    df = postgres.sql(f"SELECT application_name FROM pg_stat_activity WHERE application_name LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
     # wrong syntax
     with pytest.raises(Exception):
@@ -98,6 +106,7 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, c
         df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
         assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -108,6 +117,12 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, c
     df = postgres.fetch(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df)
+
+    # Client info is expected
+    df = postgres.fetch(f"SELECT application_name FROM pg_stat_activity WHERE application_name LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
     # wrong syntax
     with pytest.raises(Exception):

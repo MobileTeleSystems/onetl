@@ -12,6 +12,8 @@ from decimal import Decimal
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
+from onetl._util.spark import get_client_info
+
 try:
     from pydantic.v1 import root_validator
 except (ImportError, AttributeError):
@@ -253,6 +255,8 @@ class Oracle(JDBCConnection):
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
+        # https://stackoverflow.com/questions/35072134/why-am-i-getting-format-error-property-is-vsession-program-connecting-to-o/35072449#35072449
+        result["v$session.program"] = result.get("v$session.program", get_client_info(self.spark, limit=48))
         return result
 
     @property
