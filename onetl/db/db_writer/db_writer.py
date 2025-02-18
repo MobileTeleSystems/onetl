@@ -69,36 +69,34 @@ class DBWriter(FrozenModel):
     Examples
     --------
 
-    Minimal example:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Minimal example
 
-        from onetl.connection import Postgres
-        from onetl.db import DBWriter
+            from onetl.connection import Postgres
+            from onetl.db import DBWriter
 
-        postgres = Postgres(...)
+            postgres = Postgres(...)
 
-        writer = DBWriter(
-            connection=postgres,
-            target="fiddle.dummy",
-        )
+            writer = DBWriter(
+                connection=postgres,
+                target="fiddle.dummy",
+            )
 
-    With custom write options:
+        .. code-tab:: py With custom write options
 
-    .. code:: python
+            from onetl.connection import Postgres
+            from onetl.db import DBWriter
 
-        from onetl.connection import Postgres
-        from onetl.db import DBWriter
+            postgres = Postgres(...)
 
-        postgres = Postgres(...)
+            options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
 
-        options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
-
-        writer = DBWriter(
-            connection=postgres,
-            target="fiddle.dummy",
-            options=options,
-        )
+            writer = DBWriter(
+                connection=postgres,
+                target="fiddle.dummy",
+                options=options,
+            )
     """
 
     connection: BaseDBConnection

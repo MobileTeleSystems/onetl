@@ -109,100 +109,94 @@ class Kafka(DBConnection):
     Examples
     --------
 
-    Create Kafka connection with ``PLAINTEXT`` protocol and ``SCRAM-SHA-256`` auth:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Create Kafka connection with ``PLAINTEXT`` protocol and ``SCRAM-SHA-256`` auth
 
-        from onetl.connection import Kafka
-        from pyspark.sql import SparkSession
+            from onetl.connection import Kafka
+            from pyspark.sql import SparkSession
 
-        # Create Spark session with Kafka connector loaded
-        maven_packages = Kafka.get_packages(spark_version="3.5.4")
-        exclude_packages = Kafka.get_exclude_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .config("spark.jars.excludes", ",".join(exclude_packages))
-            .getOrCreate()
-        )
+            # Create Spark session with Kafka connector loaded
+            maven_packages = Kafka.get_packages(spark_version="3.5.4")
+            exclude_packages = Kafka.get_exclude_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .config("spark.jars.excludes", ",".join(exclude_packages))
+                .getOrCreate()
+            )
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            auth=Kafka.ScramAuth(
-                user="me",
-                password="abc",
-                digest="SHA-256",
-            ),
-            spark=spark,
-        ).check()
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                auth=Kafka.ScramAuth(
+                    user="me",
+                    password="abc",
+                    digest="SHA-256",
+                ),
+                spark=spark,
+            ).check()
 
-    Create Kafka connection with ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth:
+        .. code-tab:: py Create Kafka connection with ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth
 
-    .. code:: python
+            # Create Spark session with Kafka connector loaded
+            ...
 
-        # Create Spark session with Kafka connector loaded
-        ...
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                auth=Kafka.KerberosAuth(
+                    principal="me@example.com",
+                    keytab="/path/to/keytab",
+                    deploy_keytab=True,
+                ),
+                spark=spark,
+            ).check()
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            auth=Kafka.KerberosAuth(
-                principal="me@example.com",
-                keytab="/path/to/keytab",
-                deploy_keytab=True,
-            ),
-            spark=spark,
-        ).check()
+        .. code-tab:: py Create Kafka connection with ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth
 
-    Create Kafka connection with ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth:
+            from pathlib import Path
 
-    .. code:: python
+            # Create Spark session with Kafka connector loaded
+            ...
 
-        from pathlib import Path
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                protocol=Kafka.SSLProtocol(
+                    # read client certificate and private key from file
+                    keystore_type="PEM",
+                    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                    keystore_key=Path("path/to/user.key").read_text(),
+                    # read server public certificate from file
+                    truststore_type="PEM",
+                    truststore_certificates=Path("/path/to/server.crt").read_text(),
+                ),
+                auth=Kafka.ScramAuth(
+                    user="me",
+                    password="abc",
+                    digest="SHA-512",
+                ),
+                spark=spark,
+            ).check()
 
-        # Create Spark session with Kafka connector loaded
-        ...
+        .. code-tab:: py Create Kafka connection with extra options
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            protocol=Kafka.SSLProtocol(
-                # read client certificate and private key from file
-                keystore_type="PEM",
-                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
-                keystore_key=Path("path/to/user.key").read_text(),
-                # read server public certificate from file
-                truststore_type="PEM",
-                truststore_certificates=Path("/path/to/server.crt").read_text(),
-            ),
-            auth=Kafka.ScramAuth(
-                user="me",
-                password="abc",
-                digest="SHA-512",
-            ),
-            spark=spark,
-        ).check()
+            # Create Spark session with Kafka connector loaded
+            ...
 
-    Create Kafka connection with extra options:
-
-    .. code:: python
-
-        # Create Spark session with Kafka connector loaded
-        ...
-
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            protocol=...,
-            auth=...,
-            extra={"max.request.size": 1024 * 1024},  # <--
-            spark=spark,
-        ).check()
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                protocol=...,
+                auth=...,
+                extra={"max.request.size": 1024 * 1024},  # <--
+                spark=spark,
+            ).check()
 
     """
 

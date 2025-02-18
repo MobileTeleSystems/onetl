@@ -111,36 +111,34 @@ class FileUploader(FrozenModel):
     Examples
     --------
 
-    Minimal example:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Minimal example
 
-        from onetl.connection import HDFS
-        from onetl.file import FileUploader
+            from onetl.connection import HDFS
+            from onetl.file import FileUploader
 
-        hdfs = HDFS(...)
+            hdfs = HDFS(...)
 
-        uploader = FileUploader(
-            connection=hdfs,
-            target_path="/path/to/remote/source",
-        )
+            uploader = FileUploader(
+                connection=hdfs,
+                target_path="/path/to/remote/source",
+            )
 
-    Full example:
+        .. code-tab:: py Full example
 
-    .. code:: python
+            from onetl.connection import HDFS
+            from onetl.file import FileUploader
 
-        from onetl.connection import HDFS
-        from onetl.file import FileUploader
+            hdfs = HDFS(...)
 
-        hdfs = HDFS(...)
-
-        uploader = FileUploader(
-            connection=hdfs,
-            target_path="/path/to/remote/source",
-            temp_path="/user/onetl",
-            local_path="/some/local/directory",
-            options=FileUploader.Options(delete_local=True, if_exists="overwrite"),
-        )
+            uploader = FileUploader(
+                connection=hdfs,
+                target_path="/path/to/remote/source",
+                temp_path="/user/onetl",
+                local_path="/some/local/directory",
+                options=FileUploader.Options(delete_local=True, if_exists="overwrite"),
+            )
     """
 
     Options = FileUploaderOptions

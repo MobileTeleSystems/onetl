@@ -85,34 +85,51 @@ class SparkHDFS(SparkFileDFConnection):
     Examples
     --------
 
-    Create SparkHDFS connection with Kerberos auth:
+    .. tabs::
 
-        Execute ``kinit`` consome command before creating Spark Session
+        .. tab:: Create SparkHDFS connection with Kerberos auth
 
-        .. code:: bash
+            Execute ``kinit`` consome command before creating Spark Session
 
-            $ kinit -kt /path/to/keytab user
+            .. code:: bash
 
-        .. code:: python
+                $ kinit -kt /path/to/keytab user
+
+            .. code:: python
+
+                from onetl.connection import SparkHDFS
+                from pyspark.sql import SparkSession
+
+                # Create Spark session.
+                # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+                # and "spark.yarn.keytab" for Spark 2
+
+                spark = (
+                    SparkSession.builder.appName("spark-app-name")
+                    .option(
+                        "spark.kerberos.access.hadoopFileSystems",
+                        "hdfs://namenode1.domain.com:8020",
+                    )
+                    .option("spark.kerberos.principal", "user")
+                    .option("spark.kerberos.keytab", "/path/to/keytab")
+                    .enableHiveSupport()
+                    .getOrCreate()
+                )
+
+                # Create connection
+                hdfs = SparkHDFS(
+                    host="namenode1.domain.com",
+                    cluster="rnd-dwh",
+                    spark=spark,
+                ).check()
+
+        .. code-tab:: py Create SparkHDFS connection with anonymous auth
 
             from onetl.connection import SparkHDFS
             from pyspark.sql import SparkSession
 
-            # Create Spark session.
-            # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
-            # and "spark.yarn.keytab" for Spark 2
-
-            spark = (
-                SparkSession.builder.appName("spark-app-name")
-                .option(
-                    "spark.kerberos.access.hadoopFileSystems",
-                    "hdfs://namenode1.domain.com:8020",
-                )
-                .option("spark.kerberos.principal", "user")
-                .option("spark.kerberos.keytab", "/path/to/keytab")
-                .enableHiveSupport()
-                .getOrCreate()
-            )
+            # Create Spark session
+            spark = SparkSession.builder.master("local").appName("spark-app-name").getOrCreate()
 
             # Create connection
             hdfs = SparkHDFS(
@@ -121,36 +138,17 @@ class SparkHDFS(SparkFileDFConnection):
                 spark=spark,
             ).check()
 
-    Create SparkHDFS connection with anonymous auth:
+        .. tab:: Use cluster name to detect active namenode
 
-    .. code:: python
+            Can be used only if some third-party plugin provides :ref:`spark-hdfs-slots` implementation
 
-        from onetl.connection import SparkHDFS
-        from pyspark.sql import SparkSession
+            .. code:: python
 
-        # Create Spark session
-        spark = SparkSession.builder.master("local").appName("spark-app-name").getOrCreate()
+                # Create Spark session
+                ...
 
-        # Create connection
-        hdfs = SparkHDFS(
-            host="namenode1.domain.com",
-            cluster="rnd-dwh",
-            spark=spark,
-        ).check()
-
-    Use cluster name to detect active namenode:
-
-    .. note::
-
-        Can be used only if some third-party plugin provides :ref:`spark-hdfs-slots` implementation
-
-    .. code:: python
-
-        # Create Spark session
-        ...
-
-        # Create connection
-        hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark).check()
+                # Create connection
+                hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark).check()
     """
 
     Slots = SparkHDFSSlots

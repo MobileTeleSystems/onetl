@@ -53,39 +53,37 @@ class FileDFWriter(FrozenModel):
     Examples
     --------
 
-    Write CSV files to local filesystem:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Write CSV files to local filesystem
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFWriter
-        from onetl.file.format import CSV
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import CSV
 
-        local_fs = SparkLocalFS(spark=spark)
+            local_fs = SparkLocalFS(spark=spark)
 
-        writer = FileDFWriter(
-            connection=local_fs,
-            format=CSV(delimiter=","),
-            target_path="/path/to/directory",
-        )
+            writer = FileDFWriter(
+                connection=local_fs,
+                format=CSV(delimiter=","),
+                target_path="/path/to/directory",
+            )
 
-    All supported options:
+        .. code-tab:: py All supported options
 
-    .. code:: python
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import CSV
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFWriter
-        from onetl.file.format import CSV
+            csv = CSV(delimiter=",")
+            local_fs = SparkLocalFS(spark=spark)
 
-        csv = CSV(delimiter=",")
-        local_fs = SparkLocalFS(spark=spark)
-
-        writer = FileDFWriter(
-            connection=local_fs,
-            format=csv,
-            target_path="/path/to/directory",
-            options=FileDFWriter.Options(if_exists="replace_entire_directory"),
-        )
+            writer = FileDFWriter(
+                connection=local_fs,
+                format=csv,
+                target_path="/path/to/directory",
+                options=FileDFWriter.Options(if_exists="replace_entire_directory"),
+            )
     """
 
     Options = FileDFWriterOptions

@@ -97,7 +97,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
             hwm=DBReader.AutoDetectHWM(name="some_unique_name", expression="id"),
         )
 
-        writer = DBWriter(connection=hive, target="newtable")
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with YAMLHWMStore():
             with IncrementalStrategy():

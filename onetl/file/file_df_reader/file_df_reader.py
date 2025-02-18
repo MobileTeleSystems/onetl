@@ -68,39 +68,37 @@ class FileDFReader(FrozenModel):
     Examples
     --------
 
-    Read CSV files from local filesystem:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Read CSV files from local filesystem
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFReader
-        from onetl.file.format import CSV
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import CSV
 
-        local_fs = SparkLocalFS(spark=spark)
+            local_fs = SparkLocalFS(spark=spark)
 
-        reader = FileDFReader(
-            connection=local_fs,
-            format=CSV(delimiter=","),
-            source_path="/path/to/directory",
+            reader = FileDFReader(
+                connection=local_fs,
+                format=CSV(delimiter=","),
+                source_path="/path/to/directory",
         )
 
-    All supported options:
+        .. code-tab:: py All supported options
 
-    .. code:: python
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import CSV
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFReader
-        from onetl.file.format import CSV
+            csv = CSV(delimiter=",")
+            local_fs = SparkLocalFS(spark=spark)
 
-        csv = CSV(delimiter=",")
-        local_fs = SparkLocalFS(spark=spark)
-
-        reader = FileDFReader(
-            connection=local_fs,
-            format=csv,
-            source_path="/path/to/directory",
-            options=FileDFReader.Options(recursive=False),
-        )
+            reader = FileDFReader(
+                connection=local_fs,
+                format=csv,
+                source_path="/path/to/directory",
+                options=FileDFReader.Options(recursive=False),
+            )
     """
 
     Options = FileDFReaderOptions

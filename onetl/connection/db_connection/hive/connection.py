@@ -61,47 +61,47 @@ class Hive(DBConnection):
     Examples
     --------
 
-    Create Hive connection with Kerberos auth:
+    .. tabs::
 
-    Execute ``kinit`` consome command before creating Spark Session
+        .. tab:: Create Hive connection with Kerberos auth
 
-    .. code:: bash
+            Execute ``kinit`` consome command before creating Spark Session
 
-        $ kinit -kt /path/to/keytab user
+            .. code:: bash
 
-    .. code:: python
+                $ kinit -kt /path/to/keytab user
 
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
+            .. code:: python
 
-        # Create Spark session
-        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
-        # and "spark.yarn.keytab" for Spark 2
+                from onetl.connection import Hive
+                from pyspark.sql import SparkSession
 
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
-            .option("spark.kerberos.principal", "user")
-            .option("spark.kerberos.keytab", "/path/to/keytab")
-            .enableHiveSupport()
-            .getOrCreate()
-        )
+                # Create Spark session
+                # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+                # and "spark.yarn.keytab" for Spark 2
 
-        # Create connection
-        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+                spark = (
+                    SparkSession.builder.appName("spark-app-name")
+                    .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
+                    .option("spark.kerberos.principal", "user")
+                    .option("spark.kerberos.keytab", "/path/to/keytab")
+                    .enableHiveSupport()
+                    .getOrCreate()
+                )
 
-    Create Hive connection with anonymous auth:
+                # Create connection
+                hive = Hive(cluster="rnd-dwh", spark=spark).check()
 
-    .. code:: python
+        .. code-tab:: py Create Hive connection with anonymous auth
 
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
+            from onetl.connection import Hive
+            from pyspark.sql import SparkSession
 
-        # Create Spark session
-        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+            # Create Spark session
+            spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
-        # Create connection
-        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+            # Create connection
+            hive = Hive(cluster="rnd-dwh", spark=spark).check()
     """
 
     cluster: Cluster

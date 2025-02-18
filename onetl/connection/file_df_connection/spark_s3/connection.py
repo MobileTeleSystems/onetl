@@ -123,67 +123,65 @@ class SparkS3(SparkFileDFConnection):
     Examples
     --------
 
-    Create S3 connection with bucket as subdomain (``my-bucket.domain.com``):
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Create S3 connection with bucket as subdomain (``my-bucket.domain.com``):
 
-        from onetl.connection import SparkS3
-        from pyspark.sql import SparkSession
+            from onetl.connection import SparkS3
+            from pyspark.sql import SparkSession
 
-        # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(spark_version="3.5.4")
-        # Some packages are not used, but downloading takes a lot of time. Skipping them.
-        excluded_packages = SparkS3.get_exclude_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .config("spark.jars.excludes", ",".join(excluded_packages))
-            .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
-            .config("spark.hadoop.fs.s3a.committer.name", "magic")
-            .config(
-                "spark.hadoop.mapreduce.outputcommitter.factory.scheme.s3a",
-                "org.apache.hadoop.fs.s3a.commit.S3ACommitterFactory",
+            # Create Spark session with Hadoop AWS libraries loaded
+            maven_packages = SparkS3.get_packages(spark_version="3.5.4")
+            # Some packages are not used, but downloading takes a lot of time. Skipping them.
+            excluded_packages = SparkS3.get_exclude_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .config("spark.jars.excludes", ",".join(excluded_packages))
+                .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
+                .config("spark.hadoop.fs.s3a.committer.name", "magic")
+                .config(
+                    "spark.hadoop.mapreduce.outputcommitter.factory.scheme.s3a",
+                    "org.apache.hadoop.fs.s3a.commit.S3ACommitterFactory",
+                )
+                .config(
+                    "spark.sql.parquet.output.committer.class",
+                    "org.apache.spark.internal.io.cloud.BindingParquetOutputCommitter",
+                )
+                .config(
+                    "spark.sql.sources.commitProtocolClass",
+                    "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol",
+                )
+                .getOrCreate()
             )
-            .config(
-                "spark.sql.parquet.output.committer.class",
-                "org.apache.spark.internal.io.cloud.BindingParquetOutputCommitter",
-            )
-            .config(
-                "spark.sql.sources.commitProtocolClass",
-                "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol",
-            )
-            .getOrCreate()
-        )
 
-        # Create connection
-        s3 = SparkS3(
-            host="domain.com",
-            protocol="http",
-            bucket="my-bucket",
-            access_key="ACCESS_KEY",
-            secret_key="SECRET_KEY",
-            spark=spark,
-        ).check()
+            # Create connection
+            s3 = SparkS3(
+                host="domain.com",
+                protocol="http",
+                bucket="my-bucket",
+                access_key="ACCESS_KEY",
+                secret_key="SECRET_KEY",
+                spark=spark,
+            ).check()
 
-    Create S3 connection with bucket as subpath (``domain.com/my-bucket``):
+        .. code-tab:: py Create S3 connection with bucket as subpath (``domain.com/my-bucket``)
 
-    .. code:: python
+            # Create Spark session with Hadoop AWS libraries loaded
+            ...
 
-        # Create Spark session with Hadoop AWS libraries loaded
-        ...
-
-        # Create connection
-        s3 = SparkS3(
-            host="domain.com",
-            protocol="http",
-            bucket="my-bucket",
-            access_key="ACCESS_KEY",
-            secret_key="SECRET_KEY",
-            extra={
-                "path.style.access": True,  # <---
-            },
-            spark=spark,
-        ).check()
+            # Create connection
+            s3 = SparkS3(
+                host="domain.com",
+                protocol="http",
+                bucket="my-bucket",
+                access_key="ACCESS_KEY",
+                secret_key="SECRET_KEY",
+                extra={
+                    "path.style.access": True,  # <---
+                },
+                spark=spark,
+            ).check()
     """
 
     Extra = SparkS3Extra

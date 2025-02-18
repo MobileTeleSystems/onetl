@@ -96,54 +96,52 @@ class FileMover(FrozenModel):
     Examples
     --------
 
-    Minimal example:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Minimal example
 
-        from onetl.connection import SFTP
-        from onetl.file import FileMover
+            from onetl.connection import SFTP
+            from onetl.file import FileMover
 
-        sftp = SFTP(...)
+            sftp = SFTP(...)
 
-        # create mover
-        mover = FileMover(
-            connection=sftp,
-            source_path="/path/to/source/dir",
-            target_path="/path/to/target/dir",
-        )
+            # create mover
+            mover = FileMover(
+                connection=sftp,
+                source_path="/path/to/source/dir",
+                target_path="/path/to/target/dir",
+            )
 
-        # move files from "/path/to/source/dir" to "/path/to/target/dir"
-        mover.run()
+            # move files from "/path/to/source/dir" to "/path/to/target/dir"
+            mover.run()
 
-    Full example:
+        .. code-tab:: py Full example
 
-    .. code:: python
+            from onetl.connection import SFTP
+            from onetl.file import FileMover
+            from onetl.file.filter import Glob, ExcludeDir
+            from onetl.file.limit import MaxFilesCount, TotalFilesSize
 
-        from onetl.connection import SFTP
-        from onetl.file import FileMover
-        from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount, TotalFilesSize
+            sftp = SFTP(...)
 
-        sftp = SFTP(...)
+            # create mover with a bunch of options
+            mover = FileMover(
+                connection=sftp,
+                source_path="/path/to/source/dir",
+                target_path="/path/to/target/dir",
+                filters=[
+                    Glob("*.txt"),
+                    ExcludeDir("/path/to/source/dir/exclude"),
+                ],
+                limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
+                options=FileMover.Options(if_exists="replace_file"),
+            )
 
-        # create mover with a bunch of options
-        mover = FileMover(
-            connection=sftp,
-            source_path="/path/to/source/dir",
-            target_path="/path/to/target/dir",
-            filters=[
-                Glob("*.txt"),
-                ExcludeDir("/path/to/source/dir/exclude"),
-            ],
-            limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
-            options=FileMover.Options(if_exists="replace_file"),
-        )
-
-        # move files from "/path/to/source/dir" to "/path/to/target/dir",
-        # but only *.txt files
-        # excluding files from "/path/to/source/dir/exclude" directory
-        # and stop before downloading 101 file
-        mover.run()
+            # move files from "/path/to/source/dir" to "/path/to/target/dir",
+            # but only *.txt files
+            # excluding files from "/path/to/source/dir/exclude" directory
+            # and stop before downloading 101 file
+            mover.run()
 
     """
 
