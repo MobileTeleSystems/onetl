@@ -23,8 +23,8 @@ class FileMoverOptions(GenericOptions):
     How to handle existing files in the local directory.
 
     Possible values:
-        * ``error`` (default) - do nothing, mark file as failed
-        * ``ignore`` - do nothing, mark file as ignored
+        * ``error`` (default) - mark file as failed
+        * ``ignore`` - mark file as skipped
         * ``replace_file`` - replace existing file with a new one
         * ``replace_entire_directory`` - delete directory content before moving files
 
