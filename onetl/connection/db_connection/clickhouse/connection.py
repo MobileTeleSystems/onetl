@@ -38,7 +38,7 @@ class ClickhouseExtra(GenericOptions):
 class Clickhouse(JDBCConnection):
     """Clickhouse JDBC connection. |support_hooks|
 
-    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.6.5 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.6.5>`_
+    Based on Maven package `com.clickhouse:clickhouse-jdbc:0.7.2 <https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.7.2>`_
     (`official Clickhouse JDBC driver <https://github.com/ClickHouse/clickhouse-jdbc>`_).
 
     .. seealso::
@@ -140,12 +140,14 @@ class Clickhouse(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-            ClickHouse JDBC version client packages. Defaults to ``0.6.5``.
+            ClickHouse JDBC version client packages. Defaults to ``0.7.2``.
 
             .. versionadded:: 0.11.0
 
         apache_http_client_version : str, optional
-            Apache HTTP Client version package. Defaults to ``5.3.1``.
+            Apache HTTP Client version package. Defaults to ``5.4.2``.
+
+            Used only if ``package_version`` is in range ``0.5.0-0.7.0``.
 
             .. versionadded:: 0.11.0
 
@@ -156,11 +158,11 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
-            Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.3.1")
+            Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.4.2")
 
         """
-        default_jdbc_version = "0.6.5"
-        default_http_version = "5.3.1"
+        default_jdbc_version = "0.7.2"
+        default_http_version = "5.4.2"
 
         jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
         http_version = Version(apache_http_client_version or default_http_version).min_digits(3)
@@ -170,7 +172,7 @@ class Clickhouse(JDBCConnection):
             f"com.clickhouse:clickhouse-http-client:{jdbc_version}",
         ]
 
-        if jdbc_version >= Version("0.5.0"):
+        if Version("0.5.0") <= jdbc_version <= Version("0.7.0"):
             result.append(f"org.apache.httpcomponents.client5:httpclient5:{http_version}")
 
         return result
@@ -178,7 +180,7 @@ class Clickhouse(JDBCConnection):
     @classproperty
     def package(self) -> str:
         """Get a single string of package names to be downloaded by Spark for establishing a Clickhouse connection."""
-        return "com.clickhouse:clickhouse-jdbc:0.6.5,com.clickhouse:clickhouse-http-client:0.6.5,org.apache.httpcomponents.client5:httpclient5:5.3.1"
+        return "com.clickhouse:clickhouse-jdbc:0.7.2,com.clickhouse:clickhouse-http-client:0.7.2,org.apache.httpcomponents.client5:httpclient5:5.4.2"
 
     @property
     def jdbc_url(self) -> str:
