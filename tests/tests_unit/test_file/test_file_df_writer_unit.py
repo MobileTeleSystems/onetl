@@ -8,7 +8,7 @@ from onetl.file import FileDFWriter
 @pytest.mark.parametrize(
     "option, value",
     [
-        ("if_exists", "error"),
+        ("if_exists", "append"),
         ("partition_by", "month"),
         ("partition_by", ["year", "month"]),
         ("unknown", "abc"),
@@ -22,7 +22,7 @@ def test_file_df_writer_options(option, value):
 def test_file_df_writer_options_mode_prohibited():
     msg = re.escape("Parameter `mode` is not allowed. Please use `if_exists` parameter instead.")
     with pytest.raises(ValueError, match=msg):
-        FileDFWriter.Options(mode="error")
+        FileDFWriter.Options(mode="append")
 
 
 @pytest.mark.parametrize(

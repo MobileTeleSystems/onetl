@@ -70,6 +70,7 @@ def test_file_df_writer_run_if_exists_error(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
+        options=FileDFWriter.Options(if_exists="error"),
     )
 
     with pytest.raises(Exception, match="already exists"):
@@ -347,7 +348,6 @@ def test_file_df_writer_run_if_exists_append_target_not_partitioned_df_is(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(if_exists="append"),
     )
     writer1.run(df1)
 
@@ -355,7 +355,7 @@ def test_file_df_writer_run_if_exists_append_target_not_partitioned_df_is(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="append"),
+        options=FileDFWriter.Options(partition_by="str_value"),
     )
     writer2.run(df2)
 
@@ -390,7 +390,7 @@ def test_file_df_writer_run_if_exists_append_target_partitioned_df_is_not(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="append"),
+        options=FileDFWriter.Options(partition_by="str_value"),
     )
 
     writer1.run(df1)
@@ -399,7 +399,6 @@ def test_file_df_writer_run_if_exists_append_target_partitioned_df_is_not(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(if_exists="append"),
     )
 
     writer2.run(df2)
@@ -443,7 +442,7 @@ def test_file_df_writer_run_if_exists_append_to_different_partitioning_schema(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="append"),
+        options=FileDFWriter.Options(partition_by="str_value"),
     )
 
     # this can create conflicting partitioning schemas, which then cannot be read by Spark
@@ -478,7 +477,7 @@ def test_file_df_writer_run_if_exists_append_to_overlapping_partitions(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="append"),
+        options=FileDFWriter.Options(partition_by="str_value"),
     )
 
     writer.run(df1)
