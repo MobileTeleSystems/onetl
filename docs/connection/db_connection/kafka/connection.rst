@@ -6,4 +6,4 @@ Kafka Connection
 .. currentmodule:: onetl.connection.db_connection.kafka.connection
 
 .. autoclass:: Kafka
-    :members: get_packages, check, close
+    :members: get_packages, get_packages, check, close

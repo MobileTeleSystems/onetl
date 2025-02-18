@@ -1,0 +1,18 @@
+Add ``SparkS3.get_exclude_packages()`` and ``Kafka.get_exclude_packages()`` methods.
+Using them allows to skip downloading dependencies not required by this specific connector, or which are already a part of Spark/PySpark:
+
+.. code:: python
+
+    from onetl.connection import SparkS3, Kafka
+
+    maven_packages = [
+        *SparkS3.get_packages(spark_version="3.5.4"),
+        *Kafka.get_packages(spark_version="3.5.4"),
+    ]
+    exclude_packages = SparkS3.get_exclude_packages() + Kafka.get_exclude_packages()
+    spark = (
+        SparkSession.builder.appName("spark_app_onetl_demo")
+        .config("spark.jars.packages", ",".join(maven_packages))
+        .config("spark.jars.excludes", ",".join(exclude_packages))
+        .getOrCreate()
+    )
