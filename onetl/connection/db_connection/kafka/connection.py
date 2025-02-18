@@ -122,9 +122,11 @@ class Kafka(DBConnection):
 
         # Create Spark session with Kafka connector loaded
         maven_packages = Kafka.get_packages(spark_version="3.2.4")
+        exclude_packages = Kafka.get_exclude_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.jars.excludes", ",".join(exclude_packages))
             .getOrCreate()
         )
 
@@ -434,6 +436,40 @@ class Kafka(DBConnection):
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
+        ]
+
+    @slot
+    @classmethod
+    def get_exclude_packages(cls) -> list[str]:
+        """
+        Get package names to be excluded by Spark. |support_hooks|
+
+        .. versionadded:: 0.13.0
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Kafka
+
+            Kafka.get_exclude_packages()
+
+        """
+
+        return [
+            # already a part of Spark bundle
+            "org.apache.hadoop:hadoop-client-api",
+            "org.apache.hadoop:hadoop-client-runtime",
+            "com.fasterxml.jackson.core:jackson-annotations",
+            "com.fasterxml.jackson.core:jackson-core",
+            "com.fasterxml.jackson.core:jackson-databind",
+            "com.google.code.findbugs:jsr305",
+            "commons-codec:commons-codec",
+            "commons-logging:commons-logging",
+            "org.lz4:lz4-java",
+            "org.slf4j:slf4j-api",
+            "org.xerial.snappy:snappy-java",
         ]
 
     def __enter__(self):

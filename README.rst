@@ -552,9 +552,11 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
     maven_packages = SparkS3.get_packages(spark_version="3.5.4") + Postgres.get_packages()
+    exclude_packages = SparkS3.get_exclude_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))
+        .config("spark.jars.excludes", ",".join(exclude_packages))
         .getOrCreate()
     )
 

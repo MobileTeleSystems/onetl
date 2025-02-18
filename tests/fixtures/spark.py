@@ -121,12 +121,11 @@ def maven_packages(request):
 
 @pytest.fixture(scope="session")
 def excluded_packages():
-    # These packages are a part of org.apache.spark:spark-hadoop-cloud, but not used in tests
+    from onetl.connection import Kafka, SparkS3
+
     return [
-        "com.google.cloud.bigdataoss:gcs-connector",
-        "org.apache.hadoop:hadoop-aliyun",
-        "org.apache.hadoop:hadoop-azure-datalake",
-        "org.apache.hadoop:hadoop-azure",
+        *SparkS3.get_exclude_packages(),
+        *Kafka.get_exclude_packages(),
     ]
 
 

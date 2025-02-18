@@ -46,7 +46,7 @@ def test_greenplum_reader_wrong_table_name(spark_mock):
         )
 
 
-def test_postgres_reader_hint_unsupported(spark_mock):
+def test_greenplum_reader_hint_unsupported(spark_mock):
     greenplum = Greenplum(host="some_host", user="user", database="database", password="passwd", spark=spark_mock)
 
     with pytest.raises(

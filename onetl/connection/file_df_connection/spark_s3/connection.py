@@ -134,13 +134,8 @@ class SparkS3(SparkFileDFConnection):
 
         # Create Spark session with Hadoop AWS libraries loaded
         maven_packages = SparkS3.get_packages(spark_version="3.5.4")
-        # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
-        excluded_packages = [
-            "com.google.cloud.bigdataoss:gcs-connector",
-            "org.apache.hadoop:hadoop-aliyun",
-            "org.apache.hadoop:hadoop-azure-datalake",
-            "org.apache.hadoop:hadoop-azure",
-        ]
+        # Some packages are not used, but downloading takes a lot of time. Skipping them.
+        excluded_packages = SparkS3.get_exclude_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -253,6 +248,50 @@ class SparkS3(SparkFileDFConnection):
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
+
+    @slot
+    @classmethod
+    def get_exclude_packages(cls) -> list[str]:
+        """
+        Get package names to be excluded by Spark. |support_hooks|
+
+        .. versionadded:: 0.13.0
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import SparkS3
+
+            SparkS3.get_exclude_packages()
+
+        """
+
+        return [
+            # heavy and not used
+            "com.google.cloud.bigdataoss:gcs-connector",
+            "org.apache.hadoop:hadoop-aliyun",
+            "org.apache.hadoop:hadoop-azure-datalake",
+            "org.apache.hadoop:hadoop-azure",
+            "org.apache.hadoop:hadoop-cos",
+            "org.apache.hadoop:hadoop-openstack",
+            "org.apache.hadoop:hadoop-huaweicloud",
+            # already a part of Spark bundle
+            "org.apache.hadoop:hadoop-client-api",
+            "org.apache.hadoop:hadoop-client-runtime",
+            "com.fasterxml.jackson.core:jackson-annotations",
+            "com.fasterxml.jackson.core:jackson-core",
+            "com.fasterxml.jackson.core:jackson-databind",
+            "com.google.code.findbugs:jsr305",
+            "commons-codec:commons-codec",
+            "commons-logging:commons-logging",
+            "joda-time:joda-time",
+            "org.apache.httpcomponents:httpclient",
+            "org.apache.httpcomponents:httpcore",
+            "org.slf4j:slf4j-api",
+            "org.xerial.snappy:snappy-java",
+        ]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
