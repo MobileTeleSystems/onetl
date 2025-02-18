@@ -51,47 +51,45 @@ class SnapshotStrategy(BaseStrategy):
     Examples
     --------
 
-    Snapshot run with :ref:`db-reader`:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Snapshot run with :ref:`db-reader`
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import SnapshotStrategy
+            from onetl.db import DBReader, DBWriter
+            from onetl.strategy import SnapshotStrategy
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
-        )
+            reader = DBReader(
+                connection=postgres,
+                source="public.mydata",
+                columns=["id", "data"],
+                hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+            )
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+            writer = DBWriter(connection=hive, target="db.newtable")
 
-        with SnapshotStrategy():
-            df = reader.run()
-            writer.run(df)
+            with SnapshotStrategy():
+                df = reader.run()
+                writer.run(df)
 
-        # current run will execute following query:
+            # current run will execute following query:
 
-        # SELECT id, data FROM public.mydata;
+            # SELECT id, data FROM public.mydata;
 
-    Snapshot run with :ref:`file-downloader`:
+        .. code-tab:: py Snapshot run with :ref:`file-downloader`
 
-    .. code:: python
+            from onetl.file import FileDownloader
+            from onetl.strategy import SnapshotStrategy
 
-        from onetl.file import FileDownloader
-        from onetl.strategy import SnapshotStrategy
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/remote",
+                local_path="/local",
+            )
 
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/remote",
-            local_path="/local",
-        )
+            with SnapshotStrategy():
+                df = downloader.run()
 
-        with SnapshotStrategy():
-            df = downloader.run()
-
-        # current run will download all files from 'source_path'
+            # current run will download all files from 'source_path'
     """
 
 
@@ -199,186 +197,186 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     Examples
     --------
 
-    SnapshotBatch run:
+    .. tabs::
 
-    .. code:: python
+        .. tab:: SnapshotBatch run
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import SnapshotBatchStrategy
+            .. code:: python
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
-        )
+                from onetl.db import DBReader, DBWriter
+                from onetl.strategy import SnapshotBatchStrategy
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["id", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+                )
 
-        with SnapshotBatchStrategy(step=100) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-    .. code:: sql
+                with SnapshotBatchStrategy(step=100) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- get start and stop values
+            .. code:: sql
 
-            SELECT MIN(id) as start, MAX(id) as stop
-            FROM public.mydata;
+                -- get start and stop values
 
-        -- for example, start=1000 and stop=2345
+                    SELECT MIN(id) as start, MAX(id) as stop
+                    FROM public.mydata;
 
-        -- when each batch (1..N) will perform a query which return some part of input data
+                -- for example, start=1000 and stop=2345
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
+                -- when each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id > 1100 AND id <= 1200; -- + step
-        3:  WHERE id > 1200 AND id <= 1300; -- + step
-        N:  WHERE id > 2300 AND id <= 2345; -- until stop
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-    SnapshotBatch run with ``stop`` value:
+                2:  WHERE id > 1100 AND id <= 1200; -- + step
+                3:  WHERE id > 1200 AND id <= 1300; -- + step
+                N:  WHERE id > 2300 AND id <= 2345; -- until stop
 
-    .. code:: python
+        .. tab:: SnapshotBatch run with ``stop`` value
 
-        ...
+            .. code:: python
 
-        with SnapshotBatchStrategy(step=100, stop=1234) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with SnapshotBatchStrategy(step=100, stop=1234) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- stop value is set, so there is no need to fetch it from DB
-        -- get start value
+            .. code:: sql
 
-            SELECT MIN(id) as start
-            FROM public.mydata
-            WHERE id <= 1234; -- until stop
+                -- stop value is set, so there is no need to fetch it from DB
+                -- get start value
 
-        -- for example, start=1000.
-        -- when each batch (1..N) will perform a query which return some part of input data
+                    SELECT MIN(id) as start
+                    FROM public.mydata
+                    WHERE id <= 1234; -- until stop
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
+                -- for example, start=1000.
+                -- when each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id >  1100 AND id <= 1200; -- + step
-        3:  WHERE id >  1200 AND id <= 1300; -- + step
-        N:  WHERE id >  1300 AND id <= 1234; -- until stop
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-    SnapshotBatch run with ``start`` value:
+                2:  WHERE id >  1100 AND id <= 1200; -- + step
+                3:  WHERE id >  1200 AND id <= 1300; -- + step
+                N:  WHERE id >  1300 AND id <= 1234; -- until stop
 
-    .. code:: python
+        .. tab:: SnapshotBatch run with ``start`` value
 
-        ...
+            .. code:: python
 
-        with SnapshotBatchStrategy(step=100, start=500) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with SnapshotBatchStrategy(step=100, start=500) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- start value is set, so there is no need to fetch it from DB
-        -- get only stop value
+            .. code:: sql
 
-            SELECT MAX(id) as stop
-            FROM public.mydata
-            WHERE id >= 500; -- from start
+                -- start value is set, so there is no need to fetch it from DB
+                -- get only stop value
 
-        -- for example, stop=2345.
-        -- when each batch (1..N) will perform a query which return some part of input data
+                    SELECT MAX(id) as stop
+                    FROM public.mydata
+                    WHERE id >= 500; -- from start
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id >= 500 AND id <=  600; -- from start to start+step (INCLUDING first row)
+                -- for example, stop=2345.
+                -- when each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id >  600 AND id <=  700; -- + step
-        3:  WHERE id >  700 AND id <=  800; -- + step
-        ...
-        N:  WHERE id > 2300 AND id <= 2345; -- until stop
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id >= 500 AND id <=  600; -- from start to start+step (INCLUDING first row)
 
-    SnapshotBatch run with all options:
+                2:  WHERE id >  600 AND id <=  700; -- + step
+                3:  WHERE id >  700 AND id <=  800; -- + step
+                ...
+                N:  WHERE id > 2300 AND id <= 2345; -- until stop
 
-    .. code:: python
+        .. tab:: SnapshotBatch run with all options
 
-        ...
+            .. code:: python
 
-        with SnapshotBatchStrategy(
-            start=1000,
-            step=100,
-            stop=2000,
-        ) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with SnapshotBatchStrategy(
+                    start=1000,
+                    step=100,
+                    stop=2000,
+                ) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- start and stop values are set, so no need to fetch boundaries from DB
-        -- each batch (1..N) will perform a query which return some part of input data
+            .. code:: sql
 
-        1:    SELECT id, data
-            FROM public.mydata
-            WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
+                -- start and stop values are set, so no need to fetch boundaries from DB
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id >  1100 AND id <= 1200; -- + step
-        3:  WHERE id >  1200 AND id <= 1300; -- + step
-        ...
-        N:  WHERE id >  1900 AND id <= 2000; -- until stop
+                1:    SELECT id, data
+                    FROM public.mydata
+                    WHERE id >= 1000 AND id <= 1100; -- from start to start+step (INCLUDING first row)
 
-    SnapshotBatch run over non-integer column:
+                2:  WHERE id >  1100 AND id <= 1200; -- + step
+                3:  WHERE id >  1200 AND id <= 1300; -- + step
+                ...
+                N:  WHERE id >  1900 AND id <= 2000; -- until stop
 
-    .. note::
+        .. tab:: SnapshotBatch run over non-integer column
 
-        ``hwm.expression``, ``start`` and ``stop`` can be a date or datetime, not only integer:
+            ``hwm.expression``, ``start`` and ``stop`` can be a date or datetime, not only integer:
 
-    .. code:: python
+            .. code:: python
 
-        from datetime import date, timedelta
+                from datetime import date, timedelta
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["business_dt", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
-        )
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["business_dt", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
+                )
 
-        with SnapshotBatchStrategy(
-            start=date("2021-01-01"),
-            step=timedelta(days=5),
-            stop=date("2021-01-31"),
-        ) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                with SnapshotBatchStrategy(
+                    start=date("2021-01-01"),
+                    step=timedelta(days=5),
+                    stop=date("2021-01-31"),
+                ) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-    .. code:: sql
+            .. code:: sql
 
-        -- start and stop values are set, so no need to fetch boundaries from DB
-        -- each batch will perform a query which return some part of input data
-        -- HWM value will casted to match column type
+                -- start and stop values are set, so no need to fetch boundaries from DB
+                -- each batch will perform a query which return some part of input data
+                -- HWM value will casted to match column type
 
 
-        1:  SELECT business_dt, data
-            FROM public.mydata
-            WHERE business_dt >= CAST('2020-01-01' AS DATE) -- from start to start+step (INCLUDING first row)
-            AND   business_dt <= CAST('2021-01-05' AS DATE);
+                1:  SELECT business_dt, data
+                    FROM public.mydata
+                    WHERE business_dt >= CAST('2020-01-01' AS DATE) -- from start to start+step (INCLUDING first row)
+                    AND   business_dt <= CAST('2021-01-05' AS DATE);
 
-        2:  WHERE business_dt >  CAST('2021-01-05' AS DATE) -- + step
-            AND   business_dt <= CAST('2021-01-10' AS DATE);
+                2:  WHERE business_dt >  CAST('2021-01-05' AS DATE) -- + step
+                    AND   business_dt <= CAST('2021-01-10' AS DATE);
 
-        3:  WHERE business_dt >  CAST('2021-01-10' AS DATE) -- + step
-            AND   business_dt <= CAST('2021-01-15' AS DATE);
+                3:  WHERE business_dt >  CAST('2021-01-10' AS DATE) -- + step
+                    AND   business_dt <= CAST('2021-01-15' AS DATE);
 
-        ...
+                ...
 
-        N:  WHERE business_dt >  CAST('2021-01-30' AS DATE)
-            AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
+                N:  WHERE business_dt >  CAST('2021-01-30' AS DATE)
+                    AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
 
     """
 

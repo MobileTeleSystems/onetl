@@ -50,134 +50,138 @@ class IncrementalStrategy(HWMStrategy):
     For :ref:`file-downloader`:
         Behavior depends on ``hwm`` type.
 
-        ``hwm=FileListHWM(...)``:
-            First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
-            all files are downloaded:
+        .. tabs::
 
-            .. code:: bash
+            .. tab:: FileListHWM
 
-                $ hdfs dfs -ls /path
+                First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
+                all files are downloaded:
 
-                /path/my/file1
-                /path/my/file2
+                .. code:: bash
 
-            .. code:: python
+                    $ hdfs dfs -ls /path
 
-                DownloadResult(
-                    ...,
-                    successful={
-                        LocalFile("/downloaded/file1"),
-                        LocalFile("/downloaded/file2"),
-                    },
-                )
+                    /path/my/file1
+                    /path/my/file2
 
-            Then the list of original file paths is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
+                .. code:: python
 
-            .. code:: python
+                    DownloadResult(
+                        ...,
+                        successful={
+                            LocalFile("/downloaded/file1"),
+                            LocalFile("/downloaded/file2"),
+                        },
+                    )
 
-                FileListHWM(
-                    ...,
-                    entity="/path",
-                    value=[
-                        "/path/my/file1",
-                        "/path/my/file2",
-                    ],
-                )
+                Then the list of original file paths is saved as ``FileListHWM`` object into :ref:`HWM Store <hwm>`:
 
-            Next incremental run will download only new files which were added to the source since previous run:
+                .. code:: python
 
-            .. code:: bash
+                    FileListHWM(
+                        ...,
+                        entity="/path",
+                        value=[
+                            "/path/my/file1",
+                            "/path/my/file2",
+                        ],
+                    )
 
-                $ hdfs dfs -ls /path
+                Next incremental run will download only new files which were added to the source since previous run:
 
-                /path/my/file1
-                /path/my/file2
-                /path/my/file3
+                .. code:: bash
 
-            .. code:: python
+                    $ hdfs dfs -ls /path
 
-                # only files which are not covered by FileListHWM
-                DownloadResult(
-                    ...,
-                    successful={
-                        LocalFile("/downloaded/file3"),
-                    },
-                )
+                    /path/my/file1
+                    /path/my/file2
+                    /path/my/file3
 
-            Value of ``FileListHWM`` will be updated and saved to :ref:`HWM Store <hwm>`:
+                .. code:: python
 
-            .. code:: python
+                    # only files which are not covered by FileListHWM
+                    DownloadResult(
+                        ...,
+                        successful={
+                            LocalFile("/downloaded/file3"),
+                        },
+                    )
 
-                FileListHWM(
-                    ...,
-                    directory="/path",
-                    value=[
-                        "/path/my/file1",
-                        "/path/my/file2",
-                        "/path/my/file3",
-                    ],
-                )
+                Value of ``FileListHWM`` will be updated and saved to :ref:`HWM Store <hwm>`:
 
-        ``hwm=FileModifiedTimeHWM(...)``:
-            First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
-            all files are downloaded:
+                .. code:: python
 
-            .. code:: bash
+                    FileListHWM(
+                        ...,
+                        directory="/path",
+                        value=[
+                            "/path/my/file1",
+                            "/path/my/file2",
+                            "/path/my/file3",
+                        ],
+                    )
 
-                $ hdfs dfs -ls /path
+            .. tab:: FileModifiedTimeHWM
 
-                /path/my/file1
-                /path/my/file2
+                First incremental run is just the same as :obj:`SnapshotStrategy <onetl.strategy.snapshot_strategy.SnapshotStrategy>` -
+                all files are downloaded:
 
-            .. code:: python
+                .. code:: bash
 
-                DownloadResult(
-                    ...,
-                    successful={
-                        LocalFile("/downloaded/file1"),
-                        LocalFile("/downloaded/file2"),
-                    },
-                )
+                    $ hdfs dfs -ls /path
 
-            Then the maximum modified time of original files is saved as ``FileModifiedTimeHWM`` object into :ref:`HWM Store <hwm>`:
+                    /path/my/file1
+                    /path/my/file2
 
-            .. code:: python
+                .. code:: python
 
-                FileModifiedTimeHWM(
-                    ...,
-                    directory="/path",
-                    value=datetime.datetime(2025, 1, 1, 11, 22, 33, 456789, tzinfo=timezone.utc),
-                )
+                    DownloadResult(
+                        ...,
+                        successful={
+                            LocalFile("/downloaded/file1"),
+                            LocalFile("/downloaded/file2"),
+                        },
+                    )
 
-            Next incremental run will download only files from the source which were modified or created since previous run:
+                Then the maximum modified time of original files is saved as ``FileModifiedTimeHWM`` object into :ref:`HWM Store <hwm>`:
 
-            .. code:: bash
+                .. code:: python
 
-                $ hdfs dfs -ls /path
+                    FileModifiedTimeHWM(
+                        ...,
+                        directory="/path",
+                        value=datetime.datetime(2025, 1, 1, 11, 22, 33, 456789, tzinfo=timezone.utc),
+                    )
 
-                /path/my/file1
-                /path/my/file2
-                /path/my/file3
+                Next incremental run will download only files from the source which were modified or created since previous run:
 
-            .. code:: python
+                .. code:: bash
 
-                # only files which are not covered by FileModifiedTimeHWM
-                DownloadResult(
-                    ...,
-                    successful={
-                        LocalFile("/downloaded/file3"),
-                    },
-                )
+                    $ hdfs dfs -ls /path
 
-            Value of ``FileModifiedTimeHWM`` will be updated and and saved to :ref:`HWM Store <hwm>`:
+                    /path/my/file1
+                    /path/my/file2
+                    /path/my/file3
 
-            .. code:: python
+                .. code:: python
 
-                FileModifiedTimeHWM(
-                    ...,
-                    directory="/path",
-                    value=datetime.datetime(2025, 1, 1, 22, 33, 44, 567890, tzinfo=timezone.utc),
-                )
+                    # only files which are not covered by FileModifiedTimeHWM
+                    DownloadResult(
+                        ...,
+                        successful={
+                            LocalFile("/downloaded/file3"),
+                        },
+                    )
+
+                Value of ``FileModifiedTimeHWM`` will be updated and and saved to :ref:`HWM Store <hwm>`:
+
+                .. code:: python
+
+                    FileModifiedTimeHWM(
+                        ...,
+                        directory="/path",
+                        value=datetime.datetime(2025, 1, 1, 22, 33, 44, 567890, tzinfo=timezone.utc),
+                    )
 
         .. warning::
 
@@ -249,156 +253,152 @@ class IncrementalStrategy(HWMStrategy):
     Examples
     --------
 
-    Incremental run with :ref:`db-reader`:
+    .. tabs::
 
-    .. code:: python
+        .. tab:: Incremental run with :ref:`db-reader`
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import IncrementalStrategy
+            .. code:: python
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
-        )
+                from onetl.db import DBReader, DBWriter
+                from onetl.strategy import IncrementalStrategy
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["id", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+                )
 
-        with IncrementalStrategy():
-            df = reader.run()
-            writer.run(df)
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-    .. code:: sql
+                with IncrementalStrategy():
+                    df = reader.run()
+                    writer.run(df)
 
-        -- previous HWM value was 1000
-        -- DBReader will generate query like:
+            .. code:: sql
 
-        SELECT id, data
-        FROM public.mydata
-        WHERE id > 1000; --- from HWM (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- DBReader will generate query like:
 
-    Incremental run with :ref:`db-reader` and ``IncrementalStrategy(offset=...)``:
+                SELECT id, data
+                FROM public.mydata
+                WHERE id > 1000; --- from HWM (EXCLUDING first row)
 
-    .. code:: python
+        .. tab:: Incremental run with :ref:`db-reader` and ``IncrementalStrategy(offset=...)``
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import IncrementalStrategy
+            .. code:: python
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
-        )
+                from onetl.db import DBReader, DBWriter
+                from onetl.strategy import IncrementalStrategy
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["id", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+                )
 
-        with IncrementalStrategy(offset=100):
-            df = reader.run()
-            writer.run(df)
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-    .. code:: sql
+                with IncrementalStrategy(offset=100):
+                    df = reader.run()
+                    writer.run(df)
 
-        -- previous HWM value was 1000
-        -- DBReader will generate query like:
+            .. code:: sql
 
-        SELECT id, data
-        FROM public.mydata
-        WHERE id > 900; -- from HWM-offset (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- DBReader will generate query like:
 
-    ``offset`` and ``hwm.expression`` can be a date or datetime, not only integer:
+                SELECT id, data
+                FROM public.mydata
+                WHERE id > 900; -- from HWM-offset (EXCLUDING first row)
 
-    .. code:: python
+            ``offset`` and ``hwm.expression`` can be a date or datetime, not only integer:
 
-        from onetl.db import DBReader, DBWriter
-        from datetime import timedelta
+            .. code:: python
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["business_dt", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
-        )
+                from onetl.db import DBReader, DBWriter
+                from datetime import timedelta
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["business_dt", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
+                )
 
-        with IncrementalStrategy(offset=timedelta(days=1)):
-            df = reader.run()
-            writer.run(df)
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-    .. code:: sql
+                with IncrementalStrategy(offset=timedelta(days=1)):
+                    df = reader.run()
+                    writer.run(df)
 
-        -- previous HWM value was '2021-01-10'
-        -- DBReader will generate query like:
+            .. code:: sql
 
-        SELECT business_dt, data
-        FROM public.mydata
-        WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
+                -- previous HWM value was '2021-01-10'
+                -- DBReader will generate query like:
 
-    Incremental run with :ref:`db-reader` and :ref:`kafka`:
+                SELECT business_dt, data
+                FROM public.mydata
+                WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
 
-    .. code:: python
+        .. code-tab:: py Incremental run with :ref:`db-reader` and :ref:`kafka`
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import IncrementalStrategy
+            from onetl.db import DBReader, DBWriter
+            from onetl.strategy import IncrementalStrategy
 
-        reader = DBReader(
-            connection=kafka,
-            source="topic_name",
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
-        )
+            reader = DBReader(
+                connection=kafka,
+                source="topic_name",
+                hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
+            )
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+            writer = DBWriter(connection=hive, target="db.newtable")
 
-        with IncrementalStrategy():
-            df = reader.run()
+            with IncrementalStrategy():
+                df = reader.run()
 
-        # current run will fetch only messages which were added since previous run
+            # current run will fetch only messages which were added since previous run
 
-    Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
+        .. code-tab:: py Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``
 
-    .. code:: python
+            from onetl.file import FileDownloader
+            from onetl.strategy import SnapshotStrategy
+            from etl_entities.hwm import FileListHWM
 
-        from onetl.file import FileDownloader
-        from onetl.strategy import SnapshotStrategy
-        from etl_entities.hwm import FileListHWM
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/remote",
+                local_path="/local",
+                hwm=FileListHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
 
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/remote",
-            local_path="/local",
-            hwm=FileListHWM(  # mandatory for IncrementalStrategy
-                name="my_unique_hwm_name",
-            ),
-        )
+            with IncrementalStrategy():
+                df = downloader.run()
 
-        with IncrementalStrategy():
-            df = downloader.run()
+            # current run will download only files which were added since previous run
 
-        # current run will download only files which were added since previous run
+        .. code-tab:: py Incremental run with :ref:`file-downloader` and ``hwm=FileModifiedTimeHWM(...)``
 
-    Incremental run with :ref:`file-downloader` and ``hwm=FileModifiedTimeHWM(...)``:
+            from onetl.file import FileDownloader
+            from onetl.strategy import SnapshotStrategy
+            from etl_entities.hwm import FileModifiedTimeHWM
 
-    .. code:: python
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/remote",
+                local_path="/local",
+                hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
 
-        from onetl.file import FileDownloader
-        from onetl.strategy import SnapshotStrategy
-        from etl_entities.hwm import FileModifiedTimeHWM
+            with IncrementalStrategy():
+                df = downloader.run()
 
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/remote",
-            local_path="/local",
-            hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
-                name="my_unique_hwm_name",
-            ),
-        )
-
-        with IncrementalStrategy():
-            df = downloader.run()
-
-        # current run will download only files which were modified/created since previous run
+            # current run will download only files which were modified/created since previous run
     """
 
     hwm: Optional[HWM] = None
@@ -556,166 +556,166 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
     Examples
     --------
 
-    IncrementalBatch run:
+    .. tabs::
 
-    .. code:: python
+        .. tab:: IncrementalBatch run
 
-        from onetl.db import DBReader, DBWriter
-        from onetl.strategy import IncrementalBatchStrategy
+            .. code:: python
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["id", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
-        )
+                from onetl.db import DBReader, DBWriter
+                from onetl.strategy import IncrementalBatchStrategy
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["id", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+                )
 
-        with IncrementalBatchStrategy(step=100) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-    .. code:: sql
+                with IncrementalBatchStrategy(step=100) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- previous HWM value was 1000
-        -- each batch (1..N) will perform a query which return some part of input data
+            .. code:: sql
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id > 1100 AND id <= 1200; --- from HWM to HWM+step (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id > 1200 AND id <= 1300; -- + step
-        N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id > 1100 AND id <= 1200; --- from HWM to HWM+step (EXCLUDING first row)
 
-    IncrementalBatch run with ``stop`` value:
+                2:  WHERE id > 1200 AND id <= 1300; -- + step
+                N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
-    .. code:: python
+        .. tab:: IncrementalBatch run with ``stop`` value
 
-        ...
+            .. code:: python
 
-        with IncrementalBatchStrategy(step=100, stop=2000) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with IncrementalBatchStrategy(step=100, stop=2000) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- previous HWM value was 1000
-        -- each batch (1..N) will perform a query which return some part of input data
+            .. code:: sql
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id > 1000 AND id <= 1100; --- from HWM to HWM+step (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id > 1100 AND id <= 1200; -- + step
-        ...
-        N:  WHERE id > 1900 AND id <= 2000; -- until stop
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id > 1000 AND id <= 1100; --- from HWM to HWM+step (EXCLUDING first row)
 
-    IncrementalBatch run with ``offset`` value:
+                2:  WHERE id > 1100 AND id <= 1200; -- + step
+                ...
+                N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    .. code:: python
+        .. tab:: IncrementalBatch run with ``offset`` value
 
-        ...
+            .. code:: python
 
-        with IncrementalBatchStrategy(step=100, offset=100) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with IncrementalBatchStrategy(step=100, offset=100) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- previous HWM value was 1000
-        -- each batch (1..N) will perform a query which return some part of input data
+            .. code:: sql
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id >  900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id > 1000 AND id <= 1100; -- + step
-        3:  WHERE id > 1100 AND id <= 1200; -- + step
-        ...
-        N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id >  900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
 
-    IncrementalBatch run with all possible options:
+                2:  WHERE id > 1000 AND id <= 1100; -- + step
+                3:  WHERE id > 1100 AND id <= 1200; -- + step
+                ...
+                N:  WHERE id > 1300 AND id <= 1400; -- until max value of HWM column
 
-    .. code:: python
+        .. tab:: IncrementalBatch run with all possible options
 
-        ...
+            .. code:: python
 
-        with IncrementalBatchStrategy(
-            step=100,
-            stop=2000,
-            offset=100,
-        ) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                ...
 
-    .. code:: sql
+                with IncrementalBatchStrategy(
+                    step=100,
+                    stop=2000,
+                    offset=100,
+                ) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-        -- previous HWM value was 1000
-        -- each batch (1..N) will perform a query which return some part of input data
+            .. code:: sql
 
-        1:  SELECT id, data
-            FROM public.mydata
-            WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
+                -- previous HWM value was 1000
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        2:  WHERE id > 1000 AND id <= 1100; -- + step
-        3:  WHERE id > 1100 AND id <= 1200; -- + step
-        ...
-        N:  WHERE id > 1900 AND id <= 2000; -- until stop
+                1:  SELECT id, data
+                    FROM public.mydata
+                    WHERE id > 900 AND id <= 1000; --- from HWM-offset to HWM-offset+step (EXCLUDING first row)
 
-    IncrementalBatch run over non-integer column:
+                2:  WHERE id > 1000 AND id <= 1100; -- + step
+                3:  WHERE id > 1100 AND id <= 1200; -- + step
+                ...
+                N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    .. note::
+        .. tab:: IncrementalBatch run over non-integer column
 
-        ``hwm.expression``, ``offset`` and ``stop`` can be a date or datetime, not only integer
+            ``hwm.expression``, ``offset`` and ``stop`` can be a date or datetime, not only integer:
 
-    .. code:: python
+            .. code:: python
 
-        from onetl.db import DBReader, DBWriter
-        from datetime import date, timedelta
+                from onetl.db import DBReader, DBWriter
+                from datetime import date, timedelta
 
-        reader = DBReader(
-            connection=postgres,
-            source="public.mydata",
-            columns=["business_dt", "data"],
-            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
-        )
+                reader = DBReader(
+                    connection=postgres,
+                    source="public.mydata",
+                    columns=["business_dt", "data"],
+                    hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
+                )
 
-        writer = DBWriter(connection=hive, target="db.newtable")
+                writer = DBWriter(connection=hive, target="db.newtable")
 
-        with IncrementalBatchStrategy(
-            step=timedelta(days=5),
-            stop=date("2021-01-31"),
-            offset=timedelta(days=1),
-        ) as batches:
-            for _ in batches:
-                df = reader.run()
-                writer.run(df)
+                with IncrementalBatchStrategy(
+                    step=timedelta(days=5),
+                    stop=date("2021-01-31"),
+                    offset=timedelta(days=1),
+                ) as batches:
+                    for _ in batches:
+                        df = reader.run()
+                        writer.run(df)
 
-    .. code:: sql
+            .. code:: sql
 
-        -- previous HWM value was '2021-01-10'
-        -- each batch (1..N) will perform a query which return some part of input data
+                -- previous HWM value was '2021-01-10'
+                -- each batch (1..N) will perform a query which return some part of input data
 
-        1:  SELECT business_dt, data
-            FROM public.mydata
-            WHERE business_dt  > CAST('2021-01-09' AS DATE)  -- from HWM-offset (EXCLUDING first row)
-            AND   business_dt <= CAST('2021-01-14' AS DATE); -- to HWM-offset+step
+                1:  SELECT business_dt, data
+                    FROM public.mydata
+                    WHERE business_dt  > CAST('2021-01-09' AS DATE)  -- from HWM-offset (EXCLUDING first row)
+                    AND   business_dt <= CAST('2021-01-14' AS DATE); -- to HWM-offset+step
 
-        2:  WHERE business_dt  > CAST('2021-01-14' AS DATE) -- + step
-            AND   business_dt <= CAST('2021-01-19' AS DATE);
+                2:  WHERE business_dt  > CAST('2021-01-14' AS DATE) -- + step
+                    AND   business_dt <= CAST('2021-01-19' AS DATE);
 
-        3:  WHERE business_dt  > CAST('2021-01-19' AS DATE) -- + step
-            AND   business_dt <= CAST('2021-01-24' AS DATE);
+                3:  WHERE business_dt  > CAST('2021-01-19' AS DATE) -- + step
+                    AND   business_dt <= CAST('2021-01-24' AS DATE);
 
-        ...
+                ...
 
-        N:  WHERE business_dt  > CAST('2021-01-29' AS DATE)
-            AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
+                N:  WHERE business_dt  > CAST('2021-01-29' AS DATE)
+                    AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
     """
 
     hwm: Optional[HWM] = None

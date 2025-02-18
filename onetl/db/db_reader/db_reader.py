@@ -232,83 +232,79 @@ class DBReader(FrozenModel):
     Examples
     --------
 
-    Minimal example:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Minimal example
 
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
+            from onetl.db import DBReader
+            from onetl.connection import Postgres
 
-        postgres = Postgres(...)
+            postgres = Postgres(...)
 
-        # create reader
-        reader = DBReader(connection=postgres, source="fiddle.dummy")
+            # create reader
+            reader = DBReader(connection=postgres, source="fiddle.dummy")
 
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    With custom reading options:
-
-    .. code:: python
-
-        from onetl.connection import Postgres
-        from onetl.db import DBReader
-
-        postgres = Postgres(...)
-        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
-
-        # create reader and pass some options to the underlying connection object
-        reader = DBReader(connection=postgres, source="fiddle.dummy", options=options)
-
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    Full example:
-
-    .. code:: python
-
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
-
-        postgres = Postgres(...)
-        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
-
-        # create reader with specific columns, rows filter
-        reader = DBReader(
-            connection=postgres,
-            source="default.test",
-            where="d_id > 100",
-            hint="NOWAIT",
-            columns=["d_id", "d_name", "d_age"],
-            options=options,
-        )
-
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    Incremental reading:
-
-        See :ref:`strategy` for more examples
-
-    .. code:: python
-
-        from onetl.strategy import IncrementalStrategy
-
-        ...
-
-        reader = DBReader(
-            connection=postgres,
-            source="fiddle.dummy",
-            hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
-                name="some_unique_hwm_name",
-                expression="d_age",
-            ),
-        )
-
-        # read data from table "fiddle.dummy"
-        # but only with new rows (`WHERE d_age > previous_hwm_value`)
-        with IncrementalStrategy():
+            # read data from table "fiddle.dummy"
             df = reader.run()
+
+        .. code-tab:: py With custom reading options
+
+            from onetl.connection import Postgres
+            from onetl.db import DBReader
+
+            postgres = Postgres(...)
+            options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
+
+            # create reader and pass some options to the underlying connection object
+            reader = DBReader(connection=postgres, source="fiddle.dummy", options=options)
+
+            # read data from table "fiddle.dummy"
+            df = reader.run()
+
+        .. code-tab:: py Full example
+
+            from onetl.db import DBReader
+            from onetl.connection import Postgres
+
+            postgres = Postgres(...)
+            options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
+
+            # create reader with specific columns, rows filter
+            reader = DBReader(
+                connection=postgres,
+                source="default.test",
+                where="d_id > 100",
+                hint="NOWAIT",
+                columns=["d_id", "d_name", "d_age"],
+                options=options,
+            )
+
+            # read data from table "fiddle.dummy"
+            df = reader.run()
+
+        .. tab:: Incremental reading
+
+            See :ref:`strategy` for more examples
+
+            .. code:: python
+
+                from onetl.strategy import IncrementalStrategy
+
+                ...
+
+                reader = DBReader(
+                    connection=postgres,
+                    source="fiddle.dummy",
+                    hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
+                        name="some_unique_hwm_name",
+                        expression="d_age",
+                    ),
+                )
+
+                # read data from table "fiddle.dummy"
+                # but only with new rows (`WHERE d_age > previous_hwm_value`)
+                with IncrementalStrategy():
+                    df = reader.run()
     """
 
     connection: BaseDBConnection

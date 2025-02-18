@@ -157,105 +157,99 @@ class FileDownloader(FrozenModel):
     Examples
     --------
 
-    Minimal example:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Minimal example
 
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
 
-        sftp = SFTP(...)
+            sftp = SFTP(...)
 
-        # create downloader
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-        )
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+            )
 
-        # download files to "/path/to/local"
-        downloader.run()
-
-    Full example:
-
-    .. code:: python
-
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount, TotalFileSize
-
-        sftp = SFTP(...)
-
-        # create downloader with a bunch of options
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-            temp_path="/tmp",
-            filters=[
-                Glob("*.txt"),
-                ExcludeDir("/path/to/remote/source/exclude_dir"),
-            ],
-            limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
-            options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
-        )
-
-        # download files to "/path/to/local",
-        # but only *.txt,
-        # excluding files from "/path/to/remote/source/exclude_dir" directory
-        # and stop before downloading 101 file
-        downloader.run()
-
-    Incremental download (by tracking list of file paths):
-
-    .. code:: python
-
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.strategy import IncrementalStrategy
-        from etl_entities.hwm import FileListHWM
-
-        sftp = SFTP(...)
-
-        # create downloader
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-            hwm=FileListHWM(  # mandatory for IncrementalStrategy
-                name="my_unique_hwm_name",
-            ),
-        )
-
-        # download files to "/path/to/local", but only added since previous run
-        with IncrementalStrategy():
+            # download files to "/path/to/local"
             downloader.run()
 
-    Incremental download (by tracking file modification time):
+        .. code-tab:: py Full example
 
-    .. code:: python
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.file.filter import Glob, ExcludeDir
+            from onetl.file.limit import MaxFilesCount, TotalFileSize
 
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.strategy import IncrementalStrategy
-        from etl_entities.hwm import FileModifiedTimeHWM
+            sftp = SFTP(...)
 
-        sftp = SFTP(...)
+            # create downloader with a bunch of options
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                temp_path="/tmp",
+                filters=[
+                    Glob("*.txt"),
+                    ExcludeDir("/path/to/remote/source/exclude_dir"),
+                ],
+                limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
+                options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
+            )
 
-        # create downloader
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-            hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
-                name="my_unique_hwm_name",
-            ),
-        )
-
-        # download files to "/path/to/local", but only modified/created since previous run
-        with IncrementalStrategy():
+            # download files to "/path/to/local",
+            # but only *.txt,
+            # excluding files from "/path/to/remote/source/exclude_dir" directory
+            # and stop before downloading 101 file
             downloader.run()
+
+        .. code-tab:: py Incremental download (by tracking list of file paths)
+
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.strategy import IncrementalStrategy
+            from etl_entities.hwm import FileListHWM
+
+            sftp = SFTP(...)
+
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                hwm=FileListHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
+
+            # download files to "/path/to/local", but only added since previous run
+            with IncrementalStrategy():
+                downloader.run()
+
+        .. code-tab:: py Incremental download (by tracking file modification time)
+
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.strategy import IncrementalStrategy
+            from etl_entities.hwm import FileModifiedTimeHWM
+
+            sftp = SFTP(...)
+
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
+
+            # download files to "/path/to/local", but only modified/created since previous run
+            with IncrementalStrategy():
+                downloader.run()
     """
 
     Options = FileDownloaderOptions

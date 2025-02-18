@@ -150,53 +150,47 @@ class HDFS(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    Create HDFS connection with user+password:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Create HDFS connection with user+password
 
-        from onetl.connection import HDFS
+            from onetl.connection import HDFS
 
-        hdfs = HDFS(
-            host="namenode1.domain.com",
-            user="someuser",
-            password="*****",
-        ).check()
+            hdfs = HDFS(
+                host="namenode1.domain.com",
+                user="someuser",
+                password="*****",
+            ).check()
 
-    Create HDFS connection with user+keytab:
+        .. code-tab:: py Create HDFS connection with user+keytab
 
-    .. code:: python
+            from onetl.connection import HDFS
 
-        from onetl.connection import HDFS
+            hdfs = HDFS(
+                host="namenode1.domain.com",
+                user="someuser",
+                keytab="/path/to/keytab",
+            ).check()
 
-        hdfs = HDFS(
-            host="namenode1.domain.com",
-            user="someuser",
-            keytab="/path/to/keytab",
-        ).check()
+        .. code-tab:: py Create HDFS connection without auth
 
-    Create HDFS connection without auth:
+            from onetl.connection import HDFS
 
-    .. code:: python
+            hdfs = HDFS(host="namenode1.domain.com").check()
 
-        from onetl.connection import HDFS
+        .. tab:: Use cluster name to detect active namenode
 
-        hdfs = HDFS(host="namenode1.domain.com").check()
+            Can be used only if some third-party plugin provides :ref:`hdfs-slots` implementation
 
-    Use cluster name to detect active namenode:
+            .. code:: python
 
-    .. note::
+                from onetl.connection import HDFS
 
-        Can be used only if some third-party plugin provides :ref:`hdfs-slots` implementation
-
-    .. code:: python
-
-        from onetl.connection import HDFS
-
-        hdfs = HDFS(
-            cluster="rnd-dwh",
-            user="someuser",
-            password="*****",
-        ).check()
+                hdfs = HDFS(
+                    cluster="rnd-dwh",
+                    user="someuser",
+                    password="*****",
+                ).check()
     """
 
     cluster: Optional[Cluster] = None
