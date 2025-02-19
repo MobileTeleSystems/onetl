@@ -87,7 +87,7 @@ class Postgres(JDBCConnection):
     Examples
     --------
 
-    Create read-write connection:
+    Create and check Postgres connection:
 
     .. code:: python
 
@@ -123,9 +123,9 @@ class Postgres(JDBCConnection):
             user="user",
             password="*****",
             database="target_database",
-            extra={"readOnly": True, "readOnlyMode": "always"},
+            extra={"readOnly": True, "readOnlyMode": "always"},  # <--
             spark=spark,
-        )
+        ).check()
 
     """
 

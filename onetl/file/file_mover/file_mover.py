@@ -95,7 +95,8 @@ class FileMover(FrozenModel):
 
     Examples
     --------
-    Simple Mover creation
+
+    Minimal example:
 
     .. code:: python
 
@@ -114,7 +115,7 @@ class FileMover(FrozenModel):
         # move files from "/path/to/source/dir" to "/path/to/target/dir"
         mover.run()
 
-    Mover with all parameters
+    Full example:
 
     .. code:: python
 

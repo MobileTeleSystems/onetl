@@ -135,7 +135,7 @@ class Oracle(JDBCConnection):
     Examples
     --------
 
-    Connect to Oracle using ``sid``:
+    Create and check Oracle connection with ``sid``:
 
     .. code:: python
 
@@ -158,9 +158,9 @@ class Oracle(JDBCConnection):
             sid="XE",
             extra={"remarksReporting": "false"},
             spark=spark,
-        )
+        ).check()
 
-    Using ``service_name``:
+    or with ``service_name``:
 
     .. code:: python
 
@@ -170,10 +170,10 @@ class Oracle(JDBCConnection):
             host="database.host.or.ip",
             user="user",
             password="*****",
-            service_name="PDB1",
+            service_name="PDB1",  # <--- instead of SID
             extra={"remarksReporting": "false"},
             spark=spark,
-        )
+        ).check()
 
     """
 

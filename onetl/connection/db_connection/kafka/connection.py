@@ -106,14 +106,10 @@ class Kafka(DBConnection):
             Options that populated from connection
             attributes (like ``bootstrap.servers``, ``sasl.*``, ``ssl.*``) are not allowed to override.
 
-        .. note::
-
-            At current version Kafka connection doesn't support batch strategies.
-
     Examples
     --------
 
-    Connect to Kafka using ``PLAINTEXT`` protocol and without any auth mechanism (anonymous user, default):
+    Create Kafka connection with ``PLAINTEXT`` protocol and ``SCRAM-SHA-256`` auth:
 
     .. code:: python
 
@@ -121,7 +117,7 @@ class Kafka(DBConnection):
         from pyspark.sql import SparkSession
 
         # Create Spark session with Kafka connector loaded
-        maven_packages = Kafka.get_packages(spark_version="3.2.4")
+        maven_packages = Kafka.get_packages(spark_version="3.5.4")
         exclude_packages = Kafka.get_exclude_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -134,28 +130,15 @@ class Kafka(DBConnection):
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
             cluster="my-cluster",
-            spark=spark,
-        )
-
-    Connect to Kafka using ``PLAINTEXT`` protocol and basic (``PLAIN``) auth mechanism:
-
-    .. code:: python
-
-        # Create Spark session with Kafka connector loaded
-        ...
-
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            auth=Kafka.BasicAuth(
+            auth=Kafka.ScramAuth(
                 user="me",
-                password="password",
+                password="abc",
+                digest="SHA-256",
             ),
             spark=spark,
-        )
+        ).check()
 
-    Connect to Kafka using ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth mechanism:
+    Create Kafka connection with ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth:
 
     .. code:: python
 
@@ -172,9 +155,9 @@ class Kafka(DBConnection):
                 deploy_keytab=True,
             ),
             spark=spark,
-        )
+        ).check()
 
-    Connect to Kafka using ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth mechanism:
+    Create Kafka connection with ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth:
 
     .. code:: python
 
@@ -188,9 +171,11 @@ class Kafka(DBConnection):
             addresses=["mybroker:9092", "anotherbroker:9092"],
             cluster="my-cluster",
             protocol=Kafka.SSLProtocol(
+                # read client certificate and private key from file
                 keystore_type="PEM",
                 keystore_certificate_chain=Path("path/to/user.crt").read_text(),
                 keystore_key=Path("path/to/user.key").read_text(),
+                # read server public certificate from file
                 truststore_type="PEM",
                 truststore_certificates=Path("/path/to/server.crt").read_text(),
             ),
@@ -200,9 +185,9 @@ class Kafka(DBConnection):
                 digest="SHA-512",
             ),
             spark=spark,
-        )
+        ).check()
 
-    Connect to Kafka with extra options:
+    Create Kafka connection with extra options:
 
     .. code:: python
 
@@ -215,9 +200,9 @@ class Kafka(DBConnection):
             cluster="my-cluster",
             protocol=...,
             auth=...,
-            extra={"max.request.size": 1000000},
+            extra={"max.request.size": 1024 * 1024},  # <--
             spark=spark,
-        )
+        ).check()
 
     """
 
@@ -419,8 +404,8 @@ class Kafka(DBConnection):
 
             from onetl.connection import Kafka
 
-            Kafka.get_packages(spark_version="3.2.4")
-            Kafka.get_packages(spark_version="3.2.4", scala_version="2.12")
+            Kafka.get_packages(spark_version="3.5.4")
+            Kafka.get_packages(spark_version="3.5.4", scala_version="2.12")
 
         """
 

@@ -85,7 +85,7 @@ class MSSQL(JDBCConnection):
     Examples
     --------
 
-    MSSQL connection with plain auth:
+    Create MSSQL connection with plain auth:
 
     .. code:: python
 
@@ -112,7 +112,7 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
 
-    MSSQL connection with domain auth:
+    Create MSSQL connection with domain auth:
 
     .. code:: python
 
@@ -134,7 +134,7 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
 
-    MSSQL connection with instance name:
+    Create MSSQL connection with instance name:
 
     .. code:: python
 
@@ -154,7 +154,7 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
 
-    MSSQL read-only connection:
+    Create MSSQL read-only connection:
 
     .. code:: python
 
@@ -172,8 +172,7 @@ class MSSQL(JDBCConnection):
                 "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
             },
             spark=spark,
-        )
-
+        ).check()
     """
 
     database: str

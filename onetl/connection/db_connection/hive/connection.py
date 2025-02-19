@@ -61,20 +61,9 @@ class Hive(DBConnection):
     Examples
     --------
 
-    Hive connection initialization:
+    Create Hive connection with Kerberos auth:
 
-    .. code:: python
-
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
-
-        # Create Spark session
-        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
-
-        # Create connection
-        hive = Hive(cluster="rnd-dwh", spark=spark).check()
-
-    Hive connection initialization with Kerberos support:
+    Execute ``kinit`` consome command before creating Spark Session
 
     .. code:: bash
 
@@ -97,6 +86,19 @@ class Hive(DBConnection):
             .enableHiveSupport()
             .getOrCreate()
         )
+
+        # Create connection
+        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+
+    Create Hive connection with anonymous auth:
+
+    .. code:: python
+
+        from onetl.connection import Hive
+        from pyspark.sql import SparkSession
+
+        # Create Spark session
+        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
 
         # Create connection
         hive = Hive(cluster="rnd-dwh", spark=spark).check()

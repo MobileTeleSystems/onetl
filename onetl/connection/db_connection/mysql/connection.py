@@ -85,7 +85,7 @@ class MySQL(JDBCConnection):
     Examples
     --------
 
-    MySQL connection initialization
+    Create and check MySQL connection:
 
     .. code:: python
 
@@ -107,7 +107,7 @@ class MySQL(JDBCConnection):
             password="*****",
             extra={"useSSL": "false", "allowPublicKeyRetrieval": "true"},
             spark=spark,
-        )
+        ).check()
 
     """
 

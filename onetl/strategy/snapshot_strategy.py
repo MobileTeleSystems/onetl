@@ -55,26 +55,8 @@ class SnapshotStrategy(BaseStrategy):
 
     .. code:: python
 
-        from onetl.connection import Postgres
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import SnapshotStrategy
-
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="myuser",
-            password="*****",
-            database="target_database",
-            spark=spark,
-        )
 
         reader = DBReader(
             connection=postgres,
@@ -83,7 +65,7 @@ class SnapshotStrategy(BaseStrategy):
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
-        writer = DBWriter(connection=hive, target="newtable")
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with SnapshotStrategy():
             df = reader.run()
@@ -97,15 +79,8 @@ class SnapshotStrategy(BaseStrategy):
 
     .. code:: python
 
-        from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
-
-        sftp = SFTP(
-            host="sftp.domain.com",
-            user="user",
-            password="*****",
-        )
 
         downloader = FileDownloader(
             connection=sftp,
@@ -228,28 +203,8 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
-        from onetl.connection import Postgres, Hive
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import SnapshotBatchStrategy
-
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="myuser",
-            password="*****",
-            database="target_database",
-            spark=spark,
-        )
-
-        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
@@ -258,7 +213,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
-        writer = DBWriter(connection=hive, target="newtable")
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with SnapshotBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -288,6 +243,8 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
+        ...
+
         with SnapshotBatchStrategy(step=100, stop=1234) as batches:
             for _ in batches:
                 df = reader.run()
@@ -316,6 +273,8 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     SnapshotBatch run with ``start`` value:
 
     .. code:: python
+
+        ...
 
         with SnapshotBatchStrategy(step=100, start=500) as batches:
             for _ in batches:
@@ -347,6 +306,8 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
+        ...
+
         with SnapshotBatchStrategy(
             start=1000,
             step=100,
@@ -370,7 +331,11 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
         ...
         N:  WHERE id >  1900 AND id <= 2000; -- until stop
 
-    ``hwm.expression`` can be a date or datetime, not only integer:
+    SnapshotBatch run over non-integer column:
+
+    .. note::
+
+        ``hwm.expression``, ``start`` and ``stop`` can be a date or datetime, not only integer:
 
     .. code:: python
 

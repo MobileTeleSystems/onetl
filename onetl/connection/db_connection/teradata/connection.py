@@ -95,7 +95,7 @@ class Teradata(JDBCConnection):
     Examples
     --------
 
-    Teradata connection with LDAP auth:
+    Create Teradata connection with LDAP auth:
 
     .. code:: python
 
@@ -121,7 +121,7 @@ class Teradata(JDBCConnection):
                 "LOG": "TIMING",  # increase log level
             },
             spark=spark,
-        )
+        ).check()
 
     """
 

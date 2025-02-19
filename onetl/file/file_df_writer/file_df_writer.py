@@ -52,7 +52,8 @@ class FileDFWriter(FrozenModel):
 
     Examples
     --------
-    Create writer to parse CSV files in local filesystem:
+
+    Write CSV files to local filesystem:
 
     .. code:: python
 
@@ -68,7 +69,7 @@ class FileDFWriter(FrozenModel):
             target_path="/path/to/directory",
         )
 
-    All supported options
+    All supported options:
 
     .. code:: python
 

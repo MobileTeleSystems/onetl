@@ -150,8 +150,8 @@ class Avro(ReadWriteFileFormat):
 
             from onetl.file.format import Avro
 
-            Avro.get_packages(spark_version="3.2.4")
-            Avro.get_packages(spark_version="3.2.4", scala_version="2.12")
+            Avro.get_packages(spark_version="3.5.4")
+            Avro.get_packages(spark_version="3.5.4", scala_version="2.12")
 
         """
 

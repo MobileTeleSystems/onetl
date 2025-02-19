@@ -156,7 +156,8 @@ class FileDownloader(FrozenModel):
 
     Examples
     --------
-    Simple Downloader creation
+
+    Minimal example:
 
     .. code:: python
 
@@ -175,7 +176,7 @@ class FileDownloader(FrozenModel):
         # download files to "/path/to/local"
         downloader.run()
 
-    Downloader with all parameters
+    Full example:
 
     .. code:: python
 
@@ -255,7 +256,6 @@ class FileDownloader(FrozenModel):
         # download files to "/path/to/local", but only modified/created since previous run
         with IncrementalStrategy():
             downloader.run()
-
     """
 
     Options = FileDownloaderOptions

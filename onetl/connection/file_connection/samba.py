@@ -96,7 +96,7 @@ class Samba(FileConnection):
     Examples
     --------
 
-    Samba file connection initialization
+    Create and check Samba connection:
 
     .. code:: python
 
@@ -109,9 +109,7 @@ class Samba(FileConnection):
             port=445,
             user="user",
             password="password",
-        )
-
-
+        ).check()
     """
 
     host: Host

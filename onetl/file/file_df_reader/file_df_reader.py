@@ -67,7 +67,8 @@ class FileDFReader(FrozenModel):
 
     Examples
     --------
-    Create reader to parse CSV files in local filesystem:
+
+    Read CSV files from local filesystem:
 
     .. code:: python
 
@@ -83,7 +84,7 @@ class FileDFReader(FrozenModel):
             source_path="/path/to/directory",
         )
 
-    All supported options
+    All supported options:
 
     .. code:: python
 

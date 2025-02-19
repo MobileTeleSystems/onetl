@@ -123,9 +123,7 @@ class SparkS3(SparkFileDFConnection):
     Examples
     --------
 
-    Create connection to S3 to work with dataframes.
-
-    Connect to bucket as subdomain (``my-bucket.domain.com``):
+    Create S3 connection with bucket as subdomain (``my-bucket.domain.com``):
 
     .. code:: python
 
@@ -167,7 +165,7 @@ class SparkS3(SparkFileDFConnection):
             spark=spark,
         ).check()
 
-    Connect to bucket as subpath (``domain.com/my-bucket``):
+    Create S3 connection with bucket as subpath (``domain.com/my-bucket``):
 
     .. code:: python
 
@@ -182,7 +180,7 @@ class SparkS3(SparkFileDFConnection):
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
             extra={
-                "path.style.access": True,
+                "path.style.access": True,  # <---
             },
             spark=spark,
         ).check()

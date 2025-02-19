@@ -94,7 +94,7 @@ class WebDAV(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    WebDAV file connection initialization
+    Create and check WebDAV connection:
 
     .. code:: python
 
@@ -105,8 +105,7 @@ class WebDAV(FileConnection, RenameDirMixin):
             user="someuser",
             password="*****",
             protocol="https",
-        )
-
+        ).check()
     """
 
     host: Host

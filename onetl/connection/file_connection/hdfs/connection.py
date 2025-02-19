@@ -150,7 +150,7 @@ class HDFS(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    HDFS connection with password:
+    Create HDFS connection with user+password:
 
     .. code:: python
 
@@ -162,7 +162,7 @@ class HDFS(FileConnection, RenameDirMixin):
             password="*****",
         ).check()
 
-    HDFS connection with keytab:
+    Create HDFS connection with user+keytab:
 
     .. code:: python
 
@@ -174,7 +174,7 @@ class HDFS(FileConnection, RenameDirMixin):
             keytab="/path/to/keytab",
         ).check()
 
-    HDFS file connection initialization without auth (HDFS without Kerberos support)
+    Create HDFS connection without auth:
 
     .. code:: python
 
@@ -182,20 +182,11 @@ class HDFS(FileConnection, RenameDirMixin):
 
         hdfs = HDFS(host="namenode1.domain.com").check()
 
-    HDFS connection with both cluster and host names:
+    Use cluster name to detect active namenode:
 
-    .. code:: python
+    .. note::
 
-        from onetl.connection import HDFS
-
-        hdfs = HDFS(
-            cluster="rnd-dwh",
-            host="namenode1.domain.com",
-            user="someuser",
-            password="*****",
-        ).check()
-
-    HDFS connection with cluster name only:
+        Can be used only if some third-party plugin provides :ref:`hdfs-slots` implementation
 
     .. code:: python
 

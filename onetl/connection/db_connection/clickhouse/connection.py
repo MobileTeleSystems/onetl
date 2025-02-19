@@ -83,7 +83,7 @@ class Clickhouse(JDBCConnection):
     Examples
     --------
 
-    Clickhouse connection initialization
+    Create and check Clickhouse connection:
 
     .. code:: python
 
@@ -105,7 +105,7 @@ class Clickhouse(JDBCConnection):
             password="*****",
             extra={"continueBatchOnError": "false"},
             spark=spark,
-        )
+        ).check()
 
     """
 

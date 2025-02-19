@@ -126,7 +126,7 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
     Examples
     --------
 
-    Greenplum connection initialization
+    Create and check Greenplum connection:
 
     .. code:: python
 
@@ -160,7 +160,7 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
             database="target_database",
             extra=extra,
             spark=spark,
-        )
+        ).check()
     """
 
     host: Host

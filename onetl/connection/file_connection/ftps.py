@@ -82,7 +82,7 @@ class FTPS(FTP):
     Examples
     --------
 
-    FTPS file connection initialization
+    Create and check FTPS connection:
 
     .. code:: python
 
@@ -92,7 +92,7 @@ class FTPS(FTP):
             host="ftps.domain.com",
             user="someuser",
             password="*****",
-        )
+        ).check()
     """
 
     def _get_client(self) -> FTPHost:

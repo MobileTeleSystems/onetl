@@ -97,7 +97,7 @@ class S3(FileConnection):
     Examples
     --------
 
-    S3 file connection initialization
+    Create and check S3 connection:
 
     .. code:: python
 
@@ -109,7 +109,7 @@ class S3(FileConnection):
             bucket="my-bucket",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
-        )
+        ).check()
 
     """
 

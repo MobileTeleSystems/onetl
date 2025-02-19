@@ -96,7 +96,7 @@ class SFTP(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    SFTP file connection initialization
+    Create and check SFTP connection:
 
     .. code:: python
 
@@ -106,7 +106,7 @@ class SFTP(FileConnection, RenameDirMixin):
             host="192.168.1.19",
             user="someuser",
             password="*****",
-        )
+        ).check()
     """
 
     host: Host

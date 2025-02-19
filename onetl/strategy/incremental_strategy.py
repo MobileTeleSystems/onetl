@@ -253,26 +253,8 @@ class IncrementalStrategy(HWMStrategy):
 
     .. code:: python
 
-        from onetl.connection import Postgres
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import IncrementalStrategy
-
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="myuser",
-            password="*****",
-            database="target_database",
-            spark=spark,
-        )
 
         reader = DBReader(
             connection=postgres,
@@ -281,7 +263,7 @@ class IncrementalStrategy(HWMStrategy):
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
-        writer = DBWriter(connection=hive, target="newtable")
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with IncrementalStrategy():
             df = reader.run()
@@ -296,11 +278,21 @@ class IncrementalStrategy(HWMStrategy):
         FROM public.mydata
         WHERE id > 1000; --- from HWM (EXCLUDING first row)
 
-    Incremental run with :ref:`db-reader` and ``offset``:
+    Incremental run with :ref:`db-reader` and ``IncrementalStrategy(offset=...)``:
 
     .. code:: python
 
-        ...
+        from onetl.db import DBReader, DBWriter
+        from onetl.strategy import IncrementalStrategy
+
+        reader = DBReader(
+            connection=postgres,
+            source="public.mydata",
+            columns=["id", "data"],
+            hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
+        )
+
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with IncrementalStrategy(offset=100):
             df = reader.run()
@@ -315,10 +307,11 @@ class IncrementalStrategy(HWMStrategy):
         FROM public.mydata
         WHERE id > 900; -- from HWM-offset (EXCLUDING first row)
 
-    ``hwm.expression`` can be a date or datetime, not only integer:
+    ``offset`` and ``hwm.expression`` can be a date or datetime, not only integer:
 
     .. code:: python
 
+        from onetl.db import DBReader, DBWriter
         from datetime import timedelta
 
         reader = DBReader(
@@ -327,6 +320,8 @@ class IncrementalStrategy(HWMStrategy):
             columns=["business_dt", "data"],
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
+
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with IncrementalStrategy(offset=timedelta(days=1)):
             df = reader.run()
@@ -341,29 +336,12 @@ class IncrementalStrategy(HWMStrategy):
         FROM public.mydata
         WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
 
-    Incremental run with :ref:`db-reader` and :ref:`kafka` connection
-    (by ``offset`` in topic - :etl-entities:`KeyValueHWM <hwm/key_value/index.html>`):
+    Incremental run with :ref:`db-reader` and :ref:`kafka`:
 
     .. code:: python
 
-        from onetl.connection import Kafka
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import IncrementalStrategy
-
-        from pyspark.sql import SparkSession
-
-        maven_packages = Kafka.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            spark=spark,
-        )
 
         reader = DBReader(
             connection=kafka,
@@ -371,23 +349,20 @@ class IncrementalStrategy(HWMStrategy):
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="offset"),
         )
 
+        writer = DBWriter(connection=hive, target="db.newtable")
+
         with IncrementalStrategy():
             df = reader.run()
+
+        # current run will fetch only messages which were added since previous run
 
     Incremental run with :ref:`file-downloader` and ``hwm=FileListHWM(...)``:
 
     .. code:: python
 
-        from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
         from etl_entities.hwm import FileListHWM
-
-        sftp = SFTP(
-            host="sftp.domain.com",
-            user="user",
-            password="*****",
-        )
 
         downloader = FileDownloader(
             connection=sftp,
@@ -407,16 +382,9 @@ class IncrementalStrategy(HWMStrategy):
 
     .. code:: python
 
-        from onetl.connection import SFTP
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
         from etl_entities.hwm import FileModifiedTimeHWM
-
-        sftp = SFTP(
-            host="sftp.domain.com",
-            user="user",
-            password="*****",
-        )
 
         downloader = FileDownloader(
             connection=sftp,
@@ -592,28 +560,8 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
-        from onetl.connection import Postgres, Hive
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import IncrementalBatchStrategy
-
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="myuser",
-            password="*****",
-            database="target_database",
-            spark=spark,
-        )
-
-        hive = Hive(cluster="rnd-dwh", spark=spark)
 
         reader = DBReader(
             connection=postgres,
@@ -622,7 +570,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="id"),
         )
 
-        writer = DBWriter(connection=hive, target="newtable")
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with IncrementalBatchStrategy(step=100) as batches:
             for _ in batches:
@@ -645,6 +593,8 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
+        ...
+
         with IncrementalBatchStrategy(step=100, stop=2000) as batches:
             for _ in batches:
                 df = reader.run()
@@ -666,6 +616,8 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
     IncrementalBatch run with ``offset`` value:
 
     .. code:: python
+
+        ...
 
         with IncrementalBatchStrategy(step=100, offset=100) as batches:
             for _ in batches:
@@ -690,6 +642,8 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     .. code:: python
 
+        ...
+
         with IncrementalBatchStrategy(
             step=100,
             stop=2000,
@@ -713,10 +667,15 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
         ...
         N:  WHERE id > 1900 AND id <= 2000; -- until stop
 
-    ``hwm.expression`` can be a date or datetime, not only integer:
+    IncrementalBatch run over non-integer column:
+
+    .. note::
+
+        ``hwm.expression``, ``offset`` and ``stop`` can be a date or datetime, not only integer
 
     .. code:: python
 
+        from onetl.db import DBReader, DBWriter
         from datetime import date, timedelta
 
         reader = DBReader(
@@ -725,6 +684,8 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
             columns=["business_dt", "data"],
             hwm=DBReader.AutoDetectHWM(name="some_hwm_name", expression="business_dt"),
         )
+
+        writer = DBWriter(connection=hive, target="db.newtable")
 
         with IncrementalBatchStrategy(
             step=timedelta(days=5),
@@ -755,7 +716,6 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
         N:  WHERE business_dt  > CAST('2021-01-29' AS DATE)
             AND   business_dt <= CAST('2021-01-31' AS DATE); -- until stop
-
     """
 
     hwm: Optional[HWM] = None

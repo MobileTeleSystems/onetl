@@ -231,28 +231,15 @@ class DBReader(FrozenModel):
 
     Examples
     --------
-    Simple Reader creation:
+
+    Minimal example:
 
     .. code:: python
 
         from onetl.db import DBReader
         from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+        postgres = Postgres(...)
 
         # create reader
         reader = DBReader(connection=postgres, source="fiddle.dummy")
@@ -260,30 +247,14 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
 
-    Reader creation with JDBC options:
+    With custom reading options:
 
     .. code:: python
 
-        from onetl.db import DBReader
         from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
+        from onetl.db import DBReader
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
-        options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
-        # or (it is the same):
+        postgres = Postgres(...)
         options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
         # create reader and pass some options to the underlying connection object
@@ -292,28 +263,14 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
 
-    Reader creation with all parameters:
+    Full example:
 
     .. code:: python
 
         from onetl.db import DBReader
         from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+        postgres = Postgres(...)
         options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
 
         # create reader with specific columns, rows filter
@@ -329,29 +286,15 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
 
-    Incremental Reader:
+    Incremental reading:
+
+        See :ref:`strategy` for more examples
 
     .. code:: python
 
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
         from onetl.strategy import IncrementalStrategy
-        from pyspark.sql import SparkSession
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+        ...
 
         reader = DBReader(
             connection=postgres,

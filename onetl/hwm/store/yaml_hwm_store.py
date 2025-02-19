@@ -83,28 +83,12 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     .. code:: python
 
         from onetl.connection import Hive, Postgres
-        from onetl.db import DBReader
+        from onetl.db import DBReader, DBWriter
         from onetl.strategy import IncrementalStrategy
         from onetl.hwm.store import YAMLHWMStore
 
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="myuser",
-            password="*****",
-            database="target_database",
-            spark=spark,
-        )
-
-        hive = Hive(cluster="rnd-dwh", spark=spark)
+        postgres = Postgres(...)
+        hive = Hive(...)
 
         reader = DBReader(
             connection=postgres,

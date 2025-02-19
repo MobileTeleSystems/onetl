@@ -68,84 +68,35 @@ class DBWriter(FrozenModel):
 
     Examples
     --------
-    Simple Writer creation:
+
+    Minimal example:
 
     .. code:: python
 
         from onetl.connection import Postgres
         from onetl.db import DBWriter
-        from pyspark.sql import SparkSession
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+        postgres = Postgres(...)
 
         writer = DBWriter(
             connection=postgres,
             target="fiddle.dummy",
         )
 
-    Writer creation with options:
+    With custom write options:
 
     .. code:: python
 
         from onetl.connection import Postgres
         from onetl.db import DBWriter
-        from pyspark.sql import SparkSession
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+        postgres = Postgres(...)
 
         options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
 
         writer = DBWriter(
             connection=postgres,
             target="fiddle.dummy",
-            options=options,
-        )
-
-    Writer to Hive with options:
-
-    .. code:: python
-
-        from onetl.db import DBWriter
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
-
-        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
-
-        hive = Hive(cluster="rnd-dwh", spark=spark)
-
-        options = {"compression": "snappy", "partitionBy": "id"}
-        # or (it is the same):
-        options = Hive.WriteOptions(compression="snappy", partitionBy="id")
-
-        writer = DBWriter(
-            connection=hive,
-            target="default.test",
             options=options,
         )
     """

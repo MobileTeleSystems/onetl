@@ -110,7 +110,8 @@ class FileUploader(FrozenModel):
 
     Examples
     --------
-    Simple Uploader creation
+
+    Minimal example:
 
     .. code:: python
 
@@ -124,7 +125,7 @@ class FileUploader(FrozenModel):
             target_path="/path/to/remote/source",
         )
 
-    Uploader with all parameters
+    Full example:
 
     .. code:: python
 
@@ -140,7 +141,6 @@ class FileUploader(FrozenModel):
             local_path="/some/local/directory",
             options=FileUploader.Options(delete_local=True, if_exists="overwrite"),
         )
-
     """
 
     Options = FileUploaderOptions
