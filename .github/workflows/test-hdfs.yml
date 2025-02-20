@@ -34,6 +34,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Start HDFS
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile hdfs pull
+          docker compose --profile hdfs up -d --wait --wait-timeout 200
+
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
         with:
@@ -69,24 +75,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -I -r requirements/core.txt -r requirements/kerberos.txt -r requirements/hdfs.txt -r requirements/tests/base.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
-
-      # Cannot use services because we need to mount config file from the repo, but services start before checkout.
-      # See https://github.com/orgs/community/discussions/25792
-      - name: Start HDFS
-        run: |
-          docker compose down -v --remove-orphans
-          docker compose up -d hdfs --wait --wait-timeout 200 &
-          wait_pid=$!
-          docker compose logs -f hdfs &
-          wait $wait_pid
         env:
           HDFS_IMAGE: mtsrus/hadoop:${{ inputs.hadoop-version }}
 
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           echo "127.0.0.1 hdfs" | sudo tee -a /etc/hosts
           ./pytest_runner.sh -m hdfs
 
@@ -107,7 +102,7 @@ jobs:
       - name: Shutdown HDFS
         if: always()
         run: |
-          docker compose down -v --remove-orphans
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

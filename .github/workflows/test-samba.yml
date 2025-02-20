@@ -28,6 +28,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Start Samba
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile samba pull
+          docker compose --profile samba up -d --wait --wait-timeout 200
+        env:
+          SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
+
       - name: Set up Python ${{ inputs.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -50,19 +58,10 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/samba.txt -r requirements/tests/base.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-    # Replace with Github Actions' because of custom parameter for samba container start
-      - name: Start Samba
-        run: |
-          docker compose down -v --remove-orphans
-          docker compose up -d samba
-        env:
-          SAMBA_IMAGE: elswork/samba:${{ inputs.server-version }}
-
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m samba
 
       - name: Dump Samba logs on failure
@@ -82,7 +81,7 @@ jobs:
       - name: Shutdown Samba
         if: always()
         run: |
-          docker compose down -v --remove-orphans
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

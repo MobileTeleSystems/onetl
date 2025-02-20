@@ -72,8 +72,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m local_fs
 
       - name: Upload coverage results

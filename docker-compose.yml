@@ -1,5 +1,3 @@
-version: '3.9'
-
 # NOTE: local development only
 services:
   onetl:
@@ -29,15 +27,23 @@ services:
     restart: unless-stopped
     environment:
       TZ: UTC
+      POSTGRESQL_DATABASE: onetl
+      POSTGRESQL_USERNAME: onetl
+      POSTGRESQL_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 5433:5432
+    volumes:
+      - ./docker/greenplum/custom_entrypoint.sh:/entrypoint.sh
+      - ./docker/greenplum/initdb.d/:/container-entrypoint-initdb.d/
     networks:
       - onetl
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
+    healthcheck:
+      test: ["CMD", "/usr/local/gpdb/bin/pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [greenplum, db, all]
 
   pgbouncer-transaction-gp:
@@ -45,17 +51,22 @@ services:
     restart: unless-stopped
     environment:
       TZ: UTC
-      PGBOUNCER_DATABASE: postgres
+      PGBOUNCER_DATABASE: onetl
       PGBOUNCER_POOL_MODE: transaction
       POSTGRESQL_HOST: greenplum
       POSTGRESQL_PORT: 5432
-      POSTGRESQL_DATABASE: postgres
-      POSTGRESQL_USERNAME: gpadmin
+      POSTGRESQL_DATABASE: onetl
+      POSTGRESQL_USERNAME: onetl
       POSTGRESQL_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 6433:6432
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD-SHELL", "PGPASSWORD=$$POSTGRESQL_PASSWORD psql -h localhost -p 6432 -d onetl -U $$POSTGRESQL_USERNAME -tc 'SELECT 1;' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [greenplum, db, all]
 
   clickhouse:
@@ -75,10 +86,16 @@ services:
       - onetl
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
+    healthcheck:
+      test: ["CMD-SHELL", 'wget --quiet --no-verbose --tries=1 --spider --header "X-ClickHouse-User: $$CLICKHOUSE_USER" --header "X-ClickHouse-Key: $$CLICKHOUSE_PASSWORD" "http://localhost:8123/?query=SELECT%201&database=$$CLICKHOUSE_DB" || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [clickhouse, jdbc, db, all]
 
   zookeeper:
     image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
+    restart: unless-stopped
     ports:
       - 2181:2181
     networks:
@@ -132,8 +149,16 @@ services:
       - 27017:27017
     environment:
       TZ: UTC
-      MONGO_INITDB_ROOT_USERNAME: onetl
-      MONGO_INITDB_ROOT_PASSWORD: 123UsedForTestOnly@!
+      MONGO_INITDB_ROOT_DB: admin
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 123AdminUserForTests@!
+    volumes:
+      - ./docker/mongodb/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", echo 'db.runCommand("ping").ok' | $(which mongosh || which mongo) "$$MONGO_INITDB_ROOT_DB" --quiet]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - onetl
     profiles: [mongodb, db, all]
@@ -176,6 +201,11 @@ services:
     networks:
       - onetl
     platform: linux/amd64
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/bin/mysql --user=root --password=\"$$MYSQL_ROOT_PASSWORD\" --execute \"SHOW DATABASES;\""]
+      interval: 2s
+      timeout: 20s
+      retries: 10
     profiles: [mysql, jdbc, db, all]
 
   postgres:
@@ -190,6 +220,11 @@ services:
       - 5432:5432
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [postgres, jdbc, db, all]
 
   pgbouncer-transaction-pg:
@@ -208,6 +243,11 @@ services:
       - 6432:6432
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD-SHELL", "PGPASSWORD=$$POSTGRESQL_PASSWORD psql -h localhost -p 6432 -d onetl -U $$POSTGRESQL_USERNAME -tc 'SELECT 1;' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [postgres, jdbc, db, all]
 
   hdfs:
@@ -224,10 +264,11 @@ services:
       - ./docker/hdfs/conf/hadoop/:/var/hadoop/conf/
     networks:
       - onetl
+    # healthcheck is defined in image
     profiles: [hdfs, file_df, file, all]
 
   oracle:
-    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.3-slim-faststart}
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:slim-faststart}
     restart: unless-stopped
     environment:
       TZ: UTC
@@ -236,6 +277,8 @@ services:
       APP_USER_PASSWORD: 123UsedForTestOnly@!
     ports:
       - 1522:1521
+    volumes:
+      - ./docker/oracle/:/container-entrypoint-initdb.d
     networks:
       - onetl
     healthcheck:
@@ -265,6 +308,11 @@ services:
       - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --show-error --fail -u \"$$APP_USER_NAME:$$APP_USER_PASSWD\" ftp://localhost:21"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [ftp, file, all]
 
   ftps:
@@ -286,7 +334,12 @@ services:
       - ./docker/ftp/on_post_init.sh:/sources/ftps/eventscripts/on_post_init.sh
     networks:
       - onetl
-    profiles: [fts, file, all]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --show-error --fail --ftp-ssl -k -u \"$$APP_USER_NAME:$$APP_USER_PASSWD\" ftp://localhost:21"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: [ftps, file, all]
 
   samba:
     image: ${SAMBA_IMAGE:-elswork/samba}
@@ -301,6 +354,7 @@ services:
     entrypoint: ["/custom_entrypoint.sh"]
     networks:
       - onetl
+    # healthcheck is defined in image
     profiles: [samba, file, all]
 
   s3:
@@ -319,6 +373,11 @@ services:
       - 9011:9001
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --show-error --fail http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [s3, file_df, file, all]
 
   sftp:
@@ -336,6 +395,7 @@ services:
       - 2222:2222
     networks:
       - onetl
+    # no sshpass in the image, so healthcheck is not available
     profiles: [sftp, file, all]
 
   webdav:
@@ -354,6 +414,11 @@ services:
       - ./docker/webdav/on_post_init.sh:/sources/webdav/eventscripts/on_post_init.sh
     networks:
       - onetl
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --show-error --fail -u \"$$APP_USER_NAME:$$APP_USER_PASSWD\" -k http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     profiles: [webdav, file, all]
 
 networks:

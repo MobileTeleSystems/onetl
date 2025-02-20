@@ -29,23 +29,18 @@ jobs:
   test-s3:
     name: Run S3 tests (server=${{ inputs.minio-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      s3:
-        image: bitnami/minio:${{ inputs.minio-version }}
-        env:
-          TZ: UTC
-          # MINIO_ACCESS_KEY and MINIO_SECRET_KEY are deprecated by new Minio version, but used by old version.
-          # so we keeping both
-          MINIO_ACCESS_KEY: onetl
-          MINIO_ROOT_USER: onetl
-          MINIO_SECRET_KEY: 123UsedForTestOnly@!
-          MINIO_ROOT_PASSWORD: 123UsedForTestOnly@!
-        ports:
-          - 9010:9000
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start S3
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile s3 pull
+          docker compose --profile s3 up -d --wait --wait-timeout 200
+        env:
+          S3_IMAGE: bitnami/minio:${{ inputs.minio-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -88,8 +83,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m s3
 
       - name: Dump S3 logs on failure
@@ -105,6 +99,11 @@ jobs:
         with:
           name: container-logs-s3-${{ inputs.minio-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
+
+      - name: Shutdown S3
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

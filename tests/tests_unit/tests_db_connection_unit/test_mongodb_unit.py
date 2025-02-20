@@ -113,7 +113,7 @@ def test_mongodb(spark_mock):
     conn = MongoDB(
         host="host",
         user="user",
-        password="password",
+        password="some@password",
         database="database",
         spark=spark_mock,
     )
@@ -122,10 +122,10 @@ def test_mongodb(spark_mock):
     assert conn.port == 27017
     assert conn.user == "user"
     assert conn.password != "password"
-    assert conn.password.get_secret_value() == "password"
+    assert conn.password.get_secret_value() == "some@password"
     assert conn.database == "database"
 
-    assert conn.connection_url == "mongodb://user:password@host:27017/database"
+    assert conn.connection_url == "mongodb://user:some%40password@host:27017/"
     assert conn.instance_url == "mongodb://host:27017/database"
     assert str(conn) == "MongoDB[host:27017/database]"
 
@@ -167,7 +167,7 @@ def test_mongodb_with_port(spark_mock):
     assert conn.password.get_secret_value() == "password"
     assert conn.database == "database"
 
-    assert conn.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.connection_url == "mongodb://user:password@host:12345/"
     assert conn.instance_url == "mongodb://host:12345/database"
 
 
@@ -215,11 +215,11 @@ def test_mongodb_with_extra(spark_mock):
         user="user",
         password="password",
         database="database",
-        extra={"tls": "true", "opt1": "value1"},
+        extra={"tls": "true", "opt1": "value1", "opt2": "value with spaces"},
         spark=spark_mock,
     )
 
-    assert mongo.connection_url == "mongodb://user:password@host:27017/database?opt1=value1&tls=true"
+    assert mongo.connection_url == "mongodb://user:password@host:27017/?opt1=value1&opt2=value%20with%20spaces&tls=true"
 
 
 def test_mongodb_convert_list_to_str(spark_mock):
