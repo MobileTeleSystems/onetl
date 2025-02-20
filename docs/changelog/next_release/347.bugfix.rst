@@ -1,0 +1,1 @@
+Fix MongoDB trying to use current database name as ``authSource``. Use default connector value which is ``admin`` database.

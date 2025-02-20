@@ -48,14 +48,6 @@ class OracleProcessing(BaseProcessing):
         return os.environ["ONETL_ORA_PASSWORD"]
 
     @property
-    def root_user(self) -> str:
-        return os.environ["ONETL_ORA_ROOT_USER"]
-
-    @property
-    def root_password(self) -> str:
-        return os.environ["ONETL_ORA_ROOT_PASSWORD"]
-
-    @property
     def host(self) -> str:
         return os.environ["ONETL_ORA_HOST"]
 
@@ -72,18 +64,13 @@ class OracleProcessing(BaseProcessing):
         dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
         return f"oracle://{self.user}:{quote(self.password)}@{dsn}"
 
-    def get_dsn(self) -> cx_Oracle.Dsn:
+    def get_conn(self) -> cx_Oracle.Connection:
         try:
             cx_Oracle.init_oracle_client(lib_dir=os.getenv("ONETL_ORA_CLIENT_PATH"))
         except Exception:
             logger.debug("cx_Oracle client is already initialized.", exc_info=True)
-        return cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
-
-    def get_conn(self) -> cx_Oracle.Connection:
-        return cx_Oracle.connect(user=self.user, password=self.password, dsn=self.get_dsn())
-
-    def get_root_conn(self) -> cx_Oracle.Connection:
-        return cx_Oracle.connect(user=self.root_user, password=self.root_password, dsn=self.get_dsn())
+        dsn = cx_Oracle.makedsn(self.host, self.port, sid=self.sid, service_name=self.service_name)
+        return cx_Oracle.connect(user=self.user, password=self.password, dsn=dsn)
 
     def create_schema_ddl(
         self,
@@ -91,18 +78,10 @@ class OracleProcessing(BaseProcessing):
     ) -> str:
         return f"CREATE SCHEMA AUTHORIZATION {schema}"
 
-    def grant_dictionary_ddl(self):
-        return f"GRANT SELECT ANY DICTIONARY TO {self.user}"
-
     def create_schema(
         self,
         schema: str,
     ) -> None:
-        with self.get_root_conn().cursor() as cursor:
-            # this is requires to make queries to v$session
-            cursor.execute(self.grant_dictionary_ddl())
-            self.connection.commit()
-
         with self.connection.cursor() as cursor:
             cursor.execute(self.create_schema_ddl(schema))
             self.connection.commit()

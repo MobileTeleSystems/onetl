@@ -343,10 +343,11 @@ class MongoDB(DBConnection):
 
         log_options(log, read_options)
 
+        read_options["connection.uri"] = self.connection_url
+        read_options["database"] = self.database
         read_options["collection"] = collection
         if pipeline:
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
-        read_options["connection.uri"] = self.connection_url
 
         with override_job_description(self.spark, f"{self}.pipeline()"):
             spark_reader = self.spark.read.format("mongodb").options(**read_options)
@@ -414,6 +415,7 @@ class MongoDB(DBConnection):
         log_json(log, hint, "hint")
 
         read_options["connection.uri"] = self.connection_url
+        read_options["database"] = self.database
         read_options["collection"] = source
         read_options["aggregation.pipeline"] = json.dumps(pipeline)
         if hint:
@@ -456,6 +458,7 @@ class MongoDB(DBConnection):
             read_options["hint"] = json.dumps(hint)
 
         read_options["connection.uri"] = self.connection_url
+        read_options["database"] = self.database
         read_options["collection"] = source
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
@@ -488,6 +491,7 @@ class MongoDB(DBConnection):
         write_options = self.WriteOptions.parse(options)
         write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
         write_options_dict["connection.uri"] = self.connection_url
+        write_options_dict["database"] = self.database
         write_options_dict["collection"] = target
         mode = (
             "overwrite"
@@ -512,11 +516,14 @@ class MongoDB(DBConnection):
 
     @property
     def connection_url(self) -> str:
-        prop = self.extra.dict(by_alias=True)
-        parameters = "&".join(f"{k}={v}" for k, v in sorted(prop.items()))
-        parameters = "?" + parameters if parameters else ""
+        params = self.extra.dict(by_alias=True)
+        sorted_params = [(k, v) for k, v in sorted(params.items(), key=lambda x: x[0].lower())]
+        query = parser.urlencode(sorted_params, quote_via=parser.quote)
+
         password = parser.quote(self.password.get_secret_value())
-        return f"mongodb://{self.user}:{password}@{self.host}:{self.port}/{self.database}{parameters}"
+        parsed_url = parser.urlparse(f"mongodb://{self.user}:{password}@{self.host}:{self.port}/")
+        # do not include /database as it be used as authSource
+        return parser.urlunparse(parsed_url._replace(query=query))
 
     @validator("spark")
     def _check_java_class_imported(cls, spark):
