@@ -180,7 +180,7 @@ class Hive(DBConnection):
 
         try:
             with override_job_description(self.spark, f"{self}.check()"):
-                self._execute_sql(self._CHECK_QUERY).limit(1).collect()
+                self._execute_sql(self._CHECK_QUERY).take(1)
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -379,7 +379,7 @@ class Hive(DBConnection):
             hint=hint,
         )
 
-        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
         df = self._execute_sql(query)

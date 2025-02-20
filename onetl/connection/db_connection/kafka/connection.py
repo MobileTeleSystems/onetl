@@ -16,7 +16,12 @@ except (ImportError, AttributeError):
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_client_info, get_spark_version, stringify
+from onetl._util.spark import (
+    get_client_info,
+    get_spark_version,
+    override_job_description,
+    stringify,
+)
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
@@ -223,7 +228,14 @@ class Kafka(DBConnection):
         self._log_parameters()
 
         try:
-            self._get_topics()
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._get_topics()
+
+                read_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
+                # We need to read just any topic allowed to check if Kafka is alive
+                read_options["subscribePattern"] = ".*"
+                self.spark.read.format("kafka").options(**read_options).load().take(1)
+
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)

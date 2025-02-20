@@ -13,7 +13,7 @@ except (ImportError, AttributeError):
     from pydantic import Field, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.hadoop import get_hadoop_config
-from onetl._util.spark import try_import_pyspark
+from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import (
     BaseFileDFConnection,
     BaseReadableFileFormat,
@@ -46,12 +46,15 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         path = self._get_spark_default_path()
         log.info("|%s| Checking connection availability...", self.__class__.__name__)
         self._log_parameters()
+
         try:
-            fs = self._get_spark_fs()
-            fs.exists(path)
+            with override_job_description(self.spark, f"{self}.check()"):
+                fs = self._get_spark_fs()
+                fs.exists(path)
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             raise RuntimeError("Connection is unavailable") from e
+
         return self
 
     def check_if_format_supported(

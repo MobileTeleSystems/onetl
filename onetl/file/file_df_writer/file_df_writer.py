@@ -123,15 +123,14 @@ class FileDFWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        job_description = f"{self.__class__.__name__}.run({self.target_path}) -> {self.connection}"
-        with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters(df)
-                self.connection.check()
-                self._connection_checked = True
+        if not self._connection_checked:
+            self._log_parameters(df)
+            self.connection.check()
+            self._connection_checked = True
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
+                job_description = f"{self.__class__.__name__}.run({self.target_path}) -> {self.connection}"
                 with override_job_description(self.connection.spark, job_description):
                     self.connection.write_df_as_files(
                         df=df,

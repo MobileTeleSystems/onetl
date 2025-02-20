@@ -38,7 +38,8 @@ def test_spark_metrics_recorder_postgres_read(spark, processing, load_table_data
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
-        assert metrics.input.read_rows == rows
+        # +1 is just postgres.check()
+        assert metrics.input.read_rows == rows + 1
         # JDBC does not provide information about data size
         assert not metrics.input.read_bytes
 
@@ -64,7 +65,8 @@ def test_spark_metrics_recorder_postgres_read_empty_source(spark, processing, pr
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
-        assert not metrics.input.read_rows
+        # 1 is just postgres.check()
+        assert metrics.input.read_rows == 1
 
 
 def test_spark_metrics_recorder_postgres_read_no_data_after_filter(spark, processing, load_table_data):
@@ -89,7 +91,8 @@ def test_spark_metrics_recorder_postgres_read_no_data_after_filter(spark, proces
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
-        assert not metrics.input.read_rows
+        # 1 is just postgres.check()
+        assert metrics.input.read_rows == 1
 
 
 def test_spark_metrics_recorder_postgres_sql(spark, processing, load_table_data):

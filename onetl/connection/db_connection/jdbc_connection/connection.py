@@ -90,6 +90,25 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         return spark
 
     @slot
+    def check(self):
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
+
+        try:
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
+                self._query_on_executor(self._CHECK_QUERY, self.SQLOptions(fetchsize=1)).collect()
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
+
+    @slot
     def sql(
         self,
         query: str,
