@@ -16,6 +16,7 @@ def test_teradata_connection_check(spark, mocker, caplog):
     password = secrets.token_hex()
 
     mocker.patch.object(Teradata, "_query_optional_on_driver")
+    mocker.patch.object(Teradata, "_query_on_executor")
 
     teradata = Teradata(
         host=host,

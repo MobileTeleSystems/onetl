@@ -77,7 +77,6 @@ class JDBCMixin:
     ExecuteOptions = JDBCExecuteOptions
 
     DRIVER: ClassVar[str]
-    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
     @property
     @abstractmethod
@@ -140,23 +139,6 @@ class JDBCMixin:
 
     def __exit__(self, _exc_type, _exc_value, _traceback):  # noqa: U101
         self.close()
-
-    @slot
-    def check(self):
-        log.info("|%s| Checking connection availability...", self.__class__.__name__)
-        self._log_parameters()  # type: ignore
-
-        log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
-        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
-
-        try:
-            self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
-            log.info("|%s| Connection is available.", self.__class__.__name__)
-        except Exception as e:
-            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
-            raise RuntimeError("Connection is unavailable") from e
-
-        return self
 
     @slot
     def fetch(

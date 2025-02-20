@@ -479,14 +479,17 @@ class DBReader(FrozenModel):
                 # implement your handling logic here
                 ...
         """
+
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() starts")
         self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+            self._connection_checked = True
 
         job_description = f"{self.connection} -> {self.__class__.__name__}.has_data({self.source})"
         with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters()
-                self.connection.check()
-
             window, limit = self._calculate_window_and_limit()
             if limit == 0:
                 return False
@@ -502,6 +505,7 @@ class DBReader(FrozenModel):
                 **self._get_read_kwargs(),
             )
 
+            entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() ends", char="-")
             return bool(df.take(1))
 
     @slot
@@ -571,16 +575,15 @@ class DBReader(FrozenModel):
         """
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
-
         self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+            self._connection_checked = True
 
         job_description = f"{self.connection} -> {self.__class__.__name__}.run({self.source})"
         with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters()
-                self.connection.check()
-                self._connection_checked = True
-
             window, limit = self._calculate_window_and_limit()
 
             # update the HWM with the stop value

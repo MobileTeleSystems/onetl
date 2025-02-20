@@ -103,7 +103,7 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
-    # client info is expectedc
+    # client info is expected
     df = oracle.sql(f"SELECT program FROM v$session WHERE program LIKE '%onETL%'{suffix}")
     client_info = df.collect()[0][0]
     assert client_info.startswith("local-")
@@ -142,7 +142,7 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
-    # client info is expectedc
+    # client info is expected
     df = oracle.fetch(f"SELECT program FROM v$session WHERE program LIKE '%onETL%'{suffix}")
     client_info = df.collect()[0][0]
     assert client_info.startswith("local-")

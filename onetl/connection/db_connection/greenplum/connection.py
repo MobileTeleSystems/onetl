@@ -25,6 +25,7 @@ from onetl._util.spark import (
     get_client_info,
     get_executor_total_cores,
     get_spark_version,
+    override_job_description,
 )
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -185,6 +186,9 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
 
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
+    # any small table with always present in db, and which any user can access
+    # https://www.greenplumdba.com/pg-catalog-tables-and-views
+    _CHECK_DUMMY_TABLE: ClassVar[str] = "pg_catalog.gp_id"
 
     @slot
     @classmethod
@@ -302,6 +306,30 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
         result = super().jdbc_params
         result.update(self.jdbc_custom_params)
         return result
+
+    @slot
+    def check(self):
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
+
+        try:
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
+
+                read_options = self._get_connector_params(self._CHECK_DUMMY_TABLE)
+                read_options["num_partitions"] = 1  # do not require gp_segment_id column in table
+                df = self.spark.read.format("greenplum").options(**read_options).load()
+                df.take(1)
+
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     @slot
     def read_source_as_df(

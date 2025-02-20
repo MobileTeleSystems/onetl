@@ -209,6 +209,8 @@ class FileDFReader(FrozenModel):
 
         if not self._connection_checked:
             self._log_parameters(files)
+            self.connection.check()
+            self._connection_checked = True
 
         if files:
             job_description = f"{self.connection} -> {self.__class__.__name__}.run([..files..])"
@@ -221,11 +223,6 @@ class FileDFReader(FrozenModel):
                 paths = FileSet(self._validate_files(files))
             elif self.source_path:
                 paths = FileSet([self.source_path])
-
-            if not self._connection_checked:
-                self.connection.check()
-                log_with_indent(log, "")
-                self._connection_checked = True
 
             df = self._read_files(paths)
 

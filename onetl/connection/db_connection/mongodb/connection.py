@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
 from etl_entities.instance import Host
@@ -128,6 +128,10 @@ class MongoDB(DBConnection):
     WriteOptions = MongoDBWriteOptions
     PipelineOptions = MongoDBPipelineOptions
     Extra = MongoDBExtra
+
+    # any small collection with always present in db, and which any user can access
+    # https://www.mongodb.com/docs/manual/reference/system-collections/
+    _CHECK_DUMMY_COLLECTION: ClassVar[str] = "admin.system.version"
 
     @slot
     @classmethod
@@ -373,6 +377,15 @@ class MongoDB(DBConnection):
             jvm = self.spark._jvm  # type: ignore
             client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)
             list(client.listDatabaseNames().iterator())
+
+            with override_job_description(self.spark, f"{self}.check()"):
+                read_options = {
+                    "connection.uri": self.connection_url,
+                    "database": self.database,
+                    "collection": self._CHECK_DUMMY_COLLECTION,
+                }
+                self.spark.read.format("mongodb").options(**read_options).load().take(1)
+
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
