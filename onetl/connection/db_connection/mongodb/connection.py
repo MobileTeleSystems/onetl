@@ -5,20 +5,24 @@ from __future__ import annotations
 import json
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 from urllib import parse as parser
 
 from etl_entities.instance import Host
 
 try:
-    from pydantic.v1 import SecretStr, validator
+    from pydantic.v1 import PrivateAttr, SecretStr, validator
 except (ImportError, AttributeError):
-    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
+    from pydantic import PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, override_job_description
+from onetl._util.spark import (
+    get_client_info,
+    get_spark_version,
+    override_job_description,
+)
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.mongodb.dialect import MongoDBDialect
@@ -128,6 +132,8 @@ class MongoDB(DBConnection):
     WriteOptions = MongoDBWriteOptions
     PipelineOptions = MongoDBPipelineOptions
     Extra = MongoDBExtra
+
+    _server_version: Optional[Version] = PrivateAttr(default=None)
 
     # any small collection with always present in db, and which any user can access
     # https://www.mongodb.com/docs/manual/reference/system-collections/
@@ -347,9 +353,8 @@ class MongoDB(DBConnection):
 
         log_options(log, read_options)
 
-        read_options["connection.uri"] = self.connection_url
-        read_options["database"] = self.database
-        read_options["collection"] = collection
+        # exclude from the log
+        read_options.update(self._get_connection_params(collection))
         if pipeline:
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
 
@@ -379,11 +384,7 @@ class MongoDB(DBConnection):
             list(client.listDatabaseNames().iterator())
 
             with override_job_description(self.spark, f"{self}.check()"):
-                read_options = {
-                    "connection.uri": self.connection_url,
-                    "database": self.database,
-                    "collection": self._CHECK_DUMMY_COLLECTION,
-                }
+                read_options = self._get_connection_params(self._CHECK_DUMMY_COLLECTION)
                 self.spark.read.format("mongodb").options(**read_options).load().take(1)
 
             log.info("|%s| Connection is available.", self.__class__.__name__)
@@ -405,6 +406,7 @@ class MongoDB(DBConnection):
         log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, window.expression)
 
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options.update(self._get_connection_params(source))
 
         # The '_id' field must be specified in the request.
         pipeline: list[dict[str, Any]] = [
@@ -427,9 +429,6 @@ class MongoDB(DBConnection):
         log_json(log, pipeline, "pipeline")
         log_json(log, hint, "hint")
 
-        read_options["connection.uri"] = self.connection_url
-        read_options["database"] = self.database
-        read_options["collection"] = source
         read_options["aggregation.pipeline"] = json.dumps(pipeline)
         if hint:
             read_options["hint"] = json.dumps(hint)
@@ -461,18 +460,15 @@ class MongoDB(DBConnection):
         options: MongoDBReadOptions | dict | None = None,
     ) -> DataFrame:
         read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options.update(self._get_connection_params(source))
+
         final_where = self.dialect.apply_window(where, window)
         pipeline = self.dialect.prepare_pipeline({"$match": final_where}) if final_where else None
-
         if pipeline:
             read_options["aggregation.pipeline"] = json.dumps(pipeline)
 
         if hint:
             read_options["hint"] = json.dumps(hint)
-
-        read_options["connection.uri"] = self.connection_url
-        read_options["database"] = self.database
-        read_options["collection"] = source
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
@@ -503,9 +499,7 @@ class MongoDB(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
         write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
-        write_options_dict["connection.uri"] = self.connection_url
-        write_options_dict["database"] = self.database
-        write_options_dict["collection"] = target
+        write_options_dict.update(self._get_connection_params(target))
         mode = (
             "overwrite"
             if write_options.if_exists == MongoDBCollectionExistBehavior.REPLACE_ENTIRE_COLLECTION
@@ -538,6 +532,21 @@ class MongoDB(DBConnection):
         # do not include /database as it be used as authSource
         return parser.urlunparse(parsed_url._replace(query=query))
 
+    def _get_connection_params(self, collection: str):
+        # https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/#std-label-spark-batch-read-conf
+        result = {
+            "connection.uri": self.connection_url,
+            "database": self.database,
+            "collection": collection,
+        }
+
+        if self._get_server_version() >= Version("4.4.0"):
+            # According to:
+            # https://mongodb.github.io/mongo-java-driver/5.0/apidocs/mongodb-driver-core/com/mongodb/client/model/BulkWriteOptions.html#comment(java.lang.String)
+            result["comment"] = get_client_info(self.spark)
+
+        return result
+
     @validator("spark")
     def _check_java_class_imported(cls, spark):
         java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
@@ -555,6 +564,17 @@ class MongoDB(DBConnection):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
+
+    def _get_server_version(self) -> Version:
+        if self._server_version:
+            return self._server_version
+
+        jvm = self.spark._jvm  # type: ignore[attr-defined]
+        client = jvm.com.mongodb.client.MongoClients.create(self.connection_url)  # type: ignore
+        db = client.getDatabase(self.database)
+        command = jvm.org.bson.BsonDocument("buildinfo", jvm.org.bson.BsonString(""))  # type: ignore
+        self._server_version = Version(db.runCommand(command).get("version"))
+        return self._server_version
 
     def _collection_exists(self, source: str) -> bool:
         jvm = self.spark._jvm  # type: ignore[attr-defined]
