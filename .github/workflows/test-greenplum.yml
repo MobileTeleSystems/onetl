@@ -95,16 +95,6 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-      - name: Wait for Greenplum to be ready
-        run: |
-          source .env.local
-
-          # Greenplum init script is running very late
-          sleep 30
-
-          export PGPASSWORD=$ONETL_GP_PASSWORD
-          pg_isready -h localhost -p 5433 -U $ONETL_GP_USER -d $ONETL_GP_DATABASE -t 60
-
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
