@@ -175,7 +175,8 @@ def get_executor_total_cores(spark_session: SparkSession, include_driver: bool =
     expected_cores: float
     if master.startswith("local"):
         # no executors, only driver
-        expected_cores = spark_session.sparkContext.defaultParallelism  # type: ignore
+        scheduler = spark_session._jsc.sc().schedulerBackend()  # type: ignore
+        expected_cores = scheduler.totalCores()  # type: ignore
         config["spark.master"] = f"local[{expected_cores}]"
     else:
         cores = int(conf.get("spark.executor.cores", "1"))

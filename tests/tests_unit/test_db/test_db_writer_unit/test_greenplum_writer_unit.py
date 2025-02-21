@@ -26,13 +26,29 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
 @pytest.mark.parametrize(
     ["df_partitions", "spark_config"],
     [
-        (30, {"spark.master": "local[200]"}),
-        (200, {"spark.master": "local[30]"}),
-        (30, {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1}),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 30, "spark.executor.cores": 1}),
-        (30, {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10}),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 3, "spark.executor.cores": 10}),
-        (
+        pytest.param(30, {"spark.master": "local[200]"}, id="small_df, local[200]"),
+        pytest.param(200, {"spark.master": "local[30]"}, id="large_df, local[30]"),
+        pytest.param(
+            30,
+            {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1},
+            id="yarn[small_df, 200, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 30, "spark.executor.cores": 1},
+            id="yarn[large_df, 30, static]",
+        ),
+        pytest.param(
+            30,
+            {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10},
+            id="yarn[small_df, 20*10, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 3, "spark.executor.cores": 10},
+            id="yarn[large_df, 3*10, static]",
+        ),
+        pytest.param(
             30,
             {
                 "spark.master": "yarn",
@@ -40,8 +56,9 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
                 "spark.dynamicAllocation.maxExecutors": 20,
                 "spark.executor.cores": 10,
             },
+            id="yarn[small_df, 20*10, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -49,8 +66,9 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
                 "spark.dynamicAllocation.maxExecutors": 3,
                 "spark.executor.cores": 10,
             },
+            id="yarn[large_df, 3*10, dynamic]",
         ),
-        (
+        pytest.param(
             30,
             {
                 "spark.master": "yarn",
@@ -59,8 +77,9 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
                 "spark.executor.cores": 5,
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
+            id="yarn[small_df, 20*5*2, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -69,6 +88,7 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
                 "spark.executor.cores": 5,
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
+            id="yarn[large_df, 3*5*2, dynamic]",
         ),
     ],
 )
@@ -96,7 +116,7 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
 
     if "local" in conf["spark.master"]:
         parallelism = conf["spark.master"].replace("local[", "").replace("]", "")
-        spark_mock.sparkContext.defaultParallelism = int(parallelism)
+        spark_mock._jsc.sc().schedulerBackend().totalCores.return_value = int(parallelism)
 
     df = spark_mock.read.format().options().load()
     df.isStreaming = False
@@ -111,17 +131,47 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
 @pytest.mark.parametrize(
     ["df_partitions", "spark_config", "parallel_connections"],
     [
-        (31, {"spark.master": "local[200]"}, 31),
-        (200, {"spark.master": "local[31]"}, 31),
-        (99, {"spark.master": "local[200]"}, 99),
-        (200, {"spark.master": "local[99]"}, 99),
-        (31, {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1}, 31),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 31, "spark.executor.cores": 1}, 31),
-        (99, {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1}, 99),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 99, "spark.executor.cores": 1}, 99),
-        (31, {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10}, 31),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 4, "spark.executor.cores": 10}, 40),
-        (
+        pytest.param(31, {"spark.master": "local[200]"}, 31, id="small_df, local[200]"),
+        pytest.param(200, {"spark.master": "local[31]"}, 31, id="large_df, local[31]"),
+        pytest.param(99, {"spark.master": "local[200]"}, 99, id="medium_df, local[200]"),
+        pytest.param(200, {"spark.master": "local[99]"}, 99, id="large_df, local[99]"),
+        pytest.param(
+            31,
+            {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1},
+            31,
+            id="small_df, yarn[200, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 31, "spark.executor.cores": 1},
+            31,
+            id="large_df, yarn[31, static]",
+        ),
+        pytest.param(
+            99,
+            {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1},
+            99,
+            id="medium_df, yarn[200, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 99, "spark.executor.cores": 1},
+            99,
+            id="large_df, yarn[99, static]",
+        ),
+        pytest.param(
+            31,
+            {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10},
+            31,
+            id="small_df, yarn[20*10, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 4, "spark.executor.cores": 10},
+            40,
+            id="large_df, yarn[4*10, static]",
+        ),
+        pytest.param(
             31,
             {
                 "spark.master": "yarn",
@@ -130,8 +180,9 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
                 "spark.executor.cores": 10,
             },
             31,
+            id="small_df, yarn[20*10, dynamic]",
         ),
-        (
+        pytest.param(
             99,
             {
                 "spark.master": "yarn",
@@ -140,8 +191,9 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
                 "spark.executor.cores": 10,
             },
             99,
+            id="medium_df, yarn[20*10, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -150,8 +202,9 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
                 "spark.executor.cores": 10,
             },
             40,
+            id="large_df, yarn[4*10, dynamic]",
         ),
-        (
+        pytest.param(
             31,
             {
                 "spark.master": "yarn",
@@ -161,8 +214,9 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
             31,
+            id="small_df, yarn[20*5*2, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -172,6 +226,7 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
             40,
+            id="large_df, yarn[4*5*2, dynamic]",
         ),
     ],
 )
@@ -200,7 +255,8 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
 
     if "local" in conf["spark.master"]:
         parallelism = conf["spark.master"].replace("local[", "").replace("]", "")
-        spark_mock.sparkContext.defaultParallelism = int(parallelism)
+        spark_mock._jsc.sc().schedulerBackend = Mock()
+        spark_mock._jsc.sc().schedulerBackend().totalCores.return_value = int(parallelism)
 
     df = spark_mock.read.format().options().load()
     df.isStreaming = False
@@ -215,13 +271,33 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
 @pytest.mark.parametrize(
     ["df_partitions", "spark_config", "parallel_connections"],
     [
-        (100, {"spark.master": "local[200]"}, 100),
-        (200, {"spark.master": "local[100]"}, 100),
-        (100, {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1}, 100),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 100, "spark.executor.cores": 1}, 100),
-        (100, {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10}, 100),
-        (200, {"spark.master": "yarn", "spark.executor.instances": 10, "spark.executor.cores": 10}, 100),
-        (
+        pytest.param(100, {"spark.master": "local[200]"}, 100, id="large_df, local[200]"),
+        pytest.param(200, {"spark.master": "local[100]"}, 100, id="extra_large_df, local[100]"),
+        pytest.param(
+            100,
+            {"spark.master": "yarn", "spark.executor.instances": 200, "spark.executor.cores": 1},
+            100,
+            id="large_df, yarn[200, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 100, "spark.executor.cores": 1},
+            100,
+            id="extra_large_df, yarn[100, static]",
+        ),
+        pytest.param(
+            100,
+            {"spark.master": "yarn", "spark.executor.instances": 20, "spark.executor.cores": 10},
+            100,
+            id="large_df, yarn[20*10, static]",
+        ),
+        pytest.param(
+            200,
+            {"spark.master": "yarn", "spark.executor.instances": 10, "spark.executor.cores": 10},
+            100,
+            id="extra_large_df, yarn[10*10, static]",
+        ),
+        pytest.param(
             100,
             {
                 "spark.master": "yarn",
@@ -230,8 +306,9 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.executor.cores": 10,
             },
             100,
+            id="large_df, yarn[20*10, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -240,8 +317,9 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.executor.cores": 10,
             },
             100,
+            id="extra_large_df, yarn[10*10, dynamic]",
         ),
-        (
+        pytest.param(
             100,
             {
                 "spark.master": "yarn",
@@ -251,8 +329,9 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
             100,
+            id="large_df, yarn[20*5*2, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -262,8 +341,9 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.dynamicAllocation.executorAllocationRatio": 2,
             },
             100,
+            id="extra_large_df, yarn[10*5*2, dynamic]",
         ),
-        (
+        pytest.param(
             100,
             {
                 "spark.master": "yarn",
@@ -271,8 +351,9 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.dynamicAllocation.maxExecutors": "infinity",
             },
             100,
+            id="large_df, yarn[infinity, dynamic]",
         ),
-        (
+        pytest.param(
             200,
             {
                 "spark.master": "yarn",
@@ -280,6 +361,7 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
                 "spark.dynamicAllocation.maxExecutors": "infinity",
             },
             200,
+            id="extra_large_df, yarn[infinity, dynamic]",
         ),
     ],
 )
@@ -307,7 +389,8 @@ def test_greenplum_writer_number_of_connections_higher_than_exception_threshold(
 
     if "local" in conf["spark.master"]:
         parallelism = conf["spark.master"].replace("local[", "").replace("]", "")
-        spark_mock.sparkContext.defaultParallelism = int(parallelism)
+        spark_mock._jsc.sc().schedulerBackend = Mock()
+        spark_mock._jsc.sc().schedulerBackend().totalCores.return_value = int(parallelism)
 
     df = spark_mock.read.format().options().load()
     df.isStreaming = False
