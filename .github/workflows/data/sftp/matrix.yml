@@ -6,7 +6,7 @@ min: &min
   os: ubuntu-22.04
 
 max: &max
-  openssh-version: 9.7_p1-r4-ls179
+  openssh-version: 9.9_p2-r0-ls193
   pydantic-version: 2
   python-version: '3.13'
   os: ubuntu-latest
