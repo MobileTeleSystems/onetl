@@ -1,5 +1,5 @@
-Set up client info for Clickhouse, MSSQL, MySQL and Oracle. Update client info for Greenplum, Postgres, Kafka and SparkS3.
+Set up client info for Clickhouse, MongoDB, MSSQL, MySQL and Oracle. Update client info for Greenplum, Postgres, Kafka and SparkS3.
 
 Now all connectors have the same client info format: ``${spark.applicationId} ${spark.appName} onETL/${onetl.version} Spark/${spark.version}``
 
-The only DB sources not providing client info are Teradata and MongoDB, and FileConnections.
+The only connections not sending client info are Teradata and FileConnections.
