@@ -1,6 +1,0 @@
-Since now all JDBC connections opened by ``connection.fetch(...)``, ``connection.execute(...)`` or ``connection.check()``
-are immediately closed after the statements is executed.
-
-Previously Spark session with ``master=local[1]`` opened 3 connections to target DB - one for ``.check()``,
-another for Spark driver interaction with DB to create tables, and last one for Spark executor. Now only 2 connections are opened.
-This is important for RDBMS like Postgres or Greenplum where number of connections is strictly limited and limit is usually quite low.

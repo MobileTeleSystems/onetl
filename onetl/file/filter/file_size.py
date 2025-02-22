@@ -25,7 +25,8 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
 
     .. note::
 
-        SI unit prefixes means that ``1KB`` == ``1 kilobyte`` == ``1000 bytes``.
+        `SI unit prefixes <https://en.wikipedia.org/wiki/Byte#Multiple-byte_units>`_
+        means that ``1KB`` == ``1 kilobyte`` == ``1000 bytes``.
         If you need ``1024 bytes``, use ``1 KiB`` == ``1 kibibyte``.
 
     Parameters

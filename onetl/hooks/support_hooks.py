@@ -31,7 +31,7 @@ def skip_hooks(cls: type):
     Context manager (and decorator) which temporary disables hooks for all the methods of a specific class.
 
     Examples
-    ---------
+    --------
 
     .. tabs::
 
@@ -108,7 +108,7 @@ def suspend_hooks(cls: type) -> None:
     Disables all hooks for all the methods of a specific class.
 
     Examples
-    ---------
+    --------
 
     .. code:: python
 
@@ -143,7 +143,7 @@ def resume_hooks(cls: type) -> None:
     Enables all hooks for all the methods of a specific class.
 
     Examples
-    ---------
+    --------
 
     .. code:: python
 
@@ -186,7 +186,7 @@ def support_hooks(cls: Klass) -> Klass:
     .. versionadded:: 0.7.0
 
     Examples
-    ---------
+    --------
 
     .. code:: python
 

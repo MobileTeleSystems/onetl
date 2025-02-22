@@ -1,2 +1,0 @@
-Now ``DB.check()`` will test connection availability not only on Spark driver, but also from some Spark executor.
-This allows to fail immediately if Spark driver host has network access to target DB, but Spark executors haven't.

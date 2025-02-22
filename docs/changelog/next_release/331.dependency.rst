@@ -1,1 +1,0 @@
-Minimal ``etl-entities`` version is now `2.5.0 <https://github.com/MobileTeleSystems/etl-entities/releases/tag/2.5.0>`_.

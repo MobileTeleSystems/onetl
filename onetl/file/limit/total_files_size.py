@@ -20,15 +20,19 @@ log = logging.getLogger(__name__)
 class TotalFilesSize(BaseFileLimit, FrozenModel):
     """Limits the total size of files handled by :ref:`file-downloader` or :ref:`file-mover`.
 
-    Sum of downloaded/moved files should be less or equal to specified size. After that all files with non-zero size will be ignored.
+    Calculates the sum of downloaded/moved files size (``.stat().st_size``),
+    and checks that this sum is less or equal to specified limit.
 
-    This doesn't apply to directories or files with no size information,
+    After limit is reached, no more files will be downloaded/moved.
+
+    Doesn't affect directories, paths without ``.stat()`` method or files with zero size.
 
     .. versionadded:: 0.13.0
 
-    ..note::
+    .. note::
 
-        SI unit prefixes means that ``1KB`` == ``1 kilobyte`` == ``1000 bytes``.
+        `SI unit prefixes <https://en.wikipedia.org/wiki/Byte#Multiple-byte_units>`_
+        means that ``1KB`` == ``1 kilobyte`` == ``1000 bytes``.
         If you need ``1024 bytes``, use ``1 KiB`` == ``1 kibibyte``.
 
     Parameters

@@ -473,12 +473,12 @@ class Hive(DBConnection):
         log_lines(log, query, level=logging.DEBUG)
 
         df = self._execute_sql(query).where(col("tableName") == table)
-        result = df.count() > 0
-        if result:
+        if df.take(1):
             log.info("|%s| Table %r exists.", self.__class__.__name__, name)
-        else:
-            log.info("|%s| Table %r does not exist.", self.__class__.__name__, name)
-        return result
+            return True
+
+        log.info("|%s| Table %r does not exist.", self.__class__.__name__, name)
+        return False
 
     def _insert_into(
         self,

@@ -76,13 +76,14 @@ class FileDFReader(FrozenModel):
             from onetl.file import FileDFReader
             from onetl.file.format import CSV
 
+            csv = CSV(delimiter=",")
             local_fs = SparkLocalFS(spark=spark)
 
             reader = FileDFReader(
                 connection=local_fs,
-                format=CSV(delimiter=","),
+                format=csv,
                 source_path="/path/to/directory",
-        )
+            )
 
         .. code-tab:: py All supported options
 

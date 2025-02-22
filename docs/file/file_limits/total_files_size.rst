@@ -3,7 +3,7 @@
 TotalFilesSize
 ==============
 
-.. currentmodule:: onetl.file.limit.total_tiles_size
+.. currentmodule:: onetl.file.limit.total_files_size
 
 .. autoclass:: TotalFilesSize
     :members: reset, stops_at, is_reached

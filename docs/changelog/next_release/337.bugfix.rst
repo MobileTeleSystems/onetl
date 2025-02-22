@@ -1,4 +1,0 @@
-Previously ``MSSQL.fetch(...)`` and ``MySQL.fetch(...)`` opened a read-write connection, despite documentation said that is should be read-only.
-Now this is fixed:
-* ``MSSQL.fetch(...)`` establishes connection with ``ApplicationIntent=ReadOnly``.
-* ``MySQL.fetch(...)`` calls ``SET SESSION TRANSACTION READ ONLY`` statement.

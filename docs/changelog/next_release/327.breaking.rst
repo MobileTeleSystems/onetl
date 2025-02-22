@@ -1,2 +1,0 @@
-Change the logic of ``FileConnection.walk`` and ``FileConnection.list_dir`` to exclude file what returned ``True`` from ``limit.stops_at(path)``,
-instead of stopping just *after* this file (possibly exceeding the limit).

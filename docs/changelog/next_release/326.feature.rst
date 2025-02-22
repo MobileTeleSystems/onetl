@@ -1,1 +1,0 @@
-Introduce ``TotalFilesSize(...)`` limit class. Now users can set ``FileDownloader`` / ``FileMover`` to stop downloading/moving files after reaching a certain amount of data.

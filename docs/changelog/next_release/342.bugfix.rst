@@ -1,2 +1,0 @@
-Fix a false warning about a lof of parallel connections to Grenplum is opened while using ``DBReader`` or ``DBWriter`` with ``SparkSession.Builder.master("local[N]")``,
-like ``local[1]``. This warning should be shown only if ``N > 30``.
