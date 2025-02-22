@@ -7,6 +7,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import MySQL
 
 pytestmark = pytest.mark.mysql
@@ -74,6 +75,7 @@ def test_mysql_connection_sql(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
+    # dataframe content is expected
     df = mysql.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -86,6 +88,18 @@ def test_mysql_connection_sql(spark, processing, load_table_data, suffix):
     df = mysql.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # client info is expected
+    df = mysql.sql(
+        f"""
+        SELECT attr_value
+        FROM performance_schema.session_account_connect_attrs
+        WHERE attr_name = 'program_name' AND attr_value like '%onETL%'{suffix}
+        """,
+    )
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
     #  not supported by JDBC, use SELECT * FROM v$tables
     with pytest.raises(Exception):
@@ -110,6 +124,7 @@ def test_mysql_connection_fetch(spark, processing, load_table_data, suffix):
     schema = load_table_data.schema
     table = load_table_data.full_name
 
+    # dataframe content is expected
     df = mysql.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -126,9 +141,25 @@ def test_mysql_connection_fetch(spark, processing, load_table_data, suffix):
     result_df = pandas.DataFrame([[load_table_data.table]], columns=[f"Tables_in_{schema}"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
+    # client info is expected
+    df = mysql.fetch(
+        f"""
+        SELECT attr_value
+        FROM performance_schema.session_account_connect_attrs
+        WHERE attr_name = 'program_name' AND attr_value like '%onETL%'{suffix}
+        """,
+    )
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
+
     # wrong syntax
     with pytest.raises(Exception):
         mysql.fetch(f"SELEC 1{suffix}")
+
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        mysql.fetch(f"DROP TABLE {table}{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
@@ -621,8 +652,8 @@ def test_mysql_connection_execute_function(request, spark, processing, load_tabl
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -722,8 +753,8 @@ def test_mysql_connection_execute_function_arguments(
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -802,8 +833,8 @@ def test_mysql_connection_execute_function_ddl(spark, processing, get_schema_tab
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )
@@ -841,8 +872,8 @@ def test_mysql_connection_execute_function_dml(request, spark, processing, get_s
     mysql_root = MySQL(
         host=processing.host,
         port=processing.port,
-        user="root",
-        password=processing.password,
+        user=processing.root_user,
+        password=processing.root_password,
         database=processing.database,
         spark=spark,
     )

@@ -65,14 +65,18 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     class Config:
         extra = "allow"
 
-    if_exists: FileDFExistBehavior = FileDFExistBehavior.ERROR
+    if_exists: FileDFExistBehavior = FileDFExistBehavior.APPEND
     """Behavior for existing target directory.
 
     If target directory does not exist, it will be created.
     But if it does exist, then behavior is different for each value.
 
+    .. versionchanged:: 0.13.0
+
+        Default value was changed from ``error`` to ``append``
+
     Possible values:
-        * ``error`` (default)
+        * ``error``
             If folder already exists, raise an exception.
 
             Same as Spark's ``df.write.mode("error").save()``.
@@ -82,7 +86,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
             Same as Spark's ``df.write.mode("ignore").save()``.
 
-        * ``append``
+        * ``append`` (default)
             Appends data into existing directory.
 
             .. dropdown:: Behavior in details
@@ -127,6 +131,11 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
             Same as Spark's ``df.write.mode("overwrite").save()`` +
             ``spark.sql.sources.partitionOverwriteMode=dynamic``.
+
+            .. DANGER::
+
+                This mode does make sense **ONLY** if the directory is partitioned.
+                **IF NOT, YOU'LL LOOSE YOUR DATA!**
 
             .. dropdown:: Behavior in details
 

@@ -68,86 +68,35 @@ class DBWriter(FrozenModel):
 
     Examples
     --------
-    Simple Writer creation:
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.connection import Postgres
-        from onetl.db import DBWriter
-        from pyspark.sql import SparkSession
+        .. code-tab:: py Minimal example
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+            from onetl.connection import Postgres
+            from onetl.db import DBWriter
 
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+            postgres = Postgres(...)
 
-        writer = DBWriter(
-            connection=postgres,
-            target="fiddle.dummy",
-        )
+            writer = DBWriter(
+                connection=postgres,
+                target="fiddle.dummy",
+            )
 
-    Writer creation with options:
+        .. code-tab:: py With custom write options
 
-    .. code:: python
+            from onetl.connection import Postgres
+            from onetl.db import DBWriter
 
-        from onetl.connection import Postgres
-        from onetl.db import DBWriter
-        from pyspark.sql import SparkSession
+            postgres = Postgres(...)
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+            options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
 
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
-
-        options = Postgres.WriteOptions(if_exists="replace_entire_table", batchsize=1000)
-
-        writer = DBWriter(
-            connection=postgres,
-            target="fiddle.dummy",
-            options=options,
-        )
-
-    Writer to Hive with options:
-
-    .. code:: python
-
-        from onetl.db import DBWriter
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
-
-        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
-
-        hive = Hive(cluster="rnd-dwh", spark=spark)
-
-        options = {"compression": "snappy", "partitionBy": "id"}
-        # or (it is the same):
-        options = Hive.WriteOptions(compression="snappy", partitionBy="id")
-
-        writer = DBWriter(
-            connection=hive,
-            target="default.test",
-            options=options,
-        )
+            writer = DBWriter(
+                connection=postgres,
+                target="fiddle.dummy",
+                options=options,
+            )
     """
 
     connection: BaseDBConnection
@@ -203,16 +152,15 @@ class DBWriter(FrozenModel):
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
 
-        job_description = f"{self.__class__.__name__}.run({self.target}) -> {self.connection}"
-        with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters()
-                log_dataframe_schema(log, df)
-                self.connection.check()
-                self._connection_checked = True
+        if not self._connection_checked:
+            self._log_parameters()
+            log_dataframe_schema(log, df)
+            self.connection.check()
+            self._connection_checked = True
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
+                job_description = f"{self.__class__.__name__}.run({self.target}) -> {self.connection}"
                 with override_job_description(self.connection.spark, job_description):
                     self.connection.write_df_to_target(
                         df=df,

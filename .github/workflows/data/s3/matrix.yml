@@ -6,13 +6,13 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
-  minio-version: 2024.8.29
-  spark-version: 3.5.3
+  minio-version: 2025.2.18
+  spark-version: 3.5.4
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -20,7 +20,7 @@ latest: &latest
   minio-version: latest
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

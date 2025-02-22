@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.11
+  python: python3.12
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -48,11 +48,11 @@ repos:
         args:
           - --license-filepath
           - .spdx-license-header.txt
-          - --use-current-year
+          - --allow-past-years
           - --no-extra-eol
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args: [-w]
@@ -75,7 +75,7 @@ repos:
       - id: docker-compose-check
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 6.0.0
     hooks:
       - id: isort
 
@@ -90,7 +90,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.0
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
         args: [--py37-plus, --keep-runtime-typing]
@@ -101,7 +101,7 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
       - id: black
         language_version: python3
@@ -114,7 +114,7 @@ repos:
           - black==24.4.2
 
   - repo: https://github.com/pycqa/bandit
-    rev: 1.8.0
+    rev: 1.8.3
     hooks:
       - id: bandit
         args:

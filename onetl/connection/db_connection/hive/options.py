@@ -13,7 +13,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import deprecated
 
-from onetl.file.format.file_format import WriteOnlyFileFormat
+from onetl.base import BaseWritableFileFormat
 from onetl.impl import GenericOptions
 
 
@@ -136,6 +136,11 @@ class HiveWriteOptions(GenericOptions):
             Same as Spark's ``df.write.insertInto(table, overwrite=True)`` +
             ``spark.sql.sources.partitionOverwriteMode=dynamic``.
 
+            .. DANGER::
+
+                This mode does make sense **ONLY** if the table is partitioned.
+                **IF NOT, YOU'LL LOOSE YOUR DATA!**
+
             .. dropdown:: Behavior in details
 
                 * Table does not exist
@@ -199,7 +204,7 @@ class HiveWriteOptions(GenericOptions):
         does not affect behavior.
     """
 
-    format: Union[str, WriteOnlyFileFormat] = "orc"
+    format: Union[str, BaseWritableFileFormat] = "orc"
     """Format of files which should be used for storing table data.
 
     Examples

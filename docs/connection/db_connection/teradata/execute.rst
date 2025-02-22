@@ -67,7 +67,7 @@ This method supports **any** query syntax supported by Teradata, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
 * ✅︎ ``EXECUTE macro(arg1, arg2)``
 * ✅︎ ``EXECUTE FUNCTION ...``
@@ -83,20 +83,18 @@ Examples
 
     teradata = Teradata(...)
 
-    with teradata:
-        # automatically close connection after exiting this context manager
-        teradata.execute("DROP TABLE database.table")
-        teradata.execute(
-            """
-            CREATE MULTISET TABLE database.table AS (
-                id BIGINT,
-                key VARCHAR,
-                value REAL
-            )
-            NO PRIMARY INDEX
-            """,
-            options=Teradata.ExecuteOptions(query_timeout=10),
+    teradata.execute("DROP TABLE database.table")
+    teradata.execute(
+        """
+        CREATE MULTISET TABLE database.table AS (
+            id BIGINT,
+            key VARCHAR,
+            value REAL
         )
+        NO PRIMARY INDEX
+        """,
+        options=Teradata.ExecuteOptions(query_timeout=10),
+    )
 
 Options
 -------

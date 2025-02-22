@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import os
 import textwrap
+from contextlib import suppress
 from logging import getLogger
 from typing import Optional
 
@@ -96,7 +97,7 @@ class S3(FileConnection):
     Examples
     --------
 
-    S3 file connection initialization
+    Create and check S3 connection:
 
     .. code:: python
 
@@ -108,7 +109,7 @@ class S3(FileConnection):
             bucket="my-bucket",
             access_key="ACCESS_KEY",
             secret_key="SECRET_KEY",
-        )
+        ).check()
 
     """
 
@@ -203,16 +204,14 @@ class S3(FileConnection):
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
         path_str = self._delete_absolute_path_slash(path)
 
-        try:
-            stat = self.client.stat_object(self.bucket, path_str)
-            return RemotePathStat(
-                st_size=stat.size or 0,
-                st_mtime=stat.last_modified.timestamp() if stat.last_modified else None,
-                st_uid=stat.owner_name or stat.owner_id,
-            )
+        with suppress(Exception):
+            # for some reason, client.stat_object returns less precise st_mtime than client.list_objects
+            objects = self.client.list_objects(self.bucket, prefix=path_str)
+            for obj in objects:
+                if obj.object_name == path_str:
+                    return self._extract_stat_from_entry(path.parent, obj)
 
-        except Exception:  # noqa: B001,E722
-            return RemotePathStat()
+        return RemotePathStat()
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         path_str = self._delete_absolute_path_slash(remote_file_path)

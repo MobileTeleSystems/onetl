@@ -16,7 +16,12 @@ except (ImportError, AttributeError):
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import (
+    get_client_info,
+    get_spark_version,
+    override_job_description,
+    stringify,
+)
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.kafka.dialect import KafkaDialect
@@ -106,116 +111,97 @@ class Kafka(DBConnection):
             Options that populated from connection
             attributes (like ``bootstrap.servers``, ``sasl.*``, ``ssl.*``) are not allowed to override.
 
-        .. note::
-
-            At current version Kafka connection doesn't support batch strategies.
-
     Examples
     --------
 
-    Connect to Kafka using ``PLAINTEXT`` protocol and without any auth mechanism (anonymous user, default):
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Create Kafka connection with ``PLAINTEXT`` protocol and ``SCRAM-SHA-256`` auth
 
-        from onetl.connection import Kafka
-        from pyspark.sql import SparkSession
+            from onetl.connection import Kafka
+            from pyspark.sql import SparkSession
 
-        # Create Spark session with Kafka connector loaded
-        maven_packages = Kafka.get_packages(spark_version="3.2.4")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+            # Create Spark session with Kafka connector loaded
+            maven_packages = Kafka.get_packages(spark_version="3.5.4")
+            exclude_packages = Kafka.get_exclude_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .config("spark.jars.excludes", ",".join(exclude_packages))
+                .getOrCreate()
+            )
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            spark=spark,
-        )
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                auth=Kafka.ScramAuth(
+                    user="me",
+                    password="abc",
+                    digest="SHA-256",
+                ),
+                spark=spark,
+            ).check()
 
-    Connect to Kafka using ``PLAINTEXT`` protocol and basic (``PLAIN``) auth mechanism:
+        .. code-tab:: py Create Kafka connection with ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth
 
-    .. code:: python
+            # Create Spark session with Kafka connector loaded
+            ...
 
-        # Create Spark session with Kafka connector loaded
-        ...
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                auth=Kafka.KerberosAuth(
+                    principal="me@example.com",
+                    keytab="/path/to/keytab",
+                    deploy_keytab=True,
+                ),
+                spark=spark,
+            ).check()
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            auth=Kafka.BasicAuth(
-                user="me",
-                password="password",
-            ),
-            spark=spark,
-        )
+        .. code-tab:: py Create Kafka connection with ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth
 
-    Connect to Kafka using ``PLAINTEXT`` protocol and Kerberos (``GSSAPI``) auth mechanism:
+            from pathlib import Path
 
-    .. code:: python
+            # Create Spark session with Kafka connector loaded
+            ...
 
-        # Create Spark session with Kafka connector loaded
-        ...
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                protocol=Kafka.SSLProtocol(
+                    # read client certificate and private key from file
+                    keystore_type="PEM",
+                    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+                    keystore_key=Path("path/to/user.key").read_text(),
+                    # read server public certificate from file
+                    truststore_type="PEM",
+                    truststore_certificates=Path("/path/to/server.crt").read_text(),
+                ),
+                auth=Kafka.ScramAuth(
+                    user="me",
+                    password="abc",
+                    digest="SHA-512",
+                ),
+                spark=spark,
+            ).check()
 
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            auth=Kafka.KerberosAuth(
-                principal="me@example.com",
-                keytab="/path/to/keytab",
-                deploy_keytab=True,
-            ),
-            spark=spark,
-        )
+        .. code-tab:: py Create Kafka connection with extra options
 
-    Connect to Kafka using ``SASL_SSL`` protocol and ``SCRAM-SHA-512`` auth mechanism:
+            # Create Spark session with Kafka connector loaded
+            ...
 
-    .. code:: python
-
-        from pathlib import Path
-
-        # Create Spark session with Kafka connector loaded
-        ...
-
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            protocol=Kafka.SSLProtocol(
-                keystore_type="PEM",
-                keystore_certificate_chain=Path("path/to/user.crt").read_text(),
-                keystore_key=Path("path/to/user.key").read_text(),
-                truststore_type="PEM",
-                truststore_certificates=Path("/path/to/server.crt").read_text(),
-            ),
-            auth=Kafka.ScramAuth(
-                user="me",
-                password="abc",
-                digest="SHA-512",
-            ),
-            spark=spark,
-        )
-
-    Connect to Kafka with extra options:
-
-    .. code:: python
-
-        # Create Spark session with Kafka connector loaded
-        ...
-
-        # Create connection
-        kafka = Kafka(
-            addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
-            protocol=...,
-            auth=...,
-            extra={"max.request.size": 1000000},
-            spark=spark,
-        )
+            # Create connection
+            kafka = Kafka(
+                addresses=["mybroker:9092", "anotherbroker:9092"],
+                cluster="my-cluster",
+                protocol=...,
+                auth=...,
+                extra={"max.request.size": 1024 * 1024},  # <--
+                spark=spark,
+            ).check()
 
     """
 
@@ -242,7 +228,14 @@ class Kafka(DBConnection):
         self._log_parameters()
 
         try:
-            self._get_topics()
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._get_topics()
+
+                read_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
+                # We need to read just any topic allowed to check if Kafka is alive
+                read_options["subscribePattern"] = ".*"
+                self.spark.read.format("kafka").options(**read_options).load().take(1)
+
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -332,7 +325,7 @@ class Kafka(DBConnection):
         write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
-        # As of Apache Spark version 3.5.3, the mode 'error' is not functioning as expected.
+        # As of Apache Spark version 3.5.4, the mode 'error' is not functioning as expected.
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
@@ -417,8 +410,8 @@ class Kafka(DBConnection):
 
             from onetl.connection import Kafka
 
-            Kafka.get_packages(spark_version="3.2.4")
-            Kafka.get_packages(spark_version="3.2.4", scala_version="2.12")
+            Kafka.get_packages(spark_version="3.5.4")
+            Kafka.get_packages(spark_version="3.5.4", scala_version="2.12")
 
         """
 
@@ -434,6 +427,40 @@ class Kafka(DBConnection):
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
+        ]
+
+    @slot
+    @classmethod
+    def get_exclude_packages(cls) -> list[str]:
+        """
+        Get package names to be excluded by Spark. |support_hooks|
+
+        .. versionadded:: 0.13.0
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import Kafka
+
+            Kafka.get_exclude_packages()
+
+        """
+
+        return [
+            # already a part of Spark bundle
+            "org.apache.hadoop:hadoop-client-api",
+            "org.apache.hadoop:hadoop-client-runtime",
+            "com.fasterxml.jackson.core:jackson-annotations",
+            "com.fasterxml.jackson.core:jackson-core",
+            "com.fasterxml.jackson.core:jackson-databind",
+            "com.google.code.findbugs:jsr305",
+            "commons-codec:commons-codec",
+            "commons-logging:commons-logging",
+            "org.lz4:lz4-java",
+            "org.slf4j:slf4j-api",
+            "org.xerial.snappy:snappy-java",
         ]
 
     def __enter__(self):
@@ -625,7 +652,7 @@ class Kafka(DBConnection):
         if self.auth:
             result.update(self.auth.get_options(self))
 
-        result["client.id"] = self.spark.sparkContext.appName  # type: ignore[assignment]
+        result["client.id"] = result.get("client.id", get_client_info(self.spark))
         return stringify(result)
 
     def _get_java_consumer(self):

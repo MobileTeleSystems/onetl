@@ -19,7 +19,7 @@ from typing_extensions import Literal
 from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import get_client_info, get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.base import (
     BaseReadableFileFormat,
@@ -123,74 +123,65 @@ class SparkS3(SparkFileDFConnection):
     Examples
     --------
 
-    Create connection to S3 to work with dataframes.
+    .. tabs::
 
-    Connect to bucket as subdomain (``my-bucket.domain.com``):
+        .. code-tab:: py Create S3 connection with bucket as subdomain (``my-bucket.domain.com``):
 
-    .. code:: python
+            from onetl.connection import SparkS3
+            from pyspark.sql import SparkSession
 
-        from onetl.connection import SparkS3
-        from pyspark.sql import SparkSession
-
-        # Create Spark session with Hadoop AWS libraries loaded
-        maven_packages = SparkS3.get_packages(spark_version="3.5.3")
-        # Some dependencies are not used, but downloading takes a lot of time. Skipping them.
-        excluded_packages = [
-            "com.google.cloud.bigdataoss:gcs-connector",
-            "org.apache.hadoop:hadoop-aliyun",
-            "org.apache.hadoop:hadoop-azure-datalake",
-            "org.apache.hadoop:hadoop-azure",
-        ]
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .config("spark.jars.excludes", ",".join(excluded_packages))
-            .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
-            .config("spark.hadoop.fs.s3a.committer.name", "magic")
-            .config(
-                "spark.hadoop.mapreduce.outputcommitter.factory.scheme.s3a",
-                "org.apache.hadoop.fs.s3a.commit.S3ACommitterFactory",
+            # Create Spark session with Hadoop AWS libraries loaded
+            maven_packages = SparkS3.get_packages(spark_version="3.5.4")
+            # Some packages are not used, but downloading takes a lot of time. Skipping them.
+            excluded_packages = SparkS3.get_exclude_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .config("spark.jars.excludes", ",".join(excluded_packages))
+                .config("spark.hadoop.fs.s3a.committer.magic.enabled", "true")
+                .config("spark.hadoop.fs.s3a.committer.name", "magic")
+                .config(
+                    "spark.hadoop.mapreduce.outputcommitter.factory.scheme.s3a",
+                    "org.apache.hadoop.fs.s3a.commit.S3ACommitterFactory",
+                )
+                .config(
+                    "spark.sql.parquet.output.committer.class",
+                    "org.apache.spark.internal.io.cloud.BindingParquetOutputCommitter",
+                )
+                .config(
+                    "spark.sql.sources.commitProtocolClass",
+                    "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol",
+                )
+                .getOrCreate()
             )
-            .config(
-                "spark.sql.parquet.output.committer.class",
-                "org.apache.spark.internal.io.cloud.BindingParquetOutputCommitter",
-            )
-            .config(
-                "spark.sql.sources.commitProtocolClass",
-                "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol",
-            )
-            .getOrCreate()
-        )
 
-        # Create connection
-        s3 = SparkS3(
-            host="domain.com",
-            protocol="http",
-            bucket="my-bucket",
-            access_key="ACCESS_KEY",
-            secret_key="SECRET_KEY",
-            spark=spark,
-        ).check()
+            # Create connection
+            s3 = SparkS3(
+                host="domain.com",
+                protocol="http",
+                bucket="my-bucket",
+                access_key="ACCESS_KEY",
+                secret_key="SECRET_KEY",
+                spark=spark,
+            ).check()
 
-    Connect to bucket as subpath (``domain.com/my-bucket``):
+        .. code-tab:: py Create S3 connection with bucket as subpath (``domain.com/my-bucket``)
 
-    .. code:: python
+            # Create Spark session with Hadoop AWS libraries loaded
+            ...
 
-        # Create Spark session with Hadoop AWS libraries loaded
-        ...
-
-        # Create connection
-        s3 = SparkS3(
-            host="domain.com",
-            protocol="http",
-            bucket="my-bucket",
-            access_key="ACCESS_KEY",
-            secret_key="SECRET_KEY",
-            extra={
-                "path.style.access": True,
-            },
-            spark=spark,
-        ).check()
+            # Create connection
+            s3 = SparkS3(
+                host="domain.com",
+                protocol="http",
+                bucket="my-bucket",
+                access_key="ACCESS_KEY",
+                secret_key="SECRET_KEY",
+                extra={
+                    "path.style.access": True,  # <---
+                },
+                spark=spark,
+            ).check()
     """
 
     Extra = SparkS3Extra
@@ -205,7 +196,11 @@ class SparkS3(SparkFileDFConnection):
     region: Optional[str] = None
     extra: SparkS3Extra = SparkS3Extra()
 
-    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = ["committer.magic.enabled", "committer.name"]
+    _ROOT_CONFIG_KEYS: ClassVar[List[str]] = [
+        "committer.magic.enabled",
+        "committer.name",
+        "user.agent.prefix",
+    ]
 
     @slot
     @classmethod
@@ -236,8 +231,8 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.5.3")
-            SparkS3.get_packages(spark_version="3.5.3", scala_version="2.12")
+            SparkS3.get_packages(spark_version="3.5.4")
+            SparkS3.get_packages(spark_version="3.5.4", scala_version="2.12")
 
         """
 
@@ -249,6 +244,50 @@ class SparkS3(SparkFileDFConnection):
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
+
+    @slot
+    @classmethod
+    def get_exclude_packages(cls) -> list[str]:
+        """
+        Get package names to be excluded by Spark. |support_hooks|
+
+        .. versionadded:: 0.13.0
+
+        Examples
+        --------
+
+        .. code:: python
+
+            from onetl.connection import SparkS3
+
+            SparkS3.get_exclude_packages()
+
+        """
+
+        return [
+            # heavy and not used
+            "com.google.cloud.bigdataoss:gcs-connector",
+            "org.apache.hadoop:hadoop-aliyun",
+            "org.apache.hadoop:hadoop-azure-datalake",
+            "org.apache.hadoop:hadoop-azure",
+            "org.apache.hadoop:hadoop-cos",
+            "org.apache.hadoop:hadoop-openstack",
+            "org.apache.hadoop:hadoop-huaweicloud",
+            # already a part of Spark bundle
+            "org.apache.hadoop:hadoop-client-api",
+            "org.apache.hadoop:hadoop-client-runtime",
+            "com.fasterxml.jackson.core:jackson-annotations",
+            "com.fasterxml.jackson.core:jackson-core",
+            "com.fasterxml.jackson.core:jackson-databind",
+            "com.google.code.findbugs:jsr305",
+            "commons-codec:commons-codec",
+            "commons-logging:commons-logging",
+            "joda-time:joda-time",
+            "org.apache.httpcomponents:httpclient",
+            "org.apache.httpcomponents:httpcore",
+            "org.slf4j:slf4j-api",
+            "org.xerial.snappy:snappy-java",
+        ]
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
@@ -402,6 +441,14 @@ class SparkS3(SparkFileDFConnection):
 
         for key, value in self.extra.dict(by_alias=True, exclude_none=True).items():
             conf[f"{prefix}.{key}"] = value
+
+        # https://hadoop.apache.org/docs/r3.4.1/hadoop-aws/tools/hadoop-aws/index.html
+        user_agent = conf.get(f"{prefix}.user.agent.prefix")
+        client_info = get_client_info(self.spark)
+        if user_agent:
+            conf[f"{prefix}.user.agent.prefix"] = f"{user_agent} {client_info}"
+        else:
+            conf[f"{prefix}.user.agent.prefix"] = client_info
 
         self._fix_root_conf(conf, prefix)
         return stringify(conf)

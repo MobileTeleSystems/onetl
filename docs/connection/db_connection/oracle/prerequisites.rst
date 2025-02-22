@@ -7,8 +7,8 @@ Version Compatibility
 ---------------------
 
 * Oracle Server versions:
-    * Officially declared: 19 - 23
-    * Actually tested: 11.2, 23
+    * Officially declared: 19c, 21c, 23ai
+    * Actually tested: 11.2, 23.5
 * Spark versions: 2.3.x - 3.5.x
 * Java versions: 8 - 20
 

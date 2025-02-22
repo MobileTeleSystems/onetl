@@ -7,6 +7,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import MSSQL
 
 pytestmark = pytest.mark.mssql
@@ -83,6 +84,7 @@ def test_mssql_connection_sql(spark, processing, load_table_data, suffix):
     )
     table = load_table_data.full_name
 
+    # dataframe content is expected
     df = mssql.sql(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -94,6 +96,12 @@ def test_mssql_connection_sql(spark, processing, load_table_data, suffix):
     df = mssql.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # client info is expected
+    df = mssql.sql("SELECT app_name() AS app_name")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
     # wrong syntax
     with pytest.raises(Exception):
@@ -115,6 +123,7 @@ def test_mssql_connection_fetch(spark, processing, load_table_data, suffix):
     table = load_table_data.full_name
     df = mssql.fetch(f"SELECT * FROM {table}{suffix}")
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -125,11 +134,21 @@ def test_mssql_connection_fetch(spark, processing, load_table_data, suffix):
 
     df = mssql.fetch(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
-
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # client info is expected
+    df = mssql.fetch("SELECT app_name() AS app_name")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
+
     # wrong syntax
     with pytest.raises(Exception):
         mssql.fetch(f"SELEC 1{suffix}")
+
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        mssql.fetch(f"DROP TABLE {table}{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])

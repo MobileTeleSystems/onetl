@@ -12,9 +12,9 @@ pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connec
 def test_mongodb_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MongoDB.get_packages(spark_version=")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
-        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
-        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"
+        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
+        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
+        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
 
 
 def test_mongodb_get_packages_no_input():
@@ -50,16 +50,16 @@ def test_mongodb_get_packages_scala_version_not_supported(scala_version):
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version, package",
     [
-        (None, "2.12", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
-        (None, "2.13", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.13:10.4.0"),
-        ("3.2", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
-        ("3.3", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
-        ("3.4", None, "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
+        (None, "2.12", "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),
+        (None, "2.13", "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.4.1"),
+        ("3.2", None, "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),
+        ("3.3", None, "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),
+        ("3.4", None, "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),
         ("3.2", "2.12", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
         ("3.4", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
         ("3.2", "2.12", "10.2.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.1"),
         ("3.2", "2.12", "10.2.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.0"),
-        ("3.2.4", "2.12.1", "10.4.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.0"),
+        ("3.2.4", "2.12.1", "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),
     ],
 )
 def test_mongodb_get_packages(spark_version, scala_version, package_version, package):
@@ -113,7 +113,7 @@ def test_mongodb(spark_mock):
     conn = MongoDB(
         host="host",
         user="user",
-        password="password",
+        password="some@password",
         database="database",
         spark=spark_mock,
     )
@@ -122,10 +122,10 @@ def test_mongodb(spark_mock):
     assert conn.port == 27017
     assert conn.user == "user"
     assert conn.password != "password"
-    assert conn.password.get_secret_value() == "password"
+    assert conn.password.get_secret_value() == "some@password"
     assert conn.database == "database"
 
-    assert conn.connection_url == "mongodb://user:password@host:27017/database"
+    assert conn.connection_url == "mongodb://user:some%40password@host:27017/"
     assert conn.instance_url == "mongodb://host:27017/database"
     assert str(conn) == "MongoDB[host:27017/database]"
 
@@ -167,7 +167,7 @@ def test_mongodb_with_port(spark_mock):
     assert conn.password.get_secret_value() == "password"
     assert conn.database == "database"
 
-    assert conn.connection_url == "mongodb://user:password@host:12345/database"
+    assert conn.connection_url == "mongodb://user:password@host:12345/"
     assert conn.instance_url == "mongodb://host:12345/database"
 
 
@@ -215,11 +215,11 @@ def test_mongodb_with_extra(spark_mock):
         user="user",
         password="password",
         database="database",
-        extra={"tls": "true", "opt1": "value1"},
+        extra={"tls": "true", "opt1": "value1", "opt2": "value with spaces"},
         spark=spark_mock,
     )
 
-    assert mongo.connection_url == "mongodb://user:password@host:27017/database?opt1=value1&tls=true"
+    assert mongo.connection_url == "mongodb://user:password@host:27017/?opt1=value1&opt2=value%20with%20spaces&tls=true"
 
 
 def test_mongodb_convert_list_to_str(spark_mock):

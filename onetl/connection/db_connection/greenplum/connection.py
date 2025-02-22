@@ -14,14 +14,19 @@ from etl_entities.instance import Host
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 
 try:
-    from pydantic.v1 import validator
+    from pydantic.v1 import SecretStr, validator
 except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+    from pydantic import validator, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_executor_total_cores, get_spark_version
+from onetl._util.spark import (
+    get_client_info,
+    get_executor_total_cores,
+    get_spark_version,
+    override_job_description,
+)
 from onetl._util.version import Version
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.greenplum.connection_limit import (
@@ -40,7 +45,9 @@ from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
 from onetl.connection.db_connection.jdbc_mixin.options import (
     JDBCExecuteOptions,
     JDBCFetchOptions,
-    JDBCOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCOptions as JDBCMixinOptions,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
@@ -70,11 +77,11 @@ class GreenplumExtra(GenericOptions):
 
     class Config:
         extra = "allow"
-        prohibited_options = JDBCOptions.Config.prohibited_options
+        prohibited_options = JDBCMixinOptions.Config.prohibited_options
 
 
 @support_hooks
-class Greenplum(JDBCMixin, DBConnection):
+class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
     """Greenplum connection. |support_hooks|
 
     Based on package ``io.pivotal:greenplum-spark:2.2.0``
@@ -120,7 +127,7 @@ class Greenplum(JDBCMixin, DBConnection):
     Examples
     --------
 
-    Greenplum connection initialization
+    Create and check Greenplum connection:
 
     .. code:: python
 
@@ -154,10 +161,12 @@ class Greenplum(JDBCMixin, DBConnection):
             database="target_database",
             extra=extra,
             spark=spark,
-        )
+        ).check()
     """
 
     host: Host
+    user: str
+    password: SecretStr
     database: str
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
@@ -167,6 +176,7 @@ class Greenplum(JDBCMixin, DBConnection):
     SQLOptions = GreenplumSQLOptions
     FetchOptions = GreenplumFetchOptions
     ExecuteOptions = GreenplumExecuteOptions
+    JDBCOptions = JDBCMixinOptions
 
     Extra = GreenplumExtra
     Dialect = GreenplumDialect
@@ -174,6 +184,11 @@ class Greenplum(JDBCMixin, DBConnection):
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
     CONNECTIONS_EXCEPTION_LIMIT: ClassVar[int] = 100
+
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
+    # any small table with always present in db, and which any user can access
+    # https://www.greenplumdba.com/pg-catalog-tables-and-views
+    _CHECK_DUMMY_TABLE: ClassVar[str] = "pg_catalog.gp_id"
 
     @slot
     @classmethod
@@ -282,7 +297,8 @@ class Greenplum(JDBCMixin, DBConnection):
             for key, value in self.extra.dict(by_alias=True).items()
             if not (key.startswith("server.") or key.startswith("pool."))
         }
-        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
+        result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result
 
     @property
@@ -290,6 +306,30 @@ class Greenplum(JDBCMixin, DBConnection):
         result = super().jdbc_params
         result.update(self.jdbc_custom_params)
         return result
+
+    @slot
+    def check(self):
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
+
+        try:
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
+
+                read_options = self._get_connector_params(self._CHECK_DUMMY_TABLE)
+                read_options["num_partitions"] = 1  # do not require gp_segment_id column in table
+                df = self.spark.read.format("greenplum").options(**read_options).load()
+                df.take(1)
+
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     @slot
     def read_source_as_df(
@@ -457,15 +497,16 @@ class Greenplum(JDBCMixin, DBConnection):
             **greenplum_connector_options,
         }
 
-    def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
-        # See https://github.com/pgjdbc/pgjdbc/pull/1252
-        # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
-        # Which is not a desired behavior, because `.fetch()` method should always be read-only
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # To properly support pgbouncer, we have to create connection with readOnly option set.
+            # See https://github.com/pgjdbc/pgjdbc/issues/848
+            options = options.copy(update={"readOnly": True})
 
-        if not getattr(options, "readOnlyMode", None):
-            options = options.copy(update={"readOnlyMode": "always"})
-
-        return super()._options_to_connection_properties(options)
+        connection_properties = self._options_to_connection_properties(options)
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
+        # avoid calling .setReadOnly(True) here
+        return driver_manager.getConnection(self.jdbc_url, connection_properties)
 
     def _get_server_setting(self, name: str) -> Any:
         query = f"""

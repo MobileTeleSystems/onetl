@@ -36,20 +36,18 @@ jobs:
   test-oracle:
     name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      oracle:
-        image: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
-        env:
-          TZ: UTC
-          ORACLE_PASSWORD: maaxohmiGe9eep5x
-          APP_USER: onetl
-          APP_USER_PASSWORD: Yoequ2Hoeceit4ch
-        ports:
-          - 1522:1521
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start Oracle
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile oracle pull
+          docker compose --profile oracle up -d --wait --wait-timeout 200
+        env:
+          ORACLE_IMAGE: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -85,6 +83,9 @@ jobs:
       - name: Set up Oracle instantclient
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends libaio1 || sudo apt-get install --no-install-recommends libaio1t64
+          [ -f "/usr/lib/x86_64-linux-gnu/libaio.so.1t64" ] && sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
           mkdir ./tmp
           wget -P ./tmp https://download.oracle.com/otn_software/linux/instantclient/2110000/instantclient-basic-linux.x64-21.10.0.0.0dbru.zip
           mkdir -p ./oracle
@@ -105,8 +106,7 @@ jobs:
           export PATH=${ONETL_ORA_CLIENT_PATH}:${PATH}
 
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           export "ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}"
           ./pytest_runner.sh -m oracle
 
@@ -123,6 +123,11 @@ jobs:
         with:
           name: container-logs-oracle-${{ inputs.oracle-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
+
+      - name: Shutdown Oracle
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

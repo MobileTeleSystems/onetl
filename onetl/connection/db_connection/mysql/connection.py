@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import closing
 from typing import ClassVar, Optional
 
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 from onetl.connection.db_connection.mysql.dialect import MySQLDialect
 from onetl.connection.db_connection.mysql.options import (
     MySQLExecuteOptions,
@@ -36,8 +42,8 @@ class MySQLExtra(GenericOptions):
 class MySQL(JDBCConnection):
     """MySQL JDBC connection. |support_hooks|
 
-    Based on Maven package `com.mysql:mysql-connector-j:9.0.0 <https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/9.0.0>`_
-    (`official MySQL JDBC driver <https://dev.mysql.com/downloads/connector/j/8.4.html>`_).
+    Based on Maven package `com.mysql:mysql-connector-j:9.2.0 <https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/9.2.0>`_
+    (`official MySQL JDBC driver <https://dev.mysql.com/doc/connector-j/en/>`_).
 
     .. seealso::
 
@@ -79,7 +85,7 @@ class MySQL(JDBCConnection):
     Examples
     --------
 
-    MySQL connection initialization
+    Create and check MySQL connection:
 
     .. code:: python
 
@@ -101,7 +107,7 @@ class MySQL(JDBCConnection):
             password="*****",
             extra={"useSSL": "false", "allowPublicKeyRetrieval": "true"},
             spark=spark,
-        )
+        ).check()
 
     """
 
@@ -132,7 +138,7 @@ class MySQL(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-            Specifies the version of the MySQL JDBC driver to use. Defaults to ``9.0.0``.
+            Specifies the version of the MySQL JDBC driver to use. Defaults to ``9.2.0``.
 
             .. versionadded:: 0.11.0
 
@@ -147,7 +153,7 @@ class MySQL(JDBCConnection):
             # specify a custom package version
             MySQL.get_packages(package_version="8.2.0")
         """
-        default_version = "9.0.0"
+        default_version = "9.2.0"
         version = Version(package_version or default_version).min_digits(3)
 
         return [f"com.mysql:mysql-connector-j:{version}"]
@@ -157,7 +163,7 @@ class MySQL(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`MySQL.package` will be removed in 1.0.0, use `MySQL.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.mysql:mysql-connector-j:9.0.0"
+        return "com.mysql:mysql-connector-j:9.2.0"
 
     @property
     def jdbc_url(self) -> str:
@@ -170,6 +176,14 @@ class MySQL(JDBCConnection):
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
+        # https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-connection.html
+        # https://stackoverflow.com/questions/31722323/mysql-connection-with-advanced-attributes-such-as-program-name
+        client_info = f"program_name:{get_client_info(self.spark, unsupported=':,')}"
+        connection_attributes = result.get("connectionAttributes")
+        if connection_attributes and "program_name:" not in connection_attributes:
+            result["connectionAttributes"] = f"{connection_attributes},{client_info}"
+        elif not connection_attributes:
+            result["connectionAttributes"] = client_info
         return result
 
     @property
@@ -178,3 +192,16 @@ class MySQL(JDBCConnection):
 
     def __str__(self):
         return f"{self.__class__.__name__}[{self.host}:{self.port}]"
+
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        connection = super()._get_jdbc_connection(options, read_only)
+
+        # connection.setReadOnly() is no-op in MySQL JDBC driver. Session type can be changed by statement:
+        # https://stackoverflow.com/questions/10240890/sql-open-connection-in-read-only-mode#comment123789248_48959180
+        # https://dev.mysql.com/doc/refman/8.4/en/set-transaction.html
+        transaction = "READ ONLY" if read_only else "READ WRITE"
+        statement = connection.prepareStatement(f"SET SESSION TRANSACTION {transaction};")
+        with closing(statement):
+            statement.execute()
+
+        return connection

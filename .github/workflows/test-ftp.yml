@@ -28,6 +28,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Start FTP
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile ftp pull
+          docker compose --profile ftp up -d --wait --wait-timeout 200
+        env:
+          FTP_IMAGE: chonjay21/ftps:${{ inputs.ftp-version }}
+
       - name: Set up Python ${{ inputs.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -50,21 +58,10 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/ftp.txt -r requirements/tests/base.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-      # Replace with Github Actions' services after https://github.com/chonjay21/docker-ftp/pull/3
-      # Cannot use services because we need to mount config file from the repo, but services start before checkout.
-      # See https://github.com/orgs/community/discussions/25792
-      - name: Start FTP
-        run: |
-          docker compose down -v --remove-orphans
-          docker compose up -d ftp --wait --wait --wait-timeout 200
-        env:
-          FTP_IMAGE: chonjay21/ftps:${{ inputs.ftp-version }}
-
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m ftp
 
       - name: Dump FTP logs on failure
@@ -86,7 +83,7 @@ jobs:
       - name: Shutdown FTP
         if: always()
         run: |
-          docker compose down -v --remove-orphans
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import logging
 
+try:
+    from pydantic.v1 import validator
+except (ImportError, AttributeError):
+    from pydantic import validator  # type: ignore[no-redef, assignment]
+
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
 
@@ -13,6 +18,10 @@ log = logging.getLogger(__name__)
 class MaxFilesCount(BaseFileLimit, FrozenModel):
     """Limits the total number of files handled by :ref:`file-downloader` or :ref:`file-mover`.
 
+    All files until specified limit (including) will be downloaded/moved, but ``limit+1`` will not.
+
+    This doesn't apply to directories.
+
     .. versionadded:: 0.8.0
         Replaces deprecated ``onetl.core.FileLimit``
 
@@ -21,12 +30,10 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
 
     limit : int
 
-        All files until ``limit`` (including) will be downloaded/moved, but ``limit+1`` will not.
-
     Examples
     --------
 
-    Create filter which allows to handle 100 files, but stops on 101:
+    Create filter which allows to download/move up to 100 files, but stops on 101:
 
     .. code:: python
 
@@ -37,7 +44,7 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
 
     limit: int
 
-    _counter: int = 0
+    _handled: int = 0
 
     def __init__(self, limit: int):
         # this is only to allow passing glob as positional argument
@@ -46,8 +53,14 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.limit})"
 
+    @validator("limit")
+    def _limit_cannot_be_negative(cls, value):
+        if value <= 0:
+            raise ValueError("Limit should be positive number")
+        return value
+
     def reset(self):
-        self._counter = 0
+        self._handled = 0
         return self
 
     def stops_at(self, path: PathProtocol) -> bool:
@@ -58,9 +71,9 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
             # directories count does not matter
             return False
 
-        self._counter += 1
+        self._handled += 1
         return self.is_reached
 
     @property
     def is_reached(self) -> bool:
-        return self._counter >= self.limit
+        return self._handled > self.limit

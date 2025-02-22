@@ -29,19 +29,18 @@ jobs:
   test-mongodb:
     name: Run MongoDB tests (server=${{ inputs.mongodb-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      mongodb:
-        image: mongo:${{ inputs.mongodb-version }}
-        env:
-          TZ: UTC
-          MONGO_INITDB_ROOT_USERNAME: onetl
-          MONGO_INITDB_ROOT_PASSWORD: E4j7h!9A
-        ports:
-          - 27017:27017
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start MongoDB
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile mongodb pull
+          docker compose --profile mongodb up -d --wait --wait-timeout 200
+        env:
+          MONGODB_IMAGE: mongo:${{ inputs.mongodb-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -84,8 +83,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m mongodb
 
       - name: Dump MongoDB logs on failure
@@ -101,6 +99,11 @@ jobs:
         with:
           name: container-logs-mongodb-${{ inputs.mongodb-version }}
           path: logs/*
+
+      - name: Shutdown MongoDB
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

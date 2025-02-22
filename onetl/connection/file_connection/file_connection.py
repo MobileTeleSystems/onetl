@@ -172,24 +172,25 @@ class FileConnection(BaseFileConnection, FrozenModel):
     def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
         is_dir = self.is_dir(path)
         stat = self.get_stat(path)
+        remote_path = RemotePath(path)
 
         if not is_dir:
-            raise NotADirectoryError(
-                f"{path_repr(RemoteFile(path, stats=stat))} is not a directory",
-            )
+            remote_file = RemoteFile(path=remote_path, stats=stat)
+            raise NotADirectoryError(f"{path_repr(remote_file)} is not a directory")
 
-        return RemoteDirectory(path=path, stats=stat)
+        return RemoteDirectory(path=remote_path, stats=stat)
 
     @slot
     def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
         is_file = self.is_file(path)
         stat = self.get_stat(path)
-        remote_path = RemoteFile(path=path, stats=stat)
+        remote_path = RemotePath(path)
 
         if not is_file:
-            raise NotAFileError(f"{path_repr(remote_path)} is not a file")
+            remote_directory = RemoteDirectory(path=remote_path, stats=stat)
+            raise NotAFileError(f"{path_repr(remote_directory)} is not a file")
 
-        return remote_path
+        return RemoteFile(path=remote_path, stats=stat)
 
     @slot
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8", **kwargs) -> str:
@@ -415,6 +416,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         limits = reset_limits(limits or [])
 
         for entry in self._scan_entries(remote_dir):
+            if limits_reached(limits):
+                break
+
             name = self._extract_name_from_entry(entry)
             stat = self._extract_stat_from_entry(remote_dir, entry)
 
@@ -423,11 +427,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
             else:
                 path = RemoteFile(path=name, stats=stat)
 
-            if match_all_filters(path, filters):
+            if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                 result.append(path)
-
-            if limits_stop_at(path, limits):
-                break
 
         return result
 
@@ -491,6 +492,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         dirs, files = [], []
 
         for entry in self._scan_entries(root):
+            if limits_reached(limits):
+                break
+
             name = self._extract_name_from_entry(entry)
             stat = self._extract_stat_from_entry(root, entry)
 
@@ -499,21 +503,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
                     yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 
                 path = RemoteDirectory(path=root / name, stats=stat)
-                if match_all_filters(path, filters):
+                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
-
-                    if limits_stop_at(path, limits):
-                        break
             else:
                 path = RemoteFile(path=root / name, stats=stat)
 
-                if match_all_filters(path, filters):
+                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                     files.append(RemoteFile(path=name, stats=stat))
 
-                    if limits_stop_at(path, limits):
-                        break
-
-        if topdown:
+        if topdown and not limits_reached(limits):
             for name in dirs:
                 yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
 

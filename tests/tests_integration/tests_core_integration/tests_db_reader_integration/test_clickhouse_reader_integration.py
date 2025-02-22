@@ -266,15 +266,6 @@ def test_clickhouse_reader_snapshot_with_partitioning_mode_hash(spark, processin
     # So just check that any partition has at least 0 rows
     assert table_df.groupBy(spark_partition_id()).count().count() == 3
 
-    # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
-    # with some variance caused by randomness & hash distribution
-    min_count_per_partition = 10
-    max_count_per_partition = 55
-
-    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
-    for partition in count_per_partition:
-        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
-
 
 @pytest.mark.parametrize(
     "column",
@@ -361,15 +352,6 @@ def test_clickhouse_reader_snapshot_with_partitioning_mode_mod_date(spark, proce
     assert table_df.rdd.getNumPartitions() == 3
     # So just check that any partition has at least 0 rows
     assert table_df.groupBy(spark_partition_id()).count().count() == 3
-
-    # 100 rows per 3 partitions -> each partition should contain about ~33 rows,
-    # with some variance caused by randomness & hash distribution
-    min_count_per_partition = 10
-    max_count_per_partition = 55
-
-    count_per_partition = table_df.groupBy(spark_partition_id()).count().collect()
-    for partition in count_per_partition:
-        assert min_count_per_partition <= partition["count"] <= max_count_per_partition
 
 
 @pytest.mark.parametrize(

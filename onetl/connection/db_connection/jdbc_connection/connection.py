@@ -5,8 +5,14 @@ from __future__ import annotations
 import logging
 import secrets
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
+try:
+    from pydantic.v1 import SecretStr, validator
+except (ImportError, AttributeError):
+    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
+
+from onetl._util.java import try_import_java_class
 from onetl._util.spark import override_job_description
 from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -20,7 +26,14 @@ from onetl.connection.db_connection.jdbc_connection.options import (
     JDBCWriteOptions,
 )
 from onetl.connection.db_connection.jdbc_mixin import JDBCMixin
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCOptions as JDBCMixinOptions,
+)
+from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -45,12 +58,55 @@ WRITE_TOP_LEVEL_OPTIONS = frozenset("url")
 
 
 @support_hooks
-class JDBCConnection(JDBCMixin, DBConnection):
+class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
+    user: str
+    password: SecretStr
+
+    DRIVER: ClassVar[str]
+    _CHECK_QUERY: ClassVar[str] = "SELECT 1"
+
+    JDBCOptions = JDBCMixinOptions
+    FetchOptions = JDBCFetchOptions
+    ExecuteOptions = JDBCExecuteOptions
     Dialect = JDBCDialect
     ReadOptions = JDBCReadOptions
     SQLOptions = JDBCSQLOptions
     WriteOptions = JDBCWriteOptions
     Options = JDBCLegacyOptions
+
+    @validator("spark")
+    def _check_java_class_imported(cls, spark):
+        try:
+            try_import_java_class(spark, cls.DRIVER)
+        except Exception as e:
+            msg = MISSING_JVM_CLASS_MSG.format(
+                java_class=cls.DRIVER,
+                package_source=cls.__name__,
+                args="",
+            )
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Missing Java class", exc_info=e, stack_info=True)
+            raise ValueError(msg) from e
+        return spark
+
+    @slot
+    def check(self):
+        log.info("|%s| Checking connection availability...", self.__class__.__name__)
+        self._log_parameters()  # type: ignore
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(log, self._CHECK_QUERY, level=logging.DEBUG)
+
+        try:
+            with override_job_description(self.spark, f"{self}.check()"):
+                self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
+                self._query_on_executor(self._CHECK_QUERY, self.SQLOptions(fetchsize=1)).collect()
+            log.info("|%s| Connection is available.", self.__class__.__name__)
+        except Exception as e:
+            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+            raise RuntimeError("Connection is unavailable") from e
+
+        return self
 
     @slot
     def sql(
@@ -116,11 +172,16 @@ class JDBCConnection(JDBCMixin, DBConnection):
         limit: int | None = None,
         options: JDBCReadOptions | None = None,
     ) -> DataFrame:
+        if isinstance(options, JDBCLegacyOptions):
+            raw_options = self.ReadOptions.parse(options.dict(exclude_unset=True))
+        else:
+            raw_options = self.ReadOptions.parse(options)
+
         read_options = self._set_lower_upper_bound(
             table=source,
             where=where,
             hint=hint,
-            options=self.ReadOptions.parse(options),
+            options=raw_options,
         )
 
         new_columns = columns or ["*"]
@@ -178,7 +239,11 @@ class JDBCConnection(JDBCMixin, DBConnection):
         target: str,
         options: JDBCWriteOptions | None = None,
     ) -> None:
-        write_options = self.WriteOptions.parse(options)
+        if isinstance(options, JDBCLegacyOptions):
+            write_options = self.WriteOptions.parse(options.dict(exclude_unset=True))
+        else:
+            write_options = self.WriteOptions.parse(options)
+
         jdbc_properties = self._get_jdbc_properties(write_options, exclude={"if_exists"}, exclude_none=True)
 
         mode = (

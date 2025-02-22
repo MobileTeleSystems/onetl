@@ -32,18 +32,18 @@ jobs:
   test-clickhouse:
     name: Run Clickhouse tests (server=${{ inputs.clickhouse-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      clickhouse:
-        image: ${{ inputs.clickhouse-image }}:${{ inputs.clickhouse-version }}
-        env:
-          TZ: UTC
-        ports:
-          - 8123:8123
-          - 9001:9000
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start Clickhouse
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile clickhouse pull
+          docker compose --profile clickhouse up -d --wait --wait-timeout 200
+        env:
+          CLICKHOUSE_IMAGE: ${{ inputs.clickhouse-image }}:${{ inputs.clickhouse-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -86,8 +86,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m clickhouse
 
       - name: Dump Clickhouse logs on failure
@@ -103,6 +102,11 @@ jobs:
         with:
           name: container-logs-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}
           path: logs/*
+
+      - name: Shutdown Clickhouse
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

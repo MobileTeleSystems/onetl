@@ -65,7 +65,7 @@ Non-goals
 Requirements
 ------------
 
-* **Python 3.7 - 3.12**
+* **Python 3.7 - 3.13**
 * PySpark 2.3.x - 3.5.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
@@ -195,7 +195,7 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.4.x <https://spark.apache.org/docs/3.4.3/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.3/#downloading>`_  | 3.8 - 3.12  | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.4/#downloading>`_  | 3.8 - 3.13  | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
@@ -210,7 +210,7 @@ or install PySpark explicitly:
 
 .. code:: bash
 
-    pip install onetl pyspark==3.5.3  # install a specific PySpark version
+    pip install onetl pyspark==3.5.4  # install a specific PySpark version
 
 or inject PySpark to ``sys.path`` in some other way BEFORE creating a class instance.
 **Otherwise connection object cannot be created.**
@@ -263,8 +263,8 @@ The exact installation instruction depends on your OS, here are some examples:
 
 .. code:: bash
 
-    dnf install krb5-devel gcc  # CentOS, OracleLinux
-    apt install libkrb5-dev gcc  # Debian-based
+    apt install libkrb5-dev krb5-user gcc  # Debian-based
+    dnf install krb5-devel krb5-libs krb5-workstation gcc  # CentOS, OracleLinux
 
 Also you should pass ``kerberos`` to ``extras`` to install required Python packages:
 
@@ -551,10 +551,12 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(spark_version="3.5.3") + Postgres.get_packages()
+    maven_packages = SparkS3.get_packages(spark_version="3.5.4") + Postgres.get_packages()
+    exclude_packages = SparkS3.get_exclude_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")
         .config("spark.jars.packages", ",".join(maven_packages))
+        .config("spark.jars.excludes", ",".join(exclude_packages))
         .getOrCreate()
     )
 

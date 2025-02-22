@@ -67,39 +67,39 @@ class FileDFReader(FrozenModel):
 
     Examples
     --------
-    Create reader to parse CSV files in local filesystem:
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFReader
-        from onetl.file.format import CSV
+        .. code-tab:: py Read CSV files from local filesystem
 
-        local_fs = SparkLocalFS(spark=spark)
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import CSV
 
-        reader = FileDFReader(
-            connection=local_fs,
-            format=CSV(delimiter=","),
-            source_path="/path/to/directory",
-        )
+            csv = CSV(delimiter=",")
+            local_fs = SparkLocalFS(spark=spark)
 
-    All supported options
+            reader = FileDFReader(
+                connection=local_fs,
+                format=csv,
+                source_path="/path/to/directory",
+            )
 
-    .. code:: python
+        .. code-tab:: py All supported options
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFReader
-        from onetl.file.format import CSV
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import CSV
 
-        csv = CSV(delimiter=",")
-        local_fs = SparkLocalFS(spark=spark)
+            csv = CSV(delimiter=",")
+            local_fs = SparkLocalFS(spark=spark)
 
-        reader = FileDFReader(
-            connection=local_fs,
-            format=csv,
-            source_path="/path/to/directory",
-            options=FileDFReader.Options(recursive=False),
-        )
+            reader = FileDFReader(
+                connection=local_fs,
+                format=csv,
+                source_path="/path/to/directory",
+                options=FileDFReader.Options(recursive=False),
+            )
     """
 
     Options = FileDFReaderOptions
@@ -210,6 +210,8 @@ class FileDFReader(FrozenModel):
 
         if not self._connection_checked:
             self._log_parameters(files)
+            self.connection.check()
+            self._connection_checked = True
 
         if files:
             job_description = f"{self.connection} -> {self.__class__.__name__}.run([..files..])"
@@ -222,11 +224,6 @@ class FileDFReader(FrozenModel):
                 paths = FileSet(self._validate_files(files))
             elif self.source_path:
                 paths = FileSet([self.source_path])
-
-            if not self._connection_checked:
-                self.connection.check()
-                log_with_indent(log, "")
-                self._connection_checked = True
 
             df = self._read_files(paths)
 

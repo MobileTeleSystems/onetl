@@ -29,20 +29,18 @@ jobs:
   test-postgres:
     name: Run Postgres tests (server=${{ inputs.postgres-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      postgres:
-        image: postgres:${{ inputs.postgres-version }}
-        env:
-          TZ: UTC
-          POSTGRES_USER: onetl
-          POSTGRES_DB: onetl
-          POSTGRES_PASSWORD: ohtae0luxeshi1uraeluMoh9IShah7ai
-        ports:
-          - 5432:5432
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start Postgres
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile postgres pull
+          docker compose --profile postgres up -d --wait --wait-timeout 200
+        env:
+          POSTGRES_IMAGE: postgres:${{ inputs.postgres-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -85,15 +83,22 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m postgres
+
+      - name: Run tests with PGBouncer
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          source .env.local
+          export ONETL_PG_PORT=6432
+          # Run only some basic tests
+          ./pytest_runner.sh -m postgres  -k "tests_core_integration or tests_db_connection_integration"
 
       - name: Dump Postgres logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: postgres
+          images: postgres,bitnami/pgbouncer
           dest: ./logs
 
       - name: Upload Postgres logs
@@ -102,6 +107,11 @@ jobs:
         with:
           name: container-logs-postgres-${{ inputs.postgres-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
+
+      - name: Shutdown Postgres
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

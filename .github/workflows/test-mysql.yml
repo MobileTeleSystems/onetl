@@ -29,21 +29,18 @@ jobs:
   test-mysql:
     name: Run MySQL tests (server=${{ inputs.mysql-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      mysql:
-        image: mysql:${{ inputs.mysql-version }}
-        env:
-          TZ: UTC
-          MYSQL_ROOT_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
-          MYSQL_DATABASE: onetl
-          MYSQL_USER: onetl
-          MYSQL_PASSWORD: ohbuz9Eochaj9saibooK3thooGa5aesh
-        ports:
-          - 3306:3306
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start MySQL
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile mysql pull
+          docker compose --profile mysql up -d --wait --wait-timeout 200
+        env:
+          MYSQL_IMAGE: mysql:${{ inputs.mysql-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -86,8 +83,7 @@ jobs:
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           ./pytest_runner.sh -m mysql
 
       - name: Dump MySQL logs on failure
@@ -103,6 +99,11 @@ jobs:
         with:
           name: container-logs-mysql-${{ inputs.mysql-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
+
+      - name: Shutdown MySQL
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4

@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Greenplum
 from onetl.connection.db_connection.greenplum import GreenplumTableExistBehavior
 
@@ -125,14 +126,18 @@ def test_greenplum(spark_mock):
         "password": "passwd",
         "driver": "org.postgresql.Driver",
         "url": "jdbc:postgresql://some_host:5432/database",
-        "ApplicationName": "abc",
+        "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
         "tcpKeepAlive": "true",
     }
     assert conn._get_connector_params("some.table") == {
         "user": "user",
         "password": "passwd",
         "driver": "org.postgresql.Driver",
-        "url": "jdbc:postgresql://some_host:5432/database?ApplicationName=abc&tcpKeepAlive=true",
+        "url": (
+            "jdbc:postgresql://some_host:5432/database?"
+            f"ApplicationName=local-123%20abc%20onETL%2F{onetl_version}%20Spark%2F{spark_mock.version}&"
+            "tcpKeepAlive=true"
+        ),
         "dbschema": "some",
         "dbtable": "table",
     }
@@ -159,14 +164,18 @@ def test_greenplum_with_port(spark_mock):
         "password": "passwd",
         "driver": "org.postgresql.Driver",
         "url": "jdbc:postgresql://some_host:5000/database",
-        "ApplicationName": "abc",
+        "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
         "tcpKeepAlive": "true",
     }
     assert conn._get_connector_params("some.table") == {
         "user": "user",
         "password": "passwd",
         "driver": "org.postgresql.Driver",
-        "url": "jdbc:postgresql://some_host:5000/database?ApplicationName=abc&tcpKeepAlive=true",
+        "url": (
+            "jdbc:postgresql://some_host:5000/database?"
+            f"ApplicationName=local-123%20abc%20onETL%2F{onetl_version}%20Spark%2F{spark_mock.version}&"
+            "tcpKeepAlive=true"
+        ),
         "dbschema": "some",
         "dbtable": "table",
     }
@@ -214,7 +223,10 @@ def test_greenplum_with_extra(spark_mock):
         "user": "user",
         "password": "passwd",
         "driver": "org.postgresql.Driver",
-        "url": "jdbc:postgresql://some_host:5432/database?ApplicationName=override&autosave=always&options=-c%20search_path%3Dpublic&tcpKeepAlive=false",
+        "url": (
+            "jdbc:postgresql://some_host:5432/database?ApplicationName=override&"
+            "autosave=always&options=-c%20search_path%3Dpublic&tcpKeepAlive=false"
+        ),
         "dbschema": "some",
         "dbtable": "table",
         "pool.maxSize": 40,

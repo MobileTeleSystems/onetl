@@ -5,13 +5,13 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
-  mongodb-version: 7.0.14
-  spark-version: 3.5.3
+  mongodb-version: 8.0.4
+  spark-version: 3.5.4
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -19,7 +19,7 @@ latest: &latest
   mongodb-version: latest
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

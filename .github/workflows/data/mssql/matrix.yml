@@ -8,9 +8,9 @@ min: &min
 
 max: &max
   mssql-version: 2022-latest
-  spark-version: 3.5.3
+  spark-version: 3.5.4
   pydantic-version: 2
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -18,7 +18,7 @@ latest: &latest
   mssql-version: latest
   spark-version: latest
   pydantic-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

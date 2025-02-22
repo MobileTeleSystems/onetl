@@ -95,54 +95,53 @@ class FileMover(FrozenModel):
 
     Examples
     --------
-    Simple Mover creation
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.connection import SFTP
-        from onetl.file import FileMover
+        .. code-tab:: py Minimal example
 
-        sftp = SFTP(...)
+            from onetl.connection import SFTP
+            from onetl.file import FileMover
 
-        # create mover
-        mover = FileMover(
-            connection=sftp,
-            source_path="/path/to/source/dir",
-            target_path="/path/to/target/dir",
-        )
+            sftp = SFTP(...)
 
-        # move files from "/path/to/source/dir" to "/path/to/target/dir"
-        mover.run()
+            # create mover
+            mover = FileMover(
+                connection=sftp,
+                source_path="/path/to/source/dir",
+                target_path="/path/to/target/dir",
+            )
 
-    Mover with all parameters
+            # move files from "/path/to/source/dir" to "/path/to/target/dir"
+            mover.run()
 
-    .. code:: python
+        .. code-tab:: py Full example
 
-        from onetl.connection import SFTP
-        from onetl.file import FileMover
-        from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount
+            from onetl.connection import SFTP
+            from onetl.file import FileMover
+            from onetl.file.filter import Glob, ExcludeDir
+            from onetl.file.limit import MaxFilesCount, TotalFilesSize
 
-        sftp = SFTP(...)
+            sftp = SFTP(...)
 
-        # create mover with a bunch of options
-        mover = FileMover(
-            connection=sftp,
-            source_path="/path/to/source/dir",
-            target_path="/path/to/target/dir",
-            filters=[
-                Glob("*.txt"),
-                ExcludeDir("/path/to/source/dir/exclude"),
-            ],
-            limits=[MaxFilesCount(100)],
-            options=FileMover.Options(if_exists="replace_file"),
-        )
+            # create mover with a bunch of options
+            mover = FileMover(
+                connection=sftp,
+                source_path="/path/to/source/dir",
+                target_path="/path/to/target/dir",
+                filters=[
+                    Glob("*.txt"),
+                    ExcludeDir("/path/to/source/dir/exclude"),
+                ],
+                limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
+                options=FileMover.Options(if_exists="replace_file"),
+            )
 
-        # move files from "/path/to/source/dir" to "/path/to/target/dir",
-        # but only *.txt files
-        # excluding files from "/path/to/source/dir/exclude" directory
-        # and stop before downloading 101 file
-        mover.run()
+            # move files from "/path/to/source/dir" to "/path/to/target/dir",
+            # but only *.txt files
+            # excluding files from "/path/to/source/dir/exclude" directory
+            # and stop before downloading 101 file
+            mover.run()
 
     """
 
@@ -358,7 +357,7 @@ class FileMover(FrozenModel):
         try:
             for root, _dirs, files in self.connection.walk(self.source_path, filters=self.filters, limits=self.limits):
                 for file in files:
-                    result.append(RemoteFile(path=root / file, stats=file.stats))
+                    result.append(RemoteFile(path=root / file, stats=file.stat()))
 
         except Exception as e:
             raise RuntimeError(

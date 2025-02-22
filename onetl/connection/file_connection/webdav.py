@@ -43,7 +43,7 @@ except (ImportError, NameError) as e:
     ) from e
 
 log = getLogger(__name__)
-DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
+DATA_MODIFIED_FORMAT = "%a, %d %b %Y %H:%M:%S %Z"
 
 
 @support_hooks
@@ -94,7 +94,7 @@ class WebDAV(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    WebDAV file connection initialization
+    Create and check WebDAV connection:
 
     .. code:: python
 
@@ -105,8 +105,7 @@ class WebDAV(FileConnection, RenameDirMixin):
             user="someuser",
             password="*****",
             protocol="https",
-        )
-
+        ).check()
     """
 
     host: Host

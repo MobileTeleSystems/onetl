@@ -156,81 +156,100 @@ class FileDownloader(FrozenModel):
 
     Examples
     --------
-    Simple Downloader creation
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
+        .. code-tab:: py Minimal example
 
-        sftp = SFTP(...)
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
 
-        # create downloader
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-        )
+            sftp = SFTP(...)
 
-        # download files to "/path/to/local"
-        downloader.run()
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+            )
 
-    Downloader with all parameters
-
-    .. code:: python
-
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.file.filter import Glob, ExcludeDir
-        from onetl.file.limit import MaxFilesCount
-
-        sftp = SFTP(...)
-
-        # create downloader with a bunch of options
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-            temp_path="/tmp",
-            filters=[
-                Glob("*.txt"),
-                ExcludeDir("/path/to/remote/source/exclude_dir"),
-            ],
-            limits=[MaxFilesCount(100)],
-            options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
-        )
-
-        # download files to "/path/to/local",
-        # but only *.txt,
-        # excluding files from "/path/to/remote/source/exclude_dir" directory
-        # and stop before downloading 101 file
-        downloader.run()
-
-    Incremental download:
-
-    .. code:: python
-
-        from onetl.connection import SFTP
-        from onetl.file import FileDownloader
-        from onetl.strategy import IncrementalStrategy
-        from etl_entities.hwm import FileListHWM
-
-        sftp = SFTP(...)
-
-        # create downloader
-        downloader = FileDownloader(
-            connection=sftp,
-            source_path="/path/to/remote/source",
-            local_path="/path/to/local",
-            hwm=FileListHWM(
-                name="my_unique_hwm_name", directory="/path/to/remote/source"
-            ),  # mandatory for IncrementalStrategy
-        )
-
-        # download files to "/path/to/local", but only new ones
-        with IncrementalStrategy():
+            # download files to "/path/to/local"
             downloader.run()
 
+        .. code-tab:: py Full example
+
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.file.filter import Glob, ExcludeDir
+            from onetl.file.limit import MaxFilesCount, TotalFileSize
+
+            sftp = SFTP(...)
+
+            # create downloader with a bunch of options
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                temp_path="/tmp",
+                filters=[
+                    Glob("*.txt"),
+                    ExcludeDir("/path/to/remote/source/exclude_dir"),
+                ],
+                limits=[MaxFilesCount(100), TotalFileSize("10GiB")],
+                options=FileDownloader.Options(delete_source=True, if_exists="replace_file"),
+            )
+
+            # download files to "/path/to/local",
+            # but only *.txt,
+            # excluding files from "/path/to/remote/source/exclude_dir" directory
+            # and stop before downloading 101 file
+            downloader.run()
+
+        .. code-tab:: py Incremental download (by tracking list of file paths)
+
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.strategy import IncrementalStrategy
+            from etl_entities.hwm import FileListHWM
+
+            sftp = SFTP(...)
+
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                hwm=FileListHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
+
+            # download files to "/path/to/local", but only added since previous run
+            with IncrementalStrategy():
+                downloader.run()
+
+        .. code-tab:: py Incremental download (by tracking file modification time)
+
+            from onetl.connection import SFTP
+            from onetl.file import FileDownloader
+            from onetl.strategy import IncrementalStrategy
+            from etl_entities.hwm import FileModifiedTimeHWM
+
+            sftp = SFTP(...)
+
+            # create downloader
+            downloader = FileDownloader(
+                connection=sftp,
+                source_path="/path/to/remote/source",
+                local_path="/path/to/local",
+                hwm=FileModifiedTimeHWM(  # mandatory for IncrementalStrategy
+                    name="my_unique_hwm_name",
+                ),
+            )
+
+            # download files to "/path/to/local", but only modified/created since previous run
+            with IncrementalStrategy():
+                downloader.run()
     """
 
     Options = FileDownloaderOptions
@@ -468,16 +487,15 @@ class FileDownloader(FrozenModel):
         if not self._connection_checked:
             self._check_source_path()
 
-        result = FileSet()
-
         filters = self.filters.copy()
         if self.hwm:
             filters.append(FileHWMFilter(hwm=self._init_hwm(self.hwm)))
 
+        result = FileSet()
         try:
             for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
                 for file in files:
-                    result.append(RemoteFile(path=root / file, stats=file.stats))
+                    result.append(RemoteFile(path=root / file, stats=file.stat()))
 
         except Exception as e:
             raise RuntimeError(

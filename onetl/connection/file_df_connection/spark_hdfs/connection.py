@@ -85,67 +85,70 @@ class SparkHDFS(SparkFileDFConnection):
     Examples
     --------
 
-    SparkHDFS connection initialization:
+    .. tabs::
 
-    .. code:: python
+        .. tab:: Create SparkHDFS connection with Kerberos auth
 
-        from onetl.connection import SparkHDFS
-        from pyspark.sql import SparkSession
+            Execute ``kinit`` consome command before creating Spark Session
 
-        # Create Spark session
-        spark = SparkSession.builder.master("local").appName("spark-app-name").getOrCreate()
+            .. code:: bash
 
-        # Create connection
-        hdfs = SparkHDFS(
-            host="namenode1.domain.com",
-            cluster="rnd-dwh",
-            spark=spark,
-        ).check()
+                $ kinit -kt /path/to/keytab user
 
-    SparkHDFS connection initialization with Kerberos support:
+            .. code:: python
 
-    .. code:: bash
+                from onetl.connection import SparkHDFS
+                from pyspark.sql import SparkSession
 
-        $ kinit -kt /path/to/keytab user
+                # Create Spark session.
+                # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+                # and "spark.yarn.keytab" for Spark 2
 
-    .. code:: python
+                spark = (
+                    SparkSession.builder.appName("spark-app-name")
+                    .option(
+                        "spark.kerberos.access.hadoopFileSystems",
+                        "hdfs://namenode1.domain.com:8020",
+                    )
+                    .option("spark.kerberos.principal", "user")
+                    .option("spark.kerberos.keytab", "/path/to/keytab")
+                    .enableHiveSupport()
+                    .getOrCreate()
+                )
 
-        from onetl.connection import SparkHDFS
-        from pyspark.sql import SparkSession
+                # Create connection
+                hdfs = SparkHDFS(
+                    host="namenode1.domain.com",
+                    cluster="rnd-dwh",
+                    spark=spark,
+                ).check()
 
-        # Create Spark session.
-        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
-        # and "spark.yarn.keytab" for Spark 2
+        .. code-tab:: py Create SparkHDFS connection with anonymous auth
 
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .option(
-                "spark.kerberos.access.hadoopFileSystems",
-                "hdfs://namenode1.domain.com:8020",
-            )
-            .option("spark.kerberos.principal", "user")
-            .option("spark.kerberos.keytab", "/path/to/keytab")
-            .enableHiveSupport()
-            .getOrCreate()
-        )
+            from onetl.connection import SparkHDFS
+            from pyspark.sql import SparkSession
 
-        # Create connection
-        hdfs = SparkHDFS(
-            host="namenode1.domain.com",
-            cluster="rnd-dwh",
-            spark=spark,
-        ).check()
+            # Create Spark session
+            spark = SparkSession.builder.master("local").appName("spark-app-name").getOrCreate()
 
-    Automatically detect hostname for specific cluster
-    (if some third-party plugin provides :ref:`spark-hdfs-slots` implementation):
+            # Create connection
+            hdfs = SparkHDFS(
+                host="namenode1.domain.com",
+                cluster="rnd-dwh",
+                spark=spark,
+            ).check()
 
-    .. code:: python
+        .. tab:: Use cluster name to detect active namenode
 
-        # Create Spark session
-        ...
+            Can be used only if some third-party plugin provides :ref:`spark-hdfs-slots` implementation
 
-        # Create connection
-        hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark).check()
+            .. code:: python
+
+                # Create Spark session
+                ...
+
+                # Create connection
+                hdfs = SparkHDFS(cluster="rnd-dwh", spark=spark).check()
     """
 
     Slots = SparkHDFSSlots

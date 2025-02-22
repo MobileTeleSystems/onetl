@@ -8,7 +8,7 @@ import pytest
 
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file import FileMover
-from onetl.file.filter import ExcludeDir, Glob
+from onetl.file.filter import ExcludeDir, FileModifiedTime, FileSizeRange, Glob, Regexp
 from onetl.file.limit import MaxFilesCount
 from onetl.impl import FailedRemoteFile, FileExistBehavior, RemoteFile, RemotePath
 
@@ -26,6 +26,8 @@ def test_file_mover_view_file(file_connection_with_path_and_files):
     remote_files = mover.view_files()
     remote_files_list = []
 
+    # some clients return different st_mtime in .walk(root) and in .get_stat(file),
+    # so don't use .resolve_file(path) here
     for root, _dirs, files in file_connection.walk(source_path):
         for file in files:
             remote_files_list.append(RemotePath(root) / file)
@@ -61,13 +63,8 @@ def test_file_mover_run(
     )
 
     # record files content and size before move
-    files_content = {}
-    files_size = {}
-    for root, _dirs, files in file_connection.walk(source_path):
-        for file_name in files:
-            file_path = root / file_name
-            files_content[file_path] = file_connection.read_bytes(file_path)
-            files_size[file_path] = file_connection.get_stat(file_path).st_size
+    files_content = {file: file_connection.read_bytes(file) for file in uploaded_files}
+    files_size = {file: file_connection.get_stat(file).st_size for file in uploaded_files}
 
     with caplog.at_level(logging.DEBUG):
         move_result = mover.run()
@@ -126,11 +123,6 @@ def test_file_mover_file_filter_exclude_dir(
         filters=[ExcludeDir(path_type(source_path / "exclude_dir"))],
     )
 
-    excluded = [
-        source_path / "exclude_dir/excluded1.txt",
-        source_path / "exclude_dir/nested/excluded2.txt",
-    ]
-
     with caplog.at_level(logging.INFO):
         move_result = mover.run()
         assert "    filters = [" in caplog.text
@@ -142,8 +134,14 @@ def test_file_mover_file_filter_exclude_dir(
     assert not move_result.missing
     assert move_result.successful
 
+    included = [
+        source_path / "ascii.txt",
+        source_path / "nested/exclude_dir/excluded3.txt",
+        source_path / "some.csv",
+        source_path / "utf-8.txt",
+    ]
     assert sorted(move_result.successful) == sorted(
-        target_path / file.relative_to(source_path) for file in uploaded_files if file not in excluded
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
     )
 
 
@@ -163,14 +161,6 @@ def test_file_mover_file_filter_glob(request, file_connection_with_path_and_file
         filters=[Glob("*.csv")],
     )
 
-    excluded = [
-        source_path / "utf-8.txt",
-        source_path / "ascii.txt",
-        source_path / "exclude_dir/excluded1.txt",
-        source_path / "exclude_dir/nested/excluded2.txt",
-        source_path / "nested/exclude_dir/excluded3.txt",
-    ]
-
     with caplog.at_level(logging.INFO):
         move_result = mover.run()
         assert "    filters = [" in caplog.text
@@ -182,10 +172,192 @@ def test_file_mover_file_filter_glob(request, file_connection_with_path_and_file
     assert not move_result.missing
     assert move_result.successful
 
+    included = [source_path / "some.csv"]
     assert sorted(move_result.successful) == sorted(
-        target_path / file.relative_to(source_path)
-        for file in uploaded_files
-        if file not in excluded and source_path in file.parents
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
+    )
+
+
+def test_file_mover_file_filter_regexp(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        filters=[Regexp(r"\d+\.txt")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        Regexp(re.compile('\\\\d+\\\\.txt', re.IGNORECASE|re.DOTALL))," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert move_result.successful
+
+    included = [
+        source_path / "exclude_dir/excluded1.txt",
+        source_path / "exclude_dir/nested/excluded2.txt",
+        source_path / "nested/exclude_dir/excluded3.txt",
+        source_path / "utf-8.txt",
+    ]
+    assert sorted(move_result.successful) == sorted(
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
+    )
+
+
+def test_file_mover_file_filter_file_size(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        filters=[FileSizeRange(min="1B")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert move_result.successful
+
+    # other files are empty
+    included = [
+        source_path / "ascii.txt",
+        source_path / "some.csv",
+        source_path / "utf-8.txt",
+    ]
+    assert sorted(move_result.successful) == sorted(
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
+    )
+
+
+def test_file_mover_file_filter_file_mtime_since(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    remote_files = [file_connection.resolve_file(file) for file in uploaded_files]
+    remote_files.sort(key=lambda file: file.stat().st_mtime)
+    minimal_mtime = remote_files[0].stat().st_mtime
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        # some connectors return truncated timestamps in `.walk()`.
+        filters=[FileModifiedTime(since=int(minimal_mtime))],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileModifiedTime(since=" in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert move_result.successful
+
+    # all files are newer than minimal_mtime
+    assert sorted(move_result.successful) == sorted(
+        target_path / file.relative_to(source_path) for file in remote_files
+    )
+
+
+def test_file_mover_file_filter_file_mtime_until(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    remote_files = [file_connection.resolve_file(file) for file in uploaded_files]
+    remote_files.sort(key=lambda file: file.stat().st_mtime)
+    minimal_mtime = remote_files[0].stat().st_mtime
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        # some connectors return truncated timestamps in `.walk()`.
+        # also we should exclude files created exactly at minimal_mtime
+        filters=[FileModifiedTime(until=int(minimal_mtime) - 1)],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        FileModifiedTime(since=" in caplog.text
+        assert "    ]" in caplog.text
+
+    # all files are older than minimal_mtime
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert not move_result.successful
+
+
+def test_file_mover_several_file_filters(request, file_connection_with_path_and_files, caplog):
+    file_connection, source_path, uploaded_files = file_connection_with_path_and_files
+    target_path = f"/tmp/test_move_{secrets.token_hex(5)}"
+
+    def finalizer():
+        file_connection.remove_dir(target_path, recursive=True)
+
+    request.addfinalizer(finalizer)
+
+    mover = FileMover(
+        connection=file_connection,
+        source_path=source_path,
+        target_path=target_path,
+        filters=[Glob("*.csv"), FileSizeRange(min="1B")],
+    )
+
+    with caplog.at_level(logging.INFO):
+        move_result = mover.run()
+        assert "    filters = [" in caplog.text
+        assert "        Glob('*.csv')," in caplog.text
+        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "    ]" in caplog.text
+
+    assert not move_result.failed
+    assert not move_result.skipped
+    assert not move_result.missing
+    assert move_result.successful
+
+    included = [source_path / "some.csv"]
+    assert sorted(move_result.successful) == sorted(
+        target_path / file.relative_to(source_path) for file in uploaded_files if file in included
     )
 
 
@@ -242,13 +414,8 @@ def test_file_mover_run_with_files_absolute(
     )
 
     # record files content and size before move
-    files_content = {}
-    files_size = {}
-    for root, _dirs, files in file_connection.walk(source_path):
-        for file_name in files:
-            file_path = root / file_name
-            files_content[file_path] = file_connection.read_bytes(file_path)
-            files_size[file_path] = file_connection.get_stat(file_path).st_size
+    files_content = {file: file_connection.read_bytes(file) for file in uploaded_files}
+    files_size = {file: file_connection.get_stat(file).st_size for file in uploaded_files}
 
     with caplog.at_level(logging.WARNING):
         move_result = mover.run(uploaded_files)
@@ -301,13 +468,8 @@ def test_file_mover_run_with_files_relative_and_source_path(
     relative_files_path = [file.relative_to(source_path) for file in uploaded_files]
 
     # record files content and size before move
-    files_content = {}
-    files_size = {}
-    for root, _dirs, files in file_connection.walk(source_path):
-        for file_name in files:
-            file_path = root / file_name
-            files_content[file_path] = file_connection.read_bytes(file_path)
-            files_size[file_path] = file_connection.get_stat(file_path).st_size
+    files_content = {file: file_connection.read_bytes(file) for file in uploaded_files}
+    files_size = {file: file_connection.get_stat(file).st_size for file in uploaded_files}
 
     mover = FileMover(
         connection=file_connection,

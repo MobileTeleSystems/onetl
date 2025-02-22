@@ -7,6 +7,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Greenplum
 
 pytestmark = pytest.mark.greenplum
@@ -77,6 +78,7 @@ def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
+    # dataframe content is expected
     df = greenplum.fetch(f"SELECT * FROM {table}{suffix}", Greenplum.FetchOptions(fetchsize=2))
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -88,9 +90,19 @@ def test_greenplum_connection_fetch(spark, processing, load_table_data, suffix):
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
 
+    # Client info is expected
+    df = greenplum.fetch(f"SELECT application_name FROM pg_stat_activity WHERE application_name LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
+
     # wrong syntax
     with pytest.raises(Exception):
         greenplum.fetch(f"SELEC 1{suffix}")
+
+    # fetch is read-only
+    with pytest.raises(Exception):
+        greenplum.fetch(f"DROP TABLE {table}{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
@@ -135,6 +147,7 @@ def test_greenplum_connection_ddl(spark, processing, get_schema_table, suffix):
 
     assert not greenplum.execute(processing.drop_table_ddl(table, schema) + suffix)
 
+    # multiple statements
     with pytest.raises(Exception):
         greenplum.execute(
             processing.create_schema_ddl(schema) + "\n" + processing.create_table_ddl(table, schema) + suffix,
@@ -891,11 +904,16 @@ def test_greenplum_connection_execute_function_ddl(
     table_finalizer()
 
     df = greenplum.execute(f"{{call {func}()}}")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
+    table_finalizer()
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        greenplum.fetch(f"SELECT {func}() AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = greenplum.fetch(f"SELECT {func}() AS result")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])
@@ -948,6 +966,9 @@ def test_greenplum_connection_execute_function_dml(
     result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        greenplum.fetch(f"SELECT {func}(1, 'abc') AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = greenplum.fetch(f"SELECT {func}(2, 'cde') AS result")
+    result_df = pandas.DataFrame([[2]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)

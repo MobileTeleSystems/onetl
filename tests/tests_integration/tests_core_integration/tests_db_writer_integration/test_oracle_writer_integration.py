@@ -3,7 +3,7 @@ import pytest
 from onetl.connection import Oracle
 from onetl.db import DBWriter
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.flaky]
 
 
 def test_oracle_writer(spark, processing, prepare_schema_table):

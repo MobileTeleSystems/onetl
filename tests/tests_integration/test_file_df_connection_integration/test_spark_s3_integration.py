@@ -3,6 +3,7 @@ from contextlib import suppress
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl._util.hadoop import get_hadoop_config
 from onetl.connection import SparkS3
 
@@ -69,6 +70,7 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         protocol=s3_server.protocol,
         extra={
             "path.access.style": True,
+            "connection.timeout": 300000,
             "committer.name": "magic",
         },
         spark=spark,
@@ -82,17 +84,24 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         # per-bucket config
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == "wrong"
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) is None
-        # root config
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.connection.timeout", None) is None
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.user.agent.prefix", None) is None
+        # root config
         assert hadoop_conf.get("fs.s3a.committer.name") == "file"
+        # fs.s3a.user.agent.prefix is set by wrong_s3.check() call
 
         # Hadoop configuration is reset, and new S3 connection uses valid options
         real_s3.check()
         assert msg in caplog.text
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == s3_server.access_key
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) == "true"
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.connection.timeout", None) == "300000"
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.user.agent.prefix", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") == "magic"
+        assert hadoop_conf.get("fs.s3a.user.agent.prefix").startswith("local-")
+        assert hadoop_conf.get("fs.s3a.user.agent.prefix").endswith(f"onETL/{onetl_version} Spark/{spark.version}")
         caplog.clear()
 
         # Options are the same, nothing is changed
@@ -100,12 +109,19 @@ def test_spark_s3_check_hadoop_config_reset(spark, s3_server, caplog):
         assert msg not in caplog.text
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) == s3_server.access_key
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) == "true"
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.connection.timeout", None) == "300000"
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.user.agent.prefix", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") == "magic"
+        assert hadoop_conf.get("fs.s3a.user.agent.prefix").startswith("local-")
+        assert hadoop_conf.get("fs.s3a.user.agent.prefix").endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
         real_s3.close()
         # Options are reset
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.access.key", None) is None
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.path.access.style", None) is None
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.connection.timeout", None) is None
         assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.committer.name", None) is None
+        assert hadoop_conf.get(f"fs.s3a.bucket.{s3_server.bucket}.user.agent.prefix", None) is None
         assert hadoop_conf.get("fs.s3a.committer.name") is None
+        assert hadoop_conf.get("fs.s3a.user.agent.prefix") is None

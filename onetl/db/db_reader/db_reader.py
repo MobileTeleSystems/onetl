@@ -231,141 +231,80 @@ class DBReader(FrozenModel):
 
     Examples
     --------
-    Simple Reader creation:
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
+        .. code-tab:: py Minimal example
 
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+            from onetl.db import DBReader
+            from onetl.connection import Postgres
 
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
+            postgres = Postgres(...)
 
-        # create reader
-        reader = DBReader(connection=postgres, source="fiddle.dummy")
+            # create reader
+            reader = DBReader(connection=postgres, source="fiddle.dummy")
 
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    Reader creation with JDBC options:
-
-    .. code:: python
-
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
-        options = {"sessionInitStatement": "select 300", "fetchsize": "100"}
-        # or (it is the same):
-        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
-
-        # create reader and pass some options to the underlying connection object
-        reader = DBReader(connection=postgres, source="fiddle.dummy", options=options)
-
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    Reader creation with all parameters:
-
-    .. code:: python
-
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
-        options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
-
-        # create reader with specific columns, rows filter
-        reader = DBReader(
-            connection=postgres,
-            source="default.test",
-            where="d_id > 100",
-            hint="NOWAIT",
-            columns=["d_id", "d_name", "d_age"],
-            options=options,
-        )
-
-        # read data from table "fiddle.dummy"
-        df = reader.run()
-
-    Incremental Reader:
-
-    .. code:: python
-
-        from onetl.db import DBReader
-        from onetl.connection import Postgres
-        from onetl.strategy import IncrementalStrategy
-        from pyspark.sql import SparkSession
-
-        maven_packages = Postgres.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        postgres = Postgres(
-            host="postgres.domain.com",
-            user="your_user",
-            password="***",
-            database="target_db",
-            spark=spark,
-        )
-
-        reader = DBReader(
-            connection=postgres,
-            source="fiddle.dummy",
-            hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
-                name="some_unique_hwm_name",
-                expression="d_age",
-            ),
-        )
-
-        # read data from table "fiddle.dummy"
-        # but only with new rows (`WHERE d_age > previous_hwm_value`)
-        with IncrementalStrategy():
+            # read data from table "fiddle.dummy"
             df = reader.run()
+
+        .. code-tab:: py With custom reading options
+
+            from onetl.connection import Postgres
+            from onetl.db import DBReader
+
+            postgres = Postgres(...)
+            options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
+
+            # create reader and pass some options to the underlying connection object
+            reader = DBReader(connection=postgres, source="fiddle.dummy", options=options)
+
+            # read data from table "fiddle.dummy"
+            df = reader.run()
+
+        .. code-tab:: py Full example
+
+            from onetl.db import DBReader
+            from onetl.connection import Postgres
+
+            postgres = Postgres(...)
+            options = Postgres.ReadOptions(sessionInitStatement="select 300", fetchsize="100")
+
+            # create reader with specific columns, rows filter
+            reader = DBReader(
+                connection=postgres,
+                source="default.test",
+                where="d_id > 100",
+                hint="NOWAIT",
+                columns=["d_id", "d_name", "d_age"],
+                options=options,
+            )
+
+            # read data from table "fiddle.dummy"
+            df = reader.run()
+
+        .. tab:: Incremental reading
+
+            See :ref:`strategy` for more examples
+
+            .. code:: python
+
+                from onetl.strategy import IncrementalStrategy
+
+                ...
+
+                reader = DBReader(
+                    connection=postgres,
+                    source="fiddle.dummy",
+                    hwm=DBReader.AutoDetectHWM(  # mandatory for IncrementalStrategy
+                        name="some_unique_hwm_name",
+                        expression="d_age",
+                    ),
+                )
+
+                # read data from table "fiddle.dummy"
+                # but only with new rows (`WHERE d_age > previous_hwm_value`)
+                with IncrementalStrategy():
+                    df = reader.run()
     """
 
     connection: BaseDBConnection
@@ -540,14 +479,17 @@ class DBReader(FrozenModel):
                 # implement your handling logic here
                 ...
         """
+
+        entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() starts")
         self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+            self._connection_checked = True
 
         job_description = f"{self.connection} -> {self.__class__.__name__}.has_data({self.source})"
         with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters()
-                self.connection.check()
-
             window, limit = self._calculate_window_and_limit()
             if limit == 0:
                 return False
@@ -563,6 +505,7 @@ class DBReader(FrozenModel):
                 **self._get_read_kwargs(),
             )
 
+            entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() ends", char="-")
             return bool(df.take(1))
 
     @slot
@@ -632,16 +575,15 @@ class DBReader(FrozenModel):
         """
 
         entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
-
         self._check_strategy()
+
+        if not self._connection_checked:
+            self._log_parameters()
+            self.connection.check()
+            self._connection_checked = True
 
         job_description = f"{self.connection} -> {self.__class__.__name__}.run({self.source})"
         with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters()
-                self.connection.check()
-                self._connection_checked = True
-
             window, limit = self._calculate_window_and_limit()
 
             # update the HWM with the stop value

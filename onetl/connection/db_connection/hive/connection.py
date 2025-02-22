@@ -16,6 +16,7 @@ except (ImportError, AttributeError):
 from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.spark import inject_spark_param, override_job_description
 from onetl._util.sql import clear_statement
+from onetl.base import BaseWritableFileFormat
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.hive.dialect import HiveDialect
 from onetl.connection.db_connection.hive.options import (
@@ -24,7 +25,7 @@ from onetl.connection.db_connection.hive.options import (
     HiveWriteOptions,
 )
 from onetl.connection.db_connection.hive.slots import HiveSlots
-from onetl.file.format.file_format import WriteOnlyFileFormat
+from onetl.file.format.file_format import ReadWriteFileFormat, WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -60,45 +61,47 @@ class Hive(DBConnection):
     Examples
     --------
 
-    Hive connection initialization:
+    .. tabs::
 
-    .. code:: python
+        .. tab:: Create Hive connection with Kerberos auth
 
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
+            Execute ``kinit`` consome command before creating Spark Session
 
-        # Create Spark session
-        spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+            .. code:: bash
 
-        # Create connection
-        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+                $ kinit -kt /path/to/keytab user
 
-    Hive connection initialization with Kerberos support:
+            .. code:: python
 
-    .. code:: bash
+                from onetl.connection import Hive
+                from pyspark.sql import SparkSession
 
-        $ kinit -kt /path/to/keytab user
+                # Create Spark session
+                # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+                # and "spark.yarn.keytab" for Spark 2
 
-    .. code:: python
+                spark = (
+                    SparkSession.builder.appName("spark-app-name")
+                    .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
+                    .option("spark.kerberos.principal", "user")
+                    .option("spark.kerberos.keytab", "/path/to/keytab")
+                    .enableHiveSupport()
+                    .getOrCreate()
+                )
 
-        from onetl.connection import Hive
-        from pyspark.sql import SparkSession
+                # Create connection
+                hive = Hive(cluster="rnd-dwh", spark=spark).check()
 
-        # Create Spark session
-        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
-        # and "spark.yarn.keytab" for Spark 2
+        .. code-tab:: py Create Hive connection with anonymous auth
 
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
-            .option("spark.kerberos.principal", "user")
-            .option("spark.kerberos.keytab", "/path/to/keytab")
-            .enableHiveSupport()
-            .getOrCreate()
-        )
+            from onetl.connection import Hive
+            from pyspark.sql import SparkSession
 
-        # Create connection
-        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+            # Create Spark session
+            spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+
+            # Create connection
+            hive = Hive(cluster="rnd-dwh", spark=spark).check()
     """
 
     cluster: Cluster
@@ -177,7 +180,7 @@ class Hive(DBConnection):
 
         try:
             with override_job_description(self.spark, f"{self}.check()"):
-                self._execute_sql(self._CHECK_QUERY).limit(1).collect()
+                self._execute_sql(self._CHECK_QUERY).take(1)
             log.info("|%s| Connection is available.", self.__class__.__name__)
         except Exception as e:
             log.exception("|%s| Connection is unavailable", self.__class__.__name__)
@@ -295,16 +298,8 @@ class Hive(DBConnection):
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
-        try:
-            self.get_df_schema(target)
-            table_exists = True
-
-            log.info("|%s| Table %r already exists", self.__class__.__name__, target)
-        except Exception:
-            table_exists = False
-
         # https://stackoverflow.com/a/72747050
-        if table_exists and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
+        if self._target_exist(target) and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
             if write_options.if_exists == HiveTableExistBehavior.ERROR:
                 raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists='error')")
             elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
@@ -384,7 +379,7 @@ class Hive(DBConnection):
             hint=hint,
         )
 
-        log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
+        log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
         df = self._execute_sql(query)
@@ -463,6 +458,28 @@ class Hive(DBConnection):
 
         return sorted(df_columns, key=lambda column: table_columns_normalized.index(column.casefold()))
 
+    def _target_exist(self, name: str) -> bool:
+        from pyspark.sql.functions import col
+
+        log.info("|%s| Checking if table %r exists ...", self.__class__.__name__, name)
+
+        # Do not use SELECT * FROM table, because it may fail if users have no permissions,
+        # or Hive Metastore is overloaded.
+        # Also we ignore VIEW's as they are not insertable.
+        schema, table = name.split(".", maxsplit=1)
+        query = f"SHOW TABLES IN {schema} LIKE '{table}'"
+
+        log.debug("|%s| Executing SQL query:", self.__class__.__name__)
+        log_lines(log, query, level=logging.DEBUG)
+
+        df = self._execute_sql(query).where(col("tableName") == table)
+        if df.take(1):
+            log.info("|%s| Table %r exists.", self.__class__.__name__, name)
+            return True
+
+        log.info("|%s| Table %r does not exist.", self.__class__.__name__, name)
+        return False
+
     def _insert_into(
         self,
         df: DataFrame,
@@ -503,7 +520,7 @@ class Hive(DBConnection):
             exclude={"if_exists"},
         )
 
-        if isinstance(write_options.format, WriteOnlyFileFormat):
+        if isinstance(write_options.format, (WriteOnlyFileFormat, ReadWriteFileFormat)):
             options_dict["format"] = write_options.format.name
             options_dict.update(write_options.format.dict(exclude={"name"}))
 
@@ -532,7 +549,7 @@ class Hive(DBConnection):
                 writer = writer.option(method, value)
 
         # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
-        if isinstance(write_options.format, WriteOnlyFileFormat):
+        if isinstance(write_options.format, BaseWritableFileFormat):
             writer = write_options.format.apply_to_writer(writer)
         elif isinstance(write_options.format, str):
             writer = writer.format(write_options.format)

@@ -8,6 +8,7 @@ from typing import ClassVar
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -44,7 +45,7 @@ class PostgresExtra(GenericOptions):
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. |support_hooks|
 
-    Based on Maven package `org.postgresql:postgresql:42.7.4 <https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.4>`_
+    Based on Maven package `org.postgresql:postgresql:42.7.5 <https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.5>`_
     (`official Postgres JDBC driver <https://jdbc.postgresql.org/>`_).
 
     .. seealso::
@@ -86,7 +87,7 @@ class Postgres(JDBCConnection):
     Examples
     --------
 
-    Postgres connection initialization
+    Create and check Postgres connection:
 
     .. code:: python
 
@@ -107,9 +108,24 @@ class Postgres(JDBCConnection):
             user="user",
             password="*****",
             database="target_database",
-            extra={"ssl": "false"},
             spark=spark,
         )
+
+    Create read-only connection:
+
+    .. code:: python
+
+        ...
+
+        # Create connection
+        postgres = Postgres(
+            host="database.host.or.ip",
+            user="user",
+            password="*****",
+            database="target_database",
+            extra={"readOnly": True, "readOnlyMode": "always"},  # <--
+            spark=spark,
+        ).check()
 
     """
 
@@ -140,7 +156,7 @@ class Postgres(JDBCConnection):
         Parameters
         ----------
         package_version : str, optional
-            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.4``.
+            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to ``42.7.5``.
 
         Examples
         --------
@@ -155,7 +171,7 @@ class Postgres(JDBCConnection):
             Postgres.get_packages(package_version="42.6.0")
 
         """
-        default_version = "42.7.4"
+        default_version = "42.7.5"
         version = Version(package_version or default_version).min_digits(3)
 
         return [f"org.postgresql:postgresql:{version}"]
@@ -165,7 +181,7 @@ class Postgres(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.postgresql:postgresql:42.7.4"
+        return "org.postgresql:postgresql:42.7.5"
 
     @property
     def jdbc_url(self) -> str:
@@ -175,7 +191,8 @@ class Postgres(JDBCConnection):
     def jdbc_params(self) -> dict[str, str]:
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
-        result["ApplicationName"] = result.get("ApplicationName", self.spark.sparkContext.appName)
+        # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
+        result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result
 
     @property
@@ -185,15 +202,13 @@ class Postgres(JDBCConnection):
     def __str__(self):
         return f"{self.__class__.__name__}[{self.host}:{self.port}/{self.database}]"
 
-    def _options_to_connection_properties(
-        self,
-        options: JDBCFetchOptions | JDBCExecuteOptions,
-    ):  # noqa: WPS437
-        # See https://github.com/pgjdbc/pgjdbc/pull/1252
-        # Since 42.2.9 Postgres JDBC Driver added new option readOnlyMode=transaction
-        # Which is not a desired behavior, because `.fetch()` method should always be read-only
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # To properly support pgbouncer, we have to create connection with readOnly option set.
+            # See https://github.com/pgjdbc/pgjdbc/issues/848
+            options = options.copy(update={"readOnly": True})
 
-        if not getattr(options, "readOnlyMode", None):
-            options = options.copy(update={"readOnlyMode": "always"})
-
-        return super()._options_to_connection_properties(options)
+        connection_properties = self._options_to_connection_properties(options)
+        driver_manager = self.spark._jvm.java.sql.DriverManager  # type: ignore
+        # avoid calling .setReadOnly(True) here
+        return driver_manager.getConnection(self.jdbc_url, connection_properties)

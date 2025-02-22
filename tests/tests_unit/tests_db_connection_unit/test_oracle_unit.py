@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Oracle
 
 pytestmark = [pytest.mark.oracle, pytest.mark.db_connection, pytest.mark.connection]
@@ -14,11 +15,11 @@ def test_oracle_class_attributes():
 def test_oracle_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `Oracle.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"
+        assert Oracle.package == "com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"
 
 
 def test_oracle_get_packages_no_input():
-    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]
+    assert Oracle.get_packages() == ["com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"]
 
 
 @pytest.mark.parametrize("java_version", ["7", "6"])
@@ -30,16 +31,16 @@ def test_oracle_get_packages_java_version_not_supported(java_version):
 @pytest.mark.parametrize(
     "java_version, package_version, expected_packages",
     [
-        (None, None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
-        ("8", None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
-        ("8", "23.5.0.24.07", ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
+        (None, None, ["com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"]),
+        ("8", None, ["com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"]),
+        ("8", "23.7.0.25.01", ["com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"]),
         ("8", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
-        ("9", None, ["com.oracle.database.jdbc:ojdbc8:23.5.0.24.07"]),
+        ("9", None, ["com.oracle.database.jdbc:ojdbc8:23.7.0.25.01"]),
         ("9", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
-        ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"]),
+        ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.7.0.25.01"]),
         ("11", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
         ("17", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
-        ("20", "23.5.0.24.07", ["com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"]),
+        ("20", "23.7.0.25.01", ["com.oracle.database.jdbc:ojdbc11:23.7.0.25.01"]),
     ],
 )
 def test_oracle_get_packages(java_version, package_version, expected_packages):
@@ -108,6 +109,7 @@ def test_oracle(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@some_host:1521:sid",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert "passwd" not in repr(conn)
@@ -132,6 +134,7 @@ def test_oracle_with_port(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@some_host:5000:sid",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "oracle://some_host:5000/sid"
@@ -147,6 +150,7 @@ def test_oracle_uri_with_service_name(spark_mock):
         "password": "passwd",
         "driver": "oracle.jdbc.driver.OracleDriver",
         "url": "jdbc:oracle:thin:@//some_host:1521/service",
+        "v$session.program": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "oracle://some_host:1521/service"
@@ -189,7 +193,11 @@ def test_oracle_with_extra(spark_mock):
         user="user",
         password="passwd",
         sid="sid",
-        extra={"tcpKeepAlive": "false", "connectTimeout": "10"},
+        extra={
+            "tcpKeepAlive": "false",
+            "connectTimeout": "10",
+            "v$session.program": "override",
+        },
         spark=spark_mock,
     )
 
@@ -201,6 +209,7 @@ def test_oracle_with_extra(spark_mock):
         "url": "jdbc:oracle:thin:@some_host:1521:sid",
         "tcpKeepAlive": "false",
         "connectTimeout": "10",
+        "v$session.program": "override",
     }
 
 

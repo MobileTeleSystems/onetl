@@ -67,7 +67,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
 
     @property
     def is_reached(self) -> bool:
-        return self._counter >= self.count_limit
+        return self._counter > self.count_limit
 
     @validator("count_limit")
     def _deprecated(cls, value):

@@ -72,7 +72,7 @@ This method supports **any** query syntax supported by Clickhouse, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``, and so on
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ other statements not mentioned here
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
@@ -85,21 +85,19 @@ Examples
 
     clickhouse = Clickhouse(...)
 
-    with clickhouse:
-        # automatically close connection after exiting this context manager
-        clickhouse.execute("DROP TABLE schema.table")
-        clickhouse.execute(
-            """
-            CREATE TABLE schema.table (
-                id UInt8,
-                key String,
-                value Float32
-            )
-            ENGINE = MergeTree()
-            ORDER BY id
-            """,
-            options=Clickhouse.ExecuteOptions(query_timeout=10),
+    clickhouse.execute("DROP TABLE schema.table")
+    clickhouse.execute(
+        """
+        CREATE TABLE schema.table (
+            id UInt8,
+            key String,
+            value Float32
         )
+        ENGINE = MergeTree()
+        ORDER BY id
+        """,
+        options=Clickhouse.ExecuteOptions(query_timeout=10),
+    )
 
 Notes
 ------

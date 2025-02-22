@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from onetl import __version__ as onetl_version
 from onetl.connection import MySQL
 
 pytestmark = [pytest.mark.mysql, pytest.mark.db_connection, pytest.mark.connection]
@@ -14,14 +15,14 @@ def test_mysql_class_attributes():
 def test_mysql_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MySQL.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MySQL.package == "com.mysql:mysql-connector-j:9.0.0"
+        assert MySQL.package == "com.mysql:mysql-connector-j:9.2.0"
 
 
 @pytest.mark.parametrize(
     "package_version, expected_packages",
     [
-        (None, ["com.mysql:mysql-connector-j:9.0.0"]),
-        ("9.0.0", ["com.mysql:mysql-connector-j:9.0.0"]),
+        (None, ["com.mysql:mysql-connector-j:9.2.0"]),
+        ("9.2.0", ["com.mysql:mysql-connector-j:9.2.0"]),
         ("8.1.0", ["com.mysql:mysql-connector-j:8.1.0"]),
         ("8.0.33", ["com.mysql:mysql-connector-j:8.0.33"]),
     ],
@@ -87,6 +88,7 @@ def test_mysql(spark_mock):
         "url": "jdbc:mysql://some_host:3306/database",
         "characterEncoding": "UTF-8",
         "useUnicode": "yes",
+        "connectionAttributes": f"program_name:local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert "passwd" not in repr(conn)
@@ -113,6 +115,7 @@ def test_mysql_with_port(spark_mock):
         "url": "jdbc:mysql://some_host:5000/database",
         "characterEncoding": "UTF-8",
         "useUnicode": "yes",
+        "connectionAttributes": f"program_name:local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "mysql://some_host:5000"
@@ -137,6 +140,7 @@ def test_mysql_without_database(spark_mock):
         "url": "jdbc:mysql://some_host:3306",
         "characterEncoding": "UTF-8",
         "useUnicode": "yes",
+        "connectionAttributes": f"program_name:local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
     }
 
     assert conn.instance_url == "mysql://some_host:3306"
@@ -149,31 +153,15 @@ def test_mysql_with_extra(spark_mock):
         user="user",
         password="passwd",
         database="database",
-        extra={"allowMultiQueries": "true", "requireSSL": "true"},
+        extra={
+            "characterEncoding": "CP-1251",
+            "useUnicode": "no",
+            "connectionAttributes": "something:abc",
+            "allowMultiQueries": "true",
+            "requireSSL": "false",
+        },
         spark=spark_mock,
     )
-
-    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
-    assert conn.jdbc_params == {
-        "user": "user",
-        "password": "passwd",
-        "driver": "com.mysql.cj.jdbc.Driver",
-        "url": "jdbc:mysql://some_host:3306/database",
-        "characterEncoding": "UTF-8",
-        "useUnicode": "yes",
-        "allowMultiQueries": "true",
-        "requireSSL": "true",
-    }
-
-    conn = MySQL(
-        host="some_host",
-        user="user",
-        password="passwd",
-        database="database",
-        extra={"characterEncoding": "CP-1251", "useUnicode": "no"},
-        spark=spark_mock,
-    )
-
     assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
     assert conn.jdbc_params == {
         "user": "user",
@@ -182,6 +170,30 @@ def test_mysql_with_extra(spark_mock):
         "url": "jdbc:mysql://some_host:3306/database",
         "characterEncoding": "CP-1251",
         "useUnicode": "no",
+        "connectionAttributes": (
+            f"something:abc,program_name:local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}"
+        ),
+        "allowMultiQueries": "true",
+        "requireSSL": "false",
+    }
+
+    conn = MySQL(
+        host="some_host",
+        user="user",
+        password="passwd",
+        database="database",
+        extra={"connectionAttributes": "something:abc,program_name:override"},
+        spark=spark_mock,
+    )
+    assert conn.jdbc_url == "jdbc:mysql://some_host:3306/database"
+    assert conn.jdbc_params == {
+        "user": "user",
+        "password": "passwd",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://some_host:3306/database",
+        "characterEncoding": "UTF-8",
+        "useUnicode": "yes",
+        "connectionAttributes": "something:abc,program_name:override",
     }
 
 

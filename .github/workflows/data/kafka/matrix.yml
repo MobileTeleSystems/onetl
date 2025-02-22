@@ -7,13 +7,13 @@ min: &min
   spark-version: 2.4.8
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
-  kafka-version: 3.7.1
+  kafka-version: 3.9.0
   pydantic-version: 2
-  spark-version: 3.5.3
-  python-version: '3.12'
+  spark-version: 3.5.4
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 
@@ -21,7 +21,7 @@ latest: &latest
   kafka-version: latest
   pydantic-version: latest
   spark-version: latest
-  python-version: '3.12'
+  python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
 

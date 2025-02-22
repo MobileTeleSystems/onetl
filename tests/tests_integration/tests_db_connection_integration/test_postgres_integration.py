@@ -7,6 +7,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Postgres
 
 pytestmark = pytest.mark.postgres
@@ -64,6 +65,7 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix, cap
         df = postgres.sql(f"SELECT * FROM {table}{suffix}")
         assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -75,6 +77,12 @@ def test_postgres_connection_sql(spark, processing, load_table_data, suffix, cap
     df = postgres.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df)
+
+    # Client info is expected
+    df = postgres.sql(f"SELECT application_name FROM pg_stat_activity WHERE application_name LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
 
     # wrong syntax
     with pytest.raises(Exception):
@@ -98,6 +106,7 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, c
         df = postgres.fetch(f"SELECT * FROM {table}{suffix}", Postgres.FetchOptions(fetchsize=2))
         assert "Detected dialect: 'org.apache.spark.sql.jdbc.PostgresDialect'" in caplog.text
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -109,13 +118,23 @@ def test_postgres_connection_fetch(spark, processing, load_table_data, suffix, c
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df)
 
+    # Client info is expected
+    df = postgres.fetch(f"SELECT application_name FROM pg_stat_activity WHERE application_name LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert client_info.endswith(f"onETL/{onetl_version} Spark/{spark.version}")
+
     # wrong syntax
     with pytest.raises(Exception):
         postgres.fetch(f"SELEC 1{suffix}")
 
+    # fetch is read-only
+    with pytest.raises(Exception):
+        postgres.fetch(f"DROP TABLE {table}{suffix}")
+
 
 @pytest.mark.parametrize("suffix", ["", ";"])
-def test_postgres_connection_ddl(spark, processing, get_schema_table, suffix):
+def test_postgres_connection_execute_ddl(spark, processing, get_schema_table, suffix):
     postgres = Postgres(
         host=processing.host,
         port=processing.port,
@@ -898,15 +917,20 @@ def test_postgres_connection_execute_function_ddl(
     table_finalizer()
 
     df = postgres.execute(f"{{call {func}()}}")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
     table_finalizer()
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        postgres.fetch(f"SELECT {func}() AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = postgres.fetch(f"SELECT {func}() AS result")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
+    table_finalizer()
 
-    # unfortunately, we cannot pass read-only flag to spark.read.jdbc
     df = postgres.sql(f"SELECT {func}() AS result")
+    result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
 
@@ -945,6 +969,7 @@ def test_postgres_connection_execute_function_dml(
         BEGIN
             INSERT INTO {table} VALUES(idd, text);
             RETURN idd;
+            COMMIT;
         END;
         $$ LANGUAGE PLPGSQL{suffix}
         """,
@@ -959,13 +984,15 @@ def test_postgres_connection_execute_function_dml(
     result_df = pandas.DataFrame([[1]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
-    # fetch is read-only
-    with pytest.raises(Exception):
-        postgres.fetch(f"SELECT {func}(1, 'abc') AS result")
-
-    # unfortunately, we cannot pass read-only flag to spark.read.jdbc
-    df = postgres.sql(f"SELECT {func}(2, 'cde') AS result")
+    # works with readOnlyMode=transaction, because autoCommit is true:
+    # https://jdbc.postgresql.org/documentation/use/
+    # fails with readOnlyMode=always, but it is not compatible with pgbouncer
+    df = postgres.fetch(f"SELECT {func}(2, 'cde') AS result")
     result_df = pandas.DataFrame([[2]], columns=["result"])
+    processing.assert_equal_df(df=df, other_frame=result_df)
+
+    df = postgres.sql(f"SELECT {func}(3, 'def') AS result")
+    result_df = pandas.DataFrame([[3]], columns=["result"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
 

@@ -85,7 +85,7 @@ class FTP(FileConnection, RenameDirMixin):
     Examples
     --------
 
-    FTP file connection initialization
+    Create and check FTP connection:
 
     .. code:: python
 
@@ -95,7 +95,7 @@ class FTP(FileConnection, RenameDirMixin):
             host="ftp.domain.com",
             user="someuser",
             password="*****",
-        )
+        ).check()
     """
 
     host: Host

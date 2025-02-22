@@ -8,6 +8,7 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Clickhouse
 
 pytestmark = pytest.mark.clickhouse
@@ -31,7 +32,7 @@ def test_clickhouse_connection_check(spark, processing, caplog):
     assert f"port = {processing.port}" in caplog.text
     assert f"database = '{processing.database}'" in caplog.text
     assert f"user = '{processing.user}'" in caplog.text
-    assert "password = SecretStr('')" in caplog.text
+    assert "password = SecretStr('**********')" in caplog.text
 
     assert "package = " not in caplog.text
     assert "spark = " not in caplog.text
@@ -84,10 +85,20 @@ def test_clickhouse_connection_sql(spark, processing, load_table_data, suffix, c
         order_by="id_int",
     )
 
+    # dataframe content is expected
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
     df = clickhouse.sql(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # Client infois expected
+    df = clickhouse.sql(
+        "SELECT http_user_agent FROM system.processes WHERE query "
+        f"LIKE '%SELECT http_user_agent FROM system.processes%'{suffix}",
+    )
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert f"onETL/{onetl_version} Spark/{spark.version}" in client_info
 
     # wrong syntax
     with pytest.raises(Exception):
@@ -120,6 +131,7 @@ def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix,
     processing.assert_equal_df(df=df, other_frame=table_df, order_by="id_int")
     clickhouse.close()
 
+    # dataframe content is expected
     df = clickhouse.fetch(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.id_int < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
@@ -128,9 +140,22 @@ def test_clickhouse_connection_fetch(spark, processing, load_table_data, suffix,
     result_df = pandas.DataFrame([[load_table_data.table]], columns=["name"])
     processing.assert_equal_df(df=df, other_frame=result_df)
 
+    # Client infois expected
+    df = clickhouse.fetch(
+        "SELECT http_user_agent FROM system.processes WHERE query "
+        f"LIKE '%SELECT http_user_agent FROM system.processes%'{suffix}",
+    )
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    assert f"onETL/{onetl_version} Spark/{spark.version}" in client_info
+
     # wrong syntax
     with pytest.raises(Exception):
         clickhouse.fetch(f"SELEC 1{suffix}")
+
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        clickhouse.fetch(f"DROP TABLE {table}{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["", ";"])

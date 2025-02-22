@@ -38,19 +38,18 @@ jobs:
     if: github.repository == 'MobileTeleSystems/onetl'  # prevent running on forks
     name: Run Greenplum tests (server=${{ inputs.greenplum-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    services:
-      greenplum:
-        image: andruche/greenplum:${{ inputs.greenplum-version }}
-        env:
-          TZ: UTC
-        ports:
-          - 5433:5432
-        # TODO: remove after https://github.com/andruche/docker-greenplum/pull/2
-        options: --sysctl net.ipv6.conf.all.disable_ipv6=1
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Start Grenplum
+        run: |
+          docker compose --profile all down -v --remove-orphans
+          docker compose --profile greenplum pull
+          docker compose --profile greenplum up -d --wait --wait-timeout 200
+        env:
+          GREENPLUM_IMAGE: andruche/greenplum:${{ inputs.greenplum-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4
@@ -96,24 +95,24 @@ jobs:
         run: |
           pip install -I -r requirements/core.txt -r requirements/tests/base.txt -r requirements/tests/postgres.txt -r requirements/tests/spark-${{ inputs.spark-version }}.txt -r requirements/tests/pydantic-${{ inputs.pydantic-version }}.txt
 
-      - name: Wait for Greenplum to be ready
-        run: |
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
-
-          # Greenplum init script is running very late
-          sleep 30
-
-          export PGPASSWORD=$ONETL_GP_PASSWORD
-          pg_isready -h localhost -p 5433 -U $ONETL_GP_USER -d $ONETL_GP_DATABASE -t 60
-
       - name: Run tests
         run: |
           mkdir reports/ || echo "Directory exists"
-          sed '/^$/d' ./.env.local | sed '/^#/d' | sed 's/^/export /' > ./env
-          source ./env
+          source .env.local
           export ONETL_GP_PACKAGE_VERSION=${{ inputs.package-version }}
           ./pytest_runner.sh -m greenplum
+        env:
+          GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
+          GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
+
+      - name: Run tests with PGBouncer
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          source .env.local
+          export ONETL_GP_PACKAGE_VERSION=${{ inputs.package-version }}
+          export ONETL_GP_PORT=6433
+          # Run only some basic tests
+          ./pytest_runner.sh -m greenplum  -k "tests_core_integration or tests_db_connection_integration"
         env:
           GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
           GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
@@ -122,7 +121,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: andruche/greenplum
+          images: andruche/greenplum,bitnami/pgbouncer
           dest: ./logs
 
       - name: Upload Greenplum logs
@@ -132,6 +131,11 @@ jobs:
           name: container-logs-greenplum-${{ inputs.greenplum-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: logs/*
 
+      - name: Shutdown Greenplum
+        if: always()
+        run: |
+          docker compose --profile all down -v --remove-orphans
+
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:
@@ -139,3 +143,4 @@ jobs:
           path: reports/*
           # https://github.com/actions/upload-artifact/issues/602
           include-hidden-files: true
+          overwrite: true

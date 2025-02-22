@@ -8,8 +8,13 @@ from typing import ClassVar, Optional
 from etl_entities.instance import Host
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
+from onetl.connection.db_connection.jdbc_mixin.options import (
+    JDBCExecuteOptions,
+    JDBCFetchOptions,
+)
 from onetl.connection.db_connection.mssql.dialect import MSSQLDialect
 from onetl.connection.db_connection.mssql.options import (
     MSSQLExecuteOptions,
@@ -80,95 +85,88 @@ class MSSQL(JDBCConnection):
     Examples
     --------
 
-    MSSQL connection with plain auth:
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: py Create MSSQL connection with plain auth
 
-        from onetl.connection import MSSQL
-        from pyspark.sql import SparkSession
+            from onetl.connection import MSSQL
+            from pyspark.sql import SparkSession
 
-        # Create Spark session with MSSQL driver loaded
-        maven_packages = MSSQL.get_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+            # Create Spark session with MSSQL driver loaded
+            maven_packages = MSSQL.get_packages()
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
-        # Create connection
-        mssql = MSSQL(
-            host="database.host.or.ip",
-            port=1433,
-            user="user",
-            password="*****",
-            extra={
-                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-            },
-            spark=spark,
-        )
+            # Create connection
+            mssql = MSSQL(
+                host="database.host.or.ip",
+                port=1433,
+                user="user",
+                password="*****",
+                extra={
+                    "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+                },
+                spark=spark,
+            )
 
-    MSSQL connection with domain auth:
+        .. code-tab:: py Create MSSQL connection with domain auth
 
-    .. code:: python
+            # Create Spark session with MSSQL driver loaded
+            ...
 
-        # Create Spark session with MSSQL driver loaded
-        ...
+            # Create connection
+            mssql = MSSQL(
+                host="database.host.or.ip",
+                port=1433,
+                user="user",
+                password="*****",
+                extra={
+                    "domain": "some.domain.com",  # add here your domain
+                    "integratedSecurity": "true",
+                    "authenticationScheme": "NTLM",
+                    "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+                },
+                spark=spark,
+            )
 
-        # Create connection
-        mssql = MSSQL(
-            host="database.host.or.ip",
-            port=1433,
-            user="user",
-            password="*****",
-            extra={
-                "domain": "some.domain.com",  # add here your domain
-                "integratedSecurity": "true",
-                "authenticationScheme": "NTLM",
-                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-            },
-            spark=spark,
-        )
+        .. code-tab:: py Create MSSQL connection with instance name
 
-    MSSQL connection with instance name:
+            # Create Spark session with MSSQL driver loaded
+            ...
 
-    .. code:: python
+            # Create connection
+            mssql = MSSQL(
+                host="database.host.or.ip",
+                # !!! no port !!!
+                user="user",
+                password="*****",
+                extra={
+                    "instanceName": "myinstance",  # add here your instance name
+                    "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+                },
+                spark=spark,
+            )
 
-        # Create Spark session with MSSQL driver loaded
-        ...
+        .. code-tab:: py Create MSSQL read-only connection
 
-        # Create connection
-        mssql = MSSQL(
-            host="database.host.or.ip",
-            # !!! no port !!!
-            user="user",
-            password="*****",
-            extra={
-                "instanceName": "myinstance",  # add here your instance name
-                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-            },
-            spark=spark,
-        )
+            # Create Spark session with MSSQL driver loaded
+            ...
 
-    MSSQL read-only connection:
-
-    .. code:: python
-
-        # Create Spark session with MSSQL driver loaded
-        ...
-
-        # Create connection
-        mssql = MSSQL(
-            host="database.host.or.ip",
-            port=1433,
-            user="user",
-            password="*****",
-            extra={
-                "applicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
-                "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
-            },
-            spark=spark,
-        )
-
+            # Create connection
+            mssql = MSSQL(
+                host="database.host.or.ip",
+                port=1433,
+                user="user",
+                password="*****",
+                extra={
+                    "applicationIntent": "ReadOnly",  # driver will open read-only connection, to avoid writing to the database
+                    "trustServerCertificate": "true",  # add this to avoid SSL certificate issues
+                },
+                spark=spark,
+            ).check()
     """
 
     database: str
@@ -256,6 +254,8 @@ class MSSQL(JDBCConnection):
         result = super().jdbc_params
         result.update(self.extra.dict(by_alias=True))
         result["databaseName"] = self.database
+        # https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties
+        result["applicationName"] = result.get("applicationName", get_client_info(self.spark, limit=128))
         return result
 
     @property
@@ -277,3 +277,13 @@ class MSSQL(JDBCConnection):
 
         port = self.port or 1433
         return f"{self.__class__.__name__}[{self.host}:{port}/{self.database}]"
+
+    def _get_jdbc_connection(self, options: JDBCFetchOptions | JDBCExecuteOptions, read_only: bool):
+        if read_only:
+            # connection.setReadOnly() is no-op in MSSQL:
+            # https://learn.microsoft.com/en-us/sql/connect/jdbc/reference/setreadonly-method-sqlserverconnection?view=sql-server-ver16
+            # Instead, we should change connection type via option:
+            # https://github.com/microsoft/mssql-jdbc/issues/484
+            options = options.copy(update={"ApplicationIntent": "ReadOnly"})
+
+        return super()._get_jdbc_connection(options, read_only)

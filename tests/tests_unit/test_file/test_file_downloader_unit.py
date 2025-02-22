@@ -10,6 +10,7 @@ from etl_entities.hwm import (
     ColumnHWM,
     ColumnIntHWM,
     FileListHWM,
+    FileModifiedTimeHWM,
 )
 from etl_entities.instance import AbsolutePath
 from etl_entities.old_hwm import FileListHWM as OldFileListHWM
@@ -20,6 +21,8 @@ from onetl.file import FileDownloader
 from onetl.file.filter import Glob
 from onetl.file.limit import MaxFilesCount
 from onetl.impl.file_exist_behavior import FileExistBehavior
+
+SUPPORTED_HWM_TYPES = [FileListHWM, FileModifiedTimeHWM]
 
 
 def test_file_downloader_deprecated_import():
@@ -113,44 +116,48 @@ def test_file_downloader_hwm_type_without_source_path(hwm_type):
         )
 
 
-def test_file_downloader_hwm_without_source_path():
+@pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
+def test_file_downloader_hwm_without_source_path(hwm_type):
     warning_msg = "If `hwm` is passed, `source_path` must be specified"
     with pytest.raises(ValueError, match=warning_msg):
         FileDownloader(
             connection=Mock(spec=BaseFileConnection),
             local_path="/local/path",
-            hwm=FileListHWM(name="abc"),
+            hwm=hwm_type(name="abc"),
         )
 
 
-def test_file_downloader_hwm_autofill_directory():
+@pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
+def test_file_downloader_hwm_autofill_directory(hwm_type):
     downloader = FileDownloader(
         connection=Mock(spec=BaseFileConnection),
         local_path="/local/path",
         source_path="/source/path",
-        hwm=FileListHWM(name="abc"),
+        hwm=hwm_type(name="abc"),
     )
     assert downloader.hwm.entity == AbsolutePath("/source/path")
 
 
-def test_file_downloader_hwm_with_same_directory():
+@pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
+def test_file_downloader_hwm_with_same_directory(hwm_type):
     downloader = FileDownloader(
         connection=Mock(spec=BaseFileConnection),
         local_path="/local/path",
         source_path="/source/path",
-        hwm=FileListHWM(name="abc", directory="/source/path"),
+        hwm=hwm_type(name="abc", directory="/source/path"),
     )
     assert downloader.hwm.entity == AbsolutePath("/source/path")
 
 
-def test_file_downloader_hwm_with_different_directory_error():
+@pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
+def test_file_downloader_hwm_with_different_directory_error(hwm_type):
     error_msg = "Passed `hwm.directory` is different from `source_path`"
     with pytest.raises(ValueError, match=error_msg):
         FileDownloader(
             connection=Mock(spec=BaseFileConnection),
             local_path="/local/path",
             source_path="/source/path",
-            hwm=FileListHWM(name="abc", directory="/another/path"),
+            hwm=hwm_type(name="abc", directory="/another/path"),
         )
 
 

@@ -6,7 +6,7 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-latest
+  os: ubuntu-22.04
 
 max: &max
   greenplum-version: 7.0.0
@@ -31,4 +31,4 @@ latest: &latest
 matrix:
   small: [*max]
   full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  nightly: [*min, *latest]

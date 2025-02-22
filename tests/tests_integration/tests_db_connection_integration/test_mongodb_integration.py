@@ -4,7 +4,7 @@ import pytest
 
 from onetl.connection import MongoDB
 
-pytestmark = pytest.mark.mongodb
+pytestmark = [pytest.mark.mongodb, pytest.mark.flaky]
 
 
 def test_mongodb_connection_check(spark, processing, caplog):

@@ -143,7 +143,7 @@ def estimate_dataframe_size(df: DataFrame) -> int:
     """
     Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
 
-    Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/util/SizeEstimator.html>`_.
+    Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.4/api/java/org/apache/spark/util/SizeEstimator.html>`_.
     """
 
     try:
@@ -156,7 +156,7 @@ def estimate_dataframe_size(df: DataFrame) -> int:
         return 0
 
 
-def get_executor_total_cores(spark_session: SparkSession, include_driver: bool = False) -> tuple[int | float, dict]:
+def get_executor_total_cores(spark_session: SparkSession, include_driver: bool = False) -> tuple[float, dict]:
     """
     Calculate maximum number of cores which can be used by Spark on all executors.
 
@@ -172,13 +172,15 @@ def get_executor_total_cores(spark_session: SparkSession, include_driver: bool =
 
     master = conf.get("spark.master", "local")
 
-    if "local" in master:
+    expected_cores: float
+    if master.startswith("local"):
         # no executors, only driver
-        expected_cores = spark_session._jvm.Runtime.getRuntime().availableProcessors()  # type: ignore
-        config["spark.driver.cores"] = expected_cores
+        scheduler = spark_session._jsc.sc().schedulerBackend()  # type: ignore
+        expected_cores = scheduler.totalCores()  # type: ignore
+        config["spark.master"] = f"local[{expected_cores}]"
     else:
         cores = int(conf.get("spark.executor.cores", "1"))
-        config["spark.executor.cores"] = cores
+        config["spark.executor.cores"] = str(cores)
 
         dynamic_allocation = conf.get("spark.dynamicAllocation.enabled", "false") == "true"
         if dynamic_allocation:
@@ -187,17 +189,18 @@ def get_executor_total_cores(spark_session: SparkSession, include_driver: bool =
             # current load - it increases while performing heavy calculations, and decreases if executors are idle.
             # If user haven't executed anything in current session, number of executors will be 0.
             #
-            # Yes, scheduler can refuse to provide executors == maxExecutors, because
-            # queue size limit is reached, or other application has higher priority, so executors were preempted.
-            # But cluster health cannot rely on a chance, so pessimistic approach is preferred.
+            # Yes, scheduler can refuse to provide executors == maxExecutors:
+            # On Yarn - queue size limit is reached, or other application has higher priority, so executors were preempted.
+            # on K8S - namespace has not enough resources.
+            # So pessimistic approach is preferred.
 
             dynamic_executors = conf.get("spark.dynamicAllocation.maxExecutors", "infinity")
             executors_ratio = int(conf.get("spark.dynamicAllocation.executorAllocationRatio", "1"))
             config["spark.dynamicAllocation.maxExecutors"] = dynamic_executors
             executors = inf if dynamic_executors == "infinity" else int(dynamic_executors * executors_ratio)
         else:
-            fixed_executors: float = int(conf.get("spark.executor.instances", "0"))
-            config["spark.executor.instances"] = fixed_executors
+            fixed_executors = int(conf.get("spark.executor.instances", "1"))
+            config["spark.executor.instances"] = str(fixed_executors)
             executors = fixed_executors
 
         expected_cores = executors * cores
@@ -225,3 +228,23 @@ def override_job_description(spark_session: SparkSession, job_description: str):
         yield
     finally:
         spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description)  # type: ignore[arg-type]
+
+
+def get_client_info(spark_session: SparkSession, limit: int | None = None, unsupported: str = "") -> str:
+    """Get client info string for DB connections"""
+    from onetl import __version__ as onetl_version
+
+    result = (
+        # client info fields in some DB connections (like Oracle) are very limited.
+        # applicationId allows to track the exact Spark session, so more it to the beginning.
+        # less important fields are moved to the end
+        f"{spark_session.sparkContext.applicationId} {spark_session.sparkContext.appName} "
+        # using User-Agent format
+        f"onETL/{onetl_version} "
+        f"Spark/{spark_session.version}"
+    )
+    if unsupported:
+        result = result.translate(str.maketrans(unsupported, "_" * len(unsupported)))
+    if limit:
+        result = result[:limit]
+    return result

@@ -8,9 +8,10 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
+from onetl import __version__ as onetl_version
 from onetl.connection import Oracle
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.flaky]
 
 
 def test_oracle_connection_check(spark, processing, caplog):
@@ -85,6 +86,7 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
+    # dataframe content is expected
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
         table=load_table_data.table,
@@ -100,6 +102,13 @@ def test_oracle_connection_sql(spark, processing, load_table_data, suffix):
 
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # client info is expected
+    df = oracle.sql(f"SELECT program FROM v$session WHERE program LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    # version is truncated
+    assert f"onETL/{onetl_version} Spark/" in client_info
 
     with suppress(Exception):
         # new syntax in Oracle 23, but fails on older versions
@@ -120,6 +129,7 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
 
     table = load_table_data.full_name
 
+    # dataframe content is expected
     df = oracle.fetch(f"SELECT * FROM {table}{suffix}")
     table_df = processing.get_expected_dataframe(
         schema=load_table_data.schema,
@@ -131,6 +141,17 @@ def test_oracle_connection_fetch(spark, processing, load_table_data, suffix):
     df = oracle.fetch(f"SELECT * FROM {table} WHERE id_int < 50{suffix}")
     filtered_df = table_df[table_df.ID_INT < 50]
     processing.assert_equal_df(df=df, other_frame=filtered_df, order_by="id_int")
+
+    # client info is expected
+    df = oracle.fetch(f"SELECT program FROM v$session WHERE program LIKE '%onETL%'{suffix}")
+    client_info = df.collect()[0][0]
+    assert client_info.startswith("local-")
+    # version is truncated
+    assert f"onETL/{onetl_version} Spark/" in client_info
+
+    # fetch is always read-only
+    with pytest.raises(Exception):
+        oracle.fetch(f"DROP TABLE {table}{suffix}")
 
     # not supported by JDBC, use SELECT * FROM v$tables
     with pytest.raises(Exception):

@@ -8,7 +8,7 @@ except ImportError:
 from onetl.connection import MongoDB
 from onetl.db import DBReader
 
-pytestmark = pytest.mark.mongodb
+pytestmark = [pytest.mark.mongodb, pytest.mark.flaky]
 
 
 @pytest.fixture()

@@ -18,6 +18,9 @@ def test_limits_reached(caplog):
     assert not limit1.stops_at(file)
     assert not limits_reached(limits)
 
+    assert not limit1.stops_at(file)
+    assert not limits_reached(limits)
+
     # limit is reached - all check are True, input does not matter
     with caplog.at_level(logging.DEBUG):
         assert limit1.stops_at(file)

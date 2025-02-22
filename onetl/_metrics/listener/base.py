@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class BaseSparkListener:
     """Base no-op SparkListener implementation.
 
-    See `SparkListener <https://spark.apache.org/docs/3.5.3/api/java/org/apache/spark/scheduler/SparkListener.html>`_ interface.
+    See `SparkListener <https://spark.apache.org/docs/3.5.4/api/java/org/apache/spark/scheduler/SparkListener.html>`_ interface.
     """
 
     spark: SparkSession

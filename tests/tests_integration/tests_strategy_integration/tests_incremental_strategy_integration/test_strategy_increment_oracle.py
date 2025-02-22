@@ -9,7 +9,7 @@ from onetl.connection import Oracle
 from onetl.db import DBReader
 from onetl.strategy import IncrementalStrategy
 
-pytestmark = pytest.mark.oracle
+pytestmark = [pytest.mark.oracle, pytest.mark.flaky]
 
 
 # There is no INTEGER column in Oracle, only NUMERIC

@@ -86,20 +86,18 @@ Examples
 
     mysql = MySQL(...)
 
-    with mysql:
-        # automatically close connection after exiting this context manager
-        mysql.execute("DROP TABLE schema.table")
-        mysql.execute(
-            """
-            CREATE TABLE schema.table (
-                id bigint,
-                key text,
-                value float
-            )
-            ENGINE = InnoDB
-            """,
-            options=MySQL.ExecuteOptions(query_timeout=10),
+    mysql.execute("DROP TABLE schema.table")
+    mysql.execute(
+        """
+        CREATE TABLE schema.table (
+            id bigint,
+            key text,
+            value float
         )
+        ENGINE = InnoDB
+        """,
+        options=MySQL.ExecuteOptions(query_timeout=10),
+    )
 
 Options
 -------

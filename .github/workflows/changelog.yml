@@ -7,7 +7,7 @@ on:
       - master
 
 env:
-  DEFAULT_PYTHON: '3.12'
+  DEFAULT_PYTHON: '3.13'
 
 permissions:
   contents: read

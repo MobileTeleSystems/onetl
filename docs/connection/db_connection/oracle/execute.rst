@@ -72,7 +72,7 @@ This method supports **any** query syntax supported by Oracle, like:
 * ✅︎ ``CREATE TABLE ...``, ``CREATE VIEW ...``
 * ✅︎ ``ALTER ...``
 * ✅︎ ``INSERT INTO ... SELECT ...``, ``UPDATE ...``, ``DELETE ...``, and so on
-* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, and so on
+* ✅︎ ``DROP TABLE ...``, ``DROP VIEW ...``, ``TRUNCATE TABLE``, and so on
 * ✅︎ ``CALL procedure(arg1, arg2) ...`` or ``{call procedure(arg1, arg2)}`` - special syntax for calling procedure
 * ✅︎ ``DECLARE ... BEGIN ... END`` - execute PL/SQL statement
 * ✅︎ other statements not mentioned here
@@ -87,19 +87,17 @@ Examples
 
     oracle = Oracle(...)
 
-    with oracle:
-        # automatically close connection after exiting this context manager
-        oracle.execute("DROP TABLE schema.table")
-        oracle.execute(
-            """
-            CREATE TABLE schema.table (
-                id bigint GENERATED ALWAYS AS IDENTITY,
-                key VARCHAR2(4000),
-                value NUMBER
-            )
-            """,
-            options=Oracle.ExecuteOptions(query_timeout=10),
+    oracle.execute("DROP TABLE schema.table")
+    oracle.execute(
+        """
+        CREATE TABLE schema.table (
+            id bigint GENERATED ALWAYS AS IDENTITY,
+            key VARCHAR2(4000),
+            value NUMBER
         )
+        """,
+        options=Oracle.ExecuteOptions(query_timeout=10),
+    )
 
 Options
 -------

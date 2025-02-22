@@ -1,6 +1,6 @@
 .github/workflows/data/db/**
-onetl/db_connection/db_connection/*
-onetl/db_connection/dialect_mixins/*
-onetl/db_connection/jdbc_connection/*
-onetl/db_connection/jdbc_mixin/*
+onetl/connection/db_connection/db_connection/*
+onetl/connection/db_connection/dialect_mixins/*
+onetl/connection/db_connection/jdbc_connection/*
+onetl/connection/db_connection/jdbc_mixin/*
 onetl/db/**

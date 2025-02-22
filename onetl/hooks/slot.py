@@ -647,7 +647,7 @@ def slot(method: Method) -> Method:
     .. versionadded:: 0.7.0
 
     Examples
-    ---------
+    --------
 
     .. code:: python
 

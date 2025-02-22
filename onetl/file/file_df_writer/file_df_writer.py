@@ -52,39 +52,38 @@ class FileDFWriter(FrozenModel):
 
     Examples
     --------
-    Create writer to parse CSV files in local filesystem:
 
-    .. code:: python
+    .. tabs::
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFWriter
-        from onetl.file.format import CSV
+        .. code-tab:: py Write CSV files to local filesystem
 
-        local_fs = SparkLocalFS(spark=spark)
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import CSV
 
-        writer = FileDFWriter(
-            connection=local_fs,
-            format=CSV(delimiter=","),
-            target_path="/path/to/directory",
-        )
+            local_fs = SparkLocalFS(spark=spark)
 
-    All supported options
+            writer = FileDFWriter(
+                connection=local_fs,
+                format=CSV(delimiter=","),
+                target_path="/path/to/directory",
+            )
 
-    .. code:: python
+        .. code-tab:: py All supported options
 
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFWriter
-        from onetl.file.format import CSV
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import CSV
 
-        csv = CSV(delimiter=",")
-        local_fs = SparkLocalFS(spark=spark)
+            csv = CSV(delimiter=",")
+            local_fs = SparkLocalFS(spark=spark)
 
-        writer = FileDFWriter(
-            connection=local_fs,
-            format=csv,
-            target_path="/path/to/directory",
-            options=FileDFWriter.Options(if_exists="replace_entire_directory"),
-        )
+            writer = FileDFWriter(
+                connection=local_fs,
+                format=csv,
+                target_path="/path/to/directory",
+                options=FileDFWriter.Options(if_exists="replace_entire_directory"),
+            )
     """
 
     Options = FileDFWriterOptions
@@ -124,15 +123,14 @@ class FileDFWriter(FrozenModel):
         if df.isStreaming:
             raise ValueError(f"DataFrame is streaming. {self.__class__.__name__} supports only batch DataFrames.")
 
-        job_description = f"{self.__class__.__name__}.run({self.target_path}) -> {self.connection}"
-        with override_job_description(self.connection.spark, job_description):
-            if not self._connection_checked:
-                self._log_parameters(df)
-                self.connection.check()
-                self._connection_checked = True
+        if not self._connection_checked:
+            self._log_parameters(df)
+            self.connection.check()
+            self._connection_checked = True
 
         with SparkMetricsRecorder(self.connection.spark) as recorder:
             try:
+                job_description = f"{self.__class__.__name__}.run({self.target_path}) -> {self.connection}"
                 with override_job_description(self.connection.spark, job_description):
                     self.connection.write_df_as_files(
                         df=df,
