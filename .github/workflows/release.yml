@@ -113,4 +113,5 @@ jobs:
           name: ${{ steps.release-name.outputs.name }}
           body_path: changelog.md
           files: |
-            dist/*
+            dist/*.tar.gz
+            dist/*.whl
