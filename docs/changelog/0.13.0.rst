@@ -1,6 +1,8 @@
 0.13.0 (2025-02-24)
 ===================
 
+🎉 3 years since first release 0.1.0 🎉
+
 Breaking Changes
 ----------------
 
