@@ -1,13 +1,13 @@
 0.7.0 (2023-05-15)
---------------------------
+==================
 
 🎉 onETL is now open source 🎉
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 That was long road, but we finally did it!
 
 Breaking Changes
-^^^^^^^^^^^^^^^^
+----------------
 
 * Changed installation method.
 
@@ -125,7 +125,7 @@ Breaking Changes
   See :github:pull:`31`.
 
 Features
-^^^^^^^^
+--------
 
 * Added MongoDB connection.
 
@@ -193,7 +193,7 @@ Features
       See package metadata for more details
 
 Improvements
-^^^^^^^^^^^^
+------------
 
 * Added compatibility with Python 3.11 and PySpark 3.4.0.
 
@@ -229,7 +229,7 @@ Improvements
   * Added global compatibility table for Spark + Java + Python + Scala.
 
 Bug Fixes
-^^^^^^^^^^^^
+---------
 
 * Fixed several SFTP issues.
 
