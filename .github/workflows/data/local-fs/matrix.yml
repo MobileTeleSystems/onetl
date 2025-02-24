@@ -1,29 +1,38 @@
-min: &min
+23: &23
   spark-version: 2.3.1
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-min_avro: &min_avro
+24: &24
+  # Avro supported only since Spark 2.4
   spark-version: 2.4.8
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-min_excel: &min_excel
+32: &32
+  # Excel supported only since Spark 3.2
   spark-version: 3.2.4
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
+35: &35
   spark-version: 3.5.4
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
+  os: ubuntu-latest
+
+4x: &4x
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.13'
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -34,15 +43,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small:
-    - <<: *max
-  full:
-    - <<: *min
-    - <<: *min_avro
-    - <<: *min_excel
-    - <<: *max
-  nightly:
-    - <<: *min
-    - <<: *min_avro
-    - <<: *min_excel
-    - <<: *latest
+  small: [*35]
+  full: [*23, *24, *32, *35, *4x]
+  nightly: [*23, *24, *32, *35, *latest]
