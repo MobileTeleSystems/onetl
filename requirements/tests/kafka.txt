@@ -1,1 +1,2 @@
-confluent_kafka
+# https://github.com/confluentinc/confluent-kafka-python/issues/1927
+confluent-kafka<2.8.1
