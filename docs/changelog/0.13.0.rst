@@ -130,7 +130,7 @@ Improvements
 
     .. code:: sql
 
-        -- yes, "writable", it's not a mistake
+        -- yes, "writable" for reading data from GP, it's not a mistake
         ALTER USER username CREATEEXTTABLE(type = 'writable', protocol = 'gpfdist');
 
         -- for both reading and writing to GP
