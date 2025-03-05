@@ -143,7 +143,7 @@ def estimate_dataframe_size(df: DataFrame) -> int:
     """
     Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
 
-    Using Spark's `SizeEstimator <https://spark.apache.org/docs/3.5.4/api/java/org/apache/spark/util/SizeEstimator.html>`_.
+    Using Spark's `SizeEstimator <https://spark.apache.org/docs//api/java/org/apache/spark/util/SizeEstimator.html>`_.
     """
 
     try:

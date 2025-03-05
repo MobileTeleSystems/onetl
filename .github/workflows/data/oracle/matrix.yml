@@ -12,7 +12,7 @@ max: &max
   oracle-image: gvenzl/oracle-free
   oracle-version: 23.5-slim-faststart
   db-name: FREEPDB1
-  spark-version: 3.5.4
+  spark-version: 3.5.5
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20

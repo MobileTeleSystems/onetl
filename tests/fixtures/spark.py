@@ -112,7 +112,7 @@ def maven_packages(request):
             elif pyspark_version.minor == 3:
                 packages.extend(Excel.get_packages(spark_version="3.3.4"))
             elif pyspark_version.minor == 4:
-                packages.extend(Excel.get_packages(spark_version="3.4.3"))
+                packages.extend(Excel.get_packages(spark_version="3.4.4"))
             elif pyspark_version.minor == 5:
                 packages.extend(Excel.get_packages(spark_version="3.5.1"))
 

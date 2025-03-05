@@ -38,8 +38,8 @@ class SparkListenerJob:
 
     @classmethod
     def create(cls, event):
-        # https://spark.apache.org/docs/3.5.4/api/java/org/apache/spark/scheduler/SparkListenerJobSubmitted.html
-        # https://spark.apache.org/docs/3.5.4/api/java/org/apache/spark/scheduler/SparkListenerJobCompleted.html
+        # https://spark.apache.org/docs/3.5.5/api/java/org/apache/spark/scheduler/SparkListenerJobSubmitted.html
+        # https://spark.apache.org/docs/3.5.5/api/java/org/apache/spark/scheduler/SparkListenerJobCompleted.html
         result = cls(
             id=event.jobId(),
             description=event.properties().get("spark.job.description"),

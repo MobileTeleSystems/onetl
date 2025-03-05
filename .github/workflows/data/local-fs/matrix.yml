@@ -20,7 +20,7 @@ min_excel: &min_excel
   os: ubuntu-22.04
 
 max: &max
-  spark-version: 3.5.4
+  spark-version: 3.5.5
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
