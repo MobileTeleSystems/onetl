@@ -459,7 +459,7 @@ class Hive(DBConnection):
         return sorted(df_columns, key=lambda column: table_columns_normalized.index(column.casefold()))
 
     def _target_exist(self, name: str) -> bool:
-        from pyspark.sql.functions import col
+        from pyspark.sql.functions import col, lower
 
         log.info("|%s| Checking if table %r exists ...", self.__class__.__name__, name)
 
@@ -472,7 +472,8 @@ class Hive(DBConnection):
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._execute_sql(query).where(col("tableName") == table)
+        # Spark normalizes table names to lowercase, so we do the same
+        df = self._execute_sql(query).where(lower(col("tableName")) == table.lower())
         if df.take(1):
             log.info("|%s| Table %r exists.", self.__class__.__name__, name)
             return True
