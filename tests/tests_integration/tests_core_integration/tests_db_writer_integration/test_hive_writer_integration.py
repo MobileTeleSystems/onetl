@@ -326,6 +326,13 @@ def test_hive_writer_insert_into_with_options_ignored(spark, processing, get_sch
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "original_options, new_options",
     [
         pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
@@ -334,7 +341,15 @@ def test_hive_writer_insert_into_with_options_ignored(spark, processing, get_sch
         pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
     ],
 )
-def test_hive_writer_insert_into_append(spark, processing, get_schema_table, original_options, new_options, caplog):
+def test_hive_writer_insert_into_append(
+    spark,
+    processing,
+    get_schema_table,
+    original_options,
+    new_options,
+    caplog,
+    table_name_modifier,
+):
     df = processing.create_spark_df(spark=spark)
 
     df1 = df[df.id_int <= 25]
@@ -351,17 +366,19 @@ def test_hive_writer_insert_into_append(spark, processing, get_schema_table, ori
     writer1.run(df1.union(df2))
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="append", **new_options),
     )
 
     with caplog.at_level(logging.INFO):
         writer2.run(df1.union(df3))
 
-        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}' ..." in caplog.text
-        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'." in caplog.text
+        assert f"|Hive| Inserting data into existing table '{new_table_name}' ..." in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{new_table_name}'." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -378,6 +395,13 @@ def test_hive_writer_insert_into_append(spark, processing, get_schema_table, ori
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "original_options, new_options",
     [
         pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
@@ -386,7 +410,15 @@ def test_hive_writer_insert_into_append(spark, processing, get_schema_table, ori
         pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
     ],
 )
-def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, original_options, new_options, caplog):
+def test_hive_writer_insert_into_ignore(
+    spark,
+    processing,
+    get_schema_table,
+    original_options,
+    new_options,
+    caplog,
+    table_name_modifier,
+):
     df = processing.create_spark_df(spark=spark)
 
     df1 = df[df.id_int <= 25]
@@ -403,9 +435,11 @@ def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, ori
     writer1.run(df1.union(df2))
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="ignore", **new_options),
     )
 
@@ -429,6 +463,13 @@ def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, ori
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "original_options, new_options",
     [
         pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
@@ -437,7 +478,14 @@ def test_hive_writer_insert_into_ignore(spark, processing, get_schema_table, ori
         pytest.param({"partitionBy": "id_int"}, {"partitionBy": "id_int"}, id="same_partitioning_schema"),
     ],
 )
-def test_hive_writer_insert_into_error(spark, processing, get_schema_table, original_options, new_options, caplog):
+def test_hive_writer_insert_into_error(
+    spark,
+    processing,
+    get_schema_table,
+    original_options,
+    new_options,
+    table_name_modifier,
+):
     df = processing.create_spark_df(spark=spark)
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
@@ -451,9 +499,11 @@ def test_hive_writer_insert_into_error(spark, processing, get_schema_table, orig
     writer1.run(df)
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="error", **new_options),
     )
 
@@ -477,6 +527,13 @@ def test_hive_writer_insert_into_error(spark, processing, get_schema_table, orig
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "original_options, new_options",
     [
         pytest.param({}, {"partitionBy": "id_int"}, id="table_not_partitioned_dataframe_is"),
@@ -492,6 +549,7 @@ def test_hive_writer_insert_into_replace_entire_table(
     original_options,
     new_options,
     caplog,
+    table_name_modifier,
 ):
     df = processing.create_spark_df(spark=spark)
 
@@ -508,9 +566,11 @@ def test_hive_writer_insert_into_replace_entire_table(
     writer1.run(df1)
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="replace_entire_table", **new_options),
     )
     with caplog.at_level(logging.INFO):
@@ -518,8 +578,8 @@ def test_hive_writer_insert_into_replace_entire_table(
         writer2.run(df2.select(*reversed(df2.columns)))
 
         # unlike other modes, this creates new table
-        assert f"|Hive| Saving data to a table '{get_schema_table.full_name}' ..." in caplog.text
-        assert f"|Hive| Table '{get_schema_table.full_name}' is successfully created." in caplog.text
+        assert f"|Hive| Saving data to a table '{new_table_name}' ..." in caplog.text
+        assert f"|Hive| Table '{new_table_name}' is successfully created." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -535,11 +595,19 @@ def test_hive_writer_insert_into_replace_entire_table(
     assert new_ddl != old_ddl
 
 
+@pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
 def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partitioned_table(
     spark,
     processing,
     get_schema_table,
     caplog,
+    table_name_modifier,
 ):
     from pyspark.sql.functions import col
 
@@ -560,17 +628,19 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partition
     writer1.run(df1)
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by="id_int"),
     )
 
     with caplog.at_level(logging.INFO):
         writer2.run(df2_reversed)
 
-        assert f"|Hive| Inserting data into existing table '{get_schema_table.full_name}' ..." in caplog.text
-        assert f"|Hive| Data is successfully inserted into table '{get_schema_table.full_name}'." in caplog.text
+        assert f"|Hive| Inserting data into existing table '{new_table_name}' ..." in caplog.text
+        assert f"|Hive| Data is successfully inserted into table '{new_table_name}'." in caplog.text
 
     new_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
@@ -587,6 +657,13 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partition
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "partition_by",
     [
         pytest.param(None, id="table_partitioned_dataframe_is_not"),
@@ -599,6 +676,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     processing,
     get_schema_table,
     partition_by,
+    table_name_modifier,
 ):
     df = processing.create_spark_df(spark=spark)
 
@@ -618,9 +696,11 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer1.run(df1.union(df2))
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by=partition_by),
     )
 
@@ -641,6 +721,13 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
 
 
 @pytest.mark.parametrize(
+    "table_name_modifier",
+    [
+        pytest.param(lambda x: x, id="original_name"),
+        pytest.param(lambda x: x.upper(), id="different_case"),
+    ],
+)
+@pytest.mark.parametrize(
     "partition_by",
     [
         pytest.param(None, id="table_partitioned_dataframe_is_not"),
@@ -653,6 +740,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     processing,
     get_schema_table,
     partition_by,
+    table_name_modifier,
 ):
     df = processing.create_spark_df(spark=spark)
 
@@ -672,10 +760,12 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer1.run(df1.union(df2))
     old_ddl = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}").collect()[0][0]
 
+    new_table_name = table_name_modifier(get_schema_table.full_name)
+
     # insert empty dataframe with the same schema
     writer2 = DBWriter(
         connection=hive,
-        target=get_schema_table.full_name,
+        target=new_table_name,
         options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by=partition_by),
     )
 

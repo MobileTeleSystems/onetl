@@ -1,0 +1,3 @@
+In 0.13.0, using ``DBWriter(connection=hive, target="SOMEDB.SOMETABLE")`` lead to executing ``df.write.saveAsTable()``
+instead of ``df.write.insertInto()`` if target table already exist. This is caused by table name normalization (Hive uses lower-case names),
+which wasn't properly handled by method used for checking table existence.
