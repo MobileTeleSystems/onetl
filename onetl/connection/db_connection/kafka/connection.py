@@ -122,7 +122,7 @@ class Kafka(DBConnection):
             from pyspark.sql import SparkSession
 
             # Create Spark session with Kafka connector loaded
-            maven_packages = Kafka.get_packages(spark_version="3.5.4")
+            maven_packages = Kafka.get_packages(spark_version="3.5.5")
             exclude_packages = Kafka.get_exclude_packages()
             spark = (
                 SparkSession.builder.appName("spark-app-name")
@@ -325,7 +325,7 @@ class Kafka(DBConnection):
         write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
-        # As of Apache Spark version 3.5.4, the mode 'error' is not functioning as expected.
+        # As of Apache Spark version 3.5.5, the mode 'error' is not functioning as expected.
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
@@ -410,8 +410,8 @@ class Kafka(DBConnection):
 
             from onetl.connection import Kafka
 
-            Kafka.get_packages(spark_version="3.5.4")
-            Kafka.get_packages(spark_version="3.5.4", scala_version="2.12")
+            Kafka.get_packages(spark_version="3.5.5")
+            Kafka.get_packages(spark_version="3.5.5", scala_version="2.12")
 
         """
 

@@ -10,9 +10,9 @@ pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connec
 @pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
-        ("3.5.4", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.4"),
-        ("3.5.4", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.4"),
-        ("3.5.4", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.4"),
+        ("3.5.5", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.5"),
+        ("3.5.5", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.5"),
+        ("3.5.5", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.5"),
     ],
 )
 def test_spark_s3_get_packages(spark_version, scala_version, package):

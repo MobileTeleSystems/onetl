@@ -124,6 +124,20 @@ Improvements
 
   This allows to fail immediately if Spark driver host has network access to target DB, but Spark executors have not.
 
+  .. note::
+
+    Now ``Greenplum.check()`` requires the same user grants as ``DBReader(connection=greenplum)``:
+
+    .. code:: sql
+
+        -- yes, "writable" for reading data from GP, it's not a mistake
+        ALTER USER username CREATEEXTTABLE(type = 'writable', protocol = 'gpfdist');
+
+        -- for both reading and writing to GP
+        -- ALTER USER username CREATEEXTTABLE(type = 'readable', protocol = 'gpfdist') CREATEEXTTABLE(type = 'writable', protocol = 'gpfdist');
+
+    Please ask your Greenplum administrators to provide these grants.
+
 
 Bug Fixes
 ---------

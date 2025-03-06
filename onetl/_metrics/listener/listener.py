@@ -75,7 +75,7 @@ class SparkMetricsListener(BaseSparkListener):
 
             # Get execution metrics from SQLAppStatusStore,
             # as SparkListenerSQLExecutionEnd event does not provide them:
-            # https://github.com/apache/spark/blob/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/ui/SQLAppStatusStore.scala
+            # https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/execution/ui/SQLAppStatusStore.scala
             session_status_store = self.spark._jsparkSession.sharedState().statusStore()  # noqa: WPS437
             raw_execution = session_status_store.execution(execution.id).get()
             metrics = raw_execution.metrics()

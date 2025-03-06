@@ -214,7 +214,7 @@ class Samba(FileConnection):
         return socket_fileno == -1
 
     def _close_client(self, client: SMBConnection) -> None:
-        self.client.close()
+        client.close()
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         with open(local_file_path, "wb") as local_file:

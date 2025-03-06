@@ -377,7 +377,7 @@ used for creating a connection:
         -- allow creating external tables in the same schema as source table
         GRANT USAGE ON SCHEMA schema_to_read TO username;
         GRANT CREATE ON SCHEMA schema_to_read TO username;
-        -- yes, ``writable``, because data is written from Greenplum to Spark executor.
+        -- yes, ``writable`` for reading from GP, because data is written from Greenplum to Spark executor.
         ALTER USER username CREATEEXTTABLE(type = 'writable', protocol = 'gpfdist');
 
         -- allow read access to specific table
