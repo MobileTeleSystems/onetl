@@ -1,0 +1,7 @@
+0.13.2 (2025-03-11)
+===================
+
+Dependencies
+------------
+
+Allows using `etl-entities 2.6.0 <https://github.com/MobileTeleSystems/etl-entities/releases/tag/2.6.0>`_.
