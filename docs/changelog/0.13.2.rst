@@ -4,4 +4,4 @@
 Dependencies
 ------------
 
-Allows using `etl-entities 2.6.0 <https://github.com/MobileTeleSystems/etl-entities/releases/tag/2.6.0>`_.
+Allow using `etl-entities 2.6.0 <https://github.com/MobileTeleSystems/etl-entities/releases/tag/2.6.0>`_.
