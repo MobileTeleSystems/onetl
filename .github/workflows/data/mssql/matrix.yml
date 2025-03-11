@@ -4,6 +4,7 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
+  # https://github.com/microsoft/mssql-docker/issues/899
   os: ubuntu-20.04
 
 max: &max
