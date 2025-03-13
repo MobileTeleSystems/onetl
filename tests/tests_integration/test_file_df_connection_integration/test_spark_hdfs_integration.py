@@ -18,7 +18,7 @@ def test_spark_hdfs_check(hdfs_file_df_connection, caplog):
     assert "|SparkHDFS|" in caplog.text
     assert f"cluster = '{hdfs.cluster}'" in caplog.text
     assert f"host = '{hdfs.host}'" in caplog.text
-    assert f"ipc_port = {hdfs.ipc_port}" in caplog.text
+    assert f"ipc_port = {hdfs.port}" in caplog.text
 
     assert "Connection is available." in caplog.text
 
@@ -52,7 +52,7 @@ def test_spark_hdfs_file_connection_check_with_hooks(spark, request, hdfs_server
     SparkHDFS(
         cluster="rnd-dwh",
         host=hdfs_server.host,
-        port=hdfs_server.ipc_port,
+        ipc_port=hdfs_server.ipc_port,
         spark=spark,
     ).check()
 

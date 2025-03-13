@@ -16,7 +16,7 @@ def test_spark_hdfs_with_cluster(spark_mock):
     assert isinstance(conn, BaseFileDFConnection)
     assert conn.cluster == "rnd-dwh"
     assert conn.host is None
-    assert conn.ipc_port == 8020
+    assert conn.port == 8020
     assert conn.instance_url == "rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
@@ -26,6 +26,7 @@ def test_spark_hdfs_with_cluster_and_host(spark_mock):
     assert isinstance(conn, BaseFileDFConnection)
     assert conn.cluster == "rnd-dwh"
     assert conn.host == "some-host.domain.com"
+    assert conn.port == 8020
     assert conn.instance_url == "rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
@@ -34,7 +35,7 @@ def test_spark_hdfs_with_port(spark_mock):
     conn = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
     assert isinstance(conn, BaseFileDFConnection)
     assert conn.cluster == "rnd-dwh"
-    assert conn.ipc_port == 9020
+    assert conn.port == 9020
     assert conn.instance_url == "rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
@@ -127,8 +128,8 @@ def test_spark_hdfs_get_ipc_port_hook(request, spark_mock):
 
     request.addfinalizer(get_ipc_port.disable)
 
-    assert SparkHDFS(cluster="rnd-dwh", spark=spark_mock).ipc_port == 9020
-    assert SparkHDFS(cluster="rnd-prod", spark=spark_mock).ipc_port == 8020
+    assert SparkHDFS(cluster="rnd-dwh", spark=spark_mock).port == 9020
+    assert SparkHDFS(cluster="rnd-prod", spark=spark_mock).port == 8020
 
 
 def test_spark_hdfs_known_get_current(request, spark_mock):

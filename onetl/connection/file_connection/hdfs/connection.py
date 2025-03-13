@@ -195,7 +195,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
     cluster: Optional[Cluster] = None
     host: Optional[Host] = None
-    webhdfs_port: int = Field(alias="port", default=50070)
+    port: int = Field(alias="webhdfs_port", default=50070)
     user: Optional[str] = None
     password: Optional[SecretStr] = None
     keytab: Optional[FilePath] = None
@@ -257,12 +257,12 @@ class HDFS(FileConnection, RenameDirMixin):
     def instance_url(self) -> str:
         if self.cluster:
             return self.cluster
-        return f"hdfs://{self.host}:{self.webhdfs_port}"
+        return f"hdfs://{self.host}:{self.port}"
 
     def __str__(self):
         if self.cluster:
             return f"{self.__class__.__name__}[{self.cluster}]"
-        return f"{self.__class__.__name__}[{self.host}:{self.webhdfs_port}]"
+        return f"{self.__class__.__name__}[{self.host}:{self.port}]"
 
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
@@ -347,7 +347,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return namenode
 
-    @validator("webhdfs_port", always=True)
+    @validator("port", always=True)
     def _validate_port_number(cls, port, values):
         cluster = values.get("cluster")
         if cluster:
@@ -419,7 +419,7 @@ class HDFS(FileConnection, RenameDirMixin):
         # cache active host to reduce number of requests.
         if not self._active_host:
             self._active_host = self._get_host()
-        return f"http://{self._active_host}:{self.webhdfs_port}"
+        return f"http://{self._active_host}:{self.port}"
 
     def _get_client(self) -> Client:
         if self.user and (self.keytab or self.password):

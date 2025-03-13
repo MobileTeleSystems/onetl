@@ -54,6 +54,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)
-        parameters = self.dict(exclude_none=True, exclude={"spark"})
+        parameters = self.dict(exclude_none=True, by_alias=True, exclude={"spark"})
         for attr, value in parameters.items():
             log_with_indent(log, "%s = %r", attr, value)

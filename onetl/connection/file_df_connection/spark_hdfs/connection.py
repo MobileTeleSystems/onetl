@@ -155,7 +155,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     cluster: Cluster
     host: Optional[Host] = None
-    ipc_port: int = Field(default=8020, alias="port")
+    port: int = Field(default=8020, alias="ipc_port")
 
     _active_host: Optional[Host] = PrivateAttr(default=None)
 
@@ -295,7 +295,7 @@ class SparkHDFS(SparkFileDFConnection):
 
         return namenode
 
-    @validator("ipc_port", always=True)
+    @validator("port", always=True)
     def _validate_port_number(cls, port, values):
         cluster = values.get("cluster")
         if cluster:
@@ -348,7 +348,7 @@ class SparkHDFS(SparkFileDFConnection):
         # cache active host to reduce number of requests.
         if not self._active_host:
             self._active_host = self._get_host()
-        return f"hdfs://{self._active_host}:{self.ipc_port}"
+        return f"hdfs://{self._active_host}:{self.port}"
 
     def _convert_to_url(self, path: PurePathProtocol) -> str:
         # example "hdfs://namenode:8020/absolute/path"

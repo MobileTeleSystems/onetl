@@ -18,7 +18,7 @@ def test_hdfs_connection_with_host():
     conn = HDFS(host="some-host.domain.com")
     assert isinstance(conn, FileConnection)
     assert conn.host == "some-host.domain.com"
-    assert conn.webhdfs_port == 50070
+    assert conn.port == 50070
     assert not conn.user
     assert not conn.password
     assert not conn.keytab
@@ -31,7 +31,7 @@ def test_hdfs_connection_with_cluster():
 
     conn = HDFS(cluster="rnd-dwh")
     assert conn.cluster == "rnd-dwh"
-    assert conn.webhdfs_port == 50070
+    assert conn.port == 50070
     assert not conn.user
     assert not conn.password
     assert not conn.keytab
@@ -54,7 +54,7 @@ def test_hdfs_connection_with_host_and_port():
 
     conn = HDFS(host="some-host.domain.com", port=9080)
     assert conn.host == "some-host.domain.com"
-    assert conn.webhdfs_port == 9080
+    assert conn.port == 9080
     assert conn.instance_url == "hdfs://some-host.domain.com:9080"
     assert str(conn) == "HDFS[some-host.domain.com:9080]"
 
@@ -64,7 +64,7 @@ def test_hdfs_connection_with_user():
 
     conn = HDFS(host="some-host.domain.com", user="some_user")
     assert conn.host == "some-host.domain.com"
-    assert conn.webhdfs_port == 50070
+    assert conn.port == 50070
     assert conn.user == "some_user"
     assert not conn.password
     assert not conn.keytab
@@ -75,7 +75,7 @@ def test_hdfs_connection_with_password():
 
     conn = HDFS(host="some-host.domain.com", user="some_user", password="pwd")
     assert conn.host == "some-host.domain.com"
-    assert conn.webhdfs_port == 50070
+    assert conn.port == 50070
     assert conn.user == "some_user"
     assert conn.password != "pwd"
     assert conn.password.get_secret_value() == "pwd"
@@ -236,11 +236,11 @@ def test_hdfs_get_webhdfs_port_hook(request):
 
     request.addfinalizer(get_webhdfs_port.disable)
 
-    assert HDFS(cluster="rnd-dwh").webhdfs_port == 9080
-    assert HDFS(cluster="rnd-prod").webhdfs_port == 50070
+    assert HDFS(cluster="rnd-dwh").port == 9080
+    assert HDFS(cluster="rnd-prod").port == 50070
 
-    assert HDFS(host="some-node.domain.com").webhdfs_port == 50070
-    assert HDFS(host="some-node.domain.com", cluster="rnd-dwh").webhdfs_port == 9080
+    assert HDFS(host="some-node.domain.com").port == 50070
+    assert HDFS(host="some-node.domain.com", cluster="rnd-dwh").port == 9080
 
 
 def test_hdfs_known_get_current(request):
