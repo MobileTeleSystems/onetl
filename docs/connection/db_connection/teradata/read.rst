@@ -38,9 +38,9 @@ Snapshot strategy:
         columns=["id", "key", "CAST(value AS VARCHAR) value", "updated_dt"],
         where="key = 'something'",
         options=Teradata.ReadOptions(
-            partition_column="id",
-            num_partitions=10,
             partitioning_mode="hash",
+            partitionColumn="id",
+            numPartitions=10,
         ),
     )
     df = reader.run()
@@ -62,9 +62,9 @@ Incremental strategy:
         where="key = 'something'",
         hwm=DBReader.AutoDetectHWM(name="teradata_hwm", expression="updated_dt"),
         options=Teradata.ReadOptions(
-            partition_column="id",
-            num_partitions=10,
             partitioning_mode="hash",
+            partitionColumn="id",
+            numPartitions=10,
         ),
     )
 
@@ -89,7 +89,7 @@ Especially if there are indexes or partitions for columns used in ``where`` clau
 Read data in parallel
 ~~~~~~~~~~~~~~~~~~~~~
 
-``DBReader`` can read data in multiple parallel connections by passing ``Teradata.ReadOptions(num_partitions=..., partition_column=...)``.
+``DBReader`` can read data in multiple parallel connections by passing ``Teradata.ReadOptions(numPartitions=..., partitionColumn=...)``.
 
 In the example above, Spark opens 10 parallel connections, and data is evenly distributed between all these connections using expression
 ``HASHAMP(HASHBUCKET(HASHROW({partition_column}))) MOD {num_partitions}``.

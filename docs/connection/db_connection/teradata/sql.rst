@@ -42,10 +42,10 @@ Examples
             key = 'something'
         """,
         options=Teradata.SQLOptions(
-            partition_column="part_column",
-            num_partitions=10,
-            lower_bound=0,
-            upper_bound=9,
+            partitionColumn="id",
+            numPartitions=10,
+            lowerBound=0,
+            upperBound=1000,
         ),
     )
 

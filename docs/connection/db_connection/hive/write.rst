@@ -91,7 +91,7 @@ For example, dataframe with content like this:
 | US              | 2024-01-03          | 5678         | 3464574567  |
 +-----------------+---------------------+--------------+-------------+
 
-With ``partition_by=["country", "business_dt"]`` data will be stored as files in the following subfolders:
+With ``partitionBy=["country", "business_dt"]`` data will be stored as files in the following subfolders:
   * ``/country=RU/business_date=2024-01-01/``
   * ``/country=RU/business_date=2024-01-02/``
   * ``/country=US/business_date=2024-01-01/``

@@ -44,10 +44,10 @@ Examples
             key = 'something'
         """,
         options=Postgres.SQLOptions(
-            partition_column="id",
-            num_partitions=10,
-            lower_bound=0,
-            upper_bound=1000,
+            partitionColumn="id",
+            numPartitions=10,
+            lowerBound=0,
+            upperBound=1000,
         ),
     )
 

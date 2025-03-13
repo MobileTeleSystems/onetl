@@ -1066,7 +1066,7 @@ def test_postgres_connection_execute_with_legacy_jdbc_options(spark, processing,
         spark=spark,
     )
 
-    options = Postgres.JDBCOptions(query_timeout=30)
+    options = Postgres.JDBCOptions(queryTimeout=30)
 
     with caplog.at_level(logging.INFO):
         postgres.execute("DROP TABLE IF EXISTS temp_table;", options=options)

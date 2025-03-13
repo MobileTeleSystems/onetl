@@ -83,7 +83,7 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
+            partitionBy="reg_id",
             customOption="value",
         )
     """
@@ -217,7 +217,7 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
+            partitionBy="reg_id",
             format="orc",
         )
 
@@ -227,7 +227,7 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
+            partitionBy="reg_id",
             format=ORC(compression="snappy"),
         )
 

@@ -57,7 +57,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
         from onetl.file import FileDFWriter
 
         options = FileDFWriter.Options(
-            partition_by="month",
+            partitionBy="month",
             if_exists="replace_overlapping_partitions",
         )
     """

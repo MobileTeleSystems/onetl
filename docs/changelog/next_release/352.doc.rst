@@ -1,0 +1,2 @@
+Prefer ``JDBC.ReadOptions(partitionColumn=..., numPartitions=..., queryTimeout=...)`` instead of ``JDBC.ReadOptions(partition_column=..., num_partitions=..., query_timeout=...)``,
+to match Spark documentation.

@@ -41,7 +41,7 @@ Snapshot strategy:
         source="schema.table",
         columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
         where="key = 'something'",
-        options=MSSQL.ReadOptions(partition_column="id", num_partitions=10),
+        options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
     )
     df = reader.run()
 
@@ -61,7 +61,7 @@ Incremental strategy:
         columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
         where="key = 'something'",
         hwm=DBReader.AutoDetectHWM(name="mssql_hwm", expression="updated_dt"),
-        options=MSSQL.ReadOptions(partition_column="id", num_partitions=10),
+        options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
     )
 
     with IncrementalStrategy():

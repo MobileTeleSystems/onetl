@@ -48,7 +48,7 @@ Examples
 
     df = postgres.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Postgres.FetchOptions(query_timeout=10),
+        options=Postgres.FetchOptions(queryTimeout=10),
     )
     postgres.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -94,7 +94,7 @@ Examples
             value real
         )
         """,
-        options=Postgres.ExecuteOptions(query_timeout=10),
+        options=Postgres.ExecuteOptions(queryTimeout=10),
     )
 
 Options
