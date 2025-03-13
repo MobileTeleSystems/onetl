@@ -16,6 +16,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (
     SparkFileDFConnection,
@@ -155,7 +156,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     cluster: Cluster
     host: Optional[Host] = None
-    ipc_port: int = Field(default=8020, alias="port")
+    ipc_port: int = Field(default=8020, alias=avoid_alias("port"))  # type: ignore[literal-required]
 
     _active_host: Optional[Host] = PrivateAttr(default=None)
 
