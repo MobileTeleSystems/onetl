@@ -45,7 +45,7 @@ def test_hdfs_file_connection_check_with_keytab(mocker, hdfs_server, caplog, req
 
     request.addfinalizer(finalizer)
 
-    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), keytab=keytab)
+    hdfs = HDFS(host=hdfs_server.host, webhdfs_port=hdfs_server.webhdfs_port, user=getuser(), keytab=keytab)
 
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
@@ -67,7 +67,7 @@ def test_hdfs_file_connection_check_with_password(mocker, hdfs_server, caplog):
 
     mocker.patch.object(connection, "kinit")
 
-    hdfs = HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port, user=getuser(), password="somepass")
+    hdfs = HDFS(host=hdfs_server.host, webhdfs_port=hdfs_server.webhdfs_port, user=getuser(), password="somepass")
 
     with caplog.at_level(logging.INFO):
         assert hdfs.check()
@@ -88,7 +88,7 @@ def test_hdfs_file_connection_check_failed():
     from onetl.connection import HDFS
 
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
-        HDFS(host="hive1", port=1234).check()
+        HDFS(host="hive1", webhdfs_port=1234).check()
 
 
 def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
@@ -101,7 +101,7 @@ def test_hdfs_file_connection_check_with_hooks(request, hdfs_server):
 
     request.addfinalizer(is_namenode_active.disable)
 
-    HDFS(host=hdfs_server.host, port=hdfs_server.webhdfs_port).check()  # no exception
+    HDFS(host=hdfs_server.host, webhdfs_port=hdfs_server.webhdfs_port).check()  # no exception
 
     with pytest.raises(RuntimeError, match="Host 'some-node2.domain.com' is not an active namenode"):
         HDFS(host="some-node2.domain.com").check()

@@ -29,7 +29,7 @@ def test_spark_hdfs_file_connection_check_failed(spark):
     wrong_hdfs = SparkHDFS(
         cluster="rnd-dwh",
         host="hive1",
-        port=1234,
+        ipc_port=1234,
         spark=spark,
     )
 
@@ -52,7 +52,7 @@ def test_spark_hdfs_file_connection_check_with_hooks(spark, request, hdfs_server
     SparkHDFS(
         cluster="rnd-dwh",
         host=hdfs_server.host,
-        port=hdfs_server.ipc_port,
+        ipc_port=hdfs_server.ipc_port,
         spark=spark,
     ).check()
 

@@ -31,12 +31,16 @@ def test_spark_hdfs_with_cluster_and_host(spark_mock):
 
 
 def test_spark_hdfs_with_port(spark_mock):
-    conn = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
-    assert isinstance(conn, BaseFileDFConnection)
-    assert conn.cluster == "rnd-dwh"
-    assert conn.ipc_port == 9020
-    assert conn.instance_url == "rnd-dwh"
-    assert str(conn) == "HDFS[rnd-dwh]"
+    conn1 = SparkHDFS(cluster="rnd-dwh", ipc_port=9020, spark=spark_mock)
+    assert isinstance(conn1, BaseFileDFConnection)
+    assert conn1.cluster == "rnd-dwh"
+    assert conn1.ipc_port == 9020
+    assert conn1.instance_url == "rnd-dwh"
+    assert str(conn1) == "HDFS[rnd-dwh]"
+
+    conn2 = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
+    assert conn1.ipc_port == conn2.ipc_port
+    assert conn1 == conn2
 
 
 def test_spark_hdfs_without_cluster(spark_mock):
