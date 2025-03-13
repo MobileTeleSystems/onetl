@@ -45,7 +45,7 @@ Examples
 
     df = teradata.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Teradata.FetchOptions(query_timeout=10),
+        options=Teradata.FetchOptions(queryTimeout=10),
     )
     teradata.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -93,7 +93,7 @@ Examples
         )
         NO PRIMARY INDEX
         """,
-        options=Teradata.ExecuteOptions(query_timeout=10),
+        options=Teradata.ExecuteOptions(queryTimeout=10),
     )
 
 Options

@@ -64,8 +64,8 @@ def test_postgres_reader_snapshot_partitioning_mode(mode, column, spark, process
         source=load_table_data.full_name,
         options=Postgres.ReadOptions(
             partitioning_mode=mode,
-            partition_column=column,
-            num_partitions=5,
+            partitionColumn=column,
+            numPartitions=5,
         ),
     )
 

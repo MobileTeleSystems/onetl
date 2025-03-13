@@ -633,7 +633,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_non_partition
     writer2 = DBWriter(
         connection=hive,
         target=new_table_name,
-        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by="id_int"),
+        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partitionBy="id_int"),
     )
 
     with caplog.at_level(logging.INFO):
@@ -689,7 +689,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer1 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(partition_by="id_int"),
+        options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
     # create & fill up the table with some data
@@ -701,7 +701,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer2 = DBWriter(
         connection=hive,
         target=new_table_name,
-        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by=partition_by),
+        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partitionBy=partition_by),
     )
 
     writer2.run(df1.union(df3))
@@ -753,7 +753,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer1 = DBWriter(
         connection=hive,
         target=get_schema_table.full_name,
-        options=Hive.WriteOptions(partition_by="id_int"),
+        options=Hive.WriteOptions(partitionBy="id_int"),
     )
 
     # create & fill up the table with some data
@@ -766,7 +766,7 @@ def test_hive_writer_insert_into_replace_overlapping_partitions_in_partitioned_t
     writer2 = DBWriter(
         connection=hive,
         target=new_table_name,
-        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partition_by=partition_by),
+        options=Hive.WriteOptions(if_exists="replace_overlapping_partitions", partitionBy=partition_by),
     )
 
     writer2.run(empty_df)

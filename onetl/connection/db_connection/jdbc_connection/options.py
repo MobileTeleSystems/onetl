@@ -131,10 +131,10 @@ class JDBCReadOptions(JDBCFetchOptions):
     .. code:: python
 
         options = JDBC.ReadOptions(
-            partition_column="reg_id",
-            num_partitions=10,
-            lower_bound=0,
-            upper_bound=1000,
+            partitionColumn="reg_id",
+            numPartitions=10,
+            lowerBound=0,
+            upperBound=1000,
             customOption="value",
         )
     """
@@ -343,13 +343,13 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         JDBC.ReadOptions(
             partitioning_mode="range",  # default mode, can be omitted
-            partition_column="id_column",
-            num_partitions=10,
+            partitionColumn="id_column",
+            numPartitions=10,
             # if you're using DBReader, options below can be omitted
             # because they are calculated by automatically as
             # MIN and MAX values of `partition_column`
-            lower_bound=0,
-            upper_bound=100_000,
+            lowerBound=0,
+            upperBound=100_000,
         )
 
     Read data in 10 parallel jobs by hash of values in ``some_column`` column:
@@ -358,8 +358,8 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         JDBC.ReadOptions(
             partitioning_mode="hash",
-            partition_column="some_column",
-            num_partitions=10,
+            partitionColumn="some_column",
+            numPartitions=10,
             # lower_bound and upper_bound are automatically set to `0` and `9`
         )
 
@@ -369,8 +369,8 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         JDBC.ReadOptions(
             partitioning_mode="mod",
-            partition_column="id_column",
-            num_partitions=10,
+            partitionColumn="id_column",
+            numPartitions=10,
             # lower_bound and upper_bound are automatically set to `0` and `9`
         )
     """
@@ -586,7 +586,7 @@ class JDBCSQLOptions(GenericOptions):
 
     .. code-block:: sql
 
-        -- If partition_column is 'id', with num_partitions=4, lower_bound=1, and upper_bound=100:
+        -- If partition_column is 'id', with numPartitions=4, lowerBound=1, and upperBound=100:
         -- Executor 1 processes IDs from 1 to 25
         SELECT ... FROM table WHERE id >= 1 AND id < 26
         -- Executor 2 processes IDs from 26 to 50
@@ -599,9 +599,9 @@ class JDBCSQLOptions(GenericOptions):
 
         -- General case for Executor N
         SELECT ... FROM table
-        WHERE partition_column >= (lower_bound + (N-1) * stride)
-          AND partition_column <= upper_bound
-        -- Where ``stride`` is calculated as ``(upper_bound - lower_bound) / num_partitions``.
+        WHERE partition_column >= (lowerBound + (N-1) * stride)
+          AND partition_column <= upperBound
+        -- Where ``stride`` is calculated as ``(upperBound - lowerBound) / numPartitions``.
     """
 
     num_partitions: Optional[int] = Field(default=None, alias="numPartitions")
@@ -663,7 +663,7 @@ class JDBCSQLOptions(GenericOptions):
         prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"}
         extra = "allow"
 
-    @root_validator(pre=True)
+    @root_validator
     def _check_partition_fields(cls, values):
         num_partitions = values.get("num_partitions")
         lower_bound = values.get("lower_bound")
@@ -671,7 +671,7 @@ class JDBCSQLOptions(GenericOptions):
 
         if num_partitions is not None and num_partitions > 1:
             if lower_bound is None or upper_bound is None:
-                raise ValueError("lower_bound and upper_bound must be set if num_partitions > 1")
+                raise ValueError("lowerBound and upperBound must be set if numPartitions > 1")
         return values
 
 

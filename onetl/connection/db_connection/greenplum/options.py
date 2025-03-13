@@ -94,8 +94,8 @@ class GreenplumReadOptions(JDBCOptions):
     .. code:: python
 
         Greenplum.ReadOptions(
-            partition_column="reg_id",
-            num_partitions=10,
+            partitionColumn="reg_id",
+            partitions=10,
         )
     """
 
@@ -181,8 +181,8 @@ class GreenplumReadOptions(JDBCOptions):
     .. code:: python
 
         Greenplum.ReadOptions(
-            partition_column="id_column",
-            num_partitions=10,
+            partitionColumn="id_column",
+            partitions=10,
         )
     """
 

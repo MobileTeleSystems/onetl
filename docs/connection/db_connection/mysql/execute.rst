@@ -50,7 +50,7 @@ Examples
 
     df = mysql.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=MySQL.FetchOptions(query_timeout=10),
+        options=MySQL.FetchOptions(queryTimeout=10),
     )
     mysql.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -96,7 +96,7 @@ Examples
         )
         ENGINE = InnoDB
         """,
-        options=MySQL.ExecuteOptions(query_timeout=10),
+        options=MySQL.ExecuteOptions(queryTimeout=10),
     )
 
 Options
