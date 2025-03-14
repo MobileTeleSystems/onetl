@@ -31,7 +31,7 @@ def test_mysql_reader_snapshot_error_pass_df_schema(spark_mock):
     with pytest.raises(ValueError, match="'df_schema' parameter is not supported by MySQL"):
         DBReader(
             connection=mysql,
-            table="schema.table",
+            source="schema.table",
             df_schema=df_schema,
         )
 
@@ -42,7 +42,7 @@ def test_mysql_reader_wrong_table_name(spark_mock):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBReader(
             connection=mysql,
-            table="table",  # Required format: table="schema.table"
+            source="table",  # Required format: source="schema.table"
         )
 
 
@@ -56,7 +56,7 @@ def test_mysql_reader_wrong_hint_type(spark_mock):
         DBReader(
             connection=mysql,
             hint={"col1": 1},
-            table="schema.table",
+            source="schema.table",
         )
 
 
@@ -70,5 +70,5 @@ def test_mysql_reader_wrong_where_type(spark_mock):
         DBReader(
             connection=mysql,
             where={"col1": 1},
-            table="schema.table",
+            source="schema.table",
         )

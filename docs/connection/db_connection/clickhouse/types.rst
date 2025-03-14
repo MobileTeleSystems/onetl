@@ -77,7 +77,7 @@ So instead of relying on Spark to create tables:
 
         writer = DBWriter(
             connection=clickhouse,
-            table="default.target_tbl",
+            target="default.target_tbl",
             options=Clickhouse.WriteOptions(
                 if_exists="append",
                 # ENGINE is required by Clickhouse
@@ -105,7 +105,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         writer = DBWriter(
             connection=clickhouse,
-            table="default.target_tbl",
+            target="default.target_tbl",
             options=Clickhouse.WriteOptions(if_exists="append"),
         )
         writer.run(df)
@@ -375,7 +375,7 @@ For parsing JSON columns in ClickHouse, :obj:`JSON.parse_column <onetl.file.form
 
     reader = DBReader(
         connection=clickhouse,
-        table="default.source_tbl",
+        target="default.source_tbl",
         columns=[
             "id",
             "toJSONString(array_column) array_column",

@@ -44,7 +44,7 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
         DBReader(
             connection=kafka,
             where={"col1": 1},
-            table="table",
+            source="table",
         )
 
     with pytest.raises(
@@ -54,7 +54,7 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
         DBReader(
             connection=kafka,
             hint={"col1": 1},
-            table="table",
+            source="table",
         )
 
     with pytest.raises(
@@ -63,7 +63,7 @@ def test_kafka_reader_unsupported_parameters(spark_mock, df_schema):
     ):
         DBReader(
             connection=kafka,
-            table="table",
+            source="table",
             df_schema=df_schema,
         )
 
@@ -77,7 +77,7 @@ def test_kafka_reader_hwm_offset_is_valid(spark_mock):
 
     DBReader(
         connection=kafka,
-        table="table",
+        source="table",
         hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
     )
 
@@ -99,7 +99,7 @@ def test_kafka_reader_invalid_hwm_column(spark_mock, hwm_expression):
     ):
         DBReader(
             connection=kafka,
-            table="table",
+            source="table",
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression=hwm_expression),
         )
 
@@ -124,6 +124,6 @@ def test_kafka_reader_invalid_source(spark_mock, topic, error_message):
     ):
         DBReader(
             connection=kafka,
-            table=topic,
+            source=topic,
             hwm=DBReader.AutoDetectHWM(name=secrets.token_hex(5), expression="offset"),
         )

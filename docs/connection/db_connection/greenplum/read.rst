@@ -348,8 +348,8 @@ and then read this table using ``DBReader``:
 
     .. code-block:: python
 
-        df1 = DBReader(connection=greenplum, table="public.table1", ...).run()
-        df2 = DBReader(connection=greenplum, table="public.table2", ...).run()
+        df1 = DBReader(connection=greenplum, target="public.table1", ...).run()
+        df2 = DBReader(connection=greenplum, target="public.table2", ...).run()
 
         joined_df = df1.join(df2, on="col")
 

@@ -17,6 +17,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
@@ -308,7 +309,7 @@ class DBReader(FrozenModel):
     """
 
     connection: BaseDBConnection
-    source: str = Field(alias="table")
+    source: str = Field(alias=avoid_alias("table"))  # type: ignore[literal-required]
     columns: Optional[List[str]] = Field(default=None, min_items=1)
     where: Optional[Any] = None
     hint: Optional[Any] = None

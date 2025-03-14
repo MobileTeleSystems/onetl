@@ -63,7 +63,7 @@ So instead of relying on Spark to create tables:
 
         writer = DBWriter(
             connection=mysql,
-            table="myschema.target_tbl",
+            target="myschema.target_tbl",
             options=MySQL.WriteOptions(
                 if_exists="append",
                 createTableOptions="ENGINE = InnoDB",
@@ -90,7 +90,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         writer = DBWriter(
             connection=mysql,
-            table="myschema.target_tbl",
+            target="myschema.target_tbl",
             options=MySQL.WriteOptions(if_exists="append"),
         )
         writer.run(df)

@@ -19,7 +19,7 @@ def test_greenplum_writer_wrong_table_name(spark_mock):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBWriter(
             connection=greenplum,
-            table="table",  # Required format: table="schema.table"
+            target="table",  # Required format: target="schema.table"
         )
 
 
@@ -108,7 +108,7 @@ def test_greenplum_writer_number_of_connections_less_than_warning_threshold(
 
     writer = DBWriter(
         connection=greenplum,
-        table="schema.table",
+        target="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()
@@ -247,7 +247,7 @@ def test_greenplum_writer_number_of_connections_higher_than_warning_threshold(
 
     writer = DBWriter(
         connection=greenplum,
-        table="schema.table",
+        target="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()
@@ -381,7 +381,7 @@ def test_greenplum_writer_number_of_connections_higher_than_exception_threshold(
 
     writer = DBWriter(
         connection=greenplum,
-        table="schema.table",
+        target="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()
