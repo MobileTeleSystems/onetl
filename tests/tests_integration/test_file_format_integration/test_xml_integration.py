@@ -173,43 +173,74 @@ def test_xml_reader_with_attributes(
     assert_equal_df(read_df, expected_xml_attributes_df, order_by="id")
 
 
-@pytest.mark.parametrize(
-    "xml_input, expected_row",
-    [
-        (
-            """<item>
-                    <id>1</id>
-                    <str_value>Alice</str_value>
-                    <int_value>123</int_value>
-                    <date_value>2021-01-01</date_value>
-                    <datetime_value>2021-01-01T07:01:01Z</datetime_value>
-                    <float_value>1.23</float_value>
-                </item>""",
-            Row(
-                xml_string=Row(
-                    id=1,
-                    str_value="Alice",
-                    int_value=123,
-                    date_value=datetime.date(2021, 1, 1),
-                    datetime_value=datetime.datetime(2021, 1, 1, 7, 1, 1),
-                    float_value=1.23,
-                ),
-            ),
-        ),
-    ],
-    ids=["basic-case"],
-)
 @pytest.mark.parametrize("column_type", [str, col])
-def test_xml_parse_column(spark, xml_input: str, expected_row: Row, column_type, file_df_schema):
+def test_xml_parse_column(spark, column_type, file_df_schema):
     from onetl.file.format import XML
 
     spark_version = get_spark_version(spark)
     if spark_version.major < 3:
         pytest.skip("XML files are supported on Spark 3.x only")
 
-    xml = XML(row_tag="item")
-    df = spark.createDataFrame([(xml_input,)], ["xml_string"])
+    xml = XML(rowTag="item")
+    df = spark.createDataFrame(
+        [
+            Row(
+                xml_string="""
+                <item>
+                    <id>1</id>
+                    <str_value>Alice</str_value>
+                    <int_value>123</int_value>
+                    <date_value>2021-01-01</date_value>
+                    <datetime_value>2021-01-01T07:01:01Z</datetime_value>
+                    <float_value>1.23</float_value>
+                </item>
+                """,
+            ),
+        ],
+    )
     parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
-    result_row = parsed_df.first()
 
-    assert result_row == expected_row
+    assert parsed_df.collect() == [
+        Row(
+            xml_string=Row(
+                id=1,
+                str_value="Alice",
+                int_value=123,
+                date_value=datetime.date(2021, 1, 1),
+                datetime_value=datetime.datetime(2021, 1, 1, 7, 1, 1),
+                float_value=1.23,
+            ),
+        ),
+    ]
+
+
+def test_xml_parse_column_unsupported_options_warning(spark, file_df_schema):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("CSV.parse in supported on Spark 3.x only")
+
+    df = spark.createDataFrame(
+        [
+            Row(
+                xml_string="""
+                <item>
+                    <id>1</id>
+                    <str_value>Alice</str_value>
+                    <int_value>123</int_value>
+                    <date_value>2021-01-01</date_value>
+                    <datetime_value>2021-01-01T07:01:01Z</datetime_value>
+                    <float_value>1.23</float_value>
+                </item>
+                """,
+            ),
+        ],
+    )
+
+    xml = XML(rowTag="item", inferSchema=True, samplingRatio=0.1)
+
+    msg = "Options `['inferSchema', 'samplingRatio']` " "are set but not supported in `XML.parse_column`."
+
+    with pytest.warns(UserWarning) as record:
+        df.select(xml.parse_column(df.xml_string, file_df_schema)).collect()
+        assert record
+        assert msg in str(record[0].message)
