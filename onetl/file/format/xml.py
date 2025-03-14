@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
+
+from typing_extensions import Literal
 
 try:
     from pydantic.v1 import Field
@@ -21,51 +23,6 @@ from onetl.hooks import slot, support_hooks
 if TYPE_CHECKING:
     from pyspark.sql import Column, SparkSession
     from pyspark.sql.types import StructType
-
-
-PROHIBITED_OPTIONS = frozenset(
-    (
-        # filled by onETL classes
-        "path",
-    ),
-)
-
-
-READ_OPTIONS = frozenset(
-    (
-        "rowTag",
-        "samplingRatio",
-        "excludeAttribute",
-        "treatEmptyValuesAsNulls",
-        "mode",
-        "inferSchema",
-        "columnNameOfCorruptRecord",
-        "attributePrefix",
-        "valueTag",
-        "charset",
-        "ignoreSurroundingSpaces",
-        "wildcardColName",
-        "rowValidationXSDPath",
-        "ignoreNamespace",
-        "timestampFormat",
-        "dateFormat",
-    ),
-)
-
-WRITE_OPTIONS = frozenset(
-    (
-        "rowTag",
-        "rootTag",
-        "declaration",
-        "arrayElementName",
-        "nullValue",
-        "attributePrefix",
-        "valueTag",
-        "compression",
-        "timestampFormat",
-        "dateFormat",
-    ),
-)
 
 
 log = logging.getLogger(__name__)
@@ -91,52 +48,301 @@ class XML(ReadWriteFileFormat):
         * Spark versions: 3.2.x - 3.5.x
         * Java versions: 8 - 20
 
-        See documentation from link above.
-
-    .. note ::
-
-        You can pass any option to the constructor, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
-
-    .. warning::
-
-        By default, reading is done using ``mode=PERMISSIVE`` which replaces columns with wrong data type or format with ``null`` values.
-        Be careful while parsing values like timestamps, they should match the ``timestampFormat`` option.
-        Using ``mode=FAILFAST`` will throw an exception instead of producing ``null`` values.
-        `Follow <https://github.com/databricks/spark-xml/issues/662>`_
-
-    .. versionadded:: 0.9.5
+        See `official documentation <https://github.com/databricks/spark-xml>`_.
 
     Examples
     --------
-    Describe options how to read from/write to XML file with specific options:
 
-    .. code:: python
+    .. note ::
 
-        from onetl.file.format import XML
-        from pyspark.sql import SparkSession
+        You can pass any option mentioned in `official documentation <https://github.com/databricks/spark-xml>`_.
 
-        # Create Spark session with XML package loaded
-        maven_packages = XML.get_packages(spark_version="3.5.5")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+        The set of supported options depends on ``spark-xml`` version.
 
-        xml = XML(row_tag="item")
+    .. tabs::
+
+        .. code-tab:: py Read files
+
+            from onetl.file.format import XML
+            from pyspark.sql import SparkSession
+
+            # Create Spark session with XML package loaded
+            maven_packages = XML.get_packages(spark_version="3.5.5")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
+
+            # Read file /some/file.xml from local file system
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+
+            reader = FileDFReader(
+                connection=SparkLocalFS(spark=spark),
+                format=XML(rowTag="item", mode="PERMISSIVE"),
+            )
+            df = reader.run(["/some/file.xml"])
+
+        .. code-tab:: py Write files
+
+            # Create Spark session with XML package loaded
+            spark = ...
+            # Defined DataFrame
+            df = ...
+
+            # Write DataFrame as XML files at /some/folder on local file system
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import XML
+
+            writer = FileDFWriter(
+                connection=SparkLocalFS(spark=spark),
+                format=XML(rowTag="item", rootTag="data", compression="gzip"),
+                target_path="/some/folder",
+            )
+            writer.run(df)
 
     """
 
     name: ClassVar[str] = "xml"
 
     row_tag: str = Field(alias="rowTag")
+    """
+    XML tag that encloses each row in XML. Required.
+    """
+
+    rootTag: Optional[str] = None
+    """
+    XML tag that encloses content of all DataFrame. Default is ``ROWS``.
+
+    .. note::
+
+        Used only for writing files.
+    """
+
+    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    """
+    XML parsing mode.
+      * ``PERMISSIVE`` (default) replaces corrupted row with ``null``,
+        and moves original string value to column :obj:`~columnNameOfCorruptRecord`.
+      * ``DROPMALFORMED`` drops malformed row.
+      * ``FAILFAST`` throws an exception.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    charset: Optional[str] = None
+    """
+    File encoding. Default is ``UTF-8``
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    compression: Union[str, Literal["bzip2", "gzip", "lz4", "snappy"], None] = None
+    """
+    Compression codec. By default no compression is used.
+
+    .. note::
+
+        Used only for writing files.
+    """
+
+    timestampFormat: Optional[str] = None
+    """
+    Format string used for parsing or serializing timestamp values.
+    By default, ISO 8601 format is used (``yyyy-MM-ddTHH:mm:ss.SSSZ``).
+    """
+
+    dateFormat: Optional[str] = None
+    """
+    Format string used for parsing or serializing date values.
+    By default, ISO 8601 format is used (``yyyy-MM-dd``).
+    """
+
+    timezone: Optional[str] = None
+    """
+    Allows to override timezone used for parsing or serializing date and timestamp values.
+    By default, ``spark.sql.session.timeZone`` is used.
+    """
+
+    nullValue: Optional[str] = None
+    """
+    String value used to represent null. Default is ``null``.
+    """
+
+    ignoreSurroundingSpaces: Optional[bool] = None
+    """
+    If ``True``, trim surrounding spaces while parsing values. Default ``false``.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    columnNameOfCorruptRecord: Optional[str] = None
+    """
+    Name of DataFrame column there corrupted row is stored with ``mode=PERMISSIVE``.
+
+    .. warning::
+
+        If DataFrame schema is provided, this column should be added to schema explicitly:
+
+        .. code:: python
+
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import XML
+
+            from pyspark.sql.types import StructType, StructField, TImestampType, StringType
+
+            spark = ...
+            schema = StructType(
+                [
+                    StructField("my_field", TimestampType()),
+                    StructField("_corrupt_record", StringType()),  # <-- important
+                ]
+            )
+            xml = XML(rowTag="item", columnNameOfCorruptRecord="_corrupt_record")
+
+            reader = FileDFReader(
+                connection=connection,
+                format=xml,
+                schema=schema,  # < ---
+            )
+            df = reader.run(["/some/file.xml"])
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    inferSchema: Optional[bool] = None
+    """
+    If ``True``, tries to infer the input schema by reading a sample of the file (see :obj:`~samplingRatio`).
+    Default ``false`` which means that all parsed columns will be ``StringType()``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` function.
+    """
+
+    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    """
+    For ``inferSchema=True``, read the specified fraction of rows to infer the schema.
+    Default ``1``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` function.
+    """
+
+    valueTag: Optional[str] = None
+    """
+    Value used to replace missing values while parsing attributes like ``<sometag someattr>``.
+    Default ``_VALUE``.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    attributePrefix: Optional[str] = None
+    """
+    While parsing tags containing attributes like ``<sometag attr="value">``, attributes are stored as
+    DataFrame schema columns with specified prefix, e.g. ``_attr``.
+    Default ``_``.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    excludeAttribute: Optional[bool] = None
+    """
+    If ``True``, exclude attributes while parsing tags like ``<sometag attr="value">``.
+    Default ``false``.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    wildcardColName: Optional[str] = None
+    """
+    Name of column or columns which should be preserved as raw XML string, and not parsed.
+
+    .. warning::
+
+        If DataFrame schema is provided, this column should be added to schema explicitly.
+        See :obj:`~columnNameOfCorruptRecord` example.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    ignoreNamespace: Optional[bool] = None
+    """
+    If ``True``, all namespaces like ``<ns:tag>`` will be ignored and treated as just ``<tag>``.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    rowValidationXSDPath: Optional[str] = None
+    """
+    Path to XSD file which should be used to validate each row.
+    If row does not match XSD, it will be treated as error, behavior depends on :obj:`~mode` value.
+
+    Default is no validation.
+
+    .. note::
+
+        If Spark session is created with ``master=yarn`` or ``master=k8s``, XSD
+        file should be accessible from all Spark nodes. This can be achieved by calling:
+
+        .. code:: python
+
+            spark.addFile("/path/to/file.xsd")
+
+        And then by passing ``rowValidationXSDPath=file.xsd`` (relative path).
+
+    .. note::
+
+        Used only for reading files or by :obj:`~parse_column` function.
+    """
+
+    declaration: Optional[str] = None
+    """
+    Content of `<?XML ... ?>` declaration.
+    Default is ``version="1.0" encoding="UTF-8" standalone="yes"``.
+
+    .. note::
+
+        Used only for writing files.
+    """
+
+    arrayElementName: Optional[str] = None
+    """
+    If DataFrame column is ``ArrayType``, its content will be written to XML
+    inside ``<arrayElementName>...</arrayElementName>`` tag.
+    Default is ``item``.
+
+    .. note::
+
+        Used only for writing files.
+    """
 
     class Config:
-        known_options = READ_OPTIONS | WRITE_OPTIONS
-        prohibited_options = PROHIBITED_OPTIONS
+        known_options = frozenset()
+        prohibited_options = frozenset(("path",))  # filled by FileDFReader/FileDFWriter
         extra = "allow"
 
     @slot
@@ -239,7 +445,7 @@ class XML(ReadWriteFileFormat):
 
         .. note::
 
-            This method assumes that the ``spark-xml`` package is installed: :obj:`XML.get_packages <onetl.file.format.xml.XML.get_packages>`.
+            This method assumes that the ``spark-xml`` package is installed: :obj:`~get_packages`.
 
         .. note::
 
@@ -270,12 +476,12 @@ class XML(ReadWriteFileFormat):
                             ArrayType(
                                 StructType(
                                     [
-                                        StructField("title", StringType(), True),
-                                        StructField("author", StringType(), True),
+                                        StructField("title", StringType(), nullable=True),
+                                        StructField("author", StringType(), nullable=True),
                                     ],
                                 ),
                             ),
-                            True,
+                            nullable=True,
                         ),
                     ],
                 )
@@ -348,7 +554,7 @@ class XML(ReadWriteFileFormat):
         java_column = _to_java_column(column)
         java_schema = spark._jsparkSession.parseDataType(schema.json())  # noqa: WPS437
         scala_options = spark._jvm.org.apache.spark.api.python.PythonUtils.toScalaMap(  # noqa: WPS219, WPS437
-            self.dict(),
+            self.dict(by_alias=True, exclude_none=True),
         )
         jc = spark._jvm.com.databricks.spark.xml.functions.from_xml(  # noqa: WPS219, WPS437
             java_column,
@@ -356,3 +562,8 @@ class XML(ReadWriteFileFormat):
             scala_options,
         )
         return Column(jc).alias(column_name)
+
+    def __repr__(self):
+        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
+        return f"{self.__class__.__name__}({options_kwargs})"
