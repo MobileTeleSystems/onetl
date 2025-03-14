@@ -2,6 +2,11 @@ import logging
 
 import pytest
 
+try:
+    from pydantic.v1 import SecretStr
+except (ImportError, AttributeError):
+    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+
 from onetl.file.format import Excel
 
 pytestmark = [pytest.mark.excel]
@@ -73,26 +78,25 @@ def test_excel_options_default_override():
 
 
 @pytest.mark.parametrize(
-    "known_option",
+    "known_option, value, expected_value",
     [
-        "dataAddress",
-        "treatEmptyValuesAsNulls",
-        "setErrorCellsToFallbackValues",
-        "usePlainNumberFormat",
-        "inferSchema",
-        "addColorColumns",
-        "timestampFormat",
-        "maxRowsInMemory",
-        "maxByteArraySize",
-        "tempFileThreshold",
-        "excerptSize",
-        "workbookPassword",
-        "dateFormat",
+        ("dataAddress", "value", "value"),
+        ("treatEmptyValuesAsNulls", True, True),
+        ("setErrorCellsToFallbackValues", True, True),
+        ("usePlainNumberFormat", True, True),
+        ("inferSchema", True, True),
+        ("timestampFormat", "value", "value"),
+        ("maxRowsInMemory", 100, 100),
+        ("maxByteArraySize", 1024, 1024),
+        ("tempFileThreshold", 1024, 1024),
+        ("excerptSize", 100, 100),
+        ("workbookPassword", "value", SecretStr("value")),
+        ("dateFormat", "value", "value"),
     ],
 )
-def test_excel_options_known(known_option):
-    excel = Excel.parse({known_option: "value"})
-    assert getattr(excel, known_option) == "value"
+def test_excel_options_known(known_option, value, expected_value):
+    excel = Excel.parse({known_option: value})
+    assert getattr(excel, known_option) == expected_value
 
 
 def test_excel_options_unknown(caplog):
@@ -101,6 +105,12 @@ def test_excel_options_unknown(caplog):
         assert excel.unknown == "abc"
 
     assert ("Options ['unknown'] are not known by Excel, are you sure they are valid?") in caplog.text
+
+
+def test_excel_options_repr():
+    # There are too many options with default value None, hide them from repr
+    excel = Excel(header=True, timestampFormat="yyyy-MM-dd HH:mm:ss", unknownOption="abc")
+    assert repr(excel) == "Excel(header=True, timestampFormat='yyyy-MM-dd HH:mm:ss', unknownOption='abc')"
 
 
 @pytest.mark.local_fs

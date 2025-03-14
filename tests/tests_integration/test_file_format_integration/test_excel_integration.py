@@ -67,8 +67,9 @@ def test_excel_reader_with_infer_schema(
         ("without_header", {}),
         ("with_header", {"header": True}),
         ("with_data_address", {"dataAddress": "'ABC'!K6"}),
+        ("with_encryption", {"workbookPassword": "1234"}),
     ],
-    ids=["without_header", "with_header", "with_data_address"],
+    ids=["without_header", "with_header", "with_data_address", "with_encryption"],
 )
 def test_excel_reader_with_options(
     spark,
