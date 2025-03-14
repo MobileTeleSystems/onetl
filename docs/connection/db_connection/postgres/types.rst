@@ -68,7 +68,7 @@ So instead of relying on Spark to create tables:
 
         writer = DBWriter(
             connection=postgres,
-            table="public.table",
+            target="public.table",
             options=Postgres.WriteOptions(
                 if_exists="append",
                 createTableOptions="PARTITION BY RANGE (id)",
@@ -95,7 +95,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         writer = DBWriter(
             connection=postgres,
-            table="public.table",
+            target="public.table",
             options=Postgres.WriteOptions(if_exists="append"),
         )
         writer.run(df)

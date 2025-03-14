@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from onetl._util.alias import avoid_alias
+
 try:
     from pydantic.v1 import Field, PrivateAttr, validator
 except (ImportError, AttributeError):
@@ -100,7 +102,7 @@ class DBWriter(FrozenModel):
     """
 
     connection: BaseDBConnection
-    target: str = Field(alias="table")
+    target: str = Field(alias=avoid_alias("table"))  # type: ignore[literal-required]
     options: Optional[GenericOptions] = None
 
     _connection_checked: bool = PrivateAttr(default=False)

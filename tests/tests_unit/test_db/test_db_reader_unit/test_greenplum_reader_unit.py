@@ -38,7 +38,7 @@ def test_greenplum_reader_snapshot_error_pass_df_schema(spark_mock):
     with pytest.raises(ValueError, match="'df_schema' parameter is not supported by Greenplum"):
         DBReader(
             connection=greenplum,
-            table="schema.table",
+            source="schema.table",
             df_schema=df_schema,
         )
 
@@ -49,7 +49,7 @@ def test_greenplum_reader_wrong_table_name(spark_mock):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBReader(
             connection=greenplum,
-            table="table",  # Required format: table="schema.table"
+            source="table",  # Required format: source="schema.table"
         )
 
 
@@ -63,7 +63,7 @@ def test_greenplum_reader_hint_unsupported(spark_mock):
         DBReader(
             connection=greenplum,
             hint="col1",
-            table="schema.table",
+            source="schema.table",
         )
 
 
@@ -77,7 +77,7 @@ def test_greenplum_reader_wrong_where_type(spark_mock):
         DBReader(
             connection=greenplum,
             where={"col1": 1},
-            table="schema.table",
+            source="schema.table",
         )
 
 
@@ -164,7 +164,7 @@ def test_greenplum_reader_number_of_connections_less_than_warning_threshold(
 
     reader = DBReader(
         connection=greenplum,
-        table="schema.table",
+        source="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()
@@ -300,7 +300,7 @@ def test_greenplum_reader_number_of_connections_higher_than_warning_threshold(
 
     reader = DBReader(
         connection=greenplum,
-        table="schema.table",
+        source="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()
@@ -430,7 +430,7 @@ def test_greenplum_reader_number_of_connections_higher_than_exception_threshold(
 
     reader = DBReader(
         connection=greenplum,
-        table="schema.table",
+        source="schema.table",
     )
 
     conf = spark_mock.sparkContext.getConf()

@@ -12,5 +12,5 @@ def test_oracle_writer_wrong_table_name(spark_mock):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBWriter(
             connection=oracle,
-            table="table",  # Required format: table="schema.table"
+            target="table",  # Required format: target="schema.table"
         )
