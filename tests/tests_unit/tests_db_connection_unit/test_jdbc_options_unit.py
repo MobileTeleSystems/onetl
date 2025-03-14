@@ -314,12 +314,12 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options_class, options",
     [
-        (Postgres.WriteOptions, {"mode": "wrong_mode"}),
-        (Clickhouse.WriteOptions, {"mode": "wrong_mode"}),
-        (MSSQL.WriteOptions, {"mode": "wrong_mode"}),
-        (MySQL.WriteOptions, {"mode": "wrong_mode"}),
-        (Teradata.WriteOptions, {"mode": "wrong_mode"}),
-        (Oracle.WriteOptions, {"mode": "wrong_mode"}),
+        (Postgres.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Clickhouse.WriteOptions, {"if_exists": "wrong_mode"}),
+        (MSSQL.WriteOptions, {"if_exists": "wrong_mode"}),
+        (MySQL.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Teradata.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Oracle.WriteOptions, {"if_exists": "wrong_mode"}),
     ],
 )
 def test_jdbc_write_options_mode_wrong(options_class, options):

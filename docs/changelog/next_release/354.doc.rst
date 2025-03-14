@@ -1,0 +1,1 @@
+Prefer ``WriteOptions(if_exists=...)`` instead of ``WriteOptions(mode=...)`` for IDE suggestions.

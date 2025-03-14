@@ -9,6 +9,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.impl import FileExistBehavior, GenericOptions
 
 
@@ -18,7 +19,10 @@ class FileDownloaderOptions(GenericOptions):
     .. versionadded:: 0.3.0
     """
 
-    if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
+    if_exists: FileExistBehavior = Field(  # type: ignore[literal-required]
+        default=FileExistBehavior.ERROR,
+        alias=avoid_alias("mode"),
+    )
     """
     How to handle existing files in the local directory.
 

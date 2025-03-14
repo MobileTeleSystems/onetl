@@ -10,6 +10,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl._util.spark import get_spark_version, stringify
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
@@ -98,7 +99,7 @@ class CSV(ReadWriteFileFormat):
     """
 
     name: ClassVar[str] = "csv"
-    delimiter: str = Field(default=",", alias="sep")
+    delimiter: str = Field(default=",", alias=avoid_alias("sep"))  # type: ignore[literal-required]
     encoding: str = "utf-8"
     quote: str = '"'
     escape: str = "\\"

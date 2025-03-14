@@ -10,6 +10,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.impl import GenericOptions
 
 PIPELINE_PROHIBITED_OPTIONS = frozenset(
@@ -197,7 +198,10 @@ class MongoDBWriteOptions(GenericOptions):
         )
     """
 
-    if_exists: MongoDBCollectionExistBehavior = Field(default=MongoDBCollectionExistBehavior.APPEND, alias="mode")
+    if_exists: MongoDBCollectionExistBehavior = Field(  # type: ignore[literal-required]
+        default=MongoDBCollectionExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing collection.
 
     Possible values:
