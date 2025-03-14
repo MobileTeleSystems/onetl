@@ -11,6 +11,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_connection.options import JDBCSQLOptions
 from onetl.connection.db_connection.jdbc_mixin import JDBCOptions
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -237,7 +238,10 @@ class GreenplumWriteOptions(JDBCOptions):
         known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
 
-    if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")
+    if_exists: GreenplumTableExistBehavior = Field(  # type: ignore[literal-required]
+        default=GreenplumTableExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing table.
 
     Possible values:

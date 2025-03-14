@@ -6,6 +6,8 @@ import warnings
 from enum import Enum
 from typing import List, Optional, Tuple, Union
 
+from onetl._util.alias import avoid_alias
+
 try:
     from pydantic.v1 import Field, root_validator, validator
 except (ImportError, AttributeError):
@@ -92,7 +94,10 @@ class HiveWriteOptions(GenericOptions):
         known_options: frozenset = frozenset()
         extra = "allow"
 
-    if_exists: HiveTableExistBehavior = Field(default=HiveTableExistBehavior.APPEND, alias="mode")
+    if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
+        default=HiveTableExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing table.
 
     Possible values:

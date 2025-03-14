@@ -54,6 +54,6 @@ def test_file_mover_options_mode_deprecated(options, value, message):
         assert options.if_exists == value
 
 
-def test_file_mover_options_modes_wrong():
+def test_file_mover_options_if_exists_wrong_value():
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        FileMover.Options(mode="wrong_mode")
+        FileMover.Options(if_exists="wrong_mode")

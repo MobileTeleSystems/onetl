@@ -6,6 +6,7 @@ import warnings
 from enum import Enum
 from typing import Optional
 
+from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
 
 try:
@@ -429,7 +430,10 @@ class JDBCWriteOptions(GenericOptions):
         prohibited_options = GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
         extra = "allow"
 
-    if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
+    if_exists: JDBCTableExistBehavior = Field(  # type: ignore[literal-required]
+        default=JDBCTableExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing table.
 
     Possible values:
