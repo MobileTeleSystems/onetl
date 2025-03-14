@@ -207,7 +207,7 @@ def test_xml_parse_column(spark, xml_input: str, expected_row: Row, column_type,
     if spark_version.major < 3:
         pytest.skip("XML files are supported on Spark 3.x only")
 
-    xml = XML(row_tag="item")
+    xml = XML(rowTag="item")
     df = spark.createDataFrame([(xml_input,)], ["xml_string"])
     parsed_df = df.select(xml.parse_column(column_type("xml_string"), schema=file_df_schema))
     result_row = parsed_df.first()
