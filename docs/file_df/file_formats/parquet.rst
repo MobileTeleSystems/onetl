@@ -6,4 +6,5 @@ Parquet
 .. currentmodule:: onetl.file.format.parquet
 
 .. autoclass:: Parquet
-    :members: __init__
+    :members: __init__, mergeSchema,compression
+    :member-order: bysource
