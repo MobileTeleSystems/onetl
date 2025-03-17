@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
+
+from typing_extensions import Literal
 
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
@@ -17,55 +19,116 @@ PROHIBITED_OPTIONS = frozenset(
     ),
 )
 
-READ_OPTIONS = frozenset(
-    (
-        "datetimeRebaseMode",
-        "int96RebaseMode",
-        "mergeSchema",
-    ),
-)
-
-WRITE_OPTIONS = frozenset(
-    (
-        "compression",
-        "parquet.*",
-    ),
+PARQUET_LIBRARY_OPTIONS = frozenset(
+    ("parquet.*",),
 )
 
 
 @support_hooks
 class Parquet(ReadWriteFileFormat):
     """
-    Parquet file format. |support_hooks|
+    Parquet file format (columnar). |support_hooks|
 
     Based on `Spark Parquet Files <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_ file format.
 
     Supports reading/writing files with ``.parquet`` extension.
-
-    .. note ::
-
-        You can pass any option to the constructor, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
 
     .. versionadded:: 0.9.0
 
     Examples
     --------
 
-    Describe options how to read from/write to Parquet file with specific options:
+    .. note ::
 
-    .. code:: python
+        You can pass any option mentioned in `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_.
+        The set of supported options depends on Spark version.
 
-        parquet = Parquet(compression="snappy")
+        You may also set options mentioned `parquet-hadoop documentation <https://github.com/apache/parquet-java/blob/master/parquet-hadoop/README.md>`_.
+        They are prefixed with ``parquet.`` with dots in names, so instead of calling constructor ``Parquet(parquet.option=True)`` (invalid in Python)
+        you should call method ``Parquet.parse({"parquet.option": True})``.
+
+    .. tabs::
+
+        .. code-tab:: py Read files
+
+            # Create Spark session
+            spark = ...
+
+            # Read Parquet files at /some/folder from local file system
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import Parquet
+
+            parquet = Parquet(mergeSchema=True)
+
+            reader = FileDFReader(
+                connection=SparkLocalFS(spark=spark),
+                format=parquet,
+                source_path="/some/folder",
+            )
+            df = reader.run()
+
+        .. code-tab:: py Write files
+
+            # Create Spark session
+            spark = ...
+            # Defined DataFrame
+            df = ...
+
+            # Write DataFrame as Parquet files at /some/folder on local file system
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFWriter
+            from onetl.file.format import Parquet
+
+            parquet = Parquet.parse(
+                {
+                    "compression": "snappy",
+                    # Enable Bloom filter for columns 'id' and 'name'
+                    "parquet.bloom.filter.enabled#id": True,
+                    "parquet.bloom.filter.enabled#name": True,
+                    # Set expected number of distinct values for column 'id'
+                    "parquet.bloom.filter.expected.ndv#id": 10_000_000,
+                    # other options
+                }
+            )
+
+            writer = FileDFWriter(
+                connection=SparkLocalFS(spark=spark),
+                format=parquet,
+                target_path="/some/folder",
+            )
+            writer.run(df)
 
     """
 
     name: ClassVar[str] = "parquet"
 
+    mergeSchema: Optional[bool] = None
+    """
+    Merge schemas of all Parquet files being read into a single schema.
+    By default, Spark config option ``spark.sql.parquet.mergeSchema`` value is used (``false``).
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    compression: Union[
+        str,
+        Literal["uncompressed", "snappy", "gzip", "lzo", "brotli", "lz4", "lz4raw", "zstd"],
+        None,
+    ] = None
+    """
+    Compression codec of the Parquet files.
+    By default, Spark config option ``spark.sql.parquet.compression.codec`` value is used (``snappy``).
+
+    .. note::
+
+        Used only for writing files.
+    """
+
     class Config:
-        known_options = READ_OPTIONS | WRITE_OPTIONS
+        known_options = PARQUET_LIBRARY_OPTIONS
         prohibited_options = PROHIBITED_OPTIONS
         extra = "allow"
 
@@ -73,3 +136,11 @@ class Parquet(ReadWriteFileFormat):
     def check_if_supported(self, spark: SparkSession) -> None:
         # always available
         pass
+
+    def __repr__(self):
+        options_dict = self.dict(by_alias=True, exclude_none=True)
+        if any("." in field for field in options_dict.keys()):
+            return f"{self.__class__.__name__}.parse({options_dict})"
+
+        options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
+        return f"{self.__class__.__name__}({options_kwargs})"
