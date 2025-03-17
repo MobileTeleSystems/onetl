@@ -34,7 +34,7 @@ class ReadOnlyFileFormat(BaseReadableFileFormat, GenericOptions):
 
     @slot
     def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
-        options = self.dict(by_alias=True)
+        options = self.dict(by_alias=True, exclude_none=True)
         return reader.format(self.name).options(**options)
 
 
@@ -47,7 +47,7 @@ class WriteOnlyFileFormat(BaseWritableFileFormat, GenericOptions):
 
     @slot
     def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
-        options = self.dict(by_alias=True)
+        options = self.dict(by_alias=True, exclude_none=True)
         return writer.format(self.name).options(**options)
 
 
