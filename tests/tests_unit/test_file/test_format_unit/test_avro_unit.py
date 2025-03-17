@@ -51,7 +51,7 @@ def test_avro_get_packages(spark_version, scala_version, package):
     ],
 )
 def test_avro_options_schema(value, real_value):
-    avro = Avro(schema_dict=value)
+    avro = Avro(avroSchema=value)
     assert avro.schema_dict == real_value
 
 
@@ -68,19 +68,21 @@ def test_avro_options_alias(name, real_name, value):
 
 
 @pytest.mark.parametrize(
-    "known_option",
+    "known_option, value, expected_value",
     [
-        "positionalFieldMatching",
-        "ignoreExtension",
-        "datetimeRebaseMode",
-        "recordName",
-        "recordNamespace",
-        "compression",
+        ("positionalFieldMatching", True, True),
+        ("mode", "PERMISSIVE", "PERMISSIVE"),
+        ("datetimeRebaseMode", "CORRECTED", "CORRECTED"),
+        ("recordName", "value", "value"),
+        ("recordNamespace", "value", "value"),
+        ("compression", "snappy", "snappy"),
+        ("positionalFieldMatching", True, True),
+        ("enableStableIdentifiersForUnionType", True, True),
     ],
 )
-def test_avro_options_known(known_option):
-    avro = Avro.parse({known_option: "value"})
-    assert getattr(avro, known_option) == "value"
+def test_avro_options_known(known_option, value, expected_value):
+    avro = Avro.parse({known_option: value})
+    assert getattr(avro, known_option) == expected_value
 
 
 def test_avro_options_unknown(caplog):
@@ -89,6 +91,20 @@ def test_avro_options_unknown(caplog):
         assert avro.unknown == "abc"
 
     assert ("Options ['unknown'] are not known by Avro, are you sure they are valid?") in caplog.text
+
+
+def test_avro_options_repr():
+    # There are too many options with default value None, hide them from repr
+    avro = Avro(
+        avroSchema={"name": "abc", "type": "string"},
+        compression="snappy",
+        mode="PERMISSIVE",
+        unknownOption="abc",
+    )
+    assert (
+        repr(avro)
+        == "Avro(avroSchema={'name': 'abc', 'type': 'string'}, compression='snappy', mode='PERMISSIVE', unknownOption='abc')"
+    )
 
 
 @pytest.mark.parametrize(

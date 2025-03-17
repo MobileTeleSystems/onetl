@@ -96,7 +96,6 @@ def test_xml_options_row_tag_case():
     [
         ("samplingRatio", 0.1, 0.1),
         ("excludeAttribute", True, True),
-        ("treatEmptyValuesAsNulls", "true", "true"),
         ("mode", "PERMISSIVE", "PERMISSIVE"),
         ("inferSchema", True, True),
         ("columnNameOfCorruptRecord", "value", "value"),
