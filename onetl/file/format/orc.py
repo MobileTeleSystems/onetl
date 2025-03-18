@@ -142,6 +142,7 @@ class ORC(ReadWriteFileFormat):
 
     def __repr__(self):
         options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = dict(sorted(options_dict.items()))
         if any("." in field for field in options_dict.keys()):
             return f"{self.__class__.__name__}.parse({options_dict})"
 

@@ -71,4 +71,4 @@ def test_csv_options_unknown(caplog):
 def test_csv_options_repr():
     # There are too many options with default value None, hide them from repr
     csv = CSV(header=True, mode="PERMISSIVE", unknownOption="abc")
-    assert repr(csv) == "CSV(sep=',', header=True, quote='\"', escape='\\\\', mode='PERMISSIVE', unknownOption='abc')"
+    assert repr(csv) == "CSV(escape='\\\\', header=True, mode='PERMISSIVE', quote='\"', sep=',', unknownOption='abc')"

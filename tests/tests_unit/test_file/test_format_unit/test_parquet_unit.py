@@ -31,7 +31,7 @@ def test_parquet_options_unknown(caplog):
 
 def test_parquet_options_repr():  # There are too many options with default value None, hide them from repr
     parquet = Parquet(mergeSchema=True, compression="snappy", unknownOption="abc")
-    assert repr(parquet) == "Parquet(mergeSchema=True, compression='snappy', unknownOption='abc')"
+    assert repr(parquet) == "Parquet(compression='snappy', mergeSchema=True, unknownOption='abc')"
 
     parquet_with_dots = Parquet.parse({"parquet.bloom.filter.enabled#id": True, "unknownOption": "abc"})
     assert repr(parquet_with_dots) == "Parquet.parse({'parquet.bloom.filter.enabled#id': True, 'unknownOption': 'abc'})"

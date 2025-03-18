@@ -670,5 +670,6 @@ class CSV(ReadWriteFileFormat):
 
     def __repr__(self):
         options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

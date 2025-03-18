@@ -136,4 +136,4 @@ def test_xml_options_unknown(caplog):
 def test_xml_options_repr():
     # There are too many options with default value None, hide them from repr
     xml = XML(rowTag="item", mode="PERMISSIVE", unknownOption="abc")
-    assert repr(xml) == "XML(rowTag='item', mode='PERMISSIVE', unknownOption='abc')"
+    assert repr(xml) == "XML(mode='PERMISSIVE', rowTag='item', unknownOption='abc')"
