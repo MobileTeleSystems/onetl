@@ -60,10 +60,10 @@ class Excel(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
-            from onetl.file.format import Excel
             from pyspark.sql import SparkSession
+            from onetl.file.format import Excel
 
             # Create Spark session with Excel package loaded
             maven_packages = Excel.get_packages(spark_version="3.5.1")
@@ -73,38 +73,16 @@ class Excel(ReadWriteFileFormat):
                 .getOrCreate()
             )
 
-            # Read file /some/file.xlsx from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
-
             excel = Excel(header=True, inferSchema=True)
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=excel,
-            )
-            df = reader.run(["/some/file.xlsx"])
-
-        .. code-tab:: py Write files
+        .. code-tab:: py Writing files
 
             # Create Spark session with Excel package loaded
             spark = ...
-            # Defined DataFrame
-            df = ...
 
-            # Write DataFrame as .xlsx files at /some/folder on local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFWriter
             from onetl.file.format import XML
 
             excel = Excel(header=True, dataAddress="'Sheet1'!A1")
-
-            writer = FileDFWriter(
-                connection=SparkLocalFS(spark=spark),
-                format=excel,
-                target_path="/some/folder",
-            )
-            writer.run(df)
     """
 
     name: ClassVar[str] = "excel"

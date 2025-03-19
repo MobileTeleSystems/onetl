@@ -39,10 +39,6 @@ class XML(ReadWriteFileFormat):
 
     Supports reading/writing files with ``.xml`` extension.
 
-    .. warning::
-
-        Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
-
     .. versionadded:: 0.9.5
 
     .. dropdown:: Version compatibility
@@ -63,7 +59,7 @@ class XML(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
             from onetl.file.format import XML
             from pyspark.sql import SparkSession
@@ -76,34 +72,22 @@ class XML(ReadWriteFileFormat):
                 .getOrCreate()
             )
 
-            # Read file /some/file.xml from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
+            xml = XML(rowTag="item", mode="PERMISSIVE")
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=XML(rowTag="item", mode="PERMISSIVE"),
-            )
-            df = reader.run(["/some/file.xml"])
+        .. tab:: Writing files
 
-        .. code-tab:: py Write files
+            .. warning::
 
-            # Create Spark session with XML package loaded
-            spark = ...
-            # Defined DataFrame
-            df = ...
+                Due to `bug <https://github.com/databricks/spark-xml/issues/664>`_ written files currently does not have ``.xml`` extension.
 
-            # Write DataFrame as XML files at /some/folder on local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFWriter
-            from onetl.file.format import XML
+            .. code:: python
 
-            writer = FileDFWriter(
-                connection=SparkLocalFS(spark=spark),
-                format=XML(rowTag="item", rootTag="data", compression="gzip"),
-                target_path="/some/folder",
-            )
-            writer.run(df)
+                # Create Spark session with XML package loaded
+                spark = ...
+
+                from onetl.file.format import XML
+
+                xml = XML(rowTag="item", rootTag="data", compression="gzip")
 
     """
 

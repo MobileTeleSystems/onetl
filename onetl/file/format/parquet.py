@@ -49,35 +49,14 @@ class Parquet(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
-            # Create Spark session
-            spark = ...
-
-            # Read Parquet files at /some/folder from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
             from onetl.file.format import Parquet
 
             parquet = Parquet(mergeSchema=True)
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=parquet,
-                source_path="/some/folder",
-            )
-            df = reader.run()
+        .. code-tab:: py Writing files
 
-        .. code-tab:: py Write files
-
-            # Create Spark session
-            spark = ...
-            # Defined DataFrame
-            df = ...
-
-            # Write DataFrame as Parquet files at /some/folder on local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFWriter
             from onetl.file.format import Parquet
 
             parquet = Parquet.parse(
@@ -91,13 +70,6 @@ class Parquet(ReadWriteFileFormat):
                     # other options
                 }
             )
-
-            writer = FileDFWriter(
-                connection=SparkLocalFS(spark=spark),
-                format=parquet,
-                target_path="/some/folder",
-            )
-            writer.run(df)
 
     """
 

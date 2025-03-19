@@ -49,37 +49,16 @@ class ORC(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
-            # Create Spark session
-            spark = ...
-
-            # Read ORC files at /some/folder from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
             from onetl.file.format import ORC
 
             orc = ORC(mergeSchema=True)
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=orc,
-                source_path="/some/folder",
-            )
-            df = reader.run()
-
-        .. tab:: Write files
+        .. tab:: Writing files
 
             .. code:: python
 
-                # Create Spark session
-                spark = ...
-                # Defined DataFrame
-                df = ...
-
-                # Write DataFrame as ORC files at /some/folder on local file system
-                from onetl.connection import SparkLocalFS
-                from onetl.file import FileDFWriter
                 from onetl.file.format import ORC
 
                 orc = ORC.parse(
@@ -94,13 +73,6 @@ class ORC(ReadWriteFileFormat):
                         # other options
                     }
                 )
-
-                writer = FileDFWriter(
-                    connection=SparkLocalFS(spark=spark),
-                    format=orc,
-                    target_path="/some/folder",
-                )
-                writer.run(df)
 
     """
 

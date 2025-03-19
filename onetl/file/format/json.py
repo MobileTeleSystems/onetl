@@ -48,10 +48,6 @@ class JSON(ReadOnlyFileFormat):
             {"key": "value2"}
         ]
 
-    .. warning::
-
-        For writing files use :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>`.
-
     .. versionadded:: 0.9.0
 
     Examples
@@ -63,25 +59,19 @@ class JSON(ReadOnlyFileFormat):
 
         The set of supported options depends on Spark version.
 
-    Read files:
+    Reading files:
 
     .. code:: python
 
-        # Create Spark session
-        spark = ...
-
-        # Read file /some/file.JSON from local file system
-        from onetl.connection import SparkLocalFS
-        from onetl.file import FileDFReader
         from onetl.file.format import JSON
 
         json = JSON(encoding="utf-8")
 
-        reader = FileDFReader(
-            connection=SparkLocalFS(spark=spark),
-            format=json,
-        )
-        df = reader.run(["/some/file.json"])
+    Writing files:
+
+    .. warning::
+
+        Not supported. Use :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>`.
 
     """
 

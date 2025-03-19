@@ -61,44 +61,17 @@ class CSV(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
-            # Create Spark session
-            spark = ...
-
-            # Read file /some/file.CSV from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
             from onetl.file.format import CSV
 
             csv = CSV(header=True, inferSchema=True, mode="PERMISSIVE")
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=csv,
-            )
-            df = reader.run(["/some/file.csv"])
+        .. code-tab:: py Writing files
 
-        .. code-tab:: py Write files
-
-            # Create Spark session
-            spark = ...
-            # Defined DataFrame
-            df = ...
-
-            # Write DataFrame as CSV files at /some/folder on local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFWriter
             from onetl.file.format import CSV
 
             csv = CSV(header=True, compression="gzip")
-
-            writer = FileDFWriter(
-                connection=SparkLocalFS(spark=spark),
-                format=csv,
-                target_path="/some/folder",
-            )
-            writer.run(df)
 
     """
 

@@ -46,51 +46,23 @@ class JSONLine(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
-            # Create Spark session
-            spark = ...
-
-            # Read file /some/file.JSONLine from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
             from onetl.file.format import JSONLine
 
             jsonline = JSONLine(encoding="UTF-8", mode="PERMISSIVE")
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=jsonline,
-            )
-            df = reader.run(["/some/file.jsonl"])
-
-        .. tab:: Write files
+        .. tab:: Writing files
 
             .. warning::
 
                 Written files have extension ``.json``, not ``.jsonl`` or ``.jsonline``.
 
-
             .. code:: python
 
-                # Create Spark session
-                spark = ...
-                # Defined DataFrame
-                df = ...
-
-                # Write DataFrame as JSONLine files at /some/folder on local file system
-                from onetl.connection import SparkLocalFS
-                from onetl.file import FileDFWriter
                 from onetl.file.format import JSONLine
 
                 jsonline = JSONLine(encoding="UTF-8", compression="gzip")
-
-                writer = FileDFWriter(
-                    connection=SparkLocalFS(spark=spark),
-                    format=jsonline,
-                    target_path="/some/folder",
-                )
-                writer.run(df)
     """
 
     name: ClassVar[str] = "json"

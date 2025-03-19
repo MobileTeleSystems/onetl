@@ -76,8 +76,9 @@ class Avro(ReadWriteFileFormat):
 
     .. tabs::
 
-        .. code-tab:: py Read files
+        .. code-tab:: py Reading files
 
+            from pyspark.sql import SparkSession
             from onetl.file.format import Avro
 
             # Create Spark session with Avro package loaded
@@ -87,10 +88,6 @@ class Avro(ReadWriteFileFormat):
                 .config("spark.jars.packages", ",".join(maven_packages))
                 .getOrCreate()
             )
-
-            # Read file /some/file.avro from local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFReader
 
             schema = {
                 "type": "record",
@@ -102,22 +99,11 @@ class Avro(ReadWriteFileFormat):
             }
             avro = Avro(avroSchema=schema)  # or avroSchemaUrl=...
 
-            reader = FileDFReader(
-                connection=SparkLocalFS(spark=spark),
-                format=avro,
-            )
-            df = reader.run(["/some/file.avro"])
-
-        .. code-tab:: py Write files
+        .. code-tab:: py Writing files
 
             # Create Spark session with Avro package loaded
             spark = ...
-            # Defined DataFrame
-            df = ...
 
-            # Write DataFrame as Avro files at /some/folder on local file system
-            from onetl.connection import SparkLocalFS
-            from onetl.file import FileDFWriter
             from onetl.file.format import Avro
 
             schema = {
@@ -128,14 +114,10 @@ class Avro(ReadWriteFileFormat):
                     {"name": "age", "type": "int"},
                 ],
             }
-            avro = Avro(avroSchema=schema, compression="snappy")  # or avroSchemaUrl=...
-
-            writer = FileDFWriter(
-                connection=SparkLocalFS(spark=spark),
-                format=avro,
-                target_path="/some/folder",
+            avro = Avro(
+                avroSchema=schema,  # or avroSchemaUrl=...
+                compression="snappy",
             )
-            writer.run(df)
 
     """
 
@@ -171,11 +153,11 @@ class Avro(ReadWriteFileFormat):
 
     .. code:: python
 
-        schema_registry_address = "http://schema.registry.domain"
+        schema_registry = "http://some.schema.registry.domain"
         name = "MyAwesomeSchema"
         version = "latest"
 
-        schema_url = f"{schema_registry_address}/subjects/{name}/versions/{version}/schema"
+        schema_url = f"{schema_registry}/subjects/{name}/versions/{version}/schema"
         avro = Avro(avroSchemaUrl=schema_url)
 
     If set, schema is fetched before any records are parsed, so all records should match this schema.
