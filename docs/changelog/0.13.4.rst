@@ -1,0 +1,14 @@
+0.13.4 (2025-03-20)
+===================
+
+Doc only Changes
+----------------
+
+- Prefer ``ReadOptions(partitionColumn=..., numPartitions=..., queryTimeout=...)``
+  instead of ``ReadOptions(partition_column=..., num_partitions=..., query_timeout=...)``,
+  to match Spark documentation. (:github:pull:`352`)
+
+- Prefer ``WriteOptions(if_exists=...)`` instead of ``WriteOptions(mode=...)`` for IDE suggestions. (:github:pull:`354`)
+
+- Document all options of supported file formats.
+  (:github:pull:`355`, :github:pull:`356`, :github:pull:`357`, :github:pull:`358`, :github:pull:`359`, :github:pull:`360`, :github:pull:`361`, :github:pull:`362`)

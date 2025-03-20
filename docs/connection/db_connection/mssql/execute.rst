@@ -49,7 +49,7 @@ Examples
 
     df = mssql.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=MSSQL.FetchOptions(query_timeout=10),
+        options=MSSQL.FetchOptions(queryTimeout=10),
     )
     mssql.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -95,7 +95,7 @@ Examples
             value NUMBER
         )
         """,
-        options=MSSQL.ExecuteOptions(query_timeout=10),
+        options=MSSQL.ExecuteOptions(queryTimeout=10),
     )
 
 Options

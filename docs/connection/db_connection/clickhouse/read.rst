@@ -41,7 +41,7 @@ Snapshot strategy:
         source="schema.table",
         columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
         where="key = 'something'",
-        options=Clickhouse.ReadOptions(partition_column="id", num_partitions=10),
+        options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
     )
     df = reader.run()
 
@@ -61,7 +61,7 @@ Incremental strategy:
         columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
         where="key = 'something'",
         hwm=DBReader.AutoDetectHWM(name="clickhouse_hwm", expression="updated_dt"),
-        options=Clickhouse.ReadOptions(partition_column="id", num_partitions=10),
+        options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
     )
 
     with IncrementalStrategy():

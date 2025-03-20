@@ -83,44 +83,57 @@ def test_xml_get_packages_package_version_error(spark_version, scala_version, pa
         )
 
 
+def test_xml_options_row_tag_case():
+    xml1 = XML(row_tag="item")
+    xml2 = XML(rowTag="item")
+    assert xml1 == xml2
+    assert xml1.row_tag == "item"
+    assert xml2.row_tag == "item"
+
+
 @pytest.mark.parametrize(
-    "known_option",
+    "known_option, raw_value, expected_value",
     [
-        "samplingRatio",
-        "excludeAttribute",
-        "treatEmptyValuesAsNulls",
-        "mode",
-        "inferSchema",
-        "columnNameOfCorruptRecord",
-        "attributePrefix",
-        "valueTag",
-        "charset",
-        "ignoreSurroundingSpaces",
-        "wildcardColName",
-        "rowValidationXSDPath",
-        "ignoreNamespace",
-        "timestampFormat",
-        "dateFormat",
-        "rootTag",
-        "declaration",
-        "arrayElementName",
-        "nullValue",
-        "compression",
+        ("samplingRatio", 0.1, 0.1),
+        ("excludeAttribute", True, True),
+        ("mode", "PERMISSIVE", "PERMISSIVE"),
+        ("inferSchema", True, True),
+        ("columnNameOfCorruptRecord", "value", "value"),
+        ("attributePrefix", "value", "value"),
+        ("valueTag", "value", "value"),
+        ("charset", "value", "value"),
+        ("ignoreSurroundingSpaces", True, True),
+        ("wildcardColName", "value", "value"),
+        ("rowValidationXSDPath", "value", "value"),
+        ("ignoreNamespace", True, True),
+        ("timestampFormat", "value", "value"),
+        ("dateFormat", "value", "value"),
+        ("rootTag", "value", "value"),
+        ("declaration", "value", "value"),
+        ("arrayElementName", "value", "value"),
+        ("nullValue", "value", "value"),
+        ("compression", "gzip", "gzip"),
     ],
 )
-def test_xml_options_known(known_option):
-    xml = XML.parse({known_option: "value", "row_tag": "item"})
-    assert getattr(xml, known_option) == "value"
+def test_xml_options_known(known_option, raw_value, expected_value):
+    xml = XML.parse({known_option: raw_value, "rowTag": "item"})
+    assert getattr(xml, known_option) == expected_value
 
 
-def test_xml_option_path_error(caplog):
+def test_xml_option_path_error():
     msg = r"Options \['path'\] are not allowed to use in a XML"
     with pytest.raises(ValueError, match=msg):
-        XML(row_tag="item", path="/path")
+        XML(rowTag="item", path="/path")
 
 
 def test_xml_options_unknown(caplog):
     with caplog.at_level(logging.WARNING):
-        xml = XML(row_tag="item", unknownOption="abc")
+        xml = XML(rowTag="item", unknownOption="abc")
         assert xml.unknownOption == "abc"
     assert "Options ['unknownOption'] are not known by XML, are you sure they are valid?" in caplog.text
+
+
+def test_xml_options_repr():
+    # There are too many options with default value None, hide them from repr
+    xml = XML(rowTag="item", mode="PERMISSIVE", unknownOption="abc")
+    assert repr(xml) == "XML(mode='PERMISSIVE', rowTag='item', unknownOption='abc')"

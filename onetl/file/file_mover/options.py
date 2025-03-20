@@ -9,6 +9,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.impl import FileExistBehavior, GenericOptions
 
 
@@ -16,9 +17,24 @@ class FileMoverOptions(GenericOptions):
     """File moving options.
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.file import FileMover
+
+        options = FileMover.Options(
+            if_exists="replace_entire_directory",
+            workers=4,
+        )
     """
 
-    if_exists: FileExistBehavior = Field(default=FileExistBehavior.ERROR, alias="mode")
+    if_exists: FileExistBehavior = Field(  # type: ignore[literal-required]
+        default=FileExistBehavior.ERROR,
+        alias=avoid_alias("mode"),
+    )
     """
     How to handle existing files in the local directory.
 

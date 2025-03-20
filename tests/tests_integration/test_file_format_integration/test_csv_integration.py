@@ -146,19 +146,19 @@ def test_csv_writer_with_options(
         (
             "1,Anne",
             StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            {"delimiter": ",", "header": False},
+            {"delimiter": ","},
             Row(id=1, name="Anne"),
         ),
         (
             "1;Anne",
             StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            {"delimiter": ";", "header": False},
+            {"delimiter": ";"},
             Row(id=1, name="Anne"),
         ),
         (
             '"1","Anne"',
             StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            {"delimiter": ",", "quote": '"', "header": False},
+            {"delimiter": ",", "quote": '"'},
             Row(id=1, name="Anne"),
         ),
     ],
@@ -225,16 +225,7 @@ def test_csv_serialize_column(spark, data, schema, options, expected_csv, column
         assert serialized_df.first()["csv_column"] == expected_csv
 
 
-@pytest.mark.parametrize(
-    "options",
-    [
-        ({"header": True}),
-        ({"compression": "gzip"}),
-        ({"inferSchema": True}),
-    ],
-    ids=["with-header", "with-compression", "with-inferSchema"],
-)
-def test_csv_serialize_column_unsupported_options_warning(spark, options):
+def test_csv_serialize_column_unsupported_options_warning(spark):
     spark_version = get_spark_version(spark)
     if spark_version.major < 3:
         pytest.skip("CSV.serialize_column in supported on Spark 3.x only")
@@ -243,12 +234,46 @@ def test_csv_serialize_column_unsupported_options_warning(spark, options):
     df = spark.createDataFrame([Row(id=1, name="Alice")], schema)
     df = df.withColumn("csv_column", struct("id", "name"))
 
-    csv_handler = CSV(**options)
+    csv = CSV(
+        compression="gzip",
+        encoding="utf-8",
+        header=False,
+    )
     msg = (
-        f"Option `{list(options.keys())[0]}` is set but not supported in `CSV.parse_column` or `CSV.serialize_column`."
+        "Options `['compression', 'encoding', 'header']` are set "
+        "but not supported in `CSV.parse_column` or `CSV.serialize_column`."
     )
 
     with pytest.warns(UserWarning) as record:
-        df.select(csv_handler.serialize_column("csv_column")).collect()
+        df.select(csv.serialize_column("csv_column")).collect()
+        assert record
+        assert msg in str(record[0].message)
+
+
+def test_csv_parse_column_unsupported_options_warning(spark):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("CSV.parse in supported on Spark 3.x only")
+
+    schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
+    df = spark.createDataFrame([Row(csv_column="1,Alice")])
+
+    csv = CSV(
+        header=False,
+        encoding="utf-8",
+        inferSchema=True,
+        samplingRatio=0.1,
+        enforceSchema=True,
+        preferDate=True,
+        multiLine=True,
+    )
+
+    msg = (
+        "Options `['encoding', 'enforceSchema', 'header', 'inferSchema', 'multiLine', 'preferDate', 'samplingRatio']` "
+        "are set but not supported in `CSV.parse_column` or `CSV.serialize_column`."
+    )
+
+    with pytest.warns(UserWarning) as record:
+        df.select(csv.parse_column(df.csv_column, schema)).collect()
         assert record
         assert msg in str(record[0].message)

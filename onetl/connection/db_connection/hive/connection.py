@@ -523,7 +523,7 @@ class Hive(DBConnection):
 
         if isinstance(write_options.format, (WriteOnlyFileFormat, ReadWriteFileFormat)):
             options_dict["format"] = write_options.format.name
-            options_dict.update(write_options.format.dict(exclude={"name"}))
+            options_dict.update(write_options.format.dict(exclude={"name"}, exclude_none=True))
 
         return options_dict
 

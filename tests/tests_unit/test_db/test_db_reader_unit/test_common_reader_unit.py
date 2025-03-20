@@ -46,7 +46,7 @@ def test_reader_hive_with_read_options(spark_mock):
     with pytest.raises(ValueError, match=r"Hive does not implement ReadOptions, but \{'some': 'option'\} is passed"):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             options={"some": "option"},
         )
 
@@ -64,7 +64,7 @@ def test_reader_invalid_columns(spark_mock, columns):
     with pytest.raises(ValueError):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             columns=columns,
         )
 
@@ -81,7 +81,7 @@ def test_reader_invalid_columns(spark_mock, columns):
 def test_reader_valid_columns(spark_mock, columns, real_columns):
     reader = DBReader(
         connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-        table="schema.table",
+        source="schema.table",
         columns=columns,
     )
 
@@ -110,7 +110,7 @@ def test_reader_legacy_columns(spark_mock, column, real_columns, msg):
     with pytest.warns(UserWarning, match=re.escape(msg)):
         reader = DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             columns=column,
         )
 
@@ -130,7 +130,7 @@ def test_reader_deprecated_hwm_column(spark_mock, hwm_column, real_hwm_expressio
     with pytest.warns(UserWarning, match=error_msg):
         reader = DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             hwm_column=hwm_column,
         )
 
@@ -142,7 +142,7 @@ def test_reader_deprecated_hwm_column(spark_mock, hwm_column, real_hwm_expressio
 def test_reader_autofill_hwm_source(spark_mock):
     reader = DBReader(
         connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-        table="schema.table",
+        source="schema.table",
         hwm=DBReader.AutoDetectHWM(
             name="some_name",
             expression="some_expression",
@@ -173,7 +173,7 @@ def test_reader_hwm_has_different_source(spark_mock):
     with pytest.raises(ValueError, match=error_msg):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             hwm=DBReader.AutoDetectHWM(
                 name="some_name",
                 source="another.table",
@@ -186,7 +186,7 @@ def test_reader_no_hwm_expression(spark_mock):
     with pytest.raises(ValueError, match="`hwm.expression` cannot be None"):
         DBReader(
             connection=Hive(cluster="rnd-dwh", spark=spark_mock),
-            table="schema.table",
+            source="schema.table",
             hwm=DBReader.AutoDetectHWM(name="some_name"),
         )
 

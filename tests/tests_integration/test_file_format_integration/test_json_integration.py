@@ -78,66 +78,108 @@ def test_json_writer_is_not_supported(
 
 
 @pytest.mark.parametrize(
-    "json_string, schema, expected",
+    "json_row, schema, expected_row",
     [
         (
-            '{"id": 1, "name": "Alice"}',
+            Row(json_column='{"id": 1, "name": "Alice"}'),
             StructType([StructField("id", IntegerType()), StructField("name", StringType())]),
-            Row(id=1, name="Alice"),
+            Row(json_column=Row(id=1, name="Alice")),
         ),
         (
-            '[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]',
+            Row(json_column='[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]'),
             ArrayType(StructType([StructField("id", IntegerType()), StructField("name", StringType())])),
-            [Row(id=1, name="Alice"), Row(id=2, name="Bob")],
+            Row(json_column=[Row(id=1, name="Alice"), Row(id=2, name="Bob")]),
         ),
         (
-            '{"key1": "value1", "key2": "value2"}',
+            Row(json_column='{"key1": "value1", "key2": "value2"}'),
             MapType(StringType(), StringType()),
-            {"key1": "value1", "key2": "value2"},
+            Row(json_column={"key1": "value1", "key2": "value2"}),
         ),
     ],
     ids=["struct", "map", "array"],
 )
 @pytest.mark.parametrize("column_type", [str, col])
-def test_json_parse_column(spark, json_string, schema, expected, column_type):
+def test_json_parse_column(spark, json_row, schema, expected_row, column_type):
     spark_version = get_spark_version(spark)
     if spark_version < Version("2.4") and isinstance(schema, MapType):
         pytest.skip("JSON.parse_column accepts MapType only in Spark 2.4+")
 
     json = JSON()
-    df = spark.createDataFrame([(json_string,)], ["json_column"])
+    df = spark.createDataFrame([json_row])
     parsed_df = df.select(json.parse_column(column_type("json_column"), schema))
-    assert parsed_df.columns == ["json_column"]
-    assert parsed_df.select("json_column").first()["json_column"] == expected
+    assert parsed_df.collect() == [expected_row]
 
 
 @pytest.mark.parametrize(
-    "data, schema, expected_json",
+    "row, expected_row",
     [
         (
-            {"id": 1, "name": "Alice"},
-            StructType([StructField("id", IntegerType(), True), StructField("name", StringType(), True)]),
-            '{"id":1,"name":"Alice"}',
+            Row(json_column=Row(id=1, name="Alice")),
+            Row(json_column='{"id":1,"name":"Alice"}'),
         ),
         (
-            [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}],
-            ArrayType(StructType([StructField("id", IntegerType(), True), StructField("name", StringType(), True)])),
-            '[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]',
+            Row(json_column=[Row(id=1, name="Alice"), Row(id=2, name="Bob")]),
+            Row(json_column='[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]'),
         ),
         (
-            {"key1": "value1", "key2": "value2"},
-            MapType(StringType(), StringType()),
-            '{"key1":"value1","key2":"value2"}',
+            Row(json_column={"key1": "value1", "key2": "value2"}),
+            Row(json_column='{"key1":"value1","key2":"value2"}'),
         ),
     ],
     ids=["struct", "array", "map"],
 )
 @pytest.mark.parametrize("column_type", [str, col])
-def test_json_serialize_column(spark, data, schema, expected_json, column_type):
+def test_json_serialize_column(spark, row, expected_row, column_type):
     json = JSON()
-    df_schema = StructType([StructField("json_string", schema)])
-    df = spark.createDataFrame([(data,)], df_schema)
-    serialized_df = df.select(json.serialize_column(column_type("json_string")))
-    actual_json = serialized_df.select("json_string").first()["json_string"]
-    assert actual_json == expected_json
-    assert serialized_df.columns == ["json_string"]
+    df = spark.createDataFrame([row])
+    serialized_df = df.select(json.serialize_column(column_type("json_column")))
+    assert serialized_df.collect() == [expected_row]
+
+
+def test_json_serialize_column_unsupported_options_warning(spark):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("CSV.serialize_column in supported on Spark 3.x only")
+
+    df = spark.createDataFrame([Row(json_column=Row(id=1, name="Alice"))])
+
+    json = JSON(
+        encoding="UTF-8",
+        lineSep="\r\n",
+    )
+    msg = (
+        "Options `['encoding', 'lineSep']` are set "
+        "but not supported in `JSON.parse_column` or `JSON.serialize_column`."
+    )
+
+    with pytest.warns(UserWarning) as record:
+        df.select(json.serialize_column(df.json_column)).collect()
+        assert record
+        assert msg in str(record[0].message)
+
+
+def test_json_parse_column_unsupported_options_warning(spark):
+    spark_version = get_spark_version(spark)
+    if spark_version.major < 3:
+        pytest.skip("CSV.parse in supported on Spark 3.x only")
+
+    schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
+    df = spark.createDataFrame([Row(json_column='{"id":1,"name":"Alice"}')])
+
+    json = JSON(
+        encoding="UTF-8",
+        lineSep="\r\n",
+        samplingRatio=0.1,
+        primitivesAsString=True,
+        prefersDecimal=True,
+        dropFieldIfAllNull=True,
+    )
+    msg = (
+        "Options `['dropFieldIfAllNull', 'encoding', 'lineSep', 'prefersDecimal', 'primitivesAsString', 'samplingRatio']` "
+        "are set but not supported in `JSON.parse_column` or `JSON.serialize_column`."
+    )
+
+    with pytest.warns(UserWarning) as record:
+        df.select(json.parse_column(df.json_column, schema)).collect()
+        assert record
+        assert msg in str(record[0].message)

@@ -224,12 +224,6 @@ def test_hive_write_options_mode_deprecated(options, value, message):
         assert options.if_exists == value
 
 
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"mode": "wrong_mode"},
-    ],
-)
-def test_hive_write_options_mode_unsupported(options):
+def test_hive_write_options_if_exists_wrong_value():
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        Hive.WriteOptions(**options)
+        Hive.WriteOptions(if_exists="wrong_mode")

@@ -23,6 +23,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, FilePath, SecretStr, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.hdfs.slots import HDFSSlots
@@ -195,7 +196,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
     cluster: Optional[Cluster] = None
     host: Optional[Host] = None
-    webhdfs_port: int = Field(alias="port", default=50070)
+    webhdfs_port: int = Field(alias=avoid_alias("port"), default=50070)  # type: ignore[literal-required]
     user: Optional[str] = None
     password: Optional[SecretStr] = None
     keytab: Optional[FilePath] = None

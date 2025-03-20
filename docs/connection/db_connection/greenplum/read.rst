@@ -275,11 +275,11 @@ In this case, custom column can be used instead:
         reader = DBReader(
             connection=greenplum,
             source="schema.view_with_partition_column",
-            options=Greenplum.Options(
+            options=Greenplum.ReadOptions(
                 # parallelize data using specified column
-                partition_column="part_column",
+                partitionColumn="part_column",
                 # create 10 Spark tasks, each will read only part of table data
-                num_partitions=10,
+                partitions=10,
             ),
         )
         df = reader.run()
@@ -348,8 +348,8 @@ and then read this table using ``DBReader``:
 
     .. code-block:: python
 
-        df1 = DBReader(connection=greenplum, table="public.table1", ...).run()
-        df2 = DBReader(connection=greenplum, table="public.table2", ...).run()
+        df1 = DBReader(connection=greenplum, target="public.table1", ...).run()
+        df2 = DBReader(connection=greenplum, target="public.table2", ...).run()
 
         joined_df = df1.join(df2, on="col")
 

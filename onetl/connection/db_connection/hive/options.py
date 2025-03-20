@@ -6,6 +6,8 @@ import warnings
 from enum import Enum
 from typing import List, Optional, Tuple, Union
 
+from onetl._util.alias import avoid_alias
+
 try:
     from pydantic.v1 import Field, root_validator, validator
 except (ImportError, AttributeError):
@@ -66,25 +68,25 @@ class HiveWriteOptions(GenericOptions):
     For example, ``Hive.WriteOptions(if_exists="append", partitionBy="reg_id")`` will
     be converted to ``df.write.mode("append").partitionBy("reg_id")`` call, and so on.
 
-    .. note::
-
-        You can pass any method and its value
-        `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
-        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version used. See link above.
-
     Examples
     --------
 
-    Writing options initialization
+    .. note::
+
+        You can pass any method name and its value
+        `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on Spark version used.
 
     .. code:: python
 
+        from onetl.connection import Hive
+
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
-            customOption="value",
+            partitionBy="reg_id",
+            customSparkOption="value",
         )
     """
 
@@ -92,7 +94,10 @@ class HiveWriteOptions(GenericOptions):
         known_options: frozenset = frozenset()
         extra = "allow"
 
-    if_exists: HiveTableExistBehavior = Field(default=HiveTableExistBehavior.APPEND, alias="mode")
+    if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
+        default=HiveTableExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing table.
 
     Possible values:
@@ -217,7 +222,7 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
+            partitionBy="reg_id",
             format="orc",
         )
 
@@ -227,7 +232,7 @@ class HiveWriteOptions(GenericOptions):
 
         options = Hive.WriteOptions(
             if_exists="append",
-            partition_by="reg_id",
+            partitionBy="reg_id",
             format=ORC(compression="snappy"),
         )
 

@@ -31,7 +31,7 @@ def test_oracle_reader_error_df_schema(spark_mock):
     with pytest.raises(ValueError, match="'df_schema' parameter is not supported by Oracle"):
         DBReader(
             connection=oracle,
-            table="schema.table",
+            source="schema.table",
             df_schema=df_schema,
         )
 
@@ -41,7 +41,7 @@ def test_oracle_reader_wrong_table_name(spark_mock):
     with pytest.raises(ValueError, match="Name should be passed in `schema.name` format"):
         DBReader(
             connection=oracle,
-            table="table",  # Required format: table="schema.table"
+            source="table",  # Required format: source="schema.table"
         )
 
 
@@ -55,7 +55,7 @@ def test_oracle_reader_wrong_hint_type(spark_mock):
         DBReader(
             connection=oracle,
             hint={"col1": 1},
-            table="schema.table",
+            source="schema.table",
         )
 
 
@@ -69,5 +69,5 @@ def test_oracle_reader_wrong_where_type(spark_mock):
         DBReader(
             connection=oracle,
             where={"col1": 1},
-            table="schema.table",
+            source="schema.table",
         )

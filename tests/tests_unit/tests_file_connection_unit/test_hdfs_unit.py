@@ -52,11 +52,15 @@ def test_hdfs_connection_with_cluster_and_host():
 def test_hdfs_connection_with_host_and_port():
     from onetl.connection import HDFS
 
-    conn = HDFS(host="some-host.domain.com", port=9080)
-    assert conn.host == "some-host.domain.com"
-    assert conn.webhdfs_port == 9080
-    assert conn.instance_url == "hdfs://some-host.domain.com:9080"
-    assert str(conn) == "HDFS[some-host.domain.com:9080]"
+    conn1 = HDFS(host="some-host.domain.com", webhdfs_port=9080)
+    assert conn1.host == "some-host.domain.com"
+    assert conn1.webhdfs_port == 9080
+    assert conn1.instance_url == "hdfs://some-host.domain.com:9080"
+    assert str(conn1) == "HDFS[some-host.domain.com:9080]"
+
+    conn2 = HDFS(host="some-host.domain.com", port=9080)
+    assert conn1.webhdfs_port == conn2.webhdfs_port
+    assert conn1 == conn2
 
 
 def test_hdfs_connection_with_user():
@@ -147,7 +151,7 @@ def test_hdfs_connection_with_password_and_keytab(request, tmp_path_factory):
     request.addfinalizer(finalizer)
 
     with pytest.raises(ValueError, match="Please provide either `keytab` or `password` for kinit, not both"):
-        HDFS(host="hdfs2", port=50070, user="usr", password="pwd", keytab=keytab)  # noqa: F841
+        HDFS(host="hdfs2", webhdfs_port=50070, user="usr", password="pwd", keytab=keytab)  # noqa: F841
 
 
 def test_hdfs_get_known_clusters_hook(request):

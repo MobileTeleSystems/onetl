@@ -50,7 +50,7 @@ Examples
 
     df = clickhouse.fetch(
         "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-        options=Clickhouse.FetchOptions(query_timeout=10),
+        options=Clickhouse.FetchOptions(queryTimeout=10),
     )
     clickhouse.close()
     value = df.collect()[0][0]  # get value from first row and first column
@@ -96,7 +96,7 @@ Examples
         ENGINE = MergeTree()
         ORDER BY id
         """,
-        options=Clickhouse.ExecuteOptions(query_timeout=10),
+        options=Clickhouse.ExecuteOptions(queryTimeout=10),
     )
 
 Notes

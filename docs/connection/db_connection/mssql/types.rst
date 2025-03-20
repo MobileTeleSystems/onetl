@@ -69,7 +69,7 @@ So instead of relying on Spark to create tables:
 
         writer = DBWriter(
             connection=mssql,
-            table="myschema.target_tbl",
+            target="myschema.target_tbl",
             options=MSSQL.WriteOptions(
                 if_exists="append",
             ),
@@ -94,7 +94,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
 
         writer = DBWriter(
             connection=mssql,
-            table="myschema.target_tbl",
+            target="myschema.target_tbl",
             options=MSSQL.WriteOptions(if_exists="append"),
         )
         writer.run(df)

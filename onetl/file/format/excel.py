@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional
+
+try:
+    from pydantic.v1 import ByteSize, SecretStr
+except (ImportError, AttributeError):
+    from pydantic import ByteSize, SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -14,32 +19,7 @@ from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
-    from pyspark.sql import SparkSession
-
-READ_OPTIONS = frozenset(
-    (
-        "dataAddress",
-        "treatEmptyValuesAsNulls",
-        "setErrorCellsToFallbackValues",
-        "usePlainNumberFormat",
-        "inferSchema",
-        "addColorColumns",
-        "timestampFormat",
-        "maxRowsInMemory",
-        "maxByteArraySize",
-        "tempFileThreshold",
-        "excerptSize",
-        "workbookPassword",
-    ),
-)
-
-WRITE_OPTIONS = frozenset(
-    (
-        "dataAddress",
-        "dateFormat",
-        "timestampFormat",
-    ),
-)
+    from pyspark.sql import DataFrameReader, SparkSession
 
 log = logging.getLogger(__name__)
 
@@ -67,46 +47,170 @@ class Excel(ReadWriteFileFormat):
 
         See documentation from link above.
 
-    .. note ::
-
-        You can pass any option to the constructor, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
-
     .. versionadded:: 0.9.4
 
     Examples
     --------
 
-    Describe options how to read from/write to Excel file with specific options:
+    .. note ::
 
-    .. code:: python
+        You can pass any option mentioned in
+        `official documentation <https://github.com/crealytics/spark-excel>`_.
+        **Option names should be in** ``camelCase``!
 
-        from onetl.file.format import Excel
-        from pyspark.sql import SparkSession
+        The set of supported options depends on ``spark-excel`` package version.
 
-        # Create Spark session with Excel package loaded
-        maven_packages = Excel.get_packages(spark_version="3.5.1")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
+    .. tabs::
 
-        excel = Excel(
-            header=True,
-            inferSchema=True,
-        )
+        .. code-tab:: py Reading files
 
+            from pyspark.sql import SparkSession
+            from onetl.file.format import Excel
+
+            # Create Spark session with Excel package loaded
+            maven_packages = Excel.get_packages(spark_version="3.5.1")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
+
+            excel = Excel(header=True, inferSchema=True)
+
+        .. code-tab:: py Writing files
+
+            # Create Spark session with Excel package loaded
+            spark = ...
+
+            from onetl.file.format import XML
+
+            excel = Excel(header=True, dataAddress="'Sheet1'!A1")
     """
 
     name: ClassVar[str] = "excel"
 
     header: bool = False
+    """
+    If ``True``, the first row in file is conditioned as a header.
+    Default ``False``.
+    """
+
+    dataAddress: Optional[str] = None
+    """
+    Cell address used as starting point.
+    For example: ``'A1'`` or ``'Sheet1'!A1``
+    """
+
+    timestampFormat: Optional[str] = None
+    """
+    Format string used for parsing or serializing timestamp values.
+    Default ``yyyy-mm-dd hh:mm:ss[.fffffffff]``.
+    """
+
+    dateFormat: Optional[str] = None
+    """
+    Format string used for parsing or serializing date values.
+    Default ``yyyy-MM-dd``.
+    """
+
+    treatEmptyValuesAsNulls: Optional[bool] = None
+    """
+    If ``True``, empty cells are parsed as ``null`` values.
+    If ``False``, empty cells are parsed as empty strings.
+    Default ``True``.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    setErrorCellsToFallbackValues: Optional[bool] = None
+    """
+    If ``True``, cells containing ``#N/A`` value are replaced with default value for column type,
+    e.g. 0 for ``IntegerType()``. If ``False``, ``#N/A`` values are replaced with ``null``.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    usePlainNumberFormat: Optional[bool] = None
+    """
+    If ``True``, read or write numeric values with plain format, without using scientific notation or rounding.
+    Default ``False``.
+    """
+
+    inferSchema: Optional[bool] = None
+    """
+    If ``True``, infer DataFrame schema based on cell content.
+    If ``False`` and no explicit DataFrame schema is passed, all columns are ``StringType()``.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    workbookPassword: Optional[SecretStr] = None
+    """
+    If Excel file is encrypted, provide password to open it.
+
+    .. note::
+
+        Used only for reading files. Cannot be used to write files.
+    """
+
+    maxRowsInMemory: Optional[int] = None
+    """
+    If set, use streaming reader and fetch only specified number of rows per iteration.
+    This reduces memory usage for large files.
+    Default ``None``, which means reading the entire file content to memory.
+
+    .. warning::
+
+        Can be used only with ``.xlsx`` files, but fails on ``.xls``.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    maxByteArraySize: Optional[ByteSize] = None
+    """
+    If set, overrides memory limit (in bytes) of byte array size used for reading rows from input file.
+    Default ``0``, which means using default limit.
+
+    See `IOUtils.setByteArrayMaxOverride <https://poi.apache.org/apidocs/5.0/org/apache/poi/util/IOUtils.html#setByteArrayMaxOverride-int->`_
+    documentation.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    tempFileThreshold: Optional[ByteSize] = None
+    """
+    If value is greater than 0, large zip entries will be written to temporary files after reaching this threshold.
+    If value is 0, all zip entries will be written to temporary files.
+    If value is -1, no temp files will be created, which may cause errors if zip entry is larger than 2GiB.
+
+    .. note::
+
+        Used only for reading files.
+    """
+
+    excerptSize: Optional[int] = None
+    """
+    If ``inferSchema=True``, set number of rows to infer schema from.
+    Default ``10``.
+
+    .. note::
+
+        Used only for reading files.
+    """
 
     class Config:
-        known_options = READ_OPTIONS | WRITE_OPTIONS
+        known_options = frozenset()
         extra = "allow"
 
     @slot
@@ -209,3 +313,16 @@ class Excel(ReadWriteFileFormat):
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
+
+    @slot
+    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+        options = self.dict(by_alias=True, exclude_none=True)
+        if self.workbookPassword:
+            options["workbookPassword"] = self.workbookPassword.get_secret_value()
+        return reader.format(self.name).options(**options)
+
+    def __repr__(self):
+        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = dict(sorted(options_dict.items()))
+        options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
+        return f"{self.__class__.__name__}({options_kwargs})"

@@ -390,12 +390,6 @@ def test_greenplum_write_options_mode_deprecated(options, value, message):
         assert options.if_exists == value
 
 
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"mode": "wrong_mode"},
-    ],
-)
-def test_greenplum_write_options_mode_wrong(options):
+def test_greenplum_write_options_mode_wrong():
     with pytest.raises(ValueError, match="value is not a valid enumeration member"):
-        Greenplum.WriteOptions(**options)
+        Greenplum.WriteOptions(if_exists="wrong_mode")

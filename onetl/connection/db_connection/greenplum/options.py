@@ -11,6 +11,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_connection.options import JDBCSQLOptions
 from onetl.connection.db_connection.jdbc_mixin import JDBCOptions
 from onetl.connection.db_connection.jdbc_mixin.options import (
@@ -73,14 +74,6 @@ class GreenplumTableExistBehavior(str, Enum):
 class GreenplumReadOptions(JDBCOptions):
     """VMware's Greenplum Spark connector reading options.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
@@ -89,13 +82,21 @@ class GreenplumReadOptions(JDBCOptions):
     Examples
     --------
 
-    Read options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
-        Greenplum.ReadOptions(
-            partition_column="reg_id",
-            num_partitions=10,
+        from onetl.connection import Greenplum
+
+        options = Greenplum.ReadOptions(
+            partitionColumn="reg_id",
+            partitions=10,
         )
     """
 
@@ -123,10 +124,7 @@ class GreenplumReadOptions(JDBCOptions):
         * table column
             Allocate each executor a range of values from a specific column.
 
-            .. note::
-                Column type must be numeric. Other types are not supported.
-
-            Spark generates for each executor an SQL query like:
+            Spark generates for each executor an SQL query:
 
             Executor 1:
 
@@ -160,6 +158,10 @@ class GreenplumReadOptions(JDBCOptions):
 
             .. note::
 
+                Column type must be numeric. Other types are not supported.
+
+            .. note::
+
                 :obj:`~num_partitions` is used just to
                 calculate the partition stride, **NOT** for filtering the rows in table.
                 So all rows in the table will be returned (unlike *Incremental* :ref:`strategy`).
@@ -181,8 +183,8 @@ class GreenplumReadOptions(JDBCOptions):
     .. code:: python
 
         Greenplum.ReadOptions(
-            partition_column="id_column",
-            num_partitions=10,
+            partitionColumn="id_column",
+            partitions=10,
         )
     """
 
@@ -206,14 +208,6 @@ class GreenplumReadOptions(JDBCOptions):
 class GreenplumWriteOptions(JDBCOptions):
     """VMware's Greenplum Spark connector writing options.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``, etc
@@ -222,9 +216,17 @@ class GreenplumWriteOptions(JDBCOptions):
     Examples
     --------
 
-    Write options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
+
+        from onetl.connection import Greenplum
 
         options = Greenplum.WriteOptions(
             if_exists="append",
@@ -237,7 +239,10 @@ class GreenplumWriteOptions(JDBCOptions):
         known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
         prohibited_options = JDBCOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
 
-    if_exists: GreenplumTableExistBehavior = Field(default=GreenplumTableExistBehavior.APPEND, alias="mode")
+    if_exists: GreenplumTableExistBehavior = Field(  # type: ignore[literal-required]
+        default=GreenplumTableExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing table.
 
     Possible values:
@@ -321,12 +326,12 @@ class GreenplumWriteOptions(JDBCOptions):
 
 
 class GreenplumSQLOptions(JDBCSQLOptions):
-    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCSQLOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]
 
 
 class GreenplumFetchOptions(JDBCFetchOptions):
-    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCFetchOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]
 
 
 class GreenplumExecuteOptions(JDBCExecuteOptions):
-    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCExecuteOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]

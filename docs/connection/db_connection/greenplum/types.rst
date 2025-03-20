@@ -66,7 +66,7 @@ So instead of relying on Spark to create tables:
 
         writer = DBWriter(
             connection=greenplum,
-            table="public.table",
+            target="public.table",
             options=Greenplum.WriteOptions(
                 if_exists="append",
                 # by default distribution is random
@@ -96,7 +96,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
         writer = DBWriter(
             connection=greenplum,
-            table="public.table",
+            target="public.table",
             options=Greenplum.WriteOptions(if_exists="append"),
         )
         writer.run(df)

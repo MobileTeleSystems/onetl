@@ -126,7 +126,7 @@ def test_file_df_writer_run_if_exists_replace_overlapping_partitions_target_not_
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="replace_overlapping_partitions"),
+        options=FileDFWriter.Options(partitionBy="str_value", if_exists="replace_overlapping_partitions"),
     )
 
     writer.run(df1)
@@ -190,7 +190,7 @@ def test_file_df_writer_run_if_exists_replace_overlapping_partitions_to_differen
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="id"),
+        options=FileDFWriter.Options(partitionBy="id"),
     )
 
     writer1.run(df)
@@ -199,7 +199,7 @@ def test_file_df_writer_run_if_exists_replace_overlapping_partitions_to_differen
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="replace_overlapping_partitions"),
+        options=FileDFWriter.Options(partitionBy="str_value", if_exists="replace_overlapping_partitions"),
     )
 
     # this can create conflicting partitioning schemas, which then cannot be read by Spark
@@ -234,7 +234,7 @@ def test_file_df_writer_run_if_exists_replace_overlapping_partitions_to_overlapp
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value", if_exists="replace_overlapping_partitions"),
+        options=FileDFWriter.Options(partitionBy="str_value", if_exists="replace_overlapping_partitions"),
     )
 
     writer.run(df1)
@@ -355,7 +355,7 @@ def test_file_df_writer_run_if_exists_append_target_not_partitioned_df_is(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value"),
+        options=FileDFWriter.Options(partitionBy="str_value"),
     )
     writer2.run(df2)
 
@@ -390,7 +390,7 @@ def test_file_df_writer_run_if_exists_append_target_partitioned_df_is_not(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value"),
+        options=FileDFWriter.Options(partitionBy="str_value"),
     )
 
     writer1.run(df1)
@@ -433,7 +433,7 @@ def test_file_df_writer_run_if_exists_append_to_different_partitioning_schema(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="id"),
+        options=FileDFWriter.Options(partitionBy="id"),
     )
 
     writer1.run(df1)
@@ -442,7 +442,7 @@ def test_file_df_writer_run_if_exists_append_to_different_partitioning_schema(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value"),
+        options=FileDFWriter.Options(partitionBy="str_value"),
     )
 
     # this can create conflicting partitioning schemas, which then cannot be read by Spark
@@ -477,7 +477,7 @@ def test_file_df_writer_run_if_exists_append_to_overlapping_partitions(
         connection=file_df_connection,
         format=CSV(),
         target_path=csv_root,
-        options=FileDFWriter.Options(partition_by="str_value"),
+        options=FileDFWriter.Options(partitionBy="str_value"),
     )
 
     writer.run(df1)

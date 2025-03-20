@@ -10,6 +10,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.alias import avoid_alias
 from onetl.impl import GenericOptions
 
 PIPELINE_PROHIBITED_OPTIONS = frozenset(
@@ -94,15 +95,7 @@ class MongoDBCollectionExistBehavior(str, Enum):
 class MongoDBPipelineOptions(GenericOptions):
     """Aggregation pipeline options for MongoDB connector.
 
-    The only difference from :obj:`MongoDB.ReadOptions <MongoDBReadOptions>` that it is allowed to pass the ``hint`` parameter.
-
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
+    The only difference from :obj:`MongoDB.ReadOptions <MongoDBReadOptions>` that latter does not allow to pass the ``hint`` parameter.
 
     .. warning::
 
@@ -114,11 +107,19 @@ class MongoDBPipelineOptions(GenericOptions):
     Examples
     --------
 
-    Pipeline options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
-        MongoDB.PipelineOptions(
+        from onetl.connection import MongoDB
+
+        options = MongoDB.PipelineOptions(
             hint={"some_field": 1},
         )
     """
@@ -132,14 +133,6 @@ class MongoDBPipelineOptions(GenericOptions):
 class MongoDBReadOptions(GenericOptions):
     """Reading options for MongoDB connector.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
@@ -150,11 +143,19 @@ class MongoDBReadOptions(GenericOptions):
     Examples
     --------
 
-    Read options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
-        MongoDB.ReadOptions(
+        from onetl.connection import MongoDB
+
+        options = MongoDB.ReadOptions(
             sampleSize=100,
         )
     """
@@ -168,14 +169,6 @@ class MongoDBReadOptions(GenericOptions):
 class MongoDBWriteOptions(GenericOptions):
     """Writing options for MongoDB connector.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-write-config/>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
@@ -186,9 +179,17 @@ class MongoDBWriteOptions(GenericOptions):
     Examples
     --------
 
-    Write options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-write-config/>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
+
+        from onetl.connection import MongoDB
 
         options = MongoDB.WriteOptions(
             if_exists="append",
@@ -197,7 +198,10 @@ class MongoDBWriteOptions(GenericOptions):
         )
     """
 
-    if_exists: MongoDBCollectionExistBehavior = Field(default=MongoDBCollectionExistBehavior.APPEND, alias="mode")
+    if_exists: MongoDBCollectionExistBehavior = Field(  # type: ignore[literal-required]
+        default=MongoDBCollectionExistBehavior.APPEND,
+        alias=avoid_alias("mode"),
+    )
     """Behavior of writing data into existing collection.
 
     Possible values:

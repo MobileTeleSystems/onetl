@@ -10,70 +10,54 @@ pytestmark = [pytest.mark.csv]
 def test_csv_options_default():
     csv = CSV()
     assert csv.delimiter == ","
-    assert csv.encoding == "utf-8"
     assert csv.quote == '"'
     assert csv.escape == "\\"
-    assert csv.header is False
-    assert csv.lineSep == "\n"
-
-
-def test_csv_options_default_override():
-    csv = CSV(
-        delimiter="value",
-        encoding="value",
-        quote="value",
-        escape="value",
-        header=True,
-        lineSep="value",
-    )
-    assert csv.delimiter == "value"
-    assert csv.encoding == "value"
-    assert csv.quote == "value"
-    assert csv.escape == "value"
-    assert csv.header is True
-    assert csv.lineSep == "value"
 
 
 def test_csv_options_delimiter_alias():
-    csv = CSV(sep="value")
-    assert csv.delimiter == "value"
+    csv = CSV(sep=";")
+    assert csv.delimiter == ";"
 
 
 @pytest.mark.parametrize(
-    "known_option",
+    "known_option, value, expected_value",
     [
-        "charToEscapeQuoteEscaping",
-        "dateFormat",
-        "emptyValue",
-        "ignoreLeadingWhiteSpace",
-        "ignoreTrailingWhiteSpace",
-        "nullValue",
-        "timestampFormat",
-        "timestampNTZFormat",
-        "columnNameOfCorruptRecord",
-        "comment",
-        "enableDateTimeParsingFallback",
-        "enforceSchema",
-        "inferSchema",
-        "locale",
-        "maxCharsPerColumn",
-        "maxColumns",
-        "mode",
-        "multiLine",
-        "nanValue",
-        "negativeInf",
-        "positiveInf",
-        "preferDate",
-        "samplingRatio",
-        "unescapedQuoteHandling",
-        "compression",
-        "escapeQuotes",
-        "quoteAll",
+        ("delimiter", ";", ";"),
+        ("quote", "'", "'"),
+        ("escape", "#", "#"),
+        ("encoding", "value", "value"),
+        ("header", True, True),
+        ("lineSep", "\r\n", "\r\n"),
+        ("charToEscapeQuoteEscaping", "\\", "\\"),
+        ("dateFormat", "value", "value"),
+        ("emptyValue", "value", "value"),
+        ("ignoreLeadingWhiteSpace", True, True),
+        ("ignoreTrailingWhiteSpace", True, True),
+        ("nullValue", "value", "value"),
+        ("timestampFormat", "value", "value"),
+        ("timestampNTZFormat", "value", "value"),
+        ("columnNameOfCorruptRecord", "value", "value"),
+        ("comment", "#", "#"),
+        ("enforceSchema", True, True),
+        ("inferSchema", True, True),
+        ("locale", "value", "value"),
+        ("maxCharsPerColumn", 120, 120),
+        ("mode", "PERMISSIVE", "PERMISSIVE"),
+        ("multiLine", True, True),
+        ("nanValue", "value", "value"),
+        ("negativeInf", "value", "value"),
+        ("positiveInf", "value", "value"),
+        ("preferDate", True, True),
+        ("samplingRatio", 0.1, 0.1),
+        ("unescapedQuoteHandling", "STOP_AT_DELIMITER", "STOP_AT_DELIMITER"),
+        ("compression", "gzip", "gzip"),
+        ("escapeQuotes", True, True),
+        ("quoteAll", True, True),
     ],
 )
-def test_csv_options_known(known_option):
-    csv = CSV.parse({known_option: "value"})
-    assert getattr(csv, known_option) == "value"
+def test_csv_options_known(known_option, value, expected_value):
+    csv = CSV.parse({known_option: value})
+    assert getattr(csv, known_option) == expected_value
 
 
 def test_csv_options_unknown(caplog):
@@ -82,3 +66,9 @@ def test_csv_options_unknown(caplog):
         assert csv.unknown == "abc"
 
     assert ("Options ['unknown'] are not known by CSV, are you sure they are valid?") in caplog.text
+
+
+def test_csv_options_repr():
+    # There are too many options with default value None, hide them from repr
+    csv = CSV(header=True, mode="PERMISSIVE", unknownOption="abc")
+    assert repr(csv) == "CSV(escape='\\\\', header=True, mode='PERMISSIVE', quote='\"', sep=',', unknownOption='abc')"

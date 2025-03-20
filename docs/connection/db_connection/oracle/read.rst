@@ -42,7 +42,7 @@ Snapshot strategy:
         columns=["id", "key", "CAST(value AS VARCHAR2(4000)) value", "updated_dt"],
         where="key = 'something'",
         hint="INDEX(schema.table key_index)",
-        options=Oracle.ReadOptions(partition_column="id", num_partitions=10),
+        options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
     )
     df = reader.run()
 
@@ -63,7 +63,7 @@ Incremental strategy:
         where="key = 'something'",
         hint="INDEX(schema.table key_index)",
         hwm=DBReader.AutoDetectHWM(name="oracle_hwm", expression="updated_dt"),
-        options=Oracle.ReadOptions(partition_column="id", num_partitions=10),
+        options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
     )
 
     with IncrementalStrategy():

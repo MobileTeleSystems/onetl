@@ -45,7 +45,7 @@ def test_mongodb_reader_wrong_hint_type(spark_mock, df_schema):
             connection=mongo,
             where={"col_2": {"$eq": 2}, "col_1": {"$gt": 1, "$lt": 100}},
             hint="{'col1': 1}",
-            table="table",
+            source="table",
             df_schema=df_schema,
         )
 
@@ -67,7 +67,7 @@ def test_mongodb_reader_wrong_where_type(spark_mock, df_schema):
             connection=mongo,
             where="{'col_2': {'$eq': 2}, 'col_1': {'$gt': 1, '$lt': 100}, }",
             hint={"col1": 1},
-            table="table",
+            source="table",
             df_schema=df_schema,
         )
 
@@ -90,7 +90,7 @@ def test_mongodb_reader_where_wrong_value_match(spark_mock, df_schema):
         DBReader(
             connection=mongo,
             where=where,
-            table="table",
+            source="table",
             df_schema=df_schema,
         )
 
@@ -113,7 +113,7 @@ def test_mongodb_reader_where_wrong_value(spark_mock, df_schema):
         DBReader(
             connection=mongo,
             where=where,
-            table="table",
+            source="table",
             df_schema=df_schema,
         )
 
@@ -130,7 +130,7 @@ def test_mongodb_reader_without_df_schema(spark_mock):
     with pytest.raises(ValueError, match="'df_schema' parameter is mandatory for MongoDB"):
         DBReader(
             connection=mongo,
-            table="table",
+            source="table",
         )
 
 
@@ -147,4 +147,4 @@ def test_mongodb_reader_error_pass_columns(spark_mock, df_schema):
         ValueError,
         match="'columns' parameter is not supported by MongoDB",
     ):
-        DBReader(connection=mongo, table="table", columns=["_id", "test"], df_schema=df_schema)
+        DBReader(connection=mongo, source="table", columns=["_id", "test"], df_schema=df_schema)

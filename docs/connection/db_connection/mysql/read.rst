@@ -42,7 +42,7 @@ Snapshot strategy:
         columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
         where="key = 'something'",
         hint="SKIP_SCAN(schema.table key_index)",
-        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
+        options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
     )
     df = reader.run()
 
@@ -63,7 +63,7 @@ Incremental strategy:
         where="key = 'something'",
         hint="SKIP_SCAN(schema.table key_index)",
         hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
-        options=MySQL.ReadOptions(partition_column="id", num_partitions=10),
+        options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
     )
 
     with IncrementalStrategy():

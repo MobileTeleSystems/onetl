@@ -2,9 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+import warnings
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from typing_extensions import Literal
+
+try:
+    from pydantic.v1 import Field
+except (ImportError, AttributeError):
+    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
@@ -15,41 +21,14 @@ if TYPE_CHECKING:
     from pyspark.sql.types import ArrayType, MapType, StructType
 
 
-READ_WRITE_OPTIONS = frozenset(
-    (
-        "dateFormat",
-        "enableDateTimeParsingFallback",
-        "timestampFormat",
-        "timestampNTZFormat",
-        "timeZone",
-    ),
-)
-
-READ_OPTIONS = frozenset(
-    (
-        "allowBackslashEscapingAnyCharacter",
-        "allowComments",
-        "allowNonNumericNumbers",
-        "allowNumericLeadingZeros",
-        "allowSingleQuotes",
-        "allowUnquotedControlChars",
-        "allowUnquotedFieldNames",
-        "columnNameOfCorruptRecord",
-        "dropFieldIfAllNull",
-        "locale",
-        "mode",
-        "prefersDecimal",
-        "primitivesAsString",
-        "samplingRatio",
-    ),
-)
-
-WRITE_OPTIONS = frozenset(
-    (
-        "compression",
-        "ignoreNullFields",
-    ),
-)
+PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
+    "encoding",
+    "lineSep",
+    "samplingRatio",
+    "primitivesAsString",
+    "prefersDecimal",
+    "dropFieldIfAllNull",
+}
 
 
 @support_hooks
@@ -69,38 +48,276 @@ class JSON(ReadOnlyFileFormat):
             {"key": "value2"}
         ]
 
-    .. warning::
-
-        For writing prefer using :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>`.
-
-    .. note ::
-
-        You can pass any option to the constructor, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
-
     .. versionadded:: 0.9.0
 
     Examples
     --------
 
-    Describe options how to read from/write to JSON file with specific options:
+    .. note ::
+
+        You can pass any option mentioned in
+        `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_.
+        **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on Spark version.
+
+    Reading files:
 
     .. code:: python
 
-        json = JSON(encoding="utf-8", compression="gzip")
+        from onetl.file.format import JSON
+
+        json = JSON(encoding="UTF-8")
+
+    Writing files:
+
+    .. warning::
+
+        Not supported. Use :obj:`JSONLine <onetl.file.format.jsonline.JSONLine>`.
 
     """
 
     name: ClassVar[str] = "json"
 
-    multiLine: Literal[True] = True  # noqa: N815
-    encoding: str = "utf-8"
-    lineSep: str = "\n"  # noqa: N815
+    multiLine: Literal[True] = True
+
+    encoding: Optional[str] = None
+    """
+    Encoding of the JSON file.
+    Default ``UTF-8``.
+
+    .. note::
+
+        Used only for reading and writing files.
+
+        Ignored by :obj:`~parse_column` and :obj:`~serialize_column` methods.
+    """
+
+    lineSep: Optional[str] = None
+    """
+    Character used to separate lines in the JSON file.
+
+    Defaults:
+      * Try to detect for reading (``\\r\\n``, ``\\r``, ``\\n``)
+      * ``\\n`` for writing
+
+    .. note::
+
+        Used only for reading and writing files.
+
+        Ignored by :obj:`~parse_column` and :obj:`~serialize_column` methods,
+        as they handle each DataFrame row separately.
+    """
+
+    allowComments: Optional[bool] = None
+    """
+    If ``True``, add support for C/C++/Java style comments (``//``, ``/* */``).
+    Default ``False``, meaning that JSON files should not contain comments.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowUnquotedFieldNames: Optional[bool] = None
+    """
+    If ``True``, allow JSON object field names without quotes (JavaScript-style).
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowSingleQuotes: Optional[bool] = None
+    """
+    If ``True``, allow JSON object field names to be wrapped with single quotes (``'``).
+    Default ``True``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowNumericLeadingZeros: Optional[bool] = None
+    """
+    If ``True``, allow leading zeros in numbers (e.g. ``00012``).
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowNonNumericNumbers: Optional[bool] = None
+    """
+    If ``True``, allow numbers to contain non-numeric characters, like:
+      * scientific notation (e.g. ``12e10``).
+      * positive infinity floating point value (``Infinity``, ``+Infinity``, ``+INF``).
+      * negative infinity floating point value (``-Infinity``, ``-INF``).
+      * Not-a-Number floating point value (``NaN``).
+
+    Default ``True``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowBackslashEscapingAnyCharacter: Optional[bool] = None
+    """
+    If ``True``, prefix ``\\`` can escape any character.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    allowUnquotedControlChars: Optional[bool] = None
+    """
+    If ``True``, allow unquoted control characters (ASCII values 0-31) in strings without escaping them with ``\\``.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    """
+    How to handle parsing errors:
+      * ``PERMISSIVE`` - set field value as ``null``, move raw data to :obj:`~columnNameOfCorruptRecord` column.
+      * ``DROPMALFORMED`` - skip the malformed row.
+      * ``FAILFAST`` - throw an error immediately.
+
+    Default is ``PERMISSIVE``.
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    columnNameOfCorruptRecord: Optional[str] = Field(default=None, min_length=1)
+    """
+    Name of column to put corrupt records in.
+    Default is ``_corrupt_record``.
+
+    .. warning::
+
+        If DataFrame schema is provided, this column should be added to schema explicitly:
+
+        .. code:: python
+
+            from onetl.connection import SparkLocalFS
+            from onetl.file import FileDFReader
+            from onetl.file.format import JSON
+
+            from pyspark.sql.types import StructType, StructField, TimestampType, StringType
+
+            spark = ...
+
+            schema = StructType(
+                [
+                    StructField("my_field", TimestampType()),
+                    StructField("_corrupt_record", StringType()),  # <-- important
+                ]
+            )
+
+            json = JSON(mode="PERMISSIVE", columnNameOfCorruptRecord="_corrupt_record")
+
+            reader = FileDFReader(
+                connection=connection,
+                format=json,
+                schema=schema,  # < ---
+            )
+            df = reader.run(["/some/file.json"])
+
+    .. note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
+
+    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    """
+    While inferring schema, read the specified fraction of file rows.
+    Default ``1``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` function.
+    """
+
+    primitivesAsString: Optional[bool] = None
+    """
+    If ``True``, infer all primitive types (string, integer, float, boolean) as strings.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` method.
+    """
+
+    prefersDecimal: Optional[bool] = None
+    """
+    If ``True``, infer all floating-point values as ``Decimal``.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` method.
+    """
+
+    dropFieldIfAllNull: Optional[bool] = None
+    """
+    If ``True`` and inferred column is always null or empty array, exclude if from DataFrame schema.
+    Default ``False``.
+
+    .. note::
+
+        Used only for reading files. Ignored by :obj:`~parse_column` method.
+    """
+
+    dateFormat: Optional[str] = Field(default=None, min_length=1)
+    """
+    String format for ``DateType()`` representation.
+    Default is ``yyyy-MM-dd``.
+    """
+
+    timestampFormat: Optional[str] = Field(default=None, min_length=1)
+    """
+    String format for `TimestampType()`` representation.
+    Default is ``yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]``.
+    """
+
+    timestampNTZFormat: Optional[str] = Field(default=None, min_length=1)
+    """
+    String format for `TimestampNTZType()`` representation.
+    Default is ``yyyy-MM-dd'T'HH:mm:ss[.SSS]``.
+
+    .. note::
+
+        Added in Spark 3.2.0
+    """
+
+    timezone: Optional[str] = Field(default=None, min_length=1, alias="timeZone")
+    """
+    Allows to override timezone used for parsing or serializing date and timestamp values.
+    By default, ``spark.sql.session.timeZone`` is used.
+    """
+
+    locale: Optional[str] = Field(default=None, min_length=1)
+    """
+    Locale name used to parse dates and timestamps.
+    Default is ``en-US``.
+
+    ..  note::
+
+        Used only for reading files and :obj:`~parse_column` method.
+    """
 
     class Config:
-        known_options = READ_WRITE_OPTIONS | READ_OPTIONS | WRITE_OPTIONS
+        known_options = frozenset()
         extra = "allow"
 
     @slot
@@ -174,13 +391,14 @@ class JSON(ReadOnlyFileFormat):
         from pyspark.sql.functions import col, from_json
 
         self.check_if_supported(SparkSession._instantiatedSession)  # noqa:  WPS437
+        self._check_unsupported_serialization_options()
 
         if isinstance(column, Column):
             column_name, column = column._jc.toString(), column.cast("string")  # noqa:  WPS437
         else:
             column_name, column = column, col(column).cast("string")
 
-        options = stringify(self.dict(by_alias=True))
+        options = stringify(self.dict(by_alias=True, exclude_none=True))
         return from_json(column, schema, options).alias(column_name)
 
     def serialize_column(self, column: str | Column) -> Column:
@@ -236,11 +454,29 @@ class JSON(ReadOnlyFileFormat):
         from pyspark.sql.functions import col, to_json
 
         self.check_if_supported(SparkSession._instantiatedSession)  # noqa:  WPS437
+        self._check_unsupported_serialization_options()
 
         if isinstance(column, Column):
             column_name = column._jc.toString()  # noqa:  WPS437
         else:
             column_name, column = column, col(column)
 
-        options = stringify(self.dict(by_alias=True))
+        options = stringify(self.dict(by_alias=True, exclude_none=True))
         return to_json(column, options).alias(column_name)
+
+    def _check_unsupported_serialization_options(self):
+        current_options = self.dict(by_alias=True, exclude_none=True)
+        unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
+        if unsupported_options:
+            warnings.warn(
+                f"Options `{sorted(unsupported_options)}` are set but not supported "
+                f"in `JSON.parse_column` or `JSON.serialize_column`.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    def __repr__(self):
+        options_dict = self.dict(by_alias=True, exclude_none=True, exclude={"multiLine"})
+        options_dict = dict(sorted(options_dict.items()))
+        options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
+        return f"{self.__class__.__name__}({options_kwargs})"

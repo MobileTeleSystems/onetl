@@ -314,12 +314,12 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
 @pytest.mark.parametrize(
     "options_class, options",
     [
-        (Postgres.WriteOptions, {"mode": "wrong_mode"}),
-        (Clickhouse.WriteOptions, {"mode": "wrong_mode"}),
-        (MSSQL.WriteOptions, {"mode": "wrong_mode"}),
-        (MySQL.WriteOptions, {"mode": "wrong_mode"}),
-        (Teradata.WriteOptions, {"mode": "wrong_mode"}),
-        (Oracle.WriteOptions, {"mode": "wrong_mode"}),
+        (Postgres.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Clickhouse.WriteOptions, {"if_exists": "wrong_mode"}),
+        (MSSQL.WriteOptions, {"if_exists": "wrong_mode"}),
+        (MySQL.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Teradata.WriteOptions, {"if_exists": "wrong_mode"}),
+        (Oracle.WriteOptions, {"if_exists": "wrong_mode"}),
     ],
 )
 def test_jdbc_write_options_mode_wrong(options_class, options):
@@ -330,9 +330,9 @@ def test_jdbc_write_options_mode_wrong(options_class, options):
 @pytest.mark.parametrize(
     "options, expected_message",
     [
-        ({"num_partitions": 2}, "lower_bound and upper_bound must be set if num_partitions > 1"),
-        ({"num_partitions": 2, "lower_bound": 0}, "lower_bound and upper_bound must be set if num_partitions > 1"),
-        ({"num_partitions": 2, "upper_bound": 10}, "lower_bound and upper_bound must be set if num_partitions > 1"),
+        ({"numPartitions": 2}, "lowerBound and upperBound must be set if numPartitions > 1"),
+        ({"numPartitions": 2, "lowerBound": 0}, "lowerBound and upperBound must be set if numPartitions > 1"),
+        ({"numPartitions": 2, "upperBound": 10}, "lowerBound and upperBound must be set if numPartitions > 1"),
     ],
 )
 def test_jdbc_sql_options_partition_bounds(options, expected_message):
@@ -377,4 +377,4 @@ def test_jdbc_deprecated_jdbcoptions():
     deprecated_warning = "Deprecated in 0.11.0 and will be removed in 1.0.0. Use FetchOptions or ExecuteOptions instead"
 
     with pytest.warns(DeprecationWarning, match=deprecated_warning):
-        Postgres.JDBCOptions(fetchsize=10, query_timeout=30)
+        Postgres.JDBCOptions(fetchsize=10, queryTimeout=30)

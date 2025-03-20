@@ -13,20 +13,20 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 
 
 class PostgresReadOptions(JDBCReadOptions):
-    __doc__ = JDBCReadOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCReadOptions.__doc__.replace("SomeDB", "Postgres")  # type: ignore[assignment, union-attr]
 
 
 class PostgresWriteOptions(JDBCWriteOptions):
-    __doc__ = JDBCWriteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCWriteOptions.__doc__.replace("SomeDB", "Postgres")  # type: ignore[assignment, union-attr]
 
 
 class PostgresSQLOptions(JDBCSQLOptions):
-    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCSQLOptions.__doc__.replace("SomeDB", "Postgres")  # type: ignore[assignment, union-attr]
 
 
 class PostgresFetchOptions(JDBCFetchOptions):
-    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCFetchOptions.__doc__.replace("SomeDB", "Postgres")  # type: ignore[assignment, union-attr]
 
 
 class PostgresExecuteOptions(JDBCExecuteOptions):
-    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCExecuteOptions.__doc__.replace("SomeDB", "Postgres")  # type: ignore[assignment, union-attr]
