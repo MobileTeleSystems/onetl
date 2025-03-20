@@ -40,7 +40,10 @@ class Parquet(ReadWriteFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_.
+        You can pass any option mentioned in
+        `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_.
+        **Option names should be in** ``camelCase``!
+
         The set of supported options depends on Spark version.
 
         You may also set options mentioned `parquet-hadoop documentation <https://github.com/apache/parquet-java/blob/master/parquet-hadoop/README.md>`_.

@@ -79,7 +79,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
             }
         )
 
-    .. dropdown :: Not recommended
+    .. dropdown:: Not recommended
 
         These options are error-prone and have several drawbacks, so it is not recommended to use them.
 

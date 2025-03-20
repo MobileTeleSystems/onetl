@@ -17,6 +17,18 @@ class FileMoverOptions(GenericOptions):
     """File moving options.
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.file import FileMover
+
+        options = FileMover.Options(
+            if_exists="replace_entire_directory",
+            workers=4,
+        )
     """
 
     if_exists: FileExistBehavior = Field(  # type: ignore[literal-required]

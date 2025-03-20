@@ -13,20 +13,20 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 
 
 class TeradataReadOptions(JDBCReadOptions):
-    __doc__ = JDBCReadOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCReadOptions.__doc__.replace("SomeDB", "Teradata")  # type: ignore[assignment, union-attr]
 
 
 class TeradataWriteOptions(JDBCWriteOptions):
-    __doc__ = JDBCWriteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCWriteOptions.__doc__.replace("SomeDB", "Teradata")  # type: ignore[assignment, union-attr]
 
 
 class TeradataSQLOptions(JDBCSQLOptions):
-    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCSQLOptions.__doc__.replace("SomeDB", "Teradata")  # type: ignore[assignment, union-attr]
 
 
 class TeradataFetchOptions(JDBCFetchOptions):
-    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCFetchOptions.__doc__.replace("SomeDB", "Teradata")  # type: ignore[assignment, union-attr]
 
 
 class TeradataExecuteOptions(JDBCExecuteOptions):
-    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCExecuteOptions.__doc__.replace("SomeDB", "Teradata")  # type: ignore[assignment, union-attr]

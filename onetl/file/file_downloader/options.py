@@ -17,6 +17,19 @@ class FileDownloaderOptions(GenericOptions):
     """File downloading options.
 
     .. versionadded:: 0.3.0
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.file import FileDownloader
+
+        options = FileDownloader.Options(
+            if_exists="replace_entire_directory",
+            delete_source=True,
+            workers=4,
+        )
     """
 
     if_exists: FileExistBehavior = Field(  # type: ignore[literal-required]

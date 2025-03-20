@@ -53,7 +53,9 @@ class XML(ReadWriteFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://github.com/databricks/spark-xml>`_.
+        You can pass any option mentioned in
+        `official documentation <https://github.com/databricks/spark-xml>`_.
+        **Option names should be in** ``camelCase``!
 
         The set of supported options depends on ``spark-xml`` version.
 

@@ -22,21 +22,17 @@ if TYPE_CHECKING:
 class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
     """Options for :obj:`FileDFReader <onetl.file.file_df_reader.file_df_reader.FileDFReader>`.
 
-    See `Spark Generic File Data Source <https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html>`_
-    documentation for more details.
-
-    .. note::
-
-        You can pass any value supported by Spark, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
-
     .. versionadded:: 0.9.0
 
     Examples
     --------
-    Created reader options
+
+    .. note::
+
+        You can pass any value `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on Spark version.
 
     .. code:: python
 

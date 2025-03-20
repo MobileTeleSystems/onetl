@@ -28,14 +28,26 @@ PROHIBITED_OPTIONS = frozenset(
 class JDBCOptions(GenericOptions):
     """Generic options, related to specific JDBC driver.
 
+    .. deprecated:: 0.11.0
+        Use ``SomeDB.FetchOptions`` or ``SomeDB.ExecuteOptions`` instead
+
+    Examples
+    --------
+
     .. note ::
 
-        You can pass any value
-        supported by underlying JDBC driver class,
+        You can pass any value supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
 
-    .. deprecated:: 0.11.0
-        Use ``FetchOptions`` or ``ExecuteOptions`` instead
+    .. code:: python
+
+        from onetl.connection import SomeDB
+
+        options = SomeDB.Options(
+            queryTimeout=60_000,
+            fetchsize=100_000,
+            customSparkOption="value",
+        )
     """
 
     class Config:
@@ -65,14 +77,26 @@ class JDBCOptions(GenericOptions):
 class JDBCFetchOptions(GenericOptions):
     """Options related to fetching data from databases via JDBC.
 
+    .. versionadded:: 0.11.0
+        Replace ``SomeDB.JDBCOptions`` → ``SomeDB.FetchOptions``
+
+    Examples
+    --------
+
     .. note ::
 
-        You can pass any value
-        supported by underlying JDBC driver class,
+        You can pass any value supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
 
-    .. versionadded:: 0.11.0
-        Replace ``Connection.JDBCOptions`` → ``Connection.FetchOptions``
+    .. code:: python
+
+        from onetl.connection import SomeDB
+
+        options = SomeDB.FetchOptions(
+            queryTimeout=60_000,
+            fetchsize=100_000,
+            customSparkOption="value",
+        )
     """
 
     class Config:
@@ -101,14 +125,25 @@ class JDBCFetchOptions(GenericOptions):
 class JDBCExecuteOptions(GenericOptions):
     """Options related to executing statements in databases via JDBC.
 
+    .. versionadded:: 0.11.0
+        Replace ``SomeDB.JDBCOptions`` → ``SomeDB.ExecuteOptions``
+
+    Examples
+    --------
+
     .. note ::
 
-        You can pass any value
-        supported by underlying JDBC driver class,
+        You can pass any value supported by underlying JDBC driver class,
         even if it is not mentioned in this documentation.
 
-    .. versionadded:: 0.11.0
-        Replace ``Connection.JDBCOptions`` → ``Connection.ExecuteOptions``
+    .. code:: python
+
+        from onetl.connection import SomeDB
+
+        options = SomeDB.ExecuteOptions(
+            queryTimeout=60_000,
+            customSparkOption="value",
+        )
     """
 
     class Config:

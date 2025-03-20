@@ -40,7 +40,10 @@ class ORC(ReadWriteFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_.
+        You can pass any option mentioned in
+        `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_.
+        **Option names should be in** ``camelCase``!
+
         The set of supported options depends on Spark version.
 
         You may also set options mentioned `orc-java documentation <https://orc.apache.org/docs/core-java-config.html>`_.

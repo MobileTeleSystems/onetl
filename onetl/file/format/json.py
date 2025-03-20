@@ -55,7 +55,9 @@ class JSON(ReadOnlyFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_.
+        You can pass any option mentioned in
+        `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-json.html>`_.
+        **Option names should be in** ``camelCase``!
 
         The set of supported options depends on Spark version.
 
@@ -65,7 +67,7 @@ class JSON(ReadOnlyFileFormat):
 
         from onetl.file.format import JSON
 
-        json = JSON(encoding="utf-8")
+        json = JSON(encoding="UTF-8")
 
     Writing files:
 

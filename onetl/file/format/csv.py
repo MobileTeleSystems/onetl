@@ -55,7 +55,9 @@ class CSV(ReadWriteFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_.
+        You can pass any option mentioned in
+        `official documentation <https://spark.apache.org/docs/latest/sql-data-sources-csv.html>`_.
+        **Option names should be in** ``camelCase``!
 
         The set of supported options depends on Spark version.
 

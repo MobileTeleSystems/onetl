@@ -38,27 +38,25 @@ class FileDFExistBehavior(str, Enum):
 class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     """Options for :obj:`FileDFWriter <onetl.file.file_df_writer.file_df_writer.FileDFWriter>`.
 
-    See `Spark Generic Load/Save Functions <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_
-    documentation for more details.
-
-    .. note::
-
-        You can pass any value supported by Spark, even if it is not mentioned in this documentation.
-        **Option names should be in** ``camelCase``!
-
-        The set of supported options depends on Spark version. See link above.
+    .. versionadded:: 0.9.0
 
     Examples
     --------
-    Created writer options
+
+    .. note::
+
+        You can pass any value `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on Spark version.
 
     .. code:: python
 
         from onetl.file import FileDFWriter
 
         options = FileDFWriter.Options(
-            partitionBy="month",
             if_exists="replace_overlapping_partitions",
+            partitionBy="month",
         )
     """
 

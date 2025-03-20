@@ -74,14 +74,6 @@ class GreenplumTableExistBehavior(str, Enum):
 class GreenplumReadOptions(JDBCOptions):
     """VMware's Greenplum Spark connector reading options.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
@@ -90,11 +82,19 @@ class GreenplumReadOptions(JDBCOptions):
     Examples
     --------
 
-    Read options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
-        Greenplum.ReadOptions(
+        from onetl.connection import Greenplum
+
+        options = Greenplum.ReadOptions(
             partitionColumn="reg_id",
             partitions=10,
         )
@@ -124,10 +124,7 @@ class GreenplumReadOptions(JDBCOptions):
         * table column
             Allocate each executor a range of values from a specific column.
 
-            .. note::
-                Column type must be numeric. Other types are not supported.
-
-            Spark generates for each executor an SQL query like:
+            Spark generates for each executor an SQL query:
 
             Executor 1:
 
@@ -158,6 +155,10 @@ class GreenplumReadOptions(JDBCOptions):
 
             Where ``stride=(upper_bound - lower_bound) / num_partitions``,
             ``lower_bound=MIN(partition_column)``, ``upper_bound=MAX(partition_column)``.
+
+            .. note::
+
+                Column type must be numeric. Other types are not supported.
 
             .. note::
 
@@ -207,14 +208,6 @@ class GreenplumReadOptions(JDBCOptions):
 class GreenplumWriteOptions(JDBCOptions):
     """VMware's Greenplum Spark connector writing options.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``, etc
@@ -223,9 +216,17 @@ class GreenplumWriteOptions(JDBCOptions):
     Examples
     --------
 
-    Write options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
+
+        from onetl.connection import Greenplum
 
         options = Greenplum.WriteOptions(
             if_exists="append",
@@ -325,12 +326,12 @@ class GreenplumWriteOptions(JDBCOptions):
 
 
 class GreenplumSQLOptions(JDBCSQLOptions):
-    __doc__ = JDBCSQLOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCSQLOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]
 
 
 class GreenplumFetchOptions(JDBCFetchOptions):
-    __doc__ = JDBCFetchOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCFetchOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]
 
 
 class GreenplumExecuteOptions(JDBCExecuteOptions):
-    __doc__ = JDBCExecuteOptions.__doc__  # type: ignore[assignment]
+    __doc__ = JDBCExecuteOptions.__doc__.replace("SomeDB", "Greenplum")  # type: ignore[assignment, union-attr]

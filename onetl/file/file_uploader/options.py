@@ -17,6 +17,19 @@ class FileUploaderOptions(GenericOptions):
     """File uploading options.
 
     .. versionadded:: 0.3.0
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.file import FileUploader
+
+        options = FileUploader.Options(
+            if_exists="replace_entire_directory",
+            delete_local=True,
+            workers=4,
+        )
     """
 
     if_exists: FileExistBehavior = Field(  # type: ignore[literal-required]

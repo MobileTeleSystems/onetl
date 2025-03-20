@@ -54,7 +54,9 @@ class Excel(ReadWriteFileFormat):
 
     .. note ::
 
-        You can pass any option mentioned in `official documentation <https://github.com/crealytics/spark-excel>`_.
+        You can pass any option mentioned in
+        `official documentation <https://github.com/crealytics/spark-excel>`_.
+        **Option names should be in** ``camelCase``!
 
         The set of supported options depends on ``spark-excel`` package version.
 

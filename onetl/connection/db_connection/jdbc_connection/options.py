@@ -113,30 +113,29 @@ class JDBCPartitioningMode(str, Enum):
 class JDBCReadOptions(JDBCFetchOptions):
     """Spark JDBC reading options.
 
+    .. versionadded:: 0.5.0
+        Replace ``SomeDB.Options`` → ``SomeDB.ReadOptions``
+
+    Examples
+    --------
+
     .. note ::
 
         You can pass any value
         `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
         even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
-        The set of supported options depends on Spark version. See link above.
-
-    .. versionadded:: 0.5.0
-        Replace ``Connection.Options`` → ``Connection.ReadOptions``
-
-    Examples
-    --------
-
-    Read options initialization
+        The set of supported options depends on Spark version.
 
     .. code:: python
 
-        options = JDBC.ReadOptions(
+        from onetl.connection import SomeDB
+
+        options = SomeDB.ReadOptions(
+            partitioning_mode="range",
             partitionColumn="reg_id",
             numPartitions=10,
-            lowerBound=0,
-            upperBound=1000,
-            customOption="value",
+            customSparkOption="value",
         )
     """
 
@@ -150,7 +149,7 @@ class JDBCReadOptions(JDBCFetchOptions):
     """Column used to parallelize reading from a table.
 
     .. warning::
-        It is highly recommended to use primary key, or at least a column with an index
+        It is highly recommended to use primary key, or column with an index
         to avoid performance issues.
 
     .. note::
@@ -225,36 +224,36 @@ class JDBCReadOptions(JDBCFetchOptions):
     * ``range`` (default)
         Allocate each executor a range of values from column passed into :obj:`~partition_column`.
 
-        Spark generates for each executor an SQL query like:
+        .. dropdown:: Spark generates for each executor an SQL query
 
-        Executor 1:
+            Executor 1:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (partition_column >= lowerBound
-                    OR partition_column IS NULL)
-            AND partition_column < (lower_bound + stride)
+                SELECT ... FROM table
+                WHERE (partition_column >= lowerBound
+                        OR partition_column IS NULL)
+                AND partition_column < (lower_bound + stride)
 
-        Executor 2:
+            Executor 2:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE partition_column >= (lower_bound + stride)
-            AND partition_column < (lower_bound + 2 * stride)
+                SELECT ... FROM table
+                WHERE partition_column >= (lower_bound + stride)
+                AND partition_column < (lower_bound + 2 * stride)
 
-        ...
+            ...
 
-        Executor N:
+            Executor N:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE partition_column >= (lower_bound + (N-1) * stride)
-            AND partition_column <= upper_bound
+                SELECT ... FROM table
+                WHERE partition_column >= (lower_bound + (N-1) * stride)
+                AND partition_column <= upper_bound
 
-        Where ``stride=(upper_bound - lower_bound) / num_partitions``.
+            Where ``stride=(upper_bound - lower_bound) / num_partitions``.
 
         .. note::
 
@@ -273,30 +272,30 @@ class JDBCReadOptions(JDBCFetchOptions):
     * ``hash``
         Allocate each executor a set of values based on hash of the :obj:`~partition_column` column.
 
-        Spark generates for each executor an SQL query like:
+        .. dropdown:: Spark generates for each executor an SQL query
 
-        Executor 1:
+            Executor 1:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = 0 -- lower_bound
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = 0 -- lower_bound
 
-        Executor 2:
+            Executor 2:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = 1 -- lower_bound + 1
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = 1 -- lower_bound + 1
 
-        ...
+            ...
 
-        Executor N:
+            Executor N:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (some_hash(partition_column) mod num_partitions) = num_partitions-1 -- upper_bound
+                SELECT ... FROM table
+                WHERE (some_hash(partition_column) mod num_partitions) = num_partitions-1 -- upper_bound
 
         .. note::
 
@@ -306,28 +305,28 @@ class JDBCReadOptions(JDBCFetchOptions):
     * ``mod``
         Allocate each executor a set of values based on modulus of the :obj:`~partition_column` column.
 
-        Spark generates for each executor an SQL query like:
+        .. dropdown:: Spark generates for each executor an SQL query
 
-        Executor 1:
+            Executor 1:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = 0 -- lower_bound
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = 0 -- lower_bound
 
-        Executor 2:
+            Executor 2:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = 1 -- lower_bound + 1
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = 1 -- lower_bound + 1
 
-        Executor N:
+            Executor N:
 
-        .. code:: sql
+            .. code:: sql
 
-            SELECT ... FROM table
-            WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
+                SELECT ... FROM table
+                WHERE (partition_column mod num_partitions) = num_partitions-1 -- upper_bound
 
         .. note::
 
@@ -342,13 +341,12 @@ class JDBCReadOptions(JDBCFetchOptions):
 
     .. code:: python
 
-        JDBC.ReadOptions(
+        ReadOptions(
             partitioning_mode="range",  # default mode, can be omitted
             partitionColumn="id_column",
             numPartitions=10,
-            # if you're using DBReader, options below can be omitted
-            # because they are calculated by automatically as
-            # MIN and MAX values of `partition_column`
+            # Options below can be discarded because they are
+            # calculated automatically as MIN and MAX values of `partitionColumn`
             lowerBound=0,
             upperBound=100_000,
         )
@@ -357,22 +355,22 @@ class JDBCReadOptions(JDBCFetchOptions):
 
     .. code:: python
 
-        JDBC.ReadOptions(
+        ReadOptions(
             partitioning_mode="hash",
             partitionColumn="some_column",
             numPartitions=10,
-            # lower_bound and upper_bound are automatically set to `0` and `9`
+            # lowerBound and upperBound are automatically set to `0` and `9`
         )
 
     Read data in 10 parallel jobs by modulus of values in ``id_column`` column:
 
     .. code:: python
 
-        JDBC.ReadOptions(
+        ReadOptions(
             partitioning_mode="mod",
             partitionColumn="id_column",
             numPartitions=10,
-            # lower_bound and upper_bound are automatically set to `0` and `9`
+            # lowerBound and upperBound are automatically set to `0` and `9`
         )
     """
 
@@ -404,25 +402,29 @@ class JDBCReadOptions(JDBCFetchOptions):
 class JDBCWriteOptions(GenericOptions):
     """Spark JDBC writing options.
 
+    .. versionadded:: 0.5.0
+        Replace ``SomeDB.Options`` → ``SomeDB.WriteOptions``
+
+    Examples
+    --------
+
     .. note ::
 
         You can pass any value
         `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
         even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
 
-        The set of supported options depends on Spark version. See link above.
-
-    .. versionadded:: 0.5.0
-        Replace ``Connection.Options`` → ``Connection.WriteOptions``
-
-    Examples
-    --------
-
-    Write options initialization
+        The set of supported options depends on Spark version.
 
     .. code:: python
 
-        options = JDBC.WriteOptions(if_exists="append", batchsize=20_000, customOption="value")
+        from onetl.connection import SomeDB
+
+        options = SomeDB.WriteOptions(
+            if_exists="append",
+            batchsize=20_000,
+            customSparkOption="value",
+        )
     """
 
     class Config:
@@ -569,43 +571,58 @@ class JDBCSQLOptions(GenericOptions):
     These options allow you to specify configurations for executing SQL queries
     without relying on Spark's partitioning mechanisms.
 
+    .. versionadded:: 0.11.0
+        Split up ``SomeDB.ReadOptions`` to ``SomeDB.SQLOptions``
+
+    Examples
+    --------
+
     .. note::
 
         You can pass any JDBC configuration
         `supported by Spark <https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html>`_,
-        tailored to optimize SQL query execution. Option names should be in ``camelCase``!
+        tailored to optimize SQL query execution. **Option names should be in** ``camelCase``!
 
-    .. versionadded:: 0.11.0
-        Split up ``ReadOptions`` to ``SQLOptions``
+    .. code:: python
+
+        from onetl.connection import SomeDB
+
+        options = SomeDB.SQLOptions(
+            partitionColumn="reg_id",
+            numPartitions=10,
+            lowerBound=0,
+            upperBound=1000,
+            customSparkOption="value",
+        )
     """
 
     partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
     """Column used to partition data across multiple executors for parallel query processing.
 
     .. warning::
-        It is highly recommended to use primary key, or at least a column with an index
+        It is highly recommended to use primary key, or column with an index
         to avoid performance issues.
 
-    Example of using partition_column for range-based partitioning:
+    .. dropdown:: Example of using ``partitionColumn="id"`` with ``partitioning_mode="range"``
 
-    .. code-block:: sql
+        .. code-block:: sql
 
-        -- If partition_column is 'id', with numPartitions=4, lowerBound=1, and upperBound=100:
-        -- Executor 1 processes IDs from 1 to 25
-        SELECT ... FROM table WHERE id >= 1 AND id < 26
-        -- Executor 2 processes IDs from 26 to 50
-        SELECT ... FROM table WHERE id >= 26 AND id < 51
-        -- Executor 3 processes IDs from 51 to 75
-        SELECT ... FROM table WHERE id >= 51 AND id < 76
-        -- Executor 4 processes IDs from 76 to 100
-        SELECT ... FROM table WHERE id >= 76 AND id <= 100
+            -- If partition_column is 'id', with numPartitions=4, lowerBound=1, and upperBound=100:
+            -- Executor 1 processes IDs from 1 to 25
+            SELECT ... FROM table WHERE id >= 1 AND id < 26
+            -- Executor 2 processes IDs from 26 to 50
+            SELECT ... FROM table WHERE id >= 26 AND id < 51
+            -- Executor 3 processes IDs from 51 to 75
+            SELECT ... FROM table WHERE id >= 51 AND id < 76
+            -- Executor 4 processes IDs from 76 to 100
+            SELECT ... FROM table WHERE id >= 76 AND id <= 100
 
 
-        -- General case for Executor N
-        SELECT ... FROM table
-        WHERE partition_column >= (lowerBound + (N-1) * stride)
-          AND partition_column <= upperBound
-        -- Where ``stride`` is calculated as ``(upperBound - lowerBound) / numPartitions``.
+            -- General case for Executor N
+            SELECT ... FROM table
+            WHERE partition_column >= (lowerBound + (N-1) * stride)
+            AND partition_column <= upperBound
+            -- Where ``stride`` is calculated as ``(upperBound - lowerBound) / numPartitions``.
     """
 
     num_partitions: Optional[int] = Field(default=None, alias="numPartitions")

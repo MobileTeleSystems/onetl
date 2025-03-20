@@ -53,14 +53,6 @@ class KafkaTopicExistBehaviorKafka(str, Enum):
 class KafkaReadOptions(GenericOptions):
     """Reading options for Kafka connector.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Options:
@@ -81,12 +73,20 @@ class KafkaReadOptions(GenericOptions):
     Examples
     --------
 
-    Read options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
+        from onetl.connection import Kafka
+
         options = Kafka.ReadOptions(
-            include_headers=False,
+            includeHeaders=False,
             minPartitions=50,
         )
     """
@@ -107,14 +107,6 @@ class KafkaReadOptions(GenericOptions):
 class KafkaWriteOptions(GenericOptions):
     """Writing options for Kafka connector.
 
-    .. note ::
-
-        You can pass any value
-        `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
-        even if it is not mentioned in this documentation.
-
-        The set of supported options depends on connector version. See link above.
-
     .. warning::
 
         Options:
@@ -128,13 +120,21 @@ class KafkaWriteOptions(GenericOptions):
     Examples
     --------
 
-    Write options initialization
+    .. note ::
+
+        You can pass any value
+        `supported by connector <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_,
+        even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+        The set of supported options depends on connector version.
 
     .. code:: python
 
+        from onetl.connection import Kafka
+
         options = Kafka.WriteOptions(
             if_exists="append",
-            include_headers=True,
+            includeHeaders=True,
         )
     """
 
