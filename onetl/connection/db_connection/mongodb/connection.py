@@ -95,8 +95,6 @@ class MongoDB(DBConnection):
     Examples
     --------
 
-    MongoDB connection initialization.
-
     .. code:: python
 
         from onetl.connection import MongoDB
