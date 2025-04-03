@@ -114,7 +114,7 @@ def try_import_pyspark():
                 Cannot import module "pyspark".
 
                 You should install package as follows:
-                    pip install onetl[spark]
+                    pip install "onetl[spark]"
 
                 or inject PySpark to sys.path in some other way BEFORE creating class instance.
                 """,

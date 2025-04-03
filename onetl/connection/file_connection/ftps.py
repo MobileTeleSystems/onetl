@@ -15,10 +15,10 @@ except (ImportError, NameError) as e:
             Cannot import module "ftputil".
 
             Since onETL v0.7.0 you should install package as follows:
-                pip install onetl[ftps]
+                pip install "onetl[ftps]"
 
             or
-                pip install onetl[files]
+                pip install "onetl[files]"
             """,
         ).strip(),
     ) from e
@@ -52,10 +52,10 @@ class FTPS(FTP):
 
         .. code:: bash
 
-            pip install onetl[ftps]
+            pip install "onetl[ftps]"
 
             # or
-            pip install onetl[files]
+            pip install "onetl[files]"
 
         See :ref:`install-files` installation instruction for more details.
 

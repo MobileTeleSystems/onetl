@@ -201,7 +201,7 @@ Then you should install PySpark via passing ``spark`` to ``extras``:
 
 .. code:: bash
 
-    pip install onetl[spark]  # install latest PySpark
+    pip install "onetl[spark]"  # install latest PySpark
 
 or install PySpark explicitly:
 
@@ -223,14 +223,14 @@ Each client can be installed explicitly by passing connector name (in lowercase)
 
 .. code:: bash
 
-    pip install onetl[ftp]  # specific connector
-    pip install onetl[ftp,ftps,sftp,hdfs,s3,webdav,samba]  # multiple connectors
+    pip install "onetl[ftp]"  # specific connector
+    pip install "onetl[ftp,ftps,sftp,hdfs,s3,webdav,samba]"  # multiple connectors
 
 To install all file connectors at once you can pass ``files`` to ``extras``:
 
 .. code:: bash
 
-    pip install onetl[files]
+    pip install "onetl[files]"
 
 **Otherwise class import will fail.**
 
@@ -267,7 +267,7 @@ Also you should pass ``kerberos`` to ``extras`` to install required Python packa
 
 .. code:: bash
 
-    pip install onetl[kerberos]
+    pip install "onetl[kerberos]"
 
 Full bundle
 ~~~~~~~~~~~
@@ -278,10 +278,10 @@ To install all connectors and dependencies, you can pass ``all`` into ``extras``
 
 .. code:: bash
 
-    pip install onetl[all]
+    pip install "onetl[all]"
 
     # this is just the same as
-    pip install onetl[spark,files,kerberos]
+    pip install "onetl[spark,files,kerberos]"
 
 .. warning::
 
@@ -300,7 +300,7 @@ Read data from MSSQL, transform & write to Hive.
 .. code:: bash
 
     # install onETL and PySpark
-    pip install onetl[spark]
+    pip install "onetl[spark]"
 
 .. code:: python
 
@@ -402,7 +402,7 @@ Download files from SFTP & upload them to HDFS.
 .. code:: bash
 
     # install onETL with SFTP and HDFS clients, and Kerberos support
-    pip install onetl[hdfs,sftp,kerberos]
+    pip install "onetl[hdfs,sftp,kerberos]"
 
 .. code:: python
 
@@ -524,7 +524,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
 .. code:: bash
 
     # install onETL and PySpark
-    pip install onetl[spark]
+    pip install "onetl[spark]"
 
 .. code:: python
 

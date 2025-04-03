@@ -34,10 +34,10 @@ except (ImportError, NameError) as e:
             Cannot import module "webdav3".
 
             Since onETL v0.7.0 you should install package as follows:
-                pip install onetl[webdav]
+                pip install "onetl[webdav]"
 
             or
-                pip install onetl[files]
+                pip install "onetl[files]"
             """,
         ).strip(),
     ) from e
@@ -58,10 +58,10 @@ class WebDAV(FileConnection, RenameDirMixin):
 
         .. code:: bash
 
-            pip install onetl[webdav]
+            pip install "onetl[webdav]"
 
             # or
-            pip install onetl[files]
+            pip install "onetl[files]"
 
         See :ref:`install-files` installation instruction for more details.
 

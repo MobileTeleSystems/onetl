@@ -32,10 +32,10 @@ except (ImportError, NameError) as e:
             Cannot import module "pysmb".
 
             You should install package as follows:
-                pip install onetl[samba]
+                pip install "onetl[samba]"
 
             or
-                pip install onetl[files]
+                pip install "onetl[files]"
             """,
         ).strip(),
     ) from e
@@ -58,10 +58,10 @@ class Samba(FileConnection):
 
         .. code:: bash
 
-            pip install onetl[samba]
+            pip install "onetl[samba]"
 
             # or
-            pip install onetl[files]
+            pip install "onetl[files]"
 
         See :ref:`install-files` installation instruction for more details.
 
