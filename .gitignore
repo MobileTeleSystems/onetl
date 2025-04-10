@@ -78,6 +78,9 @@ docs/_build/
 docs/build
 docs/*.tar.gz
 
+# Sphinx mddocs
+mddocs/_build/
+
 # PyBuilder
 target/
 
