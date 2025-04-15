@@ -1,6 +1,6 @@
 <a id="file-root"></a>
 
- File classes
+# File classes
 
 * [File Downloader](file_downloader/index.md)
 * [File Uploader](file_uploader/index.md)

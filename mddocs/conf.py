@@ -60,9 +60,16 @@ extensions = [
     "sphinx_favicon",
     "sphinxcontrib.autodoc_pydantic",
     "sphinx_last_updated_by_git",
-    "sphinx_markdown_builder",
+    # "sphinx_markdown_builder",
     "myst_parser",
 ]
+
+myst_enable_extensions = [
+  'colon_fence',
+  'attrs_block',
+  # ... other extensions
+]
+
 numpydoc_show_class_members = False
 autodoc_pydantic_model_show_config = False
 autodoc_pydantic_model_show_config_summary = False

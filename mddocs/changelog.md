@@ -1,5 +1,4 @@
-# Changelog
-
+<!-- Is this really necessary? -->
 # Changelog
 
 * [0.13.4 (2025-03-20)](changelog/0.13.4.md)

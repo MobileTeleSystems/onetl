@@ -2,8 +2,6 @@
 
 # DB Connections
 
-# DB Connections
-
 * [Clickhouse](clickhouse/index.md)
 * [Greenplum](greenplum/index.md)
 * [Kafka](kafka/index.md)

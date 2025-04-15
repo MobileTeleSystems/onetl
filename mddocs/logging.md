@@ -1,14 +1,12 @@
-<a id="logging"></a>
-
 # Logging
+
+<a id="logging"></a>
 
 Logging is quite important to understand what’s going on under the hood of onETL.
 
-Default logging level for Python interpreters is `WARNING`,
-but most of onETL logs are in `INFO` level, so users usually don’t see much.
+Default logging level for Python interpreters is `WARNING`, but most of onETL logs are in `INFO` level, so users usually don’t see much.
 
-To change logging level, there is a function [`setup_logging`](#onetl.log.setup_logging)
-which should be called at the top of the script:
+To change logging level, there is a function [`setup_logging`](#setup_logging) which should be called at the top of the script:
 
 ```python
 from onetl.log import setup_logging
@@ -22,7 +20,7 @@ setup_logging()
 
 This changes both log level and log formatting to something like this:
 
-### See logs
+## See logs
 
 ```text
 2024-04-12 10:12:10,834 [INFO    ] MainThread: |onETL| Using IncrementalStrategy as a strategy
@@ -152,85 +150,100 @@ setup_logging(level="DEBUG", enable_clients=True)
 
 This also changes log level for all underlying Python libraries, e.g. showing each HTTP request being made, and so on.
 
-### onetl.log.setup_logging(level: int | str = 20, enable_clients: bool = False) → None
+<a id="setup_logging"></a>
+**onetl.log.setup_logging**(level: int | str = 20, enable_clients: bool = False) → None
 
 Set up onETL logging.
 
 What this function does:
-: * Adds stderr logging handler
-  * Changes root logger format to `2023-05-31 11:22:33.456 [INFO] MainThread: message`
-  * Changes root logger level to `level`
-  * Changes onETL logger level to `level`
-  * Sets up logging level of underlying client modules
 
-#### NOTE
+* Adds stderr logging handler
+* Changes root logger format to `2023-05-31 11:22:33.456 [INFO] MainThread: message`
+* Changes root logger level to `level`
+* Changes onETL logger level to `level`
+* Sets up logging level of underlying client modules
+
+<!-- TODO: admonition doesn't works -->
+
+```{admonition} note
 Should be used only in IDEs (like Jupyter notebooks or PyCharm),
 or scripts (ETL pipelines).
+```
 
-#### Versionchanged
+<!-- TODO: versionchanged doesn't works -->
+<!-- TODO: nested blocks doesn't works -->
+
+````{versionchanged}
 Changed in version 0.5.0: Renamed `setup_notebook_logging` → `setup_logging`
 
 * **Parameters:**
   **level**
-  : Log level for onETL module
+  Log level for onETL module
 
   **enable_clients**
-  : If `True`, enable logging of underlying client modules.
+  If `True`, enable logging of underlying client modules.
     Otherwise, set client modules log level to `DISABLED`.
-    <br/>
-    #### NOTE
-    For `level="DEBUG"` it is recommended to use `enable_clients=True`
-    <br/>
-    #### Versionadded
-    Added in version 0.9.0.
 
+```{admonition} note
+For `level="DEBUG"` it is recommended to use `enable_clients=True`
+```
+
+```{versionadded}
+Added in version 0.9.0.
+```
+````
 <!-- !! processed by numpydoc !! -->
 
-### onetl.log.setup_clients_logging(level: int | str = 9999) → None
+**onetl.log.setup_clients_logging**(level: int | str = 9999) → None
 
 Set logging of underlying client modules used by onETL.
 
 Affected modules:
-: * `ftputil`
-  * `hdfs`
-  * `minio`
-  * `paramiko`
-  * `py4j`
-  * `pyspark`
-  * `webdav3`
 
-#### NOTE
+* `ftputil`
+* `hdfs`
+* `minio`
+* `paramiko`
+* `py4j`
+* `pyspark`
+* `webdav3`
+
+```{admonition} note
 Can be used in applications, but it is recommended to set up these loggers
 according to your framework documentation.
+```
 
-#### Versionchanged
+````{versionchanged}
 Changed in version 0.9.0: Renamed `disable_clients_logging` → `setup_clients_logging`
 
 * **Parameters:**
   **level**
-  : Log level for client modules
+  Log level for client modules
     <br/>
-    #### NOTE
-    For `py4j`, logging level with maximum verbosity is `INFO` because `DEBUG` logs are
-    totally unreadable.
-    <br/>
-    #### Versionadded
-    Added in version 0.9.0.
-
+```{admonition} note
+For `py4j`, logging level with maximum verbosity is `INFO` because `DEBUG` logs are
+totally unreadable.
+```
+<br/>
+```{versionadded}
+Added in version 0.9.0.
+```
+````
 <!-- !! processed by numpydoc !! -->
 
-### onetl.log.set_default_logging_format() → None
+**onetl.log.set_default_logging_format()** → None
 
 Sets default logging format to preferred by onETL.
 
 Example log message: `2023-05-31 11:22:33.456 [INFO] MainThread: message`
 
-#### NOTE
+```{admonition} note
 Should be used only in IDEs (like Jupyter notebooks or PyCharm),
 or scripts (ETL pipelines).
+```
 
-#### WARNING
+```{admonition} warning
 Should **NOT** be used in applications, you should set up logging settings manually,
 according to your framework documentation.
-
+```
 <!-- !! processed by numpydoc !! -->
