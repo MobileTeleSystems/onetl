@@ -320,7 +320,7 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
                 self._query_optional_on_driver(self._CHECK_QUERY, self.FetchOptions(fetchsize=1))
 
                 read_options = self._get_connector_params(self._CHECK_DUMMY_TABLE)
-                read_options["num_partitions"] = 1  # do not require gp_segment_id column in table
+                read_options["partitions"] = 1  # do not require gp_segment_id column in table
                 df = self.spark.read.format("greenplum").options(**read_options).load()
                 df.take(1)
 
