@@ -44,10 +44,10 @@ except (ImportError, NameError) as err:
             Cannot import module "hdfs".
 
             Since onETL v0.7.0 you should install package as follows:
-                pip install onetl[hdfs]
+                pip install "onetl[hdfs]"
 
             or
-                pip install onetl[files]
+                pip install "onetl[files]"
             """,
         ).strip(),
     ) from err
@@ -68,10 +68,10 @@ class HDFS(FileConnection, RenameDirMixin):
 
         .. code:: bash
 
-            pip install onetl[hdfs]
+            pip install "onetl[hdfs]"
 
             # or
-            pip install onetl[files]
+            pip install "onetl[files]"
 
         See :ref:`install-files` installation instruction for more details.
 
@@ -289,10 +289,7 @@ class HDFS(FileConnection, RenameDirMixin):
                         Cannot import module "hdfs.ext.kerberos".
 
                         Since onETL v0.7.0 you should install package as follows:
-                            pip install onetl[hdfs,kerberos]
-
-                        or
-                            pip install onetl[all]
+                            pip install "onetl[hdfs,kerberos]"
 
                         You should also have Kerberos libraries installed to OS,
                         specifically ``kinit`` executable.

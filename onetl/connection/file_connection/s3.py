@@ -21,10 +21,10 @@ except (ImportError, NameError) as e:
             Cannot import module "minio".
 
             Since onETL v0.7.0 you should install package as follows:
-                pip install onetl[s3]
+                pip install "onetl[s3]"
 
             or
-                pip install onetl[files]
+                pip install "onetl[files]"
             """,
         ).strip(),
     ) from e
@@ -56,10 +56,10 @@ class S3(FileConnection):
 
         .. code:: bash
 
-            pip install onetl[s3]
+            pip install "onetl[s3]"
 
             # or
-            pip install onetl[files]
+            pip install "onetl[files]"
 
         See :ref:`install-files` installation instruction for more details.
 
