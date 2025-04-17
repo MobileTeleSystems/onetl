@@ -1,0 +1,11 @@
+0.13.4 (2025-04-14)
+===================
+
+Bug Fixes
+---------
+
+0.13.0 changed the way ``Greenplum.check()`` is implemented - it begin checking DB availability from both Spark driver and executor.
+But due to misspell, ``SELECT`` queries were emitted from all available executors. This lead to opening too much connections to Greenplum,
+which was unexpected.
+
+Now only one Spark executor is used to run ``Greenplum.check()``.
