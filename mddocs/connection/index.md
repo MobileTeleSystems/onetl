@@ -1,6 +1,6 @@
 <a id="connection"></a>
 
- DB Connection
+# DB Connection
 
 * [DB Connections](db_connection/index.md)
   * [Clickhouse](db_connection/clickhouse/index.md)

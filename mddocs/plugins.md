@@ -1,9 +1,10 @@
-<a id="plugins"></a>
-
 # Plugins
 
-#### Versionadded
+<a id="plugins"></a>
+
+```{versionadded}
 Added in version 0.6.0.
+```
 
 ## What are plugins?
 
@@ -78,8 +79,9 @@ like [@hook decorator](hooks/hook.md#hook-decorator), it will be executed during
 
 ## How to enable/disable plugins?
 
-#### Versionadded
+```{versionadded}
 Added in version 0.7.0.
+```
 
 ### Disable/enable all plugins
 
