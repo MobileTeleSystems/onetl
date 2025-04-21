@@ -26,6 +26,14 @@ All connection types are inherited from the parent class `BaseConnection`.
 
 ### Class diagram
 
+```{uml}
+...uml::
+
+@startuml
+Bob -> Cat
+@enduml
+```
+
 ### DBConnection
 
 Classes inherited from `DBConnection` could be used for accessing databases.
