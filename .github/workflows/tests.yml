@@ -340,6 +340,8 @@ jobs:
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
+
+    if: always()
     needs:
       - tests-core
       - tests-clickhouse
