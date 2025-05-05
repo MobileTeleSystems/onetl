@@ -154,7 +154,7 @@ jobs:
 
       - name: Get Core matrix
         id: matrix-core
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/core/matrix.yml
 
@@ -184,7 +184,7 @@ jobs:
 
       - name: Get Clickhouse matrix
         id: matrix-clickhouse
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/clickhouse/matrix.yml
 
@@ -214,7 +214,7 @@ jobs:
 
       - name: Get Greenplum matrix
         id: matrix-greenplum
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/greenplum/matrix.yml
 
@@ -244,7 +244,7 @@ jobs:
 
       - name: Get Hive matrix
         id: matrix-hive
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/hive/matrix.yml
 
@@ -274,7 +274,7 @@ jobs:
 
       - name: Get Kafka matrix
         id: matrix-kafka
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/kafka/matrix.yml
 
@@ -304,7 +304,7 @@ jobs:
 
       - name: Get LocalFS matrix
         id: matrix-local-fs
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/local-fs/matrix.yml
 
@@ -334,7 +334,7 @@ jobs:
 
       - name: Get MongoDB matrix
         id: matrix-mongodb
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/mongodb/matrix.yml
 
@@ -364,7 +364,7 @@ jobs:
 
       - name: Get MSSQL matrix
         id: matrix-mssql
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/mssql/matrix.yml
 
@@ -394,7 +394,7 @@ jobs:
 
       - name: Get MySQL matrix
         id: matrix-mysql
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/mysql/matrix.yml
 
@@ -424,7 +424,7 @@ jobs:
 
       - name: Get Oracle matrix
         id: matrix-oracle
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/oracle/matrix.yml
 
@@ -454,7 +454,7 @@ jobs:
 
       - name: Get Postgres matrix
         id: matrix-postgres
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/postgres/matrix.yml
 
@@ -484,7 +484,7 @@ jobs:
 
       - name: Get Teradata matrix
         id: matrix-teradata
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/teradata/matrix.yml
 
@@ -514,7 +514,7 @@ jobs:
 
       - name: Get FTP matrix
         id: matrix-ftp
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/ftp/matrix.yml
 
@@ -544,7 +544,7 @@ jobs:
 
       - name: Get FTPS matrix
         id: matrix-ftps
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/ftps/matrix.yml
 
@@ -574,7 +574,7 @@ jobs:
 
       - name: Get HDFS matrix
         id: matrix-hdfs
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/hdfs/matrix.yml
 
@@ -604,7 +604,7 @@ jobs:
 
       - name: Get S3 matrix
         id: matrix-s3
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/s3/matrix.yml
 
@@ -634,7 +634,7 @@ jobs:
 
       - name: Get SFTP matrix
         id: matrix-sftp
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/sftp/matrix.yml
 
@@ -664,7 +664,7 @@ jobs:
 
       - name: Get Samba matrix
         id: matrix-samba
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/samba/matrix.yml
 
@@ -694,6 +694,6 @@ jobs:
 
       - name: Get WebDAV matrix
         id: matrix-webdav
-        uses: mikefarah/yq@v4.45.1
+        uses: mikefarah/yq@v4.45.2
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/webdav/matrix.yml
