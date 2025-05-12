@@ -16,8 +16,11 @@ jobs:
   check-changelog:
     name: Changelog Entry Check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     if: "!contains(github.event.pull_request.labels.*.name, 'ci:skip-changelog') && github.event.pull_request.user.login != 'pre-commit-ci[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'"
+
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

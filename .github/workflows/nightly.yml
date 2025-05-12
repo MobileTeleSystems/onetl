@@ -12,6 +12,9 @@ concurrency:
 env:
   DEFAULT_PYTHON: '3.13'
 
+permissions:
+  contents: read
+
 jobs:
   get-matrix:
     name: Get version matrix for nightly tests

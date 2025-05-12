@@ -17,6 +17,7 @@ jobs:
     environment:
       name: pypi
       url: https://pypi.org/p/onetl
+
     permissions:
       id-token: write # to auth in PyPI
       contents: write # to create Github release

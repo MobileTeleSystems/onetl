@@ -24,8 +24,10 @@ jobs:
     environment:
       name: test-pypi
       url: https://test.pypi.org/p/onetl
+
     permissions:
       id-token: write # to auth in Test PyPI
+      contents: read
 
     steps:
       - name: Checkout code
