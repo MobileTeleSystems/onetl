@@ -4,7 +4,7 @@ min: &min
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
-  os: ubuntu-24.04
+  os: ubuntu-22.04
 
 max: &max
   mssql-version: 2022-latest
