@@ -1,4 +1,4 @@
-min: &min
+2x: &2x
   hadoop-version: hadoop2-hdfs
   spark-version: 2.3.1
   pydantic-version: 1
@@ -6,12 +6,21 @@ min: &min
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
+3x: &3x
   hadoop-version: hadoop3-hdfs
   spark-version: 3.5.5
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
+  os: ubuntu-latest
+
+4x: &4x
+  hadoop-version: hadoop3-hdfs
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.13'
+  # https://stackoverflow.com/a/79017758/23601543
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -23,6 +32,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  small: [*3x]
+  full: [*2x, *3x, *4x]
+  nightly: [*2x, *3x, *latest]
