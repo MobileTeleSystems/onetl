@@ -287,7 +287,9 @@ class BaseFileConnection(BaseConnection):
             Directory path to remote
 
         recursive : bool, default ``False``
-            If ``True``, remove directory tree recursively.
+            If ``True``, remove directory tree recursively (including files and subdirectories).
+
+            If ``False``, remove only directory, and not its content. Directory should be empty.
 
         Returns
         -------
@@ -298,10 +300,17 @@ class BaseFileConnection(BaseConnection):
         NotADirectoryError
             Path is not a directory
 
+        :obj:`onetl.exception.DirectoryNotEmptyError`
+            Directory is not empty
+
         Examples
         --------
 
         >>> connection.remove_dir("/path/to/dir")
+        Traceback (most recent call last):
+            ...
+        onetl.exception.DirectoryNotEmptyError: Cannot delete non-empty directory '/path/to/dir'
+        >>> connection.remove_dir("/path/to/dir", recirsive=True)
         True
         >>> connection.path_exists("/path/to/dir")
         False
