@@ -289,7 +289,7 @@ class BaseFileConnection(BaseConnection):
         recursive : bool, default ``False``
             If ``True``, remove directory tree recursively (including files and subdirectories).
 
-            If ``False``, remove only directory itself, but not its content. Directory should be empty.
+            If ``False``, remove only directory itself. Directory should be empty.
 
         Returns
         -------
@@ -301,7 +301,7 @@ class BaseFileConnection(BaseConnection):
             Path is not a directory
 
         :obj:`onetl.exception.DirectoryNotEmptyError`
-            Directory is not empty
+            Directory is not empty, and ``recursive`` is ``False``
 
         Examples
         --------
