@@ -284,12 +284,12 @@ class BaseFileConnection(BaseConnection):
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
-            Directory path to remote
+            Directory path to remove
 
         recursive : bool, default ``False``
             If ``True``, remove directory tree recursively (including files and subdirectories).
 
-            If ``False``, remove only directory, and not its content. Directory should be empty.
+            If ``False``, remove only directory itself, but not its content. Directory should be empty.
 
         Returns
         -------
