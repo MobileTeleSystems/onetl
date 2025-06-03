@@ -66,7 +66,7 @@ Requirements
 ------------
 
 * **Python 3.7 - 3.13**
-* PySpark 2.3.x - 3.5.x (depends on used connector)
+* PySpark 2.3.x - 4.0.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
 
@@ -193,6 +193,8 @@ Compatibility matrix
 | `3.4.x <https://spark.apache.org/docs/3.4.4/#downloading>`_  | 3.7 - 3.12  | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 | `3.5.x <https://spark.apache.org/docs/3.5.5/#downloading>`_  | 3.8 - 3.13  | 8u371 - 20  | 2.12  |
++--------------------------------------------------------------+-------------+-------------+-------+
+| `4.0.x <https://spark.apache.org/docs/4.0.0/#downloading>`_  | 3.9 - 3.13  | 17 - 22     | 2.13  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
