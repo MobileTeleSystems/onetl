@@ -226,7 +226,7 @@ class JSONLine(ReadWriteFileFormat):
             reader = FileDFReader(
                 connection=connection,
                 format=jsonline,
-                schema=schema,  # < ---
+                df_schema=schema,  # < ---
             )
             df = reader.run(["/some/file.jsonl"])
 

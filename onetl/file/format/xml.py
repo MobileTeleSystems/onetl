@@ -192,7 +192,7 @@ class XML(ReadWriteFileFormat):
             reader = FileDFReader(
                 connection=connection,
                 format=xml,
-                schema=schema,  # < ---
+                df_schema=schema,  # < ---
             )
             df = reader.run(["/some/file.xml"])
 

@@ -229,7 +229,7 @@ class JSON(ReadOnlyFileFormat):
             reader = FileDFReader(
                 connection=connection,
                 format=json,
-                schema=schema,  # < ---
+                df_schema=schema,  # < ---
             )
             df = reader.run(["/some/file.json"])
 

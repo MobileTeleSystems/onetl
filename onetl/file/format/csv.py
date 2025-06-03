@@ -416,7 +416,7 @@ class CSV(ReadWriteFileFormat):
             reader = FileDFReader(
                 connection=connection,
                 format=csv,
-                schema=schema,  # < ---
+                df_schema=schema,  # < ---
             )
             df = reader.run(["/some/file.csv"])
 
